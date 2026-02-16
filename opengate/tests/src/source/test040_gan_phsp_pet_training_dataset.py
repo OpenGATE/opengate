@@ -4,6 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test040")
@@ -79,10 +80,6 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.output_filename = "test040_train_stats.txt"
 
-    # filter gamma only
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-
     # phsp
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
     phsp.attached_to = "phase_space_sphere"
@@ -100,10 +97,10 @@ if __name__ == "__main__":
         "EventDirection",
     ]
     phsp.output_filename = "test040_train.root"
-    phsp.store_absorbed_event = (
-        True  # this option allow to store all events even if absorbed
-    )
-    phsp.filters.append(f)
+    # this option allow to store all events even if absorbed
+    phsp.store_absorbed_event = True
+    F = GateFilter(sim)
+    phsp.filter = F.ParticleName == "gamma"
     print(phsp)
     print(phsp.get_output_path())
 
