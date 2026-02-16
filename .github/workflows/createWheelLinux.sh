@@ -11,12 +11,13 @@ export CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/:${CMAKE_PREFIX_
 mkdir opengate_core/plugins
 cp -r /lib64/qt6/plugins/platforms/* opengate_core/plugins/
 cp -r /lib64/qt6/plugins/imageformats opengate_core/plugins/
-/opt/python/${PYTHONFOLDER}/bin/pip install -U pip wget colored wheel setuptools blosc2
-yum -y install hdf5-devel
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-    /opt/python/${PYTHONFOLDER}/bin/pip install tables
-else
+/opt/python/${PYTHONFOLDER}/bin/pip install -U pip wget colored wheel setuptools
+# pip install "tables>=3.11" # Replace when tables 3.11 is released
+if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
+    yum -y install hdf5-devel
     /opt/python/${PYTHONFOLDER}/bin/pip install git+https://github.com/PyTables/PyTables.git
+else
+    /opt/python/${PYTHONFOLDER}/bin/pip install tables
 fi
 /opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
 archi=`uname -m`

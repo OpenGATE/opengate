@@ -25,11 +25,12 @@ which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delocate
-pip install -U pip wheel setuptools blosc2
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-    pip install tables
-else
+pip install -U pip wheel setuptools
+# pip install "tables>=3.11" # Replace when tables 3.11 is released
+if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
     pip install git+https://github.com/PyTables/PyTables.git
+else
+    pip install tables
 fi
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
