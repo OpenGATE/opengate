@@ -6,9 +6,9 @@
    -------------------------------------------------- */
 
 #include "GateTrackCreatorProcessFilter.h"
+#include "../GateHelpers.h"
+#include "../GateHelpersDict.h"
 #include "G4VProcess.hh"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
 
 void GateTrackCreatorProcessFilter::InitializeUserInfo(py::dict &user_info) {
   fProcessName = DictGetStr(user_info, "process_name");

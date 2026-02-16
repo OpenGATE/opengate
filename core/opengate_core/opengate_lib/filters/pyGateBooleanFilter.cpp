@@ -9,11 +9,10 @@
 
 namespace py = pybind11;
 
-#include "GateParticleFilter.h"
-#include "GateVFilter.h"
+#include "GateBooleanFilter.h"
 
-void init_GateParticleFilter(py::module &m) {
-  py::class_<GateParticleFilter, GateVFilter>(m, "GateParticleFilter")
+void init_GateBooleanFilter(py::module &m) {
+  py::class_<GateBooleanFilter, GateVFilter>(m, "GateBooleanFilter")
       .def(py::init())
-      .def("InitializeUserInfo", &GateParticleFilter::InitializeUserInfo);
+      .def("InitializeUserInfo", &GateBooleanFilter::InitializeUserInfo);
 }

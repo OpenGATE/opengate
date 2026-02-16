@@ -5,6 +5,7 @@ import uproot
 import matplotlib.pyplot as plt
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.actors.filters import GateFilter
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -59,26 +60,20 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
     # phsp
+    F = GateFilter(sim)
     phsp_bg = sim.add_actor("PhaseSpaceActor", "phsp_bg")
     phsp_bg.attributes = ["EventPosition"]
     phsp_bg.output_filename = "iec_bg.root"
     phsp_bg.steps_to_store = "first"
-    f = sim.add_filter("ParticleFilter", "g")
-    f.particle = "gamma"
-    f.policy = "accept"
-    phsp_bg.filters.append(f)
+    phsp_bg.filter = F.ParticleName == "gamma"
 
     phsp_sph = sim.add_actor("PhaseSpaceActor", "phsp_sph")
     phsp_sph.attributes = ["EventPosition"]
     phsp_sph.output_filename = "iec_spheres.root"
     phsp_sph.steps_to_store = "first"
-    f = sim.add_filter("ParticleFilter", "electron")
-    f.particle = "e-"
-    f.policy = "accept"
-    phsp_sph.filters.append(f)
+    phsp_sph.filter = F.ParticleName == "e-"
     print(phsp_sph)
 
-    print(sim.filter_manager.available_filters)
     print(sim.filter_manager.dump())
 
     # run

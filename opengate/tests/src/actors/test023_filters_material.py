@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -44,30 +45,25 @@ if __name__ == "__main__":
     source.direction.type = "iso"
     source.activity = 30000 * Bq
 
-    # filter : keep gamma
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    fp = sim.add_filter("ParticleFilter", "fp")
-    fp.particle = "e-"
-
     # add dose actor
+    F = GateFilter(sim)
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "test023.mhd"
     dose.attached_to = "waterbox"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.filters = [fp]
+    dose.filter = F.ParticleName == "e-"
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
-    stat.filters.append(f)
+    stat.filter = F.ParticleName == "gamma"
     print(stat)
 
     # add stat actor
     stat2 = sim.add_actor("SimulationStatisticsActor", "Stats2")
     stat2.track_types_flag = True
-    stat2.filters.append(fp)
+    stat2.filter = F.ParticleName == "e-"
     print(stat2)
 
     print(dose)

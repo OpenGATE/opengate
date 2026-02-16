@@ -3,8 +3,10 @@
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 import uproot
 import numpy as np
+from box import Box
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -51,40 +53,28 @@ if __name__ == "__main__":
     plane1a.material = "G4_WATER"
     plane1a.color = [1, 0, 0, 1]
 
-    # filter according to time
-    filter1 = sim.add_filter("ThresholdAttributeFilter", "time_filter")
-    filter1.attribute = "GlobalTime"
-    filter1.value_min = 20 * sec
-    filter1.value_max = 70 * sec
-    filter1.policy = "accept"
-
-    # filter according to energy
-    filter2 = sim.add_filter("ThresholdAttributeFilter", "ene_filter")
-    filter2.attribute = "KineticEnergy"
-    filter2.value_min = 300 * keV
-    filter2.value_max = 1200 * keV
-    filter2.policy = "accept"
-
-    # filter according to particle
-    filter3 = sim.add_filter("ParticleFilter", "p_filter")
-    filter3.particle = "gamma"
-
     # phsp
+    F = GateFilter(sim)
     phsp_and = sim.add_actor("PhaseSpaceActor", "phsp_and")
     phsp_and.attached_to = plane1a.name
     phsp_and.attributes = ["GlobalTime", "KineticEnergy", "ParticleName"]
     phsp_and.output_filename = f"{sim_name}_and.root"
-    phsp_and.filters = [filter1, filter2, filter3]
-    phsp_and.filters_boolean_operator = "and"  # default is and
+    phsp_and.filter = (
+        (20 * sec < F.GlobalTime)
+        & (F.GlobalTime < 70 * sec)
+        & (300 * keV < F.KineticEnergy)
+        & (F.KineticEnergy < 1200 * keV)
+        & (F.ParticleName == "gamma")
+    )
 
     # phsp
     phsp_or = sim.add_actor("PhaseSpaceActor", "phsp_or")
     phsp_or.attached_to = plane1a.name
     phsp_or.attributes = ["GlobalTime", "KineticEnergy"]
     phsp_or.output_filename = f"{sim_name}_or.root"
-    phsp_or.filters.append(filter1)
-    phsp_or.filters.append(filter2)
-    phsp_or.filters_boolean_operator = "or"  # default is and
+    phsp_or.filter = (20 * sec < F.GlobalTime) & (F.GlobalTime < 70 * sec) | (
+        300 * keV < F.KineticEnergy
+    ) & (F.KineticEnergy < 1200 * keV)
 
     # stats
     stat = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -102,6 +92,15 @@ if __name__ == "__main__":
     print(stat)
     # reference :
     # stat.write(paths.output_ref / f"{sim_name}.txt")
+
+    # for the tests
+    filter1 = Box()
+    filter1.value_min = 20 * sec
+    filter1.value_max = 70 * sec
+
+    filter2 = Box()
+    filter2.value_min = 300 * keV
+    filter2.value_max = 1200 * keV
 
     # check 'or'
     print()

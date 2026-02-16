@@ -27,7 +27,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.random_seed = "auto"
+    sim.random_seed = 123456
 
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
