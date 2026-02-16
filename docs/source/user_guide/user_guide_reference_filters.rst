@@ -12,7 +12,9 @@ Gate provides a "Pythonic" syntax to create and combine filters naturally using 
 
 .. code-block:: python
 
-   # 1. Initialize the filter factory
+   from opengate.actors.filters import GateFilter
+
+   # 1. Initialize the filter factory (need to provide the sim object)
    F = gate.GateFilter(sim)
 
    # 2. Create a complex filter logic
