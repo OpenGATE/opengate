@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import platform
 
 import opengate as gate
 import opengate.tests.utility as tu
 from opengate.actors.filters import GateFilter
 from opengate.contrib.optical.optigan import OptiGAN
+from opengate.actors.filters import GateFilter
+import platform
+
+import os
 
 if __name__ == "__main__":
     paths = tu.get_default_test_paths(__file__, output_folder="test075_optigan")
