@@ -4,6 +4,7 @@
 import test022_half_life_helpers as test022
 import opengate as gate
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 import math
 import sys
 import matplotlib.pyplot as plt
@@ -115,13 +116,11 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # hit actor w1
+    F = GateFilter(sim)
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
     ta1.attached_to = "waterbox1"
     ta1.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    f.policy = "accept"
-    ta1.filters.append(f)
+    ta1.filter = F.ParticleName == "gamma"
     ta1.output_filename = "test022_half_life_ion1.root"
     ta1.steps_to_store = "first"
 
@@ -129,7 +128,7 @@ if __name__ == "__main__":
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
     ta2.attached_to = "waterbox2"
     ta2.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
-    ta2.filters.append(f)
+    ta2.filter = F.ParticleName == "gamma"
     ta2.output_filename = "test022_half_life_ion2.root"
     ta2.steps_to_store = "first"
 
