@@ -6,13 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import subprocess
-
-
 import gatetools.phsp as phsp
-
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 
 global all_cond
 
@@ -193,12 +191,8 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
         "EventKineticEnergy",
     ]
     phsp_actor.output_filename = "test040_gan_phsp.root"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    phsp_actor.filters.append(f)
-    f = sim.add_filter("KineticEnergyFilter", "f2")
-    f.energy_min = 100 * keV
-    phsp_actor.filters.append(f)
+    F = GateFilter(sim)
+    phsp_actor.filter = (F.ParticleName == "gamma") & (F.KineticEnergy > 100 * keV)
 
     # ----------------------------------------------------------------------------------------------
     # FIXME: cannot be spawn in another process !
