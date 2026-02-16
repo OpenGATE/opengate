@@ -217,27 +217,6 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
         g4.GateBooleanFilter.__init__(self)
 
 
-class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
-    # hints for IDE
-    process_name: str
-
-    user_info_defaults = {
-        "process_name": (
-            "none",
-            {
-                "doc": "Name of the track creator process to be identified.",
-            },
-        ),
-    }
-
-    def __init__(self, *args, **kwargs):
-        FilterBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
-
-
 class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):
 
     def __init__(self, *args, **kwargs):
@@ -344,7 +323,6 @@ class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterStr
 
 # Registry update
 filter_classes = {
-    "TrackCreatorProcessFilter": TrackCreatorProcessFilter,
     "UnscatteredPrimaryFilter": UnscatteredPrimaryFilter,
     "AttributeFilterDouble": AttributeFilterDouble,
     "AttributeFilterInt": AttributeFilterInt,
@@ -363,7 +341,6 @@ def get_filter_class(f):
 
 
 process_cls(FilterBase)
-process_cls(TrackCreatorProcessFilter)
 process_cls(UnscatteredPrimaryFilter)
 process_cls(AttributeFilterDouble)
 process_cls(AttributeFilterInt)
