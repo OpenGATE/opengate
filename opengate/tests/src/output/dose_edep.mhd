@@ -1,0 +1,13 @@
+ObjectType = Image
+NDims = 3
+BinaryData = True
+BinaryDataByteOrderMSB = False
+CompressedData = False
+TransformMatrix = 1 0 0 0 1 0 0 0 1
+Offset = -150 -150 -154
+CenterOfRotation = 0 0 0
+AnatomicalOrientation = RAI
+ElementSpacing = 10 10 2
+DimSize = 31 31 155
+ElementType = MET_DOUBLE
+ElementDataFile = dose_edep.raw

@@ -81,6 +81,7 @@ void init_GateVActor(py::module &m) {
       //      .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
       //      this -> problems with pickle
       .def_readwrite("fFilters", &GateVActor::fFilters)
+      .def("SetFilterFunction", &GateVActor::SetFilterFunction)
       .def("Close", &GateVActor::Close)
       .def("InitializeCpp", &GateVActor::InitializeCpp)
       .def("InitializeUserInfo", &GateVActor::InitializeUserInfo)
