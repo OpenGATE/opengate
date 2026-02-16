@@ -43,8 +43,14 @@ void init_GateDoseActor(py::module &m) {
       .def("SetDoseFlag", &GateDoseActor::SetDoseFlag)
       .def("GetDoseSquaredFlag", &GateDoseActor::GetDoseSquaredFlag)
       .def("SetDoseSquaredFlag", &GateDoseActor::SetDoseSquaredFlag)
-      .def("GetToWaterFlag", &GateDoseActor::GetToWaterFlag)
-      .def("SetToWaterFlag", &GateDoseActor::SetToWaterFlag)
+      .def("GetScoreInMaterial", &GateDoseActor::GetScoreInMaterial)
+      .def("SetScoreInMaterial", &GateDoseActor::SetScoreInMaterial)
+      .def("GetConstantSPRMaterialFlag",
+           &GateDoseActor::GetConstantSPRMaterialFlag)
+      .def("SetConstantSPRMaterialFlag",
+           &GateDoseActor::SetConstantSPRMaterialFlag)
+      .def("GetConstEnergyForSPR", &GateDoseActor::GetConstEnergyForSPR)
+      .def("SetConstEnergyForSPR", &GateDoseActor::SetConstEnergyForSPR)
       .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
       .def("SetUncertaintyGoal", &GateDoseActor::SetUncertaintyGoal)

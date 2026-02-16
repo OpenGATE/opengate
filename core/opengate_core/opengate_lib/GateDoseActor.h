@@ -11,6 +11,7 @@
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
 #include "G4VPrimitiveScorer.hh"
+#include "GateSPRCache.h"
 #include "GateVActor.h"
 #include "itkImage.h"
 
@@ -43,9 +44,19 @@ public:
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
 
-  bool GetToWaterFlag() const { return fToWaterFlag; }
+  std::string GetScoreInMaterial() const { return fScoreInMaterial; }
 
-  void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
+  void SetScoreInMaterial(const std::string b) { fScoreInMaterial = b; }
+
+  bool GetConstantSPRMaterialFlag() const { return fConstantSPRMaterialFlag; }
+
+  void SetConstantSPRMaterialFlag(const bool b) {
+    fConstantSPRMaterialFlag = b;
+  }
+
+  double GetConstEnergyForSPR() const { return fConstEnergyForSPR; }
+
+  void SetConstEnergyForSPR(const double b) { fConstEnergyForSPR = b; }
 
   bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
 
@@ -113,8 +124,9 @@ public:
   void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
                         Image3DType::IndexType &index) const;
 
-  // Option: indicate we must convert to dose to water
-  bool fToWaterFlag{};
+  // Option: indicate we convert dose to dose in this material
+  std::string fScoreInMaterial{};
+  double fConstEnergyForSPR;
 
   // Option: indicate if we must compute edep squared
   bool fEdepSquaredFlag{};
@@ -132,6 +144,7 @@ public:
   double fUncertaintyGoal;
   double fThreshEdepPerc;
   double fOvershoot;
+  bool fConstantSPRMaterialFlag;
 
   int fNbOfEvent;
   // set from python's side. It will be overwritten by an estimation of the
@@ -146,8 +159,11 @@ public:
   std::string fHitType;
 
 protected:
+  bool fScoreInOtherMaterial;
   G4Cache<threadLocalT> fThreadLocalDataEdep;
   G4Cache<threadLocalT> fThreadLocalDataDose;
+  GateSPRCache fSPRCache;
+  double CalculateSPR(G4Step *step);
 };
 
 #endif // GateDoseActor_h
