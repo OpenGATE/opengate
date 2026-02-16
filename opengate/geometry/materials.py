@@ -599,7 +599,7 @@ class MaterialBuilder:
                 self.components[e.name] = e
             if line.startswith("+el"):
                 e = self.read_one_element(line)
-                if e["f"] !=0 :
+                if e["f"] != 0:
                     self.components[e.name] = e
 
     def read_one_element(self, line):
