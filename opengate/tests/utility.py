@@ -1,4 +1,5 @@
 import io
+import numbers
 import os
 import pathlib
 import shutil
@@ -108,23 +109,29 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
     is_ok = b
     print_test(b, f"Runs:         {counts1.runs} {counts2.runs}")
 
-    b = abs(event_d) <= tolerance * 100
+    if isinstance(tolerance, numbers.Number):
+        tolerance = [tolerance, tolerance, tolerance]
+
+    b = abs(event_d) <= tolerance[0] * 100
     is_ok = b and is_ok
-    st = f"(tol = {tolerance * 100:.2f} %)"
+    st = f"(tol = {tolerance[0] * 100:.2f} %)"
     print_test(
         b,
         f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  {st}",
     )
 
-    b = abs(track_d) <= tolerance * 100
+    b = abs(track_d) <= tolerance[1] * 100
     is_ok = b and is_ok
+    st = f"(tol = {tolerance[1] * 100:.2f} %)"
     print_test(
         b,
         f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  {st}",
     )
 
-    b = abs(step_d) <= tolerance * 100
+    b = abs(step_d) <= tolerance[2] * 100
     is_ok = b and is_ok
+
+    st = f"(tol = {tolerance[2] * 100:.2f} %)"
     print_test(
         b,
         f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  {st}",

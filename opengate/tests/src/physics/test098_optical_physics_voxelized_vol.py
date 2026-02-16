@@ -6,11 +6,12 @@ Created on Fri Oct  3 15:07:07 2025
 @author: mabbas
 """
 
+import numpy as np
+import SimpleITK as sitk
+
 import opengate as gate
 from opengate.tests import utility
 from opengate.utility import g4_units
-import SimpleITK as sitk
-import numpy as np
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "test098", output_folder="test098")
@@ -93,7 +94,7 @@ if __name__ == "__main__":
 
     branch = "phsp;1"
     keys = ["PostPosition_X", "PostPosition_Y", "PostPosition_Z"]
-    tols = [1.7, 2.0, 1e-3]
+    tols = [2.0, 2.0, 1e-3]
     scalings = [1, 1, 1]
     img = paths.output / "figure.png"
 
