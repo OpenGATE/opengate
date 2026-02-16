@@ -56,6 +56,6 @@ if __name__ == "__main__":
     print("Reference file", f)
     stats_ref = utility.read_stats_file(f)
     print(stats_ref)
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.16)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=[0.12, 0.12, 0.16])
 
     utility.test_ok(is_ok)

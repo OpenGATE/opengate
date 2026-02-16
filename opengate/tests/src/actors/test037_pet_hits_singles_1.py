@@ -53,7 +53,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     p = paths.gate / "output"
     stats_ref = utility.read_stats_file(p / "stats1.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.053)
+    is_ok = utility.assert_stats(stats, stats_ref, [0.028, 0.028, 0.053])
 
     # check root hits
     hc = sim.get_actor("Hits")

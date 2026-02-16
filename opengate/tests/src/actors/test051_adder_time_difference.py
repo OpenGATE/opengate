@@ -4,9 +4,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-import opengate.contrib.spect.ge_discovery_nm670 as nm670
 import opengate as gate
+import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -94,7 +93,7 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Check stats")
     stats_ref = utility.read_stats_file(paths.output_ref / "test051_stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=[0.05, 0.05, 0.07])
 
     # check root
     print()

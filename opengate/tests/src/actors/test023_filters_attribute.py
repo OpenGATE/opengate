@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
     # tests
     stats_ref = utility.read_stats_file(paths.output_ref / "test023_att_stats.txt")
-    is_ok = utility.assert_stats(stat, stats_ref, 0.02)
+    is_ok = utility.assert_stats(stat, stats_ref, [0.01, 0.01, 0.02])
 
     # image root files (no comparison here, just for plot)
     print()
