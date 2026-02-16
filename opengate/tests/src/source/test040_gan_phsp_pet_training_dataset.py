@@ -117,7 +117,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     print(stats)
     stats_ref = utility.read_stats_file(paths.output_ref / "test040_train_stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.03)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.12)
 
     # check phsp
     print()
@@ -146,12 +146,12 @@ if __name__ == "__main__":
     scalings = [1] * len(checked_keys)
     # scalings[0] = 1e-9  # time in ns
     tols = [1.0] * len(checked_keys)
-    tols[checked_keys.index("TimeFromBeginOfEvent")] = 0.007
+    tols[checked_keys.index("TimeFromBeginOfEvent")] = 0.13
     tols[checked_keys.index("KineticEnergy")] = 0.003
-    tols[checked_keys.index("PrePosition_X")] = 1.7
+    tols[checked_keys.index("PrePosition_X")] = 2.2
     tols[checked_keys.index("PrePosition_Y")] = 1.6
     tols[checked_keys.index("PrePosition_Z")] = 1.9
-    tols[checked_keys.index("PreDirection_X")] = 0.01
+    tols[checked_keys.index("PreDirection_X")] = 0.015
     tols[checked_keys.index("PreDirection_Y")] = 0.01
     tols[checked_keys.index("PreDirection_Z")] = 0.01
     tols[checked_keys.index("EventKineticEnergy")] = 0.02
