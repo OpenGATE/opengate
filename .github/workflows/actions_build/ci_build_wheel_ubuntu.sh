@@ -10,6 +10,8 @@ elif [ ${MATRIX_PYTHON_VERSION} == "3.12" ]; then
   export PYTHONFOLDER="cp312-cp312"
 elif [ ${MATRIX_PYTHON_VERSION} == "3.13" ]; then
   export PYTHONFOLDER="cp313-cp313"
+elif [ ${MATRIX_PYTHON_VERSION} == "3.14" ]; then
+  export PYTHONFOLDER="cp314-cp314"
 fi
 mkdir -p $HOME/software
 if [ ${MATRIX_OS} == "ubuntu-24.04-arm" ]; then
