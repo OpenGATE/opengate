@@ -35,6 +35,24 @@ In the example above, you might want to attach the dose actor to an :class:`~.op
   dose_actor_patient.attached_to = patient
 
 
+Filtering Actor Data
+--------------------
+
+You can attach filters to an actor to select which data should be processed or stored. For example, you might want a ``PhaseSpaceActor`` to record only Gamma particles, or a ``DoseActor`` to score dose only from electrons.
+
+.. code-block:: python
+
+  # Create the filter factory
+  F = gate.GateFilter(sim)
+
+  # Define the filter: Accept only gammas with energy > 100 keV
+  my_filter = (F.ParticleName == "gamma") & (F.KineticEnergy > 100 * keV)
+
+  # Apply to the actor
+  dose_actor_patient.filter = my_filter
+
+For a complete list of available attributes and logical operators, see :ref:`filters-label`.
+
 Actor output
 ------------
 
