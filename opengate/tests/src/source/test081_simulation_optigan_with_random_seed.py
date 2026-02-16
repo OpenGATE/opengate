@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-# Version Information
-# Python:   3.9.18
-# Pandas:   2.2.2
-# NumPy:    1.24.1
+import platform
 
 import opengate as gate
 import opengate.tests.utility as tu
+from opengate.actors.filters import GateFilter
 from opengate.contrib.optical.optigan import OptiGAN
-import platform
 
 if __name__ == "__main__":
     paths = tu.get_default_test_paths(__file__, output_folder="test075_optigan")
@@ -56,11 +52,6 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, -1]
     source.position.translation = [0 * cm, 0 * cm, 2.2 * cm]
 
-    # filter : remove opticalphoton
-    fe = sim.add_filter("ParticleFilter", "fe")
-    fe.particle = "opticalphoton"
-    fe.policy = "reject"
-
     phsp_actor = sim.add_actor("PhaseSpaceActor", "Phase")
     phsp_actor.attached_to = crystal
     # hc.output = paths.output / "test075_simulation_optigan_with_random_seed.root"
@@ -82,9 +73,10 @@ if __name__ == "__main__":
     phsp_actor.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
 
     # add a kill actor to the crystal
+    F = GateFilter(sim)
     ka = sim.add_actor("KillActor", "kill_actor2")
     ka.attached_to = crystal
-    ka.filters.append(fe)
+    ka.filter = F.ParticleName != "opticalphoton"
 
     sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
     sim.run()
