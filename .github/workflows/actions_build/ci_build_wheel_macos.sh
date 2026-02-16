@@ -23,8 +23,8 @@ conda list
 which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
-pip install wget colored setuptools
-pip install wheel delocate
+pip install wget colored delocate
+pip install -U pip wheel setuptools
 pip install git+https://github.com/PyTables/PyTables.git
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
