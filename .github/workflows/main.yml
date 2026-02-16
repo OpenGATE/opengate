@@ -287,6 +287,26 @@ jobs:
       uses: actions/checkout@v4
     - uses: ./.github/workflows/actions_tests
 
+  test_wheel_castor:
+    runs-on: ubuntu-24.04
+    needs: [build_opengate_wheel, build_opengate_core_wheel_pr]
+    strategy:
+      fail-fast: false
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: dist-*
+        merge-multiple: true
+        path: dist/
+    - name: Run tests
+      shell: bash {0}
+      run: |
+            mv dist/opengate_core-*-cp312-cp312-manylinux*_x86_64.whl $GITHUB_WORKSPACE/.github/workflows/
+            mv dist/opengate-*.whl $GITHUB_WORKSPACE/.github/workflows/
+            docker run --rm -v $GITHUB_WORKSPACE:/home tbaudier/opengate_castor_ci /home/.github/workflows/run_test_opengate_castor.sh
+
   publish_test:
     runs-on: ubuntu-24.04
     if: ${{ (always()) && (github.ref == 'refs/heads/master') }}
