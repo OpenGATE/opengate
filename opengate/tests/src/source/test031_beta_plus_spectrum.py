@@ -4,10 +4,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import uproot
-
 import opengate as gate
 from opengate.tests import utility
 from opengate.sources.utility import compute_bins_density, get_rad_yield, get_spectrum
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test031")
@@ -98,14 +98,13 @@ if __name__ == "__main__":
             t, f"Rad {rad} total yield = {total_yield} vs {yi} (tol is {tol})"
         )
 
+        F = GateFilter(sim)
         phsp = sim.add_actor("PhaseSpaceActor", f"phsp_{rad}")
         phsp.attached_to = f"b{si}"
         phsp.attributes = ["TrackVertexKineticEnergy"]
         phsp.output_filename = f"test031_{rad}.root"
         phsp.steps_to_store = "exiting"
-        f = sim.add_filter("ParticleFilter", f"f_{rad}")
-        f.particle = "e+"
-        phsp.filters.append(f)
+        phsp.filter = F.ParticleName == "e+"
         rads.append(rad)
 
     rads = []
