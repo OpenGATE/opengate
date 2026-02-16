@@ -24,7 +24,8 @@ if __name__ == "__main__":
     create_sim_test053(sim, sim_name, output=paths.output)
 
     phsp = sim.get_actor("phsp")
-    phsp.filters = [phsp.filters[0]]
+    F = GateFilter(sim)
+    phsp.filter = F.ParticleName == "gamma"
     print(phsp.output_filename)
 
     mm = g4_units.mm
