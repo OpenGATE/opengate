@@ -17,7 +17,6 @@ brew install --force --verbose --overwrite \
 brew uninstall --ignore-dependencies libxext
 brew uninstall --ignore-dependencies libx11
 export LDFLAGS="-L/usr/local/opt/llvm/lib"
-export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
 conda list
 conda install h5py
@@ -28,8 +27,10 @@ pip install wget colored delocate
 pip install -U pip wheel setuptools blosc2
 # pip install "tables>=3.11" # Replace when tables 3.11 is released
 if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
+    export CPPFLAGS="-I/usr/local/opt/llvm/include"
     pip install git+https://github.com/PyTables/PyTables.git
 else
+    export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
     pip install tables
 fi
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then

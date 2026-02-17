@@ -16,7 +16,6 @@ pip install -U pip wheel setuptools blosc2
 # pip install "tables>=3.11" # Replace when tables 3.11 is released
 if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
     pip install cibuildwheel==3.3.0
-    pip install "tables==3.10.2"
 else
     pip install cibuildwheel==2.21.1
     pip install tables
