@@ -11,14 +11,11 @@ brew install --force --verbose --overwrite \
              ccache \
              fftw \
              libomp \
-             llvm \
              xquartz \
              xerces-c \
              wget  || true
 brew uninstall --ignore-dependencies libxext
 brew uninstall --ignore-dependencies libx11
-export CC=/usr/local/opt/llvm/bin/clang
-export CXX=/usr/local/opt/llvm/bin/clang++
 export LDFLAGS="-L/usr/local/opt/llvm/lib"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
