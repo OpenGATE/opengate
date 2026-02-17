@@ -5,13 +5,21 @@ source $GITHUB_WORKSPACE/env_dump.txt
 source $CONDA/Scripts/activate opengate_core
 conda info
 conda install cmake==3.31.2
+conda install h5py
 cmake --version
 conda list
 which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
-pip install wheel wget colored
-pip install cibuildwheel==2.21.1
+pip install wget colored
+pip install -U pip wheel setuptools blosc2
+# pip install "tables>=3.11" # Replace when tables 3.11 is released
+if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
+    pip install cibuildwheel==3.3.0
+else
+    pip install cibuildwheel==2.21.1
+    pip install tables
+fi
 which pip
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
@@ -49,6 +57,8 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-win_amd64"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.13" ]]; then
   export CIBW_BUILD="cp313-win_amd64"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
+  export CIBW_BUILD="cp314-win_amd64"
 fi
 find $HOME/software/geant4/bin/ -iname "*.dll"
 ls $HOME/software/geant4/bin/BuildProducts/Release/bin

@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  GEANT4_VERSION: 'v11.3.2'
+  GEANT4_VERSION: 'v11.4.0'
   ITK_VERSION: 'v5.4.4'
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
           - os: macos-15
             python-version: '3.10'
@@ -95,7 +95,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04-arm, macos-15-intel]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
           - os: macos-15
             python-version: '3.10'
@@ -128,7 +128,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v4
@@ -168,6 +168,8 @@ jobs:
             export PYTHONFOLDER="cp312-cp312"
           elif [ ${{ matrix.python-version }} == "3.13" ]; then
             export PYTHONFOLDER="cp313-cp313"
+          elif [ ${{ matrix.python-version }} == "3.14" ]; then
+            export PYTHONFOLDER="cp314-cp314"
           fi
           mkdir -p $HOME/software
           docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}_novis /home/.github/workflows/createWheelLinux_novis.sh
@@ -226,7 +228,7 @@ jobs:
 
 #  ssh_session:
 #    env:
-#      GEANT4_VERSION: 'v11.3.2'
+#      GEANT4_VERSION: 'v11.4.0'
 #      ITK_VERSION: 'v5.4.4'
 #    runs-on: macos-13
 #    steps:
@@ -278,7 +280,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
           - os: macos-15
             python-version: '3.10'
