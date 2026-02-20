@@ -50,6 +50,13 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_fluence_image;
+  Image3DType::Pointer cpp_fluence_sum_tracks_image;
+
+  // Option: Is the fluence as sum of the tracks to be scored?
+  bool fSumTracksFlag{};
+
+  // store the voexl volume for later use (for example to compute dose from fluence)
+  double fVoxelVolume{};
 
 private:
   std::string fPhysicalVolumeName;

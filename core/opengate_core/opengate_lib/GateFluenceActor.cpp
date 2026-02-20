@@ -41,6 +41,11 @@ void GateFluenceActor::InitializeCpp() {
   // Create the image pointer
   // (the size and allocation will be performed on the py side)
   cpp_fluence_image = Image3DType::New();
+
+  if(fSumTracksFlag){
+    cpp_fluence_sum_tracks_image = Image3DType::New();
+  }
+
 }
 
 void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
@@ -52,7 +57,14 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we (re-)attach each run
   AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
                                    fTranslation);
+  if(fSumTracksFlag){
+    AttachImageToVolume<Image3DType>(cpp_fluence_sum_tracks_image, fPhysicalVolumeName,
+                                   fTranslation);
+  }
   NbOfEvent = 0;
+
+  auto sp = cpp_fluence_image->GetSpacing();
+  fVoxelVolume = sp[0] * sp[1] * sp[2];
 }
 
 void GateFluenceActor::SteppingAction(G4Step *step) {
@@ -87,6 +99,11 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
     if (isInside) {
       G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
       ImageAddValue<Image3DType>(cpp_fluence_image, index, w);
+
+      if(fSumTracksFlag){
+        auto step_length = step->GetStepLength() / CLHEP::mm * w;
+        ImageAddValue<Image3DType>(cpp_fluence_sum_tracks_image, index, step_length / (fVoxelVolume * CLHEP::mm * CLHEP::mm * CLHEP::mm));
+      }
     } // else : outside the image
   }
 }
