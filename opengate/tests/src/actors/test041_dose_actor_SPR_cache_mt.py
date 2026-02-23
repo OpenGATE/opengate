@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
-    source.energy.mono = 40 * MeV
+    source.energy.mono = 100 * MeV
     source.particle = "proton"
     source.position.type = "disc"  # pos = Beam, shape = circle + sigma
     # rotate the disc, equiv to : rot1 0 1 0 and rot2 0 0 1
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     dose_spr_const.dose.active = True
     dose_spr_const.score_in = "G4_WATER"
     dose_spr_const.assume_constant_SPR_per_material = True
-    dose_spr_const.constant_energy_SPR = 30 * MeV
+    dose_spr_const.constant_energy_SPR = 10 * MeV
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

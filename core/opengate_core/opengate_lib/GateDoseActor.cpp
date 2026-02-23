@@ -424,8 +424,11 @@ double GateDoseActor::CalculateSPR(G4Step *step) {
   double spr = 0;
   auto *current_material = step->GetPreStepPoint()->GetMaterial();
   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+  auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+  auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+  auto energy = (energy1 + energy2) / 2;
 
-  if (fConstantSPRMaterialFlag) {
+  if (fConstantSPRMaterialFlag && energy >= fConstEnergyForSPR) {
     spr = fSPRCache.FindOrCalculateSTR(p, current_material);
     return spr;
   }
@@ -434,9 +437,6 @@ double GateDoseActor::CalculateSPR(G4Step *step) {
   double dedx_currstep = 0., dedx_material = 0.;
   static G4Material *material =
       G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
-  auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-  auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-  auto energy = (energy1 + energy2) / 2;
   if (p == G4Gamma::Gamma())
     p = G4Electron::Electron();
   auto &emc = fThreadLocalDataEdep.Get().emcalc;
