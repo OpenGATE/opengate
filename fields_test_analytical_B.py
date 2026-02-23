@@ -12,8 +12,9 @@ g4_MeV = gate.g4_units.MeV
 g4_volt = gate.g4_units.volt
 g4_eplus = gate.g4_units.eplus
 
-print(f"Units: 1 m = {g4_m} mm, 1 tesla = {g4_tesla} tesla, 1 MeV = {g4_MeV} MeV, 1 eplus = {g4_eplus} eplus")
-
+print(
+    f"Units: 1 m = {g4_m} mm, 1 tesla = {g4_tesla} tesla, 1 MeV = {g4_MeV} MeV, 1 eplus = {g4_eplus} eplus"
+)
 
 
 def cyclotron_radius(T, B, m, q):
@@ -32,6 +33,7 @@ def cyclotron_radius(T, B, m, q):
     r_metres = p / (q * B * 0.299792458)
     return r_metres / g4_m
 
+
 def x_out(r, z, x0):
     """
     Calculate the x position at a given z for a particle in a uniform magnetic field.
@@ -41,7 +43,8 @@ def x_out(r, z, x0):
     Returns:
         x position (in mm)
     """
-    return x0 + (r**2 - (r - z)**2) ** 0.5
+    return x0 + (r**2 - (r - z) ** 2) ** 0.5
+
 
 if __name__ == "__main__":
     sim = gate.Simulation()
@@ -56,7 +59,6 @@ if __name__ == "__main__":
     box = sim.add_volume("BoxVolume", "box")
     box.size = [50 * g4_cm, 50 * g4_cm, 50 * g4_cm]
     box.material = "G4_Galactic"
-
 
     # Uncomment one of the following field definitions to test different field types
 
@@ -121,6 +123,3 @@ if __name__ == "__main__":
 
     xout = x_out(r, 250 * g4_mm, -250 * g4_mm)
     print(f"Expected deflection at 25 cm: {xout:.3f} mm")
-
-
-
