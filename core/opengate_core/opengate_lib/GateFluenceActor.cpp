@@ -44,10 +44,9 @@ void GateFluenceActor::InitializeCpp() {
   cpp_fluence_image = Image3DType::New();
 
   // Create sum_tracks image if needed based on scoring mode
-  if(fFluenceScoringMode == "sum_tracks"){
+  if (fFluenceScoringMode == "sum_tracks") {
     cpp_fluence_sum_tracks_image = Image3DType::New();
   }
-
 }
 
 void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
@@ -57,26 +56,26 @@ void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
 
 void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we (re-)attach each run
-  
-  if(fFluenceScoringMode == "fluence"){
+
+  if (fFluenceScoringMode == "fluence") {
     AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
                                      fTranslation);
     auto sp = cpp_fluence_image->GetSpacing();
     fVoxelVolume = sp[0] * sp[1] * sp[2];
-  } else if(fFluenceScoringMode == "sum_tracks"){
-    AttachImageToVolume<Image3DType>(cpp_fluence_sum_tracks_image, fPhysicalVolumeName,
-                                     fTranslation);
+  } else if (fFluenceScoringMode == "sum_tracks") {
+    AttachImageToVolume<Image3DType>(cpp_fluence_sum_tracks_image,
+                                     fPhysicalVolumeName, fTranslation);
     auto sp = cpp_fluence_sum_tracks_image->GetSpacing();
     fVoxelVolume = sp[0] * sp[1] * sp[2];
   }
-  
+
   NbOfEvent = 0;
 }
 
-
 void GateFluenceActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
-                                     bool &isInside,
-                                     Image3DType::IndexType &index, Image3DType::Pointer &image) const {
+                                        bool &isInside,
+                                        Image3DType::IndexType &index,
+                                        Image3DType::Pointer &image) const {
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -123,10 +122,11 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
-  if(fFluenceScoringMode == "fluence"){
+  if (fFluenceScoringMode == "fluence") {
     GetVoxelPosition(step, position, isInside, index, cpp_fluence_image);
-  } else if(fFluenceScoringMode == "sum_tracks"){
-    GetVoxelPosition(step, position, isInside, index, cpp_fluence_sum_tracks_image);
+  } else if (fFluenceScoringMode == "sum_tracks") {
+    GetVoxelPosition(step, position, isInside, index,
+                     cpp_fluence_sum_tracks_image);
   }
 
   if (isInside) {
@@ -139,15 +139,14 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
       // Score based on selected mode
       if (fFluenceScoringMode == "fluence") {
         // Score fluence only at geometric boundaries
-        if(step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary){
+        if (step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary) {
           ImageAddValue<Image3DType>(cpp_fluence_image, index, w);
         }
       } else if (fFluenceScoringMode == "sum_tracks") {
         // Score track length density for all steps
-        ImageAddValue<Image3DType>(cpp_fluence_sum_tracks_image, index, step_length / fVoxelVolume);
+        ImageAddValue<Image3DType>(cpp_fluence_sum_tracks_image, index,
+                                   step_length / fVoxelVolume);
       }
     }
   }
-
-
 }

@@ -1674,7 +1674,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.user_output.fluence.set_active(True)
             self.user_output.sum_tracks.set_active(False)
         else:
-            fatal(f"FluenceActor: unknown fluence_scoring_mode '{self.fluence_scoring_mode}'")
+            fatal(
+                f"FluenceActor: unknown fluence_scoring_mode '{self.fluence_scoring_mode}'"
+            )
 
         self.SetFluenceScoringMode(self.fluence_scoring_mode)
         # Set the physical volume name on the C++ side
@@ -1685,11 +1687,13 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         if self.user_output.fluence.get_active():
             self.prepare_output_for_run("fluence", run_index)
             self.push_to_cpp_image("fluence", run_index, self.cpp_fluence_image)
-        
+
         if self.user_output.sum_tracks.get_active():
             self.prepare_output_for_run("sum_tracks", run_index)
-            self.push_to_cpp_image("sum_tracks", run_index, self.cpp_fluence_sum_tracks_image)
-        
+            self.push_to_cpp_image(
+                "sum_tracks", run_index, self.cpp_fluence_sum_tracks_image
+            )
+
         g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
@@ -1699,14 +1703,16 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.user_output.fluence.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        
+
         if self.user_output.sum_tracks.get_active():
-            self.fetch_from_cpp_image("sum_tracks", run_index, self.cpp_fluence_sum_tracks_image)
+            self.fetch_from_cpp_image(
+                "sum_tracks", run_index, self.cpp_fluence_sum_tracks_image
+            )
             self._update_output_coordinate_system("sum_tracks", run_index)
             self.user_output.sum_tracks.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        
+
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 

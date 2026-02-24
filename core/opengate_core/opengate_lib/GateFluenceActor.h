@@ -45,9 +45,13 @@ public:
   bool GetSumTracksFlag() const { return fSumTracksFlag; }
 
   // Set the fluence scoring mode
-  inline void SetFluenceScoringMode(std::string mode) { fFluenceScoringMode = mode; }
+  inline void SetFluenceScoringMode(std::string mode) {
+    fFluenceScoringMode = mode;
+  }
 
-  inline std::string GetFluenceScoringMode() const { return fFluenceScoringMode; }
+  inline std::string GetFluenceScoringMode() const {
+    return fFluenceScoringMode;
+  }
 
   int NbOfEvent = 0;
 
@@ -59,7 +63,8 @@ public:
   Size4DType size_4D;
 
   void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
-                        Image3DType::IndexType &index, Image3DType::Pointer &image) const;
+                        Image3DType::IndexType &index,
+                        Image3DType::Pointer &image) const;
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_fluence_image;
@@ -68,7 +73,8 @@ public:
   // Option: Is the fluence as sum of the tracks to be scored?
   bool fSumTracksFlag{};
 
-  // store the voexl volume for later use (for example to compute dose from fluence)
+  // store the voexl volume for later use (for example to compute dose from
+  // fluence)
   double fVoxelVolume{};
 
 private:
