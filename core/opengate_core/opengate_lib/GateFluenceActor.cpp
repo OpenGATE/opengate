@@ -33,6 +33,7 @@ void GateFluenceActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
+  fHitType = DictGetStr(user_info, "hit_type");
 }
 
 void GateFluenceActor::InitializeCpp() {
@@ -42,7 +43,8 @@ void GateFluenceActor::InitializeCpp() {
   // (the size and allocation will be performed on the py side)
   cpp_fluence_image = Image3DType::New();
 
-  if(fSumTracksFlag){
+  // Create sum_tracks image if needed based on scoring mode
+  if(fFluenceScoringMode == "sum_tracks"){
     cpp_fluence_sum_tracks_image = Image3DType::New();
   }
 
@@ -55,55 +57,97 @@ void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
 
 void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we (re-)attach each run
-  AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
-                                   fTranslation);
-  if(fSumTracksFlag){
+  
+  if(fFluenceScoringMode == "fluence"){
+    AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
+                                     fTranslation);
+    auto sp = cpp_fluence_image->GetSpacing();
+    fVoxelVolume = sp[0] * sp[1] * sp[2];
+  } else if(fFluenceScoringMode == "sum_tracks"){
     AttachImageToVolume<Image3DType>(cpp_fluence_sum_tracks_image, fPhysicalVolumeName,
-                                   fTranslation);
+                                     fTranslation);
+    auto sp = cpp_fluence_sum_tracks_image->GetSpacing();
+    fVoxelVolume = sp[0] * sp[1] * sp[2];
   }
+  
   NbOfEvent = 0;
+}
 
-  auto sp = cpp_fluence_image->GetSpacing();
-  fVoxelVolume = sp[0] * sp[1] * sp[2];
+
+void GateFluenceActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
+                                     bool &isInside,
+                                     Image3DType::IndexType &index, Image3DType::Pointer &image) const {
+  auto preGlobal = step->GetPreStepPoint()->GetPosition();
+  auto postGlobal = step->GetPostStepPoint()->GetPosition();
+  auto touchable = step->GetPreStepPoint()->GetTouchable();
+
+  // consider random position between pre and post
+  if (fHitType == "pre") {
+    position = preGlobal;
+  }
+  if (fHitType == "post") {
+    position = postGlobal;
+  }
+  if (fHitType == "random") {
+    auto x = G4UniformRand();
+    auto direction = postGlobal - preGlobal;
+    position = preGlobal + x * direction;
+  }
+  if (fHitType == "middle") {
+    auto direction = postGlobal - preGlobal;
+    position = preGlobal + 0.5 * direction;
+  }
+
+  auto localPosition =
+      touchable->GetHistory()->GetTransform(0).TransformPoint(position);
+
+  // convert G4ThreeVector to itk PointType
+  Image3DType::PointType point;
+  point[0] = localPosition[0];
+  point[1] = localPosition[1];
+  point[2] = localPosition[2];
+
+  isInside = image->TransformPhysicalPointToIndex(point, index);
 }
 
 void GateFluenceActor::SteppingAction(G4Step *step) {
-  // same method to consider only entering tracks
-  if (step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary) {
-    // the pre-position is at the edge
-    auto preGlobal = step->GetPreStepPoint()->GetPosition();
-    auto dir = step->GetPreStepPoint()->GetMomentumDirection();
-    auto touchable = step->GetPreStepPoint()->GetTouchable();
 
-    // consider position in the local volume, slightly shifted by 0.1 nm because
-    // otherwise, it can be considered as outside the volume by isInside.
-    auto position = preGlobal + 0.1 * CLHEP::nm * dir;
-    auto localPosition =
-        touchable->GetHistory()->GetTransform(0).TransformPoint(position);
+  const auto event_id =
+      G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+  auto preGlobal = step->GetPreStepPoint()->GetPosition();
+  auto postGlobal = step->GetPostStepPoint()->GetPosition();
 
-    // convert G4ThreeVector to itk PointType
-    Image3DType::PointType point;
-    point[0] = localPosition[0];
-    point[1] = localPosition[1];
-    point[2] = localPosition[2];
+  // FIXME If the volume has multiple copy, touchable->GetCopyNumber(0) ?
 
-    // get weight
-    auto w = step->GetTrack()->GetWeight();
-
-    // get pixel index
-    Image3DType::IndexType index;
-    bool isInside =
-        cpp_fluence_image->TransformPhysicalPointToIndex(point, index);
-
-    // set value
-    if (isInside) {
-      G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
-      ImageAddValue<Image3DType>(cpp_fluence_image, index, w);
-
-      if(fSumTracksFlag){
-        auto step_length = step->GetStepLength() / CLHEP::mm * w;
-        ImageAddValue<Image3DType>(cpp_fluence_sum_tracks_image, index, step_length / (fVoxelVolume * CLHEP::mm * CLHEP::mm * CLHEP::mm));
-      }
-    } // else : outside the image
+  // Get the voxel index
+  G4ThreeVector position;
+  bool isInside;
+  Image3DType::IndexType index;
+  if(fFluenceScoringMode == "fluence"){
+    GetVoxelPosition(step, position, isInside, index, cpp_fluence_image);
+  } else if(fFluenceScoringMode == "sum_tracks"){
+    GetVoxelPosition(step, position, isInside, index, cpp_fluence_sum_tracks_image);
   }
+
+  if (isInside) {
+
+    auto w = step->GetPreStepPoint()->GetWeight();
+    double step_length = step->GetStepLength() / CLHEP::mm * w;
+
+    {
+      G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
+      // Score based on selected mode
+      if (fFluenceScoringMode == "fluence") {
+        // Score fluence only at geometric boundaries
+        if(step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary){
+          ImageAddValue<Image3DType>(cpp_fluence_image, index, w);
+        }
+      } else if (fFluenceScoringMode == "sum_tracks") {
+        // Score track length density for all steps
+        ImageAddValue<Image3DType>(cpp_fluence_sum_tracks_image, index, step_length / fVoxelVolume);
+      }
+    }
+  }
+
+
 }

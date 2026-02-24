@@ -1599,13 +1599,14 @@ class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStopping
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
-    FluenceActor: compute a 3D map of fluence
+    FluenceActor: compute a 3D map of fluence or track length density
     FIXME: add scatter order and uncertainty
     """
 
     # hints for IDE
     uncertainty: bool
     scatter: bool
+    fluence_scoring_mode: str
 
     user_info_defaults = {
         "uncertainty": (
@@ -1620,11 +1621,23 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 "doc": "FIXME",
             },
         ),
+        "fluence_scoring_mode": (
+            "sum_tracks",
+            {
+                "doc": "Choose between 'fluence' (particle count at voxel boundaries) or 'sum_tracks' (track length density per voxel)",
+                "allowed_values": ("fluence", "sum_tracks"),
+            },
+        ),
     }
 
     user_output_config = {
         "fluence": {
             "actor_output_class": ActorOutputSingleImage,
+            "active": False,
+        },
+        "sum_tracks": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
         },
     }
 
@@ -1652,21 +1665,48 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             fatal("FluenceActor : uncertainty and scatter not implemented yet")
 
         self.InitializeUserInfo(self.user_info)
+
+        # Set the fluence scoring mode
+        if self.fluence_scoring_mode == "sum_tracks":
+            self.user_output.sum_tracks.set_active(True)
+            self.user_output.fluence.set_active(False)
+        elif self.fluence_scoring_mode == "fluence":
+            self.user_output.fluence.set_active(True)
+            self.user_output.sum_tracks.set_active(False)
+        else:
+            fatal(f"FluenceActor: unknown fluence_scoring_mode '{self.fluence_scoring_mode}'")
+
+        self.SetFluenceScoringMode(self.fluence_scoring_mode)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
-        self.prepare_output_for_run("fluence", run_index)
-        self.push_to_cpp_image("fluence", run_index, self.cpp_fluence_image)
+        if self.user_output.fluence.get_active():
+            self.prepare_output_for_run("fluence", run_index)
+            self.push_to_cpp_image("fluence", run_index, self.cpp_fluence_image)
+        
+        if self.user_output.sum_tracks.get_active():
+            self.prepare_output_for_run("sum_tracks", run_index)
+            self.push_to_cpp_image("sum_tracks", run_index, self.cpp_fluence_sum_tracks_image)
+        
         g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-        self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
-        self._update_output_coordinate_system("fluence", run_index)
-        self.user_output.fluence.store_meta_data(
-            run_index, number_of_samples=self.NbOfEvent
-        )
+        if self.user_output.fluence.get_active():
+            self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
+            self._update_output_coordinate_system("fluence", run_index)
+            self.user_output.fluence.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+        
+        if self.user_output.sum_tracks.get_active():
+            self.fetch_from_cpp_image("sum_tracks", run_index, self.cpp_fluence_sum_tracks_image)
+            self._update_output_coordinate_system("sum_tracks", run_index)
+            self.user_output.sum_tracks.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+        
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 

@@ -39,6 +39,16 @@ public:
 
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
+  // Image type is 3D float by default
+  void SetSumTracksFlag(const bool b) { fSumTracksFlag = b; }
+
+  bool GetSumTracksFlag() const { return fSumTracksFlag; }
+
+  // Set the fluence scoring mode
+  inline void SetFluenceScoringMode(std::string mode) { fFluenceScoringMode = mode; }
+
+  inline std::string GetFluenceScoringMode() const { return fFluenceScoringMode; }
+
   int NbOfEvent = 0;
 
   // Image type is 3D float by default
@@ -47,6 +57,9 @@ public:
   typedef itk::Image<int, 4> ImageInt4DType;
   using Size4DType = Image4DType::SizeType;
   Size4DType size_4D;
+
+  void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
+                        Image3DType::IndexType &index, Image3DType::Pointer &image) const;
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_fluence_image;
@@ -62,6 +75,7 @@ private:
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
   std::string fHitType;
+  std::string fFluenceScoringMode = "sum_tracks";
 };
 
 #endif // GateFluenceActor_h
