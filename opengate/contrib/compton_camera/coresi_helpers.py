@@ -64,6 +64,7 @@ def coresi_new_config():
                 "sca_material": "Si",
                 "abs_material": "Si",
                 "n_absorbers": 0,
+                # sca_layer_0 ...
             },
             "position_0": {
                 "frame_origin": [0, 0, 0],

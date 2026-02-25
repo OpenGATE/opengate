@@ -108,10 +108,10 @@ if __name__ == "__main__":
     # For each camera, we must find the names of all layers (scatterer and absorber).
     # In this simple macaco1 case, there is only one of each.
     cameras = {
-        name1: {
-            "scatter_layer_names": [f"{name1}_scatterer"],
-            "absorber_layer_names": [f"{name1}_absorber"],
-        }
+        "scatter_layer_names": [f"{name1}_scatterer"],
+        "absorber_layer_names": [f"{name1}_absorber"],
+        "camera_volume": camera1.name,
+        "image_volume": "world",
     }
     yaml_filename = paths.output / "coresi_config.yaml"
     param = coresi.set_hook_coresi_config(sim, cameras, yaml_filename)
@@ -129,6 +129,8 @@ if __name__ == "__main__":
     hits = tree.arrays(library="pd")
     singles = ccmod_ideal_singles(hits)
     coinc = ccmod_ideal_coincidences(singles)
+    data_cones = ccmod_make_cones(coinc, energy_key_name="IdealTotalEnergyDeposit")
+
     print(f"Output file: {phsp.get_output_path()}")
     print(f"Number of hits: {len(hits)} ")
     print(f"Found: {len(singles)} singles")
@@ -140,6 +142,12 @@ if __name__ == "__main__":
         coinc_filename, ["hits", "singles", "coincidences"], [hits, singles, coinc]
     )
     print(f"Output file: {coinc_filename}")
+    print()
+
+    # write cone for coresi
+    cones_filename = str(phsp.get_output_path()).replace(".root", "_cones.root")
+    root_write_trees(cones_filename, ["cones"], [data_cones])
+    print(f"Output file: {cones_filename}")
     print()
 
     # CORESI stage1: we retrieve the coresi config built during the hook
