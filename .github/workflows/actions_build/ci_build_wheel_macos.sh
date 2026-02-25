@@ -17,6 +17,7 @@ brew install --force --verbose --overwrite \
 brew uninstall --ignore-dependencies libxext
 brew uninstall --ignore-dependencies libx11
 export LDFLAGS="-L/usr/local/opt/llvm/lib"
+export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
 conda list
 conda install h5py
@@ -24,15 +25,8 @@ which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delocate
-pip install -U pip wheel setuptools blosc2
-# pip install "tables>=3.11" # Replace when tables 3.11 is released
-if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
-    export CPPFLAGS="-I/usr/local/opt/llvm/include"
-    pip install git+https://github.com/PyTables/PyTables.git
-else
-    export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
-    pip install tables
-fi
+pip install -U pip wheel setuptools
+pip install "tables>=3.11" # Replace when tables 3.11 is released
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
 else
