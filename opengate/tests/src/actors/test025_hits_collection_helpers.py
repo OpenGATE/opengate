@@ -157,6 +157,15 @@ def create_simulation(nb_threads):
 
 
 def test_simulation_results(sim):
+    """
+    WARNING
+    The reference data for this test was made with Gate 9.x, Geant4 11.2
+    Since Geant4 11.4 (January 2026), some physics changed and the hits distributions
+    are different from the previous version. The "singles" should not change too much.
+    We finally decided to keep the "old" reference data and increase the tolerance as
+    the ground truth is not known here.
+    """
+
     # Compare stats file
     stats = sim.get_actor("Stats")
     print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
