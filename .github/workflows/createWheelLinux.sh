@@ -13,7 +13,7 @@ mkdir opengate_core/plugins
 cp -r /lib64/qt6/plugins/platforms/* opengate_core/plugins/
 cp -r /lib64/qt6/plugins/imageformats opengate_core/plugins/
 /opt/python/${PYTHONFOLDER}/bin/pip install -U pip wget colored wheel setuptools
-pip install "tables>=3.11"
+/opt/python/${PYTHONFOLDER}/bin/pip install "tables>=3.11"
 /opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
 archi=`uname -m`
 if [ "$(uname -m)" = "aarch64" ]; then
