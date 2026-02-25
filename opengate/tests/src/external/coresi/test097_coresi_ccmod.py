@@ -30,21 +30,23 @@ if __name__ == "__main__":
     # sim
     sim = gate.Simulation()
     sim.visu = False
-    sim.visu_type = "qt"
+    sim.visu_type = "vrml"
     sim.random_seed = "auto"
     sim.output_dir = output_folder
     sim.number_of_threads = 1
 
     # world
     world = sim.world
-    world.size = [1 * m, 1 * m, 2 * m]
+    world.size = [0.5 * m, 0.5 * m, 0.7 * m]
     sim.world.material = "G4_AIR"
 
     # add two cameras
     name1 = "macaco1"
     macaco1 = macaco.add_macaco1_camera(sim, name1)
     camera1 = macaco1["camera"]
-    # camera1.translation = [0, 0, 10 * cm]
+    scatterer = macaco1["scatterer"]
+    absorber = macaco1["absorber"]
+    camera1.translation = [0, 0, 10 * cm]
 
     """
     name2 = "macaco2"
@@ -59,7 +61,8 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp.attached_to = [macaco1["scatterer"], macaco1["absorber"]]
+    phsp.attached_to = camera1  # [scatterer.name, absorber.name]
+    print(phsp.attached_to)
     phsp.attributes = [
         "TotalEnergyDeposit",
         "PreKineticEnergy",
@@ -77,6 +80,8 @@ if __name__ == "__main__":
     ]
     phsp.output_filename = "phsp.root"
     phsp.steps_to_store = "allsteps"
+
+    # macaco.add_macaco1_camera_digitizer(sim, scatterer, absorber)
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option2"
@@ -96,7 +101,7 @@ if __name__ == "__main__":
 
     # acquisition time
     if sim.visu:
-        source.activity = 1 * Bq
+        source.activity = 10 * Bq
     sim.run_timing_intervals = [[0 * sec, 5 * sec]]
 
     # special hook to prepare coresi config file.
