@@ -25,7 +25,6 @@ python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delocate
 pip install -U pip wheel setuptools
-pip install "tables>=3.11" 
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
 else

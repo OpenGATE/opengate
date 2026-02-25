@@ -28,7 +28,7 @@ setup(
         "jsonpickle",
         "pandas",
         "awkward-pandas",
-        "tables>=3.11",
+        "tables",
         "requests",
         "PyYAML",
         "SimpleITK",
