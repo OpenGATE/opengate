@@ -42,8 +42,9 @@ if __name__ == "__main__":
 
     # add two cameras
     name1 = "macaco1"
-    camera1 = macaco.add_macaco1_camera(sim, name1)
-    camera1.translation = [0, 0, 10 * cm]
+    macaco1 = macaco.add_macaco1_camera(sim, name1)
+    camera1 = macaco1["camera"]
+    # camera1.translation = [0, 0, 10 * cm]
 
     """
     name2 = "macaco2"
@@ -58,7 +59,7 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp.attached_to = camera1  # [camera1, camera2]
+    phsp.attached_to = [macaco1["scatterer"], macaco1["absorber"]]
     phsp.attributes = [
         "TotalEnergyDeposit",
         "PreKineticEnergy",
