@@ -56,7 +56,8 @@ def add_macaco1_camera(sim, name="macaco1"):
     pcb_scatt.mother = camera.name
     pcb_scatt.material = "PCB"
     pcb_scatt.size = [10.89 * cm, 20.7 * cm, 0.4 * cm]
-    pcb_scatt.translation = [0, 6.25 * cm, -2.46 * cm]
+    # pcb_scatt.translation = [0, 6.25 * cm, -2.46 * cm]
+    pcb_scatt.translation = [0, 6.25 * cm, -2.26 * cm]
     pcb_scatt.color = [0.0, 0.5, 0.0, 0.9]
 
     sipm_scatt = sim.add_volume("Box", f"{name}_SiPMScatt")
@@ -117,7 +118,7 @@ def add_macaco1_camera(sim, name="macaco1"):
     }
 
 
-def add_macaco1_camera_digitizer(sim, scatterer, absorber, output_path):
+def add_macaco1_camera_digitizer(sim, scatterer, absorber):
 
     # Units
     keV = g4_units.keV
