@@ -2050,7 +2050,16 @@ def np_plot_profile_Y_old(
 
 
 def np_plot_profile_X(
-    ax, img, hline, num_slice, crop_center, crop_width, label, width, spacing
+    ax,
+    img,
+    hline,
+    num_slice,
+    crop_center,
+    crop_width,
+    label,
+    width,
+    spacing,
+    stepped_line=False,
 ):
     c = int(hline - (crop_center[1] - crop_width[1] / 2))
     img, crop_coord = np_img_crop(img, crop_center, crop_width)
@@ -2061,12 +2070,24 @@ def np_plot_profile_X(
     y = np.mean(img, axis=0)
     # Convert pixel indices to physical coordinates (mm)
     x = np.arange(0, len(y)) * spacing[0] + crop_coord[0] * spacing[0]
-    ax.plot(x, y, label=label)
+    if stepped_line:
+        ax.step(x, y, label=label, where="mid")
+    else:
+        ax.plot(x, y, label=label)
     ax.set_xlabel("X (mm)")
 
 
 def np_plot_profile_Y(
-    ax, img, vline, num_slice, crop_center, crop_width, label, width, spacing
+    ax,
+    img,
+    vline,
+    num_slice,
+    crop_center,
+    crop_width,
+    label,
+    width,
+    spacing,
+    stepped_line=False,
 ):
     c = int(vline - (crop_center[0] - crop_width[0] / 2))
     img, crop_coord = np_img_crop(img, crop_center, crop_width)
@@ -2077,7 +2098,10 @@ def np_plot_profile_Y(
     y = np.mean(img, axis=1)
     # Convert pixel indices to physical coordinates (mm)
     x = np.arange(0, len(y)) * spacing[1] + crop_coord[2] * spacing[1]
-    ax.plot(x, y, label=label)
+    if stepped_line:
+        ax.step(x, y, label=label, where="mid")
+    else:
+        ax.plot(x, y, label=label)
     ax.set_xlabel("Y (mm)")
 
 
@@ -2109,7 +2133,7 @@ def add_border(ax, border_color, border_width):
         spine.set_linewidth(border_width)
 
 
-def plot_compare_slice_profile(ref_names, test_names, options):
+def plot_compare_slice_profile(ref_names, test_names, options, stepped_line=False):
     # options
     scaling = options.scaling
     n_slice = options.n_slice
@@ -2168,6 +2192,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             lref,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         np_plot_profile_X(
             ax[1][i * n],
@@ -2179,6 +2204,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             ltest,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         ax[1][i * n].legend()
 
@@ -2195,6 +2221,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             lref,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         np_plot_profile_Y(
             ax[1][i * n + 1],
@@ -2206,6 +2233,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             ltest,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         ax[1][i * n + 1].legend()
 
