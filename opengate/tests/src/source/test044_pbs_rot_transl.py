@@ -85,12 +85,13 @@ def main():
     # default source for tests (from test42)
     source = sim.add_source("IonPencilBeamSource", "mysource")
     source.energy.mono = 1440 * MeV
-    # source.energy.type = 'gauss'
+    source.energy.sigma_gauss = 2.0
+    source.energy.type = "gauss"
     source.particle = "ion 6 12"  # carbon
     source.position.type = "disc"  # pos = Beam, shape = circle + sigma
     # rotate the disc, equiv to : rot1 0 1 0 and rot2 0 0 1
     source.position.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
-    source.position.translation = [-100 * mm, 20 * mm, 30 * mm]
+    source.position.translation = [100 * mm, 20 * mm, 30 * mm]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
     source.n = 20000
@@ -136,14 +137,15 @@ def main():
     print(stat)
 
     print("Start to analyze data")
-    # override = False
+    # override = True
+    # output_pathV = [ref_path / str("plane" + str(i) + "a_" + folder + "-Edep.mhd")
+    #     for i in planePositionsV
+    # ]
     # if (not os.path.exists(ref_path / "sigma_values.txt")) or override:
     #     sigmasRef, musRef = utility.write_gauss_param_to_file(
-    #         ref_path,
+    #         output_pathV,
     #         planePositionsV,
     #         saveFig=False,
-    #         fNamePrefix="plane",
-    #         fNameSuffix="a_Carbon_1440MeV_sourceShapePBS-Edep.mhd",
     # )
     override = True
     output_pathV = [
