@@ -1,10 +1,12 @@
-import random
-from opengate.actors.miscactors import SimulationStatisticsActor
-import string
 import json
-from box import Box
-from opengate import g4_units
 import os
+import random
+import string
+
+from box import Box
+
+from opengate import g4_units
+from opengate.actors.miscactors import SimulationStatisticsActor
 
 
 def read_stat_file(filename, encoder=None):

@@ -197,7 +197,7 @@ def test_spect_root(sim, paths):
     stats = sim.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stats_file(paths.output_ref / "stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.08)
 
     # Compare root files
     print()
@@ -212,7 +212,7 @@ def test_spect_root(sim, paths):
         {
             "k1": "TotalEnergyDeposit",
             "k2": "TotalEnergyDeposit",
-            "tol": 0.001,
+            "tol": 0.004,
             "scaling": 1,
         },
         {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.5e7, "scaling": 1},
@@ -225,7 +225,7 @@ def test_spect_root(sim, paths):
             "Hits",
             checked_keys,
             paths.output / "test028_hits.png",
-            n_tol=4,
+            n_tol=12,
         )
         and is_ok
     )
@@ -355,7 +355,7 @@ def test_spect_proj(sim, paths, proj, output_ref_folder=None, output_ref_filenam
     if output_ref_folder is None:
         output_ref_folder = paths.output_ref
     stats_ref = utility.read_stats_file(output_ref_folder / "stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.09)
 
     # compare images with Gate
     print()

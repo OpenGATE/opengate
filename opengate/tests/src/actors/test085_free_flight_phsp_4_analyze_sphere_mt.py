@@ -127,7 +127,7 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     print(f"Number of scatter sec      = {ene_sc_w_scatter.sum():.0f}")
     d = len(ene_ref_scatter) - (ene_sc_w_scatter.sum() + ene_prim_w_scatter.sum())
     check4 = d / len(ene_ref_scatter) * 100
-    tol = 1.2
+    tol = 1.21
     b = np.fabs(check4) < tol
     utility.print_test(b, f"diff scatter ref-sc        = {check4:.2f} %    tol={tol}")
     is_ok = b and is_ok

@@ -71,7 +71,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.2",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.0",
 )
 def go(
     start_id,
@@ -92,7 +92,7 @@ def go(
         try:
             g4_version = get_required_g4_version(path_tests_src)
         except:
-            g4_version = "v11.3.2"
+            g4_version = "v11.4.0"
     if not check_g4_version(g4_version):
         warning(f'The geant4 version "{g4_version}" is not the expected version.')
         # return 0
@@ -497,13 +497,13 @@ def run_test_cases(
 def status_summary_report(runs_status_info, files, no_log_on_fail):
 
     dashboard_dict = {
-        str(Path(k).name): [shell_output_k.returncode == 0]
+        k: [shell_output_k.returncode == 0]
         for k, shell_output_k in zip(files, runs_status_info)
     }
 
-    tests_passed = [f for f in files if dashboard_dict[os.path.basename(f)][0]]
+    tests_passed = [f for f in files if dashboard_dict[f][0]]
     tests_passed.sort()
-    tests_failed = [f for f in files if not dashboard_dict[os.path.basename(f)][0]]
+    tests_failed = [f for f in files if not dashboard_dict[f][0]]
     tests_failed.sort()
 
     n_passed = sum([k[0] for k in dashboard_dict.values()])
@@ -513,7 +513,7 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
     for file, shell_output_k in zip(files, runs_status_info):
         if shell_output_k.returncode != 0 and not no_log_on_fail:
             print(
-                str(Path(file).name),
+                file,
                 colored.stylize(": failed", color_error),
                 end="\n",
             )
@@ -524,12 +524,12 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
 
     print(f"Summary pass: {n_passed}/{len(files)} passed the tests:")
     for k in tests_passed:
-        print(str(Path(k).name), colored.stylize(": passed", color_ok), end="\n")
+        print(k, colored.stylize(": passed", color_ok), end="\n")
 
     if n_failed > 0:
         print(f"Summary fail: {n_failed}/{len(files)} failed the tests:")
         for k in tests_failed:
-            print(str(Path(k).name), colored.stylize(": failed", color_error), end="\n")
+            print(k, colored.stylize(": failed", color_error), end="\n")
 
     fail_status = 0
     if n_passed == len(files) and n_failed == 0:

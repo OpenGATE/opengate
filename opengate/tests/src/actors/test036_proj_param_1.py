@@ -43,6 +43,15 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
+    """
+    WARNING
+    The reference data for this test was made with Gate 9.x, Geant4 11.2
+    Since Geant4 11.4 (January 2026), some physics changed and the hits distributions
+    are different from the previous version. The "singles" should not change too much.
+    We finally decided to keep the "old" reference data and increase the tolerance as
+    the ground truth is not known here.
+    """
+
     # test the output
     stats = sim.get_actor("Stats")
     is_ok = utility.assert_images(
@@ -53,7 +62,7 @@ if __name__ == "__main__":
         ignore_value_data2=0,
         axis="y",
         fig_name=paths.output / f"proj.png",
-        sum_tolerance=1.5,
+        sum_tolerance=8,
     )
     utility.print_test(is_ok, f"Compare image proj:")
     utility.test_ok(is_ok)

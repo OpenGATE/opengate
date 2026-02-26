@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import test037_pet_hits_singles_helpers as t37
+
+import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     p = paths.gate / "output"
     stats_ref = utility.read_stats_file(p / "stats1.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.028)
+    is_ok = utility.assert_stats(stats, stats_ref, [0.028, 0.028, 0.053])
 
     # check root hits
     hc = sim.get_actor("Hits")

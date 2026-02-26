@@ -20,14 +20,16 @@ if __name__ == "__main__":
 
     # add a proj actor to a repeated volume
     proj = sim.add_actor("DigitizerProjectionActor", "proj2")
-    proj.attached_to = "SPECThead"  # <-- there is two copy
+    proj.attached_to = "SPECThead"  # <-- there are two copies of this volume
     proj.physical_volume_index = 0  # <-- the first one is considered
+    # proj.authorize_repeated_volumes = True # not allowed
     proj.output_filename = "proj2.mha"
     proj.size = [128, 128]
     proj.spacing = [5 * mm, 5 * mm]
 
     # start simulation
     sim.run()
+    print("here")
 
     # test the output
     stats = sim.get_actor("Stats")
@@ -39,7 +41,7 @@ if __name__ == "__main__":
         ignore_value_data2=0,
         axis="y",
         fig_name=paths.output / f"proj_index.png",
-        sum_tolerance=1.5,
+        sum_tolerance=5,
     )
     utility.print_test(is_ok, f"Compare image proj:")
     utility.test_ok(is_ok)

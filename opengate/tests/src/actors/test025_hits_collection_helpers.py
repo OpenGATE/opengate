@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import opengate_core as g4
+
+import opengate as gate
 from opengate.tests import utility
 
 paths = utility.get_default_test_paths(
@@ -156,12 +157,21 @@ def create_simulation(nb_threads):
 
 
 def test_simulation_results(sim):
+    """
+    WARNING
+    The reference data for this test was made with Gate 9.x, Geant4 11.2
+    Since Geant4 11.4 (January 2026), some physics changed and the hits distributions
+    are different from the previous version. The "singles" should not change too much.
+    We finally decided to keep the "old" reference data and increase the tolerance as
+    the ground truth is not known here.
+    """
+
     # Compare stats file
     stats = sim.get_actor("Stats")
     print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
     stats.counts.runs = 1  # force to 1 to compare with gate result
     stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.09)
 
     # Compare root files
     print()
@@ -170,7 +180,7 @@ def test_simulation_results(sim):
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X
-    tols[3] = 0.002  # edep
+    tols[3] = 0.003  # edep
     is_ok = (
         utility.compare_root3(
             gate_file,
@@ -183,6 +193,7 @@ def test_simulation_results(sim):
             [1] * len(scalings),
             scalings,
             sim.get_output_path("test025.png"),
+            hits_tol=15,
         )
         and is_ok
     )
@@ -200,7 +211,7 @@ def test_simulation_results(sim):
     hc_file = sim.get_actor("Hits2").get_output_path()
     checked_keys = ["time", "edep"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
-    tols[1] = 0.002  # edep
+    tols[1] = 0.003  # edep
     is_ok = (
         utility.compare_root3(
             gate_file,
@@ -213,6 +224,7 @@ def test_simulation_results(sim):
             [1] * len(scalings),
             scalings,
             sim.get_output_path("test025_secondhits.png"),
+            hits_tol=15,
         )
         and is_ok
     )

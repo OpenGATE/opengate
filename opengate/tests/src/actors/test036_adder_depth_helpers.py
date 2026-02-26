@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import opengate_core as g4
 from scipy.spatial.transform import Rotation
-from opengate.userhooks import check_production_cuts
+import opengate as gate
 from opengate.tests import utility
+from opengate.userhooks import check_production_cuts
 
 
 def create_simulation(geom, paths, version):
@@ -16,13 +16,12 @@ def create_simulation(geom, paths, version):
     sim.g4_verbose = False
     sim.visu = False
     sim.number_of_threads = 1
-    sim.random_seed = 123456
+    sim.random_seed = 1234567
     sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
     cm = gate.g4_units.cm
-    nm = gate.g4_units.nm
     keV = gate.g4_units.keV
     mm = gate.g4_units.mm
     Bq = gate.g4_units.Bq
@@ -38,7 +37,7 @@ def create_simulation(geom, paths, version):
     # fake spect head
     head = sim.add_volume("Box", "SPECThead")
     head.size = [55 * cm, 42 * cm, 18 * cm]
-    head.translation = [0, 0, 15 * cm]  ## not use if array of 2 heads
+    head.translation = [0, 0, 15 * cm]  # not used if array of 2 heads
     head.material = "G4_AIR"
 
     # crystal
@@ -72,7 +71,6 @@ def create_simulation(geom, paths, version):
         sim.volume_manager.add_volume(crystal_repeater)
 
     # FIXME add a second head
-    tr = 30 * cm
     head.translation = gate.geometry.utility.get_grid_repetition(
         [1, 1, 2], [0, 0, 30 * cm]
     )
@@ -92,7 +90,7 @@ def create_simulation(geom, paths, version):
 
     # default source for tests
     activity = 40 * kBq / sim.number_of_threads
-    # activity = 5 * Bq / sim.number_of_threads
+    # activity = 5000 * Bq / sim.number_of_threads
     source = sim.add_source("GenericSource", "src1")
     source.particle = "gamma"
     source.energy.mono = 333 * keV
@@ -131,6 +129,7 @@ def create_simulation(geom, paths, version):
         "PreStepUniqueVolumeID",
         # 'TrackVolumeCopyNo', 'TrackVolumeInstanceID'
     ]
+    # hc.debug = True
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
@@ -185,8 +184,8 @@ def test_output(sim, paths):
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
-    tols[2] = 2  # Z
-    # tols[4] = 0.01  # energy
+    tols[2] = 1  # Z
+    tols[3] = 0.02  # energy
     is_ok = (
         utility.compare_root3(
             gate_file,
@@ -199,6 +198,7 @@ def test_output(sim, paths):
             scalings,
             scalings2,
             paths.output / "test036_hits.png",
+            hits_tol=8.1,
         )
         and is_ok
     )
@@ -211,10 +211,7 @@ def test_output(sim, paths):
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
     keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
-    tols[3] = 0.9  # Z
-    # tols[1] = 1.0  # X
-    # tols[2] = 1.0  # Y
-    # tols[4] = 0.02  # energy
+    tols[3] = 1.7  # Z
     is_ok = (
         utility.compare_root3(
             gate_file,

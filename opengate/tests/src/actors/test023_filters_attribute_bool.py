@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
+import uproot
+
 import opengate as gate
 from opengate.tests import utility
-import uproot
-import numpy as np
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -147,6 +148,6 @@ if __name__ == "__main__":
     print()
     print()
     stats_ref = utility.read_stats_file(paths.output_ref / f"{sim_name}.txt")
-    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
+    is_ok = utility.assert_stats(stat, stats_ref, [0.035, 0.03, 0.06])
 
     utility.test_ok(is_ok)

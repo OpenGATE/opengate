@@ -36,8 +36,10 @@ protected:
   GateUniqueVolumeIDManager();
   static GateUniqueVolumeIDManager *fInstance;
 
-  static void InitializeNumericIDsForLV(const G4LogicalVolume *lv);
-  static int GetNumericID(const G4LogicalVolume *lv, const std::string &id);
+  static void InitializeNumericIDsForLV(const G4LogicalVolume *lv,
+                                        const G4VTouchable *touchable);
+  static int GetNumericID(const G4LogicalVolume *lv, const std::string &id,
+                          const G4VTouchable *touchable);
 
   // Thread-local map: this duplicates the memory and the computation of the UiD
   // to all threads, but this avoids mutex and complex race conditions.

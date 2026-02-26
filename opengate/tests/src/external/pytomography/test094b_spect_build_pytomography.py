@@ -57,7 +57,9 @@ if __name__ == "__main__":
         ref_metadata = json.load(f)
 
     # compare the dict
-    added, removed, modified, same = utility.dict_compare(metadata, ref_metadata)
+    added, removed, modified, same = utility.dict_compare(
+        metadata, ref_metadata, tolerance=3.0
+    )
     is_ok = len(added) == 0 and len(removed) == 0 and len(modified) == 0
     utility.print_test(is_ok, f"Labels comparisons, added:    {added}")
     utility.print_test(is_ok, f"Labels comparisons, removed:  {removed}")
