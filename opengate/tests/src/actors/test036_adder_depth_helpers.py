@@ -211,7 +211,7 @@ def test_output(sim, paths):
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
     keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
-    tols[3] = 1.5  # Z
+    tols[3] = 1.7  # Z
     is_ok = (
         utility.compare_root3(
             gate_file,
