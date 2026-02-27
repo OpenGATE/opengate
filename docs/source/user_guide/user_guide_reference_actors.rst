@@ -689,6 +689,63 @@ Reference
 .. autoclass:: opengate.actors.digitizers.DigitizerEfficiencyActor
 
 
+DigitizerPileupActor
+--------------------
+
+Description
+~~~~~~~~~~~
+
+Pile‑up occurs when multiple detector interactions happen within a time interval shorter than the resolving/shaping time. As a result,
+their pulses overlap and cannot be distinguished as separate events.
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` simulates this by combining singles in the same volume
+(set by `group_volume`) if they occur in a time interval set by `time_window`.
+
+The actor applies the following rules to combine singles:
+
+* The first single occurring after a time period of at least `time_window` without singles opens a time window of duration `time_window`.
+* Any additional single occurring in that time window is merged with the other singles in that window.
+* Depending on the value of `time_window_policy`, the time window may be extended if new singles arrive before the end of the current time window:
+  * NonParalyzable (default): the time window remains fixed in duration, starting from the first single.
+  * Paralyzable: the time window is extended to end `time_window` after the most recent single.
+  * EnergyWinnerParalyzable: if the most recent single's deposited energy is higher than that of all preceding singles in the same time window,
+  the time window is extended to end `time_window` after the most recent single.
+* The resulting combined single gets an attribute value TotalEnergyDeposit that is the sum of the deposited energy of all singles in the window.
+* The resulting combined single gets an attribute value PostPosition that depends on the value of `position_attribute_policy`:
+  * EnergyWeightedCentroid (default): energy-weighted centroid of all singles in the window
+  * EnergyWinner: position of the single with the highest deposited energy in the window
+* All other attribute values of the resulting combined single are determined by the value of `attribute_policy`:
+   * First (default): attribute values are taken from the first single in the window.
+   * EnergyWinner: attribute values are taken from the single with the highest deposited energy in the window.
+   * Last: attribute values are taken from the last single in the window.
+
+To obtain the same pile-up behavior as in GATE 9, set the following options:
+
+.. code-block:: python
+
+   time_window_policy = "EnergyWinnerParalyzable"
+   position_attribute_policy = "EnergyWinner"
+   attribute_policy = "EnergyWinner"
+
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` can currently only be used in single-threaded simulations.
+
+.. code-block:: python
+
+    pu = sim.add_actor("DigitizerPileupActor", "Singles_with_pileup")
+    pu.input_digi_collection = "Singles"
+    pu.group_volume = crystal.name
+    pu.authorize_repeated_volumes = True
+    pu.time_window = 100.0 * ns
+    pu.output_filename = "singles.root"
+
+Refer to test097 for an example.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerPileupActor
+
+
+
 Coincidences Sorter
 -------------------
 
