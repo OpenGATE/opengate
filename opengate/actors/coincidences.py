@@ -59,14 +59,11 @@ class CoincidenceOutputFile:
                 )
             else:
                 coincidences_tree = self.file[table_name]
-                coincidences_data = root_tree_get_branch_data(coincidences_tree)
-                coincidences_types = root_tree_get_branch_types(coincidences_data)
-                root_write_tree(
-                    self.file,
-                    table_name,
-                    coincidences_types,
-                    coincidences_data + coincidences_to_write_data,
-                )
+                formatted_data = {
+                    k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
+                    for k, v in coincidences_to_write_data.items()
+                }
+                coincidences_tree.extend(formatted_data)
         elif self.format == "hdf5":
             coincidences.to_hdf(
                 self.file_path,
