@@ -59,14 +59,11 @@ class CoincidenceOutputFile:
                 )
             else:
                 coincidences_tree = self.file[table_name]
-                coincidences_data = root_tree_get_branch_data(coincidences_tree)
-                coincidences_types = root_tree_get_branch_types(coincidences_data)
-                root_write_tree(
-                    self.file,
-                    table_name,
-                    coincidences_types,
-                    coincidences_data + coincidences_to_write_data,
-                )
+                formatted_data = {
+                    k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
+                    for k, v in coincidences_to_write_data.items()
+                }
+                coincidences_tree.extend(formatted_data)
         elif self.format == "hdf5":
             coincidences.to_hdf(
                 self.file_path,
@@ -478,9 +475,9 @@ def _process_chunk(queue, time_window, allow_intra_volume_coincidences):
         t2 = next_chunk["GlobalTime"]
         t2_min = np.min(t2)
         t2_max = np.max(t2)
-        # Require that the next chunk's time interval is later than
-        # the current chunk's time interval (overlap (t2_min < t1_max) is allowed).
-        if not (t2_min > t1_min and t2_max > t1_max):
+        # Require that the next chunk's time interval starts later than
+        # the start time of the current chunk's time interval.
+        if t2_min <= t1_min:
             raise ChunkSizeTooSmallError
 
     # Find coincidences in the current chunk
