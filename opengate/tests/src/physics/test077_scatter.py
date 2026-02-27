@@ -3,6 +3,7 @@
 
 import opengate as gate
 from test077_scatter_helpers import *
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     # paths
@@ -86,10 +87,8 @@ if __name__ == "__main__":
     phsp.attributes = att_list
     # phsp.debug = True
     phsp.output_filename = "test077_scatter.root"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    f.policy = "accept"
-    phsp.filters.append(f)
+    F = GateFilter(sim)
+    phsp.filter = F.ParticleName == "gamma"
 
     # phsp
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_scatter")
@@ -97,20 +96,14 @@ if __name__ == "__main__":
     phsp2.attributes = att_list
     phsp2.output_filename = phsp.output_filename
     # phsp2.debug = True
-    fs = sim.add_filter("UnscatteredPrimaryFilter", "f_scatter")
-    fs.policy = "accept"
-    phsp2.filters.append(f)
-    phsp2.filters.append(fs)
+    phsp2.filter = (F.ParticleName == "gamma") & (F.UnscatteredPrimaryFlag == True)
 
     # phsp
     phsp3 = sim.add_actor("PhaseSpaceActor", "phsp_no_scatter")
     phsp3.attached_to = det.name
     phsp3.attributes = att_list
     phsp3.output_filename = phsp.output_filename
-    fs = sim.add_filter("UnscatteredPrimaryFilter", "f_no_scatter")
-    fs.policy = "reject"
-    phsp3.filters.append(f)
-    phsp3.filters.append(fs)
+    phsp3.filter = (F.ParticleName == "gamma") & (F.UnscatteredPrimaryFlag == False)
 
     # start simulation
     sim.run()

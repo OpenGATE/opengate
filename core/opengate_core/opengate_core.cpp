@@ -297,15 +297,13 @@ void init_GateActorManager(py::module &);
 // Gate filters
 void init_GateVFilter(py::module &);
 
-void init_GateParticleFilter(py::module &);
-
 void init_GatePrimaryScatterFilter(py::module &);
-
-void init_GateThresholdAttributeFilter(py::module &);
 
 void init_GateTrackCreatorProcessFilter(py::module &);
 
-void init_GateKineticEnergyFilter(py::module &);
+void init_GateBooleanFilter(py::module &);
+
+void init_GateAttributeComparisonFilter(py::module &);
 
 // Gate actors
 void init_GateDoseActor(py::module &m);
@@ -578,11 +576,10 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
-  init_GateParticleFilter(m);
   init_GatePrimaryScatterFilter(m);
   init_GateTrackCreatorProcessFilter(m);
-  init_GateKineticEnergyFilter(m);
-  init_GateThresholdAttributeFilter(m);
+  init_GateBooleanFilter(m);
+  init_GateAttributeComparisonFilter(m);
   init_itk_image(m);
   init_GateImageNestedParameterisation(m);
   init_GateRepeatParameterisation(m);

@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -69,27 +70,15 @@ if __name__ == "__main__":
     plane2b.color = [0, 1, 0, 1]  # green
 
     # kill according to time
+    F = GateFilter(sim)
     ka = sim.add_actor("KillActor", "kill_actor1")
     ka.attached_to = plane1a.name
-    att_filter = sim.add_filter("ThresholdAttributeFilter", "time_filter")
-    # we don't kill the particle within the time range, so
-    # we discard the kill filter when the time is in the correct range
-    att_filter.attribute = "GlobalTime"
-    att_filter.value_min = 20 * sec
-    att_filter.value_max = 70 * sec
-    att_filter.policy = "reject"
-    print(att_filter)
-    ka.filters.append(att_filter)
+    ka.filter = ~((20 * sec < F.GlobalTime) & (F.GlobalTime < 70 * sec))
 
     # kill according to energy
     ka = sim.add_actor("KillActor", "kill_actor2")
     ka.attached_to = plane2a.name
-    att_filter = sim.add_filter("ThresholdAttributeFilter", "ene_filter")
-    att_filter.attribute = "KineticEnergy"
-    att_filter.value_min = 300 * keV
-    att_filter.value_max = 1200 * keV
-    att_filter.policy = "accept"
-    ka.filters.append(att_filter)
+    ka.filter = (300 * keV < F.KineticEnergy) & (F.KineticEnergy < 1200 * keV)
 
     # stats
     stat = sim.add_actor("SimulationStatisticsActor", "stats")

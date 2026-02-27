@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from scipy.spatial.transform import Rotation
-import opengate as gate
-from opengate.tests import utility
 import itk
 import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy.spatial.transform import Rotation
+import opengate as gate
+from opengate.tests import utility
 from opengate.image import get_info_from_image, itk_image_from_array, write_itk_image
+from opengate.actors.filters import GateFilter
 
 
 def get_1Dimg_data(fpath):
@@ -116,15 +116,12 @@ def run_simulation(stopping_or_production: str, x_source=0.0):
     )
 
     # # add dose actor, without e- (to check)
-    fe = sim.add_filter("ParticleFilter", "f")
-    fe.particle = "proton"
-    fe.policy = "accept"
-    StoppingActor_depth.filters.append(fe)
+    F = GateFilter(sim)
+    StoppingActor_depth.filter = F.ParticleName == "proton"
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    # print("Filters: ", sim.filter_manager)
     sim.run(start_new_process=True)
     # print(stats)
 

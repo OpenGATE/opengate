@@ -71,6 +71,10 @@ The number of killed particle can be retrieved printing the actor object.
     kill_actor.attached_to = kill_plane
     print(kill_actor)
 
+    # Example: Kill only electrons with energy below 10 keV in the volume
+    F = gate.GateFilter(sim)
+    kill_actor.filter = (F.ParticleName == "e-") & (F.KineticEnergy < 10 * keV)
+
 Refers to the `test064 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test064_kill_actor_mt.py>`_ for more details.
 
 Reference
@@ -381,9 +385,9 @@ A PhaseSpaceActor stores any set of particles reaching a given volume during the
        "EventPosition",
    ]
    phsp.output_filename = "test019_hits.root"
-   f = sim.add_filter("ParticleFilter", "f")
-   f.particle = "gamma"
-   phsp.filters.append(f)
+   # Create a filter for gammas only
+   F = gate.GateFilter(sim)
+   phsp.filter = F.ParticleName == "gamma"
 
 In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp`.
 

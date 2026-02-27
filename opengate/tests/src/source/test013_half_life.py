@@ -4,6 +4,7 @@
 import opengate as gate
 from opengate.tests import utility
 from opengate.sources.utility import get_rad_yield
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test013_hl")
@@ -77,11 +78,8 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
 
-    # filter for the phase space actor below
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "e+"
-
     # phsp
+    F = GateFilter(sim)
     phsp1 = sim.add_actor("PhaseSpaceActor", "phsp_ion")
     phsp1.attached_to = wb1.name
     phsp1.attributes = [
@@ -94,13 +92,13 @@ if __name__ == "__main__":
     ]
     phsp1.output_filename = "test013_decay_ion.root"
     phsp1.steps_to_store = "first"
-    phsp1.filters.append(f)
+    phsp1.filter = F.ParticleName == "e+"
 
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_beta")
     phsp2.attached_to = wb2.name
     phsp2.attributes = phsp1.attributes
     phsp2.output_filename = "test013_decay_beta_plus.root"
-    phsp2.filters.append(f)
+    phsp2.filter = F.ParticleName == "e+"
     phsp2.steps_to_store = "first"
 
     # long run

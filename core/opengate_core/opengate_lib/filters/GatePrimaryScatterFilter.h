@@ -5,31 +5,26 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateParticleFilter_h
-#define GateParticleFilter_h
+#ifndef GatePrimaryScatterFilter_h
+#define GatePrimaryScatterFilter_h
 
 #include "GateVFilter.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateParticleFilter : public GateVFilter {
+class GateUnscatteredPrimaryFilter : public GateVFilter {
 
 public:
-  GateParticleFilter() : GateVFilter() {}
-
-  void InitializeUserInfo(py::dict &user_info) override;
+  GateUnscatteredPrimaryFilter() : GateVFilter() {}
 
   // To avoid gcc -Woverloaded-virtual
   // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
   using GateVFilter::Accept;
 
-  bool Accept(const G4Track *track) const override;
-
   bool Accept(G4Step *step) const override;
-
-  G4String fParticleName;
-  std::string fPolicy;
 };
 
-#endif // GateParticleFilter_h
+int IsUnscatteredPrimary(const G4Step *step);
+
+#endif // GatePrimaryScatterFilter_h

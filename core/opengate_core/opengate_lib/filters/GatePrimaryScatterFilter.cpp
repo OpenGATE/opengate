@@ -6,16 +6,16 @@
    -------------------------------------------------- */
 
 #include "GatePrimaryScatterFilter.h"
+#include "../GateHelpers.h"
+#include "../GateHelpersDict.h"
 #include "G4RunManager.hh"
 #include "G4Step.hh"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
 
 int IsUnscatteredPrimary(const G4Step *step) {
   /*
   Check whether a primary particle initial momentum was changed during this
   step.
-  - momentum : direction and energy
+  - momentum: direction and energy
   - particles that are not primary are considered as "scatter"
   */
   if (step->GetTrack()->GetParentID() > 0)
@@ -27,25 +27,11 @@ int IsUnscatteredPrimary(const G4Step *step) {
     Fatal("Error in IsUnscatteredPrimary, no DynamicParticle?");
     return -1;
   }
-  auto event_mom = dp->GetPrimaryParticle()->GetMomentum();
-  auto track_mom = step->GetPreStepPoint()->GetMomentum();
-  return (event_mom.isNear(track_mom));
-}
-
-void GateUnscatteredPrimaryFilter::InitializeUserInfo(py::dict &user_info) {
-  fPolicy = DictGetStr(user_info, "policy");
+  const auto event_mom = dp->GetPrimaryParticle()->GetMomentum();
+  const auto track_mom = step->GetPreStepPoint()->GetMomentum();
+  return event_mom.isNear(track_mom);
 }
 
 bool GateUnscatteredPrimaryFilter::Accept(G4Step *step) const {
-  auto b = IsUnscatteredPrimary(step);
-  if (fPolicy == "accept")
-    return b == 1;
-  if (fPolicy == "reject")
-    return b == 0;
-  std::ostringstream oss;
-  oss << "The policy '" << fPolicy
-      << "' for the ScatterFilter is unknown."
-         " Use 'accept' or 'reject'";
-  Fatal(oss.str());
-  return false;
+  return (IsUnscatteredPrimary(step) == 1);
 }

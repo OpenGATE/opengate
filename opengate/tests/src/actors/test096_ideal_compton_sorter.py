@@ -7,7 +7,7 @@ from opengate.actors.coincidences import ccmod_make_cones
 import uproot
 import numpy as np
 import pandas as pd
-from test096_ideal_Compton_sorter_helpers import *
+from test096_ideal_compton_sorter_helpers import *
 
 
 def main():
