@@ -9,7 +9,7 @@ runs:
   using: "composite"
   steps:
     - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ inputs.python-version }}
     - name: Get OS version
@@ -74,6 +74,7 @@ runs:
       if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
       env:
         MATRIX_OS: ${{ inputs.os }}
+        MATRIX_PYTHON_VERSION: ${{ inputs.python-version }}
         MATRIX_CACHE: ${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}
       shell: bash -l {0}
       run: |
