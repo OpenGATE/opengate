@@ -3,7 +3,7 @@ Opengate meetings and hackathons
 
 You should find a lot of presentations and materials in the following events:
 
-- 2026 *opengate meeting*, Strasbourg, France **soon (31 April)**
+- 2026 *opengate meeting*, Strasbourg, France **soon (31 April)** https://indico.in2p3.fr/event/37870/
 - 2026 **Hackathon**, Deflt, the Netherlands https://indico.in2p3.fr/event/37622
 - 2025 *opengate meeting*, Athens, Greece https://indico.in2p3.fr/e/gate2025
 - 2024 *opengate meeting*, Orsay, France https://indico.in2p3.fr/e/gate2024
