@@ -357,6 +357,10 @@ void init_G4VBiasingOperator(py::module &m);
 
 void init_GateTLEDoseActor(py::module &m);
 
+void init_GateVBiasOptrActor(py::module &);
+
+void init_GateChannelXSScalingOptrActor(py::module &m);
+
 // Gate digit
 void init_GateVDigitizerWithOutputActor(py::module &);
 
@@ -575,6 +579,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateCheckDeex(m);
   init_GateInfo(m);
   init_GateVActor(m);
+  init_GateVBiasOptrActor(m);
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
@@ -614,6 +619,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateBOptrBremSplittingActor(m);
   init_GateGammaFreeFlightOptrActor(m);
   init_GateScatterSplittingFreeFlightOptrActor(m);
+  init_GateChannelXSScalingOptrActor(m);
 
   init_GatePhaseSpaceActor(m);
   init_GateHitsCollectionActor(m);

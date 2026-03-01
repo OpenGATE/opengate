@@ -102,6 +102,7 @@ from .actors.biasingactors import (
     BremsstrahlungSplittingActor,
     GammaFreeFlightActor,
     ScatterSplittingFreeFlightActor,
+    ChannelXSScalingActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -158,6 +159,7 @@ actor_types = {
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,
     "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
+    "ChannelXSScalingActor": ChannelXSScalingActor,
 }
 
 
@@ -961,7 +963,7 @@ class PhysicsManager(GateObject):
         from all biasing actors present in the simulation.
         """
 
-        charged_particles = {"e-", "e+", "proton"}
+        charged_particles = {"e-", "e+", "proton", "alpha"}
         all_particles = charged_particles.union({"gamma"})
 
         # create a dictionary with sets as entries (to ensure uniqueness)

@@ -262,6 +262,50 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
 
     def StartSimulationAction(self):
         g4.GateGammaFreeFlightOptrActor.StartSimulationAction(self)
+        
+class ChannelXSScalingActor(GenericBiasingActorBase, g4.GateChannelXSScalingOptrActor):
+    """
+    Scales the alphaInelastic cross section by xs_scaling and applies
+    channel-selective rejection sampling with no weight manipulation.
+
+    When alphaInelastic fires:
+      - Desired channel: accepted as physical reality, no weight touched.
+      - Unwanted channels: the step is rolled back — secondaries killed,
+        primary alpha restored to its exact pre-interaction state
+        (position, momentum, energy, times, geometry).
+
+    xs_scaling is the direct multiplier on the total alphaInelastic XS.
+    No warmup run is required.
+    """
+
+    processes = ["alphaInelastic"]
+    particles = ["alpha"]
+
+    user_info_defaults = {
+        "xs_scaling": (
+            1.0,
+            {"doc": "Multiplicative factor applied to the alphaInelastic cross section. "
+                    "The desired channel fires xs_scaling × f_C times more often."},
+        ),
+        "desired_channel": (
+            [],
+            {"doc": "List of [Z, A] pairs identifying the nuclear reaction channel to select, "
+                    "e.g. [[0,1],[1,1],[1,2],[2,4],[2,4],[2,4]] for n+p+d+3α. "
+                    "An empty list disables channel filtering."},
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        GenericBiasingActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateChannelXSScalingOptrActor.__init__(self, {"name": self.name})
+
+    def initialize(self):
+        GenericBiasingActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
 
 
 class ActorOutputScatterSplittingFreeFlightActor(ActorOutputBase):
@@ -440,5 +484,6 @@ process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
 process_cls(BremsstrahlungSplittingActor)
 process_cls(GammaFreeFlightActor)
+process_cls(ChannelXSScalingActor)
 process_cls(ActorOutputScatterSplittingFreeFlightActor)
 process_cls(ScatterSplittingFreeFlightActor)
