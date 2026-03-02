@@ -12,3 +12,8 @@ Teaching Resources and Examples
 - `Slides (very raw!) from some technical meetings <https://www.dropbox.com/scl/fo/dv9dh8rl54h70esu7z5n2/AJzMLceFVT62eZZI5Rlzy9s?rlkey=uc6kccwlarrs25o0uoxqaonxo&st=pi7y8z9j&dl=0>`_ (more some notes than real ressources)
 
 - `Geant 4 66th Forum end 2025 <https://indico.cern.ch/event/1615896/timetable/?view=standard>`_  Geant4 information
+
+- `Geant 4 events <https://geant4.web.cern.ch/collaboration/events`_
+
+- `Geant 4 past events <https://geant4.web.cern.ch/collaboration/events?past`_
+
