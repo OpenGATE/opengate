@@ -8,7 +8,6 @@ conda install cmake==3.31.2
 cmake --version
 conda install openssl==3.0.19
 conda list
-which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wheel wget colored
