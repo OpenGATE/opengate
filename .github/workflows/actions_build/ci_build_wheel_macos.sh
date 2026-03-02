@@ -2,8 +2,8 @@
 set -e
 
 source $GITHUB_WORKSPACE/env_dump.txt
-brew install python@3.12 || true
-brew link --overwrite python@3.12
+brew install python@${MATRIX_PYTHON_VERSION} || true
+brew link --overwrite python@${MATRIX_PYTHON_VERSION}
 #brew update
 #rm -rf /usr/local/bin/python3.1*-config /usr/local/bin/2to3-3.1* /usr/local/bin/idle3.1* /usr/local/bin/pydoc3.1* /usr/local/bin/python3.1*
 #rm -rf /usr/local/bin/python3-config /usr/local/bin/2to3 /usr/local/bin/idle3 /usr/local/bin/pydoc3 /usr/local/bin/python3
@@ -23,8 +23,8 @@ conda list
 which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
-pip install wget colored
-pip install wheel delocate
+pip install wget colored delocate
+pip install -U pip wheel setuptools
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
 else
