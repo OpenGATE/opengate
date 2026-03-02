@@ -90,6 +90,15 @@ def get_info_from_image(image):
     return info
 
 
+def get_info_from_image_sitk(image):
+    info = Box()
+    info.size = np.array(image.GetSize())
+    info.spacing = np.array(image.GetSpacing())
+    info.origin = np.array(image.GetOrigin())
+    info.dir = image.GetDirection()
+    return info
+
+
 def read_image_info(path_to_image):
     path_to_image = str(path_to_image)
     image_IO = itk.ImageIOFactory.CreateImageIO(
