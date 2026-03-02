@@ -7,17 +7,11 @@ conda info
 conda install cmake==3.31.2
 cmake --version
 conda list
-which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored
 pip install -U pip wheel setuptools
-if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
-    pip install cibuildwheel==3.3.0
-else
-    pip install cibuildwheel==2.21.1
-fi
-which pip
+pip install cibuildwheel
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
     cd $HOME/software
