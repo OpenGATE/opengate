@@ -208,15 +208,13 @@ def coresi_convert_root_data(root_filename, branch_name, output_filename):
     tree = root_file[branch_name]
     # Load all needed branches at once
     arrays = tree.arrays(
-        ["X1", "Y1", "Z1", "Energy1",
-         "X2", "Y2", "Z2", "EnergyRest"],
-        library="np"
+        ["X1", "Y1", "Z1", "Energy1", "X2", "Y2", "Z2", "EnergyRest"], library="np"
     )
 
     with open(output_filename, "w") as fout:
         n = len(arrays["X1"])
         for i in range(n):
-            #Energy in keV and position in cm, as expected by coresi
+            # Energy in keV and position in cm, as expected by coresi
             line = (
                 f"2\t1\t"
                 f"{arrays['X1'][i]*0.1:.2f}\t"
@@ -231,4 +229,3 @@ def coresi_convert_root_data(root_filename, branch_name, output_filename):
                 f"3\t0\t0\t0\t0\n"
             )
             fout.write(line)
-
