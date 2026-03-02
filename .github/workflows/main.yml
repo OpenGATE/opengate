@@ -40,7 +40,7 @@ jobs:
         export GIT_SSL_NO_VERIFY=1
         git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
@@ -138,7 +138,7 @@ jobs:
         export GIT_SSL_NO_VERIFY=1
         git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
@@ -240,7 +240,7 @@ jobs:
 #        export GIT_SSL_NO_VERIFY=1
 #        git submodule update --init --recursive
 #    - name: Set up Python
-#      uses: actions/setup-python@v5
+#      uses: actions/setup-python@v6
 #      with:
 #        python-version: 3.9
 #        architecture: 'x64'
