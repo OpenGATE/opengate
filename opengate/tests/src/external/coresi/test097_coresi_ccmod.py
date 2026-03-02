@@ -108,10 +108,12 @@ if __name__ == "__main__":
     # For each camera, we must find the names of all layers (scatterer and absorber).
     # In this simple macaco1 case, there is only one of each.
     cameras = {
-        "scatter_layer_names": [f"{name1}_scatterer"],
-        "absorber_layer_names": [f"{name1}_absorber"],
-        "camera_volume": camera1.name,
-        "image_volume": "world",
+        "camera1": {
+            "scatter_layer_names": [f"{name1}_scatterer"],
+            "absorber_layer_names": [f"{name1}_absorber"],
+            "camera_volume": camera1.name,
+            "image_volume": "world",
+        }
     }
     yaml_filename = paths.output / "coresi_config.yaml"
     param = coresi.set_hook_coresi_config(sim, cameras, yaml_filename)
@@ -128,7 +130,9 @@ if __name__ == "__main__":
     tree = root_file["PhaseSpace"]
     hits = tree.arrays(library="pd")
     singles = ccmod_ideal_singles(hits)
+    print("ideal singles found:", len(singles))
     coinc = ccmod_ideal_coincidences(singles)
+    print("ideal coincidences found:", len(coinc))
     data_cones = ccmod_make_cones(coinc, energy_key_name="IdealTotalEnergyDeposit")
 
     print(f"Output file: {phsp.get_output_path()}")
@@ -160,4 +164,4 @@ if __name__ == "__main__":
 
     # CORESI stage2: convert the root file
     data_filename = output_folder / "coincidences.dat"
-    coresi.coresi_convert_root_data(coinc_filename, "coincidences", data_filename)
+    coresi.coresi_convert_root_data(cones_filename, "cones", data_filename)

@@ -206,4 +206,29 @@ def coresi_write_config(coresi_config, filename):
 def coresi_convert_root_data(root_filename, branch_name, output_filename):
     root_file = uproot.open(root_filename)
     tree = root_file[branch_name]
-    print("todo")
+    # Load all needed branches at once
+    arrays = tree.arrays(
+        ["X1", "Y1", "Z1", "Energy1",
+         "X2", "Y2", "Z2", "EnergyRest"],
+        library="np"
+    )
+
+    with open(output_filename, "w") as fout:
+        n = len(arrays["X1"])
+        for i in range(n):
+            #Energy in keV and position in cm, as expected by coresi
+            line = (
+                f"2\t1\t"
+                f"{arrays['X1'][i]*0.1:.2f}\t"
+                f"{arrays['Y1'][i]*0.1:.2f}\t"
+                f"{arrays['Z1'][i]*0.1:.2f}\t"
+                f"{arrays['Energy1'][i]*1000:.2f}\t"
+                f"2\t"
+                f"{arrays['X2'][i]*0.1:.2f}\t"
+                f"{arrays['Y2'][i]*0.1:.2f}\t"
+                f"{arrays['Z2'][i]*0.1:.2f}\t"
+                f"{arrays['EnergyRest'][i]*1000:.2f}\t"
+                f"3\t0\t0\t0\t0\n"
+            )
+            fout.write(line)
+
