@@ -33,7 +33,7 @@ jobs:
         python-version: ['3.10']
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
@@ -68,7 +68,7 @@ jobs:
             python-version: '3.10'
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
@@ -101,7 +101,7 @@ jobs:
             python-version: '3.10'
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
@@ -131,7 +131,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
@@ -188,7 +188,7 @@ jobs:
     needs: [build_opengate_wheel, build_opengate_core_wheel_pr, build_opengate_core_wheel_ci_or_tag, build_opengate_core_novis_wheel]
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - uses: actions/download-artifact@v4
       with:
         pattern: dist-*
@@ -233,7 +233,7 @@ jobs:
 #    runs-on: macos-13
 #    steps:
 #    - name: Checkout github repo
-#      uses: actions/checkout@v4
+#      uses: actions/checkout@v6
 #    - name: Checkout submodules
 #      shell: bash -l {0}
 #      run: |
@@ -286,7 +286,7 @@ jobs:
             python-version: '3.10'
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - uses: ./.github/workflows/actions_tests
 
   publish_test:
@@ -295,7 +295,7 @@ jobs:
     needs: [test_wheel_pr]
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - uses: actions/download-artifact@v4
       with:
         pattern: results_json-*
