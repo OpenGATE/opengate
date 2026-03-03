@@ -70,7 +70,7 @@ export CIBW_BEFORE_BUILD="python -m pip install colored"
 python -m cibuildwheel --output-dir dist
 cd ..
 mkdir core/dist2
-pip install pefile machomachomangler
+python -m pip install pefile machomachomangler
 ls core/dist
 python $GITHUB_WORKSPACE\\.github\\workflows\\delocateWindows.py core\\dist -w core\\dist2 -d C:\\Users\\runneradmin\\software\\geant4\\bin\\BuildProducts\\Release\\bin
 mv core/dist2 dist
