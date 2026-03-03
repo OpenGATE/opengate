@@ -284,6 +284,7 @@ class PhysicsEngine(EngineBase):
         self.initialize_user_limits_physics()
         self.initialize_physics_biasing()
         self.initialize_parallel_world_physics()
+        self.initialize_channel_xs_scaling()
 
     def initialize_after_runmanager(self):
         """ """
@@ -401,6 +402,21 @@ class PhysicsEngine(EngineBase):
                 if len(processes) > 0:
                     g4_biasing_physics.PhysicsBias(particle, processes)
             self.g4_physics_list.RegisterPhysics(g4_biasing_physics)
+
+    @requires_fatal("physics_manager")
+    def initialize_channel_xs_scaling(self):
+        """Register GateChannelSelectiveWrapperPhysics for each entry in
+        physics_manager.channel_xs_scaling_configs.
+
+        Must run after initialize_physics_list() so that the base physics
+        list has already registered alphaInelastic for alpha.
+        """
+        for config in self.physics_manager.channel_xs_scaling_configs:
+            ctor = g4.GateChannelSelectiveWrapperPhysics(
+                config["xs_scaling"],
+                config["desired_channel"],
+            )
+            self.g4_physics_list.RegisterPhysics(ctor)
 
     # This function deals with calling the parse function
     # and setting the returned MaterialPropertyTable to G4Material object

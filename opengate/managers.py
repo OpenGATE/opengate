@@ -805,6 +805,10 @@ class PhysicsManager(GateObject):
         # dictionary containing all the optical surface objects
         self.optical_surfaces = {}
 
+        # List of channel-selective XS scaling configs (process-level approach,
+        # no statistical weights).  Populated via add_channel_xs_scaling().
+        self.channel_xs_scaling_configs = []
+
     def reset(self):
         self.__init__(self.simulation)
 
@@ -835,6 +839,25 @@ class PhysicsManager(GateObject):
         for k, v in self.user_info.items():
             s += f"{k}: {v}\n"
         return s
+
+    def add_channel_xs_scaling(self, xs_scaling, desired_channel):
+        """Add a channel-selective XS scaling wrapper for alphaInelastic.
+
+        Scales the total alphaInelastic cross section by xs_scaling so the
+        process fires more often, then applies Russian roulette to keep unwanted
+        channels at their natural rate.  No statistical weights are used.
+
+        xs_scaling      -- float, factor applied to the total alphaInelastic XS.
+        desired_channel -- list of [Z, A] pairs that must appear in the reaction
+                           products (subset match, order-independent).
+                           Example for He3+n+X: [[2, 3], [0, 1]]
+        """
+        self.channel_xs_scaling_configs.append(
+            {
+                "xs_scaling": float(xs_scaling),
+                "desired_channel": [list(pair) for pair in desired_channel],
+            }
+        )
 
     def __getstate__(self):
         # if self.simulation.verbose_getstate:
