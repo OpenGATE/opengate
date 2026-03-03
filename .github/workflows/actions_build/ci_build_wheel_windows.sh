@@ -11,7 +11,7 @@ python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 python -m pip install wget colored
 python -m pip install -U pip wheel setuptools
-python -m pip install cibuildwheel
+python -m pip install cibuildwheel uv
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
     cd $HOME/software
@@ -55,6 +55,7 @@ find $HOME/software/geant4/bin/ -iname "*.dll"
 ls $HOME/software/geant4/bin/BuildProducts/Release/bin
 ls $HOME/software/geant4/bin/BuildProducts/Release/lib/
 export CIBW_BEFORE_BUILD="python -m pip install colored"
+export CIBW_BUILD_FRONTEND="uv"
 python -m cibuildwheel --output-dir dist
 cd ..
 mkdir core/dist2
