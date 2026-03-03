@@ -291,13 +291,7 @@ Example combining intersection and angle checks:
 
 See for example ``test028`` test files for more details (in particular ``test028_ge_nm670_spect_4_acc_angle_helpers.py``).
 
-Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
-= -cos𝜃.
-
-So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY
-plane from -X to -Y.
-
-.. image:: ../figures/thetaphi.png
+For details on how Geant4 defines particle directions using 𝜃 and 𝜙 angles, see the `Particle initial direction`_ section.
 
 
 Half-life
