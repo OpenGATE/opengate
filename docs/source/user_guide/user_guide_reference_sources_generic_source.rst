@@ -289,7 +289,7 @@ Example combining intersection and angle checks:
     source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
     source.direction.angular_acceptance.angle_tolerance_max = 20 * sim.unit.deg
 
-See for example ``test028`` test files for more details.
+See for example ``test028`` test files for more details (in particular ``test028_ge_nm670_spect_4_acc_angle_helpers.py``).
 
 Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
 = -cos𝜃.
