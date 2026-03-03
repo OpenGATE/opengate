@@ -15,7 +15,7 @@ def add_macaco1_materials(sim):
         sim.volume_manager.add_material_database(db_filename)
 
 
-def add_macaco1_camera(sim, name="macaco1"):
+def add_macaco1_camera(sim, name="macaco1", camera_translation=(0.0, 0.0, 0.0)):
     """
     Adds a MACACO1 camera to the simulation.
     - Bounding box (BB_box)
@@ -36,6 +36,7 @@ def add_macaco1_camera(sim, name="macaco1"):
     camera.material = "G4_AIR"
     camera.size = [16 * cm, 40 * cm, 7.6 * cm]
     camera.translation = [0, 0, 0 * cm]
+    camera.translation = [camera_translation[0] * cm, camera_translation[1] * cm, camera_translation[2] * cm]
     camera.color = [0.1, 0.1, 0.1, 0.1]
 
     # Scatterer
@@ -221,13 +222,14 @@ def add_macaco1_camera_digitizer(sim, scatterer, absorber):
     abs_collection = time_abs.name
 
     # Energy windows (thresholds)
-    threshold_min = 70 * keV
+    threshold_min_scatt = 70 * keV
+    threshold_min_abs = 70 * keV
     threshold_max = 2.0 * MeV
     thr_scatt = sim.add_actor("DigitizerEnergyWindowsActor", "ThrScatt")
     thr_scatt.attached_to = scatterer.name
     thr_scatt.input_digi_collection = scatt_collection
     thr_scatt.channels = [
-        {"name": thr_scatt.name, "min": threshold_min, "max": threshold_max}
+        {"name": thr_scatt.name, "min": threshold_min_scatt, "max": threshold_max}
     ]
     scatt_collection = thr_scatt.name
 
@@ -235,7 +237,7 @@ def add_macaco1_camera_digitizer(sim, scatterer, absorber):
     thr_abs.attached_to = absorber.name
     thr_abs.input_digi_collection = abs_collection
     thr_abs.channels = [
-        {"name": thr_abs.name, "min": threshold_min, "max": threshold_max}
+        {"name": thr_abs.name, "min": threshold_min_abs, "max": threshold_max}
     ]
 
     # Saving root files
