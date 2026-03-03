@@ -293,6 +293,32 @@ See for example ``test028`` test files for more details (in particular ``test028
 
 For details on how Geant4 defines particle directions using 𝜃 and 𝜙 angles, see the `Particle initial direction`_ section.
 
+.. note::
+
+   **Historical note:**
+
+   - Until **March 2022**, this feature was called ``angle_acceptance_volume`` with a different structure.
+   - From **March 2022 to November 2025**, it was called ``acceptance_angle`` (i.e. ``source.direction.acceptance_angle``), with properties ``volumes``, ``intersection_flag``, ``normal_flag``, ``normal_vector``, and ``normal_tolerance``.
+   - From **November 2025** onwards, it was renamed to ``angular_acceptance`` and the properties were refactored:
+
+     .. list-table::
+        :header-rows: 1
+
+        * - ``acceptance_angle`` property (pre Nov 2025)
+          - ``angular_acceptance`` property (current)
+        * - ``volumes``
+          - ``target_volumes``
+        * - ``intersection_flag``
+          - ``enable_intersection_check``
+        * - ``normal_flag``
+          - ``enable_angle_check``
+        * - ``normal_vector``
+          - ``angle_check_reference_vector``
+        * - ``normal_tolerance``
+          - ``angle_tolerance_max``
+        * - *(implicit)*
+          - ``policy`` (``"Rejection"`` or ``"ForceDirection"``)
+
 
 Half-life
 ---------
