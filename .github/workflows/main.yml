@@ -51,7 +51,7 @@ jobs:
           pip install build
           python -m build
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-opengate
         path: dist/
@@ -83,7 +83,7 @@ jobs:
         os: ${{ matrix.os }}
         python-version: ${{ matrix.python-version }}
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core
         path: dist/
@@ -116,7 +116,7 @@ jobs:
         os: ${{ matrix.os }}
         python-version: ${{ matrix.python-version }}
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core-ci_or_tag
         path: dist/
@@ -178,7 +178,7 @@ jobs:
           mv wheelhouse dist
           sudo chown -R runner:docker dist
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core-novis
         path: dist/
@@ -189,7 +189,7 @@ jobs:
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         pattern: dist-*
         merge-multiple: true
@@ -296,7 +296,7 @@ jobs:
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         pattern: results_json-*
         merge-multiple: true

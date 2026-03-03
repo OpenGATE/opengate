@@ -7,7 +7,7 @@ runs:
     shell: bash {0}
     run: |
          rm -rf $GITHUB_WORKSPACE/*
-  - uses: actions/download-artifact@v4
+  - uses: actions/download-artifact@v8
     with:
       pattern: dist-*
       merge-multiple: true
@@ -79,7 +79,7 @@ runs:
               exit 0
           fi
   - name: Upload results
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@v7
     if: always()
     with:
       name: results_json-${{ matrix.os }}-${{ matrix.python-version }}
