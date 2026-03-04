@@ -57,7 +57,6 @@ ls $HOME/software/geant4/bin/BuildProducts/Release/lib/
 export CIBW_BEFORE_BUILD="python -m pip install colored"
 
 # For windows 2025, Need to add the certifi CA bundle to avoid SSL errors when downloading dependencies during the build. This is a workaround for cibuildwheel which does not handle this properly on Windows.
-pip install cibuildwheel==2.21.1
 python - << 'EOF'
 import certifi, shutil, os
 dst = os.path.expanduser(r"C:\certifi-ca.pem")
