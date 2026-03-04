@@ -267,7 +267,7 @@ def assert_images(
     axis="z",
     fig_name=None,
     sum_tolerance=5,
-    scaleImageValuesFactor=None,
+    scale_image_values_factor=None,
     sad_profile_tolerance=None,
     img_threshold=0,
     test_sad=True,
@@ -276,8 +276,6 @@ def assert_images(
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
-    # img1 = itk.imread(ref_filename1)
-    # img2 = itk.imread(filename2)
     img1 = sitk.ReadImage(ref_filename1)
     img2 = sitk.ReadImage(filename2)
     info1 = get_info_from_image_sitk(img1)
@@ -297,8 +295,9 @@ def assert_images(
     data1 = sitk.GetArrayFromImage(img1).ravel()
     data2 = sitk.GetArrayFromImage(img2).ravel()
 
-    if scaleImageValuesFactor:
-        data2 *= scaleImageValuesFactor
+    if scale_image_values_factor:
+        data2 *= scale_image_values_factor
+        img2 *= scale_image_values_factor
 
     # do not consider pixels with a certain value
     if ignore_value_data1 is None and ignore_value_data2 is None:
@@ -320,7 +319,7 @@ def assert_images(
     # because the ignore value was previously applied only after
     # taking the sum and some tests fail after that change
     # apply_ignore_mask_to_sum_check = False recreates the old behavior
-    if apply_ignore_mask_to_sum_check is True:
+    if apply_ignore_mask_to_sum_check:
         s1 = np.sum(d1)
         s2 = np.sum(d2)
     else:
