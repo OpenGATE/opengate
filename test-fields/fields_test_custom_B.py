@@ -80,11 +80,12 @@ if __name__ == "__main__":
 
     # --> Define a custom uniform magnetic field along the Y axis
     By = 5 * g4_tesla
+
     def custom_uniform_B_field(x, y, z, t):
         return [0, By, 0]
+
     field = fields.CustomMagneticField(
-        name="B_uniform_custom",
-        field_function=custom_uniform_B_field
+        name="B_uniform_custom", field_function=custom_uniform_B_field
     )
     box.add_field(field)
 

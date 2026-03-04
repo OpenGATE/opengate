@@ -59,8 +59,10 @@ if __name__ == "__main__":
     # Uniform ELECTRIC field along X
     # -------------------------------------------------
     Ex = 1e8 * g4_volt / g4_m
+
     def custom_uniform_E_field(x, y, z, t):
         return [Ex, 0, 0]
+
     field = fields.CustomElectricField(
         name="E_uniform_custom",
         field_function=custom_uniform_E_field,
