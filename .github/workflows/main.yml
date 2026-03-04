@@ -207,24 +207,24 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE_CORE_NOVIS }}
-        packages_dir: dist_opengate_core_novis/
-        skip_existing: true
+        packages-dir: dist_opengate_core_novis/
+        skip-existing: true
     - name: Publish to PyPI opengate_core
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE_CORE }}
-        packages_dir: dist_opengate_core/
-        skip_existing: true
+        packages-dir: dist_opengate_core/
+        skip-existing: true
     - name: Publish to PyPI opengate
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE }}
-        packages_dir: dist_opengate/
-        skip_existing: true
+        packages-dir: dist_opengate/
+        skip-existing: true
 
 #  ssh_session:
 #    env:
