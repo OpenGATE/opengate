@@ -18,7 +18,6 @@ import time
 import opengate as gate
 from opengate.geometry import fields
 
-
 HISTORIES = [1, 10, 100, 1000, 10000, 100000]
 
 
@@ -53,6 +52,7 @@ def _build_simulation(
         field.field_vector = [ex, 0, 0]
 
     elif field_impl == "custom":
+
         def custom_uniform_e_field(x, y, z, t):
             return [ex, 0, 0]
 
@@ -156,7 +156,9 @@ def _child_main(field_impl: str, n_histories: int, result_json: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--child-run", action="store_true", default=False)
-    parser.add_argument("--field-impl", choices=["uniform", "custom"], default="uniform")
+    parser.add_argument(
+        "--field-impl", choices=["uniform", "custom"], default="uniform"
+    )
     parser.add_argument("--histories", type=int, default=1)
     parser.add_argument("--result-json", type=Path, default=None)
     args = parser.parse_args()
