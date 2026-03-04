@@ -12,7 +12,7 @@ export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 python -m pip install wget colored
 python -m pip install -U pip wheel setuptools
 python -m pip install uv
-python -m pip install cibuildwheel<3.3.0
+python -m pip install cibuildwheel
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
     cd $HOME/software
