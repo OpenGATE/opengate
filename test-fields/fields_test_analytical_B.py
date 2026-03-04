@@ -41,7 +41,7 @@ def cyclotron_radius(T, B, m, q):
 # * ---------------------------------
 if __name__ == "__main__":
     # paths = utility.get_default_test_paths(
-    #     __file__, "gate_testNNN_fields_uniform_B", output_folder="testNNN"
+    #     __file__, "gate_testBBB_fields_uniform_B", output_folder="testBBB"
     # )
 
     # Simulation object and setup
@@ -108,11 +108,10 @@ if __name__ == "__main__":
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attached_to = box.name
     phsp.attributes = [
-        "KineticEnergy",
-        "PrePosition",
+        "PostKineticEnergy",
         "PostPosition",
     ]
-    phsp.output_filename = "testNNN_phsp.root"
+    phsp.output_filename = "./test-fields/out/testBBB_phsp.root"
     phsp.steps_to_store = "exiting"
     phsp.root_output.write_to_disk = True
 
@@ -120,7 +119,7 @@ if __name__ == "__main__":
     sim.run()
 
     # Analyze the phase space output
-    file = uproot.open("testNNN_phsp.root")
+    file = uproot.open("./test-fields/out/testBBB_phsp.root")
     phsp_tree = file["phsp;1"]
     df = phsp_tree.arrays(library="pd")
 
@@ -159,7 +158,7 @@ if __name__ == "__main__":
     print(f"No deflection in y within {r_TOL:.3f} mm: {is_ok_y_deflection}")
 
     # * ── Check 3 : energy conservation (B does no work) ──────────────────────────
-    KE_exit = df["KineticEnergy"].values
+    KE_exit = df["PostKineticEnergy"].values
     KE_in = T
     e_TOL = 0.01 * g4_MeV
     is_ok_energy_cons = np.all(np.abs(KE_exit - KE_in) < e_TOL)
