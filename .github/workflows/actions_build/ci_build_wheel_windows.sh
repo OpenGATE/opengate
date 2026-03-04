@@ -11,7 +11,6 @@ python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 python -m pip install wget colored
 python -m pip install -U pip wheel setuptools
-python -m pip install uv
 python -m pip install cibuildwheel
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
@@ -56,7 +55,18 @@ find $HOME/software/geant4/bin/ -iname "*.dll"
 ls $HOME/software/geant4/bin/BuildProducts/Release/bin
 ls $HOME/software/geant4/bin/BuildProducts/Release/lib/
 export CIBW_BEFORE_BUILD="python -m pip install colored"
-export CIBW_BUILD_FRONTEND="build[uv]"
+
+# For windows 2025, Need to add the certifi CA bundle to avoid SSL errors when downloading dependencies during the build. This is a workaround for cibuildwheel which does not handle this properly on Windows.
+pip install cibuildwheel==2.21.1
+python - << 'EOF'
+import certifi, shutil, os
+dst = os.path.expanduser(r"C:\certifi-ca.pem")
+shutil.copy(certifi.where(), dst)
+print("Installed CA bundle at", dst)
+EOF
+export SSL_CERT_FILE="C:\certifi-ca.pem"
+export REQUESTS_CA_BUNDLE="C:\certifi-ca.pem"
+
 python -m cibuildwheel --output-dir dist
 cd ..
 mkdir core/dist2
