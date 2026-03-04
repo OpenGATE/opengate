@@ -4,6 +4,7 @@
 *              comparing to analytical results.
 * Created: 23.02.2026
 """
+
 import uproot
 import pandas as pd
 import numpy as np
@@ -13,17 +14,17 @@ from opengate.geometry import fields
 from opengate.tests import utility
 
 
-#* ---------------------------------
-#*  ------- Helper functions ------
-#* ---------------------------------
+# * ---------------------------------
+# *  ------- Helper functions ------
+# * ---------------------------------
 def electric_acceleration(E, q, m):
     """Return acceleration a = qE/m (Geant4 units)."""
     return q * E / m
 
 
-#* ---------------------------------
-#*  ---------- Main Code ----------
-#* ---------------------------------
+# * ---------------------------------
+# *  ---------- Main Code ----------
+# * ---------------------------------
 if __name__ == "__main__":
 
     sim = gate.Simulation()
@@ -46,12 +47,12 @@ if __name__ == "__main__":
 
     # World
     world = sim.world
-    world.size = [1*g4_m, 1*g4_m, 1*g4_m]
+    world.size = [1 * g4_m, 1 * g4_m, 1 * g4_m]
     world.material = "G4_Galactic"
 
     # Field box
     box = sim.add_volume("BoxVolume", "field_box")
-    box.size = [50*g4_cm, 50*g4_cm, 50*g4_cm]
+    box.size = [50 * g4_cm, 50 * g4_cm, 50 * g4_cm]
     box.material = "G4_Galactic"
 
     # -------------------------------------------------
@@ -74,9 +75,9 @@ if __name__ == "__main__":
 
     source.position.type = "point"
     source.position.translation = [
-        0*g4_cm,
-        0*g4_cm,
-        -100*g4_cm,
+        0 * g4_cm,
+        0 * g4_cm,
+        -100 * g4_cm,
     ]
 
     source.direction.type = "momentum"
@@ -140,7 +141,9 @@ if __name__ == "__main__":
     is_ok_parabola = np.all(np.abs(residual) < r_TOL)
 
     print(f"Parabolic residual: {residual}")
-    print(f"Parabolic trajectory {'' if is_ok_parabola else 'NOT '}satisfied within {r_TOL:.3f} mm: {is_ok_parabola}")
+    print(
+        f"Parabolic trajectory {'' if is_ok_parabola else 'NOT '}satisfied within {r_TOL:.3f} mm: {is_ok_parabola}"
+    )
 
     # -------------------------------------------------
     # Check 2 — No deflection in Y
@@ -157,7 +160,9 @@ if __name__ == "__main__":
     is_ok_energy = np.all(np.abs(KE_exit - KE_expected) < e_TOL)
 
     print(f"Energy residual: {KE_exit - KE_expected}")
-    print(f"Energy gain qEΔx {'' if is_ok_energy else 'NOT '}satisfied within {e_TOL:.3f} MeV: {is_ok_energy}")
+    print(
+        f"Energy gain qEΔx {'' if is_ok_energy else 'NOT '}satisfied within {e_TOL:.3f} MeV: {is_ok_energy}"
+    )
 
     # -------------------------------------------------
     is_ok = is_ok_parabola and is_ok_y and is_ok_energy
