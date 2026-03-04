@@ -26,6 +26,11 @@ public:
   using G4MagneticField::G4MagneticField;
 
   void GetFieldValue(const G4double Point[4], G4double *Bfield) const override {
+    // Always initialize output to a safe value.
+    Bfield[0] = 0.;
+    Bfield[1] = 0.;
+    Bfield[2] = 0.;
+
     py::gil_scoped_acquire gil;
 
     // Convert Point to Python list
@@ -40,20 +45,19 @@ public:
     if (override) {
       py::object result = override(pyPoint);
       if (!result.is_none()) {
+        py::sequence bfield_seq = result.cast<py::sequence>();
 
-        if (py::len(result) != 3) {
+        if (py::len(bfield_seq) != 3) {
           throw std::invalid_argument(
               "GetFieldValue for G4MagneticField must return exactly 3 "
               "components [Bx, By, Bz]");
         }
 
-        py::list bfield_list = result.cast<py::list>();
-        Bfield[0] = bfield_list[0].cast<G4double>();
-        Bfield[1] = bfield_list[1].cast<G4double>();
-        Bfield[2] = bfield_list[2].cast<G4double>();
+        Bfield[0] = bfield_seq[0].cast<G4double>();
+        Bfield[1] = bfield_seq[1].cast<G4double>();
+        Bfield[2] = bfield_seq[2].cast<G4double>();
       }
     }
-    // If no override, Bfield remains unmodified (caller should initialize)
   }
 };
 

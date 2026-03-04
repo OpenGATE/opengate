@@ -65,6 +65,7 @@ class FieldBase(GateObject):
         super().__init__(*args, **kwargs)
 
         self.g4_field = None
+        self._g4_runtime_objects = []
 
         self.attached_to = []
         self._field_changes_energy = False
@@ -81,6 +82,7 @@ class FieldBase(GateObject):
 
     def close(self) -> None:
         self.g4_field = None
+        self._g4_runtime_objects = []
         self.attached_to = []
         super().close()
 
@@ -131,6 +133,18 @@ class MagneticField(FieldBase):
         fm.SetDeltaIntersection(self.delta_intersection)
         fm.SetMinimumEpsilonStep(self.min_epsilon_step)
         fm.SetMaximumEpsilonStep(self.max_epsilon_step)
+
+        # Keep runtime objects alive for the full simulation lifetime.
+        self._g4_runtime_objects.append(
+            {
+                "field": self.g4_field,
+                "equation": self.g4_equation_of_motion,
+                "stepper": self.g4_integrator_stepper,
+                "driver": self.g4_integration_driver,
+                "chord_finder": self.g4_chord_finder,
+                "field_manager": fm,
+            }
+        )
 
         return fm
 
@@ -213,7 +227,7 @@ class CustomMagneticField(MagneticField):
 
         # Check if the function returns 3 components
         test_point = [0, 0, 0, 0]
-        result = self.field_function(test_point)
+        result = self.field_function(*test_point)
         if len(result) != 3:
             raise ValueError(
                 "field_function must return a list of 3 components: [Bx, By, Bz]"
@@ -226,7 +240,7 @@ class CustomMagneticField(MagneticField):
                 inner_self._callback = callback
 
             def GetFieldValue(inner_self, point):
-                return inner_self._callback(point)
+                return inner_self._callback(*point)
 
         self.g4_field = _PyMagneticField(self.field_function)
 
@@ -278,6 +292,18 @@ class ElectroMagneticField(FieldBase):
         fm.SetDeltaIntersection(self.delta_intersection)
         fm.SetMinimumEpsilonStep(self.min_epsilon_step)
         fm.SetMaximumEpsilonStep(self.max_epsilon_step)
+
+        # Keep runtime objects alive for the full simulation lifetime.
+        self._g4_runtime_objects.append(
+            {
+                "field": self.g4_field,
+                "equation": self.g4_equation_of_motion,
+                "stepper": self.g4_integrator_stepper,
+                "driver": self.g4_integration_driver,
+                "chord_finder": self.g4_chord_finder,
+                "field_manager": fm,
+            }
+        )
 
         return fm
 
@@ -346,7 +372,7 @@ class CustomElectricField(ElectricField):
 
         # Check if the function returns 3 components
         test_point = [0, 0, 0, 0]
-        result = self.field_function(test_point)
+        result = self.field_function(*test_point)
         if len(result) != 3:
             raise ValueError(
                 "field_function must return a list of 3 components: [Ex, Ey, Ez]"
@@ -359,7 +385,7 @@ class CustomElectricField(ElectricField):
                 inner_self._callback = callback
 
             def GetFieldValue(inner_self, point):
-                return inner_self._callback(point)
+                return inner_self._callback(*point)
 
         self.g4_field = _PyElectricField(self.field_function)
 
@@ -445,7 +471,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
 
         # Check if the function returns 6 components
         test_point = [0, 0, 0, 0]
-        result = self.field_function(test_point)
+        result = self.field_function(*test_point)
         if len(result) != 6:
             raise ValueError(
                 "field_function must return a list of 6 components: [Bx, By, Bz, Ex, Ey, Ez]"
@@ -458,7 +484,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
                 inner_self._callback = callback
 
             def GetFieldValue(inner_self, point):
-                return inner_self._callback(point)
+                return inner_self._callback(*point)
 
             def DoesFieldChangeEnergy(inner_self):
                 return True
