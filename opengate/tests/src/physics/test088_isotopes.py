@@ -85,6 +85,9 @@ def create_simu(material):
     # run
     sim.run(start_new_process=True)
 
+    if not os.path.exists(phsp.get_output_path_string()):
+        print("File not found: " + phsp.get_output_path_string())
+        return 0
     events = uproot.open(phsp.get_output_path_string())["PhaseSpace;1"]
     ekin = events["KineticEnergy"].array(library="np")
 
