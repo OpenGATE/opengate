@@ -117,7 +117,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     print(stats)
     stats_ref = utility.read_stats_file(paths.output_ref / "test040_train_stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.12)
+    is_ok = utility.assert_stats(stats, stats_ref, [0.03, 0.03, 0.12])
 
     # check phsp
     print()

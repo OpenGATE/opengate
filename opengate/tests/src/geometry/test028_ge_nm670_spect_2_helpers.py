@@ -3,8 +3,8 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
-from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
+from opengate.userhooks import check_production_cuts
 
 
 def create_spect_simu(sim, paths, number_of_threads=1):
@@ -355,7 +355,7 @@ def test_spect_proj(sim, paths, proj, output_ref_folder=None, output_ref_filenam
     if output_ref_folder is None:
         output_ref_folder = paths.output_ref
     stats_ref = utility.read_stats_file(output_ref_folder / "stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.09)
+    is_ok = utility.assert_stats(stats, stats_ref, [0.025, 0.025, 0.09])
 
     # compare images with Gate
     print()
