@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import os
+import SimpleITK as sitk
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
-from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
@@ -135,12 +134,13 @@ if __name__ == "__main__":
 
     # SPOT POSITIONS COMPARISON
     # read output and ref
-    img_mhd_out = itk.imread(dose.get_output_path("dose"))
-    img_mhd_ref = itk.imread(
+    img_mhd_out = sitk.ReadImage(dose.get_output_path("dose"))
+    img_mhd_ref = sitk.ReadImage(
         ref_path / "idc-PHANTOM-air_box_vbl-gate_test59tps_v-PLAN-Physical.mhd"
     )
-    data = itk.GetArrayViewFromImage(img_mhd_out)
-    data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
+
+    data = sitk.GetArrayViewFromImage(img_mhd_out)
+    data_ref = sitk.GetArrayViewFromImage(img_mhd_ref)
     shape = data.shape
     spacing = img_mhd_out.GetSpacing()
 
