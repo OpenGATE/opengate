@@ -87,11 +87,10 @@ if __name__ == "__main__":
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attached_to = box.name
     phsp.attributes = [
-        "KineticEnergy",
-        "PrePosition",
+        "PostKineticEnergy",
         "PostPosition",
     ]
-    phsp.output_filename = "testEEE_phsp.root"
+    phsp.output_filename = "./test-fields/out/testEEE_phsp.root"
     phsp.steps_to_store = "exiting"
     phsp.root_output.write_to_disk = True
 
@@ -101,8 +100,10 @@ if __name__ == "__main__":
     # -------------------------------------------------
     # Analysis
     # -------------------------------------------------
-    file = uproot.open("testEEE_phsp.root")
+    file = uproot.open("./test-fields/out/testEEE_phsp.root")
     df = file["phsp;1"].arrays(library="pd")
+
+    print(df)
 
     # Proton constants
     mp = 938.27208943 * g4_MeV
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     x_exit = df["PostPosition_X"].values
     y_exit = df["PostPosition_Y"].values
     z_exit = df["PostPosition_Z"].values
-    KE_exit = df["KineticEnergy"].values
+    KE_exit = df["PostKineticEnergy"].values
     r_TOL = 0.01 * g4_mm
 
     # -------------------------------------------------
