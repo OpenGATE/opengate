@@ -20,6 +20,14 @@ public:
   using G4ElectroMagneticField::G4ElectroMagneticField;
 
   void GetFieldValue(const G4double Point[4], G4double *field) const override {
+    // Always initialize output to a safe value: [Bx, By, Bz, Ex, Ey, Ez].
+    field[0] = 0.;
+    field[1] = 0.;
+    field[2] = 0.;
+    field[3] = 0.;
+    field[4] = 0.;
+    field[5] = 0.;
+
     py::gil_scoped_acquire gil;
 
     // Convert Point to Python list
@@ -35,8 +43,8 @@ public:
       // Call Python implementation and expect [Bx, By, Bz, Ex, Ey, Ez]
       py::object result = override(pyPoint);
       if (!result.is_none()) {
-        py::list field_list = result.cast<py::list>();
-        size_t n = py::len(field_list);
+        py::sequence field_seq = result.cast<py::sequence>();
+        size_t n = py::len(field_seq);
 
         if (n != 6) {
           throw std::invalid_argument(
@@ -45,7 +53,7 @@ public:
         }
 
         for (size_t i = 0; i < n && i < 6; ++i) {
-          field[i] = field_list[i].cast<G4double>();
+          field[i] = field_seq[i].cast<G4double>();
         }
       }
     }

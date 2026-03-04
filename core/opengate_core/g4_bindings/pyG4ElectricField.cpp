@@ -21,6 +21,14 @@ public:
   using G4ElectricField::G4ElectricField;
 
   void GetFieldValue(const G4double Point[4], G4double *field) const override {
+    // Always initialize output to a safe value: [Bx, By, Bz, Ex, Ey, Ez].
+    field[0] = 0.;
+    field[1] = 0.;
+    field[2] = 0.;
+    field[3] = 0.;
+    field[4] = 0.;
+    field[5] = 0.;
+
     py::gil_scoped_acquire gil;
 
     // Convert Point to Python list
@@ -36,21 +44,18 @@ public:
       py::object result = override(pyPoint);
 
       if (!result.is_none()) {
-        py::list field_list = result.cast<py::list>();
+        py::sequence field_seq = result.cast<py::sequence>();
 
-        if (py::len(field_list) != 3) {
+        if (py::len(field_seq) != 3) {
           throw std::invalid_argument(
               "GetFieldValue for G4ElectricField must return exactly 3 "
               "components [Ex, Ey, Ez]");
         }
 
         // User returned [Ex, Ey, Ez]
-        field[0] = 0.;
-        field[1] = 0.;
-        field[2] = 0.;
-        field[3] = field_list[0].cast<G4double>();
-        field[4] = field_list[1].cast<G4double>();
-        field[5] = field_list[2].cast<G4double>();
+        field[3] = field_seq[0].cast<G4double>();
+        field[4] = field_seq[1].cast<G4double>();
+        field[5] = field_seq[2].cast<G4double>();
       }
     }
   }
