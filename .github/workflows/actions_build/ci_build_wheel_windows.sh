@@ -67,6 +67,7 @@ find $HOME/software/geant4/bin/ -iname "*.dll"
 ls $HOME/software/geant4/bin/BuildProducts/Release/bin
 ls $HOME/software/geant4/bin/BuildProducts/Release/lib/
 export CIBW_BEFORE_BUILD="python -m pip install colored"
+
 python -m cibuildwheel --output-dir dist
 cd ..
 mkdir core/dist2
