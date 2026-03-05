@@ -12,7 +12,7 @@ GATE 10 introduces a Python-based interface, replacing the macro scripting of GA
 
 - Documentation: see the [User Guide](https://opengate-python.readthedocs.io/en/master/user_guide/index.html).
 - This current version uses [Geant4 11.4.0](https://geant4.web.cern.ch).
-- Compatible with Python 3.10, 3.11, 3.12, 3.13. (**Not python 3.14 yet**)
+- Compatible with Python 3.10, 3.11, 3.12, 3.13, 3.14.
 - **Warning**: on Windows, the multithreading and Qt visualization are not (yet) available.
 
 ### How to install (short version)
