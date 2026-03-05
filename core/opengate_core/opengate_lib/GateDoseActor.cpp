@@ -429,7 +429,7 @@ double GateDoseActor::CalculateSPR(G4Step *step) {
   auto energy = (energy1 + energy2) / 2;
 
   if (fConstantSPRMaterialFlag && energy >= fConstEnergyForSPR) {
-    spr = fSPRCache.FindOrCalculateSTR(p, current_material);
+    spr = fSPRCache.FindOrCalculateSPR(p, current_material);
     return spr;
   }
 

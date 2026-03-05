@@ -20,7 +20,7 @@ void GateSPRCache::Initialize(G4Material *material, double constEnergy) {
   fConstantEnergy = constEnergy;
 }
 
-double GateSPRCache::FindOrCalculateSTR(const G4ParticleDefinition *particle,
+double GateSPRCache::FindOrCalculateSPR(const G4ParticleDefinition *particle,
                                         const G4Material *voxelMaterial) {
   if (particle == G4Gamma::Gamma())
     particle = G4Electron::Electron();

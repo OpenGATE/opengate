@@ -56,7 +56,7 @@ public:
    * @param m is the material used to calculate the stopping power of p
    * @retval SPR of m,m0
    */
-  double FindOrCalculateSTR(const G4ParticleDefinition *p, const G4Material *m);
+  double FindOrCalculateSPR(const G4ParticleDefinition *p, const G4Material *m);
 
 private:
   G4Material *fMaterial;
