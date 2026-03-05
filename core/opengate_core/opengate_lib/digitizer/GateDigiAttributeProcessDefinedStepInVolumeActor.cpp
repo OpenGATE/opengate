@@ -14,6 +14,7 @@
 GateDigiAttributeProcessDefinedStepInVolumeActor::
     GateDigiAttributeProcessDefinedStepInVolumeActor(py::dict &user_info)
     : GateVActor(user_info, false) {
+  fMultiThreadReady = true;
   fActions.insert("BeginOfEventAction");
   fActions.insert("SteppingAction");
 }
@@ -27,12 +28,12 @@ void GateDigiAttributeProcessDefinedStepInVolumeActor::InitializeUserInfo(
 
 void GateDigiAttributeProcessDefinedStepInVolumeActor::BeginOfEventAction(
     const G4Event *event) {
-  fNumberOfInteractions = 0;
+  fNumberOfInteractions.Put(0);
 }
 
 int GateDigiAttributeProcessDefinedStepInVolumeActor::GetNumberOfInteractions()
     const {
-  return fNumberOfInteractions;
+  return fNumberOfInteractions.Get();
 }
 
 void GateDigiAttributeProcessDefinedStepInVolumeActor::SteppingAction(
@@ -43,6 +44,7 @@ void GateDigiAttributeProcessDefinedStepInVolumeActor::SteppingAction(
     return;
   // Store the interaction
   if (p->GetProcessName() == fProcessName) {
-    fNumberOfInteractions++;
+    auto& counter = fNumberOfInteractions.Get();
+    counter++;
   }
 }
