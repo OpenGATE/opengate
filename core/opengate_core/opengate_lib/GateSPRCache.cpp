@@ -10,6 +10,9 @@
 #include "G4Electron.hh"
 #include "G4EmCalculator.hh"
 #include "G4Gamma.hh"
+#include "G4Threading.hh"
+
+G4Mutex SetSPRMutex = G4MUTEX_INITIALIZER;
 
 GateSPRCache::GateSPRCache() {}
 
@@ -46,6 +49,7 @@ double GateSPRCache::FindOrCalculateSPR(const G4ParticleDefinition *particle,
     spr = dedxMaterial / dedxVoxel;
   }
 
+  G4AutoLock mutex(&SetSPRMutex);
   fSPRCache[key] = spr;
 
   return spr;
