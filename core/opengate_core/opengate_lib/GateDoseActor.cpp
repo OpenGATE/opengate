@@ -73,11 +73,11 @@ void GateDoseActor::InitializeCpp() {
   }
   fScoreInOtherMaterial = (fScoreInMaterial == "material") ? false : true;
 
-  if (fConstantSPRMaterialFlag) {
+  if (fFastSPRCalcFlag) {
     // Initialize the cache
     auto material =
         G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
-    fSPRCache.Initialize(material, fConstEnergyForSPR);
+    fSPRCache.Initialize(material, fReferenceEnergySPR);
   }
 }
 
@@ -422,15 +422,28 @@ double GateDoseActor::GetMaxValueOfImage(Image3DType::Pointer imageP) {
 
 double GateDoseActor::CalculateSPR(G4Step *step) {
   double spr = 0;
+  G4double energy = 0;
   auto *current_material = step->GetPreStepPoint()->GetMaterial();
   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-  auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-  auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-  auto energy = (energy1 + energy2) / 2;
 
-  if (fConstantSPRMaterialFlag && energy >= fConstEnergyForSPR) {
-    spr = fSPRCache.FindOrCalculateSPR(p, current_material);
-    return spr;
+  if (fFastSPRCalcFlag) {
+    // avoiding calculating the energy if fTransitionEnergySPR = 0
+    if (fTransitionEnergySPR == 0) {
+      spr = fSPRCache.FindOrCalculateSPR(p, current_material);
+      return spr;
+    }
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+    energy = (energy1 + energy2) / 2;
+
+    if (energy >= fTransitionEnergySPR) {
+      spr = fSPRCache.FindOrCalculateSPR(p, current_material);
+      return spr;
+    }
+  } else {
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+    energy = (energy1 + energy2) / 2;
   }
 
   double dedx_cut = DBL_MAX;

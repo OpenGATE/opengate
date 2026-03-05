@@ -362,19 +362,25 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 """,
             },
         ),
-        "assume_constant_SPR_per_material": (
+        "fast_SPR_calculation": (
             False,
             {
                 "doc": "If True, the stopping power ratio for the conversion of dose to dose to material "
-                "is assumed constant over with energy and it is calculated only once for each "
+                "is assumed constant with energy and it is calculated only once for each "
                 "interacting particle and voxel's material combinations. If False, on the fly calculation "
                 "of the SPR is performed. The former option will speed-up the calculation, the latter has better accuracy.",
             },
         ),
-        "constant_energy_SPR": (
+        "reference_energy_SPR": (
             50,
             {
-                "doc": "Energy in Mev used for the calculation of SPR, when assume_constant_SPR_per_material = True.",
+                "doc": "Energy in Mev used for the calculation of SPR, when fast_SPR_calculation = True.",
+            },
+        ),
+        "transition_energy_SPR": (
+            10,
+            {
+                "doc": "When fast_SPR_calculation = True, the fast calculation will be performed only for particles with energy < transition_energy_SPR",
             },
         ),
         "ste_of_mean": (
@@ -579,8 +585,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # item=0 is the default
         self.SetCountsFlag(self.user_output.counts.get_active())
         self.SetScoreInMaterial(self.score_in)
-        self.SetConstantSPRMaterialFlag(self.assume_constant_SPR_per_material)
-        self.SetConstEnergyForSPR(self.constant_energy_SPR)
+        self.SetFastSPRCalculationFlag(self.fast_SPR_calculation)
+        self.SetReferenceEnergySPR(self.reference_energy_SPR)
+        self.SetTransitionEnergySPR(self.transition_energy_SPR)
 
         # variables for stop on uncertainty functionality
         if self.uncertainty_goal is None:

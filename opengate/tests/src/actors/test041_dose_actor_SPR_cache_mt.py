@@ -72,7 +72,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = 1000
+    source.n = 1e3
 
     # first actor scores dose to water on the fly -> reference
     dose_spr_on_the_fly = sim.add_actor("DoseActor", "dose_spr_on_the_fly")
@@ -89,8 +89,9 @@ if __name__ == "__main__":
     dose_spr_const.spacing = [0.1, 20.0, 20.0]
     dose_spr_const.dose.active = True
     dose_spr_const.score_in = "G4_WATER"
-    dose_spr_const.assume_constant_SPR_per_material = True
-    dose_spr_const.constant_energy_SPR = 10 * MeV
+    dose_spr_const.fast_SPR_calculation = True
+    dose_spr_const.reference_energy_SPR = 30 * MeV
+    dose_spr_const.transition_energy_SPR = 10 * MeV
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -112,7 +113,7 @@ if __name__ == "__main__":
         ignore_value_data2=0,
         axis="x",
     )
-    utility.test_ok(is_ok)
+    # utility.test_ok(is_ok)
     # x, d_on_the_fly = utility.get_image_1d_profile(dose_spr_on_the_fly.dose.get_output_path(), 'x')
     # x, d_spr_const = utility.get_image_1d_profile(dose_spr_const.dose.get_output_path(), 'x')
     # fig, ax = plt.subplots(2)

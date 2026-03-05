@@ -48,15 +48,17 @@ public:
 
   void SetScoreInMaterial(const std::string b) { fScoreInMaterial = b; }
 
-  bool GetConstantSPRMaterialFlag() const { return fConstantSPRMaterialFlag; }
+  bool GetFastSPRCalculationFlag() const { return fFastSPRCalcFlag; }
 
-  void SetConstantSPRMaterialFlag(const bool b) {
-    fConstantSPRMaterialFlag = b;
-  }
+  void SetFastSPRCalculationFlag(const bool b) { fFastSPRCalcFlag = b; }
 
-  double GetConstEnergyForSPR() const { return fConstEnergyForSPR; }
+  double GetReferenceEnergySPR() const { return fReferenceEnergySPR; }
 
-  void SetConstEnergyForSPR(const double b) { fConstEnergyForSPR = b; }
+  void SetReferenceEnergySPR(const double b) { fReferenceEnergySPR = b; }
+
+  double GetTransitionEnergySPR() const { return fTransitionEnergySPR; }
+
+  void SetTransitionEnergySPR(const double b) { fTransitionEnergySPR = b; }
 
   bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
 
@@ -126,7 +128,9 @@ public:
 
   // Option: indicate we convert dose to dose in this material
   std::string fScoreInMaterial{};
-  double fConstEnergyForSPR;
+  double fReferenceEnergySPR;
+  double fTransitionEnergySPR;
+  bool fFastSPRCalcFlag;
 
   // Option: indicate if we must compute edep squared
   bool fEdepSquaredFlag{};
@@ -144,7 +148,6 @@ public:
   double fUncertaintyGoal;
   double fThreshEdepPerc;
   double fOvershoot;
-  bool fConstantSPRMaterialFlag;
 
   int fNbOfEvent;
   // set from python's side. It will be overwritten by an estimation of the
