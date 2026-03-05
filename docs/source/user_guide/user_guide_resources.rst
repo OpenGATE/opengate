@@ -1,28 +1,3 @@
-Opengate meetings and hackathons
-================================
-
-You should find a lot of presentations and materials in the following events:
-
-- 2026 *opengate meeting*, Strasbourg, France **soon (31 April)**
-- 2026 **Hackathon**, Deflt, the Netherlands https://indico.in2p3.fr/event/37622
-- 2025 *opengate meeting*, Athens, Greece https://indico.in2p3.fr/e/gate2025
-- 2024 *opengate meeting*, Orsay, France https://indico.in2p3.fr/e/gate2024
-- 2024 **Hackathon**, Lyon, France https://indico.in2p3.fr/event/30972
-- 2023 *opengate meeting*, Kraków, Poland https://indico.in2p3.fr/e/gate2023
-- 2023 **Hackathon**, Kraków, Poland https://indico.in2p3.fr/event/28828/page/3389-hackathon
-- 2022 *opengate meeting*, on line (covid) https://indico.in2p3.fr/e/gate2022
-- 2021 *opengate meeting*, on line (covid) https://indico.in2p3.fr/event/25334
-- 2020 *opengate meeting*, on line (covid) https://indico.in2p3.fr/event/21826
-- 2019 *opengate meeting*, Lyon, France https://indico.in2p3.fr/event/19280
-- 2018 *opengate meeting*, Orsay, France https://indico.in2p3.fr/event/18030
-- 2017 *opengate meeting*, Clermont Ferrand, France https://indico.in2p3.fr/event/14255
-- 2016 *opengate meeting*, Strasbourg, France
-- 2016 *opengate meeting*, Orsay, France
-- 2015 *opengate meeting*, Vienna, Austria
-- 2015 *opengate meeting*, Toulouse, France
-- 2014 *opengate meeting*, Köln, Germany
-- and more  ... lost in our memories ;)
-
 Teaching Resources and Examples
 ===============================
 
@@ -31,3 +6,9 @@ Teaching Resources and Examples
 - `Exercises <https://gitlab.in2p3.fr/davidsarrut/gate_exercices_2>`_ (initially developed for DQPRM, French medical physics diploma)
 
 - `Training <https://drive.google.com/drive/folders/1bcIS5OPLOBzhLo0NvrLJL5IxVQidNYCF>`_ (initially developed for Opengate teaching)
+
+- `Introduction to GATE10 <https://www.dropbox.com/scl/fi/zk6z48yuihyx7dhuuuqyd/python-gate-10.pdf?rlkey=stkcdgygudp265qu4sh4gcni2&dl=0>`_ (end of 2025, warning may not be up to date)
+
+- `Slides (very raw!) from some technical meetings <https://www.dropbox.com/scl/fo/dv9dh8rl54h70esu7z5n2/AJzMLceFVT62eZZI5Rlzy9s?rlkey=uc6kccwlarrs25o0uoxqaonxo&st=pi7y8z9j&dl=0>`_ (more some notes than real ressources)
+
+- `Geant 4 66th Forum end 2025 <https://indico.cern.ch/event/1615896/timetable/?view=standard>`_  Geant4 information

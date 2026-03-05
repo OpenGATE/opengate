@@ -1,11 +1,17 @@
-import numpy as np
+import json
 import pathlib
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 import SimpleITK as sitk
+from itkConfig import ImportCallback
+
+from opengate.actors.digitizers import *
 from opengate.geometry.utility import (
     translate_point_to_volume,
     vec_g4_as_np,
 )
-from opengate.actors.digitizers import *
 
 
 def add_fake_table(sim, name="table"):

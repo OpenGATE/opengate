@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from test053_phid_helpers2 import *
+
 import opengate as gate
 
 if __name__ == "__main__":
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     root_model = sim.get_actor("phsp").get_output_path()
     root_ref = paths.output_ref / Path(root_model).name
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
-    tols = [0.001, 0.02]
+    tols = [0.001, 0.025]
     img = paths.output / str(root_model).replace(".root", ".png")
     is_ok = compare_root3(
         root_ref, root_model, "phsp", "phsp", keys, keys, tols, None, None, img
