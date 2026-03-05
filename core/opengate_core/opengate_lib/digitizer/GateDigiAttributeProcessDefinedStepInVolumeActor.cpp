@@ -44,7 +44,7 @@ void GateDigiAttributeProcessDefinedStepInVolumeActor::SteppingAction(
     return;
   // Store the interaction
   if (p->GetProcessName() == fProcessName) {
-    auto& counter = fNumberOfInteractions.Get();
+    auto &counter = fNumberOfInteractions.Get();
     counter++;
   }
 }
