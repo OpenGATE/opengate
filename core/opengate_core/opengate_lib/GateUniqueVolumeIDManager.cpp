@@ -8,6 +8,7 @@
 #include "GateUniqueVolumeIDManager.h"
 #include "GateGeometryUtils.h"
 #include "GateHelpers.h"
+#include <algorithm>
 #include <shared_mutex>
 
 G4Cache<GateUniqueVolumeIDManager::threadLocalT>
@@ -41,8 +42,8 @@ GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
 
   // Also generate the unique int id
   const auto *lv = touchable->GetVolume()->GetLogicalVolume();
-  uid->fNumericID =
-      GetNumericID(lv, uid->fID); // FIXME should it be lazy, on demand ?
+  uid->fNumericID = GetNumericID(
+      lv, uid->fID, touchable); // FIXME should it be lazy, on demand ?
   l.fToVolumeID[key] = uid;
 
   return uid;
@@ -60,7 +61,8 @@ GateUniqueVolumeIDManager::GetAllVolumeIDs() const {
 }
 
 int GateUniqueVolumeIDManager::GetNumericID(const G4LogicalVolume *lv,
-                                            const std::string &id) {
+                                            const std::string &id,
+                                            const G4VTouchable *touchable) {
   auto &l = fThreadLocalData.Get();
   auto it = l.fLVtoNumericIds.find(lv);
   if (it != l.fLVtoNumericIds.end()) {
@@ -71,20 +73,25 @@ int GateUniqueVolumeIDManager::GetNumericID(const G4LogicalVolume *lv,
   }
 
   // Not found, need to initialize all IDs for this LV
-  InitializeNumericIDsForLV(lv);
+  InitializeNumericIDsForLV(lv, touchable);
 
   it = l.fLVtoNumericIds.find(lv);
   if (it != l.fLVtoNumericIds.end()) {
-    return it->second.at(id);
+    auto idIt = it->second.find(id);
+    if (idIt != it->second.end()) {
+      return idIt->second;
+    }
   }
 
-  // Should never reach here
-  Fatal("Failed to initialize numeric ID");
+  // Should never reach here, but as a safeguard:
+  std::string msg = "Cannot find numeric ID for " + id;
+  msg += " for LV " + lv->GetName();
+  Fatal(msg);
   return -1;
 }
 
 void GateUniqueVolumeIDManager::InitializeNumericIDsForLV(
-    const G4LogicalVolume *lv) {
+    const G4LogicalVolume *lv, const G4VTouchable *touchable) {
   auto &l = fThreadLocalData.Get();
 
   // Collect all touchables for this LV
@@ -92,8 +99,17 @@ void GateUniqueVolumeIDManager::InitializeNumericIDsForLV(
 
   std::vector<std::string> stringIDs;
   stringIDs.reserve(touchables.size());
-  for (const auto &touchable : touchables) {
-    stringIDs.push_back(GateUniqueVolumeID::ComputeStringID(touchable.get()));
+  for (const auto &t : touchables) {
+    stringIDs.push_back(GateUniqueVolumeID::ComputeStringID(t.get()));
+  }
+
+  // Add the current id if not already present. This is a safeguard against
+  // incomplete results from FindAllTouchables, especially for parameterized
+  // volumes with boundary issues.
+  const auto currentID = GateUniqueVolumeID::ComputeStringID(touchable);
+  if (std::find(stringIDs.begin(), stringIDs.end(), currentID) ==
+      stringIDs.end()) {
+    stringIDs.push_back(currentID);
   }
 
   // Sort for deterministic ordering

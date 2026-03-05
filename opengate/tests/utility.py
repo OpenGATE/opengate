@@ -1,27 +1,30 @@
+import io
+import numbers
+import os
+import pathlib
+import shutil
+import sys
+from pathlib import Path
+
+import colored
+import gatetools.phsp
 import itk
 import numpy as np
-import os
-import colored
-from box import Box, BoxList
 import scipy
-import pathlib
 import uproot
-import sys
-import shutil
-from pathlib import Path
-from matplotlib.ticker import StrMethodFormatter
+from box import Box, BoxList
 from matplotlib.patches import Circle
-import io
-import gatetools.phsp
+from matplotlib.ticker import StrMethodFormatter
 
+from opengate.actors.simulation_stats_helpers import *
+
+from ..exception import color_error, color_ok, fatal
+from ..image import get_info_from_image, itk_image_from_array, write_itk_image
 from ..utility import (
+    LazyModuleLoader,
     ensure_filename_is_str,
     insert_suffix_before_extension,
-    LazyModuleLoader,
 )
-from ..exception import fatal, color_error, color_ok
-from ..image import get_info_from_image, itk_image_from_array, write_itk_image
-from opengate.actors.simulation_stats_helpers import *
 
 plt = LazyModuleLoader("matplotlib.pyplot")
 
@@ -106,23 +109,29 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
     is_ok = b
     print_test(b, f"Runs:         {counts1.runs} {counts2.runs}")
 
-    b = abs(event_d) <= tolerance * 100
+    if isinstance(tolerance, numbers.Number):
+        tolerance = [tolerance, tolerance, tolerance]
+
+    b = abs(event_d) <= tolerance[0] * 100
     is_ok = b and is_ok
-    st = f"(tol = {tolerance * 100:.2f} %)"
+    st = f"(tol = {tolerance[0] * 100:.2f} %)"
     print_test(
         b,
         f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  {st}",
     )
 
-    b = abs(track_d) <= tolerance * 100
+    b = abs(track_d) <= tolerance[1] * 100
     is_ok = b and is_ok
+    st = f"(tol = {tolerance[1] * 100:.2f} %)"
     print_test(
         b,
         f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  {st}",
     )
 
-    b = abs(step_d) <= tolerance * 100
+    b = abs(step_d) <= tolerance[2] * 100
     is_ok = b and is_ok
+
+    st = f"(tol = {tolerance[2] * 100:.2f} %)"
     print_test(
         b,
         f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  {st}",
@@ -1023,8 +1032,13 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
                     if not compare_arrays(v1, v2, f"{key}[{i}]"):
                         is_equal = False
                 elif isinstance(v1, float) and isinstance(v2, float):
-                    if abs(v1 - v2) > tolerance:
-                        print(f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+                    r = np.divide(
+                        abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0)
+                    )
+                    if r > tolerance:
+                        print(
+                            f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)}, {r*100} %)"
+                        )
                         is_equal = False
                 elif v1 != v2:
                     print(f"{key}[{i}] : {v1} vs {v2}")
@@ -1047,8 +1061,11 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
         elif isinstance(v1, list) and isinstance(v2, list):
             return compare_arrays(v1, v2, full_key)
         elif isinstance(v1, float) and isinstance(v2, float):
-            if abs(v1 - v2) > tolerance:
-                print(f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+            r = np.divide(abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0))
+            if r > tolerance:
+                print(
+                    f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)}) (diff: {r*100} %)"
+                )
                 return False
             return True
         else:

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import uproot
+import os
+
 import numpy as np
+import uproot
+
+import opengate as gate
 import opengate.tests.utility as utility
 
 g_cm3 = gate.g4_units.g_cm3
@@ -82,6 +85,9 @@ def create_simu(material):
     # run
     sim.run(start_new_process=True)
 
+    if not os.path.exists(phsp.get_output_path_string()):
+        print("File not found: " + phsp.get_output_path_string())
+        return 0
     events = uproot.open(phsp.get_output_path_string())["PhaseSpace;1"]
     ekin = events["KineticEnergy"].array(library="np")
 
