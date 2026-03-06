@@ -343,7 +343,10 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
 
             # add weight
             if self.flat_generation:
-                weights.append(spot.beamFraction * len(self.spots))
+                n_primaries = spot.beamFraction * beamline.get_n_primaries_from_MU(
+                    spot.energy
+                )
+                weights.append(n_primaries * len(self.spots))
             else:
                 weights.append(1.0)
 
@@ -377,7 +380,10 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         if flat_generation:
             pdf = [1.0 / len(self.spots) for spot in self.spots]
         else:
-            pdf = [spot.beamFraction for spot in self.spots]
+            pdf = [
+                s.beamFraction * self.beam_model.get_n_primaries_from_MU(s.energy)
+                for s in self.spots
+            ]
 
         # normalize vector, to assure the probabilities sum up to 1
         pdf = pdf / np.sum(pdf)
