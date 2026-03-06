@@ -4,6 +4,7 @@
 from test053_phid_helpers2 import *
 import os
 import opengate as gate
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
@@ -24,7 +25,8 @@ if __name__ == "__main__":
     create_sim_test053(sim, sim_name, output=paths.output)
 
     phsp = sim.get_actor("phsp")
-    phsp.filters = [phsp.filters[0]]
+    F = GateFilter(sim)
+    phsp.filter = F.ParticleName == "gamma"  # remove creator process filter
     print(phsp.output_filename)
 
     mm = g4_units.mm

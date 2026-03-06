@@ -10,14 +10,14 @@
 
 namespace py = pybind11;
 
-#include "GateHelpers.h"
+#include "../GateHelpers.h"
 #include "GateVFilter.h"
 
 /*
  * The "trampoline" functions below are required if we want to
  * allow callbacks on the py side.
  *
- * If it is not needed: to not define trampoline functions in class that inherit
+ * If it is not needed: do not define trampoline functions in class that inherit
  * from VFilter.
  *
  * It must be defined also in all classes that inherit from GateVFilter

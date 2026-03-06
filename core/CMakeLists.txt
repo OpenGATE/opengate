@@ -68,6 +68,7 @@ file(GLOB all_SRCS
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/digitizer/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/biasing/*.cpp"
+        "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/filters/*.cpp"
         )
 pybind11_add_module(opengate_core
         #NO_EXTRAS

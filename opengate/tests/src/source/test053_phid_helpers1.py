@@ -4,6 +4,7 @@
 from opengate.tests.utility import *
 from opengate.sources.phidsources import *
 from opengate.utility import g4_units
+from opengate.actors.filters import GateFilter
 import numpy as np
 import math
 
@@ -37,7 +38,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     world.material = "G4_WATER"
 
     # physics
-    sim.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.enable_decay = True
     sim.physics_manager.global_production_cuts.all = 10 * mm
     sim.physics_manager.global_production_cuts.gamma = 0.001 * mm
@@ -85,18 +86,25 @@ def create_ion_gamma_simulation(sim, paths, z, a):
 def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # change simulation parameters
     phsp = sim.get_actor("phsp")
+    F = GateFilter(sim)
 
-    def rm_type(name, phsp):
+    """def rm_type(name, phsp):
         fg = sim.add_filter("ParticleFilter", f"fp_{name}")
         fg.particle = name
         fg.policy = "reject"
-        phsp.filters.append(fg)
+        phsp.filters.append(fg)"""
 
     phsp.attributes = ["ParticleName", "ParticleType", "GlobalTime"]
-    rm_type("gamma", phsp)
-    rm_type("anti_nu_e", phsp)
-    rm_type("alpha", phsp)
-    rm_type("e-", phsp)
+    # rm_type("gamma", phsp)
+    # rm_type("anti_nu_e", phsp)
+    # rm_type("alpha", phsp)
+    # rm_type("e-", phsp)
+    phsp.filter = (
+        (F.ParticleName != "gamma")
+        & (F.ParticleName != "anti_nu_e")
+        & (F.ParticleName != "alpha")
+        & (F.ParticleName != "e-")
+    )
 
     sec = g4_units.second
     Bq = g4_units.Bq
