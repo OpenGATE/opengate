@@ -10,6 +10,7 @@ from opengate.actors.coincidences import cc_coincidences_sorter
 from merge_coinc import merge_singles_root
 from coinc_filters import kill_multiple_coinc, kill_same_volume_pairs
 
+
 def add_macaco1_materials(sim):
     """
     Adds the Macaco materials database to the simulation if not already present.
@@ -296,4 +297,3 @@ def add_macaco1_camera_offlinesorter(
     coincidences = kill_multiple_coinc(coincidences)
     coincidences = kill_same_volume_pairs(coincidences)
     return coincidences
-
