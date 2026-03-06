@@ -300,7 +300,7 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
                 gantry_angle = beam_data["gantry_angle"]
             elif str(plan_path).endswith(".dcm"):
                 beamset = BeamsetInfo(plan_path)
-                gantry_angle = beamset.beam_angles[beam_nr - 1]
+                gantry_angle = float(beamset.beam_angles[beam_nr - 1])
                 self.spots = get_spots_from_beamset_beam(beamset, beam_nr)
             else:
                 raise ValueError(
