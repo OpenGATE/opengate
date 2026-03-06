@@ -2,7 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
+
+import uproot
+
 from opengate.utility import g4_units
+from opengate.actors.coincidences import cc_coincidences_sorter
+from merge_coinc import merge_singles_root
+from coinc_filters import kill_multiple_coinc, kill_same_volume_pairs
 
 
 def add_macaco1_materials(sim):
@@ -251,3 +257,43 @@ def add_macaco1_camera_digitizer(sim, scatterer, absorber):
     abs_file = thr_abs.get_output_path()
 
     return scatt_file, abs_file
+
+
+def add_macaco1_camera_offlinesorter(
+    scatt_root: Path,
+    abs_root: Path,
+    *,
+    time_window_ns: float = 25.0,
+    merged_root: Path | None = None,
+    scatt_tree: str | None = None,
+    abs_tree: str | None = None,
+    merged_tree: str = "Singles",
+):
+    """
+    Merge scatterer/absorber singles, run the Gate coincidence sorter,
+    then filter good coincidences.
+    """
+    if merged_root is None:
+        merged_root = Path(scatt_root).with_name("singles_merged.root")
+    merged_root = merge_singles_root(
+        scatt_root,
+        abs_root,
+        merged_root,
+        scatt_tree=scatt_tree,
+        abs_tree=abs_tree,
+        out_tree=merged_tree,
+        overwrite=True,
+    )
+
+    with uproot.open(merged_root) as f:
+        singles_tree = f[merged_tree]
+        coincidences = cc_coincidences_sorter(
+            singles_tree, time_window_ns * g4_units.ns
+        )
+
+    if coincidences is None or coincidences.empty:
+        return coincidences
+
+    coincidences = kill_multiple_coinc(coincidences)
+    coincidences = kill_same_volume_pairs(coincidences)
+    return coincidences
