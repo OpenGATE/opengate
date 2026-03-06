@@ -55,6 +55,19 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       });
 
   // -----------------------------------------------------
+  // Velocity
+  DefineDigiAttribute(
+      "PostVelocity", 'D',
+      FILLF { att->FillDValue(step->GetPostStepPoint()->GetVelocity()); });
+  DefineDigiAttribute(
+      "PreVelocity", 'D',
+      FILLF { att->FillDValue(step->GetPreStepPoint()->GetVelocity()); });
+  DefineDigiAttribute(
+      "Velocity", 'D',
+      // Velocity is the same as PreVelocity
+      FILLF { att->FillDValue(step->GetPreStepPoint()->GetVelocity()); });
+
+  // -----------------------------------------------------
   // Time
   DefineDigiAttribute(
       "LocalTime", 'D',
