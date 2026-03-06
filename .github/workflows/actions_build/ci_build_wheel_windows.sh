@@ -13,8 +13,13 @@ python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wheel wget colored
 
+if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
+    pip install cibuildwheel==3.4.0
+else
+    pip install cibuildwheel==2.21.1
+fi
+
 # For windows 2025, Need to add the certifi CA bundle to avoid SSL errors when downloading dependencies during the build. This is a workaround for cibuildwheel which does not handle this properly on Windows.
-pip install cibuildwheel
 python - << 'EOF'
 import certifi, shutil, os
 dst = os.path.expanduser(r"C:\certifi-ca.pem")
