@@ -1092,6 +1092,125 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             self.user_output.squared_counts.write_data_if_requested(which="merged")
 
 
+class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterActor):
+    """
+    Module for detecting coincident singles in different volumes.
+    """
+
+    user_info_defaults = {
+        "input_digi_collection": (
+            "Singles",
+            {
+                "doc": "Digi collection to be used as input.",
+            },
+        ),
+        "window": (
+            0,
+            {
+                "doc": "Coincidence window, maximum time difference between singles to be paired as a coincidence.",
+            },
+        ),
+        "offset": (
+            0,
+            {
+                "doc": "Offset of the coincidence window, for estimating the number of random coincidences.",
+            },
+        ),
+        "multiples_policy": (
+            "TakeAllGoods",
+            {
+                "doc": "Rule to apply when multiple coincidences occur in the same coincidence window",
+                "allowed_values": (
+                    "RemoveMultiples",
+                    "TakeAllGoods",
+                    "TakeWinnerOfGoods",
+                    "TakeIfOnlyOneGood",
+                    "TakeWinnerIfIsGood",
+                    "TakeWinnerIfAllAreGoods",
+                ),
+            },
+        ),
+        "multi_window": (
+            True,
+            {
+                "doc": "True if every single opens its own coincidence window, False if only one coincidence window can be open at a time.",
+            },
+        ),
+        "min_transaxial_distance": (
+            None,
+            {
+                "doc": "Minimally required transaxial distance between singles to be considered a valid coincidence.",
+            },
+        ),
+        "max_axial_distance": (
+            None,
+            {
+                "doc": "Maximally allowed axial distance between singles to be considered a valid coincidence.",
+            },
+        ),
+        "transaxial_plane": (
+            "XY",
+            {
+                "doc": "Transaxial plane.",
+                "allowed_values": ("XY", "YZ", "XZ"),
+            },
+        ),
+        "group_volume": (
+            None,
+            {
+                "doc": "Name of the volume in which coincidences are detected.",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
+            },
+        ),
+        "sorting_time": (
+            1e3,
+            {
+                "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "Attributes to be omitted from the output.",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateCoincidenceSorterActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def initialize(self):
+        DigitizerBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def set_group_by_depth(self):
+        depth = -1
+        if self.user_info.group_volume is not None:
+            depth = self.simulation.volume_manager.get_volume(
+                self.user_info.group_volume
+            ).volume_depth_in_tree
+        self.SetGroupVolumeDepth(depth)
+
+    def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
+        self.set_group_by_depth()
+        g4.GateCoincidenceSorterActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        g4.GateCoincidenceSorterActor.EndSimulationAction(self)
+
+
 class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
     """
     This actor is a DigitizerAdderActor + a discretization step:
@@ -1281,6 +1400,7 @@ process_cls(DigitizerEfficiencyActor)
 process_cls(DigitizerEnergyWindowsActor)
 process_cls(DigitizerHitsCollectionActor)
 process_cls(DigitizerProjectionActor)
+process_cls(CoincidenceSorterActor)
 process_cls(DigitizerReadoutActor)
 process_cls(PhaseSpaceActor)
 process_cls(DigiAttributeProcessDefinedStepInVolumeActor)
