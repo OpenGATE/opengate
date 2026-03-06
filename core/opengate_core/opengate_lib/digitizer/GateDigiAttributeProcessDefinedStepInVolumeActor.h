@@ -26,7 +26,7 @@ public:
   int GetNumberOfInteractions() const;
 
   std::string fProcessName;
-  int fNumberOfInteractions;
+  G4Cache<int> fNumberOfInteractions;
   GateDigiAttributeProcessDefinedStepInVolume *fAttribute;
 };
 
