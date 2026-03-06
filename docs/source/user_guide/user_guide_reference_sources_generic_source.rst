@@ -255,24 +255,69 @@ Do not forget to use an adequate physics list. You can define the polarization a
 Acceptance Angle
 ----------------
 
-It is possible to indicate an ``angle_acceptance_volume`` to the
-direction of a source. In that case, the particle will be created only
-if their position & direction make them intersect the given volume. This
-is for example useful for SPECT imaging in order to limit the particle
-creation to the ones that will have a chance to reach the detector. Note
-that the particles that will not intersect the volume will be created
-anyway but with a zero energy (so not tracked). This mechanism ensures
-to remain consistent with the required activity and timestamps of the
-particles, there is no need to scale with the solid angle. See for
-example ``test028`` test files for more details.
+It is possible to configure an ``angular_acceptance`` on the direction of a source. This mechanism controls which particles are accepted based on their direction relative to one or more ``target_volumes``. Two checks can be enabled independently and combined:
 
-Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
-= -cos𝜃.
+- ``enable_intersection_check``: accepts the particle only if its trajectory intersects the target volume(s). This is useful for SPECT imaging to limit particle creation to those that have a chance of reaching the detector.
+- ``enable_angle_check``: accepts the particle only if its direction lies within a given angular tolerance relative to a reference vector.
 
-So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY
-plane from -X to -Y.
+The behavior when a particle fails a check is controlled by ``policy``:
 
-.. image:: ../figures/thetaphi.png
+- ``"Rejection"`` with ``skip_policy="ZeroEnergy"``: the particle is kept but its energy is set to 0 (not tracked). This preserves consistency with the required activity and timestamps — no solid angle scaling is needed.
+- ``"Rejection"`` with ``skip_policy="SkipEvents"``: the event is discarded and retried. Slightly faster but the total number of events becomes unpredictable.
+- ``"ForceDirection"``: the particle direction is forced toward the target volume.
+
+Example using intersection check with rejection (ZeroEnergy):
+
+.. code-block:: python
+
+    source = sim.add_source("GenericSource", "mysource")
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "ZeroEnergy"
+    source.direction.angular_acceptance.target_volumes = ["spect_detector"]
+    source.direction.angular_acceptance.enable_intersection_check = True
+
+Example combining intersection and angle checks:
+
+.. code-block:: python
+
+    source = sim.add_source("GenericSource", "mysource")
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "SkipEvents"
+    source.direction.angular_acceptance.target_volumes = ["spect_detector"]
+    source.direction.angular_acceptance.enable_intersection_check = True
+    source.direction.angular_acceptance.enable_angle_check = True
+    source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
+    source.direction.angular_acceptance.angle_tolerance_max = 20 * sim.unit.deg
+
+See for example ``test028`` test files for more details (in particular ``test028_ge_nm670_spect_4_acc_angle_helpers.py``).
+
+For details on how Geant4 defines particle directions using 𝜃 and 𝜙 angles, see the `Particle initial direction`_ section.
+
+.. note::
+
+   **Historical note:**
+
+   - Until **March 2022**, this feature was called ``angle_acceptance_volume`` with a different structure.
+   - From **March 2022 to November 2025**, it was called ``acceptance_angle`` (i.e. ``source.direction.acceptance_angle``), with properties ``volumes``, ``intersection_flag``, ``normal_flag``, ``normal_vector``, and ``normal_tolerance``.
+   - From **November 2025** onwards, it was renamed to ``angular_acceptance`` and the properties were refactored:
+
+     .. list-table::
+        :header-rows: 1
+
+        * - ``acceptance_angle`` property (pre Nov 2025)
+          - ``angular_acceptance`` property (current)
+        * - ``volumes``
+          - ``target_volumes``
+        * - ``intersection_flag``
+          - ``enable_intersection_check``
+        * - ``normal_flag``
+          - ``enable_angle_check``
+        * - ``normal_vector``
+          - ``angle_check_reference_vector``
+        * - ``normal_tolerance``
+          - ``angle_tolerance_max``
+        * - *(implicit)*
+          - ``policy`` (``"Rejection"`` or ``"ForceDirection"``)
 
 
 Half-life
