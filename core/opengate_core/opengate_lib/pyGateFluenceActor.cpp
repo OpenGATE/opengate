@@ -39,6 +39,12 @@ void init_GateFluenceActor(py::module &m) {
            &GateFluenceActor::EndOfRunActionMasterThread)
       .def("GetPhysicalVolumeName", &GateFluenceActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateFluenceActor::SetPhysicalVolumeName)
+      .def("SetSumTracksFlag", &GateFluenceActor::SetSumTracksFlag)
+      .def("GetSumTracksFlag", &GateFluenceActor::GetSumTracksFlag)
+      .def("SetFluenceScoringMode", &GateFluenceActor::SetFluenceScoringMode)
+      .def("GetFluenceScoringMode", &GateFluenceActor::GetFluenceScoringMode)
       .def_readwrite("NbOfEvent", &GateFluenceActor::NbOfEvent)
-      .def_readwrite("cpp_fluence_image", &GateFluenceActor::cpp_fluence_image);
+      .def_readwrite("cpp_fluence_image", &GateFluenceActor::cpp_fluence_image)
+      .def_readwrite("cpp_fluence_sum_tracks_image",
+                     &GateFluenceActor::cpp_fluence_sum_tracks_image);
 }
