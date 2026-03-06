@@ -45,8 +45,16 @@ void init_GateTLEDoseActor(py::module &m) {
       .def("SetDoseFlag", &GateTLEDoseActor::SetDoseFlag)
       .def("GetDoseSquaredFlag", &GateTLEDoseActor::GetDoseSquaredFlag)
       .def("SetDoseSquaredFlag", &GateTLEDoseActor::SetDoseSquaredFlag)
-      .def("GetToWaterFlag", &GateTLEDoseActor::GetToWaterFlag)
-      .def("SetToWaterFlag", &GateTLEDoseActor::SetToWaterFlag)
+      .def("GetScoreInMaterial", &GateTLEDoseActor::GetScoreInMaterial)
+      .def("SetScoreInMaterial", &GateTLEDoseActor::SetScoreInMaterial)
+      .def("GetFastSPRCalculationFlag",
+           &GateTLEDoseActor::GetFastSPRCalculationFlag)
+      .def("SetFastSPRCalculationFlag",
+           &GateTLEDoseActor::SetFastSPRCalculationFlag)
+      .def("GetReferenceEnergySPR", &GateTLEDoseActor::GetReferenceEnergySPR)
+      .def("SetReferenceEnergySPR", &GateTLEDoseActor::SetReferenceEnergySPR)
+      .def("GetTransitionEnergySPR", &GateTLEDoseActor::GetTransitionEnergySPR)
+      .def("SetTransitionEnergySPR", &GateTLEDoseActor::SetTransitionEnergySPR)
       .def("GetCountsFlag", &GateTLEDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateTLEDoseActor::SetCountsFlag)
       .def("GetPhysicalVolumeName", &GateTLEDoseActor::GetPhysicalVolumeName)
