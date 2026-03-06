@@ -11,6 +11,7 @@ import gatetools.phsp
 import itk
 import numpy as np
 import scipy
+import SimpleITK as sitk
 import uproot
 from box import Box, BoxList
 from matplotlib.patches import Circle
@@ -19,7 +20,12 @@ from matplotlib.ticker import StrMethodFormatter
 from opengate.actors.simulation_stats_helpers import *
 
 from ..exception import color_error, color_ok, fatal
-from ..image import get_info_from_image, itk_image_from_array, write_itk_image
+from ..image import (
+    get_info_from_image,
+    get_info_from_image_sitk,
+    itk_image_from_array,
+    write_itk_image,
+)
 from ..utility import (
     LazyModuleLoader,
     ensure_filename_is_str,
@@ -196,7 +202,7 @@ def plot_img_axis(ax, img, label, axis="z"):
 
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = sitk.GetArrayViewFromImage(img)
     y = np.nansum(data, 2)
     y = np.nansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
@@ -207,7 +213,7 @@ def plot_img_z(ax, img, label):
 
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = sitk.GetArrayViewFromImage(img)
     y = np.nansum(data, 2)
     y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
@@ -218,7 +224,7 @@ def plot_img_y(ax, img, label):
 
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = sitk.GetArrayViewFromImage(img)
     y = np.nansum(data, 1)
     y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
@@ -261,7 +267,7 @@ def assert_images(
     axis="z",
     fig_name=None,
     sum_tolerance=5,
-    scaleImageValuesFactor=None,
+    scale_image_values_factor=None,
     sad_profile_tolerance=None,
     img_threshold=0,
     test_sad=True,
@@ -270,27 +276,28 @@ def assert_images(
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
-    img1 = itk.imread(ref_filename1)
-    img2 = itk.imread(filename2)
-    info1 = get_info_from_image(img1)
-    info2 = get_info_from_image(img2)
+    img1 = sitk.ReadImage(ref_filename1)
+    img2 = sitk.ReadImage(filename2)
+    info1 = get_info_from_image_sitk(img1)
+    info2 = get_info_from_image_sitk(img2)
 
     is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
     if slice_id is not None:
-        data1 = itk.GetArrayFromImage(img1)[slice_id]
-        data2 = itk.GetArrayFromImage(img2)[slice_id]
+        data1 = sitk.GetArrayFromImage(img1)[slice_id]
+        data2 = sitk.GetArrayFromImage(img2)[slice_id]
         data1 = np.expand_dims(data1, axis=0)
         data2 = np.expand_dims(data2, axis=0)
-        img1 = itk.GetImageFromArray(data1)
-        img2 = itk.GetImageFromArray(data2)
+        img1 = sitk.GetImageFromArray(data1)
+        img2 = sitk.GetImageFromArray(data2)
 
-    data1 = itk.GetArrayViewFromImage(img1).ravel()
-    data2 = itk.GetArrayViewFromImage(img2).ravel()
+    data1 = sitk.GetArrayFromImage(img1).ravel()
+    data2 = sitk.GetArrayFromImage(img2).ravel()
 
-    if scaleImageValuesFactor:
-        data2 *= scaleImageValuesFactor
+    if scale_image_values_factor:
+        data2 *= scale_image_values_factor
+        img2 *= float(scale_image_values_factor)
 
     # do not consider pixels with a certain value
     if ignore_value_data1 is None and ignore_value_data2 is None:
@@ -312,7 +319,7 @@ def assert_images(
     # because the ignore value was previously applied only after
     # taking the sum and some tests fail after that change
     # apply_ignore_mask_to_sum_check = False recreates the old behavior
-    if apply_ignore_mask_to_sum_check is True:
+    if apply_ignore_mask_to_sum_check:
         s1 = np.sum(d1)
         s2 = np.sum(d2)
     else:
@@ -2038,34 +2045,6 @@ def np_plot_integrated_profile(
     ax.plot(values, profile, label=label)
 
 
-def np_plot_profile_X_old(
-    ax, img, hline, num_slice, crop_center, crop_width, label, width
-):
-    c = int(hline - (crop_center[1] - crop_width[1] / 2))
-    img, _ = np_img_crop(img, crop_center, crop_width)
-    if width == 0:
-        img = img[num_slice, c : c + 1, :]
-    else:
-        img = img[num_slice, c - width : c + width, :]
-    y = np.mean(img, axis=0)
-    x = np.arange(0, len(y))
-    ax.plot(x, y, label=label)
-
-
-def np_plot_profile_Y_old(
-    ax, img, vline, num_slice, crop_center, crop_width, label, width
-):
-    c = int(vline - (crop_center[0] - crop_width[0] / 2))
-    img, _ = np_img_crop(img, crop_center, crop_width)
-    if width == 0:
-        img = img[num_slice, :, c : c + 1]
-    else:
-        img = img[num_slice, :, c - width : c + width]
-    x = np.mean(img, axis=1)
-    y = np.arange(0, len(x))
-    ax.plot(y, x, label=label)
-
-
 def np_plot_profile_X(
     ax,
     img,
@@ -2169,11 +2148,11 @@ def plot_compare_slice_profile(ref_names, test_names, options, stepped_line=Fals
     img_ref = []
     img_test = []
     for ref_name, test_name in zip(ref_names, test_names):
-        iref = itk.imread(ref_name)
+        iref = sitk.ReadImage(ref_name)
         spacing = (iref.GetSpacing()[1], iref.GetSpacing()[2])
-        iref = itk.array_view_from_image(iref)
-        itest = itk.imread(test_name)
-        itest = itk.array_view_from_image(itest) * scaling
+        iref = sitk.GetArrayViewFromImage(iref)
+        itest = sitk.ReadImage(test_name)
+        itest = sitk.GetArrayViewFromImage(itest) * scaling
         img_ref.append(iref)
         img_test.append(itest)
 
