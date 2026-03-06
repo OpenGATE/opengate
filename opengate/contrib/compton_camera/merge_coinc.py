@@ -13,7 +13,6 @@ from opengate.contrib.root_helpers import (
     root_write_tree,
 )
 
-
 REQUIRED_BRANCHES = (
     "EventID",
     "GlobalTime",
@@ -40,7 +39,7 @@ def _get_tree(f: uproot.ReadOnlyFile, preferred: str | None):
 def merge_singles_root(
     scatt_root: Path,
     abs_root: Path,
-    out_root: Path, #new merged ROOT file we will create.
+    out_root: Path,  # new merged ROOT file we will create.
     *,
     scatt_tree: str | None = None,
     abs_tree: str | None = None,
@@ -62,15 +61,15 @@ def merge_singles_root(
         t_sc = _get_tree(f_sc, scatt_tree)
         t_ab = _get_tree(f_ab, abs_tree)
 
-        #check that all needed columns exist
+        # check that all needed columns exist
         miss_sc = set(REQUIRED_BRANCHES) - set(t_sc.keys())
         miss_ab = set(REQUIRED_BRANCHES) - set(t_ab.keys())
         if miss_sc:
             raise ValueError(f"Scatterer singles missing branches: {sorted(miss_sc)}")
         if miss_ab:
             raise ValueError(f"Absorber singles missing branches: {sorted(miss_ab)}")
-        
-        #read singles from a ROOT tree and tag them with their detector layer.
+
+        # read singles from a ROOT tree and tag them with their detector layer.
         def _load_and_tag(tree: uproot.ReadOnlyTree, label: str) -> pd.DataFrame:
             cols = [c for c in REQUIRED_BRANCHES if c != "PreStepUniqueVolumeID"]
             df = tree.arrays(cols, library="pd")
@@ -81,9 +80,11 @@ def merge_singles_root(
         ab_df = _load_and_tag(t_ab, "absorber")
         merged = pd.concat([sc_df, ab_df], ignore_index=True)
         merged = merged[list(REQUIRED_BRANCHES)]
-        
+
         # cc_coincidences_sorter expects time-ordered singles
-        merged = merged.sort_values(["GlobalTime", "EventID"], kind="mergesort").reset_index(drop=True)
+        merged = merged.sort_values(
+            ["GlobalTime", "EventID"], kind="mergesort"
+        ).reset_index(drop=True)
 
         # Write merged tree as a TTree
         for col in merged.columns:
