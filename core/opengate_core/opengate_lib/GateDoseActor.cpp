@@ -308,6 +308,7 @@ double GateDoseActor::ComputeMeanUncertainty() {
         std::cout << "unc_i: " << unc_i << std::endl;
         std::cout << "edep: " << val << std::endl;
         std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+        unc_i = 0.;
       }
 
       unc_i = sqrt(unc_i) / (val);
@@ -316,6 +317,7 @@ double GateDoseActor::ComputeMeanUncertainty() {
         std::cout << "unc_i: " << unc_i << std::endl;
         std::cout << "edep: " << val << std::endl;
         std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+        unc_i = 1;
       }
       mean_unc += unc_i;
     }
