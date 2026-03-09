@@ -2150,9 +2150,9 @@ def plot_compare_slice_profile(ref_names, test_names, options, stepped_line=Fals
     for ref_name, test_name in zip(ref_names, test_names):
         iref = sitk.ReadImage(ref_name)
         spacing = (iref.GetSpacing()[1], iref.GetSpacing()[2])
-        iref = sitk.GetArrayViewFromImage(iref)
+        iref = sitk.GetArrayFromImage(iref)
         itest = sitk.ReadImage(test_name)
-        itest = sitk.GetArrayViewFromImage(itest) * scaling
+        itest = sitk.GetArrayFromImage(itest) * scaling
         img_ref.append(iref)
         img_test.append(itest)
 
