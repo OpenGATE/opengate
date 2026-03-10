@@ -599,7 +599,8 @@ class MaterialBuilder:
                 self.components[e.name] = e
             if line.startswith("+el"):
                 e = self.read_one_element(line)
-                self.components[e.name] = e
+                if e["f"] != 0:
+                    self.components[e.name] = e
 
     def read_one_element(self, line):
         # skip the initial +el
@@ -623,11 +624,6 @@ class MaterialBuilder:
         n = read_tag(s[1], "n")
         if not n:
             f = float(read_tag(s[1], "f"))
-            if f == 0:
-                fatal(
-                    f"Error during reading material database {self.material_database.current_filename}"
-                    f", for the sub material {elname}, the fraction 'f=' is 0."
-                )
         else:
             n = int(n)
         e = Box({"name": elname, "n": n, "f": f, "type": "element"})
