@@ -9,6 +9,7 @@ export PATH=/software/cmake/cmake/bin/:${PATH}
 source /software/geant4/bin/geant4make.sh
 export CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/:${CMAKE_PREFIX_PATH}
 /opt/python/${PYTHONFOLDER}/bin/pip install wget colored setuptools
+export PYBIND11_FINDPYTHON=OLD
 /opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
 auditwheel repair /home/core/dist/*.whl -w /software/wheelhouse/ --plat "manylinux2014_x86_64"
 cp -r /software/wheelhouse /home/
