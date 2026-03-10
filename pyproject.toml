@@ -21,7 +21,7 @@ name = "opengate"
 dynamic = ["version", "readme", "dependencies"]
 authors = [{ name = "Opengate collaboration", email = "david.sarrut@creatis.insa-lyon.fr" }]
 description = "Simulation for Medical Physics"
-license = { file = "LICENSE.md" }
+license-files = [ "LICENSE.md" ]
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
