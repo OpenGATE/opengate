@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import gc
+import time
+
 from test085_free_flight_helpers import *
-from opengate.tests import utility
+
 from opengate.contrib.root_helpers import *
 from opengate.sources.utility import *
-import gc
+from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
@@ -26,6 +29,7 @@ if __name__ == "__main__":
 
     # go
     sim.run()
+    time.sleep(3)
     stats = sim.get_actor("stats")
     print(stats)
 

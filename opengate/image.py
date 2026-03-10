@@ -90,6 +90,15 @@ def get_info_from_image(image):
     return info
 
 
+def get_info_from_image_sitk(image):
+    info = Box()
+    info.size = np.array(image.GetSize())
+    info.spacing = np.array(image.GetSpacing())
+    info.origin = np.array(image.GetOrigin())
+    info.dir = image.GetDirection()
+    return info
+
+
 def read_image_info(path_to_image):
     path_to_image = str(path_to_image)
     image_IO = itk.ImageIOFactory.CreateImageIO(
@@ -132,7 +141,7 @@ def get_translation_between_images_center(img_name1, img_name2):
 
 def get_translation_to_isocenter(img_filename):
     info = read_image_info(img_filename)
-    tr = info.size * info.spacing / 2.0 + info.origin
+    tr = (info.size - 1) * info.spacing / 2.0 + info.origin
     return tr
 
 
