@@ -45,6 +45,7 @@ def merge_singles_root(
     abs_tree: str | None = None,
     out_tree: str = "Singles",
     overwrite: bool = True,
+    save_branches: list[str] | None = None
 ) -> Path:
     scatt_root = Path(scatt_root)
     abs_root = Path(abs_root)
@@ -71,7 +72,6 @@ def merge_singles_root(
             raise ValueError(f"Scatterer singles missing branches: {sorted(miss_sc)}")
         if miss_ab:
             raise ValueError(f"Absorber singles missing branches: {sorted(miss_ab)}")
-
         # check that both trees have the same branches
         if branches_sc != branches_ab:
             only_sc = branches_sc - branches_ab
@@ -87,11 +87,18 @@ def merge_singles_root(
         ab_df = t_ab.arrays(library="pd")
 
         merged = pd.concat([sc_df, ab_df], ignore_index=True)
-        merged = merged[list(REQUIRED_BRANCHES)]
+        # Optionally filter branches before writing
+        if save_branches is not None:
+            missing = set(save_branches) - set(merged.columns)
+            if missing:
+                raise ValueError(f"Branches not found in merged data: {sorted(missing)}")
+
+            merged = merged[save_branches]
+
 
         # cc_coincidences_sorter expects time-ordered singles
         merged = merged.sort_values(
-            ["GlobalTime", "EventID"], kind="mergesort"
+            ["EventID", "GlobalTime"], kind="mergesort"
         ).reset_index(drop=True)
 
         # Write merged tree as a TTree
@@ -109,10 +116,14 @@ def merge_singles_root(
             if out_tree not in f_chk:
                 raise ValueError("Merged singles tree is empty; no data to write.")
             out_keys = set(f_chk[out_tree].keys())
-        if out_keys != set(REQUIRED_BRANCHES):
-            raise ValueError(
-                "Merged tree does not match required branches. "
-                f"Expected {sorted(REQUIRED_BRANCHES)}, got {sorted(out_keys)}"
-            )
+
+        # Warn if "required branches" for sorting are not included in the merged file
+        missing_required = set(REQUIRED_BRANCHES) - out_keys
+        if missing_required:
+            print(
+                "WARNING: The merged tree does not include all required branches for sorting.\n"
+                f"Missing required branches: {sorted(missing_required)}\n"
+                f"Required branches are: {sorted(REQUIRED_BRANCHES)}"
+         )
 
     return out_root
