@@ -3,7 +3,6 @@ import platform
 import shutil
 import sys
 import tarfile
-import urllib.request
 from pathlib import Path
 from time import sleep
 
@@ -24,17 +23,21 @@ data_packages = {
     "G4INCLDATA": "https://cern.ch/geant4-data/datasets/G4INCL.1.3.tar.gz",
     "G4ENSDFSTATEDATA": "https://cern.ch/geant4-data/datasets/G4ENSDFSTATE.3.0.tar.gz",
     "G4CHANNELINGDATA": "https://cern.ch/geant4-data/datasets/G4CHANNELING.2.0.tar.gz",
+}
+
+# optional G4 data
+optional_data_packages = {
     "G4PARTICLEHPDATA": "https://cern.ch/geant4-data/datasets/G4TENDL.1.4.tar.gz",  # optional but necessary for charged particles
-    "G4LENDDATA": "ftp://gdo142.ucllnl.org/LEND_GNDS2.0/LEND_GNDS2.0_ENDF.BVII.1.tar.gz",  # optional but necessary for neutrons with ShieldingLEND
+    "G4LENDDATA": "https://cern.ch/geant4-data/datasets/LEND_GNDS2.0_ENDF.BVII.1.tar.gz",  # optional but necessary for neutrons with ShieldingLEND
 }
 
 
 def check_g4_data():
     # check if the G4 data folder is there
-    dataLocation = get_g4_data_folder()
-    if not dataLocation.exists():
+    data_location = get_g4_data_folder()
+    if not data_location.exists():
         print("Geant4 data folder does not exist.")
-        print("I will create it for you here: " + str(dataLocation))
+        print("I will create it for you here: " + str(data_location))
         print("... and download the G4 data.")
         print("This will take a moment.")
         download_g4_data()
@@ -64,15 +67,12 @@ def download_with_resume(url, out, retries=5, delay=10):
 
     for attempt in range(retries):
         try:
-            if "ftp" in url:
-                urllib.request.urlretrieve(url, temp_file)
-            else:
-                with requests.get(url, headers=headers, stream=True) as r:
-                    r.raise_for_status()
-                    with open(temp_file, "ab") as f:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
+            with requests.get(url, headers=headers, stream=True) as r:
+                r.raise_for_status()
+                with open(temp_file, "ab") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
             os.rename(temp_file, str(out))
             print(f"Downloaded {url} successfully.")
             return
@@ -88,10 +88,6 @@ def download_with_resume(url, out, retries=5, delay=10):
 
 # Download Geant4 data:
 def download_g4_data(missing_g4_Data=None):
-    data_location = get_g4_data_folder()
-    data_location.mkdir(parents=True, exist_ok=True)
-    folder_names_from_tar = set()
-
     if missing_g4_Data is None:
         data_packages_needed = list(data_packages.values())
     else:
@@ -102,48 +98,83 @@ def download_g4_data(missing_g4_Data=None):
         ]
 
     for i, package in enumerate(data_packages_needed):
-        print(f"\nDownloading {i + 1}/{len(data_packages_needed)} {package}")
-
-        # download the archive (with resume if the connexion failed)
-        package_archive = package.split("/")[-1]
-        out = os.path.join(data_location, package_archive)
-        download_with_resume(package, out)
-        # packageArchive = wget.download(package, out=dataLocation)
-        package_archive = out
-
-        with tarfile.open(package_archive) as tar:
-            # extract the base folder from the tar archive
-            # into which the G4 data will be extracted
-            extract_to_folder = sorted(tar.getnames(), key=lambda n: len(n))[0]
-            folder_names_from_tar.update([extract_to_folder])
-            extract_to_path = data_location / extract_to_folder
-            # remove the directory into which tar wants extract if it
-            # already exists to avoid permission error
-            if extract_to_path.exists():
-                print(f"\nNeed to extract into {extract_to_path},")
-                print("but that directory already exists.")
-                print("I need to remove it.")
-                shutil.rmtree(extract_to_path)
-            print("Extracting the data archive (tar) ...")
-            tar.extractall(path=data_location)
-            print("done")
-        os.remove(package_archive)
+        download_g4_one_data_folder(i, package, len(data_packages_needed))
     check_for_non_required_files_folders()
 
 
+def download_g4_optional_data(missing_g4_Data=None):
+    if missing_g4_Data is None:
+        data_packages_needed = list(optional_data_packages.values())
+    else:
+        data_packages_needed = [
+            package
+            for g4_data, package in optional_data_packages.items()
+            if g4_data in missing_g4_Data
+        ]
+
+    for i, package in enumerate(data_packages_needed):
+        download_g4_one_data_folder(i, package, len(data_packages_needed))
+
+
+def download_g4_one_data_folder(i, package, total_number):
+    data_location = get_g4_data_folder()
+    data_location.mkdir(parents=True, exist_ok=True)
+    folder_names_from_tar = set()
+    print(f"\nDownloading {i + 1}/{total_number} {package}")
+
+    # download the archive (with resume if the connexion failed)
+    package_archive = package.split("/")[-1]
+    out = os.path.join(data_location, package_archive)
+    download_with_resume(package, out)
+    # packageArchive = wget.download(package, out=dataLocation)
+    package_archive = out
+
+    with tarfile.open(package_archive) as tar:
+        # extract the base folder from the tar archive
+        # into which the G4 data will be extracted
+        extract_to_folder = sorted(tar.getnames(), key=lambda n: len(n))[0]
+        folder_names_from_tar.update([extract_to_folder])
+        extract_to_path = data_location / extract_to_folder
+        # remove the directory into which tar wants extract if it
+        # already exists to avoid permission error
+        if extract_to_path.exists():
+            print(f"\nNeed to extract into {extract_to_path},")
+            print("but that directory already exists.")
+            print("I need to remove it.")
+            shutil.rmtree(extract_to_path)
+        print("Extracting the data archive (tar) ...")
+        tar.extractall(path=data_location)
+        print("done")
+    os.remove(package_archive)
+
+
 def check_for_non_required_files_folders():
-    """Check if there are old data folders and inform the user."""
-    dataLocation = get_g4_data_folder()
+    """Check if there are old data folders or missing optional folders and inform the user."""
+    data_location = get_g4_data_folder()
     required_paths = set(get_g4_data_paths().values())
-    existing_paths = set([(dataLocation / f) for f in dataLocation.iterdir()])
+    existing_paths = set([(data_location / f) for f in data_location.iterdir()])
     outdated_paths = existing_paths.difference(required_paths)
     if len(outdated_paths) > 0:
         print("\n" + 10 * "*")
-        print(f"The following files and folders in {dataLocation}")
+        print(f"The following files and folders in {data_location}")
         print(f"are not required and can be safely deleted:\n")
         for f in outdated_paths:
             print(str(f))
         print("\n" + 10 * "*")
+    if not os.path.isdir(data_location / "G4TENDL1.4"):
+        print(
+            "You can download optional data G4PARTICLEHPDATA: "
+            + str(optional_data_packages["G4PARTICLEHPDATA"])
+            + " and move them to "
+            + str(data_location)
+        )
+    if not os.path.isdir(data_location / "LEND_GNDS2.0_ENDF.BVII.1"):
+        print(
+            "You can download optional data G4LENDDATA: "
+            + str(optional_data_packages["G4LENDDATA"])
+            + " and move them to "
+            + str(data_location)
+        )
 
 
 def get_missing_g4_data() -> list:
@@ -164,6 +195,16 @@ def get_missing_g4_data() -> list:
         return []
 
 
+def get_missing_g4_optional_data() -> list:
+    data_location = get_g4_data_folder()
+    missing_data = []
+    if not os.path.isdir(data_location / "G4TENDL1.4"):
+        missing_data.append("G4PARTICLEHPDATA")
+    if not os.path.isdir(data_location / "LEND_GNDS2.0_ENDF.BVII.1"):
+        missing_data.append("G4LENDDATA")
+    return missing_data
+
+
 # Return Geant4 data folder:
 def get_g4_data_folder() -> Path:
     package_location = Path(__file__).resolve().parent
@@ -173,7 +214,7 @@ def get_g4_data_folder() -> Path:
 # Return Geant4 data path:
 def get_g4_data_paths() -> dict:
     data_location = get_g4_data_folder()
-    # 11.4.0
+    # G4 11.4.0
     g4_data_path = {
         "G4NEUTRONHPDATA": data_location / "G4NDL4.7.1",
         "G4LEDATA": data_location / "G4EMLOW8.8",
@@ -187,9 +228,12 @@ def get_g4_data_paths() -> dict:
         "G4INCLDATA": data_location / "G4INCL1.3",
         "G4ENSDFSTATEDATA": data_location / "G4ENSDFSTATE3.0",
         "G4CHANNELINGDATA": data_location / "G4CHANNELING2.0",
-        "G4PARTICLEHPDATA": data_location / "G4TENDL1.4",
-        "G4LENDDATA": data_location / "LEND_GNDS2.0_ENDF.BVII.1",
     }
+    if os.path.isdir(data_location / "G4TENDL1.4"):
+        g4_data_path["G4PARTICLEHPDATA"] = data_location / "G4TENDL1.4"
+    if os.path.isdir(data_location / "LEND_GNDS2.0_ENDF.BVII.1"):
+        g4_data_path["G4LENDDATA"] = data_location / "LEND_GNDS2.0_ENDF.BVII.1"
+
     return g4_data_path
 
 

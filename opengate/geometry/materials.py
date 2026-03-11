@@ -628,7 +628,7 @@ class MaterialBuilder:
             f = float(read_tag(s[1], "f"))
             if f == 0:
                 warning(
-                    f"Waring during reading material database {self.material_database.current_filename}"
+                    f"Warning during reading material database {self.material_database.current_filename}"
                     f", for the sub material {elname}, the fraction 'f=' is 0. Remove it!"
                 )
         else:
