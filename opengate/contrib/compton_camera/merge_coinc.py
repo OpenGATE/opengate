@@ -61,23 +61,31 @@ def merge_singles_root(
         t_sc = _get_tree(f_sc, scatt_tree)
         t_ab = _get_tree(f_ab, abs_tree)
 
+        branches_sc = set(t_sc.keys())
+        branches_ab = set(t_ab.keys())
+
         # check that all needed columns exist
-        miss_sc = set(REQUIRED_BRANCHES) - set(t_sc.keys())
-        miss_ab = set(REQUIRED_BRANCHES) - set(t_ab.keys())
+        miss_sc = set(REQUIRED_BRANCHES) - branches_sc
+        miss_ab = set(REQUIRED_BRANCHES) - branches_ab
         if miss_sc:
             raise ValueError(f"Scatterer singles missing branches: {sorted(miss_sc)}")
         if miss_ab:
             raise ValueError(f"Absorber singles missing branches: {sorted(miss_ab)}")
 
-        # read singles from a ROOT tree and tag them with their detector layer.
-        def _load_and_tag(tree: uproot.ReadOnlyTree, label: str) -> pd.DataFrame:
-            cols = [c for c in REQUIRED_BRANCHES if c != "PreStepUniqueVolumeID"]
-            df = tree.arrays(cols, library="pd")
-            df["PreStepUniqueVolumeID"] = label
-            return df
+        # check that both trees have the same branches
+        if branches_sc != branches_ab:
+            only_sc = branches_sc - branches_ab
+            only_ab = branches_ab - branches_sc
 
-        sc_df = _load_and_tag(t_sc, "scatterer")
-        ab_df = _load_and_tag(t_ab, "absorber")
+            if only_sc:
+                raise ValueError(f"Branches only in scatterer: {sorted(only_sc)}")
+            if only_ab:
+                raise ValueError(f"Branches only in absorber: {sorted(only_ab)}")
+
+        # Load all branches from each tree into pandas
+        sc_df = t_sc.arrays(library="pd")
+        ab_df = t_ab.arrays(library="pd")
+
         merged = pd.concat([sc_df, ab_df], ignore_index=True)
         merged = merged[list(REQUIRED_BRANCHES)]
 
