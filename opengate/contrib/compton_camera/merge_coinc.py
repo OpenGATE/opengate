@@ -45,7 +45,7 @@ def merge_singles_root(
     abs_tree: str | None = None,
     out_tree: str = "Singles",
     overwrite: bool = True,
-    save_branches: list[str] | None = None
+    save_branches: list[str] | None = None,
 ) -> Path:
     scatt_root = Path(scatt_root)
     abs_root = Path(abs_root)
@@ -91,10 +91,11 @@ def merge_singles_root(
         if save_branches is not None:
             missing = set(save_branches) - set(merged.columns)
             if missing:
-                raise ValueError(f"Branches not found in merged data: {sorted(missing)}")
+                raise ValueError(
+                    f"Branches not found in merged data: {sorted(missing)}"
+                )
 
             merged = merged[save_branches]
-
 
         # cc_coincidences_sorter expects time-ordered singles
         merged = merged.sort_values(
@@ -124,6 +125,6 @@ def merge_singles_root(
                 "WARNING: The merged tree does not include all required branches for sorting.\n"
                 f"Missing required branches: {sorted(missing_required)}\n"
                 f"Required branches are: {sorted(REQUIRED_BRANCHES)}"
-         )
+            )
 
     return out_root
