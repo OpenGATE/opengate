@@ -544,10 +544,6 @@ Once defined, this custom attribute behaves like any other standard attribute (e
    * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
    * **Volume Name:** Must be the name of a volume existing in the simulation.
 
-.. note::
-   * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
-   * **Volume Name:** Must be the name of a volume existing in the simulation.
-
 Reference
 ~~~~~~~~~
 
