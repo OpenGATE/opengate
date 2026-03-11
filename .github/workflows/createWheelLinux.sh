@@ -11,6 +11,7 @@ mkdir opengate_core/plugins
 cp -r /lib64/qt6/plugins/platforms/* opengate_core/plugins/
 cp -r /lib64/qt6/plugins/imageformats opengate_core/plugins/
 /opt/python/${PYTHONFOLDER}/bin/pip install wget colored setuptools
+export PYBIND11_FINDPYTHON=OLD
 /opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
 archi=`uname -m`
 if [ "$(uname -m)" = "aarch64" ]; then
