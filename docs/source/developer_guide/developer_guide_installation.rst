@@ -142,6 +142,7 @@ Once it is done, you can compile ``opengate_core``.
    pip install colored
    cd <path-to-opengate>/core
    export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
+   export MAX_JOBS=$(nproc)  # optional environment variable to set the number of parallel jobs for compilation
    pip install -e . -v
 
 The pip install will run cmake, compile the sources and create the

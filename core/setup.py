@@ -94,7 +94,8 @@ class CMakeBuild(build_ext):
         else:
             cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
-            build_args += ["--", "-j4"]
+            jobs = os.environ.get("MAX_JOBS", "4")
+            build_args += ["--", f"-j{jobs}"]
 
         env = os.environ.copy()
 
