@@ -1,8 +1,8 @@
-import glob
-import json
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 from pathlib import Path
-
 import click
 import itk
 import matplotlib.colors as mcolors
