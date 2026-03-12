@@ -1,16 +1,12 @@
-import glob
-import json
-import os
-import sys
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+import os
 import click
 import itk
-import matplotlib.pyplot as plt
 import numpy as np
 import pymedphys
 from box import Box
-
-import opengate
 from opengate.contrib.linacs import dicomrtplan as rtplan
 
 

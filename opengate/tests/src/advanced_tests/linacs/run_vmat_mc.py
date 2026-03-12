@@ -1,14 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import glob
 import json
 import os
 import shutil
 import sys
 import time
-
 import click
 import numpy as np
-import VMAT_MC as t
-
+import vmat_mc_helpers as t
 import opengate as gate
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])

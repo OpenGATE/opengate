@@ -1,12 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import opengate as gate
 from opengate.tests import utility
-from opengate.utility import g4_units
 from opengate.contrib.linacs import elektaversa as versa
 from opengate.contrib.linacs import dicomrtplan as rtplan
-from scipy.spatial.transform import Rotation
 import numpy as np
 import itk
 
