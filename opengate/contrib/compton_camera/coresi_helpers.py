@@ -214,17 +214,17 @@ def coresi_convert_root_data(root_filename, branch_name, output_filename):
     with open(output_filename, "w") as fout:
         n = len(arrays["X1"])
         for i in range(n):
-            # Energy in keV and position in cm, as expected by coresi
+            # Energy in keV and position in mm, as expected by coresi
             line = (
                 f"2\t1\t"
-                f"{arrays['X1'][i]*0.1:.2f}\t"
-                f"{arrays['Y1'][i]*0.1:.2f}\t"
-                f"{arrays['Z1'][i]*0.1:.2f}\t"
+                f"{arrays['X1'][i]:.2f}\t"
+                f"{arrays['Y1'][i]:.2f}\t"
+                f"{arrays['Z1'][i]:.2f}\t"
                 f"{arrays['Energy1'][i]*1000:.2f}\t"
                 f"2\t"
-                f"{arrays['X2'][i]*0.1:.2f}\t"
-                f"{arrays['Y2'][i]*0.1:.2f}\t"
-                f"{arrays['Z2'][i]*0.1:.2f}\t"
+                f"{arrays['X2'][i]:.2f}\t"
+                f"{arrays['Y2'][i]:.2f}\t"
+                f"{arrays['Z2'][i]:.2f}\t"
                 f"{arrays['EnergyRest'][i]*1000:.2f}\t"
                 f"3\t0\t0\t0\t0\n"
             )
