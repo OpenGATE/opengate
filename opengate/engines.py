@@ -84,6 +84,10 @@ class SourceEngine(EngineBase):
         # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
         self.source_manager_options = Box()
 
+    @property
+    def source_manager(self): 
+        return self.simulation_engine.simulation.source_manager
+
     def close(self):
         if self.verbose_close:
             warning("Closing SourceEngine")
