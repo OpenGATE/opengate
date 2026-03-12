@@ -29,7 +29,6 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
                 "(will be automatically normalized to sum=1)",
                 "is_input_file": True,
                 "dynamic": True,
-
             },
         )
     }
@@ -90,7 +89,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
         pg = self.GetSPSVoxelPosDistribution()
         pg.SetCumulativeDistributionFunction(cdf_z, cdf_y, cdf_x)
 
-    def update_activity_image(self, filename): 
+    def update_activity_image(self, filename):
         # read source image
         self.itk_image = itk.imread(ensure_filename_is_str(self.image))
 
@@ -99,7 +98,6 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
 
         # create Cumulative Distribution Function
         self.cumulative_distribution_functions()
-
 
     def initialize(self, run_timing_intervals):
         self.update_activity_image(self.image)
