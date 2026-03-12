@@ -85,7 +85,7 @@ class SourceEngine(EngineBase):
         self.source_manager_options = Box()
 
     @property
-    def source_manager(self): 
+    def source_manager(self):
         return self.simulation_engine.simulation.source_manager
 
     def close(self):
@@ -128,7 +128,6 @@ class SourceEngine(EngineBase):
             dynamic_source_actor.priority = 1
             for s in self.source_manager.dynamic_sources:
                 dynamic_source_actor.source_changers.extend(s.create_changers())
-
 
     def create_master_source_manager(self):
         # create the master source for the masterThread

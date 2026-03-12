@@ -37,6 +37,7 @@ class DynamicActorBase(ActorBase, g4.GateVActor):
     def initialize(self):
         ActorBase.initialize(self)
 
+
 class DynamicGeometryActor(DynamicActorBase, g4.GateVActor):
 
     def initialize(self):
@@ -142,7 +143,6 @@ class ChangerBase(GateObject):
             f"You are trying to call the method in the base class {type(self)}, "
             f"but it is only available in classes inheriting from it. "
         )
-
 
 
 class GeometryChanger(ChangerBase):
@@ -306,9 +306,9 @@ class VolumeRotationChanger(GeometryChanger):
         self.g4_physical_volume.SetRotationHepRep3x3(self.g4_rotations[run_id])
 
 
-class SourceActivityImageChanger(SourceChanger): 
+class SourceActivityImageChanger(SourceChanger):
 
-        # hints for IDE
+    # hints for IDE
     activity_images: Optional[list]
 
     user_info_defaults = {
