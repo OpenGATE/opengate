@@ -617,7 +617,7 @@ This module applies blurring to an attribute, such as time or energy. The method
 
 For Gaussian blurring, specify the sigma or FWHM with `blur_sigma` or `blur_fwhm`.
 
-For InverseSquare blurring, use `blur_reference_value` and `blur_reference_value` (equation TBD).
+For InverseSquare blurring, specify the reference energy value with `blur_reference_value` and the FWHM (at the reference energy) with `blur_resolution` (equation TBD).
 
 For Linear blurring, specify `blur_reference_value`, `blur_slope`, and `blur_reference_value` (equation TBD).
 
