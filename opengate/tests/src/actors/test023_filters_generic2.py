@@ -54,23 +54,46 @@ if __name__ == "__main__":
 
     # filters
     filter1 = AttributeComparisonFilter(
-        sim, attribute="GlobalTime", value_min=30 * sec, value_max=70 * sec
+        sim, attribute="GlobalTime", compare_value=30 * sec, compare_operation="gt"
     )
     filter2 = AttributeComparisonFilter(
         sim,
         attribute="KineticEnergy",
-        value_min=300 * keV,
-        value_max=400 * keV,
-        include_min=False,
+        compare_value=300 * keV,
+        compare_operation="gt",
     )
     filter3 = AttributeComparisonFilter(
-        sim, attribute="ParticleName", mode="equal", value_min="gamma"
+        sim, attribute="ParticleName", compare_value="gamma", compare_operation="eq"
     )
 
     # combined filters
-    combined_filter = BooleanFilter(sim, filters=[filter1, filter2], operator="and")
     combined_filter = BooleanFilter(
-        sim, filters=[combined_filter, filter3], operator="and"
+        sim,
+        filters=[
+            filter1,
+            AttributeComparisonFilter(
+                sim,
+                attribute="GlobalTime",
+                compare_value=70 * sec,
+                compare_operation="lt",
+            ),
+        ],
+        operator="and",
+    )
+    combined_filter = BooleanFilter(
+        sim,
+        filters=[
+            combined_filter,
+            filter2,
+            AttributeComparisonFilter(
+                sim,
+                attribute="KineticEnergy",
+                compare_value=400 * keV,
+                compare_operation="lt",
+            ),
+            filter3,
+        ],
+        operator="and",
     )
 
     # phsp

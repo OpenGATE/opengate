@@ -5,13 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-
 #include "../digitizer/GateDigiCollectionManager.h"
 #include "../digitizer/GateTDigiAttribute.h"
 #include "../GateHelpersDict.h"
 #include "../digitizer/GateDigiAttributeManager.h"
-#include <limits>
 #include <pybind11/stl.h>
+#include <sstream>
 
 template <typename T>
 GateAttributeComparisonFilter<T>::GateAttributeComparisonFilter() : GateVFilter() {
@@ -21,24 +20,8 @@ template <typename T>
    void GateAttributeComparisonFilter<T>::InitializeUserInfo(py::dict &user_info) {
       GateVFilter::InitializeUserInfo(user_info);
       fAttributeName = DictGetStr(user_info, "attribute");
-
-     // Check for value_min: must exist AND not be None
-       if (user_info.contains("value_min") && !user_info["value_min"].is_none()) {
-         fValueMin = user_info["value_min"].cast<T>();
-       } else {
-         fValueMin = std::numeric_limits<T>::lowest();
-       }
-
-       // Check for value_max: must exist AND not be None
-       if (user_info.contains("value_max") && !user_info["value_max"].is_none()) {
-         fValueMax = user_info["value_max"].cast<T>();
-       } else {
-         fValueMax = std::numeric_limits<T>::max();
-       }
-
-      // New: Handle strict vs non-strict flags
-      fIncludeMin = user_info["include_min"].cast<bool>();
-      fIncludeMax = user_info["include_max"].cast<bool>();
+      fCompareValue = user_info["compare_value"].cast<T>();
+      fCompareOperation = DictGetStr(user_info, "compare_operation");
 
       // We create a copy for thread safety during the simulation
       auto *dgm = GateDigiAttributeManager::GetInstance();
@@ -60,13 +43,29 @@ template <typename T>
       fAttribute->ProcessHits(step);
       // Get the first single value
       const auto value = fAttribute->GetSingleValue();
-      bool result = true;
 
-      if (fIncludeMin) { if (value < fValueMin) result = false; }
-      else { if (value <= fValueMin) result = false; }
+      if (fCompareOperation == "lt") {
+         return value < fCompareValue;
+      }
+      if (fCompareOperation == "le") {
+         return value <= fCompareValue;
+      }
+      if (fCompareOperation == "gt") {
+         return value > fCompareValue;
+      }
+      if (fCompareOperation == "ge") {
+         return value >= fCompareValue;
+      }
+      if (fCompareOperation == "eq") {
+         return value == fCompareValue;
+      }
+      if (fCompareOperation == "ne") {
+         return value != fCompareValue;
+      }
 
-      if (fIncludeMax) { if (value > fValueMax) result = false; }
-      else { if (value >= fValueMax) result = false; }
-
-      return result;
+      std::ostringstream oss;
+      oss << "Unknown compare_operation '" << fCompareOperation
+          << "' for attribute filter '" << fAttributeName << "'.";
+      Fatal(oss.str());
+      return false;
    }

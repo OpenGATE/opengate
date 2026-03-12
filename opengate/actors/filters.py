@@ -102,35 +102,51 @@ class AttributeProxy:
     # --- Standard Operators (F < value) ---
     def __lt__(self, other):  # F < other
         return AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_max=other, include_max=False
+            self.sim,
+            attribute=self.name,
+            compare_value=other,
+            compare_operation="lt",
         )
 
     def __le__(self, other):  # F <= other
         return AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_max=other, include_max=True
+            self.sim,
+            attribute=self.name,
+            compare_value=other,
+            compare_operation="le",
         )
 
     def __gt__(self, other):  # F > other
         return AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_min=other, include_min=False
+            self.sim,
+            attribute=self.name,
+            compare_value=other,
+            compare_operation="gt",
         )
 
     def __ge__(self, other):  # F >= other
         return AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_min=other, include_min=True
+            self.sim,
+            attribute=self.name,
+            compare_value=other,
+            compare_operation="ge",
         )
 
     def __eq__(self, other):  # F == other
         return AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_min=other, value_max=other
+            self.sim,
+            attribute=self.name,
+            compare_value=other,
+            compare_operation="eq",
         )
 
     def __ne__(self, other):  # F != other
-        # This returns a 'NOT' BooleanFilter wrapping an 'EQUAL' filter
-        eq_filter = AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_min=other, value_max=other
+        return AttributeComparisonFilter(
+            self.sim,
+            attribute=self.name,
+            compare_value=other,
+            compare_operation="ne",
         )
-        return ~eq_filter
 
     # Reflected not equal: other != F
     def __rne__(self, other):
@@ -170,7 +186,10 @@ class AttributeProxy:
 
     def eq(self, value):
         return AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_min=value, value_max=value
+            self.sim,
+            attribute=self.name,
+            compare_value=value,
+            compare_operation="eq",
         )
 
     def contains(self, value: str):
@@ -178,15 +197,38 @@ class AttributeProxy:
         Usage: F("ParticleName").contains("gamma")
         """
         return AttributeComparisonFilter(
-            self.sim, attribute=self.name, value_min=value, mode="contains"
+            self.sim,
+            attribute=self.name,
+            compare_value=value,
+            compare_operation="contains",
         )
 
     def not_contains(self, value: str):
         """
         Usage: F("ParticleName").not_contains("gamma")
         """
-        # Create the contains filter and wrap it in a NOT
-        return ~self.contains(value)
+        return AttributeComparisonFilter(
+            self.sim,
+            attribute=self.name,
+            compare_value=value,
+            compare_operation="not_contains",
+        )
+
+    def startswith(self, value: str):
+        return AttributeComparisonFilter(
+            self.sim,
+            attribute=self.name,
+            compare_value=value,
+            compare_operation="start",
+        )
+
+    def not_startswith(self, value: str):
+        return AttributeComparisonFilter(
+            self.sim,
+            attribute=self.name,
+            compare_value=value,
+            compare_operation="not_start",
+        )
 
     def __invert__(self):
         fatal(
@@ -249,25 +291,26 @@ class AttributeComparisonFilter(FilterBase):
 
     user_info_defaults = {
         "attribute": (None, {"doc": "Attribute name to be considered."}),
-        "value_min": (None, {"doc": "Lower bound or target value."}),
-        "value_max": (None, {"doc": "Upper bound."}),
-        "include_min": (None, {"doc": "If False, strict comparision."}),
-        "include_max": (None, {"doc": "If False, strict comparision."}),
+        "compare_value": (None, {"doc": "Reference value used by the comparison."}),
+        "compare_operation": (
+            None,
+            {"doc": "Comparison operator shorthand such as lt, le, gt, ge, eq."},
+        ),
     }
 
     def __init__(self, sim, *args, **kwargs):
         if "name" not in kwargs:
             att = kwargs["attribute"]
-            vmax = kwargs.get("value_max", "")
-            vmin = kwargs.get("value_min", "")
-            kwargs["name"] = f"filter_{att}_{vmin}_{vmax}{uuid.uuid4()}"
+            op = kwargs.get("compare_operation", "")
+            value = kwargs.get("compare_value", "")
+            kwargs["name"] = f"filter_{att}_{op}_{value}{uuid.uuid4()}"
         FilterBase.__init__(self, sim, *args, **kwargs)
         self.__initcpp__()
 
     def __new__(cls, *args, **kwargs):
         # If the user is calling the factory, choose the correct subclass
         if cls is AttributeComparisonFilter:
-            val = kwargs.get("value_min")
+            val = kwargs.get("compare_value")
             if isinstance(val, str):
                 cls = AttributeFilterString
             elif isinstance(val, int):
@@ -307,10 +350,6 @@ class AttributeFilterInt(AttributeComparisonFilter, g4.GateAttributeFilterInt):
 
 
 class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterString):
-    user_info_defaults = {
-        "mode": ("equal", {"doc": "Comparison mode: 'equal', 'contains', 'start'."}),
-    }
-
     def __init__(self, sim, *args, **kwargs):
         AttributeComparisonFilter.__init__(self, sim, *args, **kwargs)
 

@@ -3,7 +3,6 @@
 
 import numpy as np
 import uproot
-from box import Box
 
 import opengate as gate
 from opengate.actors.filters import GateFilter
@@ -95,13 +94,10 @@ if __name__ == "__main__":
     # stat.write(paths.output_ref / f"{sim_name}.txt")
 
     # for the tests
-    filter1 = Box()
-    filter1.value_min = 20 * sec
-    filter1.value_max = 70 * sec
-
-    filter2 = Box()
-    filter2.value_min = 300 * keV
-    filter2.value_max = 1200 * keV
+    lower_bound_filter1 = 20 * sec
+    upper_bound_filter1 = 70 * sec
+    lower_bound_filter2 = 300 * keV
+    upper_bound_filter2 = 1200 * keV
 
     # check 'or'
     print()
@@ -111,12 +107,12 @@ if __name__ == "__main__":
     ene = tree.arrays(["GlobalTime", "KineticEnergy"])["KineticEnergy"]
     emin = np.min(ene)
     emax = np.max(ene)
-    is_ok = emin >= filter2.value_min and emax <= filter2.value_max
+    is_ok = emin >= lower_bound_filter2 and emax <= upper_bound_filter2
     utility.print_test(is_ok, f"Ene = {len(ene)} min={emin/keV} max={emax/keV}")
     ti = tree.arrays(["GlobalTime", "KineticEnergy"])["GlobalTime"]
     tmin = np.min(ti)
     tmax = np.max(ti)
-    is_ok = tmin >= filter1.value_min and tmax <= filter1.value_max and is_ok
+    is_ok = tmin >= lower_bound_filter1 and tmax <= upper_bound_filter1 and is_ok
     utility.print_test(is_ok, f"Time = {len(ti)} min={tmin/sec} max={tmax/sec}")
 
     # check 'or'
@@ -126,21 +122,21 @@ if __name__ == "__main__":
     print("nb entries", tree.num_entries)
     ene = tree.arrays(
         ["GlobalTime", "KineticEnergy"],
-        f"(GlobalTime <= {filter1.value_min}) | "
-        f"(GlobalTime >= {filter1.value_max})",
+        f"(GlobalTime <= {lower_bound_filter1}) | "
+        f"(GlobalTime >= {upper_bound_filter1})",
     )["KineticEnergy"]
     emin = np.min(ene)
     emax = np.max(ene)
-    is_ok = emin >= filter2.value_min and emax <= filter2.value_max
+    is_ok = emin >= lower_bound_filter2 and emax <= upper_bound_filter2
     utility.print_test(is_ok, f"Ene = {len(ene)} min={emin/keV} max={emax/keV}")
     ti = tree.arrays(
         ["GlobalTime", "KineticEnergy"],
-        f"(KineticEnergy <= {filter2.value_min}) | "
-        f"(KineticEnergy >= {filter2.value_max})",
+        f"(KineticEnergy <= {lower_bound_filter2}) | "
+        f"(KineticEnergy >= {upper_bound_filter2})",
     )["GlobalTime"]
     tmin = np.min(ti)
     tmax = np.max(ti)
-    is_ok = tmin >= filter1.value_min and tmax <= filter1.value_max and is_ok
+    is_ok = tmin >= lower_bound_filter1 and tmax <= upper_bound_filter1 and is_ok
     utility.print_test(is_ok, f"Time = {len(ti)} min={tmin/sec} max={tmax/sec}")
 
     # tests

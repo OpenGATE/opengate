@@ -22,11 +22,8 @@ public:
   bool Accept(G4Step *step) const override;
 
   std::string fAttributeName;
-  T fValueMin;
-  T fValueMax;
-  bool fIncludeMin = true;
-  bool fIncludeMax = true;
-  std::string fSearchMode{"equal"};
+  T fCompareValue;
+  std::string fCompareOperation;
   GateTDigiAttribute<T> *fAttribute{nullptr};
 };
 
