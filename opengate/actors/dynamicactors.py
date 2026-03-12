@@ -58,6 +58,21 @@ class DynamicGeometryActor(DynamicActorBase, g4.GateVActor):
             gm.CloseGeometry(self.simulation.dyn_geom_optimise, False, None)
 
 
+class DynamicSourceActor(DynamicActorBase, g4.GateVActor):
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        for c in self.source_changers:
+            if c.source_manager is None:
+                c.source_manager = self.simulation.source_manager
+            c.initialize()
+
+    def BeginOfRunActionMasterThread(self, run_id):
+        # FIXME: check if source engine needs to be informed
+        for c in self.source_changers:
+            c.apply_change(run_id)
+
+
 def _setter_hook_attached_to(self, value):
     # try to pick up the simulation from the attached_to volume
     try:
@@ -145,6 +160,19 @@ class GeometryChanger(ChangerBase):
         return self.volume_manager.get_volume(self.attached_to)
 
 
+class SourceChanger(ChangerBase):
+
+    @property
+    def source_manager(self):
+        if self.simulation is not None:
+            return self.simulation.source_manager
+        else:
+            return None
+
+    @property
+    @requires_fatal("volume_manager")
+    def attached_to_source(self):
+        return self.source_manager[self.attached_to]
 
 
 class VolumeImageChanger(GeometryChanger):
@@ -276,6 +304,24 @@ class VolumeRotationChanger(GeometryChanger):
 
     def apply_change(self, run_id):
         self.g4_physical_volume.SetRotationHepRep3x3(self.g4_rotations[run_id])
+
+
+class SourceActivityImageChanger(SourceChanger): 
+
+        # hints for IDE
+    activity_images: Optional[list]
+
+    user_info_defaults = {
+        "activity_images": (
+            None,
+            {
+                "doc": "List of activity map file names corresponding to the run timing intervals. ",
+            },
+        ),
+    }
+
+    def apply_change(self, run_id):
+        self.attached_to_source.update_activity_image(self.activity_images[run_id])
 
 
 process_cls(DynamicGeometryActor)
