@@ -230,14 +230,14 @@ class AttributeProxy:
         return AttributeComparisonFilter(
             attribute=self.name,
             compare_value=value,
-            compare_operation="start",
+            compare_operation="startswith",
         )
 
     def not_startswith(self, value: str):
         return AttributeComparisonFilter(
             attribute=self.name,
             compare_value=value,
-            compare_operation="not_start",
+            compare_operation="not_startswith",
         )
 
     def one_of(self, *args):

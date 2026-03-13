@@ -52,10 +52,10 @@ bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const {
   if (fCompareOperation == "not_contains") {
     return val.find(fCompareValue) == std::string::npos;
   }
-  if (fCompareOperation == "start") {
+  if (fCompareOperation == "startswith") {
     return val.rfind(fCompareValue, 0) == 0;
   }
-  if (fCompareOperation == "not_start") {
+  if (fCompareOperation == "not_startswith") {
     return val.rfind(fCompareValue, 0) != 0;
   }
 
