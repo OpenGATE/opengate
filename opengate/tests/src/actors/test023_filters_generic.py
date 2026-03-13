@@ -50,7 +50,7 @@ if __name__ == "__main__":
     plane.color = [1, 0, 0, 1]
 
     # create filter
-    F = GateFilter(sim)
+    F = GateFilter()
     combined_filter = (
         (30 * sec < F.GlobalTime)
         & (F.GlobalTime < 70 * sec)

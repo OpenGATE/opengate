@@ -21,12 +21,20 @@ class FilterBase(GateObject):
         ),
     }
 
-    def __init__(self, sim, *args, **kwargs) -> None:
-        self.sim = sim
+    def __init__(self, *args, **kwargs) -> None:
         if "name" not in kwargs:
             kwargs["name"] = f"filter_{uuid.uuid4()}"
         super().__init__(*args, **kwargs)
-        sim.filter_manager.add_filter(self)
+
+    @GateObject.simulation.setter
+    def simulation(self, sim):
+        if sim is None:
+            self._simulation = None
+        else:
+            GateObject.simulation.fset(self, sim)
+        if isinstance(self, BooleanFilter):
+            for subfilter in self.filters:
+                subfilter.simulation = sim
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -39,7 +47,9 @@ class FilterBase(GateObject):
         self.__initcpp__()
 
     def __invert__(self):
-        return BooleanFilter(self.sim, operator="not", filters=[self])
+        return BooleanFilter(
+            simulation=self._shared_simulation_with(None), operator="not", filters=[self]
+        )
 
     def __bool__(self):
         fatal(
@@ -63,46 +73,56 @@ class FilterBase(GateObject):
         # If 'other' is an AttributeProxy, the user forgot parentheses on the RHS
         if isinstance(other, AttributeProxy):
             other._precedence_error("&")
-        return BooleanFilter(self.sim, operator="and", filters=[self, other])
+        return BooleanFilter(
+            simulation=self._shared_simulation_with(other),
+            operator="and",
+            filters=[self, other],
+        )
 
     def __or__(self, other):
         if isinstance(other, AttributeProxy):
             other._precedence_error("|")
-        return BooleanFilter(self.sim, operator="or", filters=[self, other])
+        return BooleanFilter(
+            simulation=self._shared_simulation_with(other),
+            operator="or",
+            filters=[self, other],
+        )
+
+    def _shared_simulation_with(self, other):
+        if self.simulation is not None:
+            return self.simulation
+        if other is not None and hasattr(other, "simulation"):
+            return other.simulation
+        return None
 
 
 class GateFilter:
-    """Entry point for the sugar syntax: F = GateFilter(sim)"""
-
-    def __init__(self, sim):
-        self.sim = sim
+    """Entry point for the sugar syntax: F = GateFilter()"""
 
     def __call__(self, attribute_name):
-        return AttributeProxy(self.sim, attribute_name)
+        return AttributeProxy(attribute_name)
 
     def __getattr__(self, name):
         # 1. Special case: If the user asks for the Unscattered flag
         if name == "UnscatteredPrimaryFlag":
-            return UnscatteredPrimaryFilter(self.sim)
+            return UnscatteredPrimaryFilter()
 
         # 2. Default: Return a proxy for generic attribute comparison
-        return AttributeProxy(self.sim, name)
+        return AttributeProxy(name)
 
 
 class AttributeProxy:
     """
     Attribute Proxy helper for 'Sugar' syntax.
-    Usage: F = GateFilter(sim); f = (30 * sec < F("GlobalTime")) & (F("Time") <= 70 * sec)
+    Usage: F = GateFilter(); f = (30 * sec < F("GlobalTime")) & (F("Time") <= 70 * sec)
     """
 
-    def __init__(self, sim, attribute_name):
-        self.sim = sim
+    def __init__(self, attribute_name):
         self.name = attribute_name
 
     # --- Standard Operators (F < value) ---
     def __lt__(self, other):  # F < other
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=other,
             compare_operation="lt",
@@ -110,7 +130,6 @@ class AttributeProxy:
 
     def __le__(self, other):  # F <= other
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=other,
             compare_operation="le",
@@ -118,7 +137,6 @@ class AttributeProxy:
 
     def __gt__(self, other):  # F > other
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=other,
             compare_operation="gt",
@@ -126,7 +144,6 @@ class AttributeProxy:
 
     def __ge__(self, other):  # F >= other
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=other,
             compare_operation="ge",
@@ -134,7 +151,6 @@ class AttributeProxy:
 
     def __eq__(self, other):  # F == other
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=other,
             compare_operation="eq",
@@ -142,7 +158,6 @@ class AttributeProxy:
 
     def __ne__(self, other):  # F != other
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=other,
             compare_operation="ne",
@@ -186,7 +201,6 @@ class AttributeProxy:
 
     def eq(self, value):
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=value,
             compare_operation="eq",
@@ -197,7 +211,6 @@ class AttributeProxy:
         Usage: F("ParticleName").contains("gamma")
         """
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=value,
             compare_operation="contains",
@@ -208,7 +221,6 @@ class AttributeProxy:
         Usage: F("ParticleName").not_contains("gamma")
         """
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=value,
             compare_operation="not_contains",
@@ -216,7 +228,6 @@ class AttributeProxy:
 
     def startswith(self, value: str):
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=value,
             compare_operation="start",
@@ -224,7 +235,6 @@ class AttributeProxy:
 
     def not_startswith(self, value: str):
         return AttributeComparisonFilter(
-            self.sim,
             attribute=self.name,
             compare_value=value,
             compare_operation="not_start",
@@ -250,8 +260,8 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
         ),
     }
 
-    def __init__(self, sim, *args, **kwargs):
-        FilterBase.__init__(self, sim, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
         # sim.add_filter(self, self.name)
 
@@ -298,13 +308,13 @@ class AttributeComparisonFilter(FilterBase):
         ),
     }
 
-    def __init__(self, sim, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         if "name" not in kwargs:
             att = kwargs["attribute"]
             op = kwargs.get("compare_operation", "")
             value = kwargs.get("compare_value", "")
             kwargs["name"] = f"filter_{att}_{op}_{value}{uuid.uuid4()}"
-        FilterBase.__init__(self, sim, *args, **kwargs)
+        FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __new__(cls, *args, **kwargs):
@@ -328,8 +338,8 @@ class AttributeComparisonFilter(FilterBase):
 
 
 class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDouble):
-    def __init__(self, sim, *args, **kwargs):
-        AttributeComparisonFilter.__init__(self, sim, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        AttributeComparisonFilter.__init__(self, *args, **kwargs)
 
     def __initcpp__(self):
         g4.GateAttributeFilterDouble.__init__(self)
@@ -339,8 +349,8 @@ class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDou
 
 
 class AttributeFilterInt(AttributeComparisonFilter, g4.GateAttributeFilterInt):
-    def __init__(self, sim, *args, **kwargs):
-        AttributeComparisonFilter.__init__(self, sim, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        AttributeComparisonFilter.__init__(self, *args, **kwargs)
 
     def __initcpp__(self):
         g4.GateAttributeFilterInt.__init__(self)
@@ -350,8 +360,8 @@ class AttributeFilterInt(AttributeComparisonFilter, g4.GateAttributeFilterInt):
 
 
 class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterString):
-    def __init__(self, sim, *args, **kwargs):
-        AttributeComparisonFilter.__init__(self, sim, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        AttributeComparisonFilter.__init__(self, *args, **kwargs)
 
     def __initcpp__(self):
         g4.GateAttributeFilterString.__init__(self)
@@ -368,6 +378,26 @@ filter_classes = {
     "AttributeFilterString": AttributeFilterString,
     "BooleanFilter": BooleanFilter,
 }
+
+
+def bind_filter_to_simulation(filter_obj, simulation):
+    if filter_obj is None:
+        return None
+    if not isinstance(filter_obj, FilterBase):
+        fatal(
+            f"Expected a FilterBase object, got {type(filter_obj).__name__}: {filter_obj}"
+        )
+    filter_obj.simulation = simulation
+    if simulation is not None:
+        _register_filter_tree(filter_obj, simulation)
+    return filter_obj
+
+
+def _register_filter_tree(filter_obj, simulation):
+    simulation.filter_manager.add_filter(filter_obj)
+    if isinstance(filter_obj, BooleanFilter):
+        for subfilter in filter_obj.filters:
+            _register_filter_tree(subfilter, simulation)
 
 
 def get_filter_class(f):

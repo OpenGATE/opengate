@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import AttributeComparisonFilter, BooleanFilter, GateFilter
+from opengate.actors.filters import AttributeComparisonFilter, BooleanFilter
 import uproot
 import numpy as np
 
@@ -54,25 +54,22 @@ if __name__ == "__main__":
 
     # filters
     filter1 = AttributeComparisonFilter(
-        sim, attribute="GlobalTime", compare_value=30 * sec, compare_operation="gt"
+        attribute="GlobalTime", compare_value=30 * sec, compare_operation="gt"
     )
     filter2 = AttributeComparisonFilter(
-        sim,
         attribute="KineticEnergy",
         compare_value=300 * keV,
         compare_operation="gt",
     )
     filter3 = AttributeComparisonFilter(
-        sim, attribute="ParticleName", compare_value="gamma", compare_operation="eq"
+        attribute="ParticleName", compare_value="gamma", compare_operation="eq"
     )
 
     # combined filters
     combined_filter = BooleanFilter(
-        sim,
         filters=[
             filter1,
             AttributeComparisonFilter(
-                sim,
                 attribute="GlobalTime",
                 compare_value=70 * sec,
                 compare_operation="lt",
@@ -81,12 +78,10 @@ if __name__ == "__main__":
         operator="and",
     )
     combined_filter = BooleanFilter(
-        sim,
         filters=[
             combined_filter,
             filter2,
             AttributeComparisonFilter(
-                sim,
                 attribute="KineticEnergy",
                 compare_value=400 * keV,
                 compare_operation="lt",

@@ -470,6 +470,8 @@ class ActorManager(GateObject):
         return actor.user_info
 
     def add_actor(self, actor, name):
+        from .actors.filters import bind_filter_to_simulation
+
         new_actor = None
         if isinstance(actor, str):
             if name is None:
@@ -489,6 +491,8 @@ class ActorManager(GateObject):
             )
         self.actors[new_actor.name] = new_actor
         self.actors[new_actor.name].simulation = self.simulation
+        if new_actor.filter is not None:
+            bind_filter_to_simulation(new_actor.filter, self.simulation)
         # return the volume if it has not been passed as input, i.e. it was created here
         if new_actor is not actor:
             return new_actor
