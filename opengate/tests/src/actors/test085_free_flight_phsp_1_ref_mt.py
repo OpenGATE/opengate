@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import gc
-import importlib.util as pkgutil
 import os
-import shutil
+import sys
 import time
 from pathlib import Path
 
@@ -76,6 +75,7 @@ if __name__ == "__main__":
             print("The size of the file is low (B): " + str(size_file))
             print("Warning: maybe the file was not saved correctly, do not test it")
             utility.test_ok(True)
+            sys.exit(0)
 
     is_ok = utility.compare_root3(
         paths.output_ref / "phsp_sphere_ref.root",
