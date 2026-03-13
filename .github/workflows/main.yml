@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  GEANT4_VERSION: 'v11.3.2'
+  GEANT4_VERSION: 'v11.4.0'
   ITK_VERSION: 'v5.4.4'
 
 jobs:
@@ -33,14 +33,14 @@ jobs:
         python-version: ['3.10']
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
         git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
@@ -51,7 +51,7 @@ jobs:
           pip install build
           python -m build
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-opengate
         path: dist/
@@ -62,13 +62,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
           - os: macos-15
             python-version: '3.10'
+          - os: windows-2025
+            python-version: '3.10'
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
@@ -83,7 +85,7 @@ jobs:
         os: ${{ matrix.os }}
         python-version: ${{ matrix.python-version }}
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core
         path: dist/
@@ -95,13 +97,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04-arm, macos-15-intel]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
           - os: macos-15
             python-version: '3.10'
+          - os: windows-2025
+            python-version: '3.10'
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
@@ -116,7 +120,7 @@ jobs:
         os: ${{ matrix.os }}
         python-version: ${{ matrix.python-version }}
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core-ci_or_tag
         path: dist/
@@ -128,17 +132,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
         git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
@@ -168,6 +172,8 @@ jobs:
             export PYTHONFOLDER="cp312-cp312"
           elif [ ${{ matrix.python-version }} == "3.13" ]; then
             export PYTHONFOLDER="cp313-cp313"
+          elif [ ${{ matrix.python-version }} == "3.14" ]; then
+            export PYTHONFOLDER="cp314-cp314"
           fi
           mkdir -p $HOME/software
           docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}_novis /home/.github/workflows/createWheelLinux_novis.sh
@@ -176,7 +182,7 @@ jobs:
           mv wheelhouse dist
           sudo chown -R runner:docker dist
     - name: Upload wheels
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core-novis
         path: dist/
@@ -186,8 +192,8 @@ jobs:
     needs: [build_opengate_wheel, build_opengate_core_wheel_pr, build_opengate_core_wheel_ci_or_tag, build_opengate_core_novis_wheel]
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
-    - uses: actions/download-artifact@v4
+      uses: actions/checkout@v6
+    - uses: actions/download-artifact@v8
       with:
         pattern: dist-*
         merge-multiple: true
@@ -205,40 +211,40 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE_CORE_NOVIS }}
-        packages_dir: dist_opengate_core_novis/
-        skip_existing: true
+        packages-dir: dist_opengate_core_novis/
+        skip-existing: true
     - name: Publish to PyPI opengate_core
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE_CORE }}
-        packages_dir: dist_opengate_core/
-        skip_existing: true
+        packages-dir: dist_opengate_core/
+        skip-existing: true
     - name: Publish to PyPI opengate
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE }}
-        packages_dir: dist_opengate/
-        skip_existing: true
+        packages-dir: dist_opengate/
+        skip-existing: true
 
 #  ssh_session:
 #    env:
-#      GEANT4_VERSION: 'v11.3.2'
+#      GEANT4_VERSION: 'v11.4.0'
 #      ITK_VERSION: 'v5.4.4'
 #    runs-on: macos-13
 #    steps:
 #    - name: Checkout github repo
-#      uses: actions/checkout@v4
+#      uses: actions/checkout@v6
 #    - name: Checkout submodules
 #      shell: bash -l {0}
 #      run: |
 #        export GIT_SSL_NO_VERIFY=1
 #        git submodule update --init --recursive
 #    - name: Set up Python
-#      uses: actions/setup-python@v5
+#      uses: actions/setup-python@v6
 #      with:
 #        python-version: 3.9
 #        architecture: 'x64'
@@ -278,13 +284,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
           - os: macos-15
             python-version: '3.10'
+          - os: windows-2025
+            python-version: '3.10'
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - uses: ./.github/workflows/actions_tests
 
   publish_test:
@@ -293,8 +301,8 @@ jobs:
     needs: [test_wheel_pr]
     steps:
     - name: Checkout github repo
-      uses: actions/checkout@v4
-    - uses: actions/download-artifact@v4
+      uses: actions/checkout@v6
+    - uses: actions/download-artifact@v8
       with:
         pattern: results_json-*
         merge-multiple: true

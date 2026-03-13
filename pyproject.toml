@@ -21,13 +21,14 @@ name = "opengate"
 dynamic = ["version", "readme", "dependencies"]
 authors = [{ name = "Opengate collaboration", email = "david.sarrut@creatis.insa-lyon.fr" }]
 description = "Simulation for Medical Physics"
-license = { file = "LICENSE.md" }
+license-files = [ "LICENSE.md" ]
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Operating System :: OS Independent",
 ]
@@ -40,6 +41,7 @@ novis = ["opengate-core-novis"]
 opengate_tests = "opengate.bin.opengate_tests:go"
 opengate_info = "opengate.bin.opengate_info:go"
 opengate_visu = "opengate.bin.opengate_visu:go"
+opengate_download_data = "opengate.bin.opengate_download_data:go"
 opengate_plot_volume_info = "opengate.bin.opengate_plot_volume_info:go"
 opengate_photon_attenuation_mixture = "opengate.bin.opengate_photon_attenuation_mixture:go"
 opengate_photon_attenuation_image = "opengate.bin.opengate_photon_attenuation_image:go"

@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 # Version Information
 # Python:   3.9.18
 # Pandas:   2.2.2
@@ -7,8 +10,6 @@ import opengate as gate
 import opengate.tests.utility as tu
 from opengate.contrib.optical.optigan import OptiGAN
 import platform
-
-import os
 
 if __name__ == "__main__":
     paths = tu.get_default_test_paths(__file__, output_folder="test075_optigan")

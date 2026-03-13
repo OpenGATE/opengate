@@ -1,12 +1,14 @@
 import os
-import numpy as np
 import re
-from box import Box
-import itk
 
+import itk
+import numpy as np
 import opengate_core as g4
-from ..utility import fatal, g4_units, g4_best_unit
+from box import Box
+
 from ..definitions import elements_name_symbol
+from ..exception import fatal, warning
+from ..utility import g4_best_unit, g4_units
 
 
 def read_voxel_materials(filename, def_mat="G4_AIR"):
@@ -599,7 +601,8 @@ class MaterialBuilder:
                 self.components[e.name] = e
             if line.startswith("+el"):
                 e = self.read_one_element(line)
-                self.components[e.name] = e
+                if e["f"] != 0:
+                    self.components[e.name] = e
 
     def read_one_element(self, line):
         # skip the initial +el
@@ -624,9 +627,9 @@ class MaterialBuilder:
         if not n:
             f = float(read_tag(s[1], "f"))
             if f == 0:
-                fatal(
-                    f"Error during reading material database {self.material_database.current_filename}"
-                    f", for the sub material {elname}, the fraction 'f=' is 0."
+                warning(
+                    f"Warning during reading material database {self.material_database.current_filename}"
+                    f", for the sub material {elname}, the fraction 'f=' is 0. Remove it!"
                 )
         else:
             n = int(n)

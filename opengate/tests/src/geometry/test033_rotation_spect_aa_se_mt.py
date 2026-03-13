@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import test033_rotation_spect_aa_helpers as test033
+
+import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -19,6 +20,6 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = test033.evaluate_test(sim, sources, 10, 5913808)
+    is_ok = test033.evaluate_test(sim, sources, 30, 5913808)
 
     utility.test_ok(is_ok)

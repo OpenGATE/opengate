@@ -40,7 +40,7 @@ if __name__ == "__main__":
         added, removed, modified, same = utility.dict_compare(
             j_ref,
             j_test,
-            tolerance=1e5,
+            tolerance=0.02,
             ignored_keys=[
                 "copy_no",
             ],

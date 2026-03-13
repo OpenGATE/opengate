@@ -1,25 +1,26 @@
-import numpy as np
-import scipy as sc
-from numpy.random import MT19937
-from numpy.random import RandomState, SeedSequence
-import random
-from box import Box
-import textwrap
-import inspect
-import importlib.resources as resources
-import sys
-from pathlib import Path
-import string
-import os
-import re
-import json
 import importlib
+import importlib.resources as resources
 import importlib.util
-from importlib.metadata import version
+import inspect
+import json
+import os
+import random
+import re
 import shutil
+import string
+import sys
+import textwrap
+from importlib.metadata import version
+from pathlib import Path
 
+import numpy as np
 import opengate_core as g4
+import scipy as sc
+from box import Box
+from numpy.random import MT19937, RandomState, SeedSequence
+
 from opengate import get_site_packages_dir
+
 from .exception import fatal, warning
 
 
