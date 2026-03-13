@@ -22,9 +22,9 @@ public:
 
   // To avoid gcc -Woverloaded-virtual
   // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
-  using GateVFilter::Accept;
+  using GateVFilter::Evaluate;
 
-  bool Accept(G4Step *step) const override;
+  bool Evaluate(G4Step *step) const override;
 
   std::string fProcessName;
   std::string fPolicy;

@@ -35,20 +35,20 @@ public:
     PYBIND11_OVERLOAD(void, GateVFilter, InitializeUserInfo, user_info);
   }
 
-  bool Accept(G4Step *step) const override {
-    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, step);
+  bool Evaluate(G4Step *step) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Evaluate, step);
   }
 
-  bool Accept(const G4Event *event) const override {
-    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, event);
+  bool Evaluate(const G4Event *event) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Evaluate, event);
   }
 
-  bool Accept(const G4Track *track) const override {
-    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, track);
+  bool Evaluate(const G4Track *track) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Evaluate, track);
   }
 
-  bool Accept(const G4Run *run) const override {
-    PYBIND11_OVERLOAD(bool, GateVFilter, Accept, run);
+  bool Evaluate(const G4Run *run) const override {
+    PYBIND11_OVERLOAD(bool, GateVFilter, Evaluate, run);
   }
 };
 

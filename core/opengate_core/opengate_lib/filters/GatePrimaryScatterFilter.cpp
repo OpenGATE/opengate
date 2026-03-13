@@ -32,6 +32,6 @@ int IsUnscatteredPrimary(const G4Step *step) {
   return event_mom.isNear(track_mom);
 }
 
-bool GateUnscatteredPrimaryFilter::Accept(G4Step *step) const {
+bool GateUnscatteredPrimaryFilter::Evaluate(G4Step *step) const {
   return (IsUnscatteredPrimary(step) == 1);
 }

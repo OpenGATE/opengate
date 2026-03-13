@@ -39,7 +39,7 @@ template <typename T>
    }
 
 template <typename T>
-   bool GateAttributeComparisonFilter<T>::Accept(G4Step *step) const {
+   bool GateAttributeComparisonFilter<T>::Evaluate(G4Step *step) const {
       fAttribute->ProcessHits(step);
       // Get the first single value
       const auto value = fAttribute->GetSingleValue();

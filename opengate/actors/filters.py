@@ -12,9 +12,14 @@ class FilterBase(GateObject):
     """
 
     # hints for IDE
+    negate: bool
     policy: str  # deprecated
 
     user_info_defaults = {
+        "negate": (
+            False,
+            {"doc": "If True, invert the result of this filter."},
+        ),
         "policy": (
             None,
             {"deprecated": "Use boolean filter"},
@@ -47,9 +52,7 @@ class FilterBase(GateObject):
         self.__initcpp__()
 
     def __invert__(self):
-        return BooleanFilter(
-            simulation=self._shared_simulation_with(None), operator="not", filters=[self]
-        )
+        return self._clone_negated()
 
     def __bool__(self):
         fatal(
@@ -94,6 +97,13 @@ class FilterBase(GateObject):
         if other is not None and hasattr(other, "simulation"):
             return other.simulation
         return None
+
+    def _clone_negated(self):
+        clone = type(self)(name=f"not_{self.name}")
+        clone.configure_like(self)
+        clone.simulation = self.simulation
+        clone.negate = not self.negate
+        return clone
 
 
 class GateFilter:
@@ -216,28 +226,11 @@ class AttributeProxy:
             compare_operation="contains",
         )
 
-    def not_contains(self, value: str):
-        """
-        Usage: F("ParticleName").not_contains("gamma")
-        """
-        return AttributeComparisonFilter(
-            attribute=self.name,
-            compare_value=value,
-            compare_operation="not_contains",
-        )
-
     def startswith(self, value: str):
         return AttributeComparisonFilter(
             attribute=self.name,
             compare_value=value,
             compare_operation="startswith",
-        )
-
-    def not_startswith(self, value: str):
-        return AttributeComparisonFilter(
-            attribute=self.name,
-            compare_value=value,
-            compare_operation="not_startswith",
         )
 
     def one_of(self, *args):
@@ -270,7 +263,7 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
         ),
         "operator": (
             None,
-            {"doc": "todo"},
+            {"doc": "todo", "allowed_values": ("and", "or")},
         ),
     }
 
@@ -281,6 +274,11 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
 
     def __initcpp__(self):
         g4.GateBooleanFilter.__init__(self)
+
+    def _clone_negated(self):
+        clone = FilterBase._clone_negated(self)
+        clone.filters = list(self.filters)
+        return clone
 
 
 class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):

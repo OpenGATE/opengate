@@ -36,7 +36,7 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
 
 // Specialised implementation for std::string (Equality instead of Range)
 template <>
-bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const {
+bool GateAttributeComparisonFilter<std::string>::Evaluate(G4Step *step) const {
   fAttribute->ProcessHits(step);
   const auto val = fAttribute->GetSingleValue();
 
@@ -49,14 +49,8 @@ bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const {
   if (fCompareOperation == "contains") {
     return val.find(fCompareValue) != std::string::npos;
   }
-  if (fCompareOperation == "not_contains") {
-    return val.find(fCompareValue) == std::string::npos;
-  }
   if (fCompareOperation == "startswith") {
     return val.rfind(fCompareValue, 0) == 0;
-  }
-  if (fCompareOperation == "not_startswith") {
-    return val.rfind(fCompareValue, 0) != 0;
   }
 
   std::ostringstream oss;
