@@ -240,6 +240,20 @@ class AttributeProxy:
             compare_operation="not_start",
         )
 
+    def one_of(self, *args):
+        if len(args) == 1 and isinstance(args[0], (list, tuple, set)):
+            values = list(args[0])
+        else:
+            values = list(args)
+
+        if len(values) == 0:
+            fatal(f'one_of() requires at least one value for attribute "{self.name}".')
+
+        filters = [self == value for value in values]
+        if len(filters) == 1:
+            return filters[0]
+        return BooleanFilter(filters=filters, operator="or")
+
     def __invert__(self):
         fatal(
             f'Syntax Error: Misplaced "~". You cannot invert an attribute proxy directly.\n'
