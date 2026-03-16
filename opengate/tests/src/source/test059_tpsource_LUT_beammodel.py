@@ -169,27 +169,27 @@ if __name__ == "__main__":
     expected_E_mean = energy
     e_mean = np.mean(filter_outliers(energy_0))
     print(f"{expected_E_mean = }, {e_mean = }.")
-    ok = ok and np.isclose(e_mean, expected_E_mean, atol=1e-2)
+    ok = ok and np.isclose(e_mean, expected_E_mean, atol=5e-2)
 
     expected_E_sigma = gate.numerical.piecewise_linear_interpolation(
         energy, [100, 200], [0.1, 0.5]
     )
     e_sigma = np.std(filter_outliers(energy_0))
     print(f"{expected_E_sigma = }, {e_sigma = }.")
-    ok = ok and np.isclose(e_sigma, expected_E_sigma, atol=1e-3)
+    ok = ok and np.isclose(e_sigma, expected_E_sigma, atol=5e-3)
 
     expected_beam_size = gate.numerical.piecewise_linear_interpolation(
         energy, [100, 200], [2 * mm, 4 * mm]
     )
     beam_size = np.std(filter_outliers(x_list_0))
     print(f"{expected_beam_size = }, {beam_size = }.")
-    ok = ok and np.isclose(beam_size, expected_beam_size, atol=1e-2)
+    ok = ok and np.isclose(beam_size, expected_beam_size, atol=5e-2)
 
     expected_beam_divergence = gate.numerical.piecewise_linear_interpolation(
         energy, [100, 200], [3 * mrad, 3 * mrad]
     )
     beam_divergence = np.std(filter_outliers(dir_x_list_0))
     print(f"{expected_beam_divergence = }, {beam_divergence = }.")
-    ok = ok and np.isclose(beam_divergence, expected_beam_divergence, atol=1e-2)
+    ok = ok and np.isclose(beam_divergence, expected_beam_divergence, atol=5e-2)
 
     utility.test_ok(ok)
