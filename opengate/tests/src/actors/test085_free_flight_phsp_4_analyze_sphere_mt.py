@@ -9,11 +9,12 @@ import numpy as np
 import uproot
 from test085_free_flight_helpers import *
 
+import opengate as gate
 from opengate.contrib.root_helpers import *
 from opengate.tests import utility
 
 
-def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
+def main(dependency="test085_free_flight_phsp_3_scatter_mt.py"):
 
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
 
