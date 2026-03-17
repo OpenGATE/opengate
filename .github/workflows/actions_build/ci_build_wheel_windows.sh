@@ -6,12 +6,25 @@ source $CONDA/Scripts/activate opengate_core
 conda info
 conda install cmake==3.31.2
 cmake --version
+conda install openssl==3.0.19
 conda list
 which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wheel wget colored
-pip install cibuildwheel==2.21.1
+
+pip install cibuildwheel==3.4.0
+
+# For windows 2025, Need to add the certifi CA bundle to avoid SSL errors when downloading dependencies during the build. This is a workaround for cibuildwheel which does not handle this properly on Windows.
+python - << 'EOF'
+import certifi, shutil, os
+dst = os.path.expanduser(r"C:\certifi-ca.pem")
+shutil.copy(certifi.where(), dst)
+print("Installed CA bundle at", dst)
+EOF
+export SSL_CERT_FILE="C:\certifi-ca.pem"
+export REQUESTS_CA_BUNDLE="C:\certifi-ca.pem"
+
 which pip
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
@@ -49,6 +62,8 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-win_amd64"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.13" ]]; then
   export CIBW_BUILD="cp313-win_amd64"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
+  export CIBW_BUILD="cp314-win_amd64"
 fi
 find $HOME/software/geant4/bin/ -iname "*.dll"
 ls $HOME/software/geant4/bin/BuildProducts/Release/bin

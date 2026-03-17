@@ -1,5 +1,7 @@
-import math
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+import math
 import opengate as gate
 import opengate.contrib.linacs.electron_flash.electron_flash as fun
 

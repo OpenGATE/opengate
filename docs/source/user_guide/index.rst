@@ -7,6 +7,8 @@ User Guide
 
    user_guide_installation
    user_guide_intro
+   user_guide_resources
+   user_guide_meetings
 
 .. toctree::
    :caption: How to setup a simulation
@@ -17,7 +19,6 @@ User Guide
    user_guide_physics
    user_guide_sources
    user_guide_actors
-   user_guide_resources
 
 .. toctree::
    :caption: Detailed description of components

@@ -55,6 +55,15 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       });
 
   // -----------------------------------------------------
+  // Velocity in mm/ns
+  DefineDigiAttribute(
+      "PostVelocity", 'D',
+      FILLF { att->FillDValue(step->GetPostStepPoint()->GetVelocity()); });
+  DefineDigiAttribute(
+      "PreVelocity", 'D',
+      FILLF { att->FillDValue(step->GetPreStepPoint()->GetVelocity()); });
+
+  // -----------------------------------------------------
   // Time
   DefineDigiAttribute(
       "LocalTime", 'D',

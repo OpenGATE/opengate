@@ -171,7 +171,7 @@ if __name__ == "__main__":
             tolerance=100,
             ignore_value_data2=0,
             axis="x",
-            scaleImageValuesFactor=numPartSimRef / numPartSimTest,
+            scale_image_values_factor=numPartSimRef / numPartSimTest,
         )
 
     tests_pass = []

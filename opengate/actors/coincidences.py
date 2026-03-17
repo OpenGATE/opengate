@@ -836,6 +836,7 @@ def ccmod_ideal_coincidences(df):
 
 def ccmod_make_cones(
     data,
+    groupby_key="CoincID",
     energy_key_name="TotalEnergyDeposit",
     posX_key_name="PostPosition_X",
     posY_key_name="PostPosition_Y",
@@ -843,10 +844,10 @@ def ccmod_make_cones(
 ):
 
     required_branches = {
-        "CoincID",
+        groupby_key,
         posX_key_name,
         posY_key_name,
-        posX_key_name,
+        posZ_key_name,
         energy_key_name,
     }
     missing_columns = set(required_branches) - set(
@@ -857,18 +858,18 @@ def ccmod_make_cones(
     ), f"Missing columns: {missing_columns}"  # Error if there are missing columns
 
     # Attribute name  for energy to create the cones : either IdealTotalEnergyDeposit or TotalEnergyDeposit
-    first_vals = data.groupby("CoincID").first()[
+    first_vals = data.groupby(groupby_key).first()[
         [energy_key_name, posX_key_name, posY_key_name, posZ_key_name]
     ]
     second_vals = (
-        data.groupby("CoincID")
+        data.groupby(groupby_key)
         .nth(1)[[posX_key_name, posY_key_name, posZ_key_name]]
         .reset_index()
     )  # reset otherwise old indexes of data
 
     # last_vals = data.groupby("CoincID").last()[["PostKineticEnergy"]]
 
-    total_energy = data.groupby("CoincID")[energy_key_name].sum()
+    total_energy = data.groupby(groupby_key)[energy_key_name].sum()
     EnergyRest = total_energy - first_vals[energy_key_name]
 
     # it would be nice to have the info of energy and position of the sourve

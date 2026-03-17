@@ -150,6 +150,7 @@ import opengate.image
 import opengate.physics
 import opengate.base
 import opengate.engines
+import opengate.numerical
 
 # import opengate.postprocessors
 
