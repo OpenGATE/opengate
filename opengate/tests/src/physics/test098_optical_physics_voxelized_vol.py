@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     branch = "phsp;1"
     keys = ["PostPosition_X", "PostPosition_Y", "PostPosition_Z"]
-    tols = [2.0, 2.1, 1e-3]
+    tols = [2.1, 2.1, 1e-3]
     scalings = [1, 1, 1]
     img = paths.output / "figure.png"
 

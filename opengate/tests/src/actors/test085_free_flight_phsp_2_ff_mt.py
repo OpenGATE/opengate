@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests import utility
-from test085_free_flight_helpers import *
-from opengate.contrib.root_helpers import *
+import os
 import subprocess
 
-if __name__ == "__main__":
+from test085_free_flight_helpers import *
+
+import opengate as gate
+from opengate.contrib.root_helpers import *
+from opengate.tests import utility
+
+
+def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
 
     # The test needs the output of the other tests
@@ -89,3 +94,7 @@ if __name__ == "__main__":
     is_ok = is_ok and b"""
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

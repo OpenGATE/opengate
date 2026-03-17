@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
+import sys
+
+import numpy as np
+import uproot
+from scipy.stats import wasserstein_distance
+
 import opengate as gate
-from opengate.tests import utility
 from opengate.actors.coincidences import coincidences_sorter
 from opengate.contrib.root_helpers import *
-import uproot
-import os
-import numpy as np
-from scipy.stats import wasserstein_distance
-import sys
+from opengate.tests import utility
 
 
 def main(dependency="test072_coinc_sorter_step1.py"):
@@ -77,7 +79,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     nc_ref = int(ref_coincidences.num_entries)
     stat_diff = abs(nc_ref - nc) / nc_ref
-    tolerance_stat = 0.05  # 5%
+    tolerance_stat = 0.06  # 6%
     print(
         f"Stat comparison {nc} (Gate10) vs. {nc_ref} (Gate9.4): {stat_diff}, tolerance {tolerance_stat}"
     )

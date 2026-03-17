@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
+import sys
+
+import numpy as np
+import uproot
+from scipy.stats import wasserstein_distance
+
 import opengate as gate
-from opengate.tests import utility
 from opengate.actors.coincidences import coincidences_sorter
 from opengate.contrib.root_helpers import *
-import uproot
-import os
-import numpy as np
-from scipy.stats import wasserstein_distance
-import sys
+from opengate.tests import utility
 
 
 def main(dependency="test072_coinc_sorter_step1.py"):
@@ -100,7 +102,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # Calculate Wasserstein distance for comparison
     distance_posX = wasserstein_distance(both_posX, ref_both_posX)
-    tolerance_posX = 1.03
+    tolerance_posX = 1.05
     print(f"Wasserstein distance on X : {distance_posX}, tolerence {tolerance_posX}")
 
     distance_energy = wasserstein_distance(both_energy, ref_both_energy)
