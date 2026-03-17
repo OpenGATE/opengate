@@ -44,6 +44,8 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
     def BeginOfRunActionMasterThread(self, run_id):
         if self.simulation.dyn_geom_open_close:
             gm = g4.G4GeometryManager.GetInstance()
+            # MultiRun + MultiThread + Dynamic Geometry = issues when the parallel optimisation is requested
+            gm.RequestParallelOptimisation(False, False)
             # OpenGeometry (G4VPhysicalVolume *vol=0)
             gm.OpenGeometry(None)
         for c in self.geometry_changers:
