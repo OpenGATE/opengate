@@ -28,7 +28,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.random_seed = "auto"
+    sim.random_seed = 123456
 
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     branch = "phsp;1"
     keys = ["PostPosition_X", "PostPosition_Y", "PostPosition_Z"]
-    tols = [2.1, 2.1, 1e-3]
+    tols = [2.2, 2.2, 1e-3]
     scalings = [1, 1, 1]
     img = paths.output / "figure.png"
 

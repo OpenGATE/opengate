@@ -5,6 +5,7 @@ import opengate as gate
 from opengate.tests import utility
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.userhooks import check_production_cuts
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -43,31 +44,19 @@ if __name__ == "__main__":
     source.direction.type = "iso"
     source.activity = 10000 * Bq
 
-    # filter : keep gamma
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    fp = sim.add_filter("ParticleFilter", "fp")
-    fp.particle = "e-"
-    fk = sim.add_filter("KineticEnergyFilter", "fk")
-    fk.energy_min = 100 * keV
-
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "test023_iec_phantom.mhd"
     dose.attached_to = "iec"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.filters = [fp, fk]
+    F = GateFilter(sim)
+    dose.filter = (F.ParticleName == "e-") & (F.KineticEnergy > 100 * keV)
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
-    stat.filters.append(f)
-
-    print(stat)
-    print(dose)
-    print("Filters: ", sim.filter_manager)
-    print(sim.filter_manager.dump())
+    stat.filter = F.ParticleName == "gamma"
 
     # change physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
@@ -76,6 +65,7 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run(start_new_process=True)
+    print(stat)
 
     # tests
     f = paths.output_ref / "test023_stats_iec_phantom.txt"

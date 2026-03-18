@@ -4,6 +4,7 @@
 from test053_phid_helpers1 import *
 import os
 import opengate_core as g4
+from opengate.actors.filters import GateFilter
 
 paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -55,23 +56,22 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     phsp.debug = False
     phsp.steps_to_store = "exiting first"
 
-    f = sim.add_filter("ParticleFilter", "f1")
-    f.particle = "gamma"
-    phsp.filters.append(f)
+    F = GateFilter(sim)
+    phsp.filter = F.ParticleName == "gamma"
 
     if "ref" in sim_name:
-        f = sim.add_filter("TrackCreatorProcessFilter", "f2")
         gi = g4.GateInfo
         v = gi.get_G4Version().replace("$Name: ", "")
         v = v.replace("$", "")
         warning(f"The decay process name depends on the Geant 4 version: {v}")
         if "geant4-11-02" in v:
-            f.process_name = "Radioactivation"  # G4 11.2
+            process_name = "Radioactivation"  # G4 11.2
         else:
-            f.process_name = "RadioactiveDecay"  # G4 11.1, 11.3
-        warning(f"Process name for filter is: {f.process_name}")
+            process_name = "RadioactiveDecay"  # G4 11.1, 11.3
+        f = F.TrackCreatorProcess == process_name
+        warning(f"Process name for filter is: {process_name}")
         # phsp.debug = True
-        phsp.filters.append(f)
+        phsp.filter = phsp.filter & f
 
 
 def add_source_generic(sim, z, a, activity_in_bq=1000):

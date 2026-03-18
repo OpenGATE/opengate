@@ -4,6 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test040")
@@ -95,6 +96,7 @@ if __name__ == "__main__":
     stats.output_filename = "test040_ref_stats.txt"
 
     # store phsp of exiting particles (gamma only)
+    F = GateFilter(sim)
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attached_to = phsp_sphere_surface.name
     phsp.attributes = [
@@ -111,12 +113,7 @@ if __name__ == "__main__":
     phsp.output_filename = "test040_ref_phsp.root"
     phsp.store_absorbed_event = True
     # phsp.steps_to_store = "first"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    phsp.filters.append(f)
-    f = sim.add_filter("KineticEnergyFilter", "f2")
-    f.energy_min = 100 * keV
-    phsp.filters.append(f)
+    phsp.filter = (F.ParticleName == "gamma") & (F.KineticEnergy > 100 * keV)
 
     # go
     sim.run()

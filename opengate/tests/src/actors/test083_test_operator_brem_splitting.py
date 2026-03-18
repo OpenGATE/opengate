@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
+import numpy as np
 import opengate_core as g4
 import uproot
-import numpy as np
 from scipy.spatial.transform import Rotation
+
+import opengate as gate
 from opengate.tests import utility
 
 
@@ -55,7 +56,7 @@ def validation_test(arr, nb_split, tol=0.04):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "test070test_operator_brem_splitting", output_folder="test070"
+        __file__, "test083test_operator_brem_splitting", output_folder="test083"
     )
 
     # create the simulation
@@ -153,7 +154,7 @@ if __name__ == "__main__":
         "ParticleName",
     ]
 
-    phsp_actor.output_filename = "test070_output_data.root"
+    phsp_actor.output_filename = "test083_output_data.root"
 
     ##### MODIFIED PHYSICS LIST ###############
 
