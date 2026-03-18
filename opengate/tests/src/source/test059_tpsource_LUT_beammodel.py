@@ -1,9 +1,11 @@
-import numpy as np
-import opengate as gate
 import gatetools
-from opengate.tests import utility
+import numpy as np
+
+import opengate as gate
+from opengate.actors.filters import GateFilter
 from opengate.contrib.beamlines.ionbeamline import BeamlineModelLUT
 from opengate.contrib.tps.ionbeamtherapy import SpotInfo
+from opengate.tests import utility
 
 
 def root_load_key(data_ref, keys_ref, m_ref, key: str):
@@ -96,9 +98,8 @@ if __name__ == "__main__":
         "PreDirection",
     ]
     phsp_x0.output_filename = "PhSpace_x_0.root"
-    f0 = sim.add_filter("ParticleFilter", "f0")
-    f0.particle = "proton"
-    phsp_x0.filters.append(f0)
+    F = GateFilter(sim)
+    phsp_x0.filter = F.ParticleName == "proton"
 
     # beamline model
     beamline = BeamlineModelLUT()
