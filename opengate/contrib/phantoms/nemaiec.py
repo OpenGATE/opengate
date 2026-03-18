@@ -1,13 +1,11 @@
-import json
-import itk
 import numpy as np
 import math
-
-from opengate import utility
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
 from opengate.sources.gansources import generate_isotropic_directions
+import SimpleITK as sitk
+import matplotlib.pyplot as plt
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
@@ -563,24 +561,6 @@ def get_n_samples_from_ratio(n, ratio):
     return n_samples
 
 
-def compute_sphere_centers_and_volumes_OLD_NEVER_CALLED(sim, name):
-    spheres_diam = [10, 13, 17, 22, 28, 37]
-    centers = []
-    volumes = []
-    mm = g4_units.mm
-    for diam in spheres_diam:
-        # retrieve the name of the sphere volume
-        d = f"{(diam / mm):.0f}mm"
-        v = sim.volume_manager.volumes[f"{name}_sphere_{d}"]
-        s = v.solid_info
-        # from the solid get the center position
-        center = v.translation
-        centers.append(center)
-        # and the volume
-        volumes.append(s.cubic_volume)
-    return centers, volumes
-
-
 def get_default_sphere_centers_and_volumes_old():
     """
     Global spheres centers in the phantom, to avoid using the phantom in same cases.
@@ -631,58 +611,196 @@ def get_default_sphere_centers_and_volumes():
     return centers, volumes
 
 
-def add_iec_phantom_vox_FIXME_TO_REMOVE(sim, name, image_filename, labels_filename):
-    iec = sim.add_volume("Image", name)
-    iec.image = image_filename
-    iec.material = "IEC_PLASTIC"
-    labels = utility.read_json_file(labels_filename)
-    iec.voxel_materials = []
-    create_material(sim)
-    material_list = {}
-    for l in labels:
-        mat = "IEC_PLASTIC"
-        if "capillary" in l:
-            mat = "G4_WATER"
-        if "cylinder_hole" in l:
-            mat = "G4_AIR"
-        if "world" in l:
-            mat = "G4_AIR"
-        if "interior" in l:
-            mat = "G4_WATER"
-        if "sphere" in l:
-            mat = "G4_WATER"
-        if "shell" in l:
-            mat = "IEC_PLASTIC"
-        material_list[l] = mat
-        m = [labels[l]["label"], labels[l]["label"] + 1, mat]
-        iec.voxel_materials.append(m)
-    return iec, material_list
+def individualize_spheres(mask_input):
+    """
+    Takes a binary mask (path or sitk.Image) and returns a labeled image
+    containing exactly the 6 largest connected components.
+    """
+    # 1. Handle input type
+    if isinstance(mask_input, str):
+        mask_img = sitk.ReadImage(mask_input)
+    else:
+        mask_img = mask_input
+
+    # 2. Ensure the mask is binary and integer (UInt8)
+    # BinaryThreshold ensures anything > 0 becomes 1
+    binary_mask = sitk.BinaryThreshold(
+        mask_img, lowerThreshold=0.5, upperThreshold=1e10, insideValue=1, outsideValue=0
+    )
+    binary_mask = sitk.Cast(binary_mask, sitk.sitkUInt8)
+
+    # 3. Connected Components labeling
+    label_filter = sitk.ConnectedComponentImageFilter()
+    labeled_img = label_filter.Execute(binary_mask)
+
+    # 4. Filter to keep only the 6 largest objects (the spheres)
+    # This removes background noise or small segmentation artifacts
+    relabel_filter = sitk.RelabelComponentImageFilter()
+    relabel_filter.SetSortByObjectSize(True)
+    labeled_img = relabel_filter.Execute(labeled_img)
+
+    # Relabeling assigns ID 1 to the largest, 2 to second largest, etc.
+    # We use a threshold to keep only IDs 1 through 6
+    final_mask = sitk.Threshold(labeled_img, lower=1, upper=6, outsideValue=0)
+
+    num_found = relabel_filter.GetNumberOfObjects()
+    print(f"Found {num_found} objects")
+
+    return final_mask
 
 
-def create_iec_phantom_source_vox(
-    image_filename, labels_filename, source_filename, activities=None
-):
-    if activities is None:
-        activities = {
-            "iec_sphere_10mm": 1.0,
-            "iec_sphere_13mm": 1.0,
-            "iec_sphere_17mm": 1.0,
-            "iec_sphere_22mm": 1.0,
-            "iec_sphere_28mm": 1.0,
-            "iec_sphere_37mm": 1.0,
-        }
+def check_centroid_alignment(labeled_mask, recon_img, dilate_mm=0.0):
+    """
+    Compares physical centroids even if origins/shapes differ.
+    Maps recon_img onto labeled_mask space using physical coordinates.
+    Optionally dilates the mask by `dilate_mm` before computing the centroid.
+    """
+    # 0. Dilate the labeled mask if requested
+    if dilate_mm > 0.0:
+        spacing = labeled_mask.GetSpacing()
 
-    img = itk.imread(image_filename)
-    labels = utility.read_json_file(labels_filename)
-    img_arr = itk.GetArrayViewFromImage(img)
+        # Convert physical dilation (mm) to voxel radius per dimension
+        # Round to nearest integer to get discrete pixel radii
+        radius_pixels = [int(round(dilate_mm / s)) for s in spacing]
+        print(radius_pixels)
 
-    for label in labels:
-        l = labels[label]["label"]
-        if "sphere" in label and "shell" not in label:
-            img_arr[img_arr == l] = activities[label]
-        else:
-            img_arr[img_arr == l] = 0
+        # GrayscaleDilate works on integer label maps without converting to binary
+        dilate_filter = sitk.GrayscaleDilateImageFilter()
+        dilate_filter.SetKernelRadius(radius_pixels)
+        dilate_filter.SetKernelType(
+            sitk.sitkBall
+        )  # Ball kernel preserves spherical shapes
+        labeled_mask = dilate_filter.Execute(labeled_mask)
 
-    # The coordinate system is different from IEC analytical volume
-    # 35mm should be added in Y
-    itk.imwrite(img, source_filename)
+    # 1. Resample Recon onto the Mask's grid
+    # This uses the physical origins/spacing of both to align them
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetReferenceImage(labeled_mask)
+    resampler.SetInterpolator(sitk.sitkLinear)
+    # Important: if the recon doesn't cover the mask area, set a default value
+    resampler.SetDefaultPixelValue(0)
+
+    # This creates a version of the recon that matches the mask's indices
+    recon_resampled = resampler.Execute(recon_img)
+
+    # 2. Extract stats for the Mask (Geometric Centers)
+    mask_stats = sitk.LabelShapeStatisticsImageFilter()
+    mask_stats.Execute(labeled_mask)
+
+    # 3. Extract stats for the Recon (Intensity-weighted Centers)
+    # Now we use the resampled image which is on the same grid as the mask
+    recon_stats = sitk.LabelIntensityStatisticsImageFilter()
+    recon_stats.Execute(labeled_mask, recon_resampled)
+
+    print(
+        f"{'Sphere':<8} | {'Mask Centroid (mm)':<25} | {'Recon COM (mm)':<25} | {'Shift (mm)':<10}"
+    )
+
+    total_shift = []
+    for i in mask_stats.GetLabels():
+        # Geometric center is independent of the recon origin
+        c_mask = np.array(mask_stats.GetCentroid(i))
+
+        # Center of Gravity is now calculated in the mask's coordinate system
+        # but ITK returns it in WORLD mm, so it's comparable to c_mask!
+        c_recon = np.array(recon_stats.GetCenterOfGravity(i))
+
+        shift = np.linalg.norm(c_mask - c_recon)
+        total_shift.append(shift)
+
+        print(
+            f"{i:<8} | {str(np.round(c_mask, 2)):<25} | {str(np.round(c_recon, 2)):<25} | {shift:.4f}"
+        )
+
+    mean_s = np.mean(total_shift) if total_shift else 0.0
+    print(f"Mean Shift: {mean_s:.4f} mm")
+
+    return mean_s
+
+
+def plot_sphere_panels(labeled_mask, ref_img_input, test_img_input, margin_mm=10):
+    # 1. Load and Cast
+    def ensure_image(img_input):
+        return sitk.ReadImage(img_input) if isinstance(img_input, str) else img_input
+
+    mask_img = sitk.Cast(ensure_image(labeled_mask), sitk.sitkUInt32)
+    ref_img = ensure_image(ref_img_input)
+    test_img = ensure_image(test_img_input)
+
+    # 2. Resampling & Normalization logic
+    def get_norm_resampled_array(img, target_mask):
+        res = sitk.ResampleImageFilter()
+        res.SetReferenceImage(target_mask)
+        res.SetInterpolator(sitk.sitkLinear)
+        res_img = res.Execute(img)
+        arr = sitk.GetArrayFromImage(res_img)
+        return arr / np.sum(arr) if np.sum(arr) > 0 else arr
+
+    ref_arr = get_norm_resampled_array(ref_img, mask_img)
+    test_arr = get_norm_resampled_array(test_img, mask_img)
+    mask_arr = sitk.GetArrayFromImage(mask_img)
+
+    # 3. Shape Statistics for Bounding Boxes
+    stats = sitk.LabelShapeStatisticsImageFilter()
+    stats.Execute(mask_img)
+
+    # Sort spheres by volume (largest to smallest)
+    nb_spheres = np.max(sitk.GetArrayViewFromImage(labeled_mask)) + 1
+    ids = sorted(
+        range(1, nb_spheres), key=lambda x: stats.GetPhysicalSize(x), reverse=True
+    )
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+    axes = axes.flatten()
+
+    spacing = mask_img.GetSpacing()
+
+    for idx, sphere_id in enumerate(ids):
+        # bbox is [startX, startY, startZ, sizeX, sizeY, sizeZ] in voxel indices
+        bbox = stats.GetBoundingBox(sphere_id)
+
+        # Calculate center slice in Z
+        z_slice = bbox[2] + bbox[5] // 2
+
+        # Convert physical margin (mm) to pixels
+        margin_px_x = int(margin_mm / spacing[0])
+        margin_px_y = int(margin_mm / spacing[1])
+
+        # Define crop limits with margin
+        x_start = max(0, bbox[0] - margin_px_x)
+        x_end = min(mask_arr.shape[2], bbox[0] + bbox[3] + margin_px_x)
+        y_start = max(0, bbox[1] - margin_px_y)
+        y_end = min(mask_arr.shape[1], bbox[1] + bbox[4] + margin_px_y)
+
+        # Extract 2D slices
+        m_slice = mask_arr[z_slice, y_start:y_end, x_start:x_end]
+        r_slice = ref_arr[z_slice, y_start:y_end, x_start:x_end]
+        t_slice = test_arr[z_slice, y_start:y_end, x_start:x_end]
+
+        ax = axes[idx]
+
+        # Background: Mask
+        ax.imshow(m_slice, cmap="gray", alpha=0.15, origin="lower")
+
+        # Reference Activity (Heatmap)
+        # Using a percent-of-max threshold to mask background noise in the plot
+        # thresh = np.max(r_slice) * 0.01
+        # r_plot = np.ma.masked_where(r_slice < thresh, r_slice)
+        # im = ax.imshow(r_plot, cmap='hot', alpha=0.7, origin='lower')
+        levels = np.linspace(np.max(r_slice) * 0.1, np.max(r_slice) * 0.9, 5)
+        ax.contour(
+            r_slice, levels=levels, colors="green", linewidths=1.0, origin="lower"
+        )
+
+        # Test Activity (Contours)
+        # 5 levels from 10% to 90% of local max
+        levels = np.linspace(np.max(t_slice) * 0.1, np.max(t_slice) * 0.9, 5)
+        ax.contour(t_slice, levels=levels, colors="red", linewidths=1.0, origin="lower")
+
+        diam = 2 * ((3 * stats.GetPhysicalSize(sphere_id)) / (4 * np.pi)) ** (1 / 3)
+        ax.set_title(f"Sphere {idx + 1}: {diam:.1f}mm")
+        ax.axis("off")
+
+    plt.suptitle("IEC Sphere Comparison: First (Green) vs. Second (Red)", fontsize=16)
+    plt.tight_layout()
+    plt.show()
