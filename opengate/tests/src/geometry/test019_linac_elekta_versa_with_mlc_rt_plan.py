@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import itk
+import numpy as np
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
-import opengate.contrib.linacs.elektaversa as versa
 import opengate.contrib.linacs.dicomrtplan as rtplan
+import opengate.contrib.linacs.elektaversa as versa
 from opengate.tests import utility
 from opengate.utility import g4_units
-from scipy.spatial.transform import Rotation
-import numpy as np
-import itk
 
 
 def calc_mlc_aperture(x_leaf_position, y_jaws_position):
@@ -132,10 +133,10 @@ def validation_test_19_rt_plan(
     else:
         print("")
         print("FAIL")
-        print(f"mm2 -> {percentage_diff=} (tol={tol}")
-        print(f"{np.sum(bool_percentage_diff)=}")
-        print(f"{nb_part_sent/nb_part_theo=}")
-        print(f"{err_nb_part=}")
+        print(f"mm2 -> np.abs({percentage_diff=}) > 100*tol={tol}")
+        print(f"{np.sum(bool_percentage_diff)=} ==0")
+        print(f"{nb_part_sent=} >= {nb_part_theo=} - 4*{err_nb_part=}")
+        print(f"{nb_part_sent=} <= {nb_part_theo=} + 4*{err_nb_part=}")
         return False
 
 
