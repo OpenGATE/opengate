@@ -562,6 +562,24 @@ def get_n_samples_from_ratio(n, ratio):
     return n_samples
 
 
+def compute_sphere_centers_and_volumes(sim, name):
+    spheres_diam = [10, 13, 17, 22, 28, 37]
+    centers = []
+    volumes = []
+    mm = g4_units.mm
+    for diam in spheres_diam:
+        # retrieve the name of the sphere volume
+        d = f"{(diam / mm):.0f}mm"
+        v = sim.volume_manager.volumes[f"{name}_sphere_{d}"]
+        s = v.solid_info
+        # from the solid get the center position
+        center = v.translation
+        centers.append(center)
+        # and the volume
+        volumes.append(s.cubic_volume)
+    return centers, volumes
+
+
 def get_default_sphere_centers_and_volumes_old():
     """
     Global spheres centers in the phantom, to avoid using the phantom in same cases.
