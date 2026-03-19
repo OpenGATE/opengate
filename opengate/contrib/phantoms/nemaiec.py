@@ -6,6 +6,7 @@ from opengate.geometry.volumes import unite_volumes
 from opengate.sources.gansources import generate_isotropic_directions
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
+import pathlib
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
@@ -804,3 +805,236 @@ def plot_sphere_panels(labeled_mask, ref_img_input, test_img_input, margin_mm=10
     plt.suptitle("IEC Sphere Comparison: First (Green) vs. Second (Red)", fontsize=16)
     plt.tight_layout()
     plt.show()
+
+
+def create_sphere(base_img, pos, radius, intensity):
+    """
+    Generates a sphere based on physical world coordinates.
+    """
+    # Get metadata
+    size = base_img.GetSize()
+    spacing = np.array(base_img.GetSpacing())
+    origin = np.array(base_img.GetOrigin())
+
+    # Create coordinate grids for X, Y, Z
+    # np.arange(s) * sp + o gives the physical location of each voxel center
+    coords = [np.arange(s) * sp + o for s, sp, o in zip(size, spacing, origin)]
+
+    # meshgrid indexing='ij' aligns with SITK (X, Y, Z)
+    grid = np.meshgrid(*coords, indexing="ij")
+
+    # Calculate Euclidean distance from the target position
+    dist_sq = (
+        (grid[0] - pos[0]) ** 2 + (grid[1] - pos[1]) ** 2 + (grid[2] - pos[2]) ** 2
+    )
+    sphere_mask = (dist_sq <= radius**2).astype(np.float32) * intensity
+
+    # Convert back to sitk.Image
+    # Note: GetImageFromArray expects (Z, Y, X), so we transpose back
+    out_img = sitk.GetImageFromArray(sphere_mask.transpose(2, 1, 0))
+    out_img.CopyInformation(base_img)
+    return out_img
+
+
+def compute_iec_nema_metrics(ref_activity_img, labeled_mask_img, bg_mask_img, test_img):
+    """
+    Computes comprehensive NEMA metrics: Mean, SD, Background Noise (COV), and CRC.
+    Supports both 'in air' (0 background) and standard water phantoms.
+    Uses precise Physical Integral normalization to prevent voxel-grid sizing errors.
+    """
+
+    def ensure_img(i):
+        if isinstance(i, pathlib.PosixPath):
+            i = str(i)
+        return sitk.ReadImage(i) if isinstance(i, str) else i
+
+    ref_act = ensure_img(ref_activity_img)
+    lab_mask = sitk.Cast(ensure_img(labeled_mask_img), sitk.sitkUInt8)
+    bg_mask = sitk.Cast(ensure_img(bg_mask_img), sitk.sitkUInt8)
+    test = ensure_img(test_img)
+
+    # 1. Convert everything to Activity Concentration (value / voxel_volume)
+    # This is CRITICAL before resampling, otherwise SimpleITK's linear interpolation
+    # will artificially inflate or deflate counts based on grid sizes!
+    def convert_to_concentration(img):
+        sp = img.GetSpacing()
+        vol = sp[0] * sp[1] * sp[2]
+        return sitk.Multiply(img, 1.0 / vol)
+
+    ref_conc = convert_to_concentration(ref_act)
+    test_conc = convert_to_concentration(test)
+
+    # 2. Resample to the highest resolution grid (labeled mask)
+    def resample_to_ref(image, reference, is_mask=False):
+        resampler = sitk.ResampleImageFilter()
+        resampler.SetReferenceImage(reference)
+        resampler.SetInterpolator(
+            sitk.sitkNearestNeighbor if is_mask else sitk.sitkLinear
+        )
+        resampler.SetDefaultPixelValue(0.0)
+        return resampler.Execute(image)
+
+    ref_act_res = resample_to_ref(ref_conc, lab_mask)
+    test_res = resample_to_ref(test_conc, lab_mask)
+    bg_mask_res = resample_to_ref(bg_mask, lab_mask, is_mask=True)
+
+    # 3. Global Normalization
+    # Match the total physical concentration integrals on the unified grid
+    ref_sum = np.sum(sitk.GetArrayViewFromImage(ref_act_res))
+    test_sum = np.sum(sitk.GetArrayViewFromImage(test_res))
+    scale = ref_sum / test_sum if test_sum != 0 else 1.0
+    test_norm = sitk.Multiply(test_res, float(scale))
+
+    # --- 1. Background Noise (Variability) ---
+    bg_stats = sitk.LabelStatisticsImageFilter()
+    bg_stats.Execute(test_norm, bg_mask_res)
+
+    bg_mean = bg_stats.GetMean(1)
+    bg_sd = bg_stats.GetSigma(1)
+    bg_cov = bg_sd / bg_mean if bg_mean != 0 else 0
+
+    ref_bg_stats = sitk.LabelStatisticsImageFilter()
+    ref_bg_stats.Execute(ref_act_res, bg_mask_res)
+    ref_bg_mean = ref_bg_stats.GetMean(1)
+
+    # --- 2. Sphere CRC, RC & Contrast ---
+    test_sph_stats = sitk.LabelStatisticsImageFilter()
+    test_sph_stats.Execute(test_norm, lab_mask)
+
+    ref_sph_stats = sitk.LabelStatisticsImageFilter()
+    ref_sph_stats.Execute(ref_act_res, lab_mask)
+
+    num_spheres = max(test_sph_stats.GetLabels())
+
+    results = []
+    for i in range(1, num_spheres + 1):
+        if not test_sph_stats.HasLabel(i):
+            continue
+
+        t_mean = test_sph_stats.GetMean(i)
+        r_mean = ref_sph_stats.GetMean(i)
+
+        # Contrast (Signal to Background Ratio)
+        contrast = t_mean / bg_mean if bg_mean != 0 else float("inf")
+        true_contrast = r_mean / ref_bg_mean if ref_bg_mean != 0 else float("inf")
+
+        # Contrast Recovery Coefficient (CRC)
+        if ref_bg_mean == 0 or true_contrast == float("inf"):
+            crc = contrast / true_contrast if true_contrast != 0 else 0
+        else:
+            crc = (
+                (t_mean / bg_mean - 1) / (r_mean / ref_bg_mean - 1)
+                if bg_mean != 0
+                else 0
+            )
+
+        # Standard Recovery Coefficient (RC)
+        rc = t_mean / r_mean if r_mean != 0 else 0
+
+        results.append(
+            {
+                "sphere_id": i,
+                "mean": t_mean,
+                "contrast": contrast,
+                "crc": crc,
+                "recovery_coefficient": rc,
+            }
+        )
+
+    return {"bg_mean": bg_mean, "bg_sd": bg_sd, "bg_cov": bg_cov, "spheres": results}
+
+
+def plot_iec_rc_curves(mask_input, stats_list, labels=None, fig_path="rc.pdf"):
+    """
+    Plots Recovery Coefficient curves for an arbitrary number of reconstructions.
+
+    Args:
+        mask_input: Path to the labeled mask image or a SimpleITK Image object.
+        stats_list: A list of stats lists (e.g., [stats1, stats2, stats3]).
+        labels: A list of string labels corresponding to the stats (e.g., ["RM", "SysMat", "OSEM"]).
+        fig_path: The output file path for the plot.
+    """
+    # 1. Handle input: load if it's a path, otherwise use as is
+    if isinstance(mask_input, str):
+        img = sitk.ReadImage(mask_input)
+    else:
+        img = mask_input
+
+    # 2. Ensure it's an integer label image for the statistics filter
+    img = sitk.Cast(img, sitk.sitkUInt32)
+
+    # 3. Compute physical volumes
+    shape_stats = sitk.LabelShapeStatisticsImageFilter()
+    shape_stats.Execute(img)
+
+    # Ensure labels exist and match the length of stats_list
+    if labels is None:
+        labels = [f"Data {i + 1}" for i in range(len(stats_list))]
+    elif len(labels) != len(stats_list):
+        raise ValueError(
+            "The number of labels must match the number of stats provided."
+        )
+
+    clean_stats_list = []
+    for stats in stats_list:
+        if isinstance(stats, dict) and "spheres" in stats:
+            clean_stats_list.append(stats["spheres"])
+        else:
+            clean_stats_list.append(stats)
+
+    print(clean_stats_list)
+
+    diameters = []
+    # Initialize a list of lists to hold RC values for each stat dataset
+    rc_values_list = [[] for _ in range(len(clean_stats_list))]
+
+    # Use the first stats list as the baseline to find all sphere IDs
+    for s_base in clean_stats_list[0]:
+        label_id = s_base["sphere_id"]
+
+        # Get volume in mm^3
+        vol = shape_stats.GetPhysicalSize(label_id)
+
+        # Convert Volume to Diameter: D = 2 * ( (3*V) / (4*pi) )^(1/3)
+        diam = 2 * ((3 * vol) / (4 * np.pi)) ** (1 / 3)
+        diameters.append(diam)
+
+        # Extract RC for this specific sphere across ALL provided stats
+        for j, stats in enumerate(clean_stats_list):
+            # Safely find the matching sphere_id in each stat list
+            sphere_stat = next(
+                (item for item in stats if item["sphere_id"] == label_id), None
+            )
+            rc = sphere_stat.get("recovery_coefficient", 0) if sphere_stat else 0
+            rc_values_list[j].append(rc)
+
+    # 4. Sort by diameter for a proper line plot
+    # Get the sorted indices based on the diameters
+    sorted_indices = np.argsort(diameters)
+    d_sorted = [diameters[idx] for idx in sorted_indices]
+
+    # 5. Plotting
+    plt.figure(figsize=(8, 5))
+
+    # A list of distinct marker/line styles to cycle through
+    styles = ["o-", "s--", "^-.", "d:", "v-", "p--", "*-"]
+
+    for j in range(len(clean_stats_list)):
+        # Sort the RC values using the same diameter indices
+        r_sorted = [rc_values_list[j][idx] for idx in sorted_indices]
+
+        style = styles[j % len(styles)]
+        print(d_sorted, r_sorted)
+        plt.plot(d_sorted, r_sorted, style, label=labels[j], markersize=8)
+
+    # Standard IEC diameters for reference
+    plt.xticks([10, 13, 17, 22, 28, 37])
+    plt.xlabel("Sphere Diameter (mm)")
+    plt.ylabel("Recovery Coefficient (RC)")
+    plt.title("IEC Phantom Recovery Coefficient")
+    plt.grid(True, linestyle=":", alpha=0.6)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(fig_path)
+    plt.close()

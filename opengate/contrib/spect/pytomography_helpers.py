@@ -32,26 +32,27 @@ from pathlib import Path
 import warnings
 
 
-def rotate_np_image_to_pytomography(np_image):
+def convert_image_gate_to_pytomo(np_image):
     """
-    Rotate a numpy image to the pytomography coordinate system.
-    For example, for the attenuation map.
-    """
-    rotation_arr = np.transpose(np_image, axes=(2, 1, 0))
-    rotation_arr = rotation_arr[:, ::-1, :].copy()
-    return rotation_arr
-
-
-def rotate_np_pytomography_to_image(np_image):
-    """
-    Rotate a numpy pytomography reconstructed image to the Gate coordinate system.
+    Convert a numpy image to the pytomography coordinate system.
+    => works in both direction (convert_image_pytomo_to_gate)
     """
     rotation_arr = np.transpose(np_image, axes=(2, 1, 0))
     rotation_arr = rotation_arr[:, ::-1, :].copy()
     return rotation_arr
 
 
-def rotate_np_sinogram_to_pytomography(np_sinogram):
+def convert_image_pytomo_to_gate(np_image):
+    """
+    Convert a pytomography numpy image to the gate coordinate system.
+    => works in both direction (convert_image_gate_to_pytomo)
+    """
+    rotation_arr = np.transpose(np_image, axes=(2, 1, 0))
+    rotation_arr = rotation_arr[:, ::-1, :].copy()
+    return rotation_arr
+
+
+def convert_sinogram_gate_to_pytomo(np_sinogram):
     """
     Rotate numpy sinogram to the Pytomography coordinate system [angles,z,x] -> [angles,x,z]
     we reverse the Z axis (gantry rotation) because the rotation of the
@@ -164,7 +165,7 @@ def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
     sino_arr = None
     for sinogram in sinograms:
         arr = sitk.GetArrayFromImage(sinogram)
-        arr = rotate_np_sinogram_to_pytomography(arr)
+        arr = convert_sinogram_gate_to_pytomo(arr)
         # concatenate all energy windows
         if sino_arr is None:
             sino_arr = arr
@@ -613,7 +614,7 @@ def get_attenuation_map_from_json(metadata):
     amap = amap.reshape((dimension_x, dimension_y, dimension_z))
 
     # rotation from gate to pytomo
-    amap = rotate_np_image_to_pytomography(amap)
+    amap = convert_image_gate_to_pytomo(amap)
 
     # we consider the attenuation map has already been resampled
     # like the projection / reconstructed object
@@ -705,7 +706,7 @@ def pytomography_osem_reconstruction(
     spacing = np.array([object_meta.dx, object_meta.dy, object_meta.dz]) * g4_units.cm
     size = np.array(object_meta.shape)
     recon_arr = reconstructed_image.cpu().numpy()
-    recon_arr = rotate_np_pytomography_to_image(recon_arr)
+    recon_arr = convert_image_pytomo_to_gate(recon_arr)
     recon_sitk = sitk.GetImageFromArray(recon_arr)
     recon_sitk.SetSpacing(spacing)
 
@@ -1003,7 +1004,7 @@ class MumapBlock(_ConfigBlock):
         mu_work = resampler.Execute(mu_img)
 
         mu_arr = sitk.GetArrayFromImage(mu_work)
-        mu_arr_pt = rotate_np_image_to_pytomography(mu_arr)
+        mu_arr_pt = convert_image_gate_to_pytomo(mu_arr)
         return mu_arr_pt
 
 
@@ -1239,7 +1240,7 @@ class GateToPyTomographyAdapter:
             img = sitk.ReadImage(str(filename))
             arr = sitk.GetArrayFromImage(img)
             # Apply PyTomography rotation: [Angles, Z, X] -> [Angles, X, Z] and Z flip
-            arr_rotated = rotate_np_sinogram_to_pytomography(arr)
+            arr_rotated = convert_sinogram_gate_to_pytomo(arr)
             sinograms_pt.append(
                 torch.tensor(arr_rotated, dtype=torch.float32).to(device)
             )
@@ -1252,7 +1253,6 @@ class GateToPyTomographyAdapter:
         # -- Attenuation (Mumap) --
         if self.mumap.filename is not None:
             mu_arr_pt = self.mumap.resample_like_working_grid(work_ref_img)
-            sitk.WriteImage(sitk.GetImageFromArray(mu_arr_pt), "mumap_before_rot.mha")
             mu_tensor = torch.tensor(mu_arr_pt, dtype=torch.float32).to(device)
             att_transform = SPECTAttenuationTransform(mu_tensor)
             obj_transforms.append(att_transform)
@@ -1317,9 +1317,7 @@ class GateToPyTomographyAdapter:
         # 9. Post-Processing: Rotate back and Resample
         # ---------------------------------------------------------
         recon_arr = recon_tensor.cpu().numpy()
-        sitk.WriteImage(sitk.GetImageFromArray(recon_arr), "before_rot.mha")
-        recon_arr = rotate_np_pytomography_to_image(recon_arr)
-        sitk.WriteImage(sitk.GetImageFromArray(recon_arr), "after_rot.mha")
+        recon_arr = convert_image_pytomo_to_gate(recon_arr)
 
         # Convert to ITK in the Working Grid
         recon_img_work = sitk.GetImageFromArray(recon_arr)
