@@ -18,7 +18,7 @@ def main():
         sim,
         paths,
         simu_name="ref",
-        ac=1e4,
+        ac=1e5,
         use_spect_head=False,
         use_spect_arf=False,
         use_phsp=True,
