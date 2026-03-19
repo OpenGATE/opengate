@@ -1000,8 +1000,6 @@ def plot_iec_rc_curves(mask_input, stats_list, labels=None, fig_path="rc.pdf"):
         else:
             clean_stats_list.append(stats)
 
-    print(clean_stats_list)
-
     diameters = []
     # Initialize a list of lists to hold RC values for each stat dataset
     rc_values_list = [[] for _ in range(len(clean_stats_list))]
