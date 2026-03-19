@@ -195,8 +195,9 @@ def get_files_to_run():
 
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
-        "test094a_spect_simu_prim",
-        "test094b_spect_simu_scatter",
+        "test094a_spect_simu_prim",  # to compute the reference data
+        "test094b_spect_simu_scatter",  # to compute the reference data
+        "test094c_build_sinogram",  # to compute the reference data
     ]
     path_tests_src = Path(path_tests_src)
     all_file_paths = []
