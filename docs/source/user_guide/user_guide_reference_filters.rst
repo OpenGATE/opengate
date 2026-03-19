@@ -14,8 +14,8 @@ Gate provides a "Pythonic" syntax to create and combine filters naturally using 
 
    from opengate.actors.filters import GateFilter
 
-   # 1. Initialize the filter factory (need to provide the sim object)
-   F = gate.GateFilter(sim)
+   # 1. Initialize the filter factory
+   F = gate.GateFilter()
 
    # 2. Create a complex filter logic
    # Example: Keep only gammas with Energy > 100 keV AND (Time < 10 ns OR Unscattered)
@@ -25,15 +25,17 @@ Gate provides a "Pythonic" syntax to create and combine filters naturally using 
    # 3. Attach to an actor
    actor.filter = my_filter
 
+You can attach the same filter to multiple actors. 
+
 Syntax and Logic
 ----------------
 
-The ``GateFilter`` factory (usually named ``F``) allows you to access simulation attributes directly.
+The ``GateFilter`` factory (conveniently abbreviated as ``F`` in a user script) allows you to build filters based on simulation attributes.
 
 Attribute Comparison
 ~~~~~~~~~~~~~~~~~~~~
 
-You can compare attributes (like Energy, Time, Position) using standard Python comparison operators: ``<``, ``<=``, ``>``, ``>=``, ``==``, ``!=``.
+You can compare attributes (like Energy, Time, Position) using standard Python comparison operators: ``<``, ``<=``, ``>``, ``>=``, ``==``, ``!=``. The results of the comparison statement is the actual filter to be attached to the actor. 
 
 .. code-block:: python
 
@@ -68,7 +70,7 @@ Filters can be combined using bitwise operators:
 Available Attributes
 ~~~~~~~~~~~~~~~~~~~~
 
-You can filter on any attribute available in the ``GateDigiAttributeManager``. Common attributes include:
+You can filter on any attribute available in the ``GateDigiAttributeManager`` (C++ class). Common attributes include:
 
 * ``KineticEnergy``, ``TotalEnergyDeposit``
 * ``GlobalTime``, ``LocalTime``
