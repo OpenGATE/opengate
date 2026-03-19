@@ -1,14 +1,14 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 from pathlib import Path
-
 import uproot
-
 from opengate.utility import g4_units
 from opengate.actors.coincidences import cc_coincidences_sorter
-from merge_coinc import merge_singles_root
-from coinc_filters import kill_multiple_coinc, kill_same_volume_pairs
+from opengate.contrib.compton_camera.merge_coinc import merge_singles_root
+from opengate.contrib.compton_camera.coinc_filters import (
+    kill_multiple_coinc,
+    kill_same_volume_pairs,
+)
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def add_macaco1_materials(sim):
@@ -21,7 +21,7 @@ def add_macaco1_materials(sim):
         sim.volume_manager.add_material_database(db_filename)
 
 
-def add_macaco1_camera(sim, name="macaco1", camera_translation=(0.0, 0.0, 0.0)):
+def add_macaco1_camera(sim, name="macaco1"):
     """
     Adds a MACACO1 camera to the simulation.
     - Bounding box (BB_box)
@@ -41,12 +41,6 @@ def add_macaco1_camera(sim, name="macaco1", camera_translation=(0.0, 0.0, 0.0)):
     camera.mother = sim.world
     camera.material = "G4_AIR"
     camera.size = [16 * cm, 40 * cm, 7.6 * cm]
-    camera.translation = [0, 0, 0 * cm]
-    camera.translation = [
-        camera_translation[0] * cm,
-        camera_translation[1] * cm,
-        camera_translation[2] * cm,
-    ]
     camera.color = [0.1, 0.1, 0.1, 0.1]
 
     # Scatterer
@@ -130,7 +124,6 @@ def add_macaco1_camera(sim, name="macaco1", camera_translation=(0.0, 0.0, 0.0)):
 
 
 def add_macaco1_camera_digitizer(sim, scatterer, absorber):
-
     # Units
     keV = g4_units.keV
     MeV = g4_units.MeV
@@ -297,3 +290,152 @@ def add_macaco1_camera_offlinesorter(
     coincidences = kill_multiple_coinc(coincidences)
     coincidences = kill_same_volume_pairs(coincidences)
     return coincidences
+
+
+def load_exp_histograms(
+    path: Path, scatter_name, abs_name
+) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    if not path.exists():
+        raise FileNotFoundError(f"Experimental data file not found: {path}")
+    histograms: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    with uproot.open(path) as f:
+        for name in (scatter_name, abs_name):
+            obj = f[name]
+            counts, edges = obj.to_numpy()
+            histograms[name] = (
+                np.asarray(counts, dtype=float),
+                np.asarray(edges, dtype=float),
+            )
+    return histograms
+
+
+def gaussian_fit_hist(centers: np.ndarray, counts: np.ndarray) -> tuple[float, float]:
+    mask = counts > 0
+    if mask.sum() < 3:  # need at least 3 points to fit a quadratic
+        return float("nan"), float("nan")
+    x = centers[mask].astype(float)  # x values for the fit (bin centers)
+    y = np.log(counts[mask].astype(float))  # log of counts to linearize Gaussian
+    a, b, _ = np.polyfit(x, y, 2)  # quadratic fit: y = a x^2 + b x + c
+    mu = -b / (2.0 * a)  # mean of Gaussian from quadratic coefficients
+    sigma = float(np.sqrt(-1.0 / (2.0 * a)))  # sigma from curvature
+    return float(mu), sigma  # return fitted mean and sigma
+
+
+def compare_peak_gaussian(
+    sim_energies: np.ndarray,
+    exp_counts: np.ndarray,
+    exp_edges: np.ndarray,
+    expected_energy: float,
+    label: str,
+    tol_frac: float = 0.20,
+    output_plot_path: Path = None,  # New parameter
+):
+    centers = 0.5 * (exp_edges[:-1] + exp_edges[1:])
+    win_lo, win_hi = peak_window_from_exp(
+        centers, exp_counts, expected_energy=expected_energy
+    )
+    exp_mask = (centers >= win_lo) & (centers <= win_hi)
+    exp_counts_win = exp_counts[exp_mask]
+    exp_centers_win = centers[exp_mask]
+
+    if exp_counts_win.sum() <= 0.0:
+        print(f"✗ {label}: no experimental counts in window", flush=True)
+        return False
+
+    sim_counts, _ = np.histogram(sim_energies, bins=exp_edges)
+    sim_counts_win = sim_counts[exp_mask]
+
+    mu_exp, sigma_exp = gaussian_fit_hist(exp_centers_win, exp_counts_win)
+    mu_sim, sigma_sim = gaussian_fit_hist(exp_centers_win, sim_counts_win)
+
+    # --- Plotting Logic ---
+    if output_plot_path:
+        plt.figure(figsize=(8, 6))
+
+        # Plot Data
+        plt.step(
+            exp_centers_win,
+            exp_counts_win,
+            where="mid",
+            label="Exp Data",
+            color="black",
+            alpha=0.6,
+        )
+        plt.step(
+            exp_centers_win,
+            sim_counts_win,
+            where="mid",
+            label="Sim Data",
+            color="blue",
+            alpha=0.6,
+        )
+
+        # Plot Fits
+        x_fit = np.linspace(win_lo, win_hi, 100)
+        if not np.isnan(mu_exp):
+            y_exp = np.max(exp_counts_win) * np.exp(
+                -((x_fit - mu_exp) ** 2) / (2 * sigma_exp**2)
+            )
+            plt.plot(x_fit, y_exp, "k--", label=f"Exp Fit ($\mu$={mu_exp:.1f})")
+
+        if not np.isnan(mu_sim):
+            y_sim = np.max(sim_counts_win) * np.exp(
+                -((x_fit - mu_sim) ** 2) / (2 * sigma_sim**2)
+            )
+            plt.plot(x_fit, y_sim, "b--", label=f"Sim Fit ($\mu$={mu_sim:.1f})")
+
+        plt.title(f"Gaussian Fit Comparison: {label}")
+        plt.xlabel("Energy (keV)")
+        plt.ylabel("Counts")
+        plt.legend()
+        plt.grid(True, linestyle=":", alpha=0.7)
+        plt.savefig(output_plot_path)
+        plt.close()
+        print("Figure saved in: ", output_plot_path)
+    # ----------------------
+
+    if (
+        np.isnan(mu_exp)
+        or np.isnan(sigma_exp)
+        or np.isnan(mu_sim)
+        or np.isnan(sigma_sim)
+    ):
+        print(f"✗ {label}: Gaussian fit failed", flush=True)
+        return False
+
+    # (Keep the rest of your existing logic for validation...)
+    mean_pct = 100.0 * abs(mu_sim - mu_exp) / abs(mu_exp)
+    sigma_pct = 100.0 * abs(sigma_sim - sigma_exp) / abs(sigma_exp)
+    fwhm_pct = (
+        100.0 * abs((2.355 * sigma_sim) - (2.355 * sigma_exp)) / abs(2.355 * sigma_exp)
+    )
+    tol_pct = tol_frac * 100.0
+
+    max_diff = max(mean_pct, sigma_pct, fwhm_pct)
+    if mean_pct < tol_pct and sigma_pct < tol_pct and fwhm_pct < tol_pct:
+        print(f"✓ {label} pass (max diff={max_diff:.1f}%)", flush=True)
+        return True
+
+    print(f"✗ {label} fail (max diff={max_diff:.1f}%)", flush=True)
+    return False
+
+
+# builds the energy window around the expected peak in the experimental histogram.
+def peak_window_from_exp(
+    centers: np.ndarray,
+    counts: np.ndarray,
+    expected_energy: float,
+    *,
+    rel_span: float = 0.1,
+) -> tuple[float, float]:
+    if expected_energy < 700.0:
+        rel_span = 0.12
+    else:
+        rel_span = 0.075
+    low = expected_energy * (1.0 - rel_span)
+    high = expected_energy * (1.0 + rel_span)
+    mask = (centers > low) & (centers < high)
+    sel_counts = counts[mask]
+    if sel_counts.sum() <= 0.0:
+        raise ValueError(f"No experimental counts near {expected_energy} keV.")
+    return low, high

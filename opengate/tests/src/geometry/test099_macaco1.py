@@ -1,133 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import numpy as np
-import uproot
-from pathlib import Path
-import os
-
 import opengate as gate
-from opengate.utility import g4_units
 from opengate.tests import utility
-
-# Code under test
-from opengate.contrib.compton_camera.macaco import (
-    add_macaco1_camera,
-    add_macaco1_camera_digitizer,
-)
-
-EXP_SINGLES_FILE = None  # set in main() using utility paths
-EXP_SCATT_HIST = "E_ly1"  # Scatterer histogram name in EXP_SINGLES_FILE
-EXP_ABS_HIST = "E_ly2"  # Absorber histogram name in EXP_SINGLES_FILE
-
-
-def load_exp_histograms(path: Path) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-    if not path.exists():
-        raise FileNotFoundError(f"Experimental data file not found: {path}")
-    histograms: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-    with uproot.open(path) as f:
-        for name in (EXP_SCATT_HIST, EXP_ABS_HIST):
-            obj = f[name]
-            counts, edges = obj.to_numpy()
-            histograms[name] = (
-                np.asarray(counts, dtype=float),
-                np.asarray(edges, dtype=float),
-            )
-    return histograms
-
-
-def gaussian_fit_hist(centers: np.ndarray, counts: np.ndarray) -> tuple[float, float]:
-    mask = counts > 0
-    if mask.sum() < 3:  # need at least 3 points to fit a quadratic
-        return float("nan"), float("nan")
-    x = centers[mask].astype(float)  # x values for the fit (bin centers)
-    y = np.log(counts[mask].astype(float))  # log of counts to linearize Gaussian
-    a, b, _ = np.polyfit(x, y, 2)  # quadratic fit: y = a x^2 + b x + c
-    mu = -b / (2.0 * a)  # mean of Gaussian from quadratic coefficients
-    sigma = float(np.sqrt(-1.0 / (2.0 * a)))  # sigma from curvature
-    return float(mu), sigma  # return fitted mean and sigma
-
-
-def compare_peak_gaussian(
-    sim_energies: np.ndarray,
-    exp_counts: np.ndarray,
-    exp_edges: np.ndarray,
-    expected_energy: float,
-    label: str,
-    tol_frac: float = 0.20,
-) -> None:
-    centers = 0.5 * (
-        exp_edges[:-1] + exp_edges[1:]
-    )  # bin centers from experimental edges
-    win_lo, win_hi = peak_window_from_exp(  # pick window around expected peak
-        centers, exp_counts, expected_energy=expected_energy
-    )
-    exp_mask = (centers >= win_lo) & (centers <= win_hi)  # select bins in window
-    exp_counts_win = exp_counts[exp_mask]  # experimental counts in window
-    exp_centers_win = centers[exp_mask]  # experimental bin centers in window
-    if exp_counts_win.sum() <= 0.0:  # guard against empty experimental window
-        print(
-            f"✗ {label}: no experimental counts in window", flush=True
-        )  # report failure
-        return  # stop if no data to fit
-    sim_counts, _ = np.histogram(
-        sim_energies, bins=exp_edges
-    )  # simulated counts on same bins
-    sim_counts_win = sim_counts[exp_mask]  # simulated counts in same window
-
-    # debug prints removed
-
-    mu_exp, sigma_exp = gaussian_fit_hist(exp_centers_win, exp_counts_win)
-    mu_sim, sigma_sim = gaussian_fit_hist(exp_centers_win, sim_counts_win)
-
-    if (
-        np.isnan(mu_exp)
-        or np.isnan(sigma_exp)
-        or np.isnan(mu_sim)
-        or np.isnan(sigma_sim)
-    ):
-        print(f"✗ {label}: Gaussian fit failed", flush=True)
-        return
-
-    if mu_exp == 0.0 or sigma_exp == 0.0:
-        print(f"✗ {label}: zero experimental mean/sigma", flush=True)
-        return
-
-    mean_pct = 100.0 * abs(mu_sim - mu_exp) / abs(mu_exp)  # % difference in mean
-    sigma_pct = (
-        100.0 * abs(sigma_sim - sigma_exp) / abs(sigma_exp)
-    )  # % difference in sigma
-    fwhm_exp = 2.355 * sigma_exp  # convert sigma to FWHM for experimental
-    fwhm_sim = 2.355 * sigma_sim  # convert sigma to FWHM for simulated
-    fwhm_pct = 100.0 * abs(fwhm_sim - fwhm_exp) / abs(fwhm_exp)  # % difference in FWHM
-    tol_pct = tol_frac * 100.0  # tolerance expressed in percent
-
-    max_diff = max(mean_pct, sigma_pct, fwhm_pct)
-    if mean_pct < tol_pct and sigma_pct < tol_pct and fwhm_pct < tol_pct:
-        print(f"✓ {label} pass (max diff={max_diff:.1f}%)", flush=True)
-    else:
-        print(f"✗ {label} fail (max diff={max_diff:.1f}%)", flush=True)
-
-
-# builds the energy window around the expected peak in the experimental histogram.
-def peak_window_from_exp(
-    centers: np.ndarray,
-    counts: np.ndarray,
-    expected_energy: float,
-    *,
-    rel_span: float = 0.1,
-) -> tuple[float, float]:
-    if expected_energy < 700.0:
-        rel_span = 0.12
-    else:
-        rel_span = 0.075
-    low = expected_energy * (1.0 - rel_span)
-    high = expected_energy * (1.0 + rel_span)
-    mask = (centers > low) & (centers < high)
-    sel_counts = counts[mask]
-    if sel_counts.sum() <= 0.0:
-        raise ValueError(f"No experimental counts near {expected_energy} keV.")
-    return low, high
+from opengate.contrib.compton_camera.macaco import *
 
 
 def main():
@@ -139,6 +15,7 @@ def main():
     output_ref = paths.output_ref
 
     exp_singles_file = output_ref / "singles_experimental.root"
+    print(exp_singles_file)
 
     # ======================================================
     # 1) Create simulation
@@ -147,7 +24,11 @@ def main():
     sim.visu = False
     sim.number_of_threads = 2
     sim.check_volumes_overlap = False
+    sim.progress_bar = True
+    sim.output_dir = output_folder
+    sim.random_seed = 123456789
 
+    m = g4_units.m
     mm = g4_units.mm
     keV = g4_units.keV
     Bq = g4_units.Bq
@@ -156,9 +37,16 @@ def main():
     # ======================================================
     # 2) Geometry
     # ======================================================
+    sim.world.size = [1 * m, 1 * m, 1 * m]
     cam = add_macaco1_camera(sim)
     scatterer = cam["scatterer"]
     absorber = cam["absorber"]
+    camera = cam["camera"]
+    camera.translation = [
+        0,
+        0,
+        73 * mm,
+    ]  # FIXME what is the real distance ? should we move the source of the camera ?
 
     # ======================================================
     # 3) Source
@@ -184,15 +72,17 @@ def main():
     # ======================================================
     # 4) Timing
     # ======================================================
-    sim.run_timing_intervals = [[0, 3 * sec]]
+    if sim.visu:
+        sim.run_timing_intervals = [[0, 0.000003 * sec]]
+    else:
+        sim.run_timing_intervals = [[0, 1 * sec]]
 
     # ======================================================
-    # 5) Digitizer (CODE UNDER TEST)
+    # 5) Digitizer
     # ======================================================
-    prev_cwd = os.getcwd()
-    os.chdir(output_folder)
-
     scatt_file, abs_file = add_macaco1_camera_digitizer(sim, scatterer, absorber)
+    print(f"Scatt file: {scatt_file}")
+    print(f"Abs file: {abs_file}")
 
     # ======================================================
     # 6) Run simulation
@@ -202,53 +92,63 @@ def main():
     # ======================================================
     # 7) VALIDATIONS
     # ======================================================
-    try:
-        #  Load data
-        with uproot.open(scatt_file) as f:
-            scatt = f[f.keys()[0]]
-            E_scatt = np.asarray(scatt["TotalEnergyDeposit"].array()) / keV
+    #  Load data
+    with uproot.open(scatt_file) as f:
+        scatt = f[f.keys()[0]]
+        E_scatt = np.asarray(scatt["TotalEnergyDeposit"].array()) / keV
 
-        with uproot.open(abs_file) as f:
-            absr = f[f.keys()[0]]
-            E_abs = np.asarray(absr["TotalEnergyDeposit"].array()) / keV
-    finally:
-        os.chdir(prev_cwd)
+    with uproot.open(abs_file) as f:
+        absr = f[f.keys()[0]]
+        E_abs = np.asarray(absr["TotalEnergyDeposit"].array()) / keV
 
     # Energy-only tests (Gaussian peaks)
-    exp_hists = load_exp_histograms(exp_singles_file)
-    exp_abs_counts, exp_abs_edges = exp_hists[EXP_ABS_HIST]
-    exp_scatt_counts, exp_scatt_edges = exp_hists[EXP_SCATT_HIST]
+    scatt_name = "E_ly1"  # Scatterer histogram name
+    abs_name = "E_ly2"  # Absorber histogram name
+    exp_hists = load_exp_histograms(exp_singles_file, scatt_name, abs_name)
+    exp_abs_counts, exp_abs_edges = exp_hists[abs_name]
+    exp_scatt_counts, exp_scatt_edges = exp_hists[scatt_name]
 
-    compare_peak_gaussian(
+    is_ok = True
+    b = compare_peak_gaussian(
         E_abs,
         exp_abs_counts,
         exp_abs_edges,
         expected_energy=1274.5,
         label="Absorber 1274.5 keV",
+        output_plot_path=output_folder / "test099_abs_peak_1274.5keV.png",
     )
-    compare_peak_gaussian(
+    is_ok = is_ok and b
+    b = compare_peak_gaussian(
         E_scatt,
         exp_scatt_counts,
         exp_scatt_edges,
         expected_energy=1274.5,
         label="Scatterer 1274.5 keV",
+        output_plot_path=output_folder / "test099_scatt_peak_1274.5keV.png",
     )
+    is_ok = is_ok and b
     compare_peak_gaussian(
         E_abs,
         exp_abs_counts,
         exp_abs_edges,
         expected_energy=511.0,
         label="Absorber 511 keV",
+        output_plot_path=output_folder / "test099_abs_peak_511keV.png",
     )
+    is_ok = is_ok and b
     compare_peak_gaussian(
         E_scatt,
         exp_scatt_counts,
         exp_scatt_edges,
         expected_energy=511.0,
         label="Scatterer 511 keV",
+        output_plot_path=output_folder / "test099_scatt_peak_511keV.png",
     )
+    is_ok = is_ok and b
 
     print("\n✓ MACACO1 energy test completed")
+
+    utility.test_ok(is_ok)
 
 
 if __name__ == "__main__":
