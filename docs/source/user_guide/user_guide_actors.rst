@@ -43,7 +43,7 @@ You can attach filters to an actor to select which data should be processed or s
 .. code-block:: python
 
   # Create the filter factory
-  F = gate.GateFilter(sim)
+  F = gate.GateFilterBuilder()
 
   # Define the filter: Accept only gammas with energy > 100 keV
   my_filter = (F.ParticleName == "gamma") & (F.KineticEnergy > 100 * keV)

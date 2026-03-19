@@ -4,7 +4,7 @@
 from opengate.tests.utility import *
 from opengate.sources.phidsources import *
 from opengate.utility import g4_units
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 import numpy as np
 import math
 
@@ -86,7 +86,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
 def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # change simulation parameters
     phsp = sim.get_actor("phsp")
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
 
     """def rm_type(name, phsp):
         fg = sim.add_filter("ParticleFilter", f"fp_{name}")

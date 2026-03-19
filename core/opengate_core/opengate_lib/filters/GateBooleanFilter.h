@@ -13,16 +13,15 @@
 
 class GateBooleanFilter : public GateVFilter {
 public:
-  enum class LogicOp { AND, OR, NOT };
+  enum class LogicOp { AND, OR };
 
   GateBooleanFilter();
   virtual ~GateBooleanFilter();
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  // The core recursive logic
-  bool Accept(G4Step *step) const override;
-  bool Accept(const G4Track *track) const override;
+  bool Evaluate(G4Step *step) const override;
+  bool Evaluate(const G4Track *track) const override;
 
   void SetOperator(LogicOp op) { fOperator = op; }
   void AddFilter(GateVFilter *filter) { fFilters.push_back(filter); }

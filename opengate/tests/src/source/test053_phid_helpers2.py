@@ -4,7 +4,7 @@
 from test053_phid_helpers1 import *
 import os
 import opengate_core as g4
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -56,7 +56,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     phsp.debug = False
     phsp.steps_to_store = "exiting first"
 
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     phsp.filter = F.ParticleName == "gamma"
 
     if "ref" in sim_name:

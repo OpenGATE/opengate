@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.tests import utility
+from opengate.actors.filters import GateFilterBuilder
 from opengate.sources.utility import get_rad_yield
-from opengate.actors.filters import GateFilter
+from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test013_hl")
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # phsp
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     phsp1 = sim.add_actor("PhaseSpaceActor", "phsp_ion")
     phsp1.attached_to = wb1.name
     phsp1.attributes = [

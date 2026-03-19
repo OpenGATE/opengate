@@ -7,7 +7,7 @@ import numpy as np
 from collections import defaultdict
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 #########################################################################################
 # Constants
@@ -66,7 +66,7 @@ def setup_actor(sim, actor_name, volume_name):
         "KineticEnergy",
     ]
     curr_actor.steps_to_store = "first"
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     curr_actor.filter = F.ParticleName == "gamma"
 
     return curr_actor

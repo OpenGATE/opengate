@@ -11,11 +11,12 @@
 #include "G4VProcess.hh"
 
 void GateTrackCreatorProcessFilter::InitializeUserInfo(py::dict &user_info) {
+  GateVFilter::InitializeUserInfo(user_info);
   fProcessName = DictGetStr(user_info, "process_name");
   fPolicy = DictGetStr(user_info, "policy");
 }
 
-bool GateTrackCreatorProcessFilter::Accept(G4Step *step) const {
+bool GateTrackCreatorProcessFilter::Evaluate(G4Step *step) const {
   const auto *p = step->GetTrack()->GetCreatorProcess();
   std::string name = "none";
   if (p != nullptr)

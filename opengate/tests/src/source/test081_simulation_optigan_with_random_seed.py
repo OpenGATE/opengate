@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import platform
 
 import opengate as gate
 import opengate.tests.utility as tu
-from opengate.actors.filters import GateFilter
 from opengate.contrib.optical.optigan import OptiGAN
+from opengate.actors.filters import GateFilterBuilder
+import platform
+
+import os
 
 if __name__ == "__main__":
     paths = tu.get_default_test_paths(__file__, output_folder="test075_optigan")
@@ -73,7 +75,7 @@ if __name__ == "__main__":
     phsp_actor.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
 
     # add a kill actor to the crystal
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     ka = sim.add_actor("KillActor", "kill_actor2")
     ka.attached_to = crystal
     ka.filter = F.ParticleName != "opticalphoton"

@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test040")
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     stats.output_filename = "test040_ref_stats.txt"
 
     # store phsp of exiting particles (gamma only)
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attached_to = phsp_sphere_surface.name
     phsp.attributes = [

@@ -18,15 +18,11 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  // Implementation of Accept for Step
-  bool Accept(G4Step *step) const override;
+  bool Evaluate(G4Step *step) const override;
 
   std::string fAttributeName;
-  T fValueMin;
-  T fValueMax;
-  bool fIncludeMin = true;
-  bool fIncludeMax = true;
-  std::string fSearchMode{"equal"};
+  T fCompareValue;
+  std::string fCompareOperation;
   GateTDigiAttribute<T> *fAttribute{nullptr};
 };
 
@@ -44,7 +40,7 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
     py::dict &user_info);
 
 template <>
-bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const;
+bool GateAttributeComparisonFilter<std::string>::Evaluate(G4Step *step) const;
 // --------------------------------------------------------------------
 
 #include "GateAttributeComparisonFilter.txx"

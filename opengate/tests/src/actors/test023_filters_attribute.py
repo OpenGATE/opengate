@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     plane2b.color = [0, 1, 0, 1]  # green
 
     # kill according to time
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     ka = sim.add_actor("KillActor", "kill_actor1")
     ka.attached_to = plane1a.name
     ka.filter = ~((20 * sec < F.GlobalTime) & (F.GlobalTime < 70 * sec))

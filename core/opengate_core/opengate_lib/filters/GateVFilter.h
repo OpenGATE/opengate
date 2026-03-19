@@ -24,15 +24,24 @@ public:
 
   virtual void InitializeUserInfo(py::dict &user_info);
 
-  virtual bool Accept(const G4Run *run) const;
+  bool Accept(const G4Run *run) const;
 
-  virtual bool Accept(const G4Event *event) const;
+  bool Accept(const G4Event *event) const;
 
-  virtual bool Accept(const G4Track *track) const;
+  bool Accept(const G4Track *track) const;
 
-  virtual bool Accept(G4Step *step) const;
+  bool Accept(G4Step *step) const;
+
+  virtual bool Evaluate(const G4Run *run) const;
+
+  virtual bool Evaluate(const G4Event *event) const;
+
+  virtual bool Evaluate(const G4Track *track) const;
+
+  virtual bool Evaluate(G4Step *step) const;
 
   std::string fName;
+  bool fNegate = false;
 };
 
 #endif // GateVFilter_h

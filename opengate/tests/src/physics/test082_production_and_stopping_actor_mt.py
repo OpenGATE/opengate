@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 from opengate.image import get_info_from_image, itk_image_from_array, write_itk_image
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 
 def get_1Dimg_data(fpath):
@@ -116,7 +116,7 @@ def run_simulation(stopping_or_production: str, x_source=0.0):
     )
 
     # # add dose actor, without e- (to check)
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     StoppingActor_depth.filter = F.ParticleName == "proton"
 
     # add stat actor

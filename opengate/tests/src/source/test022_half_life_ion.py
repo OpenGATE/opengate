@@ -4,7 +4,7 @@
 import test022_half_life_helpers as test022
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 import math
 import sys
 import matplotlib.pyplot as plt
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # hit actor w1
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
     ta1.attached_to = "waterbox1"
     ta1.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]

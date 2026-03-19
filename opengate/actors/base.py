@@ -42,6 +42,12 @@ def _setter_hook_attached_to(self, attached_to):
     )
 
 
+def _setter_hook_filter(self, filter_obj):
+    from .filters import bind_filter_to_simulation
+
+    return bind_filter_to_simulation(filter_obj, self.simulation)
+
+
 def shortcut_for_single_output_actor(func):
     """Decorator for shortcut methods and properties that may be used only
     with actors that handle a single user output."""
@@ -110,6 +116,7 @@ class ActorBase(GateObject):
             None,
             {
                 "doc": "Filter used by this actor: the acti is only triggered if the filter accepts the step",
+                "setter_hook": _setter_hook_filter,
             },
         ),
         "filters": (

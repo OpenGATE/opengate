@@ -10,7 +10,7 @@ import gatetools.phsp as phsp
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 global all_cond
 
@@ -191,7 +191,7 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
         "EventKineticEnergy",
     ]
     phsp_actor.output_filename = "test040_gan_phsp.root"
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     phsp_actor.filter = (F.ParticleName == "gamma") & (F.KineticEnergy > 100 * keV)
 
     # ----------------------------------------------------------------------------------------------

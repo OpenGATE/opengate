@@ -72,7 +72,7 @@ The number of killed particle can be retrieved printing the actor object.
     print(kill_actor)
 
     # Example: Kill only electrons with energy below 10 keV in the volume
-    F = gate.GateFilter(sim)
+    F = gate.GateFilterBuilder(sim)
     kill_actor.filter = (F.ParticleName == "e-") & (F.KineticEnergy < 10 * keV)
 
 Refers to the `test064 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test064_kill_actor_mt.py>`_ for more details.
@@ -386,7 +386,7 @@ A PhaseSpaceActor stores any set of particles reaching a given volume during the
    ]
    phsp.output_filename = "test019_hits.root"
    # Create a filter for gammas only
-   F = gate.GateFilter(sim)
+   F = gate.GateFilterBuilder(sim)
    phsp.filter = F.ParticleName == "gamma"
 
 In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp <https://github.com/OpenGATE/opengate/blob/master/core/opengate_core/opengate_lib/digitizer/GateDigiAttributeList.cpp>`_.
@@ -541,7 +541,7 @@ Once defined, this custom attribute behaves like any other standard attribute (e
 
    # Create a filter using the custom attribute name
    # Example: Keep only particles that have undergone at least one Compton scatter in the waterbox
-   F = gate.GateFilter(sim)
+   F = gate.GateFilterBuilder(sim)
    phsp.filter = F(att_compt.name) > 0
 
 .. note::

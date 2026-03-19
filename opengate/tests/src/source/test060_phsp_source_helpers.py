@@ -7,7 +7,7 @@ import gatetools.phsp as phsp
 import opengate as gate
 from opengate.tests import utility
 from pathlib import Path
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 # units
 m = gate.g4_units.m
@@ -91,7 +91,7 @@ def create_test_phs(
     new_joined_path = os.path.join(directory_path, base_filename + new_extension)
     ta1.output_filename = new_joined_path
     ta1.debug = False
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     f = F.ParticleName == particle
     ta1.filter = f
 

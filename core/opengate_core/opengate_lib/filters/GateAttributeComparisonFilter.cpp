@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateAttributeComparisonFilter.h"
+#include <sstream>
 
 // Explicitly instantiate the numeric types
 template class GateAttributeComparisonFilter<double>;
@@ -16,37 +17,48 @@ template class GateAttributeComparisonFilter<int>;
 template <>
 void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
     py::dict &user_info) {
+  GateVFilter::InitializeUserInfo(user_info);
   fAttributeName = DictGetStr(user_info, "attribute");
-  fValueMin =
-      DictGetStr(user_info, "value_min"); // Use "value" as the search string
-
-  // search mode: "contains" or "equal" or "start"
-  fSearchMode =
-      user_info.contains("mode") ? DictGetStr(user_info, "mode") : "equal";
+  fCompareValue = DictGetStr(user_info, "compare_value");
+  fCompareOperation = DictGetStr(user_info, "compare_operation");
 
   auto *dgm = GateDigiAttributeManager::GetInstance();
   auto *att = dgm->GetDigiAttribute(fAttributeName);
   fAttribute = dynamic_cast<GateTDigiAttribute<std::string> *>(
       dgm->CopyDigiAttribute(att));
+  if (!fAttribute) {
+    std::ostringstream oss;
+    oss << "Error: Attribute '" << fAttributeName
+        << "' type mismatch in filter.";
+    Fatal(oss.str());
+  }
   fAttribute->SetSingleValueMode(true);
 }
 
 // Specialised implementation for std::string (Equality instead of Range)
 template <>
-bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const {
+bool GateAttributeComparisonFilter<std::string>::Evaluate(G4Step *step) const {
   fAttribute->ProcessHits(step);
   const auto val = fAttribute->GetSingleValue();
-  bool result = false;
 
-  if (fSearchMode == "equal") {
-    result = (val == fValueMin);
-  } else if (fSearchMode == "contains") {
-    result = (val.find(fValueMin) != std::string::npos);
-  } else if (fSearchMode == "start") {
-    result = (val.rfind(fValueMin, 0) == 0);
+  if (fCompareOperation == "eq") {
+    return val == fCompareValue;
+  }
+  if (fCompareOperation == "ne") {
+    return val != fCompareValue;
+  }
+  if (fCompareOperation == "contains") {
+    return val.find(fCompareValue) != std::string::npos;
+  }
+  if (fCompareOperation == "startswith") {
+    return val.rfind(fCompareValue, 0) == 0;
   }
 
-  return result;
+  std::ostringstream oss;
+  oss << "Unknown compare_operation '" << fCompareOperation
+      << "' for attribute filter '" << fAttributeName << "'.";
+  Fatal(oss.str());
+  return false;
 }
 
 // Forced instantiation for string

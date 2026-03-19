@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from test077_scatter_helpers import *
-from opengate.actors.filters import GateFilter
+
+import opengate as gate
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     # paths
@@ -87,7 +88,7 @@ if __name__ == "__main__":
     phsp.attributes = att_list
     # phsp.debug = True
     phsp.output_filename = "test077_scatter.root"
-    F = GateFilter(sim)
+    F = GateFilterBuilder()
     phsp.filter = F.ParticleName == "gamma"
 
     # phsp
