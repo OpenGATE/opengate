@@ -104,7 +104,7 @@ def create_simulation_test085(
         # voxelize_iec_phantom -o data/iec_4mm.mhd --spacing 4 --output_source data/iec_4mm_activity.mhd -a 1 1 1 1 1 1
 
     # phantom
-    if not sim.visu:
+    if sim.visu is True:
         iec_vox_filename = data_folder / "iec_4mm.mhd"
         iec_label_filename = data_folder / "iec_4mm_labels.json"
         db_filename = data_folder / "iec_4mm.db"
