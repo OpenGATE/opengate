@@ -143,7 +143,7 @@ def main():
         output_plot_path=output_folder / "test099_scatt_peak_511keV.png",
     )
     is_ok = is_ok and b
-    print("\n✓ MACACO1 singles energy test completed")
+    print("✓ MACACO1 singles energy test completed")
 
     # ======================================================
     # 8) VALIDATION : COINCIDENCES
@@ -159,7 +159,10 @@ def main():
         abs_tree_name="ThrAbs",
         merged_tree_name="Singles",
     )
-    print(f"Coincidences file: {coinc_file}")
+    print()
+    print(
+        f"Coincidences file: {coinc_file} : FIXME to be compared with experimental data"
+    )
 
     # FIXME => here add the comparison with the experimental data
 
