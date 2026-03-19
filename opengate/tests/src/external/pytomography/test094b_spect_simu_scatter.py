@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.tests import utility
-from test099_helpers import *
+from test094_helpers import *
 
 
 def go():
 
     paths = utility.get_default_test_paths(__file__, output_folder="test099_pytomo")
-    data_path = paths.data / "test099_pytomo" / "data"
+    data_path = paths.data / "test099_pytomo"
 
     visu = False
     n_primary = 1e7

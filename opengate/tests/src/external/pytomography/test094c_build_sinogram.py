@@ -9,11 +9,11 @@ from opengate.contrib.spect.spect_helpers import *
 def go():
     paths = utility.get_default_test_paths(__file__, output_folder="test099_pytomo")
     print(paths)
-    data_path = paths.data / "test099_pytomo" / "data"
+    data_path = paths.data / "test099_pytomo"
     tomo_path = data_path / "tomo_4.8mm_2e7"
 
     # input param
-    primary_activity = 2e8
+    # primary_activity = 2e8
     primary_activity = 2e7
     scatter_activity = 1e7
     ref_activity = 1e9
