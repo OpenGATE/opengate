@@ -25,7 +25,7 @@ Gate provides a "Pythonic" syntax to create and combine filters naturally using 
    # 3. Attach to an actor
    actor.filter = my_filter
 
-You can attach the same filter to multiple actors. 
+You can attach the same filter to multiple actors.
 
 Syntax and Logic
 ----------------
@@ -35,7 +35,7 @@ The ``GateFilter`` factory (conveniently abbreviated as ``F`` in a user script) 
 Attribute Comparison
 ~~~~~~~~~~~~~~~~~~~~
 
-You can compare attributes (like Energy, Time, Position) using standard Python comparison operators: ``<``, ``<=``, ``>``, ``>=``, ``==``, ``!=``. The results of the comparison statement is the actual filter to be attached to the actor. 
+You can compare attributes (like Energy, Time, Position) using standard Python comparison operators: ``<``, ``<=``, ``>``, ``>=``, ``==``, ``!=``. The results of the comparison statement is the actual filter to be attached to the actor.
 
 .. code-block:: python
 
