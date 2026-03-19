@@ -93,7 +93,7 @@ def init_test019(nt, version):
     ta2.output_filename = f"test019_hits_{version}.root"
     ta2.debug = False
     ta2.steps_to_store = "exiting"
-    F = GateFilter(sim)
+    F = GateFilter()
     ta2.filter = F.ParticleName == "gamma"
 
     # phys
@@ -267,7 +267,7 @@ def create_simu_test019_phsp_source(sim, version):
     ta1.output_filename = "test019_hits_phsp_source_local{version}.root"
     ta1.debug = False
     ta1.steps_to_store = "exiting"
-    F = GateFilter(sim)
+    F = GateFilter()
     ta1.filter = F.ParticleName == "gamma"
 
     # PhaseSpace Actor

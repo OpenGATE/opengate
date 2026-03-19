@@ -82,7 +82,7 @@ if __name__ == "__main__":
     stats.output_filename = "test038_train_stats.txt"
 
     # phsp
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
     phsp.attached_to = "phase_space_sphere"
     # we use PrePosition because this is the first step in the volume

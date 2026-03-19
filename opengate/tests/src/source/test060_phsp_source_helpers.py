@@ -91,7 +91,7 @@ def create_test_phs(
     new_joined_path = os.path.join(directory_path, base_filename + new_extension)
     ta1.output_filename = new_joined_path
     ta1.debug = False
-    F = GateFilter(sim)
+    F = GateFilter()
     f = F.ParticleName == particle
     ta1.filter = f
 

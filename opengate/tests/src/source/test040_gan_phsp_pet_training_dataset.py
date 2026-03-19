@@ -99,7 +99,7 @@ if __name__ == "__main__":
     phsp.output_filename = "test040_train.root"
     # this option allow to store all events even if absorbed
     phsp.store_absorbed_event = True
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp.filter = F.ParticleName == "gamma"
     print(phsp)
     print(phsp.get_output_path())

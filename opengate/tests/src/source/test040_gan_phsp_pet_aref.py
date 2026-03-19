@@ -96,7 +96,7 @@ if __name__ == "__main__":
     stats.output_filename = "test040_ref_stats.txt"
 
     # store phsp of exiting particles (gamma only)
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attached_to = phsp_sphere_surface.name
     phsp.attributes = [

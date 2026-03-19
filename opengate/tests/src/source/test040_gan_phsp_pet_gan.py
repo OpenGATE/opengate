@@ -191,7 +191,7 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
         "EventKineticEnergy",
     ]
     phsp_actor.output_filename = "test040_gan_phsp.root"
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp_actor.filter = (F.ParticleName == "gamma") & (F.KineticEnergy > 100 * keV)
 
     # ----------------------------------------------------------------------------------------------

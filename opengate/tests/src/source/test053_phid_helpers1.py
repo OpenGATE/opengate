@@ -86,7 +86,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
 def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # change simulation parameters
     phsp = sim.get_actor("phsp")
-    F = GateFilter(sim)
+    F = GateFilter()
 
     """def rm_type(name, phsp):
         fg = sim.add_filter("ParticleFilter", f"fp_{name}")

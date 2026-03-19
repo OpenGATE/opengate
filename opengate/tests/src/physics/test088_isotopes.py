@@ -79,7 +79,7 @@ def create_simu(material):
     ]
     phsp.output_filename = "ps.root"
     phsp.steps_to_store = "exiting"
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp.filter = F.ParticleName == "neutron"
 
     # run

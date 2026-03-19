@@ -56,7 +56,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     phsp.debug = False
     phsp.steps_to_store = "exiting first"
 
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp.filter = F.ParticleName == "gamma"
 
     if "ref" in sim_name:

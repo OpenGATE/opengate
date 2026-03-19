@@ -50,7 +50,7 @@ if __name__ == "__main__":
     dose.attached_to = "iec"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    F = GateFilter(sim)
+    F = GateFilter()
     dose.filter = (F.ParticleName == "e-") & (F.KineticEnergy > 100 * keV)
 
     # add stat actor

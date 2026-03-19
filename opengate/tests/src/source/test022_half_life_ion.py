@@ -116,7 +116,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # hit actor w1
-    F = GateFilter(sim)
+    F = GateFilter()
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
     ta1.attached_to = "waterbox1"
     ta1.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]

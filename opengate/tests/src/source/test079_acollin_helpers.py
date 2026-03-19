@@ -66,7 +66,7 @@ def setup_actor(sim, actor_name, volume_name):
         "KineticEnergy",
     ]
     curr_actor.steps_to_store = "first"
-    F = GateFilter(sim)
+    F = GateFilter()
     curr_actor.filter = F.ParticleName == "gamma"
 
     return curr_actor

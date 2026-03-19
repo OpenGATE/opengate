@@ -130,7 +130,7 @@ if __name__ == "__main__":
     LETActor_primaries.averaging_method = "dose_average"
 
     # # add dose actor, without e- (to check)
-    F = GateFilter(sim)
+    F = GateFilter()
     LETActor_primaries.filter = F.ParticleName == "proton"
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
     print(paths)

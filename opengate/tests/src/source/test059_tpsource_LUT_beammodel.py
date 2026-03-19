@@ -98,7 +98,7 @@ if __name__ == "__main__":
         "PreDirection",
     ]
     phsp_x0.output_filename = "PhSpace_x_0.root"
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp_x0.filter = F.ParticleName == "proton"
 
     # beamline model

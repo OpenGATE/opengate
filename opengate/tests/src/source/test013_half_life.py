@@ -79,7 +79,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # phsp
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp1 = sim.add_actor("PhaseSpaceActor", "phsp_ion")
     phsp1.attached_to = wb1.name
     phsp1.attributes = [

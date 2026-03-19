@@ -116,7 +116,7 @@ def run_simulation(stopping_or_production: str, x_source=0.0):
     )
 
     # # add dose actor, without e- (to check)
-    F = GateFilter(sim)
+    F = GateFilter()
     StoppingActor_depth.filter = F.ParticleName == "proton"
 
     # add stat actor

@@ -45,7 +45,7 @@ if __name__ == "__main__":
     source.activity = 30000 * Bq
 
     # add dose actor, e- only
-    F = GateFilter(sim)
+    F = GateFilter()
     dose1 = sim.add_actor("DoseActor", "dose1")
     dose1.output_filename = "test023.mhd"
     dose1.attached_to = waterbox

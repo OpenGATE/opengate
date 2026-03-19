@@ -87,7 +87,7 @@ if __name__ == "__main__":
     phsp.attributes = att_list
     # phsp.debug = True
     phsp.output_filename = "test077_scatter.root"
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp.filter = F.ParticleName == "gamma"
 
     # phsp

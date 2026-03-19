@@ -76,7 +76,7 @@ if __name__ == "__main__":
     phsp_actor.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
 
     # add a kill actor to the crystal
-    F = GateFilter(sim)
+    F = GateFilter()
     ka = sim.add_actor("KillActor", "kill_actor2")
     ka.attached_to = crystal
     ka.filter = F.ParticleName != "opticalphoton"

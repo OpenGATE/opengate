@@ -98,7 +98,7 @@ if __name__ == "__main__":
             t, f"Rad {rad} total yield = {total_yield} vs {yi} (tol is {tol})"
         )
 
-        F = GateFilter(sim)
+        F = GateFilter()
         phsp = sim.add_actor("PhaseSpaceActor", f"phsp_{rad}")
         phsp.attached_to = f"b{si}"
         phsp.attributes = ["TrackVertexKineticEnergy"]

@@ -25,7 +25,7 @@ if __name__ == "__main__":
     create_sim_test053(sim, sim_name, output=paths.output)
 
     phsp = sim.get_actor("phsp")
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp.filter = F.ParticleName == "gamma"  # remove creator process filter
     print(phsp.output_filename)
 

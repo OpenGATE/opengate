@@ -70,7 +70,7 @@ if __name__ == "__main__":
     plane2b.color = [0, 1, 0, 1]  # green
 
     # kill according to time
-    F = GateFilter(sim)
+    F = GateFilter()
     ka = sim.add_actor("KillActor", "kill_actor1")
     ka.attached_to = plane1a.name
     ka.filter = ~((20 * sec < F.GlobalTime) & (F.GlobalTime < 70 * sec))

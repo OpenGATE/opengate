@@ -216,7 +216,7 @@ def add_phsp(sim, simu_name, radius, size, spacing, use_parallel_world, sph_rad=
     phsp1.output_filename = f"phsp_sphere_{simu_name}.root"
 
     # gamma only
-    F = GateFilter(sim)
+    F = GateFilter()
     phsp1.filter = F.ParticleName == "gamma"
 
     phsps = [phsp1]
