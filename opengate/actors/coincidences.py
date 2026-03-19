@@ -928,27 +928,26 @@ def _get_tree(f: uproot.ReadOnlyFile, preferred: str | None):
     return _first_tree(f)
 
 
-def merge_singles_root(
-    scatt_root: Path,
-    abs_root: Path,
-    out_root: Path,  # new merged ROOT file we will create.
-    *,
-    scatt_tree: str | None = None,
-    abs_tree: str | None = None,
-    out_tree: str = "Singles",
+def ccmod_merge_several_singles_root_into_one(
+    scatt_root_filename,
+    abs_root_filename,
+    output_root_filename,
+    scatt_tree_name,
+    abs_tree_name,
+    output_tree_name,
     overwrite: bool = True,
     save_branches: list[str] | None = None,
-) -> Path:
-    scatt_root = Path(scatt_root)
-    abs_root = Path(abs_root)
-    out_root = Path(out_root)
-    out_root.parent.mkdir(parents=True, exist_ok=True)
+):
+    scatt_root_filename = Path(scatt_root_filename)
+    abs_root_filename = Path(abs_root_filename)
+    output_root_filename = Path(output_root_filename)
+    output_root_filename.parent.mkdir(parents=True, exist_ok=True)
 
-    if out_root.exists():
+    if output_root_filename.exists():
         if overwrite:
-            out_root.unlink()
+            output_root_filename.unlink()
         else:
-            return out_root
+            return output_root_filename
 
     required_branches = (
         "EventID",
@@ -960,9 +959,12 @@ def merge_singles_root(
         "PostPosition_Z",
     )
 
-    with uproot.open(scatt_root) as f_sc, uproot.open(abs_root) as f_ab:
-        t_sc = _get_tree(f_sc, scatt_tree)
-        t_ab = _get_tree(f_ab, abs_tree)
+    with (
+        uproot.open(scatt_root_filename) as f_sc,
+        uproot.open(abs_root_filename) as f_ab,
+    ):
+        t_sc = _get_tree(f_sc, scatt_tree_name)
+        t_ab = _get_tree(f_ab, abs_tree_name)
 
         branches_sc = set(t_sc.keys())
         branches_ab = set(t_ab.keys())
@@ -1011,14 +1013,14 @@ def merge_singles_root(
         data = merged.to_dict(orient="list")
         data = root_tree_get_branch_data(data)
         types = root_tree_get_branch_types(data)
-        with uproot.recreate(out_root) as f_out:
-            root_write_tree(f_out, out_tree, types, data)
+        with uproot.recreate(output_root_filename) as f_out:
+            root_write_tree(f_out, output_tree_name, types, data)
 
         # Validate exact branch set
-        with uproot.open(out_root) as f_chk:
-            if out_tree not in f_chk:
+        with uproot.open(output_root_filename) as f_chk:
+            if output_tree_name not in f_chk:
                 raise ValueError("Merged singles tree is empty; no data to write.")
-            out_keys = set(f_chk[out_tree].keys())
+            out_keys = set(f_chk[output_tree_name].keys())
 
         # Warn if "required branches" for sorting are not included in the merged file
         missing_required = set(required_branches) - out_keys
@@ -1028,5 +1030,3 @@ def merge_singles_root(
                 f"Missing required branches: {sorted(missing_required)}\n"
                 f"Required branches are: {sorted(required_branches)}"
             )
-
-    return out_root

@@ -1,12 +1,7 @@
 from pathlib import Path
 import uproot
 from opengate.utility import g4_units
-from opengate.actors.coincidences import cc_coincidences_sorter
-from opengate.contrib.compton_camera.merge_coinc import merge_singles_root
-from opengate.contrib.compton_camera.coinc_filters import (
-    kill_multiple_coinc,
-    kill_same_volume_pairs,
-)
+from opengate.actors.coincidences import *
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -252,37 +247,33 @@ def add_macaco1_camera_digitizer(sim, scatterer, absorber):
     return scatt_file, abs_file
 
 
-def add_macaco1_camera_offlinesorter(
-    scatt_root: Path,
-    abs_root: Path,
-    *,
-    time_window_ns: float = 25.0,
-    merged_root: Path | None = None,
-    scatt_tree: str | None = None,
-    abs_tree: str | None = None,
-    merged_tree: str = "Singles",
+def macaco1_compute_coincidences(
+    scatt_root_filename,
+    abs_root_filename,
+    output_root_filename,
+    time_windows,
+    scatt_tree_name,
+    abs_tree_name,
+    merged_tree_name,
 ):
     """
     Merge scatterer/absorber singles, run the Gate coincidence sorter,
     then filter good coincidences.
     """
-    if merged_root is None:
-        merged_root = Path(scatt_root).with_name("singles_merged.root")
-    merged_root = merge_singles_root(
-        scatt_root,
-        abs_root,
-        merged_root,
-        scatt_tree=scatt_tree,
-        abs_tree=abs_tree,
-        out_tree=merged_tree,
+
+    ccmod_merge_several_singles_root_into_one(
+        scatt_root_filename,
+        abs_root_filename,
+        output_root_filename,
+        scatt_tree_name=scatt_tree_name,
+        abs_tree_name=abs_tree_name,
+        output_tree_name=merged_tree_name,
         overwrite=True,
     )
 
-    with uproot.open(merged_root) as f:
-        singles_tree = f[merged_tree]
-        coincidences = cc_coincidences_sorter(
-            singles_tree, time_window_ns * g4_units.ns
-        )
+    with uproot.open(output_root_filename) as f:
+        singles_tree = f[merged_tree_name]
+        coincidences = cc_coincidences_sorter(singles_tree, time_windows)
 
     if coincidences is None or coincidences.empty:
         return coincidences
@@ -425,7 +416,6 @@ def peak_window_from_exp(
     centers: np.ndarray,
     counts: np.ndarray,
     expected_energy: float,
-    *,
     rel_span: float = 0.1,
 ) -> tuple[float, float]:
     if expected_energy < 700.0:

@@ -33,6 +33,7 @@ def main():
     keV = g4_units.keV
     Bq = g4_units.Bq
     sec = g4_units.s
+    ns = g4_units.ns
 
     # ======================================================
     # 2) Geometry
@@ -42,11 +43,8 @@ def main():
     scatterer = cam["scatterer"]
     absorber = cam["absorber"]
     camera = cam["camera"]
-    camera.translation = [
-        0,
-        0,
-        73 * mm,
-    ]  # FIXME what is the real distance ? should we move the source of the camera ?
+    # 53 mm from the first plane
+    camera.translation = [0, 0, 83 * mm]
 
     # ======================================================
     # 3) Source
@@ -90,7 +88,7 @@ def main():
     sim.run()
 
     # ======================================================
-    # 7) VALIDATIONS
+    # 7) VALIDATION : SINGLES
     # ======================================================
     #  Load data
     with uproot.open(scatt_file) as f:
@@ -145,8 +143,27 @@ def main():
         output_plot_path=output_folder / "test099_scatt_peak_511keV.png",
     )
     is_ok = is_ok and b
+    print("\n✓ MACACO1 singles energy test completed")
 
-    print("\n✓ MACACO1 energy test completed")
+    # ======================================================
+    # 8) VALIDATION : COINCIDENCES
+    # ======================================================
+
+    coinc_file = output_folder / "coincidences.root"
+    coincidences = macaco1_compute_coincidences(
+        scatt_file,
+        abs_file,
+        time_windows=12 * ns,
+        output_root_filename=coinc_file,
+        scatt_tree_name="ThrScatt",
+        abs_tree_name="ThrAbs",
+        merged_tree_name="Singles",
+    )
+    print(f"Coincidences file: {coinc_file}")
+
+    # FIXME => here add the comparison with the experimental data
+
+    # print("\n✓ MACACO1 coincidence test completed")
 
     utility.test_ok(is_ok)
 
