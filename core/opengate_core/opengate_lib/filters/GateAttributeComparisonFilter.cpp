@@ -28,7 +28,8 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
       dgm->CopyDigiAttribute(att));
   if (!fAttribute) {
     std::ostringstream oss;
-    oss << "Error: Attribute '" << fAttributeName << "' type mismatch in filter.";
+    oss << "Error: Attribute '" << fAttributeName
+        << "' type mismatch in filter.";
     Fatal(oss.str());
   }
   fAttribute->SetSingleValueMode(true);
