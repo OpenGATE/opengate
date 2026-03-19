@@ -5,7 +5,7 @@ import numpy as np
 import uproot
 
 import opengate as gate
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     plane1a.color = [1, 0, 0, 1]
 
     # phsp
-    F = GateFilter()
+    F = GateFilterBuilder()
     phsp_and = sim.add_actor("PhaseSpaceActor", "phsp_and")
     phsp_and.attached_to = plane1a.name
     phsp_and.attributes = ["GlobalTime", "KineticEnergy", "ParticleName"]

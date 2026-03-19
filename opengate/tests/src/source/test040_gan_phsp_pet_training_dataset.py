@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test040")
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     phsp.output_filename = "test040_train.root"
     # this option allow to store all events even if absorbed
     phsp.store_absorbed_event = True
-    F = GateFilter()
+    F = GateFilterBuilder()
     phsp.filter = F.ParticleName == "gamma"
     print(phsp)
     print(phsp.get_output_path())

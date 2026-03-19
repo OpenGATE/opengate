@@ -7,7 +7,7 @@ from opengate.contrib.spect.spect_freeflight_helpers import *
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 from pathlib import Path
 import numpy as np
 import opengate_core as g4
@@ -216,7 +216,7 @@ def add_phsp(sim, simu_name, radius, size, spacing, use_parallel_world, sph_rad=
     phsp1.output_filename = f"phsp_sphere_{simu_name}.root"
 
     # gamma only
-    F = GateFilter()
+    F = GateFilterBuilder()
     phsp1.filter = F.ParticleName == "gamma"
 
     phsps = [phsp1]

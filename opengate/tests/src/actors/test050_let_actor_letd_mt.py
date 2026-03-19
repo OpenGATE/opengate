@@ -4,7 +4,7 @@
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     do_debug = False
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     LETActor_primaries.averaging_method = "dose_average"
 
     # # add dose actor, without e- (to check)
-    F = GateFilter()
+    F = GateFilterBuilder()
     LETActor_primaries.filter = F.ParticleName == "proton"
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
     print(paths)

@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     source.activity = 30000 * Bq
 
     # add dose actor
-    F = GateFilter()
+    F = GateFilterBuilder()
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "test023.mhd"
     dose.attached_to = "waterbox"

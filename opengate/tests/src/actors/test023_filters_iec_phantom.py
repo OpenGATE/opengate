@@ -5,7 +5,7 @@ import opengate as gate
 from opengate.tests import utility
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.userhooks import check_production_cuts
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     dose.attached_to = "iec"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    F = GateFilter()
+    F = GateFilterBuilder()
     dose.filter = (F.ParticleName == "e-") & (F.KineticEnergy > 100 * keV)
 
     # add stat actor

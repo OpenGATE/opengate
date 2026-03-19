@@ -12,10 +12,10 @@ Gate provides a "Pythonic" syntax to create and combine filters naturally using 
 
 .. code-block:: python
 
-   from opengate.actors.filters import GateFilter
+   from opengate.actors.filters import GateFilterBuilder
 
    # 1. Initialize the filter factory
-   F = gate.GateFilter()
+   F = gate.GateFilterBuilder()
 
    # 2. Create a complex filter logic
    # Example: Keep only gammas with Energy > 100 keV AND (Time < 10 ns OR Unscattered)
@@ -30,7 +30,7 @@ You can attach the same filter to multiple actors.
 Syntax and Logic
 ----------------
 
-The ``GateFilter`` factory (conveniently abbreviated as ``F`` in a user script) allows you to build filters based on simulation attributes.
+The ``GateFilterBuilder`` factory (conveniently abbreviated as ``F`` in a user script) allows you to build filters based on simulation attributes.
 
 Attribute Comparison
 ~~~~~~~~~~~~~~~~~~~~
@@ -101,7 +101,7 @@ This filter accepts particles that are primary particles and have not yet underg
 Reference
 ---------
 
-.. autoclass:: opengate.actors.filters.GateFilter
+.. autoclass:: opengate.actors.filters.GateFilterBuilder
 .. autoclass:: opengate.actors.filters.FilterBase
 .. autoclass:: opengate.actors.filters.AttributeComparisonFilter
 .. autoclass:: opengate.actors.filters.BooleanFilter

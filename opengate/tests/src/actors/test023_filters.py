@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     source.activity = 30000 * Bq
 
     # add dose actor, e- only
-    F = GateFilter()
+    F = GateFilterBuilder()
     dose1 = sim.add_actor("DoseActor", "dose1")
     dose1.output_filename = "test023.mhd"
     dose1.attached_to = waterbox

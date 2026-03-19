@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 import uproot
 import numpy as np
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     plane.color = [1, 0, 0, 1]
 
     # create filter
-    F = GateFilter()
+    F = GateFilterBuilder()
     combined_filter = (
         (30 * sec < F.GlobalTime)
         & (F.GlobalTime < 70 * sec)

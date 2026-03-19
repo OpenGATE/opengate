@@ -3,8 +3,8 @@
 
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.actors.filters import GateFilterBuilder
 from opengate.tests import utility
-from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test038")
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     stats.output_filename = "test038_train_stats.txt"
 
     # phsp
-    F = GateFilter()
+    F = GateFilterBuilder()
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
     phsp.attached_to = "phase_space_sphere"
     # we use PrePosition because this is the first step in the volume

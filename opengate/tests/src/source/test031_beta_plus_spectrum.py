@@ -7,7 +7,7 @@ import uproot
 import opengate as gate
 from opengate.tests import utility
 from opengate.sources.utility import compute_bins_density, get_rad_yield, get_spectrum
-from opengate.actors.filters import GateFilter
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test031")
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             t, f"Rad {rad} total yield = {total_yield} vs {yi} (tol is {tol})"
         )
 
-        F = GateFilter()
+        F = GateFilterBuilder()
         phsp = sim.add_actor("PhaseSpaceActor", f"phsp_{rad}")
         phsp.attached_to = f"b{si}"
         phsp.attributes = ["TrackVertexKineticEnergy"]

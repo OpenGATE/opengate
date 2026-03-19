@@ -1,7 +1,9 @@
 import sys
 import uuid
 from typing import Optional
+
 import opengate_core as g4
+
 from ..base import GateObject, process_cls
 from ..exception import fatal
 
@@ -106,8 +108,8 @@ class FilterBase(GateObject):
         return clone
 
 
-class GateFilter:
-    """Entry point for the sugar syntax: F = GateFilter()"""
+class GateFilterBuilder:
+    """Entry point for the sugar syntax: F = GateFilterBuilder()"""
 
     def __call__(self, attribute_name):
         return AttributeProxy(attribute_name)
@@ -124,7 +126,7 @@ class GateFilter:
 class AttributeProxy:
     """
     Attribute Proxy helper for 'Sugar' syntax.
-    Usage: F = GateFilter(); f = (30 * sec < F("GlobalTime")) & (F("Time") <= 70 * sec)
+    Usage: F = GateFilterBuilder(); f = (30 * sec < F("GlobalTime")) & (F("Time") <= 70 * sec)
     """
 
     def __init__(self, attribute_name):
