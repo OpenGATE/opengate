@@ -22,11 +22,11 @@ def main():
     # ======================================================
     sim = gate.Simulation()
     sim.visu = False
-    sim.number_of_threads = 2
+    sim.number_of_threads = 4
     sim.check_volumes_overlap = False
     sim.progress_bar = True
     sim.output_dir = output_folder
-    sim.random_seed = 123456789
+    # sim.random_seed = 123456789
 
     m = g4_units.m
     mm = g4_units.mm
@@ -73,7 +73,7 @@ def main():
     if sim.visu:
         sim.run_timing_intervals = [[0, 0.000003 * sec]]
     else:
-        sim.run_timing_intervals = [[0, 1 * sec]]
+        sim.run_timing_intervals = [[0, 3 * sec]]
 
     # ======================================================
     # 5) Digitizer
@@ -107,6 +107,7 @@ def main():
     exp_scatt_counts, exp_scatt_edges = exp_hists[scatt_name]
 
     is_ok = True
+    print()
     b = compare_peak_gaussian(
         E_abs,
         exp_abs_counts,
@@ -116,6 +117,7 @@ def main():
         output_plot_path=output_folder / "test099_abs_peak_1274.5keV.png",
     )
     is_ok = is_ok and b
+    print()
     b = compare_peak_gaussian(
         E_scatt,
         exp_scatt_counts,
@@ -125,6 +127,7 @@ def main():
         output_plot_path=output_folder / "test099_scatt_peak_1274.5keV.png",
     )
     is_ok = is_ok and b
+    print()
     compare_peak_gaussian(
         E_abs,
         exp_abs_counts,
@@ -134,6 +137,7 @@ def main():
         output_plot_path=output_folder / "test099_abs_peak_511keV.png",
     )
     is_ok = is_ok and b
+    print()
     compare_peak_gaussian(
         E_scatt,
         exp_scatt_counts,
@@ -144,6 +148,8 @@ def main():
     )
     is_ok = is_ok and b
     print("✓ MACACO1 singles energy test completed")
+
+    print(f"FIXME the absolute counts is not correct ? normalization issue ? ")
 
     # ======================================================
     # 8) VALIDATION : COINCIDENCES
