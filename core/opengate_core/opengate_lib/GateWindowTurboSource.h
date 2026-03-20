@@ -24,8 +24,11 @@ public:
   GateSourceTurbo(G4String name);
   ~GateSourceTurbo() { G4cout << "GateSourceTurbo destructs" << G4endl; };
 
-  G4int GeneratePrimaries(G4Event *event) override;
-  void GeneratePrimaryVertex(G4Event *event) override;
+  void GeneratePrimaries(G4Event *event, double current_simulation_time) override;
+
+  
+  virtual double PrepareNextTime(double current_simulation_time,
+                                 double NumberOfGeneratedEvents);
 
   // should be reimplemented
   G4double GetNextTime(G4double timeStart) override;
@@ -48,7 +51,6 @@ public:
 private:
   static G4bool random_engine_initialized;
   void SetPhiTheta(const G4ThreeVector &pos) const;
-  G4double GetSolidAngle(const G4ThreeVector &pos) const;
   G4bool CheckPosDirValid(const G4ThreeVector &pos,
                           const G4ThreeVector &dir) const;
   G4double act_ratio = 1;
