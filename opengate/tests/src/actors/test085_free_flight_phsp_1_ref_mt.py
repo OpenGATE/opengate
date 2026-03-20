@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import gc
-import os
-import sys
-import time
-from pathlib import Path
-
 from test085_free_flight_helpers import *
-
 from opengate.contrib.root_helpers import *
 from opengate.sources.utility import *
 from opengate.tests import utility
@@ -20,7 +13,7 @@ def main():
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    # sim.visu = True
+    sim.visu = False
     source, actors = create_simulation_test085(
         sim,
         paths,
@@ -33,17 +26,11 @@ def main():
 
     # go
     sim.run()
-    time.sleep(3)
     stats = sim.get_actor("stats")
     print(stats)
 
     rad_spectrum = get_spectrum("tc99m", "gamma", "radar")
     print(rad_spectrum)
-
-    # Force destruction of the simulation to trigger
-    # the merging/closing of ROOT files in MT mode before reading them.
-    del sim
-    gc.collect()
 
     # split tree
     ref_root = paths.output_ref / "phsp_sphere_ref.root"

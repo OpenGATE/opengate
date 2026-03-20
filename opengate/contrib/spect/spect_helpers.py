@@ -156,6 +156,7 @@ def extract_energy_window_from_actor_files(
     return output_filenames
 
 
+# FIXME => SHOULD BE REMOVE ; replace with merge_multi_head_projections_from_images
 def load_and_merge_multi_head_projections(filenames, nb_of_gantry_angles):
     """
     Reads projection files from a specified folder, processes them into sinograms per
@@ -232,6 +233,83 @@ def load_and_merge_multi_head_projections(filenames, nb_of_gantry_angles):
         img.SetDirection(img.GetDirection())
         sinograms.append(img)
     return sinograms
+
+
+def build_sinograms_from_projections(images, nb_of_gantry_angles):
+    """
+    Processes a list of sitk.Image projections into sinograms per energy window.
+    """
+    if not images:
+        raise ValueError("The input list of images is empty.")
+
+    sinograms_per_energy_window = None
+    nb_of_energy_windows = None
+    projection_size = None
+    projection_origin = None
+    projection_spacing = None
+
+    for i, img in enumerate(images):
+        if nb_of_energy_windows is None:
+            nb_of_energy_windows = int(img.GetSize()[2] / nb_of_gantry_angles)
+            projection_size = img.GetSize()
+            projection_origin = img.GetOrigin()
+            projection_spacing = img.GetSpacing()
+            sinograms_per_energy_window = [None] * nb_of_energy_windows
+
+        if nb_of_energy_windows < 1:
+            raise ValueError(
+                f"nb_of_energy_windows={nb_of_energy_windows} is invalid; "
+                f"image size is {img.GetSize()} and nb of angles is {nb_of_gantry_angles}"
+            )
+
+        # check that size and origin are the same for all images
+        if img.GetSize() != projection_size:
+            raise ValueError(
+                f"Image at index {i} has different size than the first image."
+            )
+        if img.GetOrigin() != projection_origin:
+            raise ValueError(
+                f"Image at index {i} has different origin than the first image."
+            )
+        if img.GetSpacing() != projection_spacing:
+            raise ValueError(
+                f"Image at index {i} has different spacing than the first image."
+            )
+
+        # convert to a numpy array view
+        arr = sitk.GetArrayViewFromImage(img)
+
+        # concatenate projections for the different heads and for each energy window
+        for ene in range(nb_of_energy_windows):
+            a = arr[ene::nb_of_energy_windows, :, :].copy()
+            if sinograms_per_energy_window[ene] is None:
+                sinograms_per_energy_window[ene] = a
+            else:
+                sinograms_per_energy_window[ene] = np.concatenate(
+                    (sinograms_per_energy_window[ene], a), axis=0
+                )
+
+    # build sitk image from np arrays
+    sinograms = []
+    for ene in range(nb_of_energy_windows):
+        img = sitk.GetImageFromArray(sinograms_per_energy_window[ene])
+        img.SetSpacing(projection_spacing)
+        img.SetOrigin(projection_origin)
+        img.SetDirection(images[0].GetDirection())
+        sinograms.append(img)
+
+    return sinograms
+
+
+def build_sinograms_from_files(filenames, nb_of_gantry_angles):
+    """
+    Reads projection files from disk and processes them into sinograms per energy window.
+    """
+    images = []
+    for f in filenames:
+        images.append(sitk.ReadImage(str(f)))
+
+    return build_sinograms_from_projections(images, nb_of_gantry_angles)
 
 
 def get_default_energy_windows(radionuclide_name, spectrum_channel=False):

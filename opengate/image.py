@@ -3,7 +3,7 @@ import numpy as np
 from box import Box
 from scipy.spatial.transform import Rotation
 import math
-
+import SimpleITK as sitk
 from .exception import fatal
 from .geometry.utility import (
     get_transform_world_to_local,
@@ -90,16 +90,36 @@ def get_info_from_image(image):
     return info
 
 
-def get_info_from_image_sitk(image):
+def read_image_info_sitk(image):
     info = Box()
-    info.size = np.array(image.GetSize())
+    info.size = np.array(image.GetSize(), dtype=int)
     info.spacing = np.array(image.GetSpacing())
     info.origin = np.array(image.GetOrigin())
-    info.dir = image.GetDirection()
+    # SimpleITK returns the direction cosines as a flat 1D tuple.
+    # We infer the dimension 'n' and reshape it into an n x n matrix.
+    n = len(info.size)
+    info.dir = np.array(image.GetDirection()).reshape((n, n))
     return info
 
 
 def read_image_info(path_to_image):
+    path_to_image = str(path_to_image)
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(path_to_image)
+
+    try:
+        # Reads only the header information, not the pixel data
+        reader.ReadImageInformation()
+    except RuntimeError as e:
+        fatal(f"Cannot read the image file (sitk): {path_to_image}\nDetails: {e}")
+
+    info = read_image_info_sitk(reader)
+    info.filename = path_to_image
+
+    return info
+
+
+def read_image_info_itk_OLD(path_to_image):
     path_to_image = str(path_to_image)
     image_IO = itk.ImageIOFactory.CreateImageIO(
         path_to_image, itk.CommonEnums.IOFileMode_ReadMode
@@ -140,9 +160,36 @@ def get_translation_between_images_center(img_name1, img_name2):
 
 
 def get_translation_to_isocenter(img_filename):
-    info = read_image_info(img_filename)
-    tr = (info.size - 1) * info.spacing / 2.0 + info.origin
-    return tr
+    """
+    Computes the translation required to move the image's geometric center
+    to the physical origin (0,0,0).
+    Returns: list of 3 floats [x, y, z]
+    """
+    # info = read_image_info(img_filename)
+    # tr = (info.size - 1) * info.spacing / 2.0 + info.origin
+    # return tr
+    center = np.array(get_image_physical_center(img_filename))
+    translation = -center
+    return translation.tolist()
+
+
+def get_image_physical_center(img_filename):
+    """
+    Computes the physical coordinate of the geometric center of an ITK image.
+    Used during PyTomography reconstruction when the Gate rotation was around this center.
+
+    Returns: list of 3 floats [x, y, z]
+    """
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(str(img_filename))
+    reader.ReadImageInformation()
+
+    size = np.array(reader.GetSize())
+    spacing = np.array(reader.GetSpacing())
+    origin = np.array(reader.GetOrigin())
+
+    center = origin + (size - 1) * spacing / 2.0
+    return center.tolist()
 
 
 def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
@@ -193,12 +240,6 @@ def itk_image_from_array(arr, view=True):
         image.SetRegions(new_region)
         image.Update()
     return image
-
-
-def get_image_center(image):
-    info = read_image_info(image)
-    center = info.size * info.spacing / 2.0  # + info.spacing / 2.0
-    return center
 
 
 def align_image_with_physical_volume(
