@@ -2,29 +2,26 @@
 set -e
 
 source $GITHUB_WORKSPACE/env_dump.txt
-brew install python@${MATRIX_PYTHON_VERSION} || true
-brew link --overwrite python@${MATRIX_PYTHON_VERSION}
-#brew update
-#rm -rf /usr/local/bin/python3.1*-config /usr/local/bin/2to3-3.1* /usr/local/bin/idle3.1* /usr/local/bin/pydoc3.1* /usr/local/bin/python3.1*
-#rm -rf /usr/local/bin/python3-config /usr/local/bin/2to3 /usr/local/bin/idle3 /usr/local/bin/pydoc3 /usr/local/bin/python3
 brew install --force --verbose --overwrite \
              ccache \
              fftw \
              libomp \
              xquartz \
-             xerces-c \
-             wget  || true
+             xerces-c || true
 brew uninstall --ignore-dependencies libxext
 brew uninstall --ignore-dependencies libx11
 export LDFLAGS="-L/usr/local/opt/llvm/lib"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
 conda list
-which python
-python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored
-pip install wheel delocate
+# install cibuildwheel
+if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
+    pip install cibuildwheel[uv]==2.23.4
+else
+    pip install cibuildwheel[uv]==3.4.0
+fi
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
 else
@@ -75,20 +72,33 @@ else
     cp -r /opt/homebrew/share/qt/plugins/platforms/* opengate_core/plugins/
     cp -r /opt/homebrew/share/qt/plugins/imageformats/* opengate_core/plugins/
 fi
-python3 setup.py sdist bdist_wheel
-ls dist
+export CIBW_BUILD_FRONTEND="build[uv]"
+export CIBW_PLATFORM="macos"
+export CIBW_SKIP="*t*"
+export MACOSX_DEPLOYMENT_TARGET=15.0
+export CIBW_BEFORE_BUILD="uv pip install colored"
+
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/Users/runner/miniconda3/envs/opengate_core/lib
+    export CIBW_ARCHS_MACOS="x86_64"
 else
     export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/opt/homebrew/share/qt/plugins/platforms/:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/opt/homebrew/lib
+    export CIBW_ARCHS_MACOS="arm64"
     python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()" | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
 fi
-delocate-listdeps --all dist/*.whl
-delocate-wheel -w fixed_wheels -v dist/*.whl
-rm -rf dist
-ls fixed_wheels
-delocate-listdeps --all fixed_wheels/*.whl
-mv fixed_wheels dist
+if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
+  export CIBW_BUILD="cp310-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
+  export CIBW_BUILD="cp311-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
+  export CIBW_BUILD="cp312-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.13" ]]; then
+  export CIBW_BUILD="cp313-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
+  export CIBW_BUILD="cp314-*"
+fi
+
+python -m cibuildwheel --output-dir dist
 cd dist
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_15_0/macosx_10_9}' {} \;

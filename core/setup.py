@@ -27,7 +27,7 @@ def get_base_dir() -> Path:
     return Path(__file__).parent.parent.resolve()
 
 
-with open("../VERSION", "r") as fh:
+with open("VERSION", "r") as fh:
     version = fh.read()[:-1]
 
 from distutils.version import LooseVersion
