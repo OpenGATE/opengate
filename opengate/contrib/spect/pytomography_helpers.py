@@ -300,16 +300,17 @@ class PSFBlock(_ConfigBlock):
         # String identifier (e.g., "3_param") or a callable.
         # Callables will trigger a warning on JSON dump.
         self.sigma_fit = None
+        self.sigma_fit_fct = None
 
     def initialize_and_validate(self):
         if self.sigma_fit_params is not None:
             # Rehydrate the function if it's the standard string identifier
             if self.sigma_fit == "3_param":
-                self.sigma_fit = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
+                self.sigma_fit_fct = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
             elif self.sigma_fit == "2_param":
-                self.sigma_fit = lambda r, a, b: a * r + b
+                self.sigma_fit_fct = lambda r, a, b: a * r + b
             elif callable(self.sigma_fit):
-                pass
+                self.sigma_fit_fct = self.sigma_fit
             else:
                 raise ValueError(f"Unknown PSF sigma_fit model: {self.sigma_fit}")
 
@@ -546,7 +547,8 @@ class GateToPyTomographyAdapter:
         # -- Point Spread Function (PSF) --
         if self.psf.sigma_fit_params is not None:
             psf_meta = SPECTPSFMeta(
-                sigma_fit_params=self.psf.sigma_fit_params, sigma_fit=self.psf.sigma_fit
+                sigma_fit_params=self.psf.sigma_fit_params,
+                sigma_fit=self.psf.sigma_fit_fct,
             )
             psf_transform = SPECTPSFTransform(psf_meta)
             obj_transforms.append(psf_transform)
