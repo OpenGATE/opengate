@@ -26,7 +26,7 @@ def main():
     sim.check_volumes_overlap = False
     sim.progress_bar = True
     sim.output_dir = output_folder
-    # sim.random_seed = 123456789
+    sim.random_seed = 123456789
 
     m = g4_units.m
     mm = g4_units.mm
@@ -73,7 +73,7 @@ def main():
     if sim.visu:
         sim.run_timing_intervals = [[0, 0.000003 * sec]]
     else:
-        sim.run_timing_intervals = [[0, 3 * sec]]
+        sim.run_timing_intervals = [[0, 5 * sec]]
 
     # ======================================================
     # 5) Digitizer
