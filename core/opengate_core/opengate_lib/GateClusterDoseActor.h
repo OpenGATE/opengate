@@ -1,0 +1,159 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#ifndef GateClusterDoseActor_h
+#define GateClusterDoseActor_h
+
+#include "G4Cache.hh"
+#include "G4EmCalculator.hh"
+#include "G4VPrimitiveScorer.hh"
+#include "GateSPRCache.h"
+#include "GateVActor.h"
+#include "itkImage.h"
+
+namespace py = pybind11;
+
+class GateClusterDoseActor : public GateVActor {
+
+public:
+  explicit GateClusterDoseActor(py::dict &user_info);
+
+  void InitializeUserInfo(py::dict &user_info) override;
+
+  void InitializeCpp() override;
+
+  void SteppingAction(G4Step *) override;
+
+  void BeginOfRunAction(const G4Run *run) override;
+
+  void BeginOfRunActionMasterThread(int run_id) override;
+
+  int EndOfRunActionMasterThread(int run_id) override;
+
+  void BeginOfEventAction(const G4Event *event) override;
+
+  void EndOfEventAction(const G4Event *event) override;
+
+  void EndOfRunAction(const G4Run *run) override;
+
+  std::string GetScoreInMaterial() const { return fScoreInMaterial; }
+
+  void SetScoreInMaterial(const std::string b) { fScoreInMaterial = b; }
+
+  bool GetFastSPRCalculationFlag() const { return fFastSPRCalcFlag; }
+
+  void SetFastSPRCalculationFlag(const bool b) { fFastSPRCalcFlag = b; }
+
+  double GetReferenceEnergySPR() const { return fReferenceEnergySPR; }
+
+  void SetReferenceEnergySPR(const double b) { fReferenceEnergySPR = b; }
+
+  double GetTransitionEnergySPR() const { return fTransitionEnergySPR; }
+
+  void SetTransitionEnergySPR(const double b) { fTransitionEnergySPR = b; }
+
+  bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
+
+  void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
+
+  void SetDoseFlag(const bool b) { fDoseFlag = b; }
+
+  bool GetDoseFlag() const { return fDoseFlag; }
+
+  void SetDoseSquaredFlag(const bool b) { fDoseSquaredFlag = b; }
+
+  bool GetDoseSquaredFlag() const { return fDoseSquaredFlag; }
+
+  void SetCountsFlag(const bool b) { fCountsFlag = b; }
+
+  bool GetCountsFlag() const { return fCountsFlag; }
+
+  void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
+
+  void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
+
+  void SetOvershoot(const double b) { fOvershoot = b; }
+
+  void SetNbEventsFirstCheck(const int b) { fNbEventsFirstCheck = b; }
+
+  std::string GetPhysicalVolumeName() const { return fPhysicalVolumeName; }
+
+  void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+
+  typedef itk::Image<double, 3> Image3DType;
+
+  int sub2ind(Image3DType::IndexType index3D);
+
+  void ind2sub(int index, Image3DType::IndexType &index3D);
+
+  double GetMaxValueOfImage(Image3DType::Pointer imageP);
+  double ComputeMeanUncertainty();
+
+  Image3DType::Pointer cpp_edep_image;
+  Image3DType::Pointer cpp_edep_squared_image;
+  Image3DType::Pointer cpp_dose_image;
+  Image3DType::Pointer cpp_dose_squared_image;
+  Image3DType::Pointer cpp_density_image;
+  Image3DType::Pointer cpp_counts_image;
+  Image3DType::SizeType size_edep{};
+
+  struct threadLocalT {
+    G4EmCalculator emcalc;
+    std::vector<double> squared_worker_flatimg;
+    std::vector<int> lastid_worker_flatimg;
+  };
+
+  void ScoreSquaredValue(threadLocalT &data,
+                         const Image3DType::Pointer &cpp_image, double value,
+                         int event_id, const Image3DType::IndexType &index);
+
+  void FlushSquaredValues(threadLocalT &data,
+                          const Image3DType::Pointer &cpp_image);
+
+  static void PrepareLocalDataForRun(threadLocalT &data,
+                                     unsigned int numberOfVoxels);
+
+  void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
+                        Image3DType::IndexType &index) const;
+
+  std::string fScoreInMaterial{};
+  double fReferenceEnergySPR;
+  double fTransitionEnergySPR;
+  bool fFastSPRCalcFlag;
+
+  bool fEdepSquaredFlag{};
+
+  bool fDoseFlag{};
+  bool fDoseSquaredFlag{};
+
+  bool fCountsFlag{};
+
+  double fVoxelVolume{};
+
+  double fUncertaintyGoal;
+  double fThreshEdepPerc;
+  double fOvershoot;
+
+  int fNbOfEvent;
+  int fNbEventsFirstCheck;
+  int fNbEventsNextCheck;
+  double fGoalUncertainty;
+
+  std::string fPhysicalVolumeName;
+
+  G4ThreeVector fTranslation;
+  std::string fHitType;
+
+protected:
+  bool fScoreInOtherMaterial;
+  G4Cache<threadLocalT> fThreadLocalDataEdep;
+  G4Cache<threadLocalT> fThreadLocalDataDose;
+  GateSPRCache fSPRCache;
+  double CalculateSPR(G4Step *step);
+};
+
+#endif // GateClusterDoseActor_h
