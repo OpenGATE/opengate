@@ -692,6 +692,158 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
+    """Scaffold for a cluster-based dose actor.
+
+    The current implementation intentionally mirrors DoseActor so new
+    cluster-specific behavior can be added incrementally on both the Python
+    and C++ sides.
+    """
+
+    user_info_defaults = {
+        "cluster_frequency_database": (
+            None,
+            {
+                "doc": "Path to the database containing cluster frequency. ",
+            },
+        ),
+    }
+
+    user_output_config = {
+        "cluster_dose": {
+            "actor_output_class": ActorOutputSingleMeanImage,
+            "active": True,
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def initialize(self, *args):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the attached volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        self.check_user_input()
+
+        VoxelDepositActor.initialize(self)
+
+        # the edep component has to be active in any case
+        self.user_output.cluster_dose.set_active(True, item=0)
+
+        self.InitializeUserInfo(self.user_info)  # C++ side
+
+        # Set the physical volume name on the C++ side
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def __initcpp__(self):
+        g4.GateClusterDoseActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+                "EndOfEventAction",
+            }
+        )
+
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("cluster_dose", run_index)
+        self.push_to_cpp_image(
+            "cluster_dose",
+            run_index,
+            self.cpp_edep_image,
+            self.cpp_edep_squared_image,
+        )
+
+        if self.user_output.dose_with_uncertainty.get_active(item="any"):
+            self.prepare_output_for_run("dose_with_uncertainty", run_index)
+            self.push_to_cpp_image(
+                "dose_with_uncertainty",
+                run_index,
+                self.cpp_dose_image,
+                self.cpp_dose_squared_image,
+            )
+
+        if self.user_output.counts.get_active():
+            self.prepare_output_for_run("counts", run_index)
+            self.push_to_cpp_image("counts", run_index, self.cpp_counts_image)
+
+        g4.GateClusterDoseActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(
+            "edep_with_uncertainty",
+            run_index,
+            self.cpp_edep_image,
+            self.cpp_edep_squared_image,
+        )
+        self._update_output_coordinate_system("edep_with_uncertainty", run_index)
+        self.user_output.edep_with_uncertainty.store_meta_data(
+            run_index, number_of_samples=self.NbOfEvent
+        )
+
+        if self.user_output.dose_with_uncertainty.get_active(item="any"):
+            self.fetch_from_cpp_image(
+                "dose_with_uncertainty",
+                run_index,
+                self.cpp_dose_image,
+                self.cpp_dose_squared_image,
+            )
+            self._update_output_coordinate_system("dose_with_uncertainty", run_index)
+            self.user_output.dose_with_uncertainty.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+            # divide by voxel volume and scale to unit Gy
+            if self.user_output.dose_with_uncertainty.get_active(item=0):
+                self.user_output.dose_with_uncertainty.data_per_run[run_index].data[
+                    0
+                ] /= (g4_units.Gy * self.spacing[0] * self.spacing[1] * self.spacing[2])
+            if self.user_output.dose_with_uncertainty.get_active(item=1):
+                # in the squared component 1, the denominator needs to be squared
+                self.user_output.dose_with_uncertainty.data_per_run[run_index].data[
+                    1
+                ] /= (
+                    g4_units.Gy * self.spacing[0] * self.spacing[1] * self.spacing[2]
+                ) ** 2
+
+        if self.user_output.counts.get_active():
+            self.fetch_from_cpp_image("counts", run_index, self.cpp_counts_image)
+            self._update_output_coordinate_system("counts", run_index)
+            self.user_output.counts.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+
+        # density image
+        if self.user_output.density.get_active():
+            edep_image = self.user_output.edep_with_uncertainty.get_data(
+                run_index, item=0
+            )
+            self.user_output.density.store_data(
+                run_index, self.create_density_image_from_image_volume(edep_image)
+            )
+            self.user_output.density.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+
+        # FIXME: should check if uncertainty goal is reached (return value: 0),
+        # but the current mechanism is quite hacky and it is therefore temporarily not in use!
+        return 0
+
+    def EndSimulationAction(self):
+        g4.GateClusterDoseActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
+
+
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     """TLE = Track Length Estimator"""
 
@@ -1760,6 +1912,7 @@ class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
 
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
+process_cls(ClusterDoseActor)
 process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(RBEActor)

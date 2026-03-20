@@ -79,6 +79,7 @@ from .actors.base import ActorBase
 
 from .actors.doseactors import (
     DoseActor,
+    ClusterDoseActor,
     TLEDoseActor,
     LETActor,
     FluenceActor,
@@ -129,6 +130,7 @@ particle_names_Gate_to_G4 = {
 actor_types = {
     # dose related
     "DoseActor": DoseActor,
+    "ClusterDoseActor": ClusterDoseActor,
     "TLEDoseActor": TLEDoseActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
