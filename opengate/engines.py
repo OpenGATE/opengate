@@ -84,6 +84,10 @@ class SourceEngine(EngineBase):
         # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
         self.source_manager_options = Box()
 
+    @property
+    def source_manager(self):
+        return self.simulation_engine.simulation.source_manager
+
     def close(self):
         if self.verbose_close:
             warning("Closing SourceEngine")
@@ -112,6 +116,18 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager.SetActors(
             self.simulation_engine.simulation.actor_manager.sorted_actors
         )
+
+    def initialize_dynamic_parametrisations(self):
+        dynamic_sources = self.source_manager.dynamic_sources
+        for s in self.source_manager.dynamic_sources:
+            s.check_if_dynamic_params_match_run_timing_intervals()
+        if len(dynamic_sources) > 0:
+            dynamic_source_actor = self.simulation_engine.simulation.add_actor(
+                "DynamicSourceActor", "dynamic_source_actor"
+            )
+            dynamic_source_actor.priority = 1
+            for s in self.source_manager.dynamic_sources:
+                dynamic_source_actor.source_changers.extend(s.create_changers())
 
     def create_master_source_manager(self):
         # create the master source for the masterThread
