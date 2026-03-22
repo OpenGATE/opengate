@@ -101,8 +101,6 @@ if __name__ == "__main__":
             return_type="pd",
         )
 
-        print(coincidences_python[coincidences_python["EventID1"] == 55])
-
         # Check that the coincidences from the CoincidenceSorterActor are identical.
         identical = compare_coincidences(coincidences_python, str(root_filename))
         if identical:
