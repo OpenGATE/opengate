@@ -286,9 +286,10 @@ void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
         break;
       }
       fCurrentStorage->earliestTime = *t;
+    }
 
-      // TODO: swap fCurrentStorage and fFutureStorage when fCurrentStorage has
-      // grown too large.
+    if (fCurrentStorage->digis->GetSize() >= fClearEveryNEvents) {
+      ClearProcessedSingles();
     }
   }
 }
@@ -377,4 +378,27 @@ std::vector<size_t> GateCoincidenceSorterActor::ApplyPolicy(
   // MultiplesPolicy::RemoveMultiples: do nothing.
 
   return filteredIndices;
+}
+
+void GateCoincidenceSorterActor::ClearProcessedSingles() {
+  GateDigiAttributesFiller transferFiller(
+      fCurrentStorage->digis, fFutureStorage->digis,
+      fCurrentStorage->digis->GetDigiAttributeNames());
+
+  auto &iter = fCurrentStorage->iter;
+  iter.GoToBegin();
+
+  while (!iter.IsAtEnd()) {
+    transferFiller.Fill(iter.fIndex);
+    iter++;
+  }
+
+  fFutureStorage->earliestTime = fCurrentStorage->earliestTime;
+  fFutureStorage->latestTime = fCurrentStorage->latestTime;
+
+  fCurrentStorage->digis->Clear();
+  fCurrentStorage->earliestTime.reset();
+  fCurrentStorage->latestTime.reset();
+
+  std::swap(fCurrentStorage, fFutureStorage);
 }

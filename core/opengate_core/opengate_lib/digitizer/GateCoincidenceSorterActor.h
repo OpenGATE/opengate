@@ -89,6 +89,8 @@ protected:
               const std::vector<double> &secondSingleEdep,
               const std::vector<uint8_t> &goodCoincidence) const;
 
+  void ClearProcessedSingles();
+
   struct threadLocalT {
     GateUniqueVolumeID::Pointer *volID;
     double *time;
