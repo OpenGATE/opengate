@@ -23,8 +23,6 @@ def compare_coincidences(
         )
         return False
 
-    print(f"{len(actual_coincidences)} coincidences")
-
     expected_coincidences.sort_values(by=["GlobalTime1"], inplace=True)
     actual_coincidences.sort_values(by=["GlobalTime1"], inplace=True)
 
@@ -49,7 +47,6 @@ def compare_coincidences(
 
     all_match = True
     for attr in expected_coincidences.columns:
-        print(attr)
         expected_values = np.asarray(expected_coincidences[attr].values)
         actual_values = np.asarray(actual_coincidences[attr].values)
         if np.issubdtype(expected_values.dtype, np.floating):
