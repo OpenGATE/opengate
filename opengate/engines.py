@@ -458,11 +458,22 @@ class PhysicsEngine(EngineBase):
 
     @requires_fatal("physics_manager")
     def initialize_optical_surfaces(self):
-        """Calls initialize() method of each OpticalSurface instance."""
+        """Calls initialize() method of each OpticalSurface instance.
 
-        # Call the initialize() method in OpticalSurface class to
-        # create the related G4 instances.
+        G4OpticalSurface objects are shared across all border surfaces that use
+        the same surface name, so that the XML is parsed once and only one
+        G4OpticalSurface C++ object exists per unique surface type.  This avoids
+        O(N^2) memory and CPU usage when simulating large crystal arrays.
+        The cache is passed via a temporary attribute on each OpticalSurface so
+        that initialize() remains argument-free (per GATE developer guidelines).
+        """
+
+        # Cache: surface_name -> (properties_dict, g4_optical_surface, g4_table)
+        # Built lazily as each unique surface name is encountered for the first time.
+        g4_optical_surface_cache = {}
+
         for optical_surface in self.physics_manager.optical_surfaces.values():
+            optical_surface.g4_optical_surface_cache = g4_optical_surface_cache
             optical_surface.initialize()
 
     @requires_fatal("physics_manager")
