@@ -27,7 +27,7 @@ def compare_coincidences(
     actual_coincidences.sort_values(by=["GlobalTime1"], inplace=True)
 
     # Columns corresponding with attributes of type "3", e.g. PostPosition, are named differently
-    # in the CoincidenceSorterActor and the Python function coincidences_sorter():
+    # in the CoincidenceSorterActor and the Python CoincidenceSorter,
     # e.g. PostPosition1_X vs. PostPosition_X1
     # Rename those columns before starting the comparison.
     column_mapping = {}

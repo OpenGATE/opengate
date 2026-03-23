@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.coincidences import coincidences_sorter
+from opengate.actors.coincidences import CoincidenceSorter
 import uproot
 import os
 import numpy as np
@@ -21,40 +21,24 @@ def main(dependency="test072_coinc_sorter_step1.py"):
         subdir = os.path.dirname(__file__)
         os.system(f"python {str(paths.current / subdir / dependency)}")
 
-    # Prepare arguments for the coincidence sorter
-    root_file = uproot.open(root_filename)
-    singles_tree = root_file["Singles_crystal"]
     ns = gate.g4_units.nanosecond
-    time_window = 3 * ns
-    transaxial_plane = "xy"
-    policy = "removeMultiples"
     mm = gate.g4_units.mm
-    minDistanceXY = 0 * mm
-    maxDistanceZ = 32 * mm
 
-    # Run coincidence sorter and return concidences as a pandas DataFrame
-    coincidences_pd = coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        minDistanceXY,
-        transaxial_plane,
-        maxDistanceZ,
-        return_type="pd",
-    )
+    # Run coincidence sorting, returning concidences as a pandas DataFrame
+    sorter = CoincidenceSorter()
+    sorter.window = 3 * ns
+    sorter.multiples_policy = "removeMultiples"
+    sorter.transaxial_plane = "XY"
+    sorter.min_transaxial_distance = 0 * mm
+    sorter.max_axial_distance = 32 * mm
 
-    # Run coincidence sorter again, saving coincidences to a root file
-    coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        minDistanceXY,
-        transaxial_plane,
-        maxDistanceZ,
-        output_file_path=paths.output / "coincidences.root",
-        output_file_format="root",  # Could be ommitted since "root" is the default format
-    )
-    # Read back the coincidences from the root file and remove the colunm named "index"
+    coincidences_pd = sorter.run(root_filename, "Singles_crystal")
+
+    # Run coincidence sorting again, saving coincidences to a root file
+    sorter.output_file_path = paths.output / "coincidences.root"
+    sorter.run(root_filename, "Singles_crystal")
+
+    # Read back the coincidences from the root file
     with uproot.open(paths.output / "coincidences.root") as file:
         tree = file["Coincidences"]
         coincidences_from_root = tree.arrays(library="pd")
@@ -63,16 +47,8 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # Coincidence sorter output to HDF5 is supported only in Python 3.10 and higher
     if sys.version_info[1] > 9:
         # Run coincidence sorter again, saving coincidences to a HDF5 file
-        coincidences_sorter(
-            singles_tree,
-            time_window,
-            policy,
-            minDistanceXY,
-            transaxial_plane,
-            maxDistanceZ,
-            output_file_path=paths.output / "coincidences.hdf5",
-            output_file_format="hdf5",
-        )
+        sorter.output_file_path = paths.output / "coincidences.hdf5"
+        sorter.run(root_filename, "Singles_crystal")
         # Read back the coincidences from the HDF5 file
         coincidences_from_hdf5 = pd.read_hdf(paths.output / "coincidences.hdf5")
         os.remove(paths.output / "coincidences.hdf5")

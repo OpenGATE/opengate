@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from test096_pet_castor_helpers import *
-from opengate.actors.coincidences import *
+from opengate.actors.coincidences import CoincidenceSorter
 import os
 import sys
 
@@ -38,23 +38,19 @@ if __name__ == "__main__":
 
     # time windows
     ns = gate.g4_units.nanosecond
-    time_window = 3 * ns
+    mm = gate.g4_units.mm
+
     policy = "takeAllGoods"
 
-    mm = gate.g4_units.mm
-    min_trans_dist = 0 * mm
-    transaxial_plane = "xy"
-    max_trans_dist = 190 * mm
-    # apply the coincidence sorter
-    coincidences = coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        min_trans_dist,
-        transaxial_plane,
-        max_trans_dist,
-        # return_type="pd",
-    )
+    sorter = CoincidenceSorter()
+    sorter.window = 3 * ns
+    sorter.multiples_policy = policy
+    sorter.transaxial_plane = "XY"
+    sorter.min_transaxial_distance = 0 * mm
+    sorter.max_axial_distance = 190 * mm
+
+    coincidences = sorter.run(root_filename, "singles")
+
     nc = len(coincidences["GlobalTime1"])
     print(f"There are {nc} coincidences for the policy", policy)
 

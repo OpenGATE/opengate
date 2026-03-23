@@ -1,6 +1,7 @@
 from collections import deque
+from dataclasses import dataclass
 from itertools import chain
-
+from pathlib import Path
 import awkward as ak
 import numpy as np
 import pandas as pd
@@ -157,9 +158,6 @@ def coincidences_sorter(
              as a dict of events (return_type "dict") or a pandas DataFrame (return_type "pd")
 
     Chunk size is important for very large root file to avoid loading everything in memory at once
-
-    DEV NOTES:
-    1) TODO: add option allDigiOpenCoincGate=false, so far only for allDigiOpenCoincGate=true
     """
     return _coincidences_sorter(
         singles_tree,
@@ -175,6 +173,45 @@ def coincidences_sorter(
         output_file_path,
         output_file_format,
     )
+
+
+@dataclass
+class CoincidenceSorter:
+    window: float = 0.0
+    multiples_policy: str = "TakeAllGoods"
+    multi_window: bool = True
+    min_transaxial_distance: float = None
+    max_axial_distance: float = None
+    transaxial_plane: str = "XY"
+    chunk_size: int = 100000
+    output_file_path: Path = None
+
+    def run(self, root_filepath, tree_name):
+        root_file = uproot.open(root_filepath)
+        singles_tree = root_file[tree_name]
+        if self.output_file_path is not None:
+            output_file_format = (
+                "hdf5"
+                if str(self.output_file_path).endswith(".hdf5")
+                or str(self.output_file_path).endswith(".h5")
+                else "root"
+            )
+        else:
+            output_file_format = None
+
+        return coincidences_sorter(
+            singles_tree,
+            self.window,
+            self.multiples_policy,
+            self.min_transaxial_distance,
+            str.lower(self.transaxial_plane),
+            self.max_axial_distance,
+            self.chunk_size,
+            "pd",
+            self.output_file_path,
+            output_file_format,
+            self.multi_window,
+        )
 
 
 def _decompose_coincidence_pairs_into_singles(coincidence_pairs):
@@ -684,16 +721,25 @@ def _filter_goods(
     if not transaxial_plane:
         return coincidences
 
-    # Calculate the transaxial distance between the singles in each coincidence.
-    td = _transaxial_distance(coincidences, transaxial_plane)
-    # Remove coincidences of which the transaxial distance is below threshold.
-    filtered_coincidences = coincidences.loc[td >= min_transaxial_distance].reset_index(
-        drop=True
-    )
-    # Calculate the axial distance between the singles in each remaining coincidence.
-    ad = _axial_distance(filtered_coincidences, transaxial_plane)
-    # Remove coincidences of which the axial distance is above the threshold.
-    return filtered_coincidences.loc[ad <= max_axial_distance].reset_index(drop=True)
+    filtered_coincidences = coincidences
+
+    if min_transaxial_distance is not None:
+        # Calculate the transaxial distance between the singles in each coincidence.
+        td = _transaxial_distance(filtered_coincidences, transaxial_plane)
+        # Remove coincidences of which the transaxial distance is below the threshold.
+        filtered_coincidences = filtered_coincidences.loc[
+            td >= min_transaxial_distance
+        ].reset_index(drop=True)
+
+    if max_axial_distance is not None:
+        # Calculate the axial distance between the singles in each remaining coincidence.
+        ad = _axial_distance(filtered_coincidences, transaxial_plane)
+        # Remove coincidences of which the axial distance is above the threshold.
+        filtered_coincidences = filtered_coincidences.loc[
+            ad <= max_axial_distance
+        ].reset_index(drop=True)
+
+    return filtered_coincidences
 
 
 def _filter_max_energy(coincidences):

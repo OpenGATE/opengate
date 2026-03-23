@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.tests.utility as utility
 import opengate.contrib.pet.philipsvereos as vereos
-from opengate.actors.coincidences import coincidences_sorter
+from opengate.actors.coincidences import CoincidenceSorter
 from test098_coincidence_helpers import compare_coincidences
 import uproot
 
@@ -86,20 +86,11 @@ if __name__ == "__main__":
         sim.run(start_new_process=True)
 
         # Calculate the coincidences using the Python implementation.
-        root_file = uproot.open(root_filename)
-        singles_tree = root_file["singles"]
+        sorter = CoincidenceSorter()
+        sorter.window = 1e-9 * sec
+        sorter.multiples_policy = policy[0].lower() + policy[1:]
 
-        coincidences_python = coincidences_sorter(
-            singles_tree,
-            1e-9 * sec,
-            # The policy names in the Python version start with lowercase.
-            policy[0].lower() + policy[1:],
-            0.0,
-            "xy",
-            1 * m,
-            chunk_size=1000000,
-            return_type="pd",
-        )
+        coincidences_python = sorter.run(root_filename, "singles")
 
         # Check that the coincidences from the CoincidenceSorterActor are identical.
         identical = compare_coincidences(coincidences_python, str(root_filename))
