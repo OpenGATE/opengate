@@ -38,18 +38,18 @@ def check_process_user_hook(simulation_engine):
 
 
 def validation_test(arr, nb_split, tol=0.04):
-    arr = arr[arr["ParticleName"] == "gamma"]
-    EventID = arr["EventID"]
-    Weights = arr["Weight"][EventID == EventID[0]]
-    sum_Weights = np.round(np.sum(Weights), 4)
+    arr2 = arr[arr["ParticleName"] == "gamma"]
+    EventID_arr = arr2["EventID"]
+    Weights_arr = arr2["Weight"][EventID_arr == EventID_arr[0]]
+    sum_Weights = np.round(np.sum(Weights_arr), 4)
     if 1 - tol < sum_Weights < 1 + tol and nb_split * (1 - tol) < len(
-        Weights
+        Weights_arr
     ) < nb_split * (1 + tol):
         return True
     else:
         print("Test failed:")
         print(f"{sum_Weights=} vs 1, tol={tol}")
-        print(f"{Weights=}  {len(Weights)=}")
+        print(f"{Weights_arr=}  {len(Weights_arr)=}")
         print(f"{nb_split=}")
         return False
 

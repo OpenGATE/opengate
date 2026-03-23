@@ -1,27 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import time
-from datetime import timedelta, datetime
-import click
-import random
-import sys
-import json
-import re
-from pathlib import Path
-import subprocess
-from multiprocessing import Pool
-import yaml
-from box import Box
 import ast
 import hashlib
+import json
+import os
+import random
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timedelta
+from multiprocessing import Pool
+from pathlib import Path
 
-from opengate.exception import fatal, colored, color_ok, color_error, color_warning
-from opengate_core.testsDataSetup import check_tests_data_folder
-from opengate.bin.opengate_library_path import return_tests_path
+import click
+import yaml
+from box import Box
 from opengate_core import GateInfo
-from opengate.exception import warning
+from opengate_core.testsDataSetup import check_tests_data_folder
+
+from opengate.bin.opengate_library_path import return_tests_path
+from opengate.exception import (
+    color_error,
+    color_ok,
+    color_warning,
+    colored,
+    fatal,
+    warning,
+)
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
