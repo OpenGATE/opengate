@@ -9,7 +9,7 @@ import uproot
 from scipy.stats import wasserstein_distance
 
 import opengate as gate
-from opengate.actors.coincidences import coincidences_sorter
+from opengate.actors.coincidences import CoincidenceSorter
 from opengate.contrib.root_helpers import *
 from opengate.tests import utility
 
@@ -47,19 +47,17 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     mm = gate.g4_units.mm
     min_trans_dist = 0 * mm
-    transaxial_plane = "xy"
     max_trans_dist = 32 * mm
-    # apply coincidences sorter
-    # (chunk size can be much larger, keep a low value to check it is ok)
-    coincidences = coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        min_trans_dist,
-        transaxial_plane,
-        max_trans_dist,
-        chunk_size=1000000,
-    )
+
+    sorter = CoincidenceSorter()
+    sorter.window = 3 * ns
+    sorter.multiples_policy = policy
+    sorter.transaxial_plane = "XY"
+    sorter.min_transaxial_distance = min_trans_dist
+    sorter.max_axial_distance = max_trans_dist
+
+    coincidences = sorter.run(root_filename, "Singles_crystal")
+
     nc = len(coincidences["GlobalTime1"])
     print(f"There are {nc} coincidences for policy", policy)
 
