@@ -1,12 +1,14 @@
-import numpy as np
 import math
+import pathlib
+
+import matplotlib.pyplot as plt
+import numpy as np
+import SimpleITK as sitk
+
 import opengate.geometry.volumes
-from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
 from opengate.sources.gansources import generate_isotropic_directions
-import SimpleITK as sitk
-import matplotlib.pyplot as plt
-import pathlib
+from opengate.utility import fatal, g4_units
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
@@ -862,7 +864,7 @@ def compute_iec_nema_metrics(ref_activity_img, labeled_mask_img, bg_mask_img, te
     """
 
     def ensure_img(i):
-        if isinstance(i, pathlib.PosixPath):
+        if isinstance(i, pathlib.PosixPath) or isinstance(i, pathlib.WindowsPath):
             i = str(i)
         return sitk.ReadImage(i) if isinstance(i, str) else i
 
