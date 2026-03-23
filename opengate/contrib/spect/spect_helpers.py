@@ -623,3 +623,71 @@ def compute_speedup_from_folders(
         test_duration,
         output_filename=test_folder / "speedup.mhd",
     )
+
+
+def create_physics_psf_2param(hole_diameter_mm, hole_length_mm, intrinsic_fwhm_mm):
+    # 1. Force everything to PyTomography's native unit: Centimeters
+    hole_diam_cm = hole_diameter_mm / 10.0
+    hole_len_cm = hole_length_mm / 10.0
+    int_fwhm_cm = intrinsic_fwhm_mm / 10.0
+
+    FWHM2sigma = 1.0 / 2.355
+
+    # 2. Slope 'sigma_a' (dimensionless)
+    # The rate at which the cone expands over distance
+    sigma_a = (hole_diam_cm / hole_len_cm) * FWHM2sigma
+
+    # 3. Intercept 'sigma_b' (in cm)
+    # We combine the hole size and intrinsic blur into a single baseline blur at d=0
+    fwhm_at_face_cm = np.sqrt(hole_diam_cm**2 + int_fwhm_cm**2)
+    sigma_b = fwhm_at_face_cm * FWHM2sigma
+
+    sigma_fit_params = (sigma_a, sigma_b)
+
+    # Standard linear fit
+    sigma_fit = lambda r, a, b: a * r + b
+
+    # =========================================================================
+    # PARAMETER EXPLANATIONS (2-Parameter Model)
+    # -------------------------------------------------------------------------
+    # a (sigma_a) : Dimensionless. The rate of geometric cone expansion (D / L_eff).
+    # b (sigma_b) : cm. The total combined blur physically present at distance 0,
+    #               computed as sqrt(D^2 + Intrinsic^2).
+    # =========================================================================
+
+    return sigma_fit_params, sigma_fit
+
+
+def create_physics_psf_3param(hole_diameter_mm, hole_length_mm, intrinsic_fwhm_mm):
+    # 1. Force everything to PyTomography's native unit: Centimeters
+    hole_diam_cm = hole_diameter_mm / 10.0
+    hole_len_cm = hole_length_mm / 10.0
+    int_fwhm_cm = intrinsic_fwhm_mm / 10.0
+
+    FWHM2sigma = 1.0 / 2.355
+
+    # 2. Geometric Collimator Resolution: R_geo = D * (d + L) / L = (D/L)*d + D
+    # Slope 'a' (dimensionless)
+    collimator_slope = (hole_diam_cm / hole_len_cm) * FWHM2sigma
+
+    # Intercept 'b' (in cm)
+    collimator_intercept = hole_diam_cm * FWHM2sigma
+
+    # Intrinsic 'c' (in cm, converted to sigma)
+    intrinsic_sigma = int_fwhm_cm * FWHM2sigma
+
+    # 3. Custom combination in quadrature
+    sigma_fit = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
+
+    sigma_fit_params = (collimator_slope, collimator_intercept, intrinsic_sigma)
+
+    # =========================================================================
+    # PARAMETER EXPLANATIONS (3-Parameter Model)
+    # -------------------------------------------------------------------------
+    # a (collimator_slope) : Dimensionless. The rate of geometric cone expansion
+    #                        calculated as (D / L_eff).
+    # b (collimator_int)   : cm. The geometric width of the hole itself (D).
+    # c (intrinsic_sigma)  : cm. The constant intrinsic blurring of the crystal.
+    # =========================================================================
+
+    return sigma_fit_params, sigma_fit
