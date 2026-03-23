@@ -13,8 +13,13 @@ script-files = [
 version = { file = "VERSION" }
 readme = { file = "README.md", content-type = "text/markdown"}
 
-[tool.setuptools.packages]
-find = { }  # Scanning implicit namespaces is active by default
+#[tool.setuptools.packages]
+#find = { }  # Scanning implicit namespaces is active by default
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["opengate*"]
+namespaces = false
 
 [project]
 name = "opengate"
