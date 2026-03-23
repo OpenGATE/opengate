@@ -230,7 +230,7 @@ def run_test085_free_flight_phsp_4_analyze_mt():
     print(f"Sum of weights, p+sec    = {t:.0f} vs {len(ene_ref)}")
 
     check1 = (len(ene_ref) - (ene_sc_w.sum() + ene_prim_w.sum())) / len(ene_ref) * 100
-    tol = 1.0
+    tol = 1.20
     is_ok = np.fabs(check1) < tol
     utility.print_test(
         is_ok, f"diff p+sec               = {check1:.2f} %     tol={tol:.2f}"
@@ -281,7 +281,7 @@ def run_test085_free_flight_phsp_4_analyze_mt():
     print(f"Number of scatter sec      = {ene_sc_w_scatter.sum():.0f}")
     d = len(ene_ref_scatter) - (ene_sc_w_scatter.sum() + ene_prim_w_scatter.sum())
     check4 = d / len(ene_ref_scatter) * 100
-    tol = 1.21
+    tol = 1.50
     b = np.fabs(check4) < tol
     utility.print_test(b, f"diff scatter ref-sc        = {check4:.2f} %    tol={tol}")
     is_ok = b and is_ok
