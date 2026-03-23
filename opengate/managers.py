@@ -28,6 +28,8 @@ from .utility import (
 )
 from .logger import *
 
+from .decorators import requires_fatal
+
 from .physics import (
     Region,
     OpticalSurface,
@@ -587,8 +589,7 @@ class PhysicsListManager(GateObject):
         super().__init__(*args, **kwargs)
         # declare the attribute here as None;
         # set to dict in create_physics_list_classes()
-        self.created_physics_list_classes = None
-        self.create_physics_list_classes()
+        self.created_physics_list_classes = self.create_physics_list_classes()
         self.particle_with_biased_process_dictionary = {}
 
     @property
@@ -608,19 +609,21 @@ class PhysicsListManager(GateObject):
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self.create_physics_list_classes()
+        self.created_physics_list_classes = self.create_physics_list_classes()
 
     def create_physics_list_classes(self):
-        self.created_physics_list_classes = {}
+        created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
-            self.created_physics_list_classes[g4pc_name] = (
+            created_physics_list_classes[g4pc_name] = (
                 create_modular_physics_list_class(g4pc_name)
             )
+        return created_physics_list_classes
 
+    @requires_fatal("simulation")
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
             physics_list = self.created_physics_list_classes[physics_list_name](
-                self.physics_manager.simulation.g4_verbose_level
+                self.simulation.g4_verbose_level
             )
         else:
             g4_factory = g4.G4PhysListFactory()
@@ -638,7 +641,7 @@ class PhysicsListManager(GateObject):
         for (
             spc,
             switch,
-        ) in self.physics_manager.special_physics_constructors.items():
+        ) in self.simulation.physics_manager.special_physics_constructors.items():
             if switch is True:
                 try:
                     physics_list.ReplacePhysics(
