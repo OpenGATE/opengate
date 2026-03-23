@@ -723,7 +723,10 @@ class OpticalSurface(GateObject):
 
         g4_optical_surface_cache = self.g4_optical_surface_cache
 
-        if g4_optical_surface_cache is not None and self.g4_surface_name in g4_optical_surface_cache:
+        if (
+            g4_optical_surface_cache is not None
+            and self.g4_surface_name in g4_optical_surface_cache
+        ):
             # Cache hit: reuse the already-built G4OpticalSurface object.
             (
                 self.optical_surface_properties_dict,
@@ -733,9 +736,11 @@ class OpticalSurface(GateObject):
         else:
             # Cache miss: build everything from scratch.
 
-            self.optical_surface_properties_dict = load_optical_surface_properties_from_xml(
-                self.physics_manager.surface_properties_file,
-                self.g4_surface_name,
+            self.optical_surface_properties_dict = (
+                load_optical_surface_properties_from_xml(
+                    self.physics_manager.surface_properties_file,
+                    self.g4_surface_name,
+                )
             )
 
             # Set properties to create G4 Optical Surface object
@@ -744,7 +749,9 @@ class OpticalSurface(GateObject):
             ]
 
             # Create object of Geant4 Optical Surface
-            self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(self.g4_surface_name))
+            self.g4_optical_surface = g4.G4OpticalSurface(
+                g4.G4String(self.g4_surface_name)
+            )
 
             # Set model (eg. Unified, LUT_Davis)
             model_name = surface_base_properties["surface_model"]
