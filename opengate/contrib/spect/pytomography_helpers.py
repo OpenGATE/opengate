@@ -549,13 +549,24 @@ class GateToPyTomographyAdapter:
         final_ref_img.SetSpacing(self.reconstruction.final_spacing)
         final_ref_img.SetOrigin(self.reconstruction.final_origin)
 
+        # Calculate Volume Ratio to Preserve Counts
+        work_vol = work_spacing[0] * work_spacing[1] * work_spacing[2]
+        fin_sp = self.reconstruction.final_spacing
+        final_vol = fin_sp[0] * fin_sp[1] * fin_sp[2]
+        volume_ratio = final_vol / work_vol
+
         # Resample from Working Grid -> Final Grid
-        verbose and print("Resampling to final reconstruction grid...")
+        verbose and print(
+            f"Resampling to final grid (Volume scale factor: {volume_ratio:.4f})..."
+        )
         final_resampler = sitk.ResampleImageFilter()
         final_resampler.SetReferenceImage(final_ref_img)
         final_resampler.SetInterpolator(sitk.sitkBSpline)
         final_resampler.SetDefaultPixelValue(0.0)
         recon_img_final = final_resampler.Execute(recon_img_work)
+
+        # Apply the volume scale to conserve total counts
+        recon_img_final = sitk.Multiply(recon_img_final, float(volume_ratio))
 
         # Clamp to remove negative ringing from spline interpolation
         recon_img_final = sitk.Clamp(recon_img_final, lowerBound=0.0)
