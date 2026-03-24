@@ -1,4 +1,4 @@
-from .base import GateObject
+from .base import GateObject, process_cls
 from .utility import g4_units, fatal
 from .decorators import requires_fatal
 
@@ -227,7 +227,7 @@ class ChemicalDissociation(GateObject):
         self.chemistry_list = None
 
 
-class ChemistryListBase(GateObject, G4VUserChemistryList):
+class ChemistryCustomList(GateObject, G4VUserChemistryList):
 
     user_info_defaults = {
         "chemical_species": (
@@ -254,6 +254,21 @@ class ChemistryListBase(GateObject, G4VUserChemistryList):
     def __init__(self, *args, **kwargs) -> None:
         # references to upper hierarchy level
         super().__init__(*args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        G4VUserChemistryList.__init__(self)
+
+    def __getstate__(self):
+        state_dict = super().__getstate__()
+        return state_dict
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self.__initcpp__()
+
+    def close(self):
+        super().close()
 
     @property
     def g4_molecule_table(self):
@@ -269,6 +284,20 @@ class ChemistryListBase(GateObject, G4VUserChemistryList):
     def find_g4_molecule(self, name):
         return self.g4_molecule_table.FindMoleculeDefinition(name)
 
+    def initialize(self):
+        pass
+
+    # The physics-list wrapper uses the physics-list lifecycle names.
+    # For chemistry lists, ConstructParticle maps naturally to ConstructMolecule.
+    def ConstructParticle(self):
+        self.ConstructMolecule()
+
+    # Geant4-DNA chemistry setup is completed through G4DNAChemistryManager.Initialize().
+    # Keep this method as a no-op so chemistry lists can participate in the wrapper
+    # lifecycle without depending on Geant4's chemistry/physics double inheritance.
+    def ConstructProcess(self):
+        pass
+
     def ConstructMolecule(self):
         for species in self.chemical_species:
             self.g4_molecule_table.CreateMoleculeDefinition(species.name,
@@ -280,7 +309,7 @@ class ChemistryListBase(GateObject, G4VUserChemistryList):
     def ConstructReactionTable(self, reaction_table):
         for reaction_name, reaction in self.reactions.items():
             g4_reactant_a = self.find_g4_molecule(reaction.reactant_a)
-            g4_reactant_b = self.find_g4_molecule(reaction.reactant_a)
+            g4_reactant_b = self.find_g4_molecule(reaction.reactant_b)
             g4_products = [self.find_g4_molecule(p) for p in reaction.products]
             reaction_table.SetReaction(g4_reactant_a, g4_reactant_b, reaction.rate_constant, g4_products)
 
@@ -291,13 +320,4 @@ class ChemistryListBase(GateObject, G4VUserChemistryList):
         pass
 
 
-class DefaultChemistryList(ChemistryListBase):
-
-    def __init__(self, *args, **kwargs) -> None:
-        # references to upper hierarchy level
-        kwargs["chemical_species"] = [ChemicalSpecies(name=k, **params) for k, params in default_chemical_species.items()]
-        super().__init__(name="default_chemistry_list", *args, **kwargs)
-    
-    def initialize(self):
-        self.g4_molecule_table = G4MoleculeTable.Instance()
-
+process_cls(ChemistryCustomList)

@@ -149,6 +149,12 @@ class ActorBase(GateObject):
     # Do not redefine this in inheriting classes!
     _existing_properties_to_interfaces = []
 
+    @property
+    def is_chemistry_actor(self):
+        from .chemistryactors import ChemistryActorBase
+
+        return isinstance(self, ChemistryActorBase)
+
     @classmethod
     def _process_user_output_config(cls):
         # it is important to create a new dictionary for this class
