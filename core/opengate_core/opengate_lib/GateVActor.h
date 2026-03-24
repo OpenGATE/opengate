@@ -104,6 +104,9 @@ public:
   // Called every time a Track ends
   virtual void PostUserTrackingAction(const G4Track *track);
 
+  // Called when the track stack reaches a new stage.
+  virtual void NewStage() {}
+
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
