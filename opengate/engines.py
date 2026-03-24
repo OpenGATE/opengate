@@ -311,9 +311,12 @@ class PhysicsEngine(EngineBase):
         Create a Physic List from the Factory
         """
         physics_list_name = self.physics_manager.user_info.physics_list_name
+        chemistry_list = (
+            self.simulation_engine.simulation.chemistry_manager.resolved_chemistry_list
+        )
         self.g4_physics_list = (
             self.physics_manager.physics_list_manager.get_physics_list(
-                physics_list_name
+                physics_list_name, chemistry_list=chemistry_list
             )
         )
 
@@ -532,6 +535,8 @@ class ChemistryEngine(EngineBase):
 
         # g4 references
         self.g4_dna_chemistry_manager = None
+        self.g4_scheduler = None
+        self.g4_time_step_action = None
 
     def close(self):
         if self.verbose_close:
@@ -540,11 +545,25 @@ class ChemistryEngine(EngineBase):
         super().close()
 
     def release_g4_references(self):
-        pass
+        self.g4_dna_chemistry_manager = None
+        self.g4_scheduler = None
+        self.g4_time_step_action = None
 
 
     def initialize(self):
+        chemistry_list = self.chemistry_manager.resolved_chemistry_list
+        if chemistry_list is None:
+            return
+
         self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
+        self.g4_dna_chemistry_manager.SetChemistryActive(True)
+        self.g4_dna_chemistry_manager.Initialize(chemistry_list)
+        self.g4_scheduler = g4.G4Scheduler.Instance()
+        self.g4_time_step_action = g4.GateTimeStepAction()
+        for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
+            if actor.is_chemistry_actor:
+                self.g4_time_step_action.RegisterActor(actor)
+        self.g4_scheduler.SetUserAction(self.g4_time_step_action)
 
 
 class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
@@ -567,6 +586,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def close(self):
         if self.verbose_close:
@@ -580,11 +600,13 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
         self.register_event_actions(actor)
         self.register_tracking_actions(actor)
+        self.register_stacking_actions(actor)
 
     def register_run_actions(self, actor):
         for ra in self.g4_RunAction:
@@ -597,6 +619,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def register_stacking_actions(self, actor):
+        is_chemistry_actor = actor.is_chemistry_actor
+        for sa in self.g4_StackingAction:
+            sa.RegisterActor(actor, is_chemistry_actor)
 
     def BuildForMaster(self):
         # This function is called only in MT mode, for the master thread
@@ -638,6 +665,13 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
+
+        sa = g4.GateStackingAction()
+        sa.fChemistryIsActive = (
+            self.simulation_engine.simulation.chemistry_manager.chemistry_is_required()
+        )
+        self.SetUserAction(sa)
+        self.g4_StackingAction.append(sa)
 
 
 def register_sensitive_detector_to_children(actor, lv):
@@ -1181,6 +1215,7 @@ class SimulationEngine(GateSingletonFatal):
 
     def notify_managers(self):
         self.simulation.physics_manager._simulation_engine_closing()
+        self.simulation.chemistry_manager._simulation_engine_closing()
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
@@ -1428,6 +1463,9 @@ class SimulationEngine(GateSingletonFatal):
         logger.info("Simulation: initialize Geometry")
         self.volume_engine.initialize()
 
+        logger.info("Simulation: resolve Chemistry configuration")
+        self.simulation.chemistry_manager.initialize()
+
         # Physics initialization
         logger.info("Simulation: initialize Physics")
         self.physics_engine.initialize_before_runmanager()
@@ -1440,6 +1478,9 @@ class SimulationEngine(GateSingletonFatal):
         self.source_engine.initialize(
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
+
+        logger.info("Simulation: initialize Chemistry")
+        self.chemistry_engine.initialize()
 
         # action
 
