@@ -1027,4 +1027,109 @@ Reference
 
 .. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
+Free Flight Actors
+------------------
 
+Description
+~~~~~~~~~~~
+
+Free Flight is a variance reduction technique designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations[cite: 248]. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See paper [Sarrut et al, PMB, 2026, to appear].
+
+
+OpenGATE provides two main actors for this purpose:
+
+* **GammaFreeFlightActor**: Primarily used for "primary" photons (unscattered) or those originating directly from the source.
+* **ScatterSplittingFreeFlightActor**: Used to handle photons that undergo Compton or Rayleigh scattering within a volume, such as a patient phantom.
+
+GammaFreeFlightActor
+~~~~~~~~~~~~~~~~~~~~
+
+This actor is typically attached to the world or a specific phantom volume. It ensures that photons directed towards the detector are accounted for analytically[cite: 249]. It is often used in conjunction with **Forced Direction** or **Angular Acceptance** source settings to focus the simulation on the detector's field of view.
+
+.. code-block:: python
+
+   # Add the actor to the simulation
+   ff = sim.add_actor("GammaFreeFlightActor", "ff")
+   ff.attached_to = "world"
+
+   # Optionally exclude specific volumes like the detector crystal
+   # to let standard Geant4 tracking take over once the particle reaches the detector.
+   ff.exclude_volumes = ["spect_1_crystal"]
+
+
+
+ScatterSplittingFreeFlightActor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``ScatterSplittingFreeFlightActor`` handles the calculation of scattered radiation contributions. When a photon interacts, this actor "splits" the interaction into multiple analytical paths directed toward the detector, weighted by the physics of the interaction (e.g., Klein-Nishina cross-section).
+
+* **compton_splitting_factor / rayleigh_splitting_factor**: Defines how many analytical photons are generated per interaction.
+* **kill_interacting_in_volumes**: Volumes where the original interacting particle should be stopped to avoid double counting.
+* **angular_acceptance**: Filters the analytical scattered photons to only those heading toward the detector.
+
+.. code-block:: python
+
+   ff_sc = sim.add_actor("ScatterSplittingFreeFlightActor", "ff_scatter")
+   ff_sc.attached_to = "world"
+   ff_sc.exclude_volumes = ["spect_1_crystal"]
+   ff_sc.kill_interacting_in_volumes = ["spect_1_crystal"]
+
+   # Splitting configuration
+   ff_sc.compton_splitting_factor = 50
+   ff_sc.rayleigh_splitting_factor = 50
+
+   # Direct scattered photons only towards the SPECT head
+   ff_sc.angular_acceptance.policy = "Rejection"
+   ff_sc.angular_acceptance.target_volumes = ["spect_1"]
+   ff_sc.angular_acceptance.angle_tolerance_max = 10 * gate.g4_units.deg
+
+
+
+Merging and Uncertainty Calculation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because Free Flight separates simulations into primary and scatter components, results must be merged offline. To obtain a statistically sound result, one must sum the mean counts per event from each step and propagate the variance.
+
+The helper function ``merge_freeflight_uncertainty`` automates this by processing the ``counts.mhd`` and ``squared_counts.mhd`` files from each subfolder (e.g., primary, scatter).
+
+**Statistical Equations:**
+
+* Let $C_i$ be the raw counts and $C2_i$ the squared counts for step $i$ with $N_i$ events.
+* Mean per event: $E[X_i] = C_i / N_i$.
+* Variance of the mean: $Var(E[X_i]) = (E[X_i^2] - (E[X_i])^2) / (N_i - 1)$.
+* Total Mean: $E[X_{total}] = \sum E[X_i]$.
+* Final Relative Uncertainty: $R = \frac{\sqrt{\sum Var(E[X_i])}}{E[X_{total}]}$.
+
+**Usage of Helpers:**
+
+.. code-block:: python
+
+   from opengate.contrib.spect.spect_freeflight_helpers import merge_freeflight_uncertainty
+   from pathlib import Path
+
+   # Define parameters
+   folder = Path("./output_simu")
+   ref_n = 1e8  # Target reference number of events
+   subfolders = ["primary", "scatter"]
+   num_events = [1e6, 2e5]  # Number of simulated events in each subfolder
+
+   # Merge images and calculate uncertainty for head 0
+   merge_freeflight_uncertainty(
+       folder,
+       ref_n,
+       subfolders,
+       num_events,
+       counts_filename="projection_0_counts.mhd",
+       squared_counts_filename="projection_0_squared_counts.mhd",
+       output_filename="relative_uncertainty_0.mhd"
+   )
+
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.freeflightactors.GammaFreeFlightActor
+.. autoclass:: opengate.actors.freeflightactors.ScatterSplittingFreeFlightActor
+
+.. autofunction:: opengate.contrib.spect.spect_freeflight_helpers.merge_freeflight_uncertainty
