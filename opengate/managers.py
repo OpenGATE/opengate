@@ -6,6 +6,7 @@ import shutil
 import weakref
 from pathlib import Path
 import io
+import sys
 
 import opengate_core as g4
 from .base import (
@@ -186,35 +187,24 @@ def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
 def create_modular_physics_list_class(g4_physics_constructor_class_name):
     """
     Create a class (not on object!) which:
-    - inherit from g4.G4VModularPhysicsList
+    - inherits from g4.G4VModularPhysicsList
     - register a single G4 PhysicsConstructor (inherited from G4VPhysicsConstructor)
     - has the same name as this PhysicsConstructor
     """
-    g4_physics_constructor_class = retrieve_g4_physics_constructor_class(
+    physics_constructor_class = retrieve_g4_physics_constructor_class(
         g4_physics_constructor_class_name
     )
-    # create the class with __init__ method
-    cls = type(
-        g4_physics_constructor_class_name,
-        (g4.G4VModularPhysicsList,),
-        {
-            "g4_physics_constructor_class": g4_physics_constructor_class,
-            "__init__": init_method,
-        },
-    )
-    return cls
+    class ModularPhysicsList(g4.G4VModularPhysicsList):
+        g4_physics_constructor_class = physics_constructor_class
 
+        def __init__(self, verbosity):
+            g4.G4VModularPhysicsList.__init__(self)
+            self.g4_physics_constructor = self.g4_physics_constructor_class(verbosity)
+            self.RegisterPhysics(self.g4_physics_constructor)
 
-def init_method(self, verbosity):
-    """
-    Init method of the dynamically created physics list class.
-    - call the init method of the super class (G4VModularPhysicsList)
-    - Create and register the physics constructor (G4VPhysicsConstructor)
-    """
-    g4.G4VModularPhysicsList.__init__(self)
-    self.g4_physics_constructor = self.g4_physics_constructor_class(verbosity)
-    self.RegisterPhysics(self.g4_physics_constructor)
-
+    ModularPhysicsList.__name__ = g4_physics_constructor_class_name
+    ModularPhysicsList.__qualname__ = g4_physics_constructor_class_name
+    return ModularPhysicsList
 
 class FilterManager:
     """
