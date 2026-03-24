@@ -96,6 +96,8 @@ void init_G4UserEventAction(py::module &);
 
 void init_G4UserTrackingAction(py::module &);
 
+void init_G4UserStackingAction(py::module &);
+
 void init_G4UserSteppingAction(py::module &);
 
 void init_G4Track(py::module &);
@@ -112,6 +114,10 @@ void init_G4VUserChemistryList(py::module &);
 void init_G4MoleculeTable(py::module &);
 
 void init_G4DNAChemistryManager(py::module &);
+
+void init_G4Scheduler(py::module &);
+
+void init_G4UserTimeStepAction(py::module &);
 
 
 // processes/electromagnetic/utils
@@ -363,6 +369,8 @@ void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
 
+void init_GateVChemistryActor(py::module &);
+
 void init_GateWeightedEdepActor(py::module &);
 
 void init_GateActorManager(py::module &);
@@ -424,6 +432,12 @@ void init_GateEventAction(py::module &);
 void init_GateTrackingAction(py::module &);
 
 void init_GateSteppingAction(py::module &);
+
+void init_GateStackingAction(py::module &);
+
+void init_GateTimeStepAction(py::module &);
+
+void init_GateChemicalStageActor(py::module &);
 
 void init_GateVAuxiliaryAttribute(py::module &);
 
@@ -578,6 +592,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4PrimaryVertex(m);
   init_G4UserEventAction(m);
   init_G4UserTrackingAction(m);
+  init_G4UserStackingAction(m);
   init_G4StepPoint(m);
   init_G4Track(m);
   init_G4Step(m);
@@ -586,6 +601,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4VUserChemistryList(m);
   init_G4MoleculeTable(m);
   init_G4DNAChemistryManager(m);
+  init_G4Scheduler(m);
+  init_G4UserTimeStepAction(m);
 
   init_G4VSolid(m);
   init_G4VFacet(m);
@@ -722,6 +739,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateCheckDeex(m);
   init_GateInfo(m);
   init_GateVActor(m);
+  init_GateVChemistryActor(m);
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
@@ -750,6 +768,9 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateEventAction(m);
   init_GateTrackingAction(m);
   init_GateSteppingAction(m);
+  init_GateStackingAction(m);
+  init_GateTimeStepAction(m);
+  init_GateChemicalStageActor(m);
   init_GateVAuxiliaryAttribute(m);
   init_GateInteractionCounterAttribute(m);
   init_GateUnscatteredPrimaryAttribute(m);
