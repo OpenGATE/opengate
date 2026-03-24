@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests import utility
-from opengate.contrib.spect.pytomography_helpers import *
-from opengate.contrib.spect.spect_helpers import get_default_energy_windows
-from opengate.image import get_image_physical_center
-from test094_helpers import analyse_test094
 from opengate import g4_units
+from opengate.tests import utility
+from test094_helpers import analyse_test094
+from opengate.image import get_image_physical_center
 import opengate.contrib.spect.siemens_intevo as intevo
+from opengate.contrib.spect.pytomography_helpers import *
+from opengate.contrib.spect.spect_helpers import (
+    get_default_energy_windows,
+    create_physics_psf_3param,
+)
 
 
 def go():
@@ -62,7 +65,7 @@ def go():
     ad.psf.sigma_fit = sigma_fit  # (cannot be dumped in json)
 
     # Example of empiric data
-    sigma_fit_params = np.array((0.01788, 0.5158, 0.0022))
+    sigma_fit_params = np.array((0.03391, 0.1083, 0.2401))
     print(sigma_fit_params)
     ad.psf.sigma_fit = "3_param"
 

@@ -1042,7 +1042,6 @@ def plot_iec_rc_curves(mask_input, stats_list, labels=None, fig_path="rc.pdf"):
         r_sorted = [rc_values_list[j][idx] for idx in sorted_indices]
 
         style = styles[j % len(styles)]
-        print(d_sorted, r_sorted)
         plt.plot(d_sorted, r_sorted, style, label=labels[j], markersize=8)
 
     # Standard IEC diameters for reference
@@ -1052,6 +1051,7 @@ def plot_iec_rc_curves(mask_input, stats_list, labels=None, fig_path="rc.pdf"):
     plt.title("IEC Phantom Recovery Coefficient")
     plt.grid(True, linestyle=":", alpha=0.6)
     plt.legend()
+    plt.ylim(0, 1.0)
 
     plt.tight_layout()
     plt.savefig(fig_path)

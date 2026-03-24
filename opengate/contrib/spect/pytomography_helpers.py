@@ -11,17 +11,17 @@ except ModuleNotFoundError:
     sys.modules[__name__] = None
     raise SystemExit
 
+import json
+import torch
+import warnings
+import numpy as np
+import SimpleITK as sitk
+from pathlib import Path
 from pytomography.metadata.SPECT import SPECTObjectMeta, SPECTProjMeta, SPECTPSFMeta
 from pytomography.transforms.SPECT import SPECTPSFTransform, SPECTAttenuationTransform
 from pytomography.projectors.SPECT import SPECTSystemMatrix
 from pytomography.likelihoods import PoissonLogLikelihood
 from pytomography.algorithms import OSEM
-import torch
-import SimpleITK as sitk
-import numpy as np
-import json
-from pathlib import Path
-import warnings
 
 
 def convert_image_gate_to_pytomo(np_image):
@@ -53,74 +53,6 @@ def convert_sinogram_gate_to_pytomo(np_sinogram):
     rotated_sinogram = np.transpose(np_sinogram, axes=(0, 2, 1))
     rotated_sinogram = rotated_sinogram[:, :, ::-1].copy()
     return rotated_sinogram
-
-
-def create_physics_psf_2param(hole_diameter_mm, hole_length_mm, intrinsic_fwhm_mm):
-    # 1. Force everything to PyTomography's native unit: Centimeters
-    hole_diam_cm = hole_diameter_mm / 10.0
-    hole_len_cm = hole_length_mm / 10.0
-    int_fwhm_cm = intrinsic_fwhm_mm / 10.0
-
-    FWHM2sigma = 1.0 / 2.355
-
-    # 2. Slope 'sigma_a' (dimensionless)
-    # The rate at which the cone expands over distance
-    sigma_a = (hole_diam_cm / hole_len_cm) * FWHM2sigma
-
-    # 3. Intercept 'sigma_b' (in cm)
-    # We combine the hole size and intrinsic blur into a single baseline blur at d=0
-    fwhm_at_face_cm = np.sqrt(hole_diam_cm**2 + int_fwhm_cm**2)
-    sigma_b = fwhm_at_face_cm * FWHM2sigma
-
-    sigma_fit_params = (sigma_a, sigma_b)
-
-    # Standard linear fit
-    sigma_fit = lambda r, a, b: a * r + b
-
-    # =========================================================================
-    # PARAMETER EXPLANATIONS (2-Parameter Model)
-    # -------------------------------------------------------------------------
-    # a (sigma_a) : Dimensionless. The rate of geometric cone expansion (D / L_eff).
-    # b (sigma_b) : cm. The total combined blur physically present at distance 0,
-    #               computed as sqrt(D^2 + Intrinsic^2).
-    # =========================================================================
-
-    return sigma_fit_params, sigma_fit
-
-
-def create_physics_psf_3param(hole_diameter_mm, hole_length_mm, intrinsic_fwhm_mm):
-    # 1. Force everything to PyTomography's native unit: Centimeters
-    hole_diam_cm = hole_diameter_mm / 10.0
-    hole_len_cm = hole_length_mm / 10.0
-    int_fwhm_cm = intrinsic_fwhm_mm / 10.0
-
-    FWHM2sigma = 1.0 / 2.355
-
-    # 2. Geometric Collimator Resolution: R_geo = D * (d + L) / L = (D/L)*d + D
-    # Slope 'a' (dimensionless)
-    collimator_slope = (hole_diam_cm / hole_len_cm) * FWHM2sigma
-
-    # Intercept 'b' (in cm)
-    collimator_intercept = hole_diam_cm * FWHM2sigma
-
-    # Intrinsic 'c' (in cm, converted to sigma)
-    intrinsic_sigma = int_fwhm_cm * FWHM2sigma
-
-    # 3. Custom combination in quadrature
-    sigma_fit = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
-
-    sigma_fit_params = (collimator_slope, collimator_intercept, intrinsic_sigma)
-
-    # =========================================================================
-    # PARAMETER EXPLANATIONS (3-Parameter Model)
-    # -------------------------------------------------------------------------
-    # a (collimator_slope) : Dimensionless. The rate of geometric cone expansion
-    #                        calculated as (D / L_eff).
-    # b (collimator_int)   : cm. The geometric width of the hole itself (D).
-    # c (intrinsic_sigma)  : cm. The constant intrinsic blurring of the crystal.
-    # =========================================================================
-
-    return sigma_fit_params, sigma_fit
 
 
 class _ConfigBlock:
@@ -300,16 +232,17 @@ class PSFBlock(_ConfigBlock):
         # String identifier (e.g., "3_param") or a callable.
         # Callables will trigger a warning on JSON dump.
         self.sigma_fit = None
+        self.sigma_fit_fct = None
 
     def initialize_and_validate(self):
         if self.sigma_fit_params is not None:
             # Rehydrate the function if it's the standard string identifier
             if self.sigma_fit == "3_param":
-                self.sigma_fit = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
+                self.sigma_fit_fct = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
             elif self.sigma_fit == "2_param":
-                self.sigma_fit = lambda r, a, b: a * r + b
+                self.sigma_fit_fct = lambda r, a, b: a * r + b
             elif callable(self.sigma_fit):
-                pass
+                self.sigma_fit_fct = self.sigma_fit
             else:
                 raise ValueError(f"Unknown PSF sigma_fit model: {self.sigma_fit}")
 
@@ -546,7 +479,8 @@ class GateToPyTomographyAdapter:
         # -- Point Spread Function (PSF) --
         if self.psf.sigma_fit_params is not None:
             psf_meta = SPECTPSFMeta(
-                sigma_fit_params=self.psf.sigma_fit_params, sigma_fit=self.psf.sigma_fit
+                sigma_fit_params=self.psf.sigma_fit_params,
+                sigma_fit=self.psf.sigma_fit_fct,
             )
             psf_transform = SPECTPSFTransform(psf_meta)
             obj_transforms.append(psf_transform)
@@ -615,13 +549,24 @@ class GateToPyTomographyAdapter:
         final_ref_img.SetSpacing(self.reconstruction.final_spacing)
         final_ref_img.SetOrigin(self.reconstruction.final_origin)
 
+        # Calculate Volume Ratio to Preserve Counts
+        work_vol = work_spacing[0] * work_spacing[1] * work_spacing[2]
+        fin_sp = self.reconstruction.final_spacing
+        final_vol = fin_sp[0] * fin_sp[1] * fin_sp[2]
+        volume_ratio = final_vol / work_vol
+
         # Resample from Working Grid -> Final Grid
-        verbose and print("Resampling to final reconstruction grid...")
+        verbose and print(
+            f"Resampling to final grid (Volume scale factor: {volume_ratio:.4f})..."
+        )
         final_resampler = sitk.ResampleImageFilter()
         final_resampler.SetReferenceImage(final_ref_img)
         final_resampler.SetInterpolator(sitk.sitkBSpline)
         final_resampler.SetDefaultPixelValue(0.0)
         recon_img_final = final_resampler.Execute(recon_img_work)
+
+        # Apply the volume scale to conserve total counts
+        recon_img_final = sitk.Multiply(recon_img_final, float(volume_ratio))
 
         # Clamp to remove negative ringing from spline interpolation
         recon_img_final = sitk.Clamp(recon_img_final, lowerBound=0.0)
