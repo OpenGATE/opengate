@@ -8,7 +8,7 @@ from opengate.tests import utility
 paths = utility.get_default_test_paths(__file__, "", "test033")
 
 
-def create_test(sim, nb_thread=1):
+def create_test(sim, version, nb_thread=1):
     # main options
     sim.g4_verbose = False
     sim.running_verbose_level = gate.logger.RUN
@@ -105,15 +105,15 @@ def create_test(sim, nb_thread=1):
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output_filename = "test033_stats.txt"
+    stat.output_filename = f"test033_stats_{version}.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
     proj = gate_spect.add_simplified_digitizer_tc99m_OLD(
-        sim, "spect1_crystal", "test033_proj_1.mhd"
+        sim, "spect1_crystal", f"test033_proj_1_{version}.mhd"
     )
     proj.origin_as_image_center = False
     proj = gate_spect.add_simplified_digitizer_tc99m_OLD(
-        sim, "spect2_crystal", "test033_proj_2.mhd"
+        sim, "spect2_crystal", f"test033_proj_2_{version}.mhd"
     )
     proj.origin_as_image_center = False
 
@@ -179,10 +179,12 @@ def evaluate_test(sim, sources, itol, ref_skipped):
 
     # compare edep map
     gate.exception.warning(f"Check images")
+    proj = sim.get_actor("Projection_spect1_crystal")
+    fn = proj.get_output_path("counts")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test033_proj_1.mhd",
-            paths.output / "test033_proj_1_counts.mhd",
+            fn,
             stats,
             tolerance=68,
             axis="x",
@@ -192,10 +194,12 @@ def evaluate_test(sim, sources, itol, ref_skipped):
         )
         and is_ok
     )
+    proj = sim.get_actor("Projection_spect2_crystal")
+    fn = proj.get_output_path("counts")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test033_proj_2.mhd",
-            paths.output / "test033_proj_2_counts.mhd",
+            fn,
             stats,
             tolerance=75,
             axis="x",
