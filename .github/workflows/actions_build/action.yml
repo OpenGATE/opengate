@@ -8,10 +8,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up Python ${{ inputs.python-version }}
+    - name: Set up Python 3.14
       uses: actions/setup-python@v6
       with:
-        python-version: ${{ inputs.python-version }}
+        python-version: '3.14'
     - name: Get OS version
       id: get-os-version
       shell: bash -l {0}
@@ -45,7 +45,7 @@ runs:
         fi
     - name: Cache modules
       id: cache_opengate_core_dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
@@ -56,11 +56,19 @@ runs:
           miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
-          python-version: ${{ inputs.python-version }}
+          python-version: '3.14'
     - name: Set up Homebrew
       if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
       id: set-up-homebrew
-      uses: Homebrew/actions/setup-homebrew@master
+      uses: Homebrew/actions/setup-homebrew@main
+    # - name: Cache Homebrew prefix
+    #   if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
+    #   id: cache-homebrew
+    #   uses: Homebrew/actions/cache-homebrew-prefix@main
+    #   with:
+    #     install: wget ccache fftw libomp xquartz xerces-c
+    #     uninstall: true
+    #     workflow-key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_homebrew
     - name: Create opengate_core Wheel Linux
       if: (inputs.os == 'ubuntu-24.04') || (inputs.os == 'ubuntu-24.04-arm')
       env:
@@ -76,6 +84,7 @@ runs:
         MATRIX_OS: ${{ inputs.os }}
         MATRIX_PYTHON_VERSION: ${{ inputs.python-version }}
         MATRIX_CACHE: ${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}
+        # BREW_CACHE: ${{ steps.cache_homebrew.outputs.cache-hit }}
       shell: bash -l {0}
       run: |
           export > $GITHUB_WORKSPACE/env_dump.txt
@@ -85,6 +94,7 @@ runs:
       env:
         MATRIX_CACHE: ${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}
         MATRIX_PYTHON_VERSION: ${{ inputs.python-version }}
+        MATRIX_OS: ${{ inputs.os }}
       shell: bash -l {0}
       run: |
           export > $GITHUB_WORKSPACE\\env_dump.txt
