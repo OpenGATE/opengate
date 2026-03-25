@@ -65,9 +65,9 @@ runs:
           sha=${{ github.sha }}
           sha=$sha$OSNAME$PYTHONFOLDER
           if [ "${{ github.event_name }}" = "schedule" ]; then
-              OutputTest=$(opengate_tests -n 1)
+              OutputTest=$(opengate_tests)
           else
-              OutputTest=$(opengate_tests -n 1 -r -s $sha)
+              OutputTest=$(opengate_tests -r -s $sha)
           fi
           echo "$OutputTest"
           ls $dashboard_path/../output_dashboard/
