@@ -15,7 +15,7 @@ Gate provides a "Pythonic" syntax to create and combine filters naturally using 
    from opengate.actors.filters import GateFilterBuilder
 
    # 1. Initialize the filter factory
-   F = gate.GateFilterBuilder()
+   F = GateFilterBuilder()
 
    # 2. Create a complex filter logic
    # Example: Keep only gammas with Energy > 100 keV AND (Time < 10 ns OR Unscattered)
