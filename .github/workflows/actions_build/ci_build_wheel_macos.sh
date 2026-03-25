@@ -8,13 +8,9 @@ if [ "${BREW_CACHE}" != 'true' ]; then
                 ccache \
                 fftw \
                 libomp \
-                xquartz \
+                qt \
                 xerces-c || true
-    if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
-        conda install conda-forge::qt6-main conda-forge::qt6-3d
-    else
-        brew install qt
-    fi
+
     brew uninstall --ignore-dependencies libxext
     brew uninstall --ignore-dependencies libx11
 fi
@@ -24,6 +20,8 @@ export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
 conda list
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
+export QT_PLUGIN_DIR=$(qtpaths6 --plugin-dir)
+echo "QT_PLUGIN_DIR is $QT_PLUGIN_DIR"
 pip install wget colored
 # install cibuildwheel
 pip install cibuildwheel[uv]==3.4.0
@@ -65,14 +63,11 @@ cd $GITHUB_WORKSPACE
 source $HOME/software/geant4/bin/geant4make.sh
 export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
 cd core
+
 mkdir opengate_core/plugins
-if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
-    cp -r /Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms/* opengate_core/plugins/
-    cp -r /Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/imageformats opengate_core/plugins/
-else
-    cp -r /opt/homebrew/share/qt/plugins/platforms/* opengate_core/plugins/
-    cp -r /opt/homebrew/share/qt/plugins/imageformats/* opengate_core/plugins/
-fi
+cp -r $QT_PLUGIN_DIR/platforms/* opengate_core/plugins/
+cp -r $QT_PLUGIN_DIR/imageformats/* opengate_core/plugins/
+
 export CIBW_BUILD_FRONTEND="build[uv]"
 export CIBW_PLATFORM="macos"
 export CIBW_SKIP="*t*"

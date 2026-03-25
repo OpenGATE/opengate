@@ -6,7 +6,6 @@ source $CONDA/Scripts/activate opengate_core
 conda info
 conda install cmake==3.31.2
 cmake --version
-conda install openssl==3.0.19
 conda list
 which python
 python --version

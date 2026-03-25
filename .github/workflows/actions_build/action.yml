@@ -66,7 +66,7 @@ runs:
     #   id: cache-homebrew
     #   uses: Homebrew/actions/cache-homebrew-prefix@main
     #   with:
-    #     install: wget ccache fftw libomp xquartz xerces-c
+    #     install: wget ccache fftw libomp qt xerces-c cmake
     #     uninstall: true
     #     workflow-key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_homebrew
     - name: Create opengate_core Wheel Linux
