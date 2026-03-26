@@ -40,7 +40,7 @@ if __name__ == "__main__":
     ns = gate.g4_units.nanosecond
     mm = gate.g4_units.mm
 
-    policy = "takeAllGoods"
+    policy = "TakeAllGoods"
 
     sorter = CoincidenceSorter()
     sorter.window = 3 * ns

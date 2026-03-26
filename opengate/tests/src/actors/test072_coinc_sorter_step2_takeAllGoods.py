@@ -43,7 +43,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # time windows
     ns = gate.g4_units.nanosecond
     time_window = 3 * ns
-    policy = "takeAllGoods"
+    policy = "TakeAllGoods"
 
     mm = gate.g4_units.mm
     min_trans_dist = 0 * mm

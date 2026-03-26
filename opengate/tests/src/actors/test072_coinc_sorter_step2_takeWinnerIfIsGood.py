@@ -40,7 +40,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # time windows
     ns = gate.g4_units.nanosecond
-    policy = "takeWinnerIfIsGood"
+    policy = "TakeWinnerIfIsGood"
 
     mm = gate.g4_units.mm
     minDistanceXY = 226.27417 * mm  # 160 *sqrt(2) * mm

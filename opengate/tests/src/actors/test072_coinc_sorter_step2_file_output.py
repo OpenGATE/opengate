@@ -27,7 +27,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # Run coincidence sorting, returning concidences as a pandas DataFrame
     sorter = CoincidenceSorter()
     sorter.window = 3 * ns
-    sorter.multiples_policy = "removeMultiples"
+    sorter.multiples_policy = "RemoveMultiples"
     sorter.transaxial_plane = "XY"
     sorter.min_transaxial_distance = 0 * mm
     sorter.max_axial_distance = 32 * mm

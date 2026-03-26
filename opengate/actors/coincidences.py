@@ -141,12 +141,12 @@ def coincidences_sorter(
     :param singles_tree: input tree of singles (root format)
     :param time_window: time windows in G4 units (ns)
     :param policy: coincidence detection policy, one of:
-            "removeMultiples"
-            "takeAllGoods"
-            "takeWinnerOfGoods"
-            "takeIfOnlyOneGood"
-            "takeWinnerIfIsGood"
-            "takeWinnerIfAllAreGoods"
+            "RemoveMultiples"
+            "TakeAllGoods"
+            "TakeWinnerOfGoods"
+            "TakeIfOnlyOneGood"
+            "TakeWinnerIfIsGood"
+            "TakeWinnerIfAllAreGoods"
     :param min_transaxial_distance: minimum transaxial distance between the two singles of a coincidence
     :param transaxial_plane: "xy", "yz", or "xz"
     :param max_axial_distance: maximum axial distance between the two singles of a coincidence
@@ -278,14 +278,17 @@ def _coincidences_sorter(
 
     # Check validity of policy parameter
     policy_functions = {
-        "removeMultiples": _remove_multiples,
-        "takeAllGoods": _take_all_goods,
-        "takeWinnerOfGoods": _take_winner_of_goods,
-        "takeIfOnlyOneGood": _take_if_only_one_good,
-        "takeWinnerIfIsGood": _take_winner_if_is_good,
-        "takeWinnerIfAllAreGoods": _take_winner_if_all_are_goods,
+        str.lower("RemoveMultiples"): _remove_multiples,
+        str.lower("TakeAllGoods"): _take_all_goods,
+        str.lower("TakeWinnerOfGoods"): _take_winner_of_goods,
+        str.lower("TakeIfOnlyOneGood"): _take_if_only_one_good,
+        str.lower("TakeWinnerIfIsGood"): _take_winner_if_is_good,
+        str.lower("TakeWinnerIfAllAreGoods"): _take_winner_if_all_are_goods,
     }
-    if result_type == ResultType.COINCIDENCE_PAIRS and policy not in policy_functions:
+    if (
+        result_type == ResultType.COINCIDENCE_PAIRS
+        and str.lower(policy) not in policy_functions
+    ):
         raise ValueError(
             f"Unknown policy '{policy}', must be one of {policy_functions.keys()}"
         )
@@ -397,7 +400,7 @@ def _coincidences_sorter(
 
                     if result_type == ResultType.COINCIDENCE_PAIRS:
                         # Apply policy for multiple coincidences
-                        processed_coincidences = policy_functions[policy](
+                        processed_coincidences = policy_functions[str.lower(policy)](
                             coincidences_to_process,
                             min_transaxial_distance,
                             transaxial_plane,
@@ -442,7 +445,7 @@ def _coincidences_sorter(
                 ].reset_index(drop=True)
 
             if result_type == ResultType.COINCIDENCE_PAIRS:
-                processed_coincidences = policy_functions[policy](
+                processed_coincidences = policy_functions[str.lower(policy)](
                     coincidences_to_process,
                     min_transaxial_distance,
                     transaxial_plane,

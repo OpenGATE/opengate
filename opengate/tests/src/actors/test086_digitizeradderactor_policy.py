@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
         sorter = CoincidenceSorter()
         sorter.window = 2 * ns
-        sorter.multiples_policy = "takeAllGoods"
+        sorter.multiples_policy = "TakeAllGoods"
         sorter.transaxial_plane = "XY"
         sorter.max_axial_distance = 60 * mm
 

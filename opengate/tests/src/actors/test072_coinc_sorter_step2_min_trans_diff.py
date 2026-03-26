@@ -43,7 +43,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     ns = gate.g4_units.nanosecond
     mm = gate.g4_units.mm
 
-    policy = "takeAllGoods"
+    policy = "TakeAllGoods"
     minDistanceXY = (
         208.46 * mm
     )  # = sqrt(2)*147.4, where 147.4 is the mean value inside the detector block (from root histo)
