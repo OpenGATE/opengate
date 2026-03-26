@@ -88,7 +88,7 @@ if __name__ == "__main__":
         # Calculate the coincidences using the Python implementation.
         sorter = CoincidenceSorter()
         sorter.window = 1e-9 * sec
-        sorter.multiples_policy = policy[0].lower() + policy[1:]
+        sorter.multiples_policy = policy
 
         coincidences_python = sorter.run(root_filename, "singles")
 

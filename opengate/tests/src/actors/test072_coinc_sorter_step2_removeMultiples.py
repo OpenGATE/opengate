@@ -39,7 +39,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # time windows
     ns = gate.g4_units.nanosecond
-    policy = "removeMultiples"
+    policy = "RemoveMultiples"
 
     mm = gate.g4_units.mm
     minDistanceXY = 0 * mm
