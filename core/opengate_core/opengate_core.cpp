@@ -112,6 +112,14 @@ void init_G4VUserChemistryList(py::module &);
 
 void init_G4MoleculeTable(py::module &);
 
+void init_G4MoleculeCounterTimeComparer(py::module &);
+
+void init_G4MoleculeCounter(py::module &);
+
+void init_G4MoleculeReactionCounter(py::module &);
+
+void init_G4MoleculeCounterManager(py::module &);
+
 void init_G4DNAChemistryManager(py::module &);
 
 void init_G4Scheduler(py::module &);
@@ -504,6 +512,10 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4VUserChemistryList(m);
   init_G4MoleculeTable(m);
+  init_G4MoleculeCounterTimeComparer(m);
+  init_G4MoleculeCounter(m);
+  init_G4MoleculeReactionCounter(m);
+  init_G4MoleculeCounterManager(m);
   init_G4DNAChemistryManager(m);
   init_G4Scheduler(m);
   init_G4UserTimeStepAction(m);
