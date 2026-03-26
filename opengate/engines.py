@@ -535,6 +535,7 @@ class ChemistryEngine(EngineBase):
 
         # g4 references
         self.g4_dna_chemistry_manager = None
+        self.g4_molecule_counter_manager = None
         self.g4_scheduler = None
         self.g4_time_step_action = None
 
@@ -546,8 +547,46 @@ class ChemistryEngine(EngineBase):
 
     def release_g4_references(self):
         self.g4_dna_chemistry_manager = None
+        self.g4_molecule_counter_manager = None
         self.g4_scheduler = None
         self.g4_time_step_action = None
+
+    def _resolve_required_molecule_counter_manager_policy(self):
+        resolved_policy = {
+            "reset_counters_before_event": None,
+            "reset_counters_before_run": None,
+            "reset_master_counter_with_workers": None,
+            "accumulate_counter_into_master": None,
+        }
+        for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
+            if not actor.is_chemistry_actor:
+                continue
+            policy = getattr(actor, "required_molecule_counter_manager_policy", {})
+            for key, value in policy.items():
+                if value is None:
+                    continue
+                if resolved_policy[key] is None:
+                    resolved_policy[key] = value
+                elif resolved_policy[key] != value:
+                    fatal(
+                        f"Incompatible molecule-counter manager policy for chemistry actors: "
+                        f"'{key}' is requested as both {resolved_policy[key]} and {value}."
+                    )
+        return resolved_policy
+
+    def _apply_required_molecule_counter_manager_policy(self):
+        self.g4_molecule_counter_manager = g4.G4MoleculeCounterManager.Instance()
+        policy = self._resolve_required_molecule_counter_manager_policy()
+        setter_map = {
+            "reset_counters_before_event": "SetResetCountersBeforeEvent",
+            "reset_counters_before_run": "SetResetCountersBeforeRun",
+            "reset_master_counter_with_workers": "SetResetMasterCounterWithWorkers",
+            "accumulate_counter_into_master": "SetAccumulateCounterIntoMaster",
+        }
+        for key, setter_name in setter_map.items():
+            value = policy[key]
+            if value is not None:
+                getattr(self.g4_molecule_counter_manager, setter_name)(value)
 
 
     def initialize(self):
@@ -555,6 +594,7 @@ class ChemistryEngine(EngineBase):
         if chemistry_list is None:
             return
 
+        self._apply_required_molecule_counter_manager_policy()
         self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
         self.g4_dna_chemistry_manager.SetChemistryActivation(True)
         self.g4_dna_chemistry_manager.SetChemistryList(chemistry_list)
