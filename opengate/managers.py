@@ -1226,6 +1226,34 @@ class PhysicsManager(GateObject):
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
 
+    def _set_region_dna_em_physics(self, region, dna_em_physics):
+        allowed_values = Region.inherited_user_info_defaults["dna_em_physics"][1][
+            "allowed_values"
+        ]
+        if dna_em_physics not in allowed_values:
+            fatal(
+                f"Illegal DNA EM physics value '{dna_em_physics}' for region {region.name}. "
+                f"Allowed values are: {allowed_values}."
+            )
+        current_value = region.user_info["dna_em_physics"]
+        if current_value not in (None, dna_em_physics):
+            fatal(
+                f"Region {region.name} already uses DNA EM physics '{current_value}'. "
+                f"Cannot also assign '{dna_em_physics}'. Only one DNA EM physics is allowed per region."
+            )
+        region.user_info["dna_em_physics"] = dna_em_physics
+
+    def set_dna_em_physics(self, volume_name, dna_em_physics):
+        region = self.find_or_create_region(volume_name)
+        self._set_region_dna_em_physics(region, dna_em_physics)
+
+    def set_dna_em_physics_in_region(self, region_name, dna_em_physics):
+        try:
+            region = self.regions[region_name]
+        except KeyError:
+            fatal(f"Cannot set DNA EM physics: region '{region_name}' does not exist.")
+        self._set_region_dna_em_physics(region, dna_em_physics)
+
     def set_user_limits_particles(self, particle_names):
         if not isinstance(particle_names, (list, set, tuple)):
             particle_names = list([particle_names])

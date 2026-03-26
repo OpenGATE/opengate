@@ -131,6 +131,17 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 class Region(GateObject):
     """FIXME: Documentation of the Region class."""
 
+    available_dna_em_physics = (
+        "DNA_Opt0",
+        "DNA_Opt2",
+        "DNA_Opt4",
+        "DNA_Opt4a",
+        "DNA_Opt6",
+        "DNA_Opt6a",
+        "DNA_Opt7",
+        "DNA_Opt8",
+    )
+
     user_info_defaults = {}
     user_info_defaults["user_limits"] = (
         Box(
@@ -174,6 +185,15 @@ class Region(GateObject):
             "doc": "Switch on/off EM parameters in this region. "
             "If None, the corresponding value from the world region is used.",
             "expose_items": True,
+        },
+    )
+    user_info_defaults["dna_em_physics"] = (
+        None,
+        {
+            "doc": "DNA EM physics option to activate in this region. "
+            "Set internally through the dedicated PhysicsManager helpers.",
+            "read_only": True,
+            "allowed_values": available_dna_em_physics + (None,),
         },
     )
 
@@ -278,9 +298,28 @@ class Region(GateObject):
         It should be called from the physics_engine,
         after setting the self.physics_engine attribute.
         """
+        if (
+            self._g4_region_initialized is True
+            and self._g4_user_limits_initialized is True
+            and self._g4_production_cuts_initialized is True
+        ):
+            return
         self.initialize_volume_dictionaries()
         self.initialize_g4_production_cuts()
         self.initialize_g4_user_limits()
+        self.initialize_g4_region()
+
+    def needs_preinitialization(self):
+        return self.dna_em_physics is not None or any(
+            v is not None for v in self.em_switches.values()
+        )
+
+    @requires_fatal("physics_engine")
+    def preinitialize_for_em(self):
+        """Create the G4Region early enough for per-region EM configuration."""
+        if self._g4_region_initialized is True:
+            return
+        self.initialize_volume_dictionaries()
         self.initialize_g4_region()
 
     # This method is currently necessary because the actual volume objects
@@ -295,29 +334,27 @@ class Region(GateObject):
             )
 
     def initialize_g4_region(self):
-        if self._g4_region_initialized is True:
-            fatal("g4_region already initialized.")
+        if self._g4_region_initialized is not True:
+            rs = g4.G4RegionStore.GetInstance()
+            self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
 
-        rs = g4.G4RegionStore.GetInstance()
-        self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
+            for vol in self.root_logical_volumes.values():
+                self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
+                vol.g4_logical_volume.SetRegion(self.g4_region)
+
+            self._g4_region_initialized = True
 
         if self.g4_user_limits is not None:
             self.g4_region.SetUserLimits(self.g4_user_limits)
 
-        # if self.g4_production_cuts is not None:
-        self.g4_region.SetProductionCuts(self.g4_production_cuts)
-
-        for vol in self.root_logical_volumes.values():
-            self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
-            vol.g4_logical_volume.SetRegion(self.g4_region)
-
-        self._g4_region_initialized = True
+        if self.g4_production_cuts is not None:
+            self.g4_region.SetProductionCuts(self.g4_production_cuts)
 
     def initialize_g4_production_cuts(self):
         self.user_info = Box(self.user_info)
 
         if self._g4_production_cuts_initialized is True:
-            fatal("g4_production_cuts already initialized.")
+            return
         if self.g4_production_cuts is None:
             self.g4_production_cuts = g4.G4ProductionCuts()
 
@@ -352,7 +389,7 @@ class Region(GateObject):
 
     def initialize_g4_user_limits(self):
         if self._g4_user_limits_initialized is True:
-            fatal("g4_user_limits already initialized.")
+            return
 
         # check if any user limits have been set
         # if not, it is not necessary to create g4 objects
