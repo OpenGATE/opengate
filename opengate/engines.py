@@ -392,6 +392,8 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
+            if region.dna_em_physics is not None:
+                self.g4_em_parameters.AddDNA(region.name, region.dna_em_physics)
 
     def initialize_physics_biasing(self):
         # get a dictionary {particle:[processes]}
@@ -935,6 +937,13 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.volume_manager.update_volume_tree()
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
+
+        # Region-based EM configuration such as DNA transport is resolved by
+        # Geant4 during physics construction, so the corresponding G4Region
+        # objects must exist as soon as the geometry has been built.
+        for region in self.simulation_engine.simulation.physics_manager.regions.values():
+            if region.needs_preinitialization():
+                region.preinitialize_for_em()
 
         # return the (main) world physical volume
         self._is_constructed = True
