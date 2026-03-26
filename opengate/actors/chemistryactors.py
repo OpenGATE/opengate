@@ -4,7 +4,7 @@ import opengate_core as g4
 from .base import ActorBase
 from .actoroutput import ActorOutputBase
 from ..serialization import dump_json
-from ..exception import warning
+from ..exception import warning, fatal
 from ..base import process_cls
 
 
@@ -21,6 +21,115 @@ class ChemistryActorBase(ActorBase):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self.required_molecule_counter_manager_policy = {
+            "reset_counters_before_event": None,
+            "reset_counters_before_run": None,
+            "reset_master_counter_with_workers": None,
+            "accumulate_counter_into_master": None,
+        }
+        self.molecule_counter = {}
+        self.reaction_counter = {}
+        self.g4_molecule_counter = None
+        self.g4_reaction_counter = None
+        self.g4_molecule_counter_id = None
+        self.g4_reaction_counter_id = None
+
+    def close(self):
+        self.g4_molecule_counter = None
+        self.g4_reaction_counter = None
+        self.g4_molecule_counter_id = None
+        self.g4_reaction_counter_id = None
+        super().close()
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self._initialize_molecule_counter()
+        self._initialize_reaction_counter()
+
+    def _create_time_comparer(self, config):
+        if not config:
+            return None
+        method = config.get("method", "fixed_precision")
+        if method == "fixed_precision":
+            try:
+                precision = config["precision"]
+            except KeyError:
+                fatal(
+                    f"Chemistry actor '{self.name}' requests a fixed-precision time comparer "
+                    f"but did not provide a 'precision' entry."
+                )
+            return g4.G4MoleculeCounterTimeComparer.CreateWithFixedPrecision(
+                precision
+            )
+        fatal(
+            f"Unsupported molecule-counter time comparer method '{method}' "
+            f"in chemistry actor '{self.name}'."
+        )
+
+    def _configure_counter_common(self, counter, config):
+        time_comparer = self._create_time_comparer(config.get("time_comparer"))
+        if time_comparer is not None:
+            counter.SetTimeComparer(time_comparer)
+        if "verbose" in config:
+            counter.SetVerbose(config["verbose"])
+        if "check_time_consistency_with_scheduler" in config:
+            counter.SetCheckTimeConsistencyWithScheduler(
+                config["check_time_consistency_with_scheduler"]
+            )
+        if "check_recorded_time_consistency" in config:
+            counter.SetCheckRecordedTimeConsistency(
+                config["check_recorded_time_consistency"]
+            )
+        if "active_lower_bound" in config:
+            lower = config["active_lower_bound"]
+            counter.SetActiveLowerBound(
+                lower["time"], lower.get("inclusive", True)
+            )
+        if "active_upper_bound" in config:
+            upper = config["active_upper_bound"]
+            counter.SetActiveUpperBound(
+                upper["time"], upper.get("inclusive", True)
+            )
+
+    def _initialize_molecule_counter(self):
+        if not self.molecule_counter:
+            return
+        counter_type = self.molecule_counter.get("type", "G4MoleculeCounter")
+        if counter_type != "G4MoleculeCounter":
+            fatal(
+                f"Unsupported molecule counter type '{counter_type}' "
+                f"in chemistry actor '{self.name}'."
+            )
+        name = self.molecule_counter.get("name", f"{self.name}_molecule_counter")
+        counter = g4.G4MoleculeCounter(name)
+        self._configure_counter_common(counter, self.molecule_counter)
+        for molecule_name in self.molecule_counter.get("ignored_molecules", []):
+            counter.IgnoreMolecule(molecule_name)
+        if self.molecule_counter.get("register_all_molecules", False):
+            counter.RegisterAll()
+        counter.Initialize()
+        manager = g4.G4MoleculeCounterManager.Instance()
+        self.g4_molecule_counter_id = manager.RegisterMoleculeCounter(counter)
+        self.g4_molecule_counter = counter
+
+    def _initialize_reaction_counter(self):
+        if not self.reaction_counter:
+            return
+        counter_type = self.reaction_counter.get(
+            "type", "G4MoleculeReactionCounter"
+        )
+        if counter_type != "G4MoleculeReactionCounter":
+            fatal(
+                f"Unsupported reaction counter type '{counter_type}' "
+                f"in chemistry actor '{self.name}'."
+            )
+        name = self.reaction_counter.get("name", f"{self.name}_reaction_counter")
+        counter = g4.G4MoleculeReactionCounter(name)
+        self._configure_counter_common(counter, self.reaction_counter)
+        counter.Initialize()
+        manager = g4.G4MoleculeCounterManager.Instance()
+        self.g4_reaction_counter_id = manager.RegisterReactionCounter(counter)
+        self.g4_reaction_counter = counter
 
 
 def _setter_hook_chem_actor_output_filename(self, output_filename):
@@ -183,6 +292,22 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
 
     def __init__(self, *args, **kwargs):
         ChemistryActorBase.__init__(self, *args, **kwargs)
+        self.required_molecule_counter_manager_policy.update(
+            {
+                "reset_counters_before_event": True,
+                "reset_counters_before_run": True,
+                "accumulate_counter_into_master": False,
+            }
+        )
+        self.molecule_counter = {
+            "type": "G4MoleculeCounter",
+            "name": f"{self.name}_molecule_counter",
+            "time_comparer": {
+                "method": "fixed_precision",
+                "precision": 1 * g4.ps,
+            },
+            "ignored_molecules": ["H2O"],
+        }
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -204,8 +329,10 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         )
 
     def initialize(self):
-        ActorBase.initialize(self)
+        ChemistryActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
+        if self.g4_molecule_counter_id is not None:
+            self.SetMoleculeCounterId(self.g4_molecule_counter_id)
         self.InitializeCpp()
 
     def EndSimulationAction(self):

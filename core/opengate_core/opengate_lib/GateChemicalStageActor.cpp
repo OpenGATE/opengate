@@ -308,7 +308,10 @@ void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
   }
 
   const auto *counter =
-      G4MoleculeCounterManager::Instance()->GetMoleculeCounter<G4MoleculeCounter>(0);
+      fMoleculeCounterId >= 0
+          ? G4MoleculeCounterManager::Instance()->GetMoleculeCounter<G4MoleculeCounter>(
+                fMoleculeCounterId)
+          : nullptr;
   if (counter == nullptr) {
     return;
   }

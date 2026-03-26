@@ -57,6 +57,7 @@ public:
   py::dict GetSpeciesInfo() const;
   py::dict GetReactionCounts() const;
   py::list GetRecordedTimes() const;
+  void SetMoleculeCounterId(G4int id) { fMoleculeCounterId = id; }
 
 protected:
   bool ShouldApplyPrimaryLogic(const G4Track *track) const;
@@ -75,6 +76,7 @@ protected:
   double fLETCutoff{DBL_MAX};
   std::vector<double> fTimesToRecord;
   int fNumberOfTimeBins{0};
+  G4int fMoleculeCounterId{-1};
 
   double fEventELoss{0.0};
   double fAccumulatedELoss{0.0};
