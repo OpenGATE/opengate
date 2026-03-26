@@ -6,6 +6,7 @@ from .actoroutput import ActorOutputBase
 from ..serialization import dump_json
 from ..exception import warning, fatal
 from ..base import process_cls
+from ..physics import Region
 
 
 class ChemistryActorBase(ActorBase):
@@ -282,6 +283,13 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
             10,
             {"doc": "If > 0 and times_to_record is empty, generate logarithmically spaced chemistry scoring times like chem6."},
         ),
+        "dna_em_physics": (
+            "DNA_Opt2",
+            {
+                "doc": "If not None, request region-based DNA EM physics in the volume to which this actor is attached.",
+                "allowed_values": Region.available_dna_em_physics + (None,),
+            },
+        ),
     }
 
     user_output_config = {
@@ -329,6 +337,16 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         )
 
     def initialize(self):
+        if self.dna_em_physics is not None:
+            if not isinstance(self.attached_to, str):
+                fatal(
+                    f"Actor '{self.name}' requests dna_em_physics='{self.dna_em_physics}' "
+                    f"but is attached to {self.attached_to}. "
+                    f"ChemicalStageActor currently supports DNA EM activation only for a single attached volume."
+                )
+            self.simulation.physics_manager.set_dna_em_physics(
+                self.attached_to, self.dna_em_physics
+            )
         ChemistryActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         if self.g4_molecule_counter_id is not None:
