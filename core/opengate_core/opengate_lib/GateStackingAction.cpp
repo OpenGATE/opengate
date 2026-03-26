@@ -7,6 +7,7 @@
 
 #include "GateStackingAction.h"
 #include "G4DNAChemistryManager.hh"
+#include "G4StackManager.hh"
 
 GateStackingAction::GateStackingAction() : G4UserStackingAction() {
   fChemistryIsActive = false;

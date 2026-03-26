@@ -8,6 +8,7 @@
 
 namespace py = pybind11;
 
+#include "G4Track.hh"
 #include "G4UserStackingAction.hh"
 
 class PyG4UserStackingAction : public G4UserStackingAction {
@@ -30,7 +31,8 @@ public:
 
 void init_G4UserStackingAction(py::module &m) {
 
-  py::class_<G4UserStackingAction, PyG4UserStackingAction>(
+  py::class_<G4UserStackingAction, PyG4UserStackingAction,
+             std::unique_ptr<G4UserStackingAction, py::nodelete>>(
       m, "G4UserStackingAction")
       .def(py::init())
       .def("ClassifyNewTrack", &G4UserStackingAction::ClassifyNewTrack)
