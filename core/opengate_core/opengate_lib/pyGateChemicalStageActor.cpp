@@ -22,10 +22,25 @@ void init_GateChemicalStageActor(py::module &m) {
            &GateChemicalStageActor::GetNumberOfAbortedEvents)
       .def("GetNumberOfChemistryStarts",
            &GateChemicalStageActor::GetNumberOfChemistryStarts)
+      .def("GetNumberOfChemistryStages",
+           &GateChemicalStageActor::GetNumberOfChemistryStages)
       .def("GetNumberOfPreTimeStepCalls",
            &GateChemicalStageActor::GetNumberOfPreTimeStepCalls)
       .def("GetNumberOfPostTimeStepCalls",
            &GateChemicalStageActor::GetNumberOfPostTimeStepCalls)
+      .def("GetNumberOfReactions",
+           &GateChemicalStageActor::GetNumberOfReactions)
+      .def("GetNumberOfRecordedEvents",
+           &GateChemicalStageActor::GetNumberOfRecordedEvents)
       .def("GetAccumulatedPrimaryEnergyLoss",
-           &GateChemicalStageActor::GetAccumulatedPrimaryEnergyLoss);
+           &GateChemicalStageActor::GetAccumulatedPrimaryEnergyLoss)
+      .def("GetAccumulatedEnergyDeposit",
+           &GateChemicalStageActor::GetAccumulatedEnergyDeposit)
+      .def("GetMeanRestrictedLET",
+           &GateChemicalStageActor::GetMeanRestrictedLET)
+      .def("GetStdRestrictedLET",
+           &GateChemicalStageActor::GetStdRestrictedLET)
+      .def("GetSpeciesInfo", &GateChemicalStageActor::GetSpeciesInfo)
+      .def("GetReactionCounts", &GateChemicalStageActor::GetReactionCounts)
+      .def("GetRecordedTimes", &GateChemicalStageActor::GetRecordedTimes);
 }
