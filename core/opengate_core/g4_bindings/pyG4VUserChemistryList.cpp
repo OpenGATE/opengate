@@ -3,7 +3,6 @@
 
 #include "G4VUserChemistryList.hh"
 #include "G4DNAMolecularReactionTable.hh"
-#include "G4DNAChemistryManager.hh"
 
 namespace py = pybind11;
 
@@ -42,13 +41,13 @@ public:
         );
     }
 
-    // ConstructTimeStepModel(G4DNAChemistryManager* mgr)
-    void ConstructTimeStepModel(G4DNAChemistryManager* mgr) override {
+    // ConstructTimeStepModel(G4DNAMolecularReactionTable* reactionTable)
+    void ConstructTimeStepModel(G4DNAMolecularReactionTable* reactionTable) override {
         PYBIND11_OVERRIDE(
             void,
             G4VUserChemistryList,
             ConstructTimeStepModel,
-            mgr
+            reactionTable
         );
     }
 };

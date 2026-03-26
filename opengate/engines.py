@@ -556,8 +556,9 @@ class ChemistryEngine(EngineBase):
             return
 
         self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
-        self.g4_dna_chemistry_manager.SetChemistryActive(True)
-        self.g4_dna_chemistry_manager.Initialize(chemistry_list)
+        self.g4_dna_chemistry_manager.SetChemistryActivation(True)
+        self.g4_dna_chemistry_manager.SetChemistryList(chemistry_list)
+        self.g4_dna_chemistry_manager.Initialize()
         self.g4_scheduler = g4.G4Scheduler.Instance()
         self.g4_time_step_action = g4.GateTimeStepAction()
         for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
