@@ -52,6 +52,7 @@ namespace py = pybind11;
 #include "G4EmDNAPhysics_option6.hh"
 #include "G4EmDNAPhysics_option7.hh"
 #include "G4EmDNAPhysics_option8.hh"
+#include "G4EmDNAPhysicsActivator.hh"
 #include "G4EmDNAChemistry.hh"
 #include "G4EmDNAChemistry_option1.hh"
 #include "G4EmDNAChemistry_option2.hh"
@@ -204,6 +205,7 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option6)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option7)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option8)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysicsActivator)
   ADD_CHEMISTRY_LIST(G4EmDNAChemistry)
   ADD_CHEMISTRY_LIST(G4EmDNAChemistry_option1)
   ADD_CHEMISTRY_LIST(G4EmDNAChemistry_option2)
