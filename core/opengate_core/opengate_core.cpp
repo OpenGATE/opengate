@@ -309,6 +309,7 @@ void init_QMainWindow(py::module &);
 
 // Gate
 void init_GateCheckDeex(py::module &);
+void init_GateCheckEmModel(py::module &);
 
 void init_GateInfo(py::module &);
 
@@ -618,6 +619,7 @@ PYBIND11_MODULE(opengate_core, m) {
 
   // Gate
   init_GateCheckDeex(m);
+  init_GateCheckEmModel(m);
   init_GateInfo(m);
   init_GateVActor(m);
   init_GateVChemistryActor(m);
