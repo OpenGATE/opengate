@@ -8,6 +8,7 @@
 
 namespace py = pybind11;
 
+#include "G4Track.hh"
 #include "G4UserTimeStepAction.hh"
 
 class PyG4UserTimeStepAction : public G4UserTimeStepAction {
@@ -43,7 +44,8 @@ public:
 
 void init_G4UserTimeStepAction(py::module &m) {
 
-  py::class_<G4UserTimeStepAction, PyG4UserTimeStepAction>(
+  py::class_<G4UserTimeStepAction, PyG4UserTimeStepAction,
+             std::unique_ptr<G4UserTimeStepAction, py::nodelete>>(
       m, "G4UserTimeStepAction")
       .def(py::init())
       .def("StartProcessing", &G4UserTimeStepAction::StartProcessing)
@@ -51,5 +53,6 @@ void init_G4UserTimeStepAction(py::module &m) {
       .def("UserPreTimeStepAction", &G4UserTimeStepAction::UserPreTimeStepAction)
       .def("UserPostTimeStepAction",
            &G4UserTimeStepAction::UserPostTimeStepAction)
+      .def("UserReactionAction", &G4UserTimeStepAction::UserReactionAction)
       .def("EndProcessing", &G4UserTimeStepAction::EndProcessing);
 }

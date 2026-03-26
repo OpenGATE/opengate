@@ -7,40 +7,41 @@ namespace py = pybind11;
 
 void init_G4DNAChemistryManager(py::module &m)
 {
-  py::class_<G4DNAChemistryManager>(m, "G4DNAChemistryManager")
+  py::class_<G4DNAChemistryManager,
+             std::unique_ptr<G4DNAChemistryManager, py::nodelete>>(
+      m, "G4DNAChemistryManager")
       .def_static(
           "Instance",
           &G4DNAChemistryManager::Instance,
           py::return_value_policy::reference)
 
       .def(
-          "Initialize",
+          "SetChemistryList",
           [](G4DNAChemistryManager *self,
              py::object pychemlist) {
-            // The Python-side object must hold a capsule containing
-            // a raw pointer to a G4VUserChemistryList.
-            // This mirrors what other GATE-10 pybind wrappers do
-            // for user-defined C++ classes.
             if (!pychemlist) {
               throw std::runtime_error(
-                  "Initialize() requires a ChemistryList object");
+                  "SetChemistryList() requires a ChemistryList object");
             }
-
-            // Retrieve pointer from capsule
-            auto ptr = pychemlist.attr("__cpp__").cast<G4VUserChemistryList *>();
+            auto ptr = pychemlist.cast<G4VUserChemistryList *>();
             if (!ptr) {
               throw std::runtime_error(
-                  "Invalid ChemistryList: missing or null __cpp__ pointer");
+                  "Invalid ChemistryList: null pointer");
             }
-
-            self->Initialize(ptr);
+            self->SetChemistryList(*ptr);
           },
           py::arg("chemistry_list"),
-          "Initialize the DNA chemistry system with a user-defined ChemistryList")
+          "Register a user-defined ChemistryList with the DNA chemistry manager")
 
       .def(
-          "SetChemistryActive",
-          &G4DNAChemistryManager::SetChemistryActive,
+          "Initialize",
+          py::overload_cast<>(&G4DNAChemistryManager::Initialize),
+          py::call_guard<py::gil_scoped_release>(),
+          "Initialize the DNA chemistry system")
+
+      .def(
+          "SetChemistryActivation",
+          &G4DNAChemistryManager::SetChemistryActivation,
           py::arg("chemistry_active_flag"),
           "Enable or disable Geant4-DNA chemistry")
 
@@ -50,22 +51,9 @@ void init_G4DNAChemistryManager(py::module &m)
           "Return True if DNA chemistry is active")
 
       .def(
-          "GetChemistryStartTime",
-          &G4DNAChemistryManager::GetChemistryStartTime,
-          "Return the chemistry start time")
-
-      .def(
-          "SetChemistryStartTime",
-          &G4DNAChemistryManager::SetChemistryStartTime,
-          py::arg("chemistry_start_time"),
-          "Set the chemistry start time")
-
-      .def(
           "Run",
-          [](G4DNAChemistryManager *self) {
-            // Convenience wrapper, mirrors C++ API
-            self->Run();
-          },
+          &G4DNAChemistryManager::Run,
+          py::call_guard<py::gil_scoped_release>(),
           "Run the chemistry stage using the underlying G4Scheduler")
 
       // expose the underlying scheduler (read-only)

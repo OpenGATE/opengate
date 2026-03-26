@@ -316,7 +316,7 @@ class ChemistryCustomList(GateObject, G4VUserChemistryList):
     def ConstructDissociationChannels(self):
         pass
 
-    def ConstructTimeStepModel(self):
+    def ConstructTimeStepModel(self, reaction_table):
         pass
 
 
