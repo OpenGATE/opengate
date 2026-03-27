@@ -548,6 +548,7 @@ class ChemistryEngine(EngineBase):
         self.g4_molecule_counter_manager = None
         self.g4_scheduler = None
         self.g4_time_step_action = None
+        self.g4_it_tracking_interactivity = None
 
     def close(self):
         if self.verbose_close:
@@ -560,6 +561,7 @@ class ChemistryEngine(EngineBase):
         self.g4_molecule_counter_manager = None
         self.g4_scheduler = None
         self.g4_time_step_action = None
+        self.g4_it_tracking_interactivity = None
 
     def _resolve_required_molecule_counter_manager_policy(self):
         resolved_policy = {
@@ -611,10 +613,13 @@ class ChemistryEngine(EngineBase):
         self.g4_dna_chemistry_manager.Initialize()
         self.g4_scheduler = g4.G4Scheduler.Instance()
         self.g4_time_step_action = g4.GateTimeStepAction()
+        self.g4_it_tracking_interactivity = g4.GateITTrackingInteractivity()
         for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
             if actor.is_chemistry_actor:
                 self.g4_time_step_action.RegisterActor(actor)
+                self.g4_it_tracking_interactivity.RegisterActor(actor)
         self.g4_scheduler.SetUserAction(self.g4_time_step_action)
+        self.g4_scheduler.SetInteractivity(self.g4_it_tracking_interactivity)
 
 
 class ActionEngine(g4.G4VUserActionInitialization, EngineBase):

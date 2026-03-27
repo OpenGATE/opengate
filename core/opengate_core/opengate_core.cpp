@@ -126,6 +126,8 @@ void init_G4Scheduler(py::module &);
 
 void init_G4UserTimeStepAction(py::module &);
 
+void init_G4ITTrackingInteractivity(py::module &);
+
 
 // processes/electromagnetic/utils
 
@@ -371,6 +373,8 @@ void init_GateStackingAction(py::module &);
 
 void init_GateTimeStepAction(py::module &);
 
+void init_GateITTrackingInteractivity(py::module &);
+
 void init_GateChemicalStageActor(py::module &);
 
 void init_GateSimulationStatisticsActor(py::module &);
@@ -520,6 +524,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4DNAChemistryManager(m);
   init_G4Scheduler(m);
   init_G4UserTimeStepAction(m);
+  init_G4ITTrackingInteractivity(m);
 
   init_G4VSolid(m);
   init_G4VFacet(m);
@@ -650,6 +655,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTrackingAction(m);
   init_GateStackingAction(m);
   init_GateTimeStepAction(m);
+  init_GateITTrackingInteractivity(m);
   init_GateChemicalStageActor(m);
 
   init_GateDoseActor(m);
