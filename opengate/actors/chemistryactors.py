@@ -326,6 +326,8 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                 "BeginOfEventAction",
                 "SteppingAction",
                 "NewStage",
+                "StartChemistryTracking",
+                "EndChemistryTracking",
                 "StartProcessing",
                 "UserPreTimeStepAction",
                 "UserPostTimeStepAction",
