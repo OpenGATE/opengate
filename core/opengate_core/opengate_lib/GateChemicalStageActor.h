@@ -74,8 +74,6 @@ protected:
   double fELossMin{-1.0};
   double fELossMax{-1.0};
   double fKineticEMin{0.0};
-  G4ThreeVector fBoundingBoxSize;
-  bool fUseBoundingBox{false};
   double fLETCutoff{DBL_MAX};
   std::vector<double> fTimesToRecord;
   int fNumberOfTimeBins{0};
