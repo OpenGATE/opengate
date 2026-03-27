@@ -205,6 +205,8 @@ def get_files_to_run():
         "test094a_spect_simu_prim",  # to compute the reference data
         "test094b_spect_simu_scatter",  # to compute the reference data
         "test094c_build_sinogram",  # to compute the reference data
+        "test096_pet_castor_ref.py",  # test for castor compatibility
+        "test096_pet_castor_coinc.py",  # test for castor compatibility
     ]
     path_tests_src = Path(path_tests_src)
     all_file_paths = []
