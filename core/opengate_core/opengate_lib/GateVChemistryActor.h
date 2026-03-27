@@ -17,6 +17,8 @@ public:
 
   ~GateVChemistryActor() override = default;
 
+  virtual void StartChemistryTracking(G4Track * /*track*/) {}
+  virtual void EndChemistryTracking(G4Track * /*track*/) {}
   virtual void StartProcessing() {}
   virtual void UserPreTimeStepAction() {}
   virtual void UserPostTimeStepAction() {}
