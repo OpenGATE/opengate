@@ -31,8 +31,7 @@ G4Mutex GateChemicalStageActorMutex = G4MUTEX_INITIALIZER;
 }
 
 GateChemicalStageActor::GateChemicalStageActor(py::dict &user_info)
-    : GateVChemistryActor(user_info, true),
-      fBoundingBoxSize(-1.0, -1.0, -1.0) {}
+    : GateVChemistryActor(user_info, true) {}
 
 void GateChemicalStageActor::InitializeUserInfo(py::dict &user_info) {
   GateVChemistryActor::InitializeUserInfo(user_info);
@@ -41,8 +40,6 @@ void GateChemicalStageActor::InitializeUserInfo(py::dict &user_info) {
   fELossMin = DictGetDouble(user_info, "energy_loss_min");
   fELossMax = DictGetDouble(user_info, "energy_loss_max");
   fKineticEMin = DictGetDouble(user_info, "min_kinetic_energy");
-  fBoundingBoxSize = DictGetG4ThreeVector(user_info, "bounding_box_size");
-  fUseBoundingBox = DictGetBool(user_info, "use_bounding_box");
   fLETCutoff = DictGetDouble(user_info, "let_cutoff");
   fTimesToRecord = DictGetVecDouble(user_info, "times_to_record");
   fNumberOfTimeBins = DictGetInt(user_info, "number_of_time_bins");
@@ -111,20 +108,6 @@ void GateChemicalStageActor::SteppingAction(G4Step *step) {
   auto *track = step->GetTrack();
   const auto *preStepPoint = step->GetPreStepPoint();
   const auto *postStepPoint = step->GetPostStepPoint();
-
-  if (fUseBoundingBox) {
-    const auto pos = postStepPoint->GetPosition();
-    const bool outside =
-        std::abs(pos.x()) > fBoundingBoxSize.x() / 2.0 ||
-        std::abs(pos.y()) > fBoundingBoxSize.y() / 2.0 ||
-        std::abs(pos.z()) > fBoundingBoxSize.z() / 2.0;
-    if (outside) {
-      track->SetTrackStatus(fStopAndKill);
-      G4AutoLock lock(&GateChemicalStageActorMutex);
-      fNbKilledParticles++;
-      return;
-    }
-  }
 
   if (!ShouldApplyPrimaryLogic(track)) {
     // chem6 LET scorer continues to follow charge-changed descendants
@@ -201,15 +184,25 @@ bool GateChemicalStageActor::IsChemistryTrackInsideAttachedVolume(
   if (track == nullptr) {
     return false;
   }
-  const auto *volume = track->GetVolume();
-  if (volume == nullptr) {
+  if (track->GetTouchable() == nullptr) {
     return false;
   }
-  const auto *logicalVolume = volume->GetLogicalVolume();
-  if (logicalVolume == nullptr) {
-    return false;
+  const auto &touchable = track->GetTouchableHandle();
+  const auto depth = touchable->GetHistoryDepth();
+  for (G4int i = 0; i <= depth; ++i) {
+    const auto *volume = touchable->GetVolume(i);
+    if (volume == nullptr) {
+      continue;
+    }
+    const auto *logicalVolume = volume->GetLogicalVolume();
+    if (logicalVolume == nullptr) {
+      continue;
+    }
+    if (logicalVolume->GetName() == fAttachedToVolumeName) {
+      return true;
+    }
   }
-  return logicalVolume->GetName() == fAttachedToVolumeName;
+  return false;
 }
 
 void GateChemicalStageActor::StartChemistryTracking(G4Track *track) {
