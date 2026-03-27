@@ -18,11 +18,9 @@ class ChemistryActorBase(ActorBase):
     type for configuration, validation and actor discovery.
     """
 
-    user_info_defaults = {}
-
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self.required_molecule_counter_manager_policy = {
+        self.required_molecule_counter_manager_policy: dict[str, bool | None] = {
             "reset_counters_before_event": None,
             "reset_counters_before_run": None,
             "reset_master_counter_with_workers": None,
@@ -262,14 +260,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         "min_kinetic_energy": (
             0.0,
             {"doc": "Kill the tracked primary when its kinetic energy falls below this value."},
-        ),
-        "bounding_box_size": (
-            [0.0, 0.0, 0.0],
-            {"doc": "Size of the optional bounding box used to kill tracks outside the region."},
-        ),
-        "use_bounding_box": (
-            False,
-            {"doc": "Enable the bounding-box track killing logic."},
         ),
         "let_cutoff": (
             1e30,
