@@ -42,19 +42,18 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # time windows
     ns = gate.g4_units.nanosecond
-    time_window = 3 * ns
     policy = "TakeAllGoods"
 
     mm = gate.g4_units.mm
     min_trans_dist = 0 * mm
-    max_trans_dist = 32 * mm
+    max_ax_dist = 32 * mm
 
     sorter = CoincidenceSorter()
     sorter.window = 3 * ns
     sorter.multiples_policy = policy
     sorter.transaxial_plane = "XY"
     sorter.min_transaxial_distance = min_trans_dist
-    sorter.max_axial_distance = max_trans_dist
+    sorter.max_axial_distance = max_ax_dist
 
     coincidences = sorter.run(root_filename, "Singles_crystal")
 
