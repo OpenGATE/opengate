@@ -7,6 +7,7 @@ from ..serialization import dump_json
 from ..exception import warning, fatal
 from ..base import process_cls
 from ..physics import Region
+from ..utility import g4_best_unit, g4_units
 
 
 class ChemistryActorBase(ActorBase):
@@ -288,6 +289,8 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         },
     }
 
+    _large_volume_extent_warning_threshold = 100 * g4_units.um
+
     def __init__(self, *args, **kwargs):
         ChemistryActorBase.__init__(self, *args, **kwargs)
         self.required_molecule_counter_manager_policy.update(
@@ -307,6 +310,27 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
             "ignored_molecules": ["H2O"],
         }
         self.__initcpp__()
+
+    def _warn_if_attached_volume_is_large_for_chemistry(self):
+        try:
+            bounding_box_size = self.attached_to_volume.bounding_box_size
+        except Exception:
+            return
+
+        max_extent = max(float(v) for v in bounding_box_size)
+        if max_extent <= self._large_volume_extent_warning_threshold:
+            return
+
+        formatted_extents = ", ".join(
+            str(g4_best_unit(extent, "Length")) for extent in bounding_box_size
+        )
+        self.warn_user(
+            f"ChemicalStageActor '{self.name}' is attached to volume '{self.attached_to}', "
+            f"whose bounding-box extents are [{formatted_extents}]. "
+            f"This exceeds the chemistry warning threshold of "
+            f"{g4_best_unit(self._large_volume_extent_warning_threshold, 'Length')} "
+            f"and may lead to very expensive region-based DNA EM transport and chemistry staging."
+        )
 
     def __initcpp__(self):
         g4.GateChemicalStageActor.__init__(self, self.user_info)
@@ -336,6 +360,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                     f"but is attached to {self.attached_to}. "
                     f"ChemicalStageActor currently supports DNA EM activation only for a single attached volume."
                 )
+            self._warn_if_attached_volume_is_large_for_chemistry()
             self.simulation.physics_manager.set_dna_em_physics(
                 self.attached_to, self.dna_em_physics
             )
