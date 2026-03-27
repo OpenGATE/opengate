@@ -67,7 +67,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # Compare with reference output
     ref_folder = paths.output_ref
 
-    ref_filename = ref_folder / f"{policy}_Gate9.4.root"
+    ref_filename = ref_folder / f"{policy[0].lower() + policy[1:]}_Gate9.4.root"
     ref_file = uproot.open(ref_filename)
     ref_coincidences = ref_file["Coincidences"]
 
