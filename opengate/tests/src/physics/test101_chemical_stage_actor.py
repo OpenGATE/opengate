@@ -4,8 +4,25 @@
 import opengate as gate
 from opengate.tests import utility
 
-WORLD_NAME = "world"
-TARGET_NAME = "chem_box"
+
+def print_results(label, results):
+    print(label)
+    print(f"  recorded_events: {results.recorded_events}")
+    print(f"  chemistry_starts: {results.chemistry_starts}")
+    print(f"  chemistry_stages: {results.chemistry_stages}")
+    print(f"  pre_time_step_calls: {results.pre_time_step_calls}")
+    print(f"  post_time_step_calls: {results.post_time_step_calls}")
+    print(f"  reaction_count: {results.reaction_count}")
+    print(f"  killed_particles: {results.killed_particles}")
+    print(f"  aborted_events: {results.aborted_events}")
+    print(
+        f"  accumulated_primary_energy_loss: {results.accumulated_primary_energy_loss}"
+    )
+    print(f"  total_energy_deposit: {results.total_energy_deposit}")
+    print(f"  mean_restricted_let: {results.mean_restricted_let}")
+    print(f"  std_restricted_let: {results.std_restricted_let}")
+    print(f"  chemistry_times: {len(results.times_to_record)}")
+    print(f"  species_times: {len(results.species)}")
 
 
 def create_simulation(use_actor_requested_dna_em):
@@ -29,13 +46,13 @@ def create_simulation(use_actor_requested_dna_em):
     sim.chemistry_manager.chemistry_list_name = "G4EmDNAChemistry_option3"
 
     # Small inner water box representing the local chemistry/scoring region.
-    target = sim.add_volume("Box", TARGET_NAME)
+    target = sim.add_volume("Box", "chem_box")
     target.size = [10 * um, 10 * um, 10 * um]
     target.material = "G4_WATER"
 
     if not use_actor_requested_dna_em:
         # Global DNA EM transport like chem6.
-        sim.physics_manager.set_dna_em_physics(TARGET_NAME, "DNA_Opt2")
+        target.set_dna_em_physics("DNA_Opt2")
 
     source = sim.add_source("GenericSource", "source")
     source.particle = "e-"
@@ -49,7 +66,7 @@ def create_simulation(use_actor_requested_dna_em):
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
     chem_actor = sim.add_actor("ChemicalStageActor", "chem_actor")
-    chem_actor.attached_to = TARGET_NAME
+    chem_actor.attached_to = target
     chem_actor.number_of_time_bins = 50
     if use_actor_requested_dna_em:
         chem_actor.dna_em_physics = "DNA_Opt2"
@@ -62,8 +79,7 @@ def create_simulation(use_actor_requested_dna_em):
 def check_single_run(stats, results):
     is_ok = True
 
-    print("Checking ChemicalStageActor output:")
-    print(results)
+    print_results("Checking ChemicalStageActor output:", results)
 
     is_ok = is_ok and stats.counts.events == 1
     is_ok = is_ok and results.chemistry_starts == 1
@@ -93,7 +109,7 @@ def _species_signature(species_dict):
     return signature
 
 
-def compare_results(global_results, actor_results):
+def compare_results(result1, result2):
     is_ok = True
 
     same_fields = [
@@ -113,17 +129,17 @@ def compare_results(global_results, actor_results):
         "reactions",
     ]
 
-    print("Comparing global DNA EM vs actor-requested DNA EM results:")
+    print("Comparing chemistry results:")
     for field in same_fields:
-        value_global = global_results[field]
-        value_actor = actor_results[field]
-        print(f"{field}: {value_global} / {value_actor}")
-        is_ok = is_ok and value_global == value_actor
+        value1 = result1[field]
+        value2 = result2[field]
+        print(f"{field}: {value1} / {value2}")
+        is_ok = is_ok and value1 == value2
 
-    species_global = _species_signature(global_results["species"])
-    species_actor = _species_signature(actor_results["species"])
-    print("species signature identical:", species_global == species_actor)
-    is_ok = is_ok and species_global == species_actor
+    species1 = _species_signature(result1["species"])
+    species2 = _species_signature(result2["species"])
+    print("species signature identical:", species1 == species2)
+    is_ok = is_ok and species1 == species2
 
     return is_ok
 
@@ -133,13 +149,15 @@ if __name__ == "__main__":
         use_actor_requested_dna_em=False
     )
     sim_global.run(start_new_process=False)
-    results_global = chem_actor_global.user_output.results.merged_data
+    results_global = chem_actor_global.results.get_data()
+    print_results("Global DNA EM results:", results_global)
 
     sim_actor, stats_actor, chem_actor_actor = create_simulation(
         use_actor_requested_dna_em=True
     )
     sim_actor.run(start_new_process=False)
-    results_actor = chem_actor_actor.user_output.results.merged_data
+    results_actor = chem_actor_actor.results.get_data()
+    print_results("Actor-requested DNA EM results:", results_actor)
 
     is_ok = check_single_run(stats_global, results_global)
     is_ok = check_single_run(stats_actor, results_actor) and is_ok
