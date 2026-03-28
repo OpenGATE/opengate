@@ -1146,6 +1146,16 @@ class PhysicsManager(GateObject):
         self.regions[name] = Region(name=name, simulation=self.simulation)
         return self.regions[name]
 
+    def _normalize_volume_name(self, volume):
+        if isinstance(volume, str):
+            return volume
+        try:
+            return volume.name
+        except AttributeError:
+            fatal(
+                f"Expected a volume name or a volume object, but received: {volume}"
+            )
+
     def find_or_create_region(self, volume_name):
         if volume_name not in self.volumes_regions_lut:
             region = self.add_region(volume_name + "_region")
@@ -1195,6 +1205,7 @@ class PhysicsManager(GateObject):
 
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):
+        volume_name = self._normalize_volume_name(volume_name)
         if volume_name == self.simulation.world.name:
             self.global_production_cuts[particle_name] = value
         else:
@@ -1207,22 +1218,27 @@ class PhysicsManager(GateObject):
     # Outlook: These setter methods might be linked to properties
     # implemented in a future version of the Volume class
     def set_max_step_size(self, volume_name, max_step_size):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_step_size"] = max_step_size
 
     def set_max_track_length(self, volume_name, max_track_length):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_track_length"] = max_track_length
 
     def set_min_ekine(self, volume_name, min_ekine):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_ekine"] = min_ekine
 
     def set_max_time(self, volume_name, max_time):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_time"] = max_time
 
     def set_min_range(self, volume_name, min_range):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
 
@@ -1244,6 +1260,7 @@ class PhysicsManager(GateObject):
         region.user_info["dna_em_physics"] = dna_em_physics
 
     def set_dna_em_physics(self, volume_name, dna_em_physics):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         self._set_region_dna_em_physics(region, dna_em_physics)
 
