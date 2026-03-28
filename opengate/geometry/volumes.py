@@ -573,6 +573,12 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         field.attached_to.append(self.name)
         self.volume_manager.fields[field.name] = field
 
+    @requires_fatal("volume_manager")
+    def set_dna_em_physics(self, dna_em_physics):
+        self.volume_manager.simulation.physics_manager.set_dna_em_physics(
+            self.name, dna_em_physics
+        )
+
 
 class RepeatableVolume(VolumeBase):
     def get_repetition_name_from_index(self, index):
