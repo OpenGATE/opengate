@@ -19,6 +19,15 @@ class ChemistryActorBase(ActorBase):
     type for configuration, validation and actor discovery.
     """
 
+    user_info_defaults = {
+        "confine_chemistry_to_volume": (
+            False,
+            {
+                "doc": "If True, chemistry tracks starting outside the attached volume subtree are killed before chemistry processing.",
+            },
+        ),
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self.required_molecule_counter_manager_policy: dict[str, bool | None] = {
@@ -242,6 +251,12 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     """
 
     user_info_defaults = {
+        "confine_chemistry_to_volume": (
+            True,
+            {
+                "doc": "Confine chemistry processing to the attached volume subtree.",
+            },
+        ),
         "track_only_primary": (
             True,
             {"doc": "Apply the chem6-like energy-loss logic only to the primary track."},

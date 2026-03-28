@@ -11,8 +11,6 @@
 #include "G4AutoLock.hh"
 #include "G4Event.hh"
 #include "G4EventManager.hh"
-#include "G4ITTrackHolder.hh"
-#include "G4LogicalVolume.hh"
 #include "G4Molecule.hh"
 #include "G4MoleculeCounter.hh"
 #include "G4MoleculeCounterManager.hh"
@@ -178,40 +176,6 @@ void GateChemicalStageActor::NewStage() {
   G4AutoLock lock(&GateChemicalStageActorMutex);
   fNbChemistryStages++;
 }
-
-bool GateChemicalStageActor::IsChemistryTrackInsideAttachedVolume(
-    const G4Track *track) const {
-  if (track == nullptr) {
-    return false;
-  }
-  if (track->GetTouchable() == nullptr) {
-    return false;
-  }
-  const auto &touchable = track->GetTouchableHandle();
-  const auto depth = touchable->GetHistoryDepth();
-  for (G4int i = 0; i <= depth; ++i) {
-    const auto *volume = touchable->GetVolume(i);
-    if (volume == nullptr) {
-      continue;
-    }
-    const auto *logicalVolume = volume->GetLogicalVolume();
-    if (logicalVolume == nullptr) {
-      continue;
-    }
-    if (logicalVolume->GetName() == fAttachedToVolumeName) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void GateChemicalStageActor::StartChemistryTracking(G4Track *track) {
-  if (!IsChemistryTrackInsideAttachedVolume(track)) {
-    G4ITTrackHolder::Instance()->PushToKill(track);
-  }
-}
-
-void GateChemicalStageActor::EndChemistryTracking(G4Track * /*track*/) {}
 
 void GateChemicalStageActor::StartProcessing() {
   ConfigureTimesToRecordIfNeeded();

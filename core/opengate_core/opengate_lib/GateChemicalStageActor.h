@@ -35,8 +35,6 @@ public:
   void EndOfEventAction(const G4Event *event) override;
   void SteppingAction(G4Step *step) override;
   void NewStage() override;
-  void StartChemistryTracking(G4Track *track) override;
-  void EndChemistryTracking(G4Track *track) override;
   void StartProcessing() override;
   void UserPreTimeStepAction() override;
   void UserPostTimeStepAction() override;
@@ -63,7 +61,6 @@ public:
 
 protected:
   bool ShouldApplyPrimaryLogic(const G4Track *track) const;
-  bool IsChemistryTrackInsideAttachedVolume(const G4Track *track) const;
   void ConfigureTimesToRecordIfNeeded();
   void RecordSpeciesAtEndOfChemicalStage();
   std::string GetReactionSignature(const G4Track &trackA, const G4Track &trackB,
