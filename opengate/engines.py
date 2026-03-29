@@ -217,6 +217,7 @@ class PhysicsEngine(EngineBase):
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_dna_physics_activator = None
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
@@ -244,6 +245,7 @@ class PhysicsEngine(EngineBase):
         self.g4_cuts_by_regions = None
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_dna_physics_activator = None
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
@@ -291,9 +293,10 @@ class PhysicsEngine(EngineBase):
     def initialize_dna_physics_regions(self):
         if not any(region.dna_em_physics is not None for region in self.physics_manager.regions.values()):
             return
-        self.g4_physics_list.RegisterPhysics(
-            g4.G4EmDNAPhysicsActivator(self.physics_manager.simulation.g4_verbose_level)
+        self.g4_dna_physics_activator = g4.G4EmDNAPhysicsActivator(
+            self.physics_manager.simulation.g4_verbose_level
         )
+        self.g4_physics_list.RegisterPhysics(self.g4_dna_physics_activator)
 
     def initialize_after_runmanager(self):
         """ """
