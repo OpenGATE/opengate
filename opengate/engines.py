@@ -628,7 +628,8 @@ class ChemistryEngine(EngineBase):
 
         if self.g4_dna_chemistry_manager is None:
             self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
-        self.g4_dna_chemistry_manager.Initialize()
+        if isinstance(chemistry_list, ChemistryCustomList):
+            self.g4_dna_chemistry_manager.Initialize()
         self.g4_scheduler = g4.G4Scheduler.Instance()
         self.g4_time_step_action = g4.GateTimeStepAction()
         self.g4_it_tracking_interactivity = g4.GateITTrackingInteractivity()
