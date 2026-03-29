@@ -88,19 +88,22 @@ class ChemistryActorBase(ActorBase):
 
     def initialize(self):
         ActorBase.initialize(self)
-        if self.dna_em_physics is not None:
-            if not isinstance(self.attached_to, str):
-                fatal(
-                    f"Actor '{self.name}' requests dna_em_physics='{self.dna_em_physics}' "
-                    f"but is attached to {self.attached_to}. "
-                    f"ChemistryActorBase currently supports DNA EM activation only for a single attached volume."
-                )
-            self._warn_if_attached_volume_is_large_for_chemistry()
-            self.simulation.physics_manager.set_dna_em_physics(
-                self.attached_to, self.dna_em_physics
-            )
         self._initialize_molecule_counter()
         self._initialize_reaction_counter()
+
+    def apply_dna_em_physics_request(self):
+        if self.dna_em_physics is None:
+            return
+        if not isinstance(self.attached_to, str):
+            fatal(
+                f"Actor '{self.name}' requests dna_em_physics='{self.dna_em_physics}' "
+                f"but is attached to {self.attached_to}. "
+                f"ChemistryActorBase currently supports DNA EM activation only for a single attached volume."
+            )
+        self._warn_if_attached_volume_is_large_for_chemistry()
+        self.simulation.physics_manager.set_dna_em_physics(
+            self.attached_to, self.dna_em_physics
+        )
 
     def _create_time_comparer(self, config):
         if not config:

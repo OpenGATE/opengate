@@ -1099,6 +1099,17 @@ class PhysicsManager(GateObject):
                 )
             self.user_info.user_limits_particles[pn] = True
 
+    def freeze_config(self):
+        # Freeze the Python-side configuration before any SimulationEngine is
+        # created. This phase may negotiate requests across managers and
+        # actors, but it must not instantiate Geant4 objects yet.
+        # Chemistry actors may request region-based DNA EM physics on the
+        # volumes they are attached to. This must be resolved before the
+        # physics engine configures G4 EM parameters and registers the DNA
+        # activator.
+        for actor in self.simulation.actor_manager.sorted_actors:
+            actor.apply_dna_em_physics_request()
+
 
 class ChemistryListManager(GateObject):
 
@@ -2092,6 +2103,12 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
+    def freeze_config(self):
+        # Keep this phase limited to Python-side configuration resolution and
+        # negotiation before runtime initialization. It may tie managers and
+        # actors together, but it must not create any Geant4 objects yet.
+        self.physics_manager.freeze_config()
+
     def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
         Args:
@@ -2100,7 +2117,7 @@ class Simulation(GateObject):
         Returns:
             obj:SimulationOutput : The output of the simulation run.
         """
-
+        self.freeze_config()
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
