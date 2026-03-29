@@ -105,7 +105,9 @@ namespace py = pybind11;
 #define ADD_CHEMISTRY_LIST(plname)                                             \
   py::class_<plname, G4VUserChemistryList,                                     \
              std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
-      .def(py::init<>());
+      .def(py::init<>())                                                       \
+      .def("ConstructParticle", &plname::ConstructParticle)                    \
+      .def("ConstructProcess", &plname::ConstructProcess);
 
 // FIXME ? A bit different for the biasing classe which do not take as argument
 // a int. Moreover, we need at least the function PhysicsBias to put a bias, so
