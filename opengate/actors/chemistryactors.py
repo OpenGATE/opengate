@@ -26,6 +26,13 @@ class ChemistryActorBase(ActorBase):
                 "doc": "If True, chemistry tracks starting outside the attached volume subtree are killed before chemistry processing.",
             },
         ),
+        "dna_em_physics": (
+            None,
+            {
+                "doc": "If not None, request region-based DNA EM physics in the volume to which this actor is attached.",
+                "allowed_values": Region.available_dna_em_physics + (None,),
+            },
+        ),
         "chemistry_list_name": (
             None,
             {
@@ -33,6 +40,8 @@ class ChemistryActorBase(ActorBase):
             },
         ),
     }
+
+    _large_volume_extent_warning_threshold = 100 * g4_units.um
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -56,8 +65,40 @@ class ChemistryActorBase(ActorBase):
         self.g4_reaction_counter_id = None
         super().close()
 
+    def _warn_if_attached_volume_is_large_for_chemistry(self):
+        try:
+            bounding_box_size = self.attached_to_volume.bounding_box_size
+        except Exception:
+            return
+
+        max_extent = max(float(v) for v in bounding_box_size)
+        if max_extent <= self._large_volume_extent_warning_threshold:
+            return
+
+        formatted_extents = ", ".join(
+            str(g4_best_unit(extent, "Length")) for extent in bounding_box_size
+        )
+        self.warn_user(
+            f"Chemistry actor '{self.name}' is attached to volume '{self.attached_to}', "
+            f"whose bounding-box extents are [{formatted_extents}]. "
+            f"This exceeds the chemistry warning threshold of "
+            f"{g4_best_unit(self._large_volume_extent_warning_threshold, 'Length')} "
+            f"and may lead to very expensive region-based DNA EM transport and chemistry staging."
+        )
+
     def initialize(self):
         ActorBase.initialize(self)
+        if self.dna_em_physics is not None:
+            if not isinstance(self.attached_to, str):
+                fatal(
+                    f"Actor '{self.name}' requests dna_em_physics='{self.dna_em_physics}' "
+                    f"but is attached to {self.attached_to}. "
+                    f"ChemistryActorBase currently supports DNA EM activation only for a single attached volume."
+                )
+            self._warn_if_attached_volume_is_large_for_chemistry()
+            self.simulation.physics_manager.set_dna_em_physics(
+                self.attached_to, self.dna_em_physics
+            )
         self._initialize_molecule_counter()
         self._initialize_reaction_counter()
 
@@ -289,13 +330,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
             10,
             {"doc": "If > 0 and times_to_record is empty, generate logarithmically spaced chemistry scoring times like chem6."},
         ),
-        "dna_em_physics": (
-            "DNA_Opt2",
-            {
-                "doc": "If not None, request region-based DNA EM physics in the volume to which this actor is attached.",
-                "allowed_values": Region.available_dna_em_physics + (None,),
-            },
-        ),
     }
 
     user_output_config = {
@@ -304,9 +338,8 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         },
     }
 
-    _large_volume_extent_warning_threshold = 100 * g4_units.um
-
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault("dna_em_physics", "DNA_Opt2")
         ChemistryActorBase.__init__(self, *args, **kwargs)
         self.required_molecule_counter_manager_policy.update(
             {
@@ -325,27 +358,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
             "ignored_molecules": ["H2O"],
         }
         self.__initcpp__()
-
-    def _warn_if_attached_volume_is_large_for_chemistry(self):
-        try:
-            bounding_box_size = self.attached_to_volume.bounding_box_size
-        except Exception:
-            return
-
-        max_extent = max(float(v) for v in bounding_box_size)
-        if max_extent <= self._large_volume_extent_warning_threshold:
-            return
-
-        formatted_extents = ", ".join(
-            str(g4_best_unit(extent, "Length")) for extent in bounding_box_size
-        )
-        self.warn_user(
-            f"ChemicalStageActor '{self.name}' is attached to volume '{self.attached_to}', "
-            f"whose bounding-box extents are [{formatted_extents}]. "
-            f"This exceeds the chemistry warning threshold of "
-            f"{g4_best_unit(self._large_volume_extent_warning_threshold, 'Length')} "
-            f"and may lead to very expensive region-based DNA EM transport and chemistry staging."
-        )
 
     def __initcpp__(self):
         g4.GateChemicalStageActor.__init__(self, self.user_info)
@@ -368,17 +380,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         )
 
     def initialize(self):
-        if self.dna_em_physics is not None:
-            if not isinstance(self.attached_to, str):
-                fatal(
-                    f"Actor '{self.name}' requests dna_em_physics='{self.dna_em_physics}' "
-                    f"but is attached to {self.attached_to}. "
-                    f"ChemicalStageActor currently supports DNA EM activation only for a single attached volume."
-                )
-            self._warn_if_attached_volume_is_large_for_chemistry()
-            self.simulation.physics_manager.set_dna_em_physics(
-                self.attached_to, self.dna_em_physics
-            )
         ChemistryActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         if self.g4_molecule_counter_id is not None:
