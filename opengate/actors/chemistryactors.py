@@ -21,7 +21,7 @@ class ChemistryActorBase(ActorBase):
 
     user_info_defaults = {
         "confine_chemistry_to_volume": (
-            False,
+            True,
             {
                 "doc": "If True, chemistry tracks starting outside the attached volume subtree are killed before chemistry processing.",
             },
@@ -251,12 +251,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     """
 
     user_info_defaults = {
-        "confine_chemistry_to_volume": (
-            True,
-            {
-                "doc": "Confine chemistry processing to the attached volume subtree.",
-            },
-        ),
         "track_only_primary": (
             True,
             {"doc": "Apply the chem6-like energy-loss logic only to the primary track."},
@@ -320,7 +314,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
             "name": f"{self.name}_molecule_counter",
             "time_comparer": {
                 "method": "fixed_precision",
-                "precision": 1 * g4.ps,
+                "precision": 1 * g4_units.ps,
             },
             "ignored_molecules": ["H2O"],
         }
