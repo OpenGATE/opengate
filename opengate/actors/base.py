@@ -155,6 +155,11 @@ class ActorBase(GateObject):
 
         return isinstance(self, ChemistryActorBase)
 
+    def apply_dna_em_physics_request(self):
+        # Freeze-time hook for actors that request region-based DNA EM
+        # activation before Geant4 physics initialization.
+        pass
+
     @classmethod
     def _process_user_output_config(cls):
         # it is important to create a new dictionary for this class
