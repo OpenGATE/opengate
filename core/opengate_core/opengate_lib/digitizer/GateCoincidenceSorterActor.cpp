@@ -316,7 +316,7 @@ bool GateCoincidenceSorterActor::CoincidenceIsGood(
     if (TransaxialPlane::XY == fTransaxialPlane) {
       good = dx * dx + dy * dy >= *fMinTransaxialDistance2;
     } else if (TransaxialPlane::XZ == fTransaxialPlane) {
-      good = dy * dy + dy * dy >= *fMinTransaxialDistance2;
+      good = dx * dx + dz * dz >= *fMinTransaxialDistance2;
     } else if (TransaxialPlane::YZ == fTransaxialPlane) {
       good = dy * dy + dz * dz >= *fMinTransaxialDistance2;
     }
