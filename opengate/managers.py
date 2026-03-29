@@ -702,6 +702,14 @@ class PhysicsListManager(GateObject):
         "G4EmLivermorePolarizedPhysics",
         "G4EmPenelopePhysics",
         "G4EmDNAPhysics",
+        "G4EmDNAPhysics_option1",
+        "G4EmDNAPhysics_option2",
+        "G4EmDNAPhysics_option3",
+        "G4EmDNAPhysics_option4",
+        "G4EmDNAPhysics_option5",
+        "G4EmDNAPhysics_option6",
+        "G4EmDNAPhysics_option7",
+        "G4EmDNAPhysics_option8",
         "G4OpticalPhysics",
     ]
 
