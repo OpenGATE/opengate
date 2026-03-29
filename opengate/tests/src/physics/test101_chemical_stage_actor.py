@@ -133,13 +133,17 @@ def compare_results(result1, result2):
     for field in same_fields:
         value1 = result1[field]
         value2 = result2[field]
-        print(f"{field}: {value1} / {value2}")
-        is_ok = is_ok and value1 == value2
+        passed = value1 == value2
+        status = "PASS" if passed else "FAIL"
+        print(f"  [{status}] {field}: {value1} / {value2}")
+        is_ok = is_ok and passed
 
     species1 = _species_signature(result1["species"])
     species2 = _species_signature(result2["species"])
-    print("species signature identical:", species1 == species2)
-    is_ok = is_ok and species1 == species2
+    species_identical = species1 == species2
+    status = "PASS" if species_identical else "FAIL"
+    print(f"  [{status}] species signature identical")
+    is_ok = is_ok and species_identical
 
     return is_ok
 
