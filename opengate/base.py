@@ -46,6 +46,8 @@ class MetaSingletonFatal(type):
                 f"You are trying to create another instance of {cls.__name__}, but an instance already exists "
                 f"in this process. Only one instance per process can be created. "
                 f"Please open a new python session and run the simulation again. "
+                f"If you want to run multiple simulation within a single script, "
+                f"make sure to use sim.run(start_new_process=True)"
             )
 
 
