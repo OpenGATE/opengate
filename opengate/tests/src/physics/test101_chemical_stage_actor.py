@@ -96,7 +96,7 @@ def check_single_run(stats, results):
     return is_ok
 
 
-def _species_signature(species_dict):
+def _species_signature(species_dict, label=None):
     signature = {}
     for time, species_at_time in species_dict.items():
         signature[float(time)] = {}
@@ -106,6 +106,30 @@ def _species_signature(species_dict):
                 float(values["sum_g"]),
                 float(values["sum_g2"]),
             )
+    if label is not None:
+        all_species = sorted(
+            {
+                species_name
+                for species_at_time in signature.values()
+                for species_name in species_at_time
+            }
+        )
+        print(
+            f"  species summary for {label}: "
+            f"{len(signature)} times, {len(all_species)} species"
+        )
+        if all_species:
+            print(f"    species: {', '.join(all_species)}")
+    return signature
+
+
+def _reaction_signature(reactions_dict):
+    signature = {}
+    for reaction, count in reactions_dict.items():
+        reactants, products = str(reaction).split(" -> ", 1)
+        canonical_reactants = " + ".join(sorted(reactants.split(" + ")))
+        canonical_reaction = f"{canonical_reactants} -> {products}"
+        signature[canonical_reaction] = signature.get(canonical_reaction, 0) + int(count)
     return signature
 
 
@@ -126,7 +150,6 @@ def compare_results(result1, result2):
         "mean_restricted_let",
         "std_restricted_let",
         "times_to_record",
-        "reactions",
     ]
 
     print("Comparing chemistry results:")
@@ -138,12 +161,31 @@ def compare_results(result1, result2):
         print(f"  [{status}] {field}: {value1} / {value2}")
         is_ok = is_ok and passed
 
-    species1 = _species_signature(result1["species"])
-    species2 = _species_signature(result2["species"])
+    species1 = _species_signature(result1["species"], "result1")
+    species2 = _species_signature(result2["species"], "result2")
     species_identical = species1 == species2
     status = "PASS" if species_identical else "FAIL"
     print(f"  [{status}] species signature identical")
+    if not species_identical:
+        all_times = sorted(set(species1.keys()) | set(species2.keys()))
+        for time in all_times:
+            if species1.get(time) != species2.get(time):
+                print(
+                    f"    first differing time: {time} "
+                    f"with {len(species1.get(time, {}))} / {len(species2.get(time, {}))} species"
+                )
+                break
     is_ok = is_ok and species_identical
+
+    reactions1 = _reaction_signature(result1["reactions"])
+    reactions2 = _reaction_signature(result2["reactions"])
+    reactions_identical = reactions1 == reactions2
+    status = "PASS" if reactions_identical else "FAIL"
+    print(f"  [{status}] reaction signature identical (commutative reactants)")
+    if not reactions_identical:
+        print(f"    reactions result1: {reactions1}")
+        print(f"    reactions result2: {reactions2}")
+    is_ok = is_ok and reactions_identical
 
     return is_ok
 
