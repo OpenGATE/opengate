@@ -42,7 +42,7 @@ def create_simulation(use_actor_requested_dna_em):
     sim.world.material = "G4_WATER"
 
     # chem6 default pair
-    sim.physics_manager.physics_list_name = "G4EmDNAPhysics_option2"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
     sim.chemistry_manager.chemistry_list_name = "G4EmDNAChemistry_option3"
 
     # Small inner water box representing the local chemistry/scoring region.
@@ -51,7 +51,7 @@ def create_simulation(use_actor_requested_dna_em):
     target.material = "G4_WATER"
 
     if not use_actor_requested_dna_em:
-        # Global DNA EM transport like chem6.
+        # Explicit region-based DNA EM configured on the target volume.
         target.set_dna_em_physics("DNA_Opt2")
 
     source = sim.add_source("GenericSource", "source")
@@ -148,14 +148,14 @@ if __name__ == "__main__":
     sim_global, stats_global, chem_actor_global = create_simulation(
         use_actor_requested_dna_em=False
     )
-    sim_global.run(start_new_process=False)
+    sim_global.run(start_new_process=True)
     results_global = chem_actor_global.results.get_data()
-    print_results("Global DNA EM results:", results_global)
+    print_results("Explicit region DNA EM results:", results_global)
 
     sim_actor, stats_actor, chem_actor_actor = create_simulation(
         use_actor_requested_dna_em=True
     )
-    sim_actor.run(start_new_process=False)
+    sim_actor.run(start_new_process=True)
     results_actor = chem_actor_actor.results.get_data()
     print_results("Actor-requested DNA EM results:", results_actor)
 
