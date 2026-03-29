@@ -134,7 +134,7 @@ namespace pyPhysicsLists {
 static std::vector<std::string> plList;
 
 void AddPhysicsList(const G4String &plname) {
-  std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
+  // std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
   plList.push_back(plname);
 }
 
