@@ -639,6 +639,12 @@ class ChemistryEngine(EngineBase):
         self.simulation_engine.physics_engine.g4_physics_list.set_chemistry_list(
             self.g4_chemistry_list
         )
+        g4.G4EmParameters.Instance().SetTimeStepModel(
+            getattr(
+                g4.G4ChemTimeStepModel,
+                self.chemistry_manager.time_step_model,
+            )
+        )
         self._apply_required_molecule_counter_manager_policy()
         self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
         self.g4_dna_chemistry_manager.SetChemistryActivation(True)
@@ -1321,7 +1327,6 @@ class SimulationEngine(GateSingletonFatal):
 
     def notify_managers(self):
         self.simulation.physics_manager._simulation_engine_closing()
-        self.simulation.chemistry_manager._simulation_engine_closing()
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
