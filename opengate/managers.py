@@ -1107,8 +1107,25 @@ class PhysicsManager(GateObject):
         # volumes they are attached to. This must be resolved before the
         # physics engine configures G4 EM parameters and registers the DNA
         # activator.
+        dna_em_requests = {}
         for actor in self.simulation.actor_manager.sorted_actors:
-            actor.apply_dna_em_physics_request()
+            request = actor.get_dna_em_physics_request()
+            if request is None:
+                continue
+            volume_name, dna_em_physics = request
+            previous_request = dna_em_requests.get(volume_name)
+            if previous_request is not None:
+                previous_dna_em_physics, previous_actor_name = previous_request
+                if previous_dna_em_physics != dna_em_physics:
+                    fatal(
+                        f"Conflicting dna_em_physics requests for volume '{volume_name}': "
+                        f"actor '{previous_actor_name}' requests '{previous_dna_em_physics}' "
+                        f"while actor '{actor.name}' requests '{dna_em_physics}'."
+                    )
+            dna_em_requests[volume_name] = (dna_em_physics, actor.name)
+
+        for volume_name, (dna_em_physics, _) in dna_em_requests.items():
+            self.set_dna_em_physics(volume_name, dna_em_physics)
 
 
 class ChemistryListManager(GateObject):
