@@ -1176,8 +1176,11 @@ class ChemistryManager(GateObject):
             },
         ),
         "time_step_model": (
-            "default",
-            {"doc": "The model used to update the time steps in the chemistry simulation. "},
+            "SBS",
+            {
+                "doc": "The Geant4 chemistry time-step model to use. ",
+                "allowed_values": ("SBS", "IRT", "IRT_syn"),
+            },
         ),
     }
 
