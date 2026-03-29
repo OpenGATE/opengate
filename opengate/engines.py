@@ -19,6 +19,7 @@ from .physics import (
     create_g4_optical_properties_table,
     load_optical_properties_from_xml,
 )
+from .chemistry import ChemistryCustomList
 from .base import GateSingletonFatal
 from .logger import logger
 
@@ -279,6 +280,7 @@ class PhysicsEngine(EngineBase):
         G4RunManager.Initialize() is called.
 
         """
+        self.initialize_regions_before_runmanager()
         self.initialize_physics_list()
         self.initialize_dna_physics_regions()
         self.initialize_g4_em_parameters()
@@ -306,6 +308,10 @@ class PhysicsEngine(EngineBase):
         self.initialize_ionisation_options()
         self.initialize_users_ionisation_potentials()
 
+    def initialize_regions_before_runmanager(self):
+        for region in self.physics_manager.regions.values():
+            region.initialize_before_runmanager()
+
     def initialize_parallel_world_physics(self):
         for (
             world
@@ -330,7 +336,7 @@ class PhysicsEngine(EngineBase):
 
     def initialize_regions(self):
         for region in self.physics_manager.regions.values():
-            region.initialize()
+            region.initialize_after_runmanager()
 
     def initialize_global_cuts(self):
         ui = self.physics_manager.user_info
@@ -601,7 +607,7 @@ class ChemistryEngine(EngineBase):
                 getattr(self.g4_molecule_counter_manager, setter_name)(value)
 
 
-    def initialize(self):
+    def initialize_before_runmanager(self):
         chemistry_list = self.chemistry_manager.resolved_chemistry_list
         if chemistry_list is None:
             return
@@ -609,7 +615,16 @@ class ChemistryEngine(EngineBase):
         self._apply_required_molecule_counter_manager_policy()
         self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
         self.g4_dna_chemistry_manager.SetChemistryActivation(True)
-        self.g4_dna_chemistry_manager.SetChemistryList(chemistry_list)
+        if isinstance(chemistry_list, ChemistryCustomList):
+            self.g4_dna_chemistry_manager.SetChemistryList(chemistry_list)
+
+    def initialize_after_runmanager(self):
+        chemistry_list = self.chemistry_manager.resolved_chemistry_list
+        if chemistry_list is None:
+            return
+
+        if self.g4_dna_chemistry_manager is None:
+            self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
         self.g4_dna_chemistry_manager.Initialize()
         self.g4_scheduler = g4.G4Scheduler.Instance()
         self.g4_time_step_action = g4.GateTimeStepAction()
@@ -951,12 +966,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
 
-        # Region-based EM configuration such as DNA transport is resolved by
-        # Geant4 during physics construction, so the corresponding G4Region
-        # objects must exist as soon as the geometry has been built.
         for region in self.simulation_engine.simulation.physics_manager.regions.values():
-            if region.needs_preinitialization():
-                region.preinitialize_for_em()
+            region.initialize_during_runmanager()
 
         # return the (main) world physical volume
         self._is_constructed = True
@@ -1542,8 +1553,8 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
-        logger.info("Simulation: initialize Chemistry")
-        self.chemistry_engine.initialize()
+        logger.info("Simulation: prepare Chemistry")
+        self.chemistry_engine.initialize_before_runmanager()
 
         # action
 
@@ -1577,6 +1588,9 @@ class SimulationEngine(GateSingletonFatal):
         logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
+
+        logger.info("Simulation: initialize Chemistry")
+        self.chemistry_engine.initialize_after_runmanager()
 
         # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
