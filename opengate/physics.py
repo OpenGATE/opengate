@@ -190,9 +190,7 @@ class Region(GateObject):
     user_info_defaults["dna_em_physics"] = (
         None,
         {
-            "doc": "DNA EM physics option to activate in this region. "
-            "Set internally through the dedicated PhysicsManager helpers.",
-            "read_only": True,
+            "doc": "DNA EM physics option to activate in this region.",
             "allowed_values": available_dna_em_physics + (None,),
         },
     )
@@ -291,35 +289,20 @@ class Region(GateObject):
         return s
 
     @requires_fatal("physics_engine")
-    def initialize(self):
-        """
-        This method wraps around all initialization methods of this class.
-
-        It should be called from the physics_engine,
-        after setting the self.physics_engine attribute.
-        """
-        if (
-            self._g4_region_initialized is True
-            and self._g4_user_limits_initialized is True
-            and self._g4_production_cuts_initialized is True
-        ):
-            return
+    def initialize_before_runmanager(self):
+        """Perform Python-side region setup before G4RunManager.Initialize()."""
         self.initialize_volume_dictionaries()
-        self.initialize_g4_production_cuts()
-        self.initialize_g4_user_limits()
-        self.initialize_g4_region()
-
-    def needs_preinitialization(self):
-        return self.dna_em_physics is not None or any(
-            v is not None for v in self.em_switches.values()
-        )
 
     @requires_fatal("physics_engine")
-    def preinitialize_for_em(self):
-        """Create the G4Region early enough for per-region EM configuration."""
-        if self._g4_region_initialized is True:
-            return
-        self.initialize_volume_dictionaries()
+    def initialize_during_runmanager(self):
+        """Create and attach the G4Region during geometry construction."""
+        self.initialize_g4_region()
+
+    @requires_fatal("physics_engine")
+    def initialize_after_runmanager(self):
+        """Finalize region-related G4 objects after G4RunManager.Initialize()."""
+        self.initialize_g4_production_cuts()
+        self.initialize_g4_user_limits()
         self.initialize_g4_region()
 
     # This method is currently necessary because the actual volume objects
