@@ -291,11 +291,17 @@ class Region(GateObject):
     @requires_fatal("physics_engine")
     def initialize_before_runmanager(self):
         """Perform Python-side region setup before G4RunManager.Initialize()."""
+        # Only Python objects are touched here. The actual G4Region cannot be
+        # created yet because G4LogicalVolume objects appear during geometry
+        # construction inside G4RunManager.Initialize().
         self.initialize_volume_dictionaries()
 
     @requires_fatal("physics_engine")
     def initialize_during_runmanager(self):
         """Create and attach the G4Region during geometry construction."""
+        # This runs from VolumeEngine.Construct(), i.e. after logical volumes
+        # exist but still early enough for Geant4 physics construction to see
+        # the region-based EM configuration.
         self.initialize_g4_region()
 
     @requires_fatal("physics_engine")
