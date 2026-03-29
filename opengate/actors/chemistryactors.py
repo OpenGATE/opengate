@@ -26,6 +26,12 @@ class ChemistryActorBase(ActorBase):
                 "doc": "If True, chemistry tracks starting outside the attached volume subtree are killed before chemistry processing.",
             },
         ),
+        "chemistry_list_name": (
+            None,
+            {
+                "doc": "Chemistry list requested by this actor. ",
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
