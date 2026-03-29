@@ -37,6 +37,11 @@ from .physics import (
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
 )
+from .physicslists import (
+    create_modular_physics_list_class,
+    create_physics_list_wrapper_class,
+    create_reference_physics_list_class,
+)
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
 
@@ -169,185 +174,6 @@ actor_types = {
     "GammaFreeFlightActor": GammaFreeFlightActor,
     "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
 }
-
-
-def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
-    """
-    Dynamically create a class with the given PhysicList
-    Only possible if the class exist in g4
-    """
-    # Retrieve the G4VPhysicsConstructor class
-    try:
-        a = getattr(g4, g4_physics_constructor_class_name)
-        # sanity check:
-        assert g4_physics_constructor_class_name == a.__name__
-        return a
-    except AttributeError:
-        s = f"Cannot find the class {g4_physics_constructor_class_name} in opengate_core"
-        fatal(s)
-
-
-def create_modular_physics_list_class(g4_physics_constructor_class_name):
-    """
-    Create a class (not on object!) which:
-    - inherits from g4.G4VModularPhysicsList
-    - register a single G4 PhysicsConstructor (inherited from G4VPhysicsConstructor)
-    - has the same name as this PhysicsConstructor
-    """
-    physics_constructor_class = retrieve_g4_physics_constructor_class(
-        g4_physics_constructor_class_name
-    )
-    class ModularPhysicsList(g4.G4VModularPhysicsList):
-        g4_physics_constructor_class = physics_constructor_class
-
-        def __init__(self, verbosity):
-            g4.G4VModularPhysicsList.__init__(self)
-            self.g4_physics_constructor = self.g4_physics_constructor_class(verbosity)
-            self.RegisterPhysics(self.g4_physics_constructor)
-
-    ModularPhysicsList.__name__ = g4_physics_constructor_class_name
-    ModularPhysicsList.__qualname__ = g4_physics_constructor_class_name
-    return ModularPhysicsList
-
-
-def create_physics_list_wrapper_class(physics_list_class):
-    """
-    Create a thin wrapper around a physics list class.
-
-    The wrapper remains a Geant4 physics list, while optionally forwarding the
-    initialization lifecycle to a chemistry list.
-    """
-
-    class PhysicsListWrapper(physics_list_class):
-        def __init__(self, *args, chemistry_list=None, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.chemistry_list = chemistry_list
-
-        def ConstructParticle(self):
-            super().ConstructParticle()
-            if self.chemistry_list is not None:
-                self.chemistry_list.ConstructParticle()
-
-        def ConstructProcess(self):
-            super().ConstructProcess()
-            if self.chemistry_list is not None:
-                self.chemistry_list.ConstructProcess()
-
-    PhysicsListWrapper.__name__ = f"{physics_list_class.__name__}Wrapper"
-    PhysicsListWrapper.__qualname__ = PhysicsListWrapper.__name__
-    return PhysicsListWrapper
-
-
-reference_physics_list_base_class_names = (
-    "FTFP_BERT",
-    "FTFP_BERT_ATL",
-    "FTFP_BERT_HP",
-    "FTFP_BERT_TRV",
-    "FTFQGSP_BERT",
-    "FTFP_INCLXX",
-    "FTFP_INCLXX_HP",
-    "FTF_BIC",
-    "LBE",
-    "NuBeam",
-    "QBBC",
-    "QGSP_BERT",
-    "QGSP_BERT_HP",
-    "QGSP_BIC",
-    "QGSP_BIC_HP",
-    "QGSP_BIC_AllHP",
-    "QGSP_BIC_HPT",
-    "QGSP_FTFP_BERT",
-    "QGSP_INCLXX",
-    "QGSP_INCLXX_HP",
-    "QGS_BIC",
-    "Shielding",
-    "ShieldingLEND",
-)
-
-reference_physics_list_em_extensions = {
-    "_EM0": None,
-    "_EMV": "G4EmStandardPhysics_option1",
-    "_EMX": "G4EmStandardPhysics_option2",
-    "_EMY": "G4EmStandardPhysics_option3",
-    "_EMZ": "G4EmStandardPhysics_option4",
-    "_LIV": "G4EmLivermorePhysics",
-    "_PEN": "G4EmPenelopePhysics",
-    "_GS": "G4EmStandardPhysicsGS",
-    "__GS": "G4EmStandardPhysicsGS",
-    "_LE": "G4EmLowEPPhysics",
-}
-
-reference_physics_list_special_builders = {
-    "Shielding_HP": {"base": "Shielding"},
-    "ShieldingM": {"base": "Shielding", "ctor_args": ("HP", "M", False)},
-    "ShieldingM_HP": {"base": "Shielding", "ctor_args": ("HP", "M", False)},
-    "ShieldingLIQMD": {"base": "Shielding", "ctor_args": ("HP", "", True)},
-    "ShieldingLIQMD_HP": {"base": "Shielding", "ctor_args": ("HP", "", True)},
-    "FTFP_BERT_HPT": {"base": "FTFP_BERT_HP", "add_thermal_neutrons": True},
-    "FTFP_INCLXX_HPT": {"base": "FTFP_INCLXX_HP", "add_thermal_neutrons": True},
-    "QGSP_BERT_HPT": {"base": "QGSP_BERT_HP", "add_thermal_neutrons": True},
-    "QGSP_BIC_AllHPT": {"base": "QGSP_BIC_AllHP", "add_thermal_neutrons": True},
-    "QGSP_INCLXX_HPT": {"base": "QGSP_INCLXX_HP", "add_thermal_neutrons": True},
-    "Shielding_HPT": {"base": "Shielding", "add_thermal_neutrons": True},
-    "ShieldingLIQMD_HPT": {
-        "base": "Shielding",
-        "ctor_args": ("HP", "", True),
-        "add_thermal_neutrons": True,
-    },
-    "ShieldingM_HPT": {
-        "base": "Shielding",
-        "ctor_args": ("HP", "M", False),
-        "add_thermal_neutrons": True,
-    },
-}
-
-
-def _split_reference_physics_list_name(physics_list_name):
-    for suffix in sorted(reference_physics_list_em_extensions.keys(), key=len, reverse=True):
-        if suffix and physics_list_name.endswith(suffix):
-            return physics_list_name[: -len(suffix)], suffix
-    return physics_list_name, None
-
-
-def create_reference_physics_list_class(physics_list_name):
-    base_name, em_suffix = _split_reference_physics_list_name(physics_list_name)
-    em_constructor_name = reference_physics_list_em_extensions.get(em_suffix)
-
-    special_builder = reference_physics_list_special_builders.get(base_name)
-    if special_builder is not None:
-        bound_base_name = special_builder["base"]
-    else:
-        bound_base_name = base_name
-
-    try:
-        bound_base_class = getattr(g4, bound_base_name)
-    except AttributeError:
-        fatal(
-            f"Cannot construct the reference physics list {physics_list_name}. "
-            f"Missing bound base class {bound_base_name} in opengate_core."
-        )
-
-    def __init__(self, verbosity):
-        if bound_base_name == "LBE":
-            bound_base_class.__init__(self)
-        elif special_builder is not None and "ctor_args" in special_builder:
-            model, variant, use_liqmd = special_builder["ctor_args"]
-            bound_base_class.__init__(self, verbosity, model, variant, use_liqmd)
-        else:
-            bound_base_class.__init__(self, verbosity)
-
-        if special_builder is not None and special_builder.get("add_thermal_neutrons"):
-            self.RegisterPhysics(g4.G4ThermalNeutrons(verbosity))
-
-        if em_constructor_name is not None:
-            self.ReplacePhysics(
-                retrieve_g4_physics_constructor_class(em_constructor_name)(verbosity)
-            )
-
-    cls = type(physics_list_name, (bound_base_class,), {"__init__": __init__})
-    cls.__qualname__ = physics_list_name
-    return cls
-
 class FilterManager:
     """
     Manage all the Filters in the simulation
@@ -798,10 +624,10 @@ class PhysicsListManager(GateObject):
         return created_physics_list_classes
 
     @requires_fatal("simulation")
-    def get_physics_list(self, physics_list_name, chemistry_list=None):
+    def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
             physics_list = self.created_physics_list_classes[physics_list_name](
-                self.simulation.g4_verbose_level, chemistry_list=chemistry_list
+                self.simulation.g4_verbose_level
             )
         else:
             s = (
@@ -1332,7 +1158,7 @@ class ChemistryListManager(GateObject):
 
 
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
-    if chemistry_list_name in (None, "", "default"):
+    if chemistry_list_name in ("default"):
         return self.inherited_user_info_defaults["chemistry_list_name"][0]
     return chemistry_list_name
 
@@ -1363,8 +1189,6 @@ class ChemistryManager(GateObject):
         self.chemistry_list_manager = ChemistryListManager(
             simulation=self.simulation, name="ChemistryListManager"
         )
-        self.chemistry_list = None
-        self._resolved_chemistry_list = None
 
     def reset(self):
         self.__init__(self.simulation)
@@ -1388,7 +1212,6 @@ class ChemistryManager(GateObject):
         # Reason: physics_list_manager would become None also in the base process
         dict_to_return = dict([(k, v) for k, v in super().__getstate__().items()])
         dict_to_return["chemistry_list_manager"] = None
-        dict_to_return["_resolved_chemistry_list"] = None
         return dict_to_return
 
     def __setstate__(self, d):
@@ -1396,70 +1219,57 @@ class ChemistryManager(GateObject):
         self.chemistry_list_manager = ChemistryListManager(
             simulation=self.simulation, name="ChemistryListManager"
         )
-        self._resolved_chemistry_list = None
 
-    def _simulation_engine_closing(self):
-        if isinstance(self._resolved_chemistry_list, ChemistryCustomList):
-            self._resolved_chemistry_list.close()
-        if (
-            self.chemistry_list is not self._resolved_chemistry_list
-            and isinstance(self.chemistry_list, ChemistryCustomList)
-        ):
-            self.chemistry_list.close()
-        self._resolved_chemistry_list = None
-        self.chemistry_list = None
+    def check_chemistry_list_requests(self):
+        requested_chemistry_lists = set()
 
-    @property
-    def resolved_chemistry_list(self):
-        return self._resolved_chemistry_list
+        if self.chemistry_list_name not in (None, ""):
+            requested_chemistry_lists.add(self.chemistry_list_name)
 
-    def _has_explicit_chemistry_list_name(self):
-        chemistry_list_name = self.user_info.chemistry_list_name
-        return chemistry_list_name not in (None, "", "default")
+        for actor in self.simulation.actor_manager.sorted_actors:
+            if not actor.is_chemistry_actor:
+                continue
+            try:
+                actor_chemistry_list_name = actor.chemistry_list_name
+            except AttributeError:
+                fatal(
+                    f"Chemistry actor '{actor.name}' is missing required attribute "
+                    f"'chemistry_list_name'. Check that it inherits correctly from "
+                    f"ChemistryActorBase."
+                )
+            if actor_chemistry_list_name not in (None, ""):
+                requested_chemistry_lists.add(actor_chemistry_list_name)
 
-    def _has_explicit_chemistry_list_object(self):
-        return self.chemistry_list is not None
+        # Chemistry must run with one coherent chemistry list. Actor-level and
+        # manager-level requests therefore participate in one uniqueness check.
+        if len(requested_chemistry_lists) > 1:
+            fatal(
+                f"Incompatible chemistry list requests were found: {sorted(requested_chemistry_lists)}. "
+                f"All chemistry actors and the ChemistryManager must request the same chemistry list."
+            )
 
-    def chemistry_is_required(self):
-        return (
-            self.simulation.actor_manager.has_chemistry_actors()
-            or self._has_explicit_chemistry_list_object()
-            or self._has_explicit_chemistry_list_name()
-        )
+        if len(requested_chemistry_lists) == 1:
+            chemistry_list_name = next(iter(requested_chemistry_lists))
+        else:
+            chemistry_list_name = None
 
-    def resolve_chemistry_list(self):
-        if self._resolved_chemistry_list is not None:
-            return self._resolved_chemistry_list
+        self.chemistry_list_name = chemistry_list_name
+        return chemistry_list_name
 
-        if not self.chemistry_is_required():
-            self._resolved_chemistry_list = None
+    def get_chemistry_list(self):
+        chemistry_list_name = self.check_chemistry_list_requests()
+        if chemistry_list_name is None:
             return None
 
-        chemistry_list = self.chemistry_list
-        chemistry_list_name = self.user_info.chemistry_list_name
-
-        if chemistry_list is not None and self._has_explicit_chemistry_list_name():
-            self.warn_user(
-                "Both chemistry_manager.chemistry_list and chemistry_manager.chemistry_list_name "
-                "were provided. Using the explicit chemistry_list object and ignoring chemistry_list_name."
-            )
-
-        if chemistry_list is None:
-            chemistry_list = self.chemistry_list_manager.create_chemistry_list(
-                chemistry_list_name
-            )
+        # The manager only resolves configuration into a chemistry-list object.
+        # The runtime ownership of that object lives in ChemistryEngine.
+        chemistry_list = self.chemistry_list_manager.create_chemistry_list(
+            chemistry_list_name
+        )
 
         if isinstance(chemistry_list, ChemistryCustomList):
             chemistry_list.simulation = self.simulation
 
-        self._resolved_chemistry_list = chemistry_list
-        return self._resolved_chemistry_list
-
-    def initialize(self):
-        self._resolved_chemistry_list = None
-        chemistry_list = self.resolve_chemistry_list()
-        if chemistry_list is not None and hasattr(chemistry_list, "initialize"):
-            chemistry_list.initialize()
         return chemistry_list
 
 
