@@ -239,6 +239,8 @@ class PhysicsEngine(EngineBase):
         super().close()
 
     def release_g4_references(self):
+        if self.g4_physics_list is not None:
+            self.g4_physics_list.close()
         self.g4_physics_list = None
         self.g4_decay = None
         self.g4_radioactive_decay = None
@@ -282,6 +284,9 @@ class PhysicsEngine(EngineBase):
         G4RunManager.Initialize() is called.
 
         """
+        # Regions have a split lifecycle because their G4Region objects must
+        # exist during Geant4 initialization, while some settings are only safe
+        # to apply after G4RunManager.Initialize() has completed.
         self.initialize_regions_before_runmanager()
         self.initialize_physics_list()
         self.initialize_dna_physics_regions()
@@ -293,6 +298,8 @@ class PhysicsEngine(EngineBase):
     def initialize_dna_physics_regions(self):
         if not any(region.dna_em_physics is not None for region in self.physics_manager.regions.values()):
             return
+        # Keep a Python ref to the activator because it is created on the Python
+        # side and then registered into a Geant4-owned physics list.
         self.g4_dna_physics_activator = g4.G4EmDNAPhysicsActivator(
             self.physics_manager.simulation.g4_verbose_level
         )
@@ -328,13 +335,10 @@ class PhysicsEngine(EngineBase):
         Create a Physic List from the Factory
         """
         physics_list_name = self.physics_manager.user_info.physics_list_name
-        chemistry_list = (
-            self.simulation_engine.simulation.chemistry_manager.resolved_chemistry_list
-        )
-        self.g4_physics_list = (
-            self.physics_manager.physics_list_manager.get_physics_list(
-                physics_list_name, chemistry_list=chemistry_list
-            )
+        # The chemistry list is attached later by ChemistryEngine once the
+        # runtime chemistry-list object has been created and retained there.
+        self.g4_physics_list = self.physics_manager.physics_list_manager.get_physics_list(
+            physics_list_name
         )
 
     def initialize_regions(self):
@@ -554,6 +558,7 @@ class ChemistryEngine(EngineBase):
 
         # g4 references
         self.g4_dna_chemistry_manager = None
+        self.g4_chemistry_list = None
         self.g4_molecule_counter_manager = None
         self.g4_scheduler = None
         self.g4_time_step_action = None
@@ -566,6 +571,12 @@ class ChemistryEngine(EngineBase):
         super().close()
 
     def release_g4_references(self):
+        # ChemistryEngine is the owner of the runtime chemistry-list object.
+        # Wrapped physics lists and Geant4 managers may temporarily refer to it,
+        # but teardown is coordinated from here.
+        if isinstance(self.g4_chemistry_list, ChemistryCustomList):
+            self.g4_chemistry_list.close()
+        self.g4_chemistry_list = None
         self.g4_dna_chemistry_manager = None
         self.g4_molecule_counter_manager = None
         self.g4_scheduler = None
@@ -611,24 +622,40 @@ class ChemistryEngine(EngineBase):
 
 
     def initialize_before_runmanager(self):
-        chemistry_list = self.chemistry_manager.resolved_chemistry_list
-        if chemistry_list is None:
+        # Resolve the single chemistry-list request for this run and keep the
+        # resulting runtime object alive in the engine for the full simulation.
+        self.g4_chemistry_list = self.chemistry_manager.get_chemistry_list()
+        if self.g4_chemistry_list is None:
             return
 
+        # Only Python-side ChemistryCustomList implementations provide initialize().
+        # Built-in Geant4 chemistry lists are plain bound C++ objects and therefore
+        # legitimately do not implement a Python initialize() method.
+        if hasattr(self.g4_chemistry_list, "initialize"):
+            self.g4_chemistry_list.initialize()
+        # The physics-list wrapper forwards ConstructParticle/ConstructProcess
+        # to the chemistry list during Geant4 initialization, so inject the ref
+        # before G4RunManager.Initialize() starts.
+        self.simulation_engine.physics_engine.g4_physics_list.set_chemistry_list(
+            self.g4_chemistry_list
+        )
         self._apply_required_molecule_counter_manager_policy()
         self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
         self.g4_dna_chemistry_manager.SetChemistryActivation(True)
-        if isinstance(chemistry_list, ChemistryCustomList):
-            self.g4_dna_chemistry_manager.SetChemistryList(chemistry_list)
+        if isinstance(self.g4_chemistry_list, ChemistryCustomList):
+            # Built-in Geant4 chemistry lists register themselves with the DNA
+            # chemistry manager; custom Python lists must be registered by GATE.
+            self.g4_dna_chemistry_manager.SetChemistryList(self.g4_chemistry_list)
 
     def initialize_after_runmanager(self):
-        chemistry_list = self.chemistry_manager.resolved_chemistry_list
-        if chemistry_list is None:
+        if self.g4_chemistry_list is None:
             return
 
         if self.g4_dna_chemistry_manager is None:
             self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
-        if isinstance(chemistry_list, ChemistryCustomList):
+        if isinstance(self.g4_chemistry_list, ChemistryCustomList):
+            # Built-in Geant4 chemistry lists initialize themselves from their
+            # ConstructProcess(); only custom lists need an explicit call here.
             self.g4_dna_chemistry_manager.Initialize()
         self.g4_scheduler = g4.G4Scheduler.Instance()
         self.g4_time_step_action = g4.GateTimeStepAction()
@@ -743,7 +770,8 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
 
         sa = g4.GateStackingAction()
         sa.fChemistryIsActive = (
-            self.simulation_engine.simulation.chemistry_manager.chemistry_is_required()
+            self.simulation_engine.simulation.chemistry_manager.check_chemistry_list_requests()
+            is not None
         )
         self.SetUserAction(sa)
         self.g4_StackingAction.append(sa)
@@ -1540,9 +1568,6 @@ class SimulationEngine(GateSingletonFatal):
         # Geometry initialization
         logger.info("Simulation: initialize Geometry")
         self.volume_engine.initialize()
-
-        logger.info("Simulation: resolve Chemistry configuration")
-        self.simulation.chemistry_manager.initialize()
 
         # Physics initialization
         logger.info("Simulation: initialize Physics")
