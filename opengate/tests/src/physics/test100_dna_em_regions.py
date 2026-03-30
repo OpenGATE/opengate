@@ -75,7 +75,7 @@ if __name__ == "__main__":
     target_explicit.material = "G4_WATER"
 
     target_explicit_child = sim.add_volume("Box", TARGET_EXPLICIT_CHILD_NAME)
-    target_explicit_child.mother = TARGET_EXPLICIT_NAME
+    target_explicit_child.mother = target_explicit
     target_explicit_child.size = [1 * cm, 1 * cm, 1 * cm]
     target_explicit_child.material = "G4_WATER"
 
@@ -83,8 +83,8 @@ if __name__ == "__main__":
     target_auto.set_dna_em_physics("DNA_Opt2")
 
     explicit_region = sim.physics_manager.add_region(EXPLICIT_REGION_NAME)
-    explicit_region.associate_volume(TARGET_EXPLICIT_NAME)
-    explicit_region.associate_volume(TARGET_EXPLICIT_CHILD_NAME)
+    explicit_region.associate_volume(target_explicit)
+    explicit_region.associate_volume(target_explicit_child)
     sim.physics_manager.set_dna_em_physics_in_region(EXPLICIT_REGION_NAME, "DNA_Opt4")
 
     source = sim.add_source("GenericSource", "source")
