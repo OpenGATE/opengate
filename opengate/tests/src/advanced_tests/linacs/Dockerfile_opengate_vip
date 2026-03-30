@@ -1,0 +1,27 @@
+
+#Docker for opengate_core
+#systemctl start docker
+#login: docker login
+#build: docker build -t tbaudier/opengate_castor_ci -f Dockerfile_opengate_vip.
+#push: docker push tbaudier/opengate_vip
+#run: docker run --rm -v $(Pipeline.Workspace):/home tbaudier/opengate_vip /home/.github/workflows/vip/run_linac_test.sh
+#interactive: docker run -ti --rm -v $PWD:/home quay.io/pypa/manylinux_2_34_x86_64 /bin/bash
+
+FROM quay.io/pypa/manylinux_2_34_x86_64
+MAINTAINER Thomas Baudier <thomas.baudier@creatis.insa-lyon.fr>
+#Install packages
+RUN     yum install -y wget \
+     && /opt/python/cp312-cp312/bin/pip install opengate \
+     && export PATH=/opt/python/cp312-cp312/bin:$PATH \
+     && opengate_tests \
+     && cd /opt/python/cp312-cp312/lib/python3.12/site-packages/opengate/tests/src/advanced_tests/linacs/ \
+     && wget http://www.creatis.insa-lyon.fr/~baudier/data_advanced_test_linac.zip \
+     && unzip data_advanced_test_linac.zip \
+     && rm -f data_advanced_test_linac.zip \
+     && mkdir output \
+     && pip install "pymedphys[tests]==0.41.0"
+
+# docker commit <container_name>
+# docker tag <image_id> tbaudier/opengate_vip:0.1.0
+# docker run --rm tbaudier/opengate_vip:0.1.0 /opt/python/cp312-cp312/lib/python3.12/site-packages/opengate/tests/src/advanced_tests/linacs/run_linac_test.sh
+

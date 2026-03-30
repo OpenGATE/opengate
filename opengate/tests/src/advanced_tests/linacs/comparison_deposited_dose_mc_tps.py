@@ -193,6 +193,7 @@ def gamma_index_comparison(path, path_output):
         "random_subset": None,
         "local_gamma": True,
         "ram_available": 40 * 2**29,  # 40 * 1/2 GB
+        "interp_algo": "scipy",
     }
 
     gamma = pymedphys.gamma(
@@ -204,6 +205,7 @@ def gamma_index_comparison(path, path_output):
     )
     valid_gamma = gamma[~np.isnan(gamma)]
     pass_ratio = np.sum(valid_gamma <= 1) / len(valid_gamma)
+    print("pass ration: " + str(pass_ratio))
 
     height = 20
     width = height / 2
@@ -257,7 +259,7 @@ def gamma_index_comparison(path, path_output):
     ax1[1].set(ylabel="Y position [mm]", xlabel="X position [mm]")
     ax1[0].axes.get_xaxis().set_visible(False)
     fig1.savefig(f"{path_output}/MC_vs_TPS_dose.pdf")
-    is_ok = pass_ratio > 0.6
+    is_ok = pass_ratio > 0.70
     utility.test_ok(is_ok)
 
 
