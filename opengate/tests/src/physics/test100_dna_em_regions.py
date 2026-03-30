@@ -18,28 +18,68 @@ def check_dna_regions(sim):
 
     target_auto_region = f"{TARGET_AUTO_NAME}_region"
 
-    is_ok = True
-
     print("Checking configured DNA regions:")
     print(dna_regions)
     print("Checking volume-to-region association:")
     print(volume_regions)
-
-    is_ok = is_ok and dna_regions.get(target_auto_region) == "DNA_Opt2"
-    is_ok = is_ok and dna_regions.get(EXPLICIT_REGION_NAME) == "DNA_Opt4"
-
-    is_ok = is_ok and volume_regions.get(TARGET_AUTO_NAME) == target_auto_region
-    is_ok = is_ok and volume_regions.get(TARGET_EXPLICIT_NAME) == EXPLICIT_REGION_NAME
-    is_ok = is_ok and volume_regions.get(TARGET_EXPLICIT_CHILD_NAME) == EXPLICIT_REGION_NAME
-    is_ok = is_ok and dna_regions.get("DefaultRegionForTheWorld") is None
-    is_ok = is_ok and model_checks.get(TARGET_AUTO_NAME) is not None
-    is_ok = is_ok and "DNA" in str(model_checks.get(TARGET_AUTO_NAME))
-    is_ok = is_ok and model_checks.get(TARGET_EXPLICIT_NAME) is not None
-    is_ok = is_ok and "DNA" in str(model_checks.get(TARGET_EXPLICIT_NAME))
     world_model = model_checks.get("world")
-    is_ok = is_ok and (
-        world_model is None or "DummyModel" in str(world_model)
-    )
+
+    checks = [
+        (
+            f"DNA region for {target_auto_region}",
+            dna_regions.get(target_auto_region),
+            "DNA_Opt2",
+        ),
+        (
+            f"DNA region for {EXPLICIT_REGION_NAME}",
+            dna_regions.get(EXPLICIT_REGION_NAME),
+            "DNA_Opt4",
+        ),
+        (
+            f"Region attached to {TARGET_AUTO_NAME}",
+            volume_regions.get(TARGET_AUTO_NAME),
+            target_auto_region,
+        ),
+        (
+            f"Region attached to {TARGET_EXPLICIT_NAME}",
+            volume_regions.get(TARGET_EXPLICIT_NAME),
+            EXPLICIT_REGION_NAME,
+        ),
+        (
+            f"Region attached to {TARGET_EXPLICIT_CHILD_NAME}",
+            volume_regions.get(TARGET_EXPLICIT_CHILD_NAME),
+            EXPLICIT_REGION_NAME,
+        ),
+        (
+            "World DNA region remains unset",
+            dna_regions.get("DefaultRegionForTheWorld"),
+            None,
+        ),
+        (
+            "World model remains standard/inactive",
+            world_model,
+            "None or DummyModel",
+        ),
+    ]
+
+    is_ok = True
+    print("Detailed DNA region checks:")
+    for label, actual, expected in checks:
+        if expected == "contains DNA":
+            passed = actual is not None and "DNA" in str(actual)
+        elif expected == "None or DummyModel":
+            passed = actual is None or "DummyModel" in str(actual)
+        else:
+            passed = actual == expected
+        status = "PASS" if passed else "FAIL"
+        print(f"  [{status}] {label}")
+        print(f"    actual  : {actual}")
+        print(f"    expected: {expected}")
+        is_ok = is_ok and passed
+
+    print("Diagnostic EM-model checks:")
+    for volume_name, model_name in model_checks.items():
+        print(f"  {volume_name}: {model_name}")
 
     return is_ok
 
@@ -79,7 +119,7 @@ if __name__ == "__main__":
     target_explicit_child.size = [1 * cm, 1 * cm, 1 * cm]
     target_explicit_child.material = "G4_WATER"
 
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
     target_auto.set_dna_em_physics("DNA_Opt2")
 
     explicit_region = sim.physics_manager.add_region(EXPLICIT_REGION_NAME)
