@@ -80,7 +80,7 @@ if __name__ == "__main__":
     target_explicit_child.material = "G4_WATER"
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
-    sim.physics_manager.set_dna_em_physics(TARGET_AUTO_NAME, "DNA_Opt2")
+    target_auto.set_dna_em_physics("DNA_Opt2")
 
     explicit_region = sim.physics_manager.add_region(EXPLICIT_REGION_NAME)
     explicit_region.associate_volume(TARGET_EXPLICIT_NAME)
