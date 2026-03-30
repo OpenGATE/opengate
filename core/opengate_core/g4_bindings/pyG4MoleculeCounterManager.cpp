@@ -1,13 +1,12 @@
 #include "pybind11/pybind11.h"
 
-#include "G4MoleculeCounterManager.hh"
 #include "G4MoleculeCounter.hh"
+#include "G4MoleculeCounterManager.hh"
 #include "G4MoleculeReactionCounter.hh"
 
 namespace py = pybind11;
 
-void init_G4MoleculeCounterManager(py::module &m)
-{
+void init_G4MoleculeCounterManager(py::module &m) {
   py::class_<G4MoleculeCounterManager,
              std::unique_ptr<G4MoleculeCounterManager, py::nodelete>>(
       m, "G4MoleculeCounterManager")
@@ -42,7 +41,8 @@ void init_G4MoleculeCounterManager(py::module &m)
           py::arg("counter"))
       .def(
           "RegisterReactionCounter",
-          [](G4MoleculeCounterManager *self, G4MoleculeReactionCounter *counter) {
+          [](G4MoleculeCounterManager *self,
+             G4MoleculeReactionCounter *counter) {
             return self->RegisterCounter(
                 std::unique_ptr<G4VMoleculeReactionCounter>(counter));
           },

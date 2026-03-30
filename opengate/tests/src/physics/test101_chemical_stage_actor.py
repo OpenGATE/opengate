@@ -129,7 +129,9 @@ def _reaction_signature(reactions_dict):
         reactants, products = str(reaction).split(" -> ", 1)
         canonical_reactants = " + ".join(sorted(reactants.split(" + ")))
         canonical_reaction = f"{canonical_reactants} -> {products}"
-        signature[canonical_reaction] = signature.get(canonical_reaction, 0) + int(count)
+        signature[canonical_reaction] = signature.get(canonical_reaction, 0) + int(
+            count
+        )
     return signature
 
 

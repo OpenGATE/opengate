@@ -174,6 +174,8 @@ actor_types = {
     "GammaFreeFlightActor": GammaFreeFlightActor,
     "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
 }
+
+
 class FilterManager:
     """
     Manage all the Filters in the simulation
@@ -384,7 +386,9 @@ class ActorManager(GateObject):
         return dynamic_geometry_actors + sorted_actors
 
     def has_chemistry_actors(self):
-        return any(isinstance(actor, ChemistryActorBase) for actor in self.actors.values())
+        return any(
+            isinstance(actor, ChemistryActorBase) for actor in self.actors.values()
+        )
 
     def reset(self):
         self.__init__(simulation=self.simulation)
@@ -982,9 +986,7 @@ class PhysicsManager(GateObject):
         try:
             return volume.name
         except AttributeError:
-            fatal(
-                f"Expected a volume name or a volume object, but received: {volume}"
-            )
+            fatal(f"Expected a volume name or a volume object, but received: {volume}")
 
     def find_or_create_region(self, volume_name):
         if volume_name not in self.volumes_regions_lut:
@@ -1189,6 +1191,7 @@ def _setter_hook_chemistry_list_name(self, chemistry_list_name):
     if chemistry_list_name in ("default"):
         return self.inherited_user_info_defaults["chemistry_list_name"][0]
     return chemistry_list_name
+
 
 class ChemistryManager(GateObject):
     """

@@ -129,7 +129,10 @@ def user_hook_dna_regions(simulation_engine):
         for region_name, dna_type in zip(em.RegionsDNA(), em.TypesDNA())
     }
     volume_regions = {}
-    for volume_name, volume in simulation_engine.simulation.volume_manager.volumes.items():
+    for (
+        volume_name,
+        volume,
+    ) in simulation_engine.simulation.volume_manager.volumes.items():
         region_name = None
         if volume.g4_region is not None:
             region_name = volume.g4_region.GetName()
@@ -150,7 +153,10 @@ def user_hook_dna_regions(simulation_engine):
 def user_hook_dna_region_models(simulation_engine):
     eV = g4.G4UnitDefinition.GetValueOf("eV")
     model_checks = {}
-    for volume_name, volume in simulation_engine.simulation.volume_manager.volumes.items():
+    for (
+        volume_name,
+        volume,
+    ) in simulation_engine.simulation.volume_manager.volumes.items():
         model_checks[volume_name] = g4.check_em_model_in_volume(
             volume.g4_logical_volume,
             "e-",

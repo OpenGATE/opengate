@@ -296,7 +296,10 @@ class PhysicsEngine(EngineBase):
         self.initialize_parallel_world_physics()
 
     def initialize_dna_physics_regions(self):
-        if not any(region.dna_em_physics is not None for region in self.physics_manager.regions.values()):
+        if not any(
+            region.dna_em_physics is not None
+            for region in self.physics_manager.regions.values()
+        ):
             return
         # Keep a Python ref to the activator because it is created on the Python
         # side and then registered into a Geant4-owned physics list.
@@ -337,8 +340,10 @@ class PhysicsEngine(EngineBase):
         physics_list_name = self.physics_manager.user_info.physics_list_name
         # The chemistry list is attached later by ChemistryEngine once the
         # runtime chemistry-list object has been created and retained there.
-        self.g4_physics_list = self.physics_manager.physics_list_manager.get_physics_list(
-            physics_list_name
+        self.g4_physics_list = (
+            self.physics_manager.physics_list_manager.get_physics_list(
+                physics_list_name
+            )
         )
 
     def initialize_regions(self):
@@ -619,7 +624,6 @@ class ChemistryEngine(EngineBase):
             value = policy[key]
             if value is not None:
                 getattr(self.g4_molecule_counter_manager, setter_name)(value)
-
 
     def initialize_before_runmanager(self):
         # Resolve the single chemistry-list request for this run and keep the
@@ -1004,7 +1008,9 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
 
-        for region in self.simulation_engine.simulation.physics_manager.regions.values():
+        for (
+            region
+        ) in self.simulation_engine.simulation.physics_manager.regions.values():
             region.initialize_during_runmanager()
 
         # return the (main) world physical volume
