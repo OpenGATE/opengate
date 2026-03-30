@@ -23,13 +23,11 @@ def compare_coincidences(
         )
         return False
 
-    print(f"{len(actual_coincidences)} coincidences")
-
     expected_coincidences.sort_values(by=["GlobalTime1"], inplace=True)
     actual_coincidences.sort_values(by=["GlobalTime1"], inplace=True)
 
     # Columns corresponding with attributes of type "3", e.g. PostPosition, are named differently
-    # in the CoincidenceSorterActor and the Python function coincidences_sorter():
+    # in the CoincidenceSorterActor and the Python CoincidenceSorter,
     # e.g. PostPosition1_X vs. PostPosition_X1
     # Rename those columns before starting the comparison.
     column_mapping = {}
@@ -49,7 +47,6 @@ def compare_coincidences(
 
     all_match = True
     for attr in expected_coincidences.columns:
-        print(attr)
         expected_values = np.asarray(expected_coincidences[attr].values)
         actual_values = np.asarray(actual_coincidences[attr].values)
         if np.issubdtype(expected_values.dtype, np.floating):
