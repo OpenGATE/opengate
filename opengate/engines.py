@@ -1621,7 +1621,7 @@ class SimulationEngine(GateSingletonFatal):
 
         logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
-        self.g4_RunManager.PhysicsHasBeenModified()
+        # self.g4_RunManager.PhysicsHasBeenModified()  # NK: probably a relic. Should not be needed here as call above only touches cuts, not physics
 
         logger.info("Simulation: initialize Chemistry")
         self.chemistry_engine.initialize_after_runmanager()
