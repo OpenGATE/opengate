@@ -92,7 +92,8 @@ void GateChemicalStageActor::EndOfEventAction(const G4Event *event) {
   fLETTrackID = 1;
 }
 
-bool GateChemicalStageActor::ShouldApplyPrimaryLogic(const G4Track *track) const {
+bool GateChemicalStageActor::ShouldApplyPrimaryLogic(
+    const G4Track *track) const {
   if (!fTrackOnlyPrimary) {
     return true;
   }
@@ -126,7 +127,8 @@ void GateChemicalStageActor::SteppingAction(G4Step *step) {
     fEventEdep += step->GetTotalEnergyDeposit() / keV;
 
     if (postStepPoint->GetProcessDefinedStep() != nullptr) {
-      const auto subType = postStepPoint->GetProcessDefinedStep()->GetProcessSubType();
+      const auto subType =
+          postStepPoint->GetProcessDefinedStep()->GetProcessSubType();
       if (subType != 56 && subType != 57) {
         const auto *secondary = step->GetSecondaryInCurrentStep();
         if (secondary != nullptr) {
@@ -275,9 +277,8 @@ void GateChemicalStageActor::ConfigureTimesToRecordIfNeeded() {
   const auto timeLogMin = std::log10(timeMin);
   const auto timeLogMax = std::log10(endTime);
   for (auto i = 0; i < fNumberOfTimeBins; i++) {
-    const auto time =
-        std::pow(10.0, timeLogMin +
-                           i * (timeLogMax - timeLogMin) /
+    const auto time = std::pow(
+        10.0, timeLogMin + i * (timeLogMax - timeLogMin) /
                                static_cast<double>(fNumberOfTimeBins - 1));
     fTimesToRecord.push_back(time);
   }
@@ -292,8 +293,8 @@ void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
 
   const auto *counter =
       fMoleculeCounterId >= 0
-          ? G4MoleculeCounterManager::Instance()->GetMoleculeCounter<G4MoleculeCounter>(
-                fMoleculeCounterId)
+          ? G4MoleculeCounterManager::Instance()
+                ->GetMoleculeCounter<G4MoleculeCounter>(fMoleculeCounterId)
           : nullptr;
   if (counter == nullptr) {
     return;

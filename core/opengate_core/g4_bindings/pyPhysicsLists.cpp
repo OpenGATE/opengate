@@ -16,9 +16,9 @@ namespace py = pybind11;
 #include "FTFP_BERT_ATL.hh"
 #include "FTFP_BERT_HP.hh"
 #include "FTFP_BERT_TRV.hh"
-#include "FTFQGSP_BERT.hh"
 #include "FTFP_INCLXX.hh"
 #include "FTFP_INCLXX_HP.hh"
+#include "FTFQGSP_BERT.hh"
 #include "FTF_BIC.hh"
 #include "LBE.hh"
 
@@ -29,13 +29,13 @@ namespace py = pybind11;
 #include "QGSP_BIC.hh"
 #include "QGSP_BIC_AllHP.hh"
 #include "QGSP_BIC_HP.hh"
+#include "QGSP_BIC_HPT.hh"
 #include "QGSP_FTFP_BERT.hh"
 #include "QGSP_INCLXX.hh"
 #include "QGSP_INCLXX_HP.hh"
 #include "QGS_BIC.hh"
 #include "Shielding.hh"
 #include "ShieldingLEND.hh"
-#include "QGSP_BIC_HPT.hh"
 
 #include "G4EmStandardPhysics.hh"
 #include "G4EmStandardPhysics_option1.hh"
@@ -43,7 +43,12 @@ namespace py = pybind11;
 #include "G4EmStandardPhysics_option3.hh"
 #include "G4EmStandardPhysics_option4.hh"
 
+#include "G4EmDNAChemistry.hh"
+#include "G4EmDNAChemistry_option1.hh"
+#include "G4EmDNAChemistry_option2.hh"
+#include "G4EmDNAChemistry_option3.hh"
 #include "G4EmDNAPhysics.hh"
+#include "G4EmDNAPhysicsActivator.hh"
 #include "G4EmDNAPhysics_option1.hh"
 #include "G4EmDNAPhysics_option2.hh"
 #include "G4EmDNAPhysics_option3.hh"
@@ -52,11 +57,6 @@ namespace py = pybind11;
 #include "G4EmDNAPhysics_option6.hh"
 #include "G4EmDNAPhysics_option7.hh"
 #include "G4EmDNAPhysics_option8.hh"
-#include "G4EmDNAPhysicsActivator.hh"
-#include "G4EmDNAChemistry.hh"
-#include "G4EmDNAChemistry_option1.hh"
-#include "G4EmDNAChemistry_option2.hh"
-#include "G4EmDNAChemistry_option3.hh"
 #include "G4EmLivermorePhysics.hh"
 #include "G4EmLivermorePolarizedPhysics.hh"
 #include "G4EmLowEPPhysics.hh"
@@ -71,27 +71,27 @@ namespace py = pybind11;
 
 #include "G4VModularPhysicsList.hh"
 #include "G4VPhysicsConstructor.hh"
-#include "G4VUserPhysicsList.hh"
 #include "G4VUserChemistryList.hh"
+#include "G4VUserPhysicsList.hh"
 
 // macro for adding reference physics lists
-#define ADD_REFERENCE_PHYSICS_LIST0(plname)                                   \
-  py::class_<plname, G4VModularPhysicsList,                                   \
-             std::unique_ptr<plname, py::nodelete>>(m, #plname)               \
-      .def(py::init<>());                                                     \
+#define ADD_REFERENCE_PHYSICS_LIST0(plname)                                    \
+  py::class_<plname, G4VModularPhysicsList,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<>());                                                      \
   AddPhysicsList(#plname);
 
-#define ADD_REFERENCE_PHYSICS_LIST1(plname)                                   \
-  py::class_<plname, G4VModularPhysicsList,                                   \
-             std::unique_ptr<plname, py::nodelete>>(m, #plname)               \
-      .def(py::init<G4int>(), py::arg("verbosity") = 1);                      \
+#define ADD_REFERENCE_PHYSICS_LIST1(plname)                                    \
+  py::class_<plname, G4VModularPhysicsList,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<G4int>(), py::arg("verbosity") = 1);                       \
   AddPhysicsList(#plname);
 
-#define ADD_REFERENCE_PHYSICS_LIST2(plname, default_type)                     \
-  py::class_<plname, G4VModularPhysicsList,                                   \
-             std::unique_ptr<plname, py::nodelete>>(m, #plname)               \
-      .def(py::init<G4int, G4String>(), py::arg("verbosity") = 1,             \
-           py::arg("type") = G4String(default_type));                         \
+#define ADD_REFERENCE_PHYSICS_LIST2(plname, default_type)                      \
+  py::class_<plname, G4VModularPhysicsList,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<G4int, G4String>(), py::arg("verbosity") = 1,              \
+           py::arg("type") = G4String(default_type));                          \
   AddPhysicsList(#plname);
 
 // macro for adding physics constructor: one int parameter (verbosity),

@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4Scheduler.hh"
 #include "G4ITTrackingInteractivity.hh"
+#include "G4Scheduler.hh"
 #include "G4UserTimeStepAction.hh"
 
 void init_G4Scheduler(py::module &m) {
@@ -18,8 +18,7 @@ void init_G4Scheduler(py::module &m) {
       m, "G4Scheduler")
       .def_static("Instance", &G4Scheduler::Instance,
                   py::return_value_policy::reference)
-      .def("SetUserAction", &G4Scheduler::SetUserAction,
-           py::arg("user_action"))
+      .def("SetUserAction", &G4Scheduler::SetUserAction, py::arg("user_action"))
       .def("SetInteractivity", &G4Scheduler::SetInteractivity,
            py::arg("interactivity"))
       .def("GetUserTimeStepAction", &G4Scheduler::GetUserTimeStepAction,

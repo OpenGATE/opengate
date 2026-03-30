@@ -15,7 +15,8 @@ GateVChemistryActor::GateVChemistryActor(py::dict &user_info, bool MT_ready)
 
 void GateVChemistryActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
-  fConfineChemistryToVolume = DictGetBool(user_info, "confine_chemistry_to_volume");
+  fConfineChemistryToVolume =
+      DictGetBool(user_info, "confine_chemistry_to_volume");
 }
 
 bool GateVChemistryActor::IsChemistryTrackInsideAttachedVolume(

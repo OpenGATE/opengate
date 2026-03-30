@@ -9,8 +9,8 @@
 namespace py = pybind11;
 
 #include "G4ITTrackingInteractivity.hh"
-#include "G4Track.hh"
 #include "G4Step.hh"
+#include "G4Track.hh"
 
 class PyG4ITTrackingInteractivity : public G4ITTrackingInteractivity {
 public:

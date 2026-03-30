@@ -10,8 +10,8 @@
 
 #include "GateVChemistryActor.h"
 #include <cfloat>
-#include <pybind11/stl.h>
 #include <map>
+#include <pybind11/stl.h>
 #include <vector>
 
 namespace py = pybind11;
@@ -63,8 +63,9 @@ protected:
   bool ShouldApplyPrimaryLogic(const G4Track *track) const;
   void ConfigureTimesToRecordIfNeeded();
   void RecordSpeciesAtEndOfChemicalStage();
-  std::string GetReactionSignature(const G4Track &trackA, const G4Track &trackB,
-                                   const std::vector<G4Track *> *products) const;
+  std::string
+  GetReactionSignature(const G4Track &trackA, const G4Track &trackB,
+                       const std::vector<G4Track *> *products) const;
 
   bool fTrackOnlyPrimary{true};
   int fPrimaryPDGCode{11};

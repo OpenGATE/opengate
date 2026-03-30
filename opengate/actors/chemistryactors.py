@@ -72,9 +72,7 @@ class ChemistryActorBase(ActorBase):
                     f"Chemistry actor '{self.name}' requests a fixed-precision time comparer "
                     f"but did not provide a 'precision' entry."
                 )
-            return g4.G4MoleculeCounterTimeComparer.CreateWithFixedPrecision(
-                precision
-            )
+            return g4.G4MoleculeCounterTimeComparer.CreateWithFixedPrecision(precision)
         fatal(
             f"Unsupported molecule-counter time comparer method '{method}' "
             f"in chemistry actor '{self.name}'."
@@ -96,14 +94,10 @@ class ChemistryActorBase(ActorBase):
             )
         if "active_lower_bound" in config:
             lower = config["active_lower_bound"]
-            counter.SetActiveLowerBound(
-                lower["time"], lower.get("inclusive", True)
-            )
+            counter.SetActiveLowerBound(lower["time"], lower.get("inclusive", True))
         if "active_upper_bound" in config:
             upper = config["active_upper_bound"]
-            counter.SetActiveUpperBound(
-                upper["time"], upper.get("inclusive", True)
-            )
+            counter.SetActiveUpperBound(upper["time"], upper.get("inclusive", True))
 
     def _initialize_molecule_counter(self):
         if not self.molecule_counter:
@@ -129,9 +123,7 @@ class ChemistryActorBase(ActorBase):
     def _initialize_reaction_counter(self):
         if not self.reaction_counter:
             return
-        counter_type = self.reaction_counter.get(
-            "type", "G4MoleculeReactionCounter"
-        )
+        counter_type = self.reaction_counter.get("type", "G4MoleculeReactionCounter")
         if counter_type != "G4MoleculeReactionCounter":
             fatal(
                 f"Unsupported reaction counter type '{counter_type}' "
@@ -258,7 +250,9 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     user_info_defaults = {
         "track_only_primary": (
             True,
-            {"doc": "Apply the chem6-like energy-loss logic only to the primary track."},
+            {
+                "doc": "Apply the chem6-like energy-loss logic only to the primary track."
+            },
         ),
         "primary_pdg_code": (
             11,
@@ -266,27 +260,39 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         ),
         "energy_loss_min": (
             -1.0,
-            {"doc": "Kill the tracked primary when accumulated energy loss exceeds this value. Negative disables it."},
+            {
+                "doc": "Kill the tracked primary when accumulated energy loss exceeds this value. Negative disables it."
+            },
         ),
         "energy_loss_max": (
             -1.0,
-            {"doc": "Abort the event when accumulated energy loss exceeds this value. Negative disables it."},
+            {
+                "doc": "Abort the event when accumulated energy loss exceeds this value. Negative disables it."
+            },
         ),
         "min_kinetic_energy": (
             0.0,
-            {"doc": "Kill the tracked primary when its kinetic energy falls below this value."},
+            {
+                "doc": "Kill the tracked primary when its kinetic energy falls below this value."
+            },
         ),
         "let_cutoff": (
             1e30,
-            {"doc": "Restricted LET cutoff energy. Secondary kinetic energies below this threshold are added to the event energy deposit."},
+            {
+                "doc": "Restricted LET cutoff energy. Secondary kinetic energies below this threshold are added to the event energy deposit."
+            },
         ),
         "times_to_record": (
             [],
-            {"doc": "Explicit chemistry times at which species numbers and G values should be recorded."},
+            {
+                "doc": "Explicit chemistry times at which species numbers and G values should be recorded."
+            },
         ),
         "number_of_time_bins": (
             10,
-            {"doc": "If > 0 and times_to_record is empty, generate logarithmically spaced chemistry scoring times like chem6."},
+            {
+                "doc": "If > 0 and times_to_record is empty, generate logarithmically spaced chemistry scoring times like chem6."
+            },
         ),
     }
 

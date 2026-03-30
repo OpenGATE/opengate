@@ -50,7 +50,8 @@ void init_G4UserTimeStepAction(py::module &m) {
       .def(py::init())
       .def("StartProcessing", &G4UserTimeStepAction::StartProcessing)
       .def("NewStage", &G4UserTimeStepAction::NewStage)
-      .def("UserPreTimeStepAction", &G4UserTimeStepAction::UserPreTimeStepAction)
+      .def("UserPreTimeStepAction",
+           &G4UserTimeStepAction::UserPreTimeStepAction)
       .def("UserPostTimeStepAction",
            &G4UserTimeStepAction::UserPostTimeStepAction)
       .def("UserReactionAction", &G4UserTimeStepAction::UserReactionAction)

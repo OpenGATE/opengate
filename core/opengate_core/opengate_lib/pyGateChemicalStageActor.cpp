@@ -16,7 +16,8 @@ void init_GateChemicalStageActor(py::module &m) {
              std::unique_ptr<GateChemicalStageActor, py::nodelete>,
              GateVChemistryActor>(m, "GateChemicalStageActor")
       .def(py::init<py::dict &>())
-      .def("SetMoleculeCounterId", &GateChemicalStageActor::SetMoleculeCounterId)
+      .def("SetMoleculeCounterId",
+           &GateChemicalStageActor::SetMoleculeCounterId)
       .def("GetNumberOfKilledParticles",
            &GateChemicalStageActor::GetNumberOfKilledParticles)
       .def("GetNumberOfAbortedEvents",
@@ -39,8 +40,7 @@ void init_GateChemicalStageActor(py::module &m) {
            &GateChemicalStageActor::GetAccumulatedEnergyDeposit)
       .def("GetMeanRestrictedLET",
            &GateChemicalStageActor::GetMeanRestrictedLET)
-      .def("GetStdRestrictedLET",
-           &GateChemicalStageActor::GetStdRestrictedLET)
+      .def("GetStdRestrictedLET", &GateChemicalStageActor::GetStdRestrictedLET)
       .def("GetSpeciesInfo", &GateChemicalStageActor::GetSpeciesInfo)
       .def("GetReactionCounts", &GateChemicalStageActor::GetReactionCounts)
       .def("GetRecordedTimes", &GateChemicalStageActor::GetRecordedTimes);
