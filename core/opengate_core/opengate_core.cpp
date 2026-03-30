@@ -105,7 +105,6 @@ void init_G4Step(py::module &);
 
 void init_G4StepPoint(py::module &);
 
-
 // Geant4-DNA
 
 void init_G4VUserChemistryList(py::module &);
@@ -127,7 +126,6 @@ void init_G4Scheduler(py::module &);
 void init_G4UserTimeStepAction(py::module &);
 
 void init_G4ITTrackingInteractivity(py::module &);
-
 
 // processes/electromagnetic/utils
 

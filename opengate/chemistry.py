@@ -7,7 +7,6 @@ from opengate_core import G4MoleculeTable, G4VUserChemistryList
 
 from box import Box
 
-
 g = g4_units.g
 mole = g4_units.mole
 nm = g4_units.nm
@@ -279,7 +278,9 @@ class ChemistryCustomList(GateObject, G4VUserChemistryList):
             self.dissociations[dissociation.name] = dissociation
             self.dissociations[dissociation.name].chemistry_list = self
         else:
-            fatal(f"This chemistry list already has a dissociation called {dissociation.name}.")
+            fatal(
+                f"This chemistry list already has a dissociation called {dissociation.name}."
+            )
 
     def find_g4_molecule(self, name):
         return self.g4_molecule_table.FindMoleculeDefinition(name)
@@ -300,18 +301,22 @@ class ChemistryCustomList(GateObject, G4VUserChemistryList):
 
     def ConstructMolecule(self):
         for species in self.chemical_species:
-            self.g4_molecule_table.CreateMoleculeDefinition(species.name,
-                                                            species.molecular_mass,
-                                                            species.charge,
-                                                            species.electronic_level,
-                                                            species.diffusion_radius)
+            self.g4_molecule_table.CreateMoleculeDefinition(
+                species.name,
+                species.molecular_mass,
+                species.charge,
+                species.electronic_level,
+                species.diffusion_radius,
+            )
 
     def ConstructReactionTable(self, reaction_table):
         for reaction_name, reaction in self.reactions.items():
             g4_reactant_a = self.find_g4_molecule(reaction.reactant_a)
             g4_reactant_b = self.find_g4_molecule(reaction.reactant_b)
             g4_products = [self.find_g4_molecule(p) for p in reaction.products]
-            reaction_table.SetReaction(g4_reactant_a, g4_reactant_b, reaction.rate_constant, g4_products)
+            reaction_table.SetReaction(
+                g4_reactant_a, g4_reactant_b, reaction.rate_constant, g4_products
+            )
 
     def ConstructDissociationChannels(self):
         pass

@@ -18,7 +18,8 @@ void init_GateStackingAction(py::module &m) {
              std::unique_ptr<GateStackingAction, py::nodelete>>(
       m, "GateStackingAction")
       .def(py::init())
-      .def_readwrite("fChemistryIsActive", &GateStackingAction::fChemistryIsActive)
+      .def_readwrite("fChemistryIsActive",
+                     &GateStackingAction::fChemistryIsActive)
       .def("RegisterActor", &GateStackingAction::RegisterActor,
            py::arg("actor"), py::arg("is_chemistry_actor") = false);
 }

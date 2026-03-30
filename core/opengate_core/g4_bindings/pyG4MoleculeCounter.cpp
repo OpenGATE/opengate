@@ -6,9 +6,9 @@
 
 namespace py = pybind11;
 
-void init_G4MoleculeCounter(py::module &m)
-{
-  py::class_<G4MoleculeCounter, std::unique_ptr<G4MoleculeCounter, py::nodelete>>(
+void init_G4MoleculeCounter(py::module &m) {
+  py::class_<G4MoleculeCounter,
+             std::unique_ptr<G4MoleculeCounter, py::nodelete>>(
       m, "G4MoleculeCounter")
       .def(py::init<>())
       .def(py::init<G4String>())

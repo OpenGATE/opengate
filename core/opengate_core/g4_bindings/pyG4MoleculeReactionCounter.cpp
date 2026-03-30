@@ -4,8 +4,7 @@
 
 namespace py = pybind11;
 
-void init_G4MoleculeReactionCounter(py::module &m)
-{
+void init_G4MoleculeReactionCounter(py::module &m) {
   py::class_<G4MoleculeReactionCounter,
              std::unique_ptr<G4MoleculeReactionCounter, py::nodelete>>(
       m, "G4MoleculeReactionCounter")
@@ -19,9 +18,11 @@ void init_G4MoleculeReactionCounter(py::module &m)
            &G4MoleculeReactionCounter::SetCheckTimeConsistencyWithScheduler)
       .def("SetCheckRecordedTimeConsistency",
            &G4MoleculeReactionCounter::SetCheckRecordedTimeConsistency)
-      .def("SetActiveLowerBound", &G4MoleculeReactionCounter::SetActiveLowerBound,
-           py::arg("time"), py::arg("inclusive") = true)
-      .def("SetActiveUpperBound", &G4MoleculeReactionCounter::SetActiveUpperBound,
-           py::arg("time"), py::arg("inclusive") = true)
+      .def("SetActiveLowerBound",
+           &G4MoleculeReactionCounter::SetActiveLowerBound, py::arg("time"),
+           py::arg("inclusive") = true)
+      .def("SetActiveUpperBound",
+           &G4MoleculeReactionCounter::SetActiveUpperBound, py::arg("time"),
+           py::arg("inclusive") = true)
       .def("GetManagedId", &G4MoleculeReactionCounter::GetManagedId);
 }
