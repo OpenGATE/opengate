@@ -3,8 +3,8 @@
 
 import opengate_core as g4
 
-from opengate.managers import (
-    PhysicsListManager,
+from opengate.managers import PhysicsListManager
+from opengate.physicslists import (
     create_reference_physics_list_class,
     reference_physics_list_base_class_names,
 )
@@ -14,18 +14,17 @@ from opengate.tests.utility import print_test, test_ok
 def check_pybind_reference_classes_against_factory(factory):
     is_ok = True
 
-    factory_names = set(factory.AvailablePhysLists())
-    pybind_names = {
-        name for name in reference_physics_list_base_class_names if hasattr(g4, name)
-    }
+    factory_names = {str(name) for name in factory.AvailablePhysLists()}
+    expected_bound_names = set(reference_physics_list_base_class_names)
+    pybind_names = {name for name in expected_bound_names if hasattr(g4, name)}
 
-    missing_pybind_names = sorted(factory_names - pybind_names)
+    missing_pybind_names = sorted(expected_bound_names - pybind_names)
     extra_pybind_names = sorted(pybind_names - factory_names)
 
     b = len(missing_pybind_names) == 0
     print_test(
         b,
-        f"All Geant4 factory base physics lists are exposed via pybind. Missing: {missing_pybind_names}",
+        f"All expected base reference physics lists are exposed via pybind. Missing: {missing_pybind_names}",
     )
     is_ok = b and is_ok
 
@@ -36,7 +35,7 @@ def check_pybind_reference_classes_against_factory(factory):
     )
     is_ok = b and is_ok
 
-    for name in sorted(factory_names):
+    for name in sorted(expected_bound_names):
         b = hasattr(g4, name)
         print_test(b, f"Reference physics list '{name}' is bound in opengate_core")
         is_ok = b and is_ok
