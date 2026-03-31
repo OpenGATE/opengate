@@ -122,6 +122,8 @@ public:
   IsStepEnteringVolume(const G4Step *step,
                        const std::vector<const G4LogicalVolume *> &volumes);
 
+  bool IsStepInTopAttachedVolume(const G4Step *step) const;
+
   bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
   inline static std::string fOutputNameRoot = "root_output";

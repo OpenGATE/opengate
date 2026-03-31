@@ -175,6 +175,28 @@ bool GateVActor::IsStepEnteringVolume(
   return false;
 }
 
+bool GateVActor::IsStepInTopAttachedVolume(const G4Step *step) const {
+  const auto *touchable = step->GetPreStepPoint()->GetTouchable();
+  if (touchable == nullptr)
+    return false;
+
+  const auto history_depth = touchable->GetHistoryDepth();
+  int attached_volume_depth = -1;
+  for (int i = 0; i <= history_depth; i++) {
+    const auto *volume = touchable->GetVolume(i);
+    if (volume == nullptr)
+      continue;
+    const auto *logical_volume = volume->GetLogicalVolume();
+    if (logical_volume != nullptr &&
+        logical_volume->GetName() == fAttachedToVolumeName) {
+      attached_volume_depth = i;
+      break;
+    }
+  }
+
+  return attached_volume_depth == 0;
+}
+
 bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
   if (fAttachedToVolumeMotherName == "None") {
     Fatal("Cannot use IsStepExitingAttachedVolume when "
