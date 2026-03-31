@@ -131,6 +131,17 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 class Region(GateObject):
     """FIXME: Documentation of the Region class."""
 
+    available_dna_em_physics = (
+        "DNA_Opt0",
+        "DNA_Opt2",
+        "DNA_Opt4",
+        "DNA_Opt4a",
+        "DNA_Opt6",
+        "DNA_Opt6a",
+        "DNA_Opt7",
+        "DNA_Opt8",
+    )
+
     user_info_defaults = {}
     user_info_defaults["user_limits"] = (
         Box(
@@ -174,6 +185,13 @@ class Region(GateObject):
             "doc": "Switch on/off EM parameters in this region. "
             "If None, the corresponding value from the world region is used.",
             "expose_items": True,
+        },
+    )
+    user_info_defaults["dna_em_physics"] = (
+        None,
+        {
+            "doc": "DNA EM physics option to activate in this region.",
+            "allowed_values": available_dna_em_physics + (None,),
         },
     )
 
@@ -271,14 +289,24 @@ class Region(GateObject):
         return s
 
     @requires_fatal("physics_engine")
-    def initialize(self):
-        """
-        This method wraps around all initialization methods of this class.
-
-        It should be called from the physics_engine,
-        after setting the self.physics_engine attribute.
-        """
+    def initialize_before_runmanager(self):
+        """Perform Python-side region setup before G4RunManager.Initialize()."""
+        # Only Python objects are touched here. The actual G4Region cannot be
+        # created yet because G4LogicalVolume objects appear during geometry
+        # construction inside G4RunManager.Initialize().
         self.initialize_volume_dictionaries()
+
+    @requires_fatal("physics_engine")
+    def initialize_during_runmanager(self):
+        """Create and attach the G4Region during geometry construction."""
+        # This runs from VolumeEngine.Construct(), i.e. after logical volumes
+        # exist but still early enough for Geant4 physics construction to see
+        # the region-based EM configuration.
+        self.initialize_g4_region()
+
+    @requires_fatal("physics_engine")
+    def initialize_after_runmanager(self):
+        """Finalize region-related G4 objects after G4RunManager.Initialize()."""
         self.initialize_g4_production_cuts()
         self.initialize_g4_user_limits()
         self.initialize_g4_region()
@@ -295,29 +323,27 @@ class Region(GateObject):
             )
 
     def initialize_g4_region(self):
-        if self._g4_region_initialized is True:
-            fatal("g4_region already initialized.")
+        if self._g4_region_initialized is not True:
+            rs = g4.G4RegionStore.GetInstance()
+            self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
 
-        rs = g4.G4RegionStore.GetInstance()
-        self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
+            for vol in self.root_logical_volumes.values():
+                self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
+                vol.g4_logical_volume.SetRegion(self.g4_region)
+
+            self._g4_region_initialized = True
 
         if self.g4_user_limits is not None:
             self.g4_region.SetUserLimits(self.g4_user_limits)
 
-        # if self.g4_production_cuts is not None:
-        self.g4_region.SetProductionCuts(self.g4_production_cuts)
-
-        for vol in self.root_logical_volumes.values():
-            self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
-            vol.g4_logical_volume.SetRegion(self.g4_region)
-
-        self._g4_region_initialized = True
+        if self.g4_production_cuts is not None:
+            self.g4_region.SetProductionCuts(self.g4_production_cuts)
 
     def initialize_g4_production_cuts(self):
         self.user_info = Box(self.user_info)
 
         if self._g4_production_cuts_initialized is True:
-            fatal("g4_production_cuts already initialized.")
+            return
         if self.g4_production_cuts is None:
             self.g4_production_cuts = g4.G4ProductionCuts()
 
@@ -352,7 +378,7 @@ class Region(GateObject):
 
     def initialize_g4_user_limits(self):
         if self._g4_user_limits_initialized is True:
-            fatal("g4_user_limits already initialized.")
+            return
 
         # check if any user limits have been set
         # if not, it is not necessary to create g4 objects

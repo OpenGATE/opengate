@@ -19,6 +19,7 @@ from .physics import (
     create_g4_optical_properties_table,
     load_optical_properties_from_xml,
 )
+from .chemistry import ChemistryCustomList
 from .base import GateSingletonFatal
 from .logger import logger
 
@@ -216,6 +217,7 @@ class PhysicsEngine(EngineBase):
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_dna_physics_activator = None
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
@@ -237,12 +239,15 @@ class PhysicsEngine(EngineBase):
         super().close()
 
     def release_g4_references(self):
+        if self.g4_physics_list is not None:
+            self.g4_physics_list.close()
         self.g4_physics_list = None
         self.g4_decay = None
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = None
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_dna_physics_activator = None
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
@@ -279,11 +284,29 @@ class PhysicsEngine(EngineBase):
         G4RunManager.Initialize() is called.
 
         """
+        # Regions have a split lifecycle because their G4Region objects must
+        # exist during Geant4 initialization, while some settings are only safe
+        # to apply after G4RunManager.Initialize() has completed.
+        self.initialize_regions_before_runmanager()
         self.initialize_physics_list()
+        self.initialize_dna_physics_regions()
         self.initialize_g4_em_parameters()
         self.initialize_user_limits_physics()
         self.initialize_physics_biasing()
         self.initialize_parallel_world_physics()
+
+    def initialize_dna_physics_regions(self):
+        if not any(
+            region.dna_em_physics is not None
+            for region in self.physics_manager.regions.values()
+        ):
+            return
+        # Keep a Python ref to the activator because it is created on the Python
+        # side and then registered into a Geant4-owned physics list.
+        self.g4_dna_physics_activator = g4.G4EmDNAPhysicsActivator(
+            self.physics_manager.simulation.g4_verbose_level
+        )
+        self.g4_physics_list.RegisterPhysics(self.g4_dna_physics_activator)
 
     def initialize_after_runmanager(self):
         """ """
@@ -298,6 +321,10 @@ class PhysicsEngine(EngineBase):
         self.initialize_ionisation_options()
         self.initialize_users_ionisation_potentials()
 
+    def initialize_regions_before_runmanager(self):
+        for region in self.physics_manager.regions.values():
+            region.initialize_before_runmanager()
+
     def initialize_parallel_world_physics(self):
         for (
             world
@@ -311,6 +338,8 @@ class PhysicsEngine(EngineBase):
         Create a Physic List from the Factory
         """
         physics_list_name = self.physics_manager.user_info.physics_list_name
+        # The chemistry list is attached later by ChemistryEngine once the
+        # runtime chemistry-list object has been created and retained there.
         self.g4_physics_list = (
             self.physics_manager.physics_list_manager.get_physics_list(
                 physics_list_name
@@ -319,7 +348,7 @@ class PhysicsEngine(EngineBase):
 
     def initialize_regions(self):
         for region in self.physics_manager.regions.values():
-            region.initialize()
+            region.initialize_after_runmanager()
 
     def initialize_global_cuts(self):
         ui = self.physics_manager.user_info
@@ -389,6 +418,8 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
+            if region.dna_em_physics is not None:
+                self.g4_em_parameters.AddDNA(region.name, region.dna_em_physics)
 
     def initialize_physics_biasing(self):
         # get a dictionary {particle:[processes]}
@@ -518,6 +549,135 @@ class PhysicsEngine(EngineBase):
             ionisation.SetMeanExcitationEnergy(val)
 
 
+class ChemistryEngine(EngineBase):
+    """
+    Class that contains all the information and mechanism regarding physics
+    to actually run a simulation. It is associated with a simulation engine.
+
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        # Keep a shortcut reference to the current physics_manager
+        self.chemistry_manager = self.simulation_engine.simulation.chemistry_manager
+
+        # g4 references
+        self.g4_dna_chemistry_manager = None
+        self.g4_chemistry_list = None
+        self.g4_molecule_counter_manager = None
+        self.g4_scheduler = None
+        self.g4_time_step_action = None
+        self.g4_it_tracking_interactivity = None
+
+    def close(self):
+        if self.verbose_close:
+            warning("Closing ChemistryEngine")
+        self.release_g4_references()
+        super().close()
+
+    def release_g4_references(self):
+        # ChemistryEngine is the owner of the runtime chemistry-list object.
+        # Wrapped physics lists and Geant4 managers may temporarily refer to it,
+        # but teardown is coordinated from here.
+        if isinstance(self.g4_chemistry_list, ChemistryCustomList):
+            self.g4_chemistry_list.close()
+        self.g4_chemistry_list = None
+        self.g4_dna_chemistry_manager = None
+        self.g4_molecule_counter_manager = None
+        self.g4_scheduler = None
+        self.g4_time_step_action = None
+        self.g4_it_tracking_interactivity = None
+
+    def _resolve_required_molecule_counter_manager_policy(self):
+        resolved_policy = {
+            "reset_counters_before_event": None,
+            "reset_counters_before_run": None,
+            "reset_master_counter_with_workers": None,
+            "accumulate_counter_into_master": None,
+        }
+        for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
+            if not actor.is_chemistry_actor:
+                continue
+            policy = getattr(actor, "required_molecule_counter_manager_policy", {})
+            for key, value in policy.items():
+                if value is None:
+                    continue
+                if resolved_policy[key] is None:
+                    resolved_policy[key] = value
+                elif resolved_policy[key] != value:
+                    fatal(
+                        f"Incompatible molecule-counter manager policy for chemistry actors: "
+                        f"'{key}' is requested as both {resolved_policy[key]} and {value}."
+                    )
+        return resolved_policy
+
+    def _apply_required_molecule_counter_manager_policy(self):
+        self.g4_molecule_counter_manager = g4.G4MoleculeCounterManager.Instance()
+        policy = self._resolve_required_molecule_counter_manager_policy()
+        setter_map = {
+            "reset_counters_before_event": "SetResetCountersBeforeEvent",
+            "reset_counters_before_run": "SetResetCountersBeforeRun",
+            "reset_master_counter_with_workers": "SetResetMasterCounterWithWorkers",
+            "accumulate_counter_into_master": "SetAccumulateCounterIntoMaster",
+        }
+        for key, setter_name in setter_map.items():
+            value = policy[key]
+            if value is not None:
+                getattr(self.g4_molecule_counter_manager, setter_name)(value)
+
+    def initialize_before_runmanager(self):
+        # Resolve the single chemistry-list request for this run and keep the
+        # resulting runtime object alive in the engine for the full simulation.
+        self.g4_chemistry_list = self.chemistry_manager.get_chemistry_list()
+        if self.g4_chemistry_list is None:
+            return
+
+        # Only Python-side ChemistryCustomList implementations provide initialize().
+        # Built-in Geant4 chemistry lists are plain bound C++ objects and therefore
+        # legitimately do not implement a Python initialize() method.
+        if hasattr(self.g4_chemistry_list, "initialize"):
+            self.g4_chemistry_list.initialize()
+        # The physics-list wrapper forwards ConstructParticle/ConstructProcess
+        # to the chemistry list during Geant4 initialization, so inject the ref
+        # before G4RunManager.Initialize() starts.
+        self.simulation_engine.physics_engine.g4_physics_list.set_chemistry_list(
+            self.g4_chemistry_list
+        )
+        g4.G4EmParameters.Instance().SetTimeStepModel(
+            getattr(
+                g4.G4ChemTimeStepModel,
+                self.chemistry_manager.time_step_model,
+            )
+        )
+        self._apply_required_molecule_counter_manager_policy()
+        self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
+        self.g4_dna_chemistry_manager.SetChemistryActivation(True)
+        if isinstance(self.g4_chemistry_list, ChemistryCustomList):
+            # Built-in Geant4 chemistry lists register themselves with the DNA
+            # chemistry manager; custom Python lists must be registered by GATE.
+            self.g4_dna_chemistry_manager.SetChemistryList(self.g4_chemistry_list)
+
+    def initialize_after_runmanager(self):
+        if self.g4_chemistry_list is None:
+            return
+
+        if self.g4_dna_chemistry_manager is None:
+            self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
+        if isinstance(self.g4_chemistry_list, ChemistryCustomList):
+            # Built-in Geant4 chemistry lists initialize themselves from their
+            # ConstructProcess(); only custom lists need an explicit call here.
+            self.g4_dna_chemistry_manager.Initialize()
+        self.g4_scheduler = g4.G4Scheduler.Instance()
+        self.g4_time_step_action = g4.GateTimeStepAction()
+        self.g4_it_tracking_interactivity = g4.GateITTrackingInteractivity()
+        for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
+            if actor.is_chemistry_actor:
+                self.g4_time_step_action.RegisterActor(actor)
+                self.g4_it_tracking_interactivity.RegisterActor(actor)
+        self.g4_scheduler.SetUserAction(self.g4_time_step_action)
+        self.g4_scheduler.SetInteractivity(self.g4_it_tracking_interactivity)
+
+
 class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     """
     Main object to manage all actions during a simulation.
@@ -538,6 +698,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def close(self):
         if self.verbose_close:
@@ -551,11 +712,13 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
         self.register_event_actions(actor)
         self.register_tracking_actions(actor)
+        self.register_stacking_actions(actor)
 
     def register_run_actions(self, actor):
         for ra in self.g4_RunAction:
@@ -568,6 +731,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def register_stacking_actions(self, actor):
+        is_chemistry_actor = actor.is_chemistry_actor
+        for sa in self.g4_StackingAction:
+            sa.RegisterActor(actor, is_chemistry_actor)
 
     def BuildForMaster(self):
         # This function is called only in MT mode, for the master thread
@@ -609,6 +777,14 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
+
+        sa = g4.GateStackingAction()
+        sa.fChemistryIsActive = (
+            self.simulation_engine.simulation.chemistry_manager.check_chemistry_list_requests()
+            is not None
+        )
+        self.SetUserAction(sa)
+        self.g4_StackingAction.append(sa)
 
 
 def register_sensitive_detector_to_children(actor, lv):
@@ -831,6 +1007,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.volume_manager.update_volume_tree()
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
+
+        for (
+            region
+        ) in self.simulation_engine.simulation.physics_manager.regions.values():
+            region.initialize_during_runmanager()
 
         # return the (main) world physical volume
         self._is_constructed = True
@@ -1073,6 +1254,7 @@ class SimulationEngine(GateSingletonFatal):
         self.volume_engine = VolumeEngine(self)
         self.volume_engine.create_parallel_world_engines()
         self.physics_engine = PhysicsEngine(self)
+        self.chemistry_engine = ChemistryEngine(self)
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)
         self.actor_engine = ActorEngine(self)
@@ -1122,6 +1304,8 @@ class SimulationEngine(GateSingletonFatal):
             self.volume_engine.close()
         if self.physics_engine:
             self.physics_engine.close()
+        if self.chemistry_engine:
+            self.chemistry_engine.close()
         if self.source_engine:
             self.source_engine.close()
         if self.action_engine:
@@ -1134,6 +1318,7 @@ class SimulationEngine(GateSingletonFatal):
     def release_engines(self):
         self.volume_engine = None
         self.physics_engine = None
+        self.chemistry_engine = None
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
@@ -1408,6 +1593,9 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
+        logger.info("Simulation: prepare Chemistry")
+        self.chemistry_engine.initialize_before_runmanager()
+
         # action
 
         # Visu
@@ -1439,7 +1627,10 @@ class SimulationEngine(GateSingletonFatal):
 
         logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
-        self.g4_RunManager.PhysicsHasBeenModified()
+        # self.g4_RunManager.PhysicsHasBeenModified()  # NK: probably a relic. Should not be needed here as call above only touches cuts, not physics
+
+        logger.info("Simulation: initialize Chemistry")
+        self.chemistry_engine.initialize_after_runmanager()
 
         # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
