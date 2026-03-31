@@ -848,7 +848,7 @@ def ccmod_ideal_singles(data):
     )
     df = filter_pandas_tree(
         df, branch_name="ProcessDefinedStep", value="Rayl", accepted=False
-    )  # Check but I think that this process did not generate a pulse
+    ).copy()
 
     # Create a new branch  with ideal energy info
     df["IdealTotalEnergyDeposit"] = df["PreKineticEnergy"] - df["PostKineticEnergy"]
@@ -873,7 +873,7 @@ def ccmod_ideal_coincidences(df):
     # create a new attribute CoincID that groups hits from the same coincidence. We can have more that two hits/pulses in a coincidence oe
     nSingles = df["EventID"].value_counts()
     # keep only events with more than one nSingles
-    df = df[df["EventID"].isin(nSingles[nSingles > 1].index)]
+    df = df[df["EventID"].isin(nSingles[nSingles > 1].index)].copy()
     # Assign CoincIDs starting from 0, in order of first appearance).
     df["CoincID"] = pd.factorize(df["EventID"])[0]
 
@@ -938,3 +938,144 @@ def ccmod_make_cones(
     )  # flatten index Do not save old index from data
 
     return data_cones
+
+
+def kill_multiple_coinc(df: pd.DataFrame, group_col: str = "CoincID") -> pd.DataFrame:
+    """
+    Remove coincidences that contain more than 2 singles.
+    """
+    singles_per_coinc = df.groupby(group_col, sort=False).size()
+    valid_ids = singles_per_coinc[singles_per_coinc == 2].index
+    return df[df[group_col].isin(valid_ids)].copy()
+
+
+def kill_same_volume_pairs(
+    df: pd.DataFrame,
+    group_col: str = "CoincID",
+    volume_col: str = "PreStepUniqueVolumeID",
+) -> pd.DataFrame:
+    """
+    Remove 2‑single coincidences where both singles occur in the same volume.
+
+    Assumes:
+    - Each CoincID has exactly 2 singles (e.g. after kill_multiple_coinc).
+    """
+    unique_volumes_per_coinc = df.groupby(group_col, sort=False)[volume_col].nunique()
+    good_ids = unique_volumes_per_coinc[unique_volumes_per_coinc >= 2].index
+    return df[df[group_col].isin(good_ids)].copy()
+
+
+def _first_tree(f: uproot.ReadOnlyFile):
+    key = f.keys()[0]
+    name = key.split(";")[0]
+    return f[name]
+
+
+def _get_tree(f: uproot.ReadOnlyFile, preferred: str | None):
+    if preferred and preferred in f:
+        return f[preferred]
+    return _first_tree(f)
+
+
+def ccmod_merge_several_singles_root_into_one(
+    scatt_root_filename,
+    abs_root_filename,
+    output_root_filename,
+    scatt_tree_name,
+    abs_tree_name,
+    output_tree_name,
+    overwrite: bool = True,
+    save_branches: list[str] | None = None,
+):
+    scatt_root_filename = Path(scatt_root_filename)
+    abs_root_filename = Path(abs_root_filename)
+    output_root_filename = Path(output_root_filename)
+    output_root_filename.parent.mkdir(parents=True, exist_ok=True)
+
+    if output_root_filename.exists():
+        if overwrite:
+            output_root_filename.unlink()
+        else:
+            return output_root_filename
+
+    required_branches = (
+        "EventID",
+        "GlobalTime",
+        "PreStepUniqueVolumeID",
+        "TotalEnergyDeposit",
+        "PostPosition_X",
+        "PostPosition_Y",
+        "PostPosition_Z",
+    )
+
+    with (
+        uproot.open(scatt_root_filename) as f_sc,
+        uproot.open(abs_root_filename) as f_ab,
+    ):
+        t_sc = _get_tree(f_sc, scatt_tree_name)
+        t_ab = _get_tree(f_ab, abs_tree_name)
+
+        branches_sc = set(t_sc.keys())
+        branches_ab = set(t_ab.keys())
+
+        # check that all needed columns exist
+        miss_sc = set(required_branches) - branches_sc
+        miss_ab = set(required_branches) - branches_ab
+        if miss_sc:
+            raise ValueError(f"Scatterer singles missing branches: {sorted(miss_sc)}")
+        if miss_ab:
+            raise ValueError(f"Absorber singles missing branches: {sorted(miss_ab)}")
+        # check that both trees have the same branches
+        if branches_sc != branches_ab:
+            only_sc = branches_sc - branches_ab
+            only_ab = branches_ab - branches_sc
+
+            if only_sc:
+                raise ValueError(f"Branches only in scatterer: {sorted(only_sc)}")
+            if only_ab:
+                raise ValueError(f"Branches only in absorber: {sorted(only_ab)}")
+
+        # Load all branches from each tree into pandas
+        sc_df = t_sc.arrays(library="pd")
+        ab_df = t_ab.arrays(library="pd")
+
+        merged = pd.concat([sc_df, ab_df], ignore_index=True)
+        # Optionally filter branches before writing
+        if save_branches is not None:
+            missing = set(save_branches) - set(merged.columns)
+            if missing:
+                raise ValueError(
+                    f"Branches not found in merged data: {sorted(missing)}"
+                )
+
+            merged = merged[save_branches]
+
+        # cc_coincidences_sorter expects time-ordered singles
+        merged = merged.sort_values(
+            ["EventID", "GlobalTime"], kind="mergesort"
+        ).reset_index(drop=True)
+
+        # Write merged tree as a TTree
+        for col in merged.columns:
+            if merged[col].dtype == object:
+                merged[col] = pd.Categorical(merged[col])
+        data = merged.to_dict(orient="list")
+        data = root_tree_get_branch_data(data)
+        types = root_tree_get_branch_types(data)
+        with uproot.recreate(output_root_filename) as f_out:
+            root_write_tree(f_out, output_tree_name, types, data)
+
+        # Validate exact branch set
+        with uproot.open(output_root_filename) as f_chk:
+            if output_tree_name not in f_chk:
+                raise ValueError("Merged singles tree is empty; no data to write.")
+            out_keys = set(f_chk[output_tree_name].keys())
+
+        # Warn if "required branches" for sorting are not included in the merged file
+        missing_required = set(required_branches) - out_keys
+        if missing_required:
+            print(
+                "WARNING: The merged tree does not include all required branches for sorting.\n"
+                f"Missing required branches: {sorted(missing_required)}\n"
+                f"Required branches are: {sorted(required_branches)}"
+            )
