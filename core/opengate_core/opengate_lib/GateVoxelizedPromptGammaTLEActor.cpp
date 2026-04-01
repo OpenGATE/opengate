@@ -230,7 +230,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 }
 
 void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
-  std::cout << "incident particles : " << incidentParticles << std::endl;
+  //std::cout << "incident particles : " << incidentParticles << std::endl;
   if (incidentParticles == 0) {
     std::cerr << "Error: incidentParticles is zero. Skipping scaling."
               << std::endl;

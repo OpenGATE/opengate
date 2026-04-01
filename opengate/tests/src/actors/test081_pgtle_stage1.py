@@ -16,6 +16,32 @@ import hist
 import time
 import glob
 
+def redim(ind, ct, actor_vol, array):  # to convert the index from the actor volume to the ct volume
+
+    # centres ct et actor
+    ct_trans = list(ct.translation)
+    vol_trans = list(actor_vol.translation)
+
+    # distance entre le centre du ct et le centre du vol
+    decal = [
+        vol_trans[2] - ct_trans[2],
+        vol_trans[1] - ct_trans[1],
+        vol_trans[0] - ct_trans[0],
+    ]
+
+    # calculer la position du voxel dans le volume de l'actor
+    X = ind[0] * actor_vol.spacing[2]
+    Y = ind[1] * actor_vol.spacing[1]
+    Z = ind[2] * actor_vol.spacing[0]
+
+    # calculer la position du voxel dans le ct
+    x = (X + decal[0]) / ct.spacing[0]
+    y = (Y + decal[1]) / ct.spacing[1]
+    z = (Z + decal[2]) / ct.spacing[2]
+
+    return int(x), int(y), int(z)
+
+
 def find_emission_vector(el, root_data):  # to find the TH2D in the root_data corresponding to the element el
     #if el == "Phosphor":
     #    el = "Phosphorus"
@@ -70,8 +96,8 @@ def gamma_mat(paths, mat_fraction, name, root_data):  # construct the GammaZ cor
         Gamma += vect * w * rho_mat
 
     # dump material DB
-    itk_output = itk.image_from_array(Gamma)
-    itk.imwrite(itk_output, paths.output / f"{name}.nii.gz")
+    #itk_output = itk.image_from_array(Gamma)
+    #itk.imwrite(itk_output, paths.output / f"{name}.nii.gz")
 
     return Gamma
 
@@ -92,25 +118,31 @@ def voxel_to_mat_name(UH, mat_data):  # from UH to material name
 if __name__ == "__main__":
 
     # features of simulation that can be modify
-    output = "stage1a"
-    File_name = "vpg"
+    file_name = "stage1_vpg"
     vol_name = "ct"
-    MJ = False
-    number_of_particles = 1e6
+    number_of_particles = 1e3
     # source Energy andrange of the actor
     Erange = 130
-    
-    paths = utility.get_default_test_paths(__file__, output_folder="test081_pgtle")
-    #paths = Box()
-    # data and output are in the parent directory
-    #paths.current = pathlib.Path().resolve().parent
-    #paths.data = (paths.current / "data").resolve()
-    #paths.output = (paths.current / "output" / output).resolve()
+    test_name="test081_pgtle"
+    paths = utility.get_default_test_paths(__file__, output_folder=test_name)
+
+    #def get_default_test_paths(f, gate_folder=None, output_folder=None):
+    #
+    #    paths = utility.get_default_test_paths(
+    #    __file__, "gate_test042_gauss_gps", "test008"
+    #)
+    # gives
+    #{'current': PosixPath('/home/letang/opengate/opengate/tests/src'), 
+    # 'data': PosixPath('/home/letang/opengate/opengate/tests/data'), 
+    # 'gate': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps'), 
+    # 'gate_output': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/output'), 
+    # 'gate_data': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/data'), 
+    # 'output': PosixPath('/home/letang/opengate/opengate/tests/output/test008'), 
+    # 'output_ref': PosixPath('/home/letang/opengate/opengate/tests/data/output_ref/test008')}
 
     job_id = 0
     visu = False
 
-    # paths = utility.get_default_test_paths(__file__, gate_folder="", output_folder=output)          
     # create the simulation
     sim = gate.Simulation()
     # main options
@@ -120,7 +152,7 @@ if __name__ == "__main__":
     sim.random_engine = "MersenneTwister"
     sim.output_dir = paths.output
     sim.number_of_threads = 1
-    sim.progress_bar = True
+    sim.progress_bar = False
 
     # units
     mm = gate.g4_units.mm
@@ -136,36 +168,20 @@ if __name__ == "__main__":
     world.material = "G4_Galactic"
 
     # patient
-    """
-    ct = sim.add_volume("Image", "ct")
-    ct.image = paths.data / f"1mm-carbo-volume.mhd"
-    if visu :
-        ct.image = paths.data / f"visu-carbo-volume.mhd"
-    ct.mother = "world"
-    ct.material = "G4_C"
-    ct.voxel_materials = [
-    # range format [)
-    [-2000, -700, "G4_C"],
-    ]
-    ct.dump_label_image = "labels.mhd"
-    """
 
     ct = sim.add_volume("Image", vol_name)
-    ct.image = paths.data / "test081_pgtle" / f"ct_4mm.mhd"
-    if sim.visu:
-        ct.image = paths.data / f"ct_40mm.mhd"
+    ct.image = paths.data / f"ct_40mm_ij.mhd"
     ct.material = "G4_AIR"
-    #f1 = paths.data / "test081_pgtle" / "Schneider2000MaterialsTable.txt"
-    #f2 = paths.data / "test081_pgtle" / "Schneider2000DensitiesTable.txt"
-    f1 = paths.data / "test081_pgtle" / "OxygenMaterialsTable.txt"
-    f2 = paths.data / "test081_pgtle" / "UnitDensitiesTable.txt"
+    f1 = paths.data / "Schneider2000MaterialsTable.txt"
+    f2 = paths.data / "Schneider2000DensitiesTable.txt"
     tol = 0.05 * gcm3
     (ct.voxel_materials, materials,) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
+
 
     (mat_fraction, el) = gate.geometry.materials.HU_read_materials_table(f1)
     database_mat = gate.geometry.materials.write_material_database(sim, materials, paths.output / "database.db")
 
-    ct.dump_label_image = paths.output / f"labels.mhd"
+    ct.dump_label_image = paths.output / f"labels.nii.gz"
     ct.mother = "world"
     ct.load_input_image()
 
@@ -194,18 +210,18 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 1, 0]
 
     # LOOKHERE :: if database not well implanted, has to be modified
-    with uproot.open(paths.data / "test081_pgtle" / "data_merge_proton.root") as root_file:
+    with uproot.open(paths.data / test_name / "data_merge_proton.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_p = histo.to_numpy()[0]
-    with uproot.open(paths.data  / "test081_pgtle" / "data_merge_neutron.root") as root_file:
+    with uproot.open(paths.data  / test_name / "data_merge_neutron.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_n = histo.to_numpy()[0]
 
     vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpg_tle")
     vpg_tle.attached_to = vol_name
-    vpg_tle.output_filename = f"{File_name}.nii.gz"
-    vpg_tle.size = [125, 125, 189]  # the same size than ct image is stronly adviced
-    vpg_tle.spacing = [4, 4, 4, ]  # the same spacing is stronly adviced
+    vpg_tle.output_filename = f"{file_name}_tle.nii.gz"
+    vpg_tle.size = [13, 13, 19]  # the same size than ct image is stronly adviced
+    vpg_tle.spacing = [40, 40, 40, ]  # the same spacing is stronly adviced
     vpg_tle.timebins = 250
     vpg_tle.timerange = 5 * ns
     vpg_tle.energybins = 250
@@ -219,29 +235,29 @@ if __name__ == "__main__":
     vpg_tle.vect_p = vect_p
     vpg_tle.vect_n = vect_n
 
-    analog_tle = sim.add_actor("VoxelizedPromptGammaAnalogActor", "analog_tle")
-    analog_tle.attached_to = vol_name
-    analog_tle.output_filename = f"{File_name}_analog.nii.gz"
-    analog_tle.size = [125, 125, 189]  # the same size than ct image is stronly adviced
-    analog_tle.spacing = [4, 4, 4, ]  # the same spacing is stronly adviced
-    analog_tle.timebins = 250
-    analog_tle.timerange = 5 * ns
-    analog_tle.energybins = 250
-    analog_tle.energyrange = 10 * MeV
-    analog_tle.prot_E.active = True
-    analog_tle.neutr_E.active = True
-    analog_tle.prot_tof.active = True
-    analog_tle.neutr_tof.active = True
+    vpg_analog = sim.add_actor("VoxelizedPromptGammaAnalogActor", "vpg_analog")
+    vpg_analog.attached_to = vol_name
+    vpg_analog.output_filename = f"{file_name}_analog.nii.gz"
+    vpg_analog.size = [13, 13, 19]  # the same size than ct image is stronly adviced
+    vpg_analog.spacing = [40, 40, 40, ]  # the same spacing is stronly adviced
+    vpg_analog.timebins = 250
+    vpg_analog.timerange = 5 * ns
+    vpg_analog.energybins = 250
+    vpg_analog.energyrange = 10 * MeV
+    vpg_analog.prot_E.active = True
+    vpg_analog.neutr_E.active = True
+    vpg_analog.prot_tof.active = True
+    vpg_analog.neutr_tof.active = True
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    stats.output_filename = f"stat_{job_id}_{File_name}.txt"
+    stats.output_filename = f"stat_{job_id}_{file_name}.txt"
 
     sim.run()
     
-    #print(stats)
-    #print()
+    print(stats)
+    print()
 
     
     ######## Track Length => PG energy ########################################################
@@ -257,7 +273,7 @@ if __name__ == "__main__":
 
     # SECOND STEP : compute the material Gamma for each materials present in the ct and store it in a list
 
-    neutr = False  # to skip step if neutron are not taking into account
+    neutr = True  # to skip step if neutron are not taking into account
     if vpg_tle.neutr_E.active:
         neutr = True
     gamma_neutron = {}
@@ -274,17 +290,11 @@ if __name__ == "__main__":
     E_db = np.linspace(0, 200, 500)
     ind_db = np.abs(E_db[None, :] - Ep[:, None]).argmin(axis=1) # LOOKHERE :: should find a better way to build the index list
 
-    if MJ:  # multijobs or not ??
-        img_p = itk.imread(paths.output / f"{File_name}_merged_prot_e.nii.gz")
-    else:
-        img_p = itk.imread(paths.output / f"{File_name}_prot_e.nii.gz")
+    img_p = itk.imread(paths.output / f"{file_name}_tle_prot_e.nii.gz")
     array_p = itk.array_from_image(img_p)
     
     if neutr:
-        if MJ:
-            img_n = itk.imread(paths.output / f"{File_name}_merged_neutr_e.nii.gz")
-        else:
-            img_n = itk.imread(paths.output / f"{File_name}_neutr_e.nii.gz")
+        img_n = itk.imread(paths.output / f"{file_name}_tle_neutr_e.nii.gz")
         array_n = itk.array_from_image(img_n)
 
     # Initialize the treated array for proton, neutron, and proton + neutron
@@ -292,112 +302,54 @@ if __name__ == "__main__":
     treated_array_n = np.zeros((250, array_p.shape[1], array_p.shape[2], array_p.shape[3]))
     gamma_array = np.zeros((250, array_p.shape[1], array_p.shape[2], array_p.shape[3]))
 
-    # Vectorized processing: map actor voxel indices to CT indices, group by material
-    E, Nz, Ny, Nx = array_p.shape
 
-    # Build CT material lookup (map unique HU values once)
-    valid_hu = UH_array != -3024
-    hu_values = np.unique(UH_array[valid_hu])
-    hu_to_mat = {}
-    for hu in hu_values:
-        hu_to_mat[hu] = voxel_to_mat_name(int(hu), mat)
+    # treatment of the image voxel by voxel => to store gamma emission spectrum in each voxel
+    for x in range(array_p.shape[3]):
+        for y in range(array_p.shape[2]):
+            for z in range(array_p.shape[1]):
+                # Get the Hounsfield Unit (HU) value at the current voxel
+                if ct.size == vpg_tle.size:
+                    # If the CT size matches the actor size, use the voxel coordinates directly
+                    X, Y, Z = x, y, z
+                else:
+                    X, Y, Z = redim((x, y, z), ct, vpg_tle, array_p)
+                if (
+                    UH_array[Z, Y, X] == -3024
+                ):  # LOOKHERE : conditions of the CT where there is no matter, to be removed if CT different from the exemple case
+                    # Skip the voxel if HU value is -3024
+                    continue
+                name = voxel_to_mat_name(UH_array[Z, Y, X], ct.voxel_materials)
+                histo_E_p = array_p[
+                    :, z, y, x
+                ]  # Get the energy histogram for the current voxel
+                spectrum_p = np.zeros(250)  # Initialize the spectrum for the current voxel
+                if histo_E_p.sum() != 0:  # if nothing is detected, the voxel is not treated
+                    Gamma_m_p = gamma_proton[name]
+                    Gamma_p = Gamma_m_p[ind_db]
+                    spectrum_p = np.dot(
+                        histo_E_p, Gamma_p
+                    )  # np.dot : method used for the spectrum computation BUT, can be optimised ???
+                    treated_array_p[:, z, y, x] = spectrum_p
+                if neutr:
+                    histo_E_n = array_n[:, z, y, x]
+                    spectrum_n = np.zeros(250)
+                    if histo_E_n.sum() != 0:
+                        Gamma_m_n = gamma_neutron[name]
+                        Gamma_n = Gamma_m_n[ind_db]
+                        spectrum_n = np.dot(
+                            histo_E_n, Gamma_n
+                        )  # np.dot : method used for the spectrum computation BUT, can be optimised ???
+                        treated_array_n[:, z, y, x] = spectrum_n
 
-    material_array = np.empty(UH_array.shape, dtype=object)
-    for hu, mname in hu_to_mat.items():
-        material_array[UH_array == hu] = mname
 
-    # Create actor-coordinate grids
-    inds = np.indices((Nz, Ny, Nx), dtype=int)
-    z_idx, y_idx, x_idx = inds[0], inds[1], inds[2]
-
-    # Vectorized coordinate transformation (redim)
-    if ct.size == vpg_tle.size:
-        x_ct, y_ct, z_ct = x_idx, y_idx, z_idx
-    else:
-        ct_trans = list(ct.translation)
-        vol_trans = list(vpg_tle.translation)
-        decal = [vol_trans[2] - ct_trans[2], vol_trans[1] - ct_trans[1], vol_trans[0] - ct_trans[0]]
-    
-        X = x_idx * vpg_tle.spacing[2]
-        Y = y_idx * vpg_tle.spacing[1]
-        Z = z_idx * vpg_tle.spacing[0]
-    
-        x_ct = np.floor((X + decal[0]) / ct.spacing[0]).astype(int)
-        y_ct = np.floor((Y + decal[1]) / ct.spacing[1]).astype(int)
-        z_ct = np.floor((Z + decal[2]) / ct.spacing[2]).astype(int)
-
-    # Clip to valid ranges
-    x_ct = np.clip(x_ct, 0, UH_array.shape[2] - 1)
-    y_ct = np.clip(y_ct, 0, UH_array.shape[1] - 1)
-    z_ct = np.clip(z_ct, 0, UH_array.shape[0] - 1)
-
-    # Valid voxels
-    valid_mask = UH_array[z_ct, y_ct, x_ct] != -3024
-
-    # Flatten for batch operations
-    N = Nz * Ny * Nx
-    Hp = array_p.reshape(E, N)
-    if neutr:
-        Hn = array_n.reshape(E, N)
-    valid_flat = valid_mask.ravel(order='C')
-    mat_flat = material_array[z_ct, y_ct, x_ct].ravel(order='C')
-
-    # Process by material using batched matrix multiply
-    for mat_name in np.unique(mat_flat[valid_flat]):
-        if mat_name is None:
-            continue
-        sel = (mat_flat == mat_name) & valid_flat
-        if not np.any(sel):
-            continue
-        cols = np.nonzero(sel)[0]
-    
-        Hp_sel = Hp[:, cols].T  # (n_voxels, E)
-    
-        # Proton
-        Gamma_p = gamma_proton[mat_name][ind_db]
-        if Hp_sel.size > 0:
-            S_p = Hp_sel.dot(Gamma_p)
-            z_flat, y_flat, x_flat = np.unravel_index(cols, (Nz, Ny, Nx))
-            for i in range(len(cols)):
-                treated_array_p[:, z_flat[i], y_flat[i], x_flat[i]] = S_p[i]
-    
-        # Neutron
-        if neutr:
-            Hn_sel = Hn[:, cols].T  # (n_voxels, E)
-            Gamma_n = gamma_neutron[mat_name][ind_db]
-            if Hn_sel.size > 0:
-                S_n = Hn_sel.dot(Gamma_n)
-                z_flat, y_flat, x_flat = np.unravel_index(cols, (Nz, Ny, Nx))
-                for i in range(len(cols)):
-                    treated_array_n[:, z_flat[i], y_flat[i], x_flat[i]] = S_n[i]
-                    
     # Create a new ITK image from the treated array
-    gamma_array += treated_array_p + treated_array_n
     itk_output = itk.image_from_array(treated_array_p)
     itk_output.CopyInformation(img_p)
-    if MJ:
-        itk.imwrite(itk_output, paths.output / f"VPG_{File_name}_merged_prot_e.nii.gz")
-    else:
-        itk.imwrite(itk_output, paths.output / f"VPG_{File_name}_prot_e.nii.gz")
+    itk.imwrite(itk_output, paths.output / f"{file_name}_tle_prot_pge.nii.gz")
     if neutr:
         itk_output = itk.image_from_array(treated_array_n)
         itk_output.CopyInformation(img_n)
-        if MJ:
-            itk.imwrite(itk_output, paths.output / f"VPG_{File_name}_merged_neutr_e.nii.gz")
-        else:
-            itk.imwrite(itk_output, paths.output / f"VPG_{File_name}_neutr_e.nii.gz")
+        itk.imwrite(itk_output, paths.output / f"{file_name}_tle_neutr_pge.nii.gz")
 
-    itk_output = itk.image_from_array(gamma_array)
-    if MJ:
-        itk.imwrite(itk_output, paths.output / f"VPG_{File_name}_merged_gamma_e.nii.gz")
-    else:
-        itk.imwrite(itk_output, paths.output / f"VPG_{File_name}_gamma_e.nii.gz")
-
-    # check outputs
-    #img1 = itk.imread(analog_tle.get_output_path())
-    #img2 = itk.imread(vpg_tle.get_output_path())
-
-    #print(sum(im1))
-    #print(sum(im2))
     
     #utility.test_ok(is_ok)
