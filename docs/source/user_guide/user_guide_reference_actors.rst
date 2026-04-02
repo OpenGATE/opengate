@@ -399,6 +399,7 @@ By default, the PhaseSpaceActor stores information about particles entering the 
 
    phsp.steps_to_store = "entering"  # this is the default
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
+   phsp.steps_to_store = "all"   # all steps (including secondary particles)
 
 The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
 
@@ -406,6 +407,8 @@ The option “entering” stores the particle information whenever it is at the 
 For example: if a particle enters the volume only once, its information is stored only once; the option entering is equal to the option first. If a particle passes through a volume, performs n scattering outside of it, and re-enters the volume, its entry information will be stored n times. If a particle interacts with the volume interfaces without exiting the volume (e.g., the reflection of optical photons), the actor will store all instances when the particle is at the boundary (all reflections are stored).
 
 The option “exiting” stores the particle information whenever, starting from within the volume, it is at the boundary between the volume to which the actor is attached and the surrounding environment (world, another volume). The variables to be used are the PostPosition, PostDirection, etc.
+
+The option “all” stores the particle information for every step in the volume, including secondary particles generated in the volume. If you want to track all steps for both primary and secondary particles, use this option.
 
 
 Reference
