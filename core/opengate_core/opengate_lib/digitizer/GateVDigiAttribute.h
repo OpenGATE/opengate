@@ -49,6 +49,11 @@ public:
 
   virtual void FillDigiWithEmptyValue();
 
+  // When set to true, the attribute stores data in a plain (non-thread-local)
+  // vector so that it can be safely shared across worker threads (under an
+  // external mutex).  The default implementation is a no-op.
+  virtual void SetSharedStorage(bool /*b*/) {}
+
   virtual int GetSize() const = 0;
 
   virtual void Clear() = 0;
