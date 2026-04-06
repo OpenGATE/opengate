@@ -10,8 +10,10 @@
 
 #include "GateTimeSorter.h"
 #include "GateVDigitizerWithOutputActor.h"
-#include <G4Cache.hh>
+#include <G4Threading.hh>
 #include <G4ThreeVector.hh>
+#include <atomic>
+#include <memory>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -26,6 +28,8 @@ public:
   void InitializeUserInfo(py::dict &user_info) override;
 
   void StartSimulationAction() override;
+
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   void EndOfEventAction(const G4Event *event) override;
 
@@ -63,7 +67,6 @@ protected:
                      const std::string &name_suffix);
 
     GateDigiCollection *digis;
-    GateDigiCollectionIterator iter;
     double *currentTime;
     GateUniqueVolumeID::Pointer *currentVolID;
     G4ThreeVector *currentPos;
@@ -75,10 +78,14 @@ protected:
     std::optional<double> latestTime;
   };
 
-  GateTimeSorter fTimeSorter;
+  std::unique_ptr<GateTimeSorter> fTimeSorter;
 
   std::unique_ptr<TemporaryStorage> fCurrentStorage;
   std::unique_ptr<TemporaryStorage> fFutureStorage;
+
+  G4Mutex fMutex;
+  std::atomic<size_t> fIterPosition{};
+  std::atomic<size_t> fNumActiveWorkingThreads{};
 
   void ProcessTimeSortedSingles();
   void DetectCoincidences(bool lastCall = false);
@@ -90,14 +97,6 @@ protected:
               const std::vector<uint8_t> &goodCoincidence) const;
 
   void ClearProcessedSingles();
-
-  struct threadLocalT {
-    GateUniqueVolumeID::Pointer *volID;
-    double *time;
-    G4ThreeVector *pos;
-  };
-
-  G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateCoincidenceSorterActor_h

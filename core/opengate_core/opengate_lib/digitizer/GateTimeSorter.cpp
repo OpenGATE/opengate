@@ -14,6 +14,7 @@ GateTimeSorter::TimeSortedStorage::TimeSortedStorage(
   // GateDigiCollection for temporary storage
   digis = manager->NewDigiCollection(input->GetName() + "_" + name_suffix);
   digis->InitDigiAttributesFromCopy(input);
+  digis->SetSharedStorage(true);
 
   // Filler to copy from input collection to temporary collection
   fillerIn =
@@ -33,8 +34,6 @@ void GateTimeSorter::Init(GateDigiCollection *input) {
   // Create an iterator for the input collection, tracking the GlobalTime of
   // digis to be able to sort them in time.
   fInputCollection = input;
-  fInputIter = fInputCollection->NewIterator();
-  fInputIter.TrackAttribute("GlobalTime", &fTime);
 
   auto *manager = GateDigiCollectionManager::GetInstance();
   const auto attribute_names = fInputCollection->GetDigiAttributeNames();
@@ -44,6 +43,7 @@ void GateTimeSorter::Init(GateDigiCollection *input) {
   fOutputCollection =
       manager->NewDigiCollection(fInputCollection->GetName() + "_sorted");
   fOutputCollection->InitDigiAttributesFromCopy(fInputCollection);
+  fOutputCollection->SetSharedStorage(true);
   fOutputIter = fOutputCollection->NewIterator();
 
   // Create a TimeSortedStorage object for sorting digis.
@@ -115,14 +115,17 @@ void GateTimeSorter::Process() {
   }
   fProcessingStarted = true;
 
-  auto &iter = fInputIter;
+  auto iter = fInputCollection->NewIterator();
+  double *t;
+  iter.TrackAttribute("GlobalTime", &t);
+
   auto &sortedIndices = fCurrentStorage->sortedIndices;
 
   // Iterate over the input collection and sort the digis.
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
     const size_t digiIndex = fCurrentStorage->digis->GetSize();
-    const double digiTime = *fTime;
+    const double digiTime = *t;
     if (fMostRecentTimeDeparted.has_value() &&
         (digiTime < *fMostRecentTimeDeparted)) {
       // The digi is dropped, in order to be able to guarantee monotonous
