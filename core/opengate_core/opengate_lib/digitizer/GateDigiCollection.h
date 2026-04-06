@@ -76,6 +76,10 @@ public:
 
   void SetFilenameAndInitRoot(const std::string &filename);
 
+  // Switch all attributes to shared (non-thread-local) storage.
+  // Must be called after InitDigiAttributes* and before any Fill call.
+  void SetSharedStorage(bool b);
+
   std::string GetFilename() const { return fFilename; }
 
   std::string GetTitle() const { return fDigiCollectionTitle; }
@@ -126,6 +130,11 @@ protected:
   int fTupleId;
   int fCurrentDigiAttributeId;
   bool fWriteToRootFlag;
+
+  // When fSharedStorageMode is true, fBeginOfEventIndex is stored in a plain
+  // member rather than thread-local storage (all access serialised externally).
+  bool fSharedStorageMode = false;
+  mutable size_t fSharedBeginOfEventIndex = 0;
 
   // thread local: the index of the beginning
   // of event is specific for each thread
