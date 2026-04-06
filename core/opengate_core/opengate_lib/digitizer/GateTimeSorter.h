@@ -54,12 +54,9 @@ private:
   size_t fMaxSize{100'000};
 
   GateDigiCollection *fInputCollection;
-  GateDigiCollectionIterator fInputIter;
 
   GateDigiCollection *fOutputCollection;
   GateDigiCollectionIterator fOutputIter;
-
-  double *fTime;
 
   bool fInitialized{false};
   bool fProcessingStarted{false};
