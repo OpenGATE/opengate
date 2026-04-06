@@ -24,15 +24,29 @@ GateDigiCollection::GateDigiCollection(const std::string &collName)
 GateDigiCollection::~GateDigiCollection() = default;
 
 size_t GateDigiCollection::GetBeginOfEventIndex() const {
+  if (fSharedStorageMode) {
+    return fSharedBeginOfEventIndex;
+  }
   return threadLocalData.Get().fBeginOfEventIndex;
 }
 
 void GateDigiCollection::SetBeginOfEventIndex(size_t index) const {
-  threadLocalData.Get().fBeginOfEventIndex = index;
+  if (fSharedStorageMode) {
+    fSharedBeginOfEventIndex = index;
+  } else {
+    threadLocalData.Get().fBeginOfEventIndex = index;
+  }
 }
 
 void GateDigiCollection::SetBeginOfEventIndex() const {
   SetBeginOfEventIndex(GetSize());
+}
+
+void GateDigiCollection::SetSharedStorage(const bool b) {
+  fSharedStorageMode = b;
+  fSharedBeginOfEventIndex = 0;
+  for (auto *att : fDigiAttributes)
+    att->SetSharedStorage(b);
 }
 
 void GateDigiCollection::SetWriteToRootFlag(const bool f) {
