@@ -21,7 +21,7 @@ public:
       const std::string &att_name,
       const GateDigiAttributeLastProcessDefinedStepInVolumeActor *actor);
 
-std::string GetProcessDefinedStepInVolume(const G4Step *step) const;
+  std::string GetProcessDefinedStepInVolume(const G4Step *step) const;
 
   const GateDigiAttributeLastProcessDefinedStepInVolumeActor *fActor;
 };
