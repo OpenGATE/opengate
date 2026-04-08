@@ -3,9 +3,9 @@ Dose rate computation
 
 Dose rate computations can be performed using Monte Carlo simulations, especially in the context of dosimetry for targeted radionuclide therapy. To run the simulations, you need to use the following command:
 
-.. code:: python
+.. code:: bash
 
-    python dose_rate dose_rate_test1.json -o outputFolder/
+    dose_rate dose_rate_test1.json -o outputFolder/
 
 The `dose_rate_test1.json` file contains the input parameters for the simulation: SPECT image, CT image, activity to simulate, radionuclide used, number of threads, and visualization settings.
 

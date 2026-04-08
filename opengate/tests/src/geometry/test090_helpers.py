@@ -84,7 +84,7 @@ def check_projection_files(
             ignore_value_data1=0,
             ignore_value_data2=0,
             sum_tolerance=tol,
-            scaleImageValuesFactor=scaling,
+            scale_image_values_factor=scaling,
             axis=axis,
         )
         is_ok = is_ok and b

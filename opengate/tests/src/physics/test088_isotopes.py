@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import uproot
+import os
+
 import numpy as np
+import uproot
+
+import opengate as gate
 import opengate.tests.utility as utility
+from opengate.actors.filters import GateFilterBuilder
 
 g_cm3 = gate.g4_units.g_cm3
 mm = gate.g4_units.mm
@@ -75,13 +79,15 @@ def create_simu(material):
     ]
     phsp.output_filename = "ps.root"
     phsp.steps_to_store = "exiting"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "neutron"
-    phsp.filters.append(f)
+    F = GateFilterBuilder()
+    phsp.filter = F.ParticleName == "neutron"
 
     # run
     sim.run(start_new_process=True)
 
+    if not os.path.exists(phsp.get_output_path_string()):
+        print("File not found: " + phsp.get_output_path_string())
+        return 0
     events = uproot.open(phsp.get_output_path_string())["PhaseSpace;1"]
     ekin = events["KineticEnergy"].array(library="np")
 

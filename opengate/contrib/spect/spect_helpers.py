@@ -1,11 +1,17 @@
-import numpy as np
+import json
 import pathlib
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 import SimpleITK as sitk
+from itkConfig import ImportCallback
+
+from opengate.actors.digitizers import *
 from opengate.geometry.utility import (
     translate_point_to_volume,
     vec_g4_as_np,
 )
-from opengate.actors.digitizers import *
 
 
 def add_fake_table(sim, name="table"):
@@ -150,6 +156,7 @@ def extract_energy_window_from_actor_files(
     return output_filenames
 
 
+# FIXME => SHOULD BE REMOVE ; replace with merge_multi_head_projections_from_images
 def load_and_merge_multi_head_projections(filenames, nb_of_gantry_angles):
     """
     Reads projection files from a specified folder, processes them into sinograms per
@@ -226,6 +233,83 @@ def load_and_merge_multi_head_projections(filenames, nb_of_gantry_angles):
         img.SetDirection(img.GetDirection())
         sinograms.append(img)
     return sinograms
+
+
+def build_sinograms_from_projections(images, nb_of_gantry_angles):
+    """
+    Processes a list of sitk.Image projections into sinograms per energy window.
+    """
+    if not images:
+        raise ValueError("The input list of images is empty.")
+
+    sinograms_per_energy_window = None
+    nb_of_energy_windows = None
+    projection_size = None
+    projection_origin = None
+    projection_spacing = None
+
+    for i, img in enumerate(images):
+        if nb_of_energy_windows is None:
+            nb_of_energy_windows = int(img.GetSize()[2] / nb_of_gantry_angles)
+            projection_size = img.GetSize()
+            projection_origin = img.GetOrigin()
+            projection_spacing = img.GetSpacing()
+            sinograms_per_energy_window = [None] * nb_of_energy_windows
+
+        if nb_of_energy_windows < 1:
+            raise ValueError(
+                f"nb_of_energy_windows={nb_of_energy_windows} is invalid; "
+                f"image size is {img.GetSize()} and nb of angles is {nb_of_gantry_angles}"
+            )
+
+        # check that size and origin are the same for all images
+        if img.GetSize() != projection_size:
+            raise ValueError(
+                f"Image at index {i} has different size than the first image."
+            )
+        if img.GetOrigin() != projection_origin:
+            raise ValueError(
+                f"Image at index {i} has different origin than the first image."
+            )
+        if img.GetSpacing() != projection_spacing:
+            raise ValueError(
+                f"Image at index {i} has different spacing than the first image."
+            )
+
+        # convert to a numpy array view
+        arr = sitk.GetArrayViewFromImage(img)
+
+        # concatenate projections for the different heads and for each energy window
+        for ene in range(nb_of_energy_windows):
+            a = arr[ene::nb_of_energy_windows, :, :].copy()
+            if sinograms_per_energy_window[ene] is None:
+                sinograms_per_energy_window[ene] = a
+            else:
+                sinograms_per_energy_window[ene] = np.concatenate(
+                    (sinograms_per_energy_window[ene], a), axis=0
+                )
+
+    # build sitk image from np arrays
+    sinograms = []
+    for ene in range(nb_of_energy_windows):
+        img = sitk.GetImageFromArray(sinograms_per_energy_window[ene])
+        img.SetSpacing(projection_spacing)
+        img.SetOrigin(projection_origin)
+        img.SetDirection(images[0].GetDirection())
+        sinograms.append(img)
+
+    return sinograms
+
+
+def build_sinograms_from_files(filenames, nb_of_gantry_angles):
+    """
+    Reads projection files from disk and processes them into sinograms per energy window.
+    """
+    images = []
+    for f in filenames:
+        images.append(sitk.ReadImage(str(f)))
+
+    return build_sinograms_from_projections(images, nb_of_gantry_angles)
 
 
 def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
@@ -539,3 +623,71 @@ def compute_speedup_from_folders(
         test_duration,
         output_filename=test_folder / "speedup.mhd",
     )
+
+
+def create_physics_psf_2param(hole_diameter_mm, hole_length_mm, intrinsic_fwhm_mm):
+    # 1. Force everything to PyTomography's native unit: Centimeters
+    hole_diam_cm = hole_diameter_mm / 10.0
+    hole_len_cm = hole_length_mm / 10.0
+    int_fwhm_cm = intrinsic_fwhm_mm / 10.0
+
+    FWHM2sigma = 1.0 / 2.355
+
+    # 2. Slope 'sigma_a' (dimensionless)
+    # The rate at which the cone expands over distance
+    sigma_a = (hole_diam_cm / hole_len_cm) * FWHM2sigma
+
+    # 3. Intercept 'sigma_b' (in cm)
+    # We combine the hole size and intrinsic blur into a single baseline blur at d=0
+    fwhm_at_face_cm = np.sqrt(hole_diam_cm**2 + int_fwhm_cm**2)
+    sigma_b = fwhm_at_face_cm * FWHM2sigma
+
+    sigma_fit_params = (sigma_a, sigma_b)
+
+    # Standard linear fit
+    sigma_fit = lambda r, a, b: a * r + b
+
+    # =========================================================================
+    # PARAMETER EXPLANATIONS (2-Parameter Model)
+    # -------------------------------------------------------------------------
+    # a (sigma_a) : Dimensionless. The rate of geometric cone expansion (D / L_eff).
+    # b (sigma_b) : cm. The total combined blur physically present at distance 0,
+    #               computed as sqrt(D^2 + Intrinsic^2).
+    # =========================================================================
+
+    return sigma_fit_params, sigma_fit
+
+
+def create_physics_psf_3param(hole_diameter_mm, hole_length_mm, intrinsic_fwhm_mm):
+    # 1. Force everything to PyTomography's native unit: Centimeters
+    hole_diam_cm = hole_diameter_mm / 10.0
+    hole_len_cm = hole_length_mm / 10.0
+    int_fwhm_cm = intrinsic_fwhm_mm / 10.0
+
+    FWHM2sigma = 1.0 / 2.355
+
+    # 2. Geometric Collimator Resolution: R_geo = D * (d + L) / L = (D/L)*d + D
+    # Slope 'a' (dimensionless)
+    collimator_slope = (hole_diam_cm / hole_len_cm) * FWHM2sigma
+
+    # Intercept 'b' (in cm)
+    collimator_intercept = hole_diam_cm * FWHM2sigma
+
+    # Intrinsic 'c' (in cm, converted to sigma)
+    intrinsic_sigma = int_fwhm_cm * FWHM2sigma
+
+    # 3. Custom combination in quadrature
+    sigma_fit = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
+
+    sigma_fit_params = (collimator_slope, collimator_intercept, intrinsic_sigma)
+
+    # =========================================================================
+    # PARAMETER EXPLANATIONS (3-Parameter Model)
+    # -------------------------------------------------------------------------
+    # a (collimator_slope) : Dimensionless. The rate of geometric cone expansion
+    #                        calculated as (D / L_eff).
+    # b (collimator_int)   : cm. The geometric width of the hole itself (D).
+    # c (intrinsic_sigma)  : cm. The constant intrinsic blurring of the crystal.
+    # =========================================================================
+
+    return sigma_fit_params, sigma_fit

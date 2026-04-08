@@ -71,6 +71,10 @@ The number of killed particle can be retrieved printing the actor object.
     kill_actor.attached_to = kill_plane
     print(kill_actor)
 
+    # Example: Kill only electrons with energy below 10 keV in the volume
+    F = gate.GateFilterBuilder(sim)
+    kill_actor.filter = (F.ParticleName == "e-") & (F.KineticEnergy < 10 * keV)
+
 Refers to the `test064 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test064_kill_actor_mt.py>`_ for more details.
 
 Reference
@@ -381,11 +385,11 @@ A PhaseSpaceActor stores any set of particles reaching a given volume during the
        "EventPosition",
    ]
    phsp.output_filename = "test019_hits.root"
-   f = sim.add_filter("ParticleFilter", "f")
-   f.particle = "gamma"
-   phsp.filters.append(f)
+   # Create a filter for gammas only
+   F = gate.GateFilterBuilder(sim)
+   phsp.filter = F.ParticleName == "gamma"
 
-In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp`.
+In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp <https://github.com/OpenGATE/opengate/blob/master/core/opengate_core/opengate_lib/digitizer/GateDigiAttributeList.cpp>`_.
 
 The output is a ROOT file that contains a tree. It can be analyzed, for example, with `uproot`.
 
@@ -447,31 +451,31 @@ In this example, the actor is attached to (attached_to option) several volumes (
 Attribute correspondence with Gate 9.X for Hits and Singles:
 
 +----------------------------+---------------------------------------+
-| Gate 9.X                   | Gate 10            			         |
+| Gate 9.X                   | Gate 10                               |
 +============================+=======================================+
-| edep or energy             | TotalEnergyDeposit   			     |
+| edep or energy             | TotalEnergyDeposit                    |
 +----------------------------+---------------------------------------+
 | posX/Y/Z or globalPosX/Y/Z | PostPosition_X/Y/Z or Position_X/Y/Z  |
 +----------------------------+---------------------------------------+
-| time                       | GlobalTime          			         |
+| time                       | GlobalTime                            |
 +----------------------------+---------------------------------------+
-| PDGEncoding                | PDGCode            				     |
+| PDGEncoding                | PDGCode                               |
 +----------------------------+---------------------------------------+
-| parentID                   | ParentID           				     |
+| parentID                   | ParentID                              |
 +----------------------------+---------------------------------------+
-| momDirX/Y/Z                | PostDirection_X/Y/Z    				 |
+| momDirX/Y/Z                | PostDirection_X/Y/Z                   |
 +----------------------------+---------------------------------------+
-| localPosX/Y/Z              | PostPositionLocal_X/Y/Z 				 |
+| localPosX/Y/Z              | PostPositionLocal_X/Y/Z               |
 +----------------------------+---------------------------------------+
-| runID                      | RunID                			     |
+| runID                      | RunID                                 |
 +----------------------------+---------------------------------------+
-| stepLength                 | StepLength        			         |
+| stepLength                 | StepLength                            |
 +----------------------------+---------------------------------------+
-| processName                | TrackCreatorProcess    				 |
+| processName                | TrackCreatorProcess                   |
 +----------------------------+---------------------------------------+
-| trackID                    | TrackID        				         |
+| trackID                    | TrackID                               |
 +----------------------------+---------------------------------------+
-| trackLength                | TrackLength           			     |
+| trackLength                | TrackLength                           |
 +----------------------------+---------------------------------------+
 
 At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is None nothing will be written. Note that, like in Gate, every hit with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using DigitizerHitsCollectionActor are proposed: test025, test028, test035, etc.
@@ -485,6 +489,69 @@ Reference
 
 .. autoclass:: opengate.actors.digitizers.DigitizerHitsCollectionActor
 
+ProcessDefinedStepInVolumeAttribute
+-----------------------------------
+
+Description
+~~~~~~~~~~~
+
+This is a helper class used to define a custom attribute for hits-related actors (such as :class:`~.opengate.actors.digitizers.PhaseSpaceActor` or :class:`~.opengate.actors.digitizers.DigitizerHitsCollectionActor`).
+
+It creates a new integer attribute that **counts** the number of times a particle has undergone a specific physics process (e.g. Compton, Rayleigh) within a specific volume.
+
+* **Value:** The attribute contains the cumulative number of interactions of the defined type that the track has experienced in the volume up to the current step.
+
+This is useful for analyzing particle history, for example, to determine how many times a detected photon has scattered in a collimator or patient.
+
+Usage
+~~~~~
+
+To use it, you must instantiate the class with the simulation object, the process name (as defined in Geant4), and the volume name. The instance provides a ``.name`` property that must be added to the actor's attribute list.
+
+.. code-block:: python
+
+   from opengate.actors.digitizers import ProcessDefinedStepInVolumeAttribute
+
+   # 1. Define the custom attributes
+   # Count "compt" (Compton scattering) interactions in volume "Waterbox1"
+   att_compt = ProcessDefinedStepInVolumeAttribute(sim, "compt", "Waterbox1")
+
+   # Count "Rayl" (Rayleigh scattering) interactions in volume "world"
+   att_rayl = ProcessDefinedStepInVolumeAttribute(sim, "Rayl", "world")
+
+   # 2. Create the actor (e.g. PhaseSpace)
+   phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
+   phsp.attached_to = "Detector"
+
+   # 3. Add the custom attributes to the list
+   phsp.attributes = [
+       "KineticEnergy",
+       "PrePosition",
+       "EventID",
+       att_compt.name,  # Add the custom counter here
+       att_rayl.name
+   ]
+
+Filtering
+~~~~~~~~~
+
+Once defined, this custom attribute behaves like any other standard attribute (e.g. ``KineticEnergy``). This means you can use it in a filter to select specific particles.
+
+.. code-block:: python
+
+   # Create a filter using the custom attribute name
+   # Example: Keep only particles that have undergone at least one Compton scatter in the waterbox
+   F = gate.GateFilterBuilder(sim)
+   phsp.filter = F(att_compt.name) > 0
+
+.. note::
+   * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
+   * **Volume Name:** Must be the name of a volume existing in the simulation.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttribute
 
 DigitizerAdderActor
 -----------------------
@@ -554,7 +621,7 @@ This module applies blurring to an attribute, such as time or energy. The method
 
 For Gaussian blurring, specify the sigma or FWHM with `blur_sigma` or `blur_fwhm`.
 
-For InverseSquare blurring, use `blur_reference_value` and `blur_reference_value` (equation TBD).
+For InverseSquare blurring, specify the reference energy value with `blur_reference_value` and the FWHM (at the reference energy) with `blur_resolution` (equation TBD).
 
 For Linear blurring, specify `blur_reference_value`, `blur_slope`, and `blur_reference_value` (equation TBD).
 
@@ -689,71 +756,119 @@ Reference
 .. autoclass:: opengate.actors.digitizers.DigitizerEfficiencyActor
 
 
-Coincidences Sorter
--------------------
+DigitizerPileupActor
+--------------------
 
-.. note::
-   The current version of the Coincidence sorter is still a work in progress. It is only available for offline use.
+Description
+~~~~~~~~~~~
 
-The Coincidence Sorter finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences.
+Pile‑up occurs when multiple detector interactions happen within a time interval shorter than the resolving/shaping time. As a result,
+their pulses overlap and cannot be distinguished as separate events.
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` simulates this by combining singles in the same volume
+(set by `group_volume`) if they occur in a time interval set by `time_window`.
+
+The actor applies the following rules to combine singles:
+
+* The first single occurring after a time period of at least `time_window` without singles opens a time window of duration `time_window`.
+* Any additional single occurring in that time window is merged with the other singles in that window.
+* Depending on the value of `time_window_policy`, the time window may be extended if new singles arrive before the end of the current time window:
+  * NonParalyzable (default): the time window remains fixed in duration, starting from the first single.
+  * Paralyzable: the time window is extended to end `time_window` after the most recent single.
+  * EnergyWinnerParalyzable: if the most recent single's deposited energy is higher than that of all preceding singles in the same time window,
+  the time window is extended to end `time_window` after the most recent single.
+* The resulting combined single gets an attribute value TotalEnergyDeposit that is the sum of the deposited energy of all singles in the window.
+* The resulting combined single gets an attribute value PostPosition that depends on the value of `position_attribute_policy`:
+  * EnergyWeightedCentroid (default): energy-weighted centroid of all singles in the window
+  * EnergyWinner: position of the single with the highest deposited energy in the window
+* All other attribute values of the resulting combined single are determined by the value of `attribute_policy`:
+   * First (default): attribute values are taken from the first single in the window.
+   * EnergyWinner: attribute values are taken from the single with the highest deposited energy in the window.
+   * Last: attribute values are taken from the last single in the window.
+
+To obtain the same pile-up behavior as in GATE 9, set the following options:
 
 .. code-block:: python
 
-   root_file = uproot.open("singles.root")
-   singles_tree = root_file["Singles_crystal"]
-   ns = gate.g4_units.nanosecond
-   time_window = 3 * ns
-   policy = "takeAllGoods"
-   mm = gate.g4_units.mm
-   transaxial_plane = "xy"
-   min_transaxial_distance = 0 * mm
-   max_axial_distance = 32 * mm
+   time_window_policy = "EnergyWinnerParalyzable"
+   position_attribute_policy = "EnergyWinner"
+   attribute_policy = "EnergyWinner"
 
-   # Apply coincidence sorter
-   coincidences = coincidences_sorter(
-      singles_tree,
-      time_window,
-      policy,
-      min_transaxial_distance,
-      transaxial_plane,
-      max_axial_distance,
-      chunk_size=100000,
-      return_type="dict",
-      output_file_path=None,
-      output_file_format="root",
-   )
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` can currently only be used in single-threaded simulations.
+
+.. code-block:: python
+
+    pu = sim.add_actor("DigitizerPileupActor", "Singles_with_pileup")
+    pu.input_digi_collection = "Singles"
+    pu.group_volume = crystal.name
+    pu.authorize_repeated_volumes = True
+    pu.time_window = 100.0 * ns
+    pu.output_filename = "singles.root"
+
+Refer to test097 for an example.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerPileupActor
+
+
+
+Coincidence Sorter
+------------------
+
+Coincidence sorting finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences.
+
+It can be performed on-line during the simulation with the :class:`~.opengate.actors.digitizers.CoincidenceSorterActor`, or off-line after the simulation with the `CoincidenceSorter` class.
+
+.. code-block:: python
+
+   # On-line coincidence sorting (minimal example)
+   cc = sim.add_actor("CoincidenceSorterActor", "Coincidences")
+   cc.input_digi_collection = "Singles"
+   cc.window = 1e-9 * sec
+   cc.output_filename = "coincidences.root"
+
+.. code-block:: python
+
+   # Off-line coincidence sorting (minimal example)
+   from opengate.actors.coincidences import CoincidenceSorter
+   sorter = CoincidenceSorter()
+   sorter.window = 1e-9 * sec
+   coincidences_pd = sorter.run("singles.root", "Singles")
 
 Coincidences with oblique lines of response can be excluded by limiting the axial distance between their two singles (`max_axial_distance`).
 Likewise, coincidences between adjacent detectors can be excluded by imposing a minimum transaxial distance (`min_transaxial_distance`).
-The `transaxial_plane` can be `"xy"`, `"yz"`, or `"xz"`, depending on the PET scanner geometry.
+The `transaxial_plane` can be `"XY"`, `"YZ"`, or `"XZ"`, depending on the scanner geometry.
 Coincidences that comply with the given `max_distance_axial` and `max_distance_axial` are referred to
 as "good pairs" in the definitions below.
 
 The following policies are supported to deal with multiple coincidences in the same time window:
 
-- **removeMultiples**: No multiple coincidences are accepted, even if there are good pairs.
-- **takeAllGoods**: Each good pair is considered.
-- **takeWinnerOfGoods**: From all good pairs, only the one with the highest energy is considered.
-- **takeIfOnlyOneGood**: If exactly one good pair exists, keep it, otherwise discard all pairs.
-- **takeWinnerIfIsGood**: If the highest energy pair is good, take it, otherwise discard all pairs.
-- **takeWinnerIfAllAreGoods**: If all pairs are good, then take the one with the highest energy, otherwise discard all pairs.
+- **RemoveMultiples**: No multiple coincidences are accepted, even if there are good pairs.
+- **TakeAllGoods**: Each good pair is considered.
+- **TakeWinnerOfGoods**: From all good pairs, only the one with the highest energy is considered.
+- **TakeIfOnlyOneGood**: If exactly one good pair exists, keep it, otherwise discard all pairs.
+- **TakeWinnerIfIsGood**: If the highest energy pair is good, take it, otherwise discard all pairs.
+- **TakeWinnerIfAllAreGoods**: If all pairs are good, then take the one with the highest energy, otherwise discard all pairs.
 
-By default, coincidences are returned from the function in a Python dictionary (`return_type="dict"`).
-Alternatively, they can be returned as a pandas DataFrame (`return_type="pd"`).
-It is also possible to specify an output file for saving the coincidences (`output_file_path`) in ROOT format,
-(`output_file_format="root"`, the default) or HDF5 format (`output_file_format="hdf5"`).
-In the case of file output, the function returns `None`.
+On-line coincidence sorting does not require saving singles to a file,
+which is more economical in terms of disk space if the singles are not needed after the simulation.
+The current limitation, however, is that :class:`~.opengate.actors.digitizers.CoincidenceSorterActor` can only be used
+in single-threaded simulations.
+
+With off-line coincidence sorting, coincidences are returned from the `CoincidenceSorter.run()`` method as a pandas DataFrame.
+Alternatively, `output_file_path` can be specified for saving the coincidences to a file. In this case, the run() method returns `None`.
+The output file format is ROOT, except when the extension of `output_file_path` indicates that HDF5 format should be used (`.hdf5` or `h5`).
 Saving coincidences to a file is recommended when processing large numbers of singles, to avoid running out of memory.
+A current limitation of off-line coincidence sorting is that a delayed time window is not supported.
 
-The coincidence sorter reads singles from the `singles_tree` in groups containing `chunk_size` singles.
-Larger chunk sizes result in more efficient disk I/O but can also result in higher memory consumption.
-The coincidence sorter may internally use a larger chunk size than indicated by the `chunk_size` parameter,
-when required to correctly handle non-monotonicities of time in the singles tree. These non-monotonicities typically
-arise in multi-threaded simulations, because time progresses independently in each thread.
-It is important to note that the resulting coincidences are independent of the value of `chunk_size`,
-because the coincidence sorter also considers coincidences between singles in consecutive chunks.
+Refer to `test072 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ and `test098 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_
+for examples of off-line and on-line coincidence sorting, respectively.
 
-Refer to `test072 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ for more details.
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.CoincidenceSorterActor
 
 CCMod offline tools
 ------------------------------------
@@ -903,4 +1018,109 @@ Reference
 
 .. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
+Free Flight Actors
+------------------
 
+Description
+~~~~~~~~~~~
+
+Free Flight is a variance reduction technique designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations[cite: 248]. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See paper [Sarrut et al, PMB, 2026, to appear].
+
+
+OpenGATE provides two main actors for this purpose:
+
+* **GammaFreeFlightActor**: Primarily used for "primary" photons (unscattered) or those originating directly from the source.
+* **ScatterSplittingFreeFlightActor**: Used to handle photons that undergo Compton or Rayleigh scattering within a volume, such as a patient phantom.
+
+GammaFreeFlightActor
+~~~~~~~~~~~~~~~~~~~~
+
+This actor is typically attached to the world or a specific phantom volume. It ensures that photons directed towards the detector are accounted for analytically[cite: 249]. It is often used in conjunction with **Forced Direction** or **Angular Acceptance** source settings to focus the simulation on the detector's field of view.
+
+.. code-block:: python
+
+   # Add the actor to the simulation
+   ff = sim.add_actor("GammaFreeFlightActor", "ff")
+   ff.attached_to = "world"
+
+   # Optionally exclude specific volumes like the detector crystal
+   # to let standard Geant4 tracking take over once the particle reaches the detector.
+   ff.exclude_volumes = ["spect_1_crystal"]
+
+
+
+ScatterSplittingFreeFlightActor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``ScatterSplittingFreeFlightActor`` handles the calculation of scattered radiation contributions. When a photon interacts, this actor "splits" the interaction into multiple analytical paths directed toward the detector, weighted by the physics of the interaction (e.g., Klein-Nishina cross-section).
+
+* **compton_splitting_factor / rayleigh_splitting_factor**: Defines how many analytical photons are generated per interaction.
+* **kill_interacting_in_volumes**: Volumes where the original interacting particle should be stopped to avoid double counting.
+* **angular_acceptance**: Filters the analytical scattered photons to only those heading toward the detector.
+
+.. code-block:: python
+
+   ff_sc = sim.add_actor("ScatterSplittingFreeFlightActor", "ff_scatter")
+   ff_sc.attached_to = "world"
+   ff_sc.exclude_volumes = ["spect_1_crystal"]
+   ff_sc.kill_interacting_in_volumes = ["spect_1_crystal"]
+
+   # Splitting configuration
+   ff_sc.compton_splitting_factor = 50
+   ff_sc.rayleigh_splitting_factor = 50
+
+   # Direct scattered photons only towards the SPECT head
+   ff_sc.angular_acceptance.policy = "Rejection"
+   ff_sc.angular_acceptance.target_volumes = ["spect_1"]
+   ff_sc.angular_acceptance.angle_tolerance_max = 10 * gate.g4_units.deg
+
+
+
+Merging and Uncertainty Calculation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because Free Flight separates simulations into primary and scatter components, results must be merged offline. To obtain a statistically sound result, one must sum the mean counts per event from each step and propagate the variance.
+
+The helper function ``merge_freeflight_uncertainty`` automates this by processing the ``counts.mhd`` and ``squared_counts.mhd`` files from each subfolder (e.g., primary, scatter).
+
+**Statistical Equations:**
+
+* Let $C_i$ be the raw counts and $C2_i$ the squared counts for step $i$ with $N_i$ events.
+* Mean per event: $E[X_i] = C_i / N_i$.
+* Variance of the mean: $Var(E[X_i]) = (E[X_i^2] - (E[X_i])^2) / (N_i - 1)$.
+* Total Mean: $E[X_{total}] = \sum E[X_i]$.
+* Final Relative Uncertainty: $R = \frac{\sqrt{\sum Var(E[X_i])}}{E[X_{total}]}$.
+
+**Usage of Helpers:**
+
+.. code-block:: python
+
+   from opengate.contrib.spect.spect_freeflight_helpers import merge_freeflight_uncertainty
+   from pathlib import Path
+
+   # Define parameters
+   folder = Path("./output_simu")
+   ref_n = 1e8  # Target reference number of events
+   subfolders = ["primary", "scatter"]
+   num_events = [1e6, 2e5]  # Number of simulated events in each subfolder
+
+   # Merge images and calculate uncertainty for head 0
+   merge_freeflight_uncertainty(
+       folder,
+       ref_n,
+       subfolders,
+       num_events,
+       counts_filename="projection_0_counts.mhd",
+       squared_counts_filename="projection_0_squared_counts.mhd",
+       output_filename="relative_uncertainty_0.mhd"
+   )
+
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.freeflightactors.GammaFreeFlightActor
+.. autoclass:: opengate.actors.freeflightactors.ScatterSplittingFreeFlightActor
+
+.. autofunction:: opengate.contrib.spect.spect_freeflight_helpers.merge_freeflight_uncertainty

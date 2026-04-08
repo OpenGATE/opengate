@@ -1,27 +1,35 @@
+import io
+import numbers
+import os
+import pathlib
+import shutil
+import sys
+from pathlib import Path
+import colored
+import gatetools.phsp
 import itk
 import numpy as np
-import os
-import colored
-from box import Box, BoxList
 import scipy
-import pathlib
+import SimpleITK as sitk
 import uproot
-import sys
-import shutil
-from pathlib import Path
-from matplotlib.ticker import StrMethodFormatter
+from box import Box, BoxList
 from matplotlib.patches import Circle
-import io
-import gatetools.phsp
+from matplotlib.ticker import StrMethodFormatter
 
+from opengate.actors.simulation_stats_helpers import *
+
+from ..exception import color_error, color_ok, fatal
+from ..image import (
+    get_info_from_image,
+    itk_image_from_array,
+    write_itk_image,
+    read_image_info_sitk,
+)
 from ..utility import (
+    LazyModuleLoader,
     ensure_filename_is_str,
     insert_suffix_before_extension,
-    LazyModuleLoader,
 )
-from ..exception import fatal, color_error, color_ok
-from ..image import get_info_from_image, itk_image_from_array, write_itk_image
-from opengate.actors.simulation_stats_helpers import *
 
 plt = LazyModuleLoader("matplotlib.pyplot")
 
@@ -106,23 +114,29 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
     is_ok = b
     print_test(b, f"Runs:         {counts1.runs} {counts2.runs}")
 
-    b = abs(event_d) <= tolerance * 100
+    if isinstance(tolerance, numbers.Number):
+        tolerance = [tolerance, tolerance, tolerance]
+
+    b = abs(event_d) <= tolerance[0] * 100
     is_ok = b and is_ok
-    st = f"(tol = {tolerance * 100:.2f} %)"
+    st = f"(tol = {tolerance[0] * 100:.2f} %)"
     print_test(
         b,
         f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  {st}",
     )
 
-    b = abs(track_d) <= tolerance * 100
+    b = abs(track_d) <= tolerance[1] * 100
     is_ok = b and is_ok
+    st = f"(tol = {tolerance[1] * 100:.2f} %)"
     print_test(
         b,
         f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  {st}",
     )
 
-    b = abs(step_d) <= tolerance * 100
+    b = abs(step_d) <= tolerance[2] * 100
     is_ok = b and is_ok
+
+    st = f"(tol = {tolerance[2] * 100:.2f} %)"
     print_test(
         b,
         f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  {st}",
@@ -187,7 +201,7 @@ def plot_img_axis(ax, img, label, axis="z"):
 
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = sitk.GetArrayViewFromImage(img)
     y = np.nansum(data, 2)
     y = np.nansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
@@ -198,7 +212,7 @@ def plot_img_z(ax, img, label):
 
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = sitk.GetArrayViewFromImage(img)
     y = np.nansum(data, 2)
     y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
@@ -209,7 +223,7 @@ def plot_img_y(ax, img, label):
 
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = sitk.GetArrayViewFromImage(img)
     y = np.nansum(data, 1)
     y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
@@ -252,7 +266,7 @@ def assert_images(
     axis="z",
     fig_name=None,
     sum_tolerance=5,
-    scaleImageValuesFactor=None,
+    scale_image_values_factor=None,
     sad_profile_tolerance=None,
     img_threshold=0,
     test_sad=True,
@@ -261,27 +275,28 @@ def assert_images(
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
-    img1 = itk.imread(ref_filename1)
-    img2 = itk.imread(filename2)
-    info1 = get_info_from_image(img1)
-    info2 = get_info_from_image(img2)
+    img1 = sitk.ReadImage(ref_filename1)
+    img2 = sitk.ReadImage(filename2)
+    info1 = read_image_info_sitk(img1)
+    info2 = read_image_info_sitk(img2)
 
     is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
     if slice_id is not None:
-        data1 = itk.GetArrayFromImage(img1)[slice_id]
-        data2 = itk.GetArrayFromImage(img2)[slice_id]
+        data1 = sitk.GetArrayFromImage(img1)[slice_id]
+        data2 = sitk.GetArrayFromImage(img2)[slice_id]
         data1 = np.expand_dims(data1, axis=0)
         data2 = np.expand_dims(data2, axis=0)
-        img1 = itk.GetImageFromArray(data1)
-        img2 = itk.GetImageFromArray(data2)
+        img1 = sitk.GetImageFromArray(data1)
+        img2 = sitk.GetImageFromArray(data2)
 
-    data1 = itk.GetArrayViewFromImage(img1).ravel()
-    data2 = itk.GetArrayViewFromImage(img2).ravel()
+    data1 = sitk.GetArrayFromImage(img1).ravel()
+    data2 = sitk.GetArrayFromImage(img2).ravel()
 
-    if scaleImageValuesFactor:
-        data2 *= scaleImageValuesFactor
+    if scale_image_values_factor:
+        data2 *= scale_image_values_factor
+        img2 *= float(scale_image_values_factor)
 
     # do not consider pixels with a certain value
     if ignore_value_data1 is None and ignore_value_data2 is None:
@@ -303,7 +318,7 @@ def assert_images(
     # because the ignore value was previously applied only after
     # taking the sum and some tests fail after that change
     # apply_ignore_mask_to_sum_check = False recreates the old behavior
-    if apply_ignore_mask_to_sum_check is True:
+    if apply_ignore_mask_to_sum_check:
         s1 = np.sum(d1)
         s2 = np.sum(d2)
     else:
@@ -1023,8 +1038,13 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
                     if not compare_arrays(v1, v2, f"{key}[{i}]"):
                         is_equal = False
                 elif isinstance(v1, float) and isinstance(v2, float):
-                    if abs(v1 - v2) > tolerance:
-                        print(f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+                    r = np.divide(
+                        abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0)
+                    )
+                    if r > tolerance:
+                        print(
+                            f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)}, {r*100} %)"
+                        )
                         is_equal = False
                 elif v1 != v2:
                     print(f"{key}[{i}] : {v1} vs {v2}")
@@ -1047,8 +1067,11 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
         elif isinstance(v1, list) and isinstance(v2, list):
             return compare_arrays(v1, v2, full_key)
         elif isinstance(v1, float) and isinstance(v2, float):
-            if abs(v1 - v2) > tolerance:
-                print(f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+            r = np.divide(abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0))
+            if r > tolerance:
+                print(
+                    f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)}) (diff: {r*100} %)"
+                )
                 return False
             return True
         else:
@@ -2021,36 +2044,17 @@ def np_plot_integrated_profile(
     ax.plot(values, profile, label=label)
 
 
-def np_plot_profile_X_old(
-    ax, img, hline, num_slice, crop_center, crop_width, label, width
-):
-    c = int(hline - (crop_center[1] - crop_width[1] / 2))
-    img, _ = np_img_crop(img, crop_center, crop_width)
-    if width == 0:
-        img = img[num_slice, c : c + 1, :]
-    else:
-        img = img[num_slice, c - width : c + width, :]
-    y = np.mean(img, axis=0)
-    x = np.arange(0, len(y))
-    ax.plot(x, y, label=label)
-
-
-def np_plot_profile_Y_old(
-    ax, img, vline, num_slice, crop_center, crop_width, label, width
-):
-    c = int(vline - (crop_center[0] - crop_width[0] / 2))
-    img, _ = np_img_crop(img, crop_center, crop_width)
-    if width == 0:
-        img = img[num_slice, :, c : c + 1]
-    else:
-        img = img[num_slice, :, c - width : c + width]
-    x = np.mean(img, axis=1)
-    y = np.arange(0, len(x))
-    ax.plot(y, x, label=label)
-
-
 def np_plot_profile_X(
-    ax, img, hline, num_slice, crop_center, crop_width, label, width, spacing
+    ax,
+    img,
+    hline,
+    num_slice,
+    crop_center,
+    crop_width,
+    label,
+    width,
+    spacing,
+    stepped_line=False,
 ):
     c = int(hline - (crop_center[1] - crop_width[1] / 2))
     img, crop_coord = np_img_crop(img, crop_center, crop_width)
@@ -2061,12 +2065,24 @@ def np_plot_profile_X(
     y = np.mean(img, axis=0)
     # Convert pixel indices to physical coordinates (mm)
     x = np.arange(0, len(y)) * spacing[0] + crop_coord[0] * spacing[0]
-    ax.plot(x, y, label=label)
+    if stepped_line:
+        ax.step(x, y, label=label, where="mid")
+    else:
+        ax.plot(x, y, label=label)
     ax.set_xlabel("X (mm)")
 
 
 def np_plot_profile_Y(
-    ax, img, vline, num_slice, crop_center, crop_width, label, width, spacing
+    ax,
+    img,
+    vline,
+    num_slice,
+    crop_center,
+    crop_width,
+    label,
+    width,
+    spacing,
+    stepped_line=False,
 ):
     c = int(vline - (crop_center[0] - crop_width[0] / 2))
     img, crop_coord = np_img_crop(img, crop_center, crop_width)
@@ -2077,7 +2093,10 @@ def np_plot_profile_Y(
     y = np.mean(img, axis=1)
     # Convert pixel indices to physical coordinates (mm)
     x = np.arange(0, len(y)) * spacing[1] + crop_coord[2] * spacing[1]
-    ax.plot(x, y, label=label)
+    if stepped_line:
+        ax.step(x, y, label=label, where="mid")
+    else:
+        ax.plot(x, y, label=label)
     ax.set_xlabel("Y (mm)")
 
 
@@ -2109,7 +2128,7 @@ def add_border(ax, border_color, border_width):
         spine.set_linewidth(border_width)
 
 
-def plot_compare_slice_profile(ref_names, test_names, options):
+def plot_compare_slice_profile(ref_names, test_names, options, stepped_line=False):
     # options
     scaling = options.scaling
     n_slice = options.n_slice
@@ -2128,11 +2147,11 @@ def plot_compare_slice_profile(ref_names, test_names, options):
     img_ref = []
     img_test = []
     for ref_name, test_name in zip(ref_names, test_names):
-        iref = itk.imread(ref_name)
+        iref = sitk.ReadImage(ref_name)
         spacing = (iref.GetSpacing()[1], iref.GetSpacing()[2])
-        iref = itk.array_view_from_image(iref)
-        itest = itk.imread(test_name)
-        itest = itk.array_view_from_image(itest) * scaling
+        iref = sitk.GetArrayFromImage(iref)
+        itest = sitk.ReadImage(test_name)
+        itest = sitk.GetArrayFromImage(itest) * scaling
         img_ref.append(iref)
         img_test.append(itest)
 
@@ -2168,6 +2187,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             lref,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         np_plot_profile_X(
             ax[1][i * n],
@@ -2179,6 +2199,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             ltest,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         ax[1][i * n].legend()
 
@@ -2195,6 +2216,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             lref,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         np_plot_profile_Y(
             ax[1][i * n + 1],
@@ -2206,6 +2228,7 @@ def plot_compare_slice_profile(ref_names, test_names, options):
             ltest,
             width=wi,
             spacing=spacing,
+            stepped_line=stepped_line,
         )
         ax[1][i * n + 1].legend()
 

@@ -1,7 +1,8 @@
 import inspect
-import colored
 
+import colored
 import opengate_core as g4
+
 from .logger import logger
 
 

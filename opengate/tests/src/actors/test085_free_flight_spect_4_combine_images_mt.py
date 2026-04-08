@@ -73,7 +73,7 @@ def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
             ignore_value_data1=0,
             sum_tolerance=45,
             axis="x",
-            scaleImageValuesFactor=scaling_prim,
+            scale_image_values_factor=scaling_prim,
             slice_id=1,
             fig_name=paths.output / f"projection_1_ff_test_1.png",
         )
@@ -90,7 +90,7 @@ def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
             ignore_value_data1=0,
             sum_tolerance=48,
             axis="x",
-            scaleImageValuesFactor=scaling_sc,
+            scale_image_values_factor=scaling_sc,
             slice_id=0,
             fig_name=paths.output / f"projection_1_ff_sc_test_1.png",
         )

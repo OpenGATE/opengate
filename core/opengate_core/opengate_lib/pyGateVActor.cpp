@@ -72,15 +72,12 @@ public:
 void init_GateVActor(py::module &m) {
 
   // do not inherit from trampoline for the moment (not needed)
-  py::class_<GateVActor, PyGateVActor //>(
-             >(m, "GateVActor")
-      //,std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
-      //>(m, "GateVActor")
+  py::class_<GateVActor, PyGateVActor>(m, "GateVActor")
       .def(py::init<py::dict &>())
       .def("RegisterSD", &GateVActor::RegisterSD)
-      //      .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
-      //      this -> problems with pickle
-      .def_readwrite("fFilters", &GateVActor::fFilters)
+      // .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
+      // this -> problems with pickle
+      .def_readwrite("fFilter", &GateVActor::fFilter)
       .def("Close", &GateVActor::Close)
       .def("InitializeCpp", &GateVActor::InitializeCpp)
       .def("InitializeUserInfo", &GateVActor::InitializeUserInfo)
@@ -107,5 +104,4 @@ void init_GateVActor(py::module &m) {
       .def("SetWriteToDisk", &GateVActor::SetWriteToDisk)
       .def("AddActorOutputInfo", &GateVActor::AddActorOutputInfo)
       .def("SteppingAction", &GateVActor::SteppingAction);
-  //      .def("RegisterCallBack", &GateVActor::RegisterCallBack);
 }

@@ -2,18 +2,18 @@
 # -*- coding: utf-8 -*-
 
 from test085_free_flight_helpers import *
-from opengate.tests import utility
 from opengate.contrib.root_helpers import *
 from opengate.sources.utility import *
-import gc
+from opengate.tests import utility
 
-if __name__ == "__main__":
+
+def main():
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
 
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    # sim.visu = True
+    sim.visu = False
     source, actors = create_simulation_test085(
         sim,
         paths,
@@ -31,11 +31,6 @@ if __name__ == "__main__":
 
     rad_spectrum = get_spectrum("tc99m", "gamma", "radar")
     print(rad_spectrum)
-
-    # Force destruction of the simulation to trigger
-    # the merging/closing of ROOT files in MT mode before reading them.
-    del sim
-    gc.collect()
 
     # split tree
     ref_root = paths.output_ref / "phsp_sphere_ref.root"
@@ -92,3 +87,7 @@ if __name__ == "__main__":
     print(f"Saved plot to {fig}")
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

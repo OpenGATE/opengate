@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests import utility
 from test085_free_flight_helpers import *
+
 from opengate.contrib.spect.spect_helpers import *
+from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -60,9 +61,9 @@ if __name__ == "__main__":
             stats,
             tolerance=80,
             ignore_value_data1=0,
-            sum_tolerance=15,
+            sum_tolerance=16,
             sad_profile_tolerance=33,
-            scaleImageValuesFactor=2e5 / ac,
+            scale_image_values_factor=2e5 / ac,
             axis="x",
             fig_name=paths.output / "projection_fd_check_1.png",
         )

@@ -6,7 +6,6 @@
    ------------------------------------ -------------- */
 
 #include "G4Electron.hh"
-#include "G4EmCalculator.hh"
 #include "G4Gamma.hh"
 #include "G4NistManager.hh"
 #include "G4ParticleDefinition.hh"
@@ -71,6 +70,14 @@ void GateDoseActor::InitializeCpp() {
   }
   if (fCountsFlag) {
     cpp_counts_image = Image3DType::New();
+  }
+  fScoreInOtherMaterial = (fScoreInMaterial == "material") ? false : true;
+
+  if (fFastSPRCalcFlag) {
+    // Initialize the cache
+    auto material =
+        G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
+    fSPRCache.Initialize(material, fReferenceEnergySPR);
   }
 }
 
@@ -192,35 +199,17 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
     double dose;
 
-    if (fToWaterFlag) {
-      auto *current_material = step->GetPreStepPoint()->GetMaterial();
-      double dedx_cut = DBL_MAX;
-      double dedx_currstep = 0., dedx_water = 0.;
-      const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-      static G4Material *water =
-          G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-      auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-      auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-      auto energy = (energy1 + energy2) / 2;
-      if (p == G4Gamma::Gamma())
-        p = G4Electron::Electron();
-      auto &emc = fThreadLocalDataEdep.Get().emcalc;
-      dedx_currstep =
-          emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
-      dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
-      if (dedx_currstep == 0 || dedx_water == 0) {
-        edep = 0.;
-      } else {
-        edep *= (dedx_water / dedx_currstep);
-      }
+    if (fScoreInOtherMaterial) {
+      auto spr = CalculateSPR(step);
+      edep *= spr;
     }
 
     if (fDoseFlag || fDoseSquaredFlag) {
       double density;
-      if (fToWaterFlag) {
-        const auto *water =
-            G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-        density = water->GetDensity();
+      if (fScoreInOtherMaterial) {
+        const auto *material =
+            G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
+        density = material->GetDensity();
       } else {
         const auto *current_material = step->GetPreStepPoint()->GetMaterial();
         density = current_material->GetDensity();
@@ -319,6 +308,7 @@ double GateDoseActor::ComputeMeanUncertainty() {
         std::cout << "unc_i: " << unc_i << std::endl;
         std::cout << "edep: " << val << std::endl;
         std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+        unc_i = 0.;
       }
 
       unc_i = sqrt(unc_i) / (val);
@@ -327,6 +317,7 @@ double GateDoseActor::ComputeMeanUncertainty() {
         std::cout << "unc_i: " << unc_i << std::endl;
         std::cout << "edep: " << val << std::endl;
         std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+        unc_i = 1;
       }
       mean_unc += unc_i;
     }
@@ -429,4 +420,46 @@ double GateDoseActor::GetMaxValueOfImage(Image3DType::Pointer imageP) {
     }
   }
   return max;
+}
+
+double GateDoseActor::CalculateSPR(G4Step *step) {
+  double spr = 0;
+  G4double energy = 0;
+  auto *current_material = step->GetPreStepPoint()->GetMaterial();
+  const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+
+  if (fFastSPRCalcFlag) {
+    // avoiding calculating the energy if fTransitionEnergySPR = 0
+    if (fTransitionEnergySPR == 0) {
+      spr = fSPRCache.FindOrCalculateSPR(p, current_material);
+      return spr;
+    }
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+    energy = (energy1 + energy2) / 2;
+
+    if (energy >= fTransitionEnergySPR) {
+      spr = fSPRCache.FindOrCalculateSPR(p, current_material);
+      return spr;
+    }
+  } else {
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+    energy = (energy1 + energy2) / 2;
+  }
+
+  double dedx_cut = DBL_MAX;
+  double dedx_currstep = 0., dedx_material = 0.;
+  static G4Material *material =
+      G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
+  if (p == G4Gamma::Gamma())
+    p = G4Electron::Electron();
+  auto &emc = fThreadLocalDataEdep.Get().emcalc;
+  dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+  dedx_material = emc.ComputeTotalDEDX(energy, p, material, dedx_cut);
+  if (dedx_currstep != 0 || dedx_material != 0) {
+    spr = dedx_material / dedx_currstep;
+  }
+
+  return spr;
 }

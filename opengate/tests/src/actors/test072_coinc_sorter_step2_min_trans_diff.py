@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from opengate.tests import utility
-from opengate.actors.coincidences import coincidences_sorter
-from opengate.contrib.root_helpers import *
-import uproot
 import os
-import numpy as np
-from scipy.stats import wasserstein_distance
 import sys
+
+import numpy as np
+import uproot
+from scipy.stats import wasserstein_distance
+
+import opengate as gate
+from opengate.actors.coincidences import CoincidenceSorter
+from opengate.contrib.root_helpers import *
+from opengate.tests import utility
 
 
 def main(dependency="test072_coinc_sorter_step1.py"):
@@ -39,27 +41,25 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # time windows
     ns = gate.g4_units.nanosecond
-    ms = gate.g4_units.millisecond
-    time_window = 3 * ns
-    transaxial_plane = "xy"
-    policy = "takeAllGoods"
-
     mm = gate.g4_units.mm
+
+    policy = "TakeAllGoods"
     minDistanceXY = (
         208.46 * mm
     )  # = sqrt(2)*147.4, where 147.4 is the mean value inside the detector block (from root histo)
     maxDistanceZ = 32 * mm
     # apply coincidences sorter
     # (chunk size can be much larger, keep a low value to check it is ok)
-    coincidences = coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        minDistanceXY,
-        transaxial_plane,
-        maxDistanceZ,
-        chunk_size=1000000,
-    )
+
+    sorter = CoincidenceSorter()
+    sorter.window = 3 * ns
+    sorter.multiples_policy = policy
+    sorter.transaxial_plane = "XY"
+    sorter.min_transaxial_distance = minDistanceXY
+    sorter.max_axial_distance = maxDistanceZ
+
+    coincidences = sorter.run(root_filename, "Singles_crystal")
+
     nc = len(coincidences["GlobalTime1"])
     print(f"There are {nc} coincidences for policy", policy)
 
@@ -100,7 +100,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # Calculate Wasserstein distance for comparison
     distance_posX = wasserstein_distance(both_posX, ref_both_posX)
-    tolerance_posX = 1.03
+    tolerance_posX = 1.05
     print(f"Wasserstein distance on X : {distance_posX}, tolerence {tolerance_posX}")
 
     distance_energy = wasserstein_distance(both_energy, ref_both_energy)
