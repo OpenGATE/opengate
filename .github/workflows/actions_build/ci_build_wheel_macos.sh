@@ -22,7 +22,7 @@ conda list
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 export QT_PLUGIN_DIR=$(qtpaths6 --plugin-dir)
 echo "QT_PLUGIN_DIR is $QT_PLUGIN_DIR"
-pip install wget colored
+pip install wget colored setuptools
 # install cibuildwheel
 pip install cibuildwheel[uv]==3.4.0
 

@@ -813,71 +813,62 @@ Reference
 
 
 
-Coincidences Sorter
--------------------
+Coincidence Sorter
+------------------
 
-.. note::
-   The current version of the Coincidence sorter is still a work in progress. It is only available for offline use.
+Coincidence sorting finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences.
 
-The Coincidence Sorter finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences.
+It can be performed on-line during the simulation with the :class:`~.opengate.actors.digitizers.CoincidenceSorterActor`, or off-line after the simulation with the `CoincidenceSorter` class.
 
 .. code-block:: python
 
-   root_file = uproot.open("singles.root")
-   singles_tree = root_file["Singles_crystal"]
-   ns = gate.g4_units.nanosecond
-   time_window = 3 * ns
-   policy = "takeAllGoods"
-   mm = gate.g4_units.mm
-   transaxial_plane = "xy"
-   min_transaxial_distance = 0 * mm
-   max_axial_distance = 32 * mm
+   # On-line coincidence sorting (minimal example)
+   cc = sim.add_actor("CoincidenceSorterActor", "Coincidences")
+   cc.input_digi_collection = "Singles"
+   cc.window = 1e-9 * sec
+   cc.output_filename = "coincidences.root"
 
-   # Apply coincidence sorter
-   coincidences = coincidences_sorter(
-      singles_tree,
-      time_window,
-      policy,
-      min_transaxial_distance,
-      transaxial_plane,
-      max_axial_distance,
-      chunk_size=100000,
-      return_type="dict",
-      output_file_path=None,
-      output_file_format="root",
-   )
+.. code-block:: python
+
+   # Off-line coincidence sorting (minimal example)
+   from opengate.actors.coincidences import CoincidenceSorter
+   sorter = CoincidenceSorter()
+   sorter.window = 1e-9 * sec
+   coincidences_pd = sorter.run("singles.root", "Singles")
 
 Coincidences with oblique lines of response can be excluded by limiting the axial distance between their two singles (`max_axial_distance`).
 Likewise, coincidences between adjacent detectors can be excluded by imposing a minimum transaxial distance (`min_transaxial_distance`).
-The `transaxial_plane` can be `"xy"`, `"yz"`, or `"xz"`, depending on the PET scanner geometry.
+The `transaxial_plane` can be `"XY"`, `"YZ"`, or `"XZ"`, depending on the scanner geometry.
 Coincidences that comply with the given `max_distance_axial` and `max_distance_axial` are referred to
 as "good pairs" in the definitions below.
 
 The following policies are supported to deal with multiple coincidences in the same time window:
 
-- **removeMultiples**: No multiple coincidences are accepted, even if there are good pairs.
-- **takeAllGoods**: Each good pair is considered.
-- **takeWinnerOfGoods**: From all good pairs, only the one with the highest energy is considered.
-- **takeIfOnlyOneGood**: If exactly one good pair exists, keep it, otherwise discard all pairs.
-- **takeWinnerIfIsGood**: If the highest energy pair is good, take it, otherwise discard all pairs.
-- **takeWinnerIfAllAreGoods**: If all pairs are good, then take the one with the highest energy, otherwise discard all pairs.
+- **RemoveMultiples**: No multiple coincidences are accepted, even if there are good pairs.
+- **TakeAllGoods**: Each good pair is considered.
+- **TakeWinnerOfGoods**: From all good pairs, only the one with the highest energy is considered.
+- **TakeIfOnlyOneGood**: If exactly one good pair exists, keep it, otherwise discard all pairs.
+- **TakeWinnerIfIsGood**: If the highest energy pair is good, take it, otherwise discard all pairs.
+- **TakeWinnerIfAllAreGoods**: If all pairs are good, then take the one with the highest energy, otherwise discard all pairs.
 
-By default, coincidences are returned from the function in a Python dictionary (`return_type="dict"`).
-Alternatively, they can be returned as a pandas DataFrame (`return_type="pd"`).
-It is also possible to specify an output file for saving the coincidences (`output_file_path`) in ROOT format,
-(`output_file_format="root"`, the default) or HDF5 format (`output_file_format="hdf5"`).
-In the case of file output, the function returns `None`.
+On-line coincidence sorting does not require saving singles to a file,
+which is more economical in terms of disk space if the singles are not needed after the simulation.
+The current limitation, however, is that :class:`~.opengate.actors.digitizers.CoincidenceSorterActor` can only be used
+in single-threaded simulations.
+
+With off-line coincidence sorting, coincidences are returned from the `CoincidenceSorter.run()`` method as a pandas DataFrame.
+Alternatively, `output_file_path` can be specified for saving the coincidences to a file. In this case, the run() method returns `None`.
+The output file format is ROOT, except when the extension of `output_file_path` indicates that HDF5 format should be used (`.hdf5` or `h5`).
 Saving coincidences to a file is recommended when processing large numbers of singles, to avoid running out of memory.
+A current limitation of off-line coincidence sorting is that a delayed time window is not supported.
 
-The coincidence sorter reads singles from the `singles_tree` in groups containing `chunk_size` singles.
-Larger chunk sizes result in more efficient disk I/O but can also result in higher memory consumption.
-The coincidence sorter may internally use a larger chunk size than indicated by the `chunk_size` parameter,
-when required to correctly handle non-monotonicities of time in the singles tree. These non-monotonicities typically
-arise in multi-threaded simulations, because time progresses independently in each thread.
-It is important to note that the resulting coincidences are independent of the value of `chunk_size`,
-because the coincidence sorter also considers coincidences between singles in consecutive chunks.
+Refer to `test072 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ and `test098 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_
+for examples of off-line and on-line coincidence sorting, respectively.
 
-Refer to `test072 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ for more details.
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.CoincidenceSorterActor
 
 CCMod offline tools
 ------------------------------------

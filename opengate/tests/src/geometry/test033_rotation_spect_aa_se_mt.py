@@ -9,7 +9,8 @@ from opengate.tests import utility
 if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
-    sources = test033.create_test(sim, nb_thread=2)
+    version = "aa_se_mt"
+    sources = test033.create_test(sim, version, nb_thread=2)
 
     # AA mode
     for source in sources:
