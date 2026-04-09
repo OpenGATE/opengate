@@ -175,16 +175,16 @@ class VoxelizedPromptGammaTLEActor(
     def BeginOfRunActionMasterThread(self, run_index):
         if self.user_output.p_E.get_active(item=0):
             self.prepare_output_for_run("p_E", run_index)
-            self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image)
+            self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image,)
         if self.user_output.p_tof.get_active(item=0):
             self.prepare_output_for_run("p_tof", run_index)
-            self.push_to_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
+            self.push_to_cpp_image("p_tof", run_index, self.cpp_tof_proton_image,)
         if self.user_output.n_E.get_active(item=0):
             self.prepare_output_for_run("n_E", run_index)
-            self.push_to_cpp_image("n_E", run_index, self.cpp_E_neutron_image)
+            self.push_to_cpp_image("n_E", run_index, self.cpp_E_neutron_image,)
         if self.user_output.n_tof.get_active(item=0):
             self.prepare_output_for_run("n_tof", run_index)
-            self.push_to_cpp_image("n_tof", run_index, self.cpp_tof_neutron_image)
+            self.push_to_cpp_image("n_tof", run_index, self.cpp_tof_neutron_image,)
         g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(
             self, run_index
         )

@@ -117,10 +117,12 @@ def voxel_to_mat_name(UH, mat_data):  # from UH to material name
 
 if __name__ == "__main__":
 
+    np.seterr(all='raise')
+
     # features of simulation that can be modify
     file_name = "stage1_vpg"
     vol_name = "ct"
-    number_of_particles = 1e3
+    number_of_particles = 1e6
     # source Energy andrange of the actor
     Erange = 130
     test_name="test081_pgtle"
@@ -209,7 +211,7 @@ if __name__ == "__main__":
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 
-    # LOOKHERE :: if database not well implanted, has to be modified
+    # LOOKHERE :: if database not well implanted, has to be modified 
     with uproot.open(paths.data / test_name / "data_merge_proton.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_p = histo.to_numpy()[0]
@@ -258,7 +260,6 @@ if __name__ == "__main__":
     
     print(stats)
     print()
-
     
     ######## Track Length => PG energy ########################################################
 
@@ -351,5 +352,6 @@ if __name__ == "__main__":
         itk_output.CopyInformation(img_n)
         itk.imwrite(itk_output, paths.output / f"{file_name}_tle_neutr_pge.nii.gz")
 
-    
+    # tests (neutron, proton) x (E,tof)
+
     #utility.test_ok(is_ok)

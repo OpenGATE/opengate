@@ -60,7 +60,7 @@ def create_3d_image(
 
 
 def create_3d_image_of_histogram(
-    size, spacing, bins, origin=None, pixel_type="float", allocate=True
+    size, spacing, bins, origin=None, pixel_type="double", allocate=True
 ):
     if len(size) != 4:
         size.append(bins)
@@ -72,7 +72,7 @@ def create_3d_image_of_histogram(
     return create_4d_image(size, spacing, origin, pixel_type, allocate)
 
 
-def create_4d_image(size, spacing, origin=None, pixel_type="float", allocate=True):
+def create_4d_image(size, spacing, origin=None, pixel_type="double", allocate=True):
     dim = 4
     pixel_type = itk.ctype(pixel_type)
     image_type = itk.Image[pixel_type, dim]

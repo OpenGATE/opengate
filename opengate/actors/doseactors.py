@@ -263,7 +263,7 @@ class VoxelDepositActor(ActorBase):
                 update_image_py_to_cpp(
                     self.user_output[output_name].get_data(run_index, item=i),
                     cppi,
-                    copy_data,
+                    copy_data
                 )
 
     def EndOfRunActionMasterThread(self, run_index):
