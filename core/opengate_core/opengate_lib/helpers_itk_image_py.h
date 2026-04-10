@@ -174,11 +174,17 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
           "to_pyarray",
           [](const TImagePointer &img, const std::string &contiguous) {
             const auto size = img->GetLargestPossibleRegion().GetSize();
-	    const auto shape =
-		(contiguous == "F")
-		    ? ((img->ImageDimension == 4) ? std::vector<size_t>{size[3], size[2], size[1], size[0]} : std::vector<size_t>{size[2], size[1], size[0]})
-		    : ((img->ImageDimension == 4) ? std::vector<size_t>{size[0], size[1], size[2], size[3]} : std::vector<size_t>{size[0], size[1], size[2]});
-             return py::array(
+            const auto shape =
+                (contiguous == "F")
+                    ? ((img->ImageDimension == 4)
+                           ? std::vector<size_t>{size[3], size[2], size[1],
+                                                 size[0]}
+                           : std::vector<size_t>{size[2], size[1], size[0]})
+                    : ((img->ImageDimension == 4)
+                           ? std::vector<size_t>{size[0], size[1], size[2],
+                                                 size[3]}
+                           : std::vector<size_t>{size[0], size[1], size[2]});
+            return py::array(
                 py::dtype::of<typename TImagePointer::ObjectType::PixelType>(),
                 shape, img->GetBufferPointer());
           },
