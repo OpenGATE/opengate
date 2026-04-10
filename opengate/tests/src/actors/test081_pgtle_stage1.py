@@ -16,10 +16,11 @@ import hist
 import time
 import glob
 
+
 def compute_hist_mean(paths, method, particle, distrib):
     if method == "tle":
         if distrib == "energy":
-            filename = "stage1_vpg_tle""_" + particle + "_pge.nii.gz"
+            filename = "stage1_vpg_tle" "_" + particle + "_pge.nii.gz"
         elif distrib == "tof":
             filename = "stage1_vpg_tle_" + particle + "_tof.nii.gz"
         else:
@@ -33,13 +34,13 @@ def compute_hist_mean(paths, method, particle, distrib):
             return 0
     else:
         return 0
-    
+
     itk_image = itk.imread(paths.output / filename)
     # Copy of itk.Image, pixel data is copied
     array = itk.array_from_image(itk_image)
 
     histogram = np.sum(array, axis=(1, 2, 3))
-    histogram = histogram[:len(histogram)-1] # remove overcounts
+    histogram = histogram[: len(histogram) - 1]  # remove overcounts
 
     norma = np.sum(histogram)
     histogram = histogram / norma
@@ -52,10 +53,13 @@ def compute_hist_mean(paths, method, particle, distrib):
         axis = np.linspace(0, 10, len(histogram))
 
     hist_mean = np.sum(axis * histogram)
- 
+
     return hist_mean
 
-def redim(ind, ct, actor_vol, array):  # to convert the index from the actor volume to the ct volume
+
+def redim(
+    ind, ct, actor_vol, array
+):  # to convert the index from the actor volume to the ct volume
 
     # centres ct et actor
     ct_trans = list(ct.translation)
@@ -81,15 +85,20 @@ def redim(ind, ct, actor_vol, array):  # to convert the index from the actor vol
     return int(x), int(y), int(z)
 
 
-def find_emission_vector(el, root_data):  # to find the TH2D in the root_data corresponding to the element el
-    #if el == "Phosphor":
+def find_emission_vector(
+    el, root_data
+):  # to find the TH2D in the root_data corresponding to the element el
+    # if el == "Phosphor":
     #    el = "Phosphorus"
     el = elements_name_symbol[el]
     histo = root_data[el]["GammaZ"].to_hist()
     w = histo.to_numpy()[0]
     return w
 
-def liste_el_frac(mat, frac_data):  # from material, extract a list of element and a list of fraction. Element and its corresponding fraction are stored with the same index in both lists
+
+def liste_el_frac(
+    mat, frac_data
+):  # from material, extract a list of element and a list of fraction. Element and its corresponding fraction are stored with the same index in both lists
     if mat[-3] == "_":
         mat = mat[:-3]
     else:
@@ -120,13 +129,16 @@ def density_mat(mat, data_way):  # read the datas to find the density of the mat
                 return float(rho[2:])
     return "DEFAULT"
 
-def gamma_mat(paths, mat_fraction, name, root_data):  # construct the GammaZ corresponding to the material
+
+def gamma_mat(
+    paths, mat_fraction, name, root_data
+):  # construct the GammaZ corresponding to the material
     Gamma = np.zeros((500, 250))  # Initialize a 2D array for gamma emission
 
     """Find the material and its composition corresponding to the Hounsfield Unit (UH)"""
     data_way = paths.output / "database.db"
     rho_mat = density_mat(name, data_way)
-    (elements, fractions) = liste_el_frac(name, mat_fraction)
+    elements, fractions = liste_el_frac(name, mat_fraction)
 
     """        elements: list of elements in the material"""
     for el in elements:
@@ -135,10 +147,11 @@ def gamma_mat(paths, mat_fraction, name, root_data):  # construct the GammaZ cor
         Gamma += vect * w * rho_mat
 
     # dump material DB
-    #itk_output = itk.image_from_array(Gamma)
-    #itk.imwrite(itk_output, paths.output / f"{name}.nii.gz")
+    # itk_output = itk.image_from_array(Gamma)
+    # itk.imwrite(itk_output, paths.output / f"{name}.nii.gz")
 
     return Gamma
+
 
 def voxel_to_mat_name(UH, mat_data):  # from UH to material name
     ind = 0
@@ -156,7 +169,7 @@ def voxel_to_mat_name(UH, mat_data):  # from UH to material name
 
 if __name__ == "__main__":
 
-    np.seterr(all='raise')
+    np.seterr(all="raise")
 
     # features of simulation that can be modify
     file_name = "stage1_vpg"
@@ -164,21 +177,21 @@ if __name__ == "__main__":
     number_of_particles = 1e3
     # source Energy andrange of the actor
     Erange = 130
-    test_name="test081_pgtle"
+    test_name = "test081_pgtle"
     paths = utility.get_default_test_paths(__file__, output_folder=test_name)
 
-    #def get_default_test_paths(f, gate_folder=None, output_folder=None):
+    # def get_default_test_paths(f, gate_folder=None, output_folder=None):
     #
     #    paths = utility.get_default_test_paths(
     #    __file__, "gate_test042_gauss_gps", "test008"
-    #)
+    # )
     # gives
-    #{'current': PosixPath('/home/letang/opengate/opengate/tests/src'), 
-    # 'data': PosixPath('/home/letang/opengate/opengate/tests/data'), 
-    # 'gate': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps'), 
-    # 'gate_output': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/output'), 
-    # 'gate_data': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/data'), 
-    # 'output': PosixPath('/home/letang/opengate/opengate/tests/output/test008'), 
+    # {'current': PosixPath('/home/letang/opengate/opengate/tests/src'),
+    # 'data': PosixPath('/home/letang/opengate/opengate/tests/data'),
+    # 'gate': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps'),
+    # 'gate_output': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/output'),
+    # 'gate_data': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/data'),
+    # 'output': PosixPath('/home/letang/opengate/opengate/tests/output/test008'),
     # 'output_ref': PosixPath('/home/letang/opengate/opengate/tests/data/output_ref/test008')}
 
     job_id = 0
@@ -216,11 +229,15 @@ if __name__ == "__main__":
     f1 = paths.data / "Schneider2000MaterialsTable.txt"
     f2 = paths.data / "Schneider2000DensitiesTable.txt"
     tol = 0.05 * gcm3
-    (ct.voxel_materials, materials,) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
+    (
+        ct.voxel_materials,
+        materials,
+    ) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
 
-
-    (mat_fraction, el) = gate.geometry.materials.HU_read_materials_table(f1)
-    database_mat = gate.geometry.materials.write_material_database(sim, materials, paths.output / "database.db")
+    mat_fraction, el = gate.geometry.materials.HU_read_materials_table(f1)
+    database_mat = gate.geometry.materials.write_material_database(
+        sim, materials, paths.output / "database.db"
+    )
 
     ct.dump_label_image = paths.output / f"labels.nii.gz"
     ct.mother = "world"
@@ -250,11 +267,11 @@ if __name__ == "__main__":
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 
-    # LOOKHERE :: if database not well implanted, has to be modified 
+    # LOOKHERE :: if database not well implanted, has to be modified
     with uproot.open(paths.data / test_name / "data_merge_proton.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_p = histo.to_numpy()[0]
-    with uproot.open(paths.data  / test_name / "data_merge_neutron.root") as root_file:
+    with uproot.open(paths.data / test_name / "data_merge_neutron.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_n = histo.to_numpy()[0]
 
@@ -262,12 +279,16 @@ if __name__ == "__main__":
     vpg_tle.attached_to = vol_name
     vpg_tle.output_filename = f"{file_name}_tle.nii.gz"
     vpg_tle.size = [13, 13, 19]  # the same size than ct image is stronly adviced
-    vpg_tle.spacing = [40, 40, 40, ]  # the same spacing is stronly adviced
+    vpg_tle.spacing = [
+        40,
+        40,
+        40,
+    ]  # the same spacing is stronly adviced
     vpg_tle.timebins = 250
     vpg_tle.timerange = 5 * ns
     vpg_tle.energybins = 250
     vpg_tle.energyrange = 200 * MeV
-    #vpg_tle.energyrange = Erange * MeV
+    # vpg_tle.energyrange = Erange * MeV
     vpg_tle.prot_E.active = True
     vpg_tle.neutr_E.active = True
     vpg_tle.prot_tof.active = True
@@ -280,7 +301,11 @@ if __name__ == "__main__":
     vpg_analog.attached_to = vol_name
     vpg_analog.output_filename = f"{file_name}_analog.nii.gz"
     vpg_analog.size = [13, 13, 19]  # the same size than ct image is stronly adviced
-    vpg_analog.spacing = [40, 40, 40, ]  # the same spacing is stronly adviced
+    vpg_analog.spacing = [
+        40,
+        40,
+        40,
+    ]  # the same spacing is stronly adviced
     vpg_analog.timebins = 250
     vpg_analog.timerange = 5 * ns
     vpg_analog.energybins = 250
@@ -296,10 +321,10 @@ if __name__ == "__main__":
     stats.output_filename = f"stat_{job_id}_{file_name}.txt"
 
     sim.run()
-    
+
     print(stats)
     print()
-    
+
     ######## Track Length => PG energy ########################################################
 
     # FIRST STEP : retrieve the arrays and all the needed features
@@ -308,7 +333,9 @@ if __name__ == "__main__":
     UH_array = itk.array_from_image(ct.load_input_image())
     # database
     data_protons = uproot.open(paths.data / "test081_pgtle" / "data_merge_proton.root")
-    data_neutrons = uproot.open(paths.data / "test081_pgtle" / "data_merge_neutron.root")
+    data_neutrons = uproot.open(
+        paths.data / "test081_pgtle" / "data_merge_neutron.root"
+    )
     mat = ct.voxel_materials
 
     # SECOND STEP : compute the material Gamma for each materials present in the ct and store it in a list
@@ -328,20 +355,25 @@ if __name__ == "__main__":
     # THIRD STEP : convert the energy histogram stored the 4D output into emission spectra for each voxel of the ct volume
     Ep = np.linspace(0, vpg_tle.energyrange, vpg_tle.energybins + 1)
     E_db = np.linspace(0, 200, 500)
-    ind_db = np.abs(E_db[None, :] - Ep[:, None]).argmin(axis=1) # LOOKHERE :: should find a better way to build the index list
+    ind_db = np.abs(E_db[None, :] - Ep[:, None]).argmin(
+        axis=1
+    )  # LOOKHERE :: should find a better way to build the index list
 
     img_p = itk.imread(paths.output / f"{file_name}_tle_prot_e.nii.gz")
     array_p = itk.array_from_image(img_p)
-    
+
     if neutr:
         img_n = itk.imread(paths.output / f"{file_name}_tle_neutr_e.nii.gz")
         array_n = itk.array_from_image(img_n)
 
     # Initialize the treated array for proton, neutron, and proton + neutron
-    treated_array_p = np.zeros((250, array_p.shape[1], array_p.shape[2], array_p.shape[3]))  
-    treated_array_n = np.zeros((250, array_p.shape[1], array_p.shape[2], array_p.shape[3]))
+    treated_array_p = np.zeros(
+        (250, array_p.shape[1], array_p.shape[2], array_p.shape[3])
+    )
+    treated_array_n = np.zeros(
+        (250, array_p.shape[1], array_p.shape[2], array_p.shape[3])
+    )
     gamma_array = np.zeros((250, array_p.shape[1], array_p.shape[2], array_p.shape[3]))
-
 
     # treatment of the image voxel by voxel => to store gamma emission spectrum in each voxel
     for x in range(array_p.shape[3]):
@@ -362,8 +394,12 @@ if __name__ == "__main__":
                 histo_E_p = array_p[
                     :, z, y, x
                 ]  # Get the energy histogram for the current voxel
-                spectrum_p = np.zeros(250)  # Initialize the spectrum for the current voxel
-                if histo_E_p.sum() != 0:  # if nothing is detected, the voxel is not treated
+                spectrum_p = np.zeros(
+                    250
+                )  # Initialize the spectrum for the current voxel
+                if (
+                    histo_E_p.sum() != 0
+                ):  # if nothing is detected, the voxel is not treated
                     Gamma_m_p = gamma_proton[name]
                     Gamma_p = Gamma_m_p[ind_db]
                     spectrum_p = np.dot(
@@ -381,7 +417,6 @@ if __name__ == "__main__":
                         )  # np.dot : method used for the spectrum computation BUT, can be optimised ???
                         treated_array_n[:, z, y, x] = spectrum_n
 
-
     # Create a new ITK image from the treated array
     itk_output = itk.image_from_array(treated_array_p)
     itk_output.CopyInformation(img_p)
@@ -391,33 +426,40 @@ if __name__ == "__main__":
         itk_output.CopyInformation(img_n)
         itk.imwrite(itk_output, paths.output / f"{file_name}_tle_neutr_pge.nii.gz")
 
-
     is_ok = True
     # tests (neutron, proton) x (E,tof)
     ana_hist_mean = compute_hist_mean(paths, "analog", "prot", "tof")
     tle_hist_mean = compute_hist_mean(paths, "tle", "prot", "tof")
-    print(f"proton PG tof (ns): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    print(
+        f"proton PG tof (ns): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)"
+    )
     reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
     if np.abs(reldif) > 0.5:
         is_ok = False
 
     ana_hist_mean = compute_hist_mean(paths, "analog", "neutr", "tof")
     tle_hist_mean = compute_hist_mean(paths, "tle", "neutr", "tof")
-    print(f"neutron PG tof (ns): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    print(
+        f"neutron PG tof (ns): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)"
+    )
     reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
     if np.abs(reldif) > 0.5:
         is_ok = False
 
     ana_hist_mean = compute_hist_mean(paths, "analog", "prot", "energy")
     tle_hist_mean = compute_hist_mean(paths, "tle", "prot", "energy")
-    print(f"proton PG energy (MeV): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    print(
+        f"proton PG energy (MeV): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)"
+    )
     reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
     if np.abs(reldif) > 0.5:
         is_ok = False
 
     ana_hist_mean = compute_hist_mean(paths, "analog", "neutr", "energy")
     tle_hist_mean = compute_hist_mean(paths, "tle", "neutr", "energy")
-    print(f"neutron PG energy (MeV): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    print(
+        f"neutron PG energy (MeV): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)"
+    )
     reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
     if np.abs(reldif) > 0.5:
         is_ok = False
