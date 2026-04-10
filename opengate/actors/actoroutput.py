@@ -1,20 +1,21 @@
 import copy
 import inspect
-from box import Box
-from typing import Optional
 import sys
+from typing import Optional
 
 import opengate_core as g4
+from box import Box
+
 from ..base import GateObject, process_cls
+from ..exception import GateImplementationError, fatal, warning
 from ..image import create_3d_image_of_histogram
-from ..utility import insert_suffix_before_extension, ensure_filename_is_str
-from ..exception import warning, fatal, GateImplementationError
+from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from .dataitems import (
-    SingleItkImage,
-    SingleMeanItkImage,
-    SingleItkImageWithVariance,
     QuotientItkImage,
     QuotientMeanItkImage,
+    SingleItkImage,
+    SingleItkImageWithVariance,
+    SingleMeanItkImage,
     merge_data,
 )
 
@@ -974,6 +975,7 @@ class ActorOutputRoot(ActorOutputBase):
 process_cls(ActorOutputBase)
 process_cls(ActorOutputUsingDataItemContainer)
 process_cls(ActorOutputImage)
+process_cls(ActorOutputImageOfHistogram)
 process_cls(ActorOutputSingleImage)
 process_cls(ActorOutputSingleImageOfHistogram)
 process_cls(ActorOutputSingleMeanImage)
