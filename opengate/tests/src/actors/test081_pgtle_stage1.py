@@ -16,6 +16,45 @@ import hist
 import time
 import glob
 
+def compute_hist_mean(paths, method, particle, distrib):
+    if method == "tle":
+        if distrib == "energy":
+            filename = "stage1_vpg_tle""_" + particle + "_pge.nii.gz"
+        elif distrib == "tof":
+            filename = "stage1_vpg_tle_" + particle + "_tof.nii.gz"
+        else:
+            return 0
+    elif method == "analog":
+        if distrib == "energy":
+            filename = "stage1_vpg_analog_" + particle + "_e.nii.gz"
+        elif distrib == "tof":
+            filename = "stage1_vpg_analog_" + particle + "_tof.nii.gz"
+        else:
+            return 0
+    else:
+        return 0
+    
+    itk_image = itk.imread(paths.output / filename)
+    # Copy of itk.Image, pixel data is copied
+    array = itk.array_from_image(itk_image)
+
+    histogram = np.sum(array, axis=(1, 2, 3))
+    histogram = histogram[:len(histogram)-1] # remove overcounts
+
+    norma = np.sum(histogram)
+    histogram = histogram / norma
+
+    # Define the energy axis (assuming the histogram bins correspond to energy levels)
+
+    if distrib == "tof":
+        axis = np.linspace(0, 5, len(histogram))
+    elif distrib == "energy":
+        axis = np.linspace(0, 10, len(histogram))
+
+    hist_mean = np.sum(axis * histogram)
+ 
+    return hist_mean
+
 def redim(ind, ct, actor_vol, array):  # to convert the index from the actor volume to the ct volume
 
     # centres ct et actor
@@ -122,7 +161,7 @@ if __name__ == "__main__":
     # features of simulation that can be modify
     file_name = "stage1_vpg"
     vol_name = "ct"
-    number_of_particles = 1e6
+    number_of_particles = 1e3
     # source Energy andrange of the actor
     Erange = 130
     test_name="test081_pgtle"
@@ -172,7 +211,7 @@ if __name__ == "__main__":
     # patient
 
     ct = sim.add_volume("Image", vol_name)
-    ct.image = paths.data / f"ct_40mm_ij.mhd"
+    ct.image = paths.data / f"ct_40mm.mhd"
     ct.material = "G4_AIR"
     f1 = paths.data / "Schneider2000MaterialsTable.txt"
     f2 = paths.data / "Schneider2000DensitiesTable.txt"
@@ -352,6 +391,35 @@ if __name__ == "__main__":
         itk_output.CopyInformation(img_n)
         itk.imwrite(itk_output, paths.output / f"{file_name}_tle_neutr_pge.nii.gz")
 
-    # tests (neutron, proton) x (E,tof)
 
-    #utility.test_ok(is_ok)
+    is_ok = True
+    # tests (neutron, proton) x (E,tof)
+    ana_hist_mean = compute_hist_mean(paths, "analog", "prot", "tof")
+    tle_hist_mean = compute_hist_mean(paths, "tle", "prot", "tof")
+    print(f"proton PG tof (ns): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
+    if np.abs(reldif) > 0.5:
+        is_ok = False
+
+    ana_hist_mean = compute_hist_mean(paths, "analog", "neutr", "tof")
+    tle_hist_mean = compute_hist_mean(paths, "tle", "neutr", "tof")
+    print(f"neutron PG tof (ns): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
+    if np.abs(reldif) > 0.5:
+        is_ok = False
+
+    ana_hist_mean = compute_hist_mean(paths, "analog", "prot", "energy")
+    tle_hist_mean = compute_hist_mean(paths, "tle", "prot", "energy")
+    print(f"proton PG energy (MeV): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
+    if np.abs(reldif) > 0.5:
+        is_ok = False
+
+    ana_hist_mean = compute_hist_mean(paths, "analog", "neutr", "energy")
+    tle_hist_mean = compute_hist_mean(paths, "tle", "neutr", "energy")
+    print(f"neutron PG energy (MeV): {ana_hist_mean:.2f} (analog) vs {tle_hist_mean:.2f} (tle)")
+    reldif = (ana_hist_mean - tle_hist_mean) / tle_hist_mean
+    if np.abs(reldif) > 0.5:
+        is_ok = False
+
+    utility.test_ok(is_ok)
