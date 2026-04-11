@@ -341,7 +341,7 @@ class PhysicsEngine(EngineBase):
         # The chemistry list is attached later by ChemistryEngine once the
         # runtime chemistry-list object has been created and retained there.
         self.g4_augmented_physics_list = (
-            self.physics_manager.physics_list_manager.get_physics_list(
+            self.physics_manager.physics_list_builder.create_physics_list(
                 physics_list_name
             )
         )
