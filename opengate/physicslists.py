@@ -42,15 +42,15 @@ def create_modular_physics_list_class(g4_physics_constructor_class_name):
     return ModularPhysicsList
 
 
-def create_physics_list_wrapper_class(physics_list_class):
+def create_augmented_physics_list_class(physics_list_class):
     """
-    Create a thin wrapper around a physics list class.
+    Create an augmented physics list class.
 
-    The wrapper remains a Geant4 physics list, while optionally forwarding the
-    initialization lifecycle to a chemistry list.
+    The augmented class remains a Geant4 physics list, while optionally
+    forwarding part of the initialization lifecycle to a chemistry list.
     """
 
-    class PhysicsListWrapper(physics_list_class):
+    class AugmentedPhysicsList(physics_list_class):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             # The chemistry engine injects the chemistry list later, once it has
@@ -75,9 +75,9 @@ def create_physics_list_wrapper_class(physics_list_class):
             if self.chemistry_list is not None:
                 self.chemistry_list.ConstructProcess()
 
-    PhysicsListWrapper.__name__ = f"{physics_list_class.__name__}Wrapper"
-    PhysicsListWrapper.__qualname__ = PhysicsListWrapper.__name__
-    return PhysicsListWrapper
+    AugmentedPhysicsList.__name__ = f"{physics_list_class.__name__}Augmented"
+    AugmentedPhysicsList.__qualname__ = AugmentedPhysicsList.__name__
+    return AugmentedPhysicsList
 
 
 reference_physics_list_base_class_names = (
