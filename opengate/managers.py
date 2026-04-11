@@ -27,13 +27,9 @@ from .decorators import requires_fatal
 from .physics import (
     OpticalSurface,
     Region,
+    PhysicsListBuilder,
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
-)
-from .physicslists import (
-    create_modular_physics_list_class,
-    create_augmented_physics_list_class,
-    create_reference_physics_list_class,
 )
 from .processing import dispatch_to_subprocess
 from .serialization import dump_json, dumps_json, load_json, loads_json
@@ -67,7 +63,7 @@ source_types = {
 }
 
 from .actors.chemistryactors import ChemistryActorBase, ChemicalStageActor
-from .chemistry import ChemistryList, known_g4_chemistry_list_names
+from .chemistry import ChemistryList
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.base import ActorBase
 from .actors.biasingactors import (
@@ -546,160 +542,6 @@ class ActorManager(GateObject):
         return cls(name=name, simulation=self.simulation)
 
 
-class PhysicsListManager(GateObject):
-    # Names of the physics constructors that can be created dynamically
-    available_g4_physics_constructors = [
-        "G4EmStandardPhysics",
-        "G4EmStandardPhysics_option1",
-        "G4EmStandardPhysics_option2",
-        "G4EmStandardPhysics_option3",
-        "G4EmStandardPhysics_option4",
-        "G4EmStandardPhysicsGS",
-        "G4EmLowEPPhysics",
-        "G4EmLivermorePhysics",
-        "G4EmLivermorePolarizedPhysics",
-        "G4EmPenelopePhysics",
-        "G4OpticalPhysics",
-    ]
-
-    available_g4_reference_physics_lists = [
-        "FTFP_BERT",
-        "FTFP_BERT_EMV",
-        "FTFP_BERT_EMX",
-        "FTFP_BERT_EMY",
-        "FTFP_BERT_EMZ",
-        "FTFP_BERT_HP",
-        "FTFP_BERT_TRV",
-        "FTFP_BERT_ATL",
-        "FTFQGSP_BERT",
-        "FTFP_INCLXX",
-        "FTFP_INCLXX_HP",
-        "FTFP_BERT_HPT",
-        "FTFP_INCLXX_HPT",
-        "FTF_BIC",
-        "LBE",
-        "NuBeam",
-        "QBBC",
-        "QGSP_BERT",
-        "QGSP_BERT_EMV",
-        "QGSP_BERT_EMX",
-        "QGSP_BERT_EMY",
-        "QGSP_BERT_EMZ",
-        "QGSP_BERT_HP",
-        "QGSP_BERT_HPT",
-        "QGSP_BIC",
-        "QGSP_BIC_HP",
-        "QGSP_BIC_AllHP",
-        "QGSP_BIC_HPT",
-        "QGSP_BIC_AllHPT",
-        "QGSP_FTFP_BERT",
-        "QGSP_INCLXX",
-        "QGSP_INCLXX_HP",
-        "QGSP_INCLXX_HPT",
-        "QGS_BIC",
-        "Shielding",
-        "ShieldingLEND",
-        "Shielding_HP",
-        "Shielding_HPT",
-        "ShieldingM",
-        "ShieldingM_HP",
-        "ShieldingM_HPT",
-        "ShieldingLIQMD",
-        "ShieldingLIQMD_HP",
-        "ShieldingLIQMD_HPT",
-    ]
-
-    special_physics_constructor_classes = {
-        "G4DecayPhysics": g4.G4DecayPhysics,
-        "G4RadioactiveDecayPhysics": g4.G4RadioactiveDecayPhysics,
-        "G4OpticalPhysics": g4.G4OpticalPhysics,
-    }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # declare the attribute here as None;
-        # set to dict in create_physics_list_classes()
-        self.created_physics_list_classes = self.create_physics_list_classes()
-        self.particle_with_biased_process_dictionary = {}
-
-    @property
-    def physics_manager(self):
-        if self.simulation is not None:
-            return self.simulation.physics_manager
-        else:
-            return None
-
-    def __getstate__(self):
-        raise GateImplementationError(
-            f"It seems like {self.type_name} is getting pickled, "
-            f"while this should never happen because the PhysicsManager should "
-            f"remove it from its state dictionary. In fact, {self.type_name} "
-            f"is not compatible with pickling. "
-        )
-
-    def __setstate__(self, d):
-        self.__dict__ = d
-        self.created_physics_list_classes = self.create_physics_list_classes()
-
-    def create_physics_list_classes(self):
-        created_physics_list_classes = {}
-        for g4pc_name in self.available_g4_physics_constructors:
-            physics_list_class = create_modular_physics_list_class(g4pc_name)
-            created_physics_list_classes[g4pc_name] = (
-                create_augmented_physics_list_class(physics_list_class)
-            )
-        for reference_name in self.available_g4_reference_physics_lists:
-            reference_class = create_reference_physics_list_class(reference_name)
-            created_physics_list_classes[reference_name] = (
-                create_augmented_physics_list_class(reference_class)
-            )
-        return created_physics_list_classes
-
-    @requires_fatal("simulation")
-    def get_physics_list(self, physics_list_name):
-        if physics_list_name in self.created_physics_list_classes:
-            physics_list = self.created_physics_list_classes[physics_list_name](
-                self.simulation.g4_verbose_level
-            )
-        else:
-            s = (
-                f"Cannot find the physic list: {physics_list_name}\n"
-                f"{self.dump_info_physics_lists()}"
-                f"Default is {self.physics_manager.user_info_defaults['physics_list_name']}\n"
-                f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
-            )
-            fatal(s)
-        # add special physics constructors
-        for (
-            spc,
-            switch,
-        ) in self.simulation.physics_manager.special_physics_constructors.items():
-            if switch is True:
-                try:
-                    physics_list.ReplacePhysics(
-                        self.special_physics_constructor_classes[spc](
-                            self.physics_manager.simulation.g4_verbose_level
-                        )
-                    )
-                except KeyError:
-                    fatal(
-                        f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
-                    )
-        return physics_list
-
-    def dump_info_physics_lists(self):
-        g4_factory = g4.G4PhysListFactory()
-        s = (
-            "\n**** INFO about GATE physics lists ****\n"
-            f"* Known Geant4 lists are: {g4_factory.AvailablePhysLists()}\n"
-            f"* With EM options: {g4_factory.AvailablePhysListsEM()[1:]}\n"
-            f"* Or the following simple physics lists with a single PhysicsConstructor: \n"
-            f"* {self.available_g4_physics_constructors} \n"
-            "**** ----------------------------- ****\n\n"
-        )
-        return s
-
-
 def _setter_hook_physics_list_name(self, physics_list_name):
     if physics_list_name.startswith("G4EmDNAPhysics"):
         fatal(
@@ -804,7 +646,7 @@ class PhysicsManager(GateObject):
             Box(
                 [
                     (spc, False)
-                    for spc in PhysicsListManager.special_physics_constructor_classes
+                    for spc in PhysicsListBuilder.special_physics_constructor_classes
                 ]
             ),
             {
@@ -846,8 +688,8 @@ class PhysicsManager(GateObject):
 
         # Keep a pointer to the current simulation
         self.simulation = simulation
-        self.physics_list_manager = PhysicsListManager(
-            simulation=self.simulation, name="PhysicsListManager"
+        self.physics_list_builder = PhysicsListBuilder(
+            simulation=self.simulation, name="PhysicsListBuilder"
         )
 
         # dictionary containing all the region objects
@@ -900,15 +742,15 @@ class PhysicsManager(GateObject):
 
         # in the case of the PhysicsManager, we make a copy of super().__getstate__()
         # rather than just using super().__getstate__() (which does not make a copy).
-        # Reason: physics_list_manager would become None also in the base process
+        # Reason: physics_list_builder would become None also in the base process
         dict_to_return = dict([(k, v) for k, v in super().__getstate__().items()])
-        dict_to_return["physics_list_manager"] = None
+        dict_to_return["physics_list_builder"] = None
         return dict_to_return
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self.physics_list_manager = PhysicsListManager(
-            simulation=self.simulation, name="PhysicsListManager"
+        self.physics_list_builder = PhysicsListBuilder(
+            simulation=self.simulation, name="PhysicsListBuilder"
         )
 
     def _simulation_engine_closing(self):
@@ -921,10 +763,10 @@ class PhysicsManager(GateObject):
             r.close()
 
     def dump_available_physics_lists(self):
-        return self.physics_list_manager.dump_info_physics_lists()
+        return self.physics_list_builder.dump_info_physics_lists()
 
     def dump_info_physics_lists(self):
-        return self.physics_list_manager.dump_info_physics_lists()
+        return self.physics_list_builder.dump_info_physics_lists()
 
     def dump_production_cuts(self):
         s = "*** Production cuts for World: ***\n"
@@ -1158,55 +1000,6 @@ class PhysicsManager(GateObject):
             self.set_dna_em_physics(volume_name, dna_em_physics)
 
 
-class ChemistryListManager(GateObject):
-
-    available_chemistry_lists = {name: name for name in known_g4_chemistry_list_names}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @property
-    def chemistry_manager(self):
-        if self.simulation is not None:
-            return self.simulation.chemistry_manager
-        else:
-            return None
-
-    def __getstate__(self):
-        raise GateImplementationError(
-            f"It seems like {self.type_name} is getting pickled, "
-            f"while this should never happen because the PhysicsManager should "
-            f"remove it from its state dictionary. In fact, {self.type_name} "
-            f"is not compatible with pickling. "
-        )
-
-    def create_chemistry_list(self, chemistry_list_name):
-        try:
-            chemistry_list_spec = self.available_chemistry_lists[chemistry_list_name]
-        except KeyError:
-            fatal(
-                f"Unknown chemistry list '{chemistry_list_name}'. "
-                f"Available chemistry lists are: {list(self.available_chemistry_lists.keys())}."
-            )
-        if isinstance(chemistry_list_spec, str):
-            try:
-                chemistry_list_class = getattr(g4, chemistry_list_spec)
-            except AttributeError:
-                fatal(
-                    f"Chemistry list '{chemistry_list_name}' is configured in GATE but "
-                    f"the corresponding class '{chemistry_list_spec}' is not bound in opengate_core."
-                )
-            return chemistry_list_class()
-        return chemistry_list_spec(simulation=self.simulation)
-
-    def dump_info_chemistry_lists(self):
-        return (
-            "\n**** INFO about GATE chemistry lists ****\n"
-            f"* Available chemistry lists are: {list(self.available_chemistry_lists.keys())}\n"
-            "**** ------------------------------- ****\n\n"
-        )
-
-
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
     if chemistry_list_name in ("default"):
         return self.inherited_user_info_defaults["chemistry_list_name"][0]
@@ -1239,13 +1032,8 @@ class ChemistryManager(GateObject):
         kwargs["simulation"] = simulation
         super().__init__(name="chemistry_manager", *args, **kwargs)
 
-        self.chemistry_list_manager = ChemistryListManager(
-            simulation=simulation, name="ChemistryListManager"
-        )
-        self.chemistry_list = ChemistryList(
-            name="chemistry_list",
-            simulation=simulation,
-        )
+        self.chemistry_list = ChemistryList(name="chemistry_list", 
+            simulation=simulation,)
 
     def reset(self):
         self.__init__(self.simulation)
@@ -1264,18 +1052,7 @@ class ChemistryManager(GateObject):
         # if self.simulation.verbose_getstate:
         #     self.warn_user("Getstate PhysicsManager")
 
-        # in the case of the PhysicsManager, we make a copy of super().__getstate__()
-        # rather than just using super().__getstate__() (which does not make a copy).
-        # Reason: physics_list_manager would become None also in the base process
-        dict_to_return = dict([(k, v) for k, v in super().__getstate__().items()])
-        dict_to_return["chemistry_list_manager"] = None
-        return dict_to_return
-
-    def __setstate__(self, d):
-        super().__setstate__(d)
-        self.chemistry_list_manager = ChemistryListManager(
-            simulation=self.simulation, name="ChemistryListManager"
-        )
+        return dict([(k, v) for k, v in super().__getstate__().items()])
 
     def _simulation_engine_closing(self):
         """This function should be called from the simulation engine
@@ -2395,7 +2172,6 @@ def create_sim_from_json(path):
 
 
 process_cls(PhysicsManager)
-process_cls(PhysicsListManager)
 process_cls(VolumeManager)
 process_cls(ActorManager)
 process_cls(PostProcessingManager)

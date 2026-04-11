@@ -3,8 +3,8 @@
 
 import opengate_core as g4
 
-from opengate.managers import PhysicsListManager
-from opengate.physicslists import (
+from opengate.physics import (
+    PhysicsListBuilder,
     create_reference_physics_list_class,
     reference_physics_list_base_class_names,
 )
@@ -56,7 +56,7 @@ def check_pybind_reference_classes_against_factory(factory):
 def check_gate_reference_registry_against_factory(factory):
     is_ok = True
 
-    for name in PhysicsListManager.available_g4_reference_physics_lists:
+    for name in PhysicsListBuilder.available_g4_reference_physics_lists:
         b = factory.IsReferencePhysList(name)
         print_test(
             b,
@@ -70,7 +70,7 @@ def check_gate_reference_registry_against_factory(factory):
 def check_gate_reference_classes_can_be_synthesized():
     is_ok = True
 
-    for name in PhysicsListManager.available_g4_reference_physics_lists:
+    for name in PhysicsListBuilder.available_g4_reference_physics_lists:
         try:
             cls = create_reference_physics_list_class(name)
             b = issubclass(cls, g4.G4VModularPhysicsList)
