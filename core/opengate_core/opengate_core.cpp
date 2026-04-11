@@ -609,6 +609,13 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Step(m);
   init_G4UserSteppingAction(m);
 
+  init_G4ParticleTable(m);
+  init_G4ParticleDefinition(m);
+  init_G4Ions(m);
+  init_G4IonTable(m);
+  init_G4DecayTable(m);
+  init_G4VDecayChannel(m);
+
   init_G4VUserChemistryList(m);
   init_G4MoleculeTable(m);
   init_G4MoleculeCounterTimeComparer(m);
@@ -727,13 +734,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4SPSRandomGenerator(m);
   init_G4SPSEneDistribution(m);
   init_G4SingleParticleSource(m);
-
-  init_G4ParticleTable(m);
-  init_G4ParticleDefinition(m);
-  init_G4Ions(m);
-  init_G4IonTable(m);
-  init_G4DecayTable(m);
-  init_G4VDecayChannel(m);
 
   init_G4VPrimitiveScorer(m);
 

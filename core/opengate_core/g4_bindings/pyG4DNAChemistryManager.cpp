@@ -29,6 +29,22 @@ void init_G4DNAChemistryManager(py::module &m) {
           "Register a user-defined ChemistryList with the DNA chemistry "
           "manager")
 
+      .def(
+          "Deregister",
+          [](G4DNAChemistryManager *self, py::object pychemlist) {
+            if (!pychemlist) {
+              throw std::runtime_error(
+                  "Deregister() requires a ChemistryList object");
+            }
+            auto ptr = pychemlist.cast<G4VUserChemistryList *>();
+            if (!ptr) {
+              throw std::runtime_error("Invalid ChemistryList: null pointer");
+            }
+            self->Deregister(*ptr);
+          },
+          py::arg("chemistry_list"),
+          "Deregister a chemistry list from the DNA chemistry manager")
+
       .def("Initialize",
            py::overload_cast<>(&G4DNAChemistryManager::Initialize),
            py::call_guard<py::gil_scoped_release>(),
