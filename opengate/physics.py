@@ -369,7 +369,7 @@ class Region(GateObject):
                 # If no cut is specified by user for this particle,
                 # set it to the value specified for the world region
                 else:
-                    global_cut = self.physics_engine.g4_physics_list.GetCutValue(
+                    global_cut = self.physics_engine.g4_augmented_physics_list.GetCutValue(
                         g4_pname
                     )
                     self.g4_production_cuts.SetProductionCut(global_cut, g4_pname)

@@ -39,7 +39,7 @@ from .physics import (
 )
 from .physicslists import (
     create_modular_physics_list_class,
-    create_physics_list_wrapper_class,
+    create_augmented_physics_list_class,
     create_reference_physics_list_class,
 )
 from .serialization import dump_json, dumps_json, loads_json, load_json
@@ -99,7 +99,7 @@ from .actors.doseactors import (
 
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.chemistryactors import ChemistryActorBase, ChemicalStageActor
-from .chemistry import ChemistryCustomList
+from .chemistry import ChemistryList, known_g4_chemistry_list_names
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
@@ -617,13 +617,13 @@ class PhysicsListManager(GateObject):
         created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
             physics_list_class = create_modular_physics_list_class(g4pc_name)
-            created_physics_list_classes[g4pc_name] = create_physics_list_wrapper_class(
+            created_physics_list_classes[g4pc_name] = create_augmented_physics_list_class(
                 physics_list_class
             )
         for reference_name in self.available_g4_reference_physics_lists:
             reference_class = create_reference_physics_list_class(reference_name)
             created_physics_list_classes[reference_name] = (
-                create_physics_list_wrapper_class(reference_class)
+                create_augmented_physics_list_class(reference_class)
             )
         return created_physics_list_classes
 
@@ -1133,10 +1133,7 @@ class PhysicsManager(GateObject):
 class ChemistryListManager(GateObject):
 
     available_chemistry_lists = {
-        "G4EmDNAChemistry": "G4EmDNAChemistry",
-        "G4EmDNAChemistry_option1": "G4EmDNAChemistry_option1",
-        "G4EmDNAChemistry_option2": "G4EmDNAChemistry_option2",
-        "G4EmDNAChemistry_option3": "G4EmDNAChemistry_option3",
+        name: name for name in known_g4_chemistry_list_names
     }
 
     def __init__(self, *args, **kwargs):
@@ -1156,9 +1153,6 @@ class ChemistryListManager(GateObject):
             f"remove it from its state dictionary. In fact, {self.type_name} "
             f"is not compatible with pickling. "
         )
-
-    def __setstate__(self, d):
-        self.__dict__ = d
 
     def create_chemistry_list(self, chemistry_list_name):
         try:
@@ -1216,13 +1210,14 @@ class ChemistryManager(GateObject):
     }
 
     def __init__(self, simulation, *args, **kwargs) -> None:
+        kwargs["simulation"] = simulation
         super().__init__(name="chemistry_manager", *args, **kwargs)
 
-        # Keep a pointer to the current simulation
-        self.simulation = simulation
         self.chemistry_list_manager = ChemistryListManager(
-            simulation=self.simulation, name="ChemistryListManager"
+            simulation=simulation, name="ChemistryListManager"
         )
+        self.chemistry_list = ChemistryList(name="chemistry_list", 
+            simulation=simulation,)
 
     def reset(self):
         self.__init__(self.simulation)
@@ -1249,10 +1244,17 @@ class ChemistryManager(GateObject):
         return dict_to_return
 
     def __setstate__(self, d):
-        self.__dict__ = d
+        super().__setstate__(d)
         self.chemistry_list_manager = ChemistryListManager(
             simulation=self.simulation, name="ChemistryListManager"
         )
+
+    def _simulation_engine_closing(self):
+        """This function should be called from the simulation engine
+        when it is closing to make sure that G4 references are set to None.
+
+        """
+        self.chemistry_list.close()
 
     def check_chemistry_list_requests(self):
         requested_chemistry_lists = set()
@@ -1290,21 +1292,14 @@ class ChemistryManager(GateObject):
         self.chemistry_list_name = chemistry_list_name
         return chemistry_list_name
 
-    def get_chemistry_list(self):
+    def prepare_chemistry_list_if_needed(self):
         chemistry_list_name = self.check_chemistry_list_requests()
-        if chemistry_list_name is None:
-            return None
+        self.chemistry_list.list_name = chemistry_list_name
 
-        # The manager only resolves configuration into a chemistry-list object.
-        # The runtime ownership of that object lives in ChemistryEngine.
-        chemistry_list = self.chemistry_list_manager.create_chemistry_list(
-            chemistry_list_name
-        )
-
-        if isinstance(chemistry_list, ChemistryCustomList):
-            chemistry_list.simulation = self.simulation
-
-        return chemistry_list
+        if chemistry_list_name is None and self.chemistry_list.has_customizations() is False:
+            return False
+        else: 
+            return True
 
 
 class PostProcessingManager(GateObject):
