@@ -1,4 +1,4 @@
-from .base import GateObject, process_cls
+from .base import GateObject, process_cls, create_gate_object_from_dict
 from .utility import g4_units, fatal
 from .decorators import requires_fatal
 
@@ -347,6 +347,44 @@ class ChemistryList(GateObject, G4VUserChemistryList):
     def __setstate__(self, state):
         super().__setstate__(state)
         self.__initcpp__()
+        self.g4_builtin_chemistry_list = None
+        self._custom_species_constructed = False
+        self._custom_reactions_constructed = False
+        self._custom_dissociations_constructed = False
+
+    def to_dictionary(self):
+        return super().to_dictionary()
+
+    def _reconstruct_nested_gate_objects(self, object_dicts, object_class):
+        objects = []
+        for object_dict in object_dicts:
+            obj = create_gate_object_from_dict(object_dict)
+            if not isinstance(obj, object_class):
+                fatal(
+                    f"Expected a serialized {object_class.__name__}, but reconstructed {type(obj).__name__}."
+                )
+            obj.simulation = self.simulation
+            obj.from_dictionary(object_dict)
+            objects.append(obj)
+        return objects
+
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        user_info = d.get("user_info", {})
+        self.chemical_species = self._reconstruct_nested_gate_objects(
+            user_info.get("chemical_species", []),
+            ChemicalSpecies,
+        )
+        self.reactions = self._reconstruct_nested_gate_objects(
+            user_info.get("reactions", []),
+            ChemicalReaction,
+        )
+        self.dissociations = self._reconstruct_nested_gate_objects(
+            user_info.get("dissociations", []),
+            ChemicalDissociation,
+        )
+        for dissociation in self.dissociations:
+            dissociation.chemistry_list = self
         self.g4_builtin_chemistry_list = None
         self._custom_species_constructed = False
         self._custom_reactions_constructed = False

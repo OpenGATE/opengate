@@ -1010,9 +1010,16 @@ class ChemistryManager(GateObject):
     def reset(self):
         self.__init__(self.simulation)
 
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["chemistry_list"] = self.chemistry_list.to_dictionary()
+        return d
+
     def from_dictionary(self, d):
         self.reset()
         super().from_dictionary(d)
+        if "chemistry_list" in d:
+            self.chemistry_list.from_dictionary(d["chemistry_list"])
 
     def __str__(self):
         s = ""
