@@ -59,14 +59,13 @@ void init_G4VUserChemistryList(py::module &m) {
   py::class_<G4DNAMolecularReactionData,
              std::unique_ptr<G4DNAMolecularReactionData, py::nodelete>>(
       m, "G4DNAMolecularReactionData")
-      .def(py::init<G4double, const G4MolecularConfiguration*,
-                    const G4MolecularConfiguration*>(),
-           py::arg("reaction_rate"),
-           py::arg("reactant_a"),
+      .def(py::init<G4double, const G4MolecularConfiguration *,
+                    const G4MolecularConfiguration *>(),
+           py::arg("reaction_rate"), py::arg("reactant_a"),
            py::arg("reactant_b"))
       .def("SetReactionType", &G4DNAMolecularReactionData::SetReactionType)
       .def("AddProduct",
-           py::overload_cast<const G4MolecularConfiguration*>(
+           py::overload_cast<const G4MolecularConfiguration *>(
                &G4DNAMolecularReactionData::AddProduct),
            py::arg("product"));
 
@@ -77,7 +76,7 @@ void init_G4VUserChemistryList(py::module &m) {
                   &G4DNAMolecularReactionTable::GetReactionTable,
                   py::return_value_policy::reference)
       .def("SetReaction",
-           py::overload_cast<G4DNAMolecularReactionData*>(
+           py::overload_cast<G4DNAMolecularReactionData *>(
                &G4DNAMolecularReactionTable::SetReaction),
            py::arg("reaction_data"));
 
@@ -88,15 +87,16 @@ void init_G4VUserChemistryList(py::module &m) {
            [](G4VUserChemistryList &self) { self.ConstructMolecule(); })
       .def("ConstructProcess",
            [](G4VUserChemistryList &self) { self.ConstructProcess(); })
-      .def("ConstructDissociationChannels", [](G4VUserChemistryList &self) {
-        self.ConstructDissociationChannels();
-      })
-      .def("ConstructReactionTable", [](G4VUserChemistryList &self,
-                                         G4DNAMolecularReactionTable *table) {
-        self.ConstructReactionTable(table);
-      })
-      .def("ConstructTimeStepModel", [](G4VUserChemistryList &self,
-                                          G4DNAMolecularReactionTable *table) {
-        self.ConstructTimeStepModel(table);
-      });
+      .def("ConstructDissociationChannels",
+           [](G4VUserChemistryList &self) {
+             self.ConstructDissociationChannels();
+           })
+      .def("ConstructReactionTable",
+           [](G4VUserChemistryList &self, G4DNAMolecularReactionTable *table) {
+             self.ConstructReactionTable(table);
+           })
+      .def("ConstructTimeStepModel",
+           [](G4VUserChemistryList &self, G4DNAMolecularReactionTable *table) {
+             self.ConstructTimeStepModel(table);
+           });
 }

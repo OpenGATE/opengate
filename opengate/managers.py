@@ -645,8 +645,8 @@ class PhysicsListManager(GateObject):
         created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
             physics_list_class = create_modular_physics_list_class(g4pc_name)
-            created_physics_list_classes[g4pc_name] = create_augmented_physics_list_class(
-                physics_list_class
+            created_physics_list_classes[g4pc_name] = (
+                create_augmented_physics_list_class(physics_list_class)
             )
         for reference_name in self.available_g4_reference_physics_lists:
             reference_class = create_reference_physics_list_class(reference_name)
@@ -1160,9 +1160,7 @@ class PhysicsManager(GateObject):
 
 class ChemistryListManager(GateObject):
 
-    available_chemistry_lists = {
-        name: name for name in known_g4_chemistry_list_names
-    }
+    available_chemistry_lists = {name: name for name in known_g4_chemistry_list_names}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1244,8 +1242,10 @@ class ChemistryManager(GateObject):
         self.chemistry_list_manager = ChemistryListManager(
             simulation=simulation, name="ChemistryListManager"
         )
-        self.chemistry_list = ChemistryList(name="chemistry_list", 
-            simulation=simulation,)
+        self.chemistry_list = ChemistryList(
+            name="chemistry_list",
+            simulation=simulation,
+        )
 
     def reset(self):
         self.__init__(self.simulation)
@@ -1324,9 +1324,12 @@ class ChemistryManager(GateObject):
         chemistry_list_name = self.check_chemistry_list_requests()
         self.chemistry_list.list_name = chemistry_list_name
 
-        if chemistry_list_name is None and self.chemistry_list.has_customizations() is False:
+        if (
+            chemistry_list_name is None
+            and self.chemistry_list.has_customizations() is False
+        ):
             return False
-        else: 
+        else:
             return True
 
 

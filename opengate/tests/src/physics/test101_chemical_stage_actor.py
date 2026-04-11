@@ -289,7 +289,6 @@ if __name__ == "__main__":
     results_global = chem_actor_global.results.get_data()
     print_results("Explicit region DNA EM results:", results_global)
 
-
     plot_species_counts(
         results_global,
         "Explicit region DNA EM",
