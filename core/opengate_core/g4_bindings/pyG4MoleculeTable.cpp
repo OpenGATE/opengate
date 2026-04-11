@@ -1,10 +1,10 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
-#include "G4Molecule.hh"
 #include "G4ElectronOccupancy.hh"
 #include "G4MolecularConfiguration.hh"
 #include "G4MolecularDissociationChannel.hh"
+#include "G4Molecule.hh"
 #include "G4MoleculeDefinition.hh"
 #include "G4MoleculeTable.hh"
 #include "G4ParticleDefinition.hh"
@@ -47,7 +47,8 @@ void init_G4MoleculeTable(py::module &m) {
                              const G4MolecularDissociationChannel *>(
                &G4MoleculeDefinition::AddDecayChannel),
            py::arg("configuration_label"), py::arg("channel"))
-      .def("SetDiffusionCoefficient", &G4MoleculeDefinition::SetDiffusionCoefficient)
+      .def("SetDiffusionCoefficient",
+           &G4MoleculeDefinition::SetDiffusionCoefficient)
       .def("SetVanDerVaalsRadius", &G4MoleculeDefinition::SetVanDerVaalsRadius);
 
   py::class_<G4MoleculeTable, std::unique_ptr<G4MoleculeTable, py::nodelete>>(
@@ -64,8 +65,7 @@ void init_G4MoleculeTable(py::module &m) {
       // ----------------------------------------------------
       .def(
           "GetMoleculeDefinition",
-          [](G4MoleculeTable *self, const std::string &name,
-             bool must_exist) {
+          [](G4MoleculeTable *self, const std::string &name, bool must_exist) {
             return self->GetMoleculeDefinition(name, must_exist);
           },
           py::arg("name"), py::arg("must_exist") = false,
@@ -73,8 +73,7 @@ void init_G4MoleculeTable(py::module &m) {
           "Get a molecule definition by name. Returns None if not found.")
       .def(
           "GetConfiguration",
-          [](G4MoleculeTable *self, const std::string &name,
-             bool must_exist) {
+          [](G4MoleculeTable *self, const std::string &name, bool must_exist) {
             return self->GetConfiguration(name, must_exist);
           },
           py::arg("name"), py::arg("must_exist") = false,
@@ -93,24 +92,20 @@ void init_G4MoleculeTable(py::module &m) {
           py::arg("name"), py::arg("diffusion_coefficient"),
           py::return_value_policy::reference,
           "Create a new molecule definition and return it")
-      .def(
-          "CreateConfiguration",
-          py::overload_cast<const G4String&, G4MoleculeDefinition*, int, double>(
-              &G4MoleculeTable::CreateConfiguration),
-          py::arg("user_identifier"),
-          py::arg("molecule_definition"),
-          py::arg("charge"),
-          py::arg("diffusion_coefficient") = -1.0,
-          py::return_value_policy::reference,
-          "Create a molecular configuration from a molecule definition and charge.")
-      .def(
-          "CreateConfiguration",
-          py::overload_cast<const G4String&, G4MoleculeDefinition*>(
-              &G4MoleculeTable::CreateConfiguration),
-          py::arg("user_identifier"),
-          py::arg("molecule_definition"),
-          py::return_value_policy::reference,
-          "Create a molecular configuration from a molecule definition.")
+      .def("CreateConfiguration",
+           py::overload_cast<const G4String &, G4MoleculeDefinition *, int,
+                             double>(&G4MoleculeTable::CreateConfiguration),
+           py::arg("user_identifier"), py::arg("molecule_definition"),
+           py::arg("charge"), py::arg("diffusion_coefficient") = -1.0,
+           py::return_value_policy::reference,
+           "Create a molecular configuration from a molecule definition and "
+           "charge.")
+      .def("CreateConfiguration",
+           py::overload_cast<const G4String &, G4MoleculeDefinition *>(
+               &G4MoleculeTable::CreateConfiguration),
+           py::arg("user_identifier"), py::arg("molecule_definition"),
+           py::return_value_policy::reference,
+           "Create a molecular configuration from a molecule definition.")
 
       // ----------------------------------------------------
       // List all registered molecules

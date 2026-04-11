@@ -396,9 +396,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
         try:
             chemistry_list_class = getattr(g4, self.list_name)
         except AttributeError:
-            fatal(
-                f"Chemistry list '{self.list_name}' is not bound in opengate_core."
-            )
+            fatal(f"Chemistry list '{self.list_name}' is not bound in opengate_core.")
         self._custom_species_constructed = False
         self._custom_reactions_constructed = False
         self._custom_dissociations_constructed = False
@@ -408,9 +406,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
         # object as a provider of default chemistry callbacks, so deregister it
         # immediately and let the user-facing ChemistryList be the sole
         # registered chemistry-list identity.
-        g4.G4DNAChemistryManager.Instance().Deregister(
-            self.g4_builtin_chemistry_list
-        )
+        g4.G4DNAChemistryManager.Instance().Deregister(self.g4_builtin_chemistry_list)
         g4.G4DNAChemistryManager.Instance().SetChemistryList(self)
 
     def _make_helper_name(self, prefix, *parts):
@@ -518,10 +514,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
     def _reaction_key(self, reaction):
         reactants = " + ".join(reaction.sorted_reactants)
         products = " + ".join(reaction.reaction_products)
-        return (
-            f"{reactants} -> {products} "
-            f"[type={reaction.reaction_type}]"
-        )
+        return f"{reactants} -> {products} " f"[type={reaction.reaction_type}]"
 
     def _dissociation_key(self, dissociation):
         if dissociation.name not in (None, ""):
@@ -613,9 +606,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
                         f"Cannot add reaction product '{product_name}' because its molecular configuration is unknown."
                     )
                 reaction_data.AddProduct(product)
-            g4.G4DNAMolecularReactionTable.GetReactionTable().SetReaction(
-                reaction_data
-            )
+            g4.G4DNAMolecularReactionTable.GetReactionTable().SetReaction(reaction_data)
         self._custom_reactions_constructed = True
 
     def _construct_custom_dissociations(self):
@@ -650,7 +641,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
     @requires_fatal("g4_builtin_chemistry_list")
     def ConstructParticle(self):
         # Built-in Geant4 chemistry lists use ConstructParticle() as the hook
-        # that populates their molecular species. 
+        # that populates their molecular species.
         self.ConstructMolecule()
 
     @requires_fatal("g4_builtin_chemistry_list")
@@ -775,6 +766,7 @@ class ChemistryCustomList(GateObject, G4VUserChemistryList):
 
     def ConstructTimeStepModel(self, reaction_table):
         pass
+
 
 process_cls(ChemistryList)
 process_cls(ChemistryCustomList)
