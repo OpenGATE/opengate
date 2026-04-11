@@ -18,9 +18,28 @@ void init_G4Scheduler(py::module &m) {
       m, "G4Scheduler")
       .def_static("Instance", &G4Scheduler::Instance,
                   py::return_value_policy::reference)
-      .def("SetUserAction", &G4Scheduler::SetUserAction, py::arg("user_action"))
-      .def("SetInteractivity", &G4Scheduler::SetInteractivity,
-           py::arg("interactivity"))
+      .def(
+          "SetUserAction",
+          [](G4Scheduler &self, py::object user_action) {
+            if (user_action.is_none()) {
+              self.SetUserAction(static_cast<G4UserTimeStepAction *>(nullptr));
+            } else {
+              self.SetUserAction(user_action.cast<G4UserTimeStepAction *>());
+            }
+          },
+          py::arg("user_action"))
+      .def(
+          "SetInteractivity",
+          [](G4Scheduler &self, py::object interactivity) {
+            if (interactivity.is_none()) {
+              self.SetInteractivity(
+                  static_cast<G4ITTrackingInteractivity *>(nullptr));
+            } else {
+              self.SetInteractivity(
+                  interactivity.cast<G4ITTrackingInteractivity *>());
+            }
+          },
+          py::arg("interactivity"))
       .def("GetUserTimeStepAction", &G4Scheduler::GetUserTimeStepAction,
            py::return_value_policy::reference)
       .def("Initialize", &G4Scheduler::Initialize)
