@@ -409,8 +409,8 @@ class PhysicsListBuilder(GateObject):
         created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
             physics_list_class = create_modular_physics_list_class(g4pc_name)
-            created_physics_list_classes[g4pc_name] = create_augmented_physics_list_class(
-                physics_list_class
+            created_physics_list_classes[g4pc_name] = (
+                create_augmented_physics_list_class(physics_list_class)
             )
         for reference_name in self.available_g4_reference_physics_lists:
             reference_class = create_reference_physics_list_class(reference_name)
@@ -433,7 +433,10 @@ class PhysicsListBuilder(GateObject):
                 f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
             )
             fatal(s)
-        for spc, switch in self.simulation.physics_manager.special_physics_constructors.items():
+        for (
+            spc,
+            switch,
+        ) in self.simulation.physics_manager.special_physics_constructors.items():
             if switch is True:
                 try:
                     physics_list.ReplacePhysics(

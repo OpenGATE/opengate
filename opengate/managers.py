@@ -1032,8 +1032,10 @@ class ChemistryManager(GateObject):
         kwargs["simulation"] = simulation
         super().__init__(name="chemistry_manager", *args, **kwargs)
 
-        self.chemistry_list = ChemistryList(name="chemistry_list", 
-            simulation=simulation,)
+        self.chemistry_list = ChemistryList(
+            name="chemistry_list",
+            simulation=simulation,
+        )
 
     def reset(self):
         self.__init__(self.simulation)
