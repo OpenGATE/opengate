@@ -43,26 +43,26 @@ public:
 
   // Called from G4UserTimeStepAction::StartProcessing() when the chemistry
   // scheduler starts.
-  virtual void StartProcessing() {}
+  virtual void StartChemistryProcessing() {}
 
   // Called from G4UserTimeStepAction::UserPreTimeStepAction() before each
   // chemistry time step.
-  virtual void UserPreTimeStepAction() {}
+  virtual void PreChemistryTimeStepAction() {}
 
   // Called from G4UserTimeStepAction::UserPostTimeStepAction() after each
   // chemistry time step.
-  virtual void UserPostTimeStepAction() {}
+  virtual void PostChemistryTimeStepAction() {}
 
   // Called from G4UserTimeStepAction::UserReactionAction() for each chemistry
   // reaction.
-  virtual void UserReactionAction(const G4Track & /*trackA*/,
-                                  const G4Track & /*trackB*/,
-                                  const std::vector<G4Track *> *
-                                  /*products*/) {}
+  virtual void ChemistryReactionAction(const G4Track & /*trackA*/,
+                                       const G4Track & /*trackB*/,
+                                       const std::vector<G4Track *> *
+                                       /*products*/) {}
 
   // Called from G4UserTimeStepAction::EndProcessing() when the chemistry
   // scheduler ends.
-  virtual void EndProcessing() {}
+  virtual void EndChemistryProcessing() {}
 
 protected:
   bool IsChemistryTrackInsideAttachedVolume(const G4Track *track) const;

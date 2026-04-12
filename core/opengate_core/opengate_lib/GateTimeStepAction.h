@@ -29,12 +29,12 @@ public:
   void EndProcessing() override;
 
 protected:
-  std::vector<GateVChemistryActor *> fStartProcessingActors;
+  std::vector<GateVChemistryActor *> fStartChemistryProcessingActors;
   std::vector<GateVChemistryActor *> fNewStageActors;
-  std::vector<GateVChemistryActor *> fPreTimeStepActors;
-  std::vector<GateVChemistryActor *> fPostTimeStepActors;
-  std::vector<GateVChemistryActor *> fReactionActors;
-  std::vector<GateVChemistryActor *> fEndProcessingActors;
+  std::vector<GateVChemistryActor *> fPreChemistryTimeStepActors;
+  std::vector<GateVChemistryActor *> fPostChemistryTimeStepActors;
+  std::vector<GateVChemistryActor *> fChemistryReactionActors;
+  std::vector<GateVChemistryActor *> fEndChemistryProcessingActors;
 };
 
 #endif // GateTimeStepAction_h

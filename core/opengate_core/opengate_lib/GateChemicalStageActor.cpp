@@ -179,23 +179,23 @@ void GateChemicalStageActor::NewStage() {
   fNbChemistryStages++;
 }
 
-void GateChemicalStageActor::StartProcessing() {
+void GateChemicalStageActor::StartChemistryProcessing() {
   ConfigureTimesToRecordIfNeeded();
   G4AutoLock lock(&GateChemicalStageActorMutex);
   fNbChemistryStarts++;
 }
 
-void GateChemicalStageActor::UserPreTimeStepAction() {
+void GateChemicalStageActor::PreChemistryTimeStepAction() {
   G4AutoLock lock(&GateChemicalStageActorMutex);
   fNbPreTimeStepCalls++;
 }
 
-void GateChemicalStageActor::UserPostTimeStepAction() {
+void GateChemicalStageActor::PostChemistryTimeStepAction() {
   G4AutoLock lock(&GateChemicalStageActorMutex);
   fNbPostTimeStepCalls++;
 }
 
-void GateChemicalStageActor::UserReactionAction(
+void GateChemicalStageActor::ChemistryReactionAction(
     const G4Track &trackA, const G4Track &trackB,
     const std::vector<G4Track *> *products) {
   const auto signature = GetReactionSignature(trackA, trackB, products);
@@ -204,7 +204,7 @@ void GateChemicalStageActor::UserReactionAction(
   fReactionCounts[signature]++;
 }
 
-void GateChemicalStageActor::EndProcessing() {
+void GateChemicalStageActor::EndChemistryProcessing() {
   RecordSpeciesAtEndOfChemicalStage();
 }
 
