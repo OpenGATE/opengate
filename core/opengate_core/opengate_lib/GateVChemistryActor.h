@@ -10,6 +10,8 @@
 
 #include "GateVActor.h"
 
+class G4Step;
+
 class GateVChemistryActor : public GateVActor {
 
 public:
@@ -23,9 +25,21 @@ public:
   // track.
   virtual void StartChemistryTracking(G4Track *track);
 
+  // Called from G4ITTrackingInteractivity::Initialize() before chemistry
+  // tracking starts.
+  virtual void InitializeChemistryTracking() {}
+
+  // Called from G4ITTrackingInteractivity::AppendStep() for each chemistry
+  // step.
+  virtual void AppendChemistryStep(G4Track * /*track*/, G4Step * /*step*/) {}
+
   // Called from G4ITTrackingInteractivity::EndTracking() for each chemistry
   // track.
   virtual void EndChemistryTracking(G4Track * /*track*/) {}
+
+  // Called from G4ITTrackingInteractivity::Finalize() after chemistry
+  // tracking ends.
+  virtual void FinalizeChemistryTracking() {}
 
   // Called from G4UserTimeStepAction::StartProcessing() when the chemistry
   // scheduler starts.

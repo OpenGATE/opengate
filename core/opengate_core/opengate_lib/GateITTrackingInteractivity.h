@@ -20,12 +20,18 @@ public:
 
   void RegisterActor(GateVChemistryActor *actor);
 
+  void Initialize() override;
+  void AppendStep(G4Track *track, G4Step *step) override;
   void StartTracking(G4Track *track) override;
   void EndTracking(G4Track *track) override;
+  void Finalize() override;
 
 protected:
+  std::vector<GateVChemistryActor *> fInitializeTrackingActors;
+  std::vector<GateVChemistryActor *> fAppendStepActors;
   std::vector<GateVChemistryActor *> fStartTrackingActors;
   std::vector<GateVChemistryActor *> fEndTrackingActors;
+  std::vector<GateVChemistryActor *> fFinalizeTrackingActors;
 };
 
 #endif // GateITTrackingInteractivity_h
