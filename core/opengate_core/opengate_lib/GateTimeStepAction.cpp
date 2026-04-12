@@ -10,29 +10,29 @@
 GateTimeStepAction::GateTimeStepAction() : G4UserTimeStepAction() {}
 
 void GateTimeStepAction::RegisterActor(GateVChemistryActor *actor) {
-  if (actor->HasAction("StartProcessing")) {
-    fStartProcessingActors.push_back(actor);
+  if (actor->HasAction("StartChemistryProcessing")) {
+    fStartChemistryProcessingActors.push_back(actor);
   }
   if (actor->HasAction("NewStage")) {
     fNewStageActors.push_back(actor);
   }
-  if (actor->HasAction("UserPreTimeStepAction")) {
-    fPreTimeStepActors.push_back(actor);
+  if (actor->HasAction("PreChemistryTimeStepAction")) {
+    fPreChemistryTimeStepActors.push_back(actor);
   }
-  if (actor->HasAction("UserPostTimeStepAction")) {
-    fPostTimeStepActors.push_back(actor);
+  if (actor->HasAction("PostChemistryTimeStepAction")) {
+    fPostChemistryTimeStepActors.push_back(actor);
   }
-  if (actor->HasAction("UserReactionAction")) {
-    fReactionActors.push_back(actor);
+  if (actor->HasAction("ChemistryReactionAction")) {
+    fChemistryReactionActors.push_back(actor);
   }
-  if (actor->HasAction("EndProcessing")) {
-    fEndProcessingActors.push_back(actor);
+  if (actor->HasAction("EndChemistryProcessing")) {
+    fEndChemistryProcessingActors.push_back(actor);
   }
 }
 
 void GateTimeStepAction::StartProcessing() {
-  for (auto actor : fStartProcessingActors) {
-    actor->StartProcessing();
+  for (auto actor : fStartChemistryProcessingActors) {
+    actor->StartChemistryProcessing();
   }
 }
 
@@ -43,27 +43,27 @@ void GateTimeStepAction::NewStage() {
 }
 
 void GateTimeStepAction::UserPreTimeStepAction() {
-  for (auto actor : fPreTimeStepActors) {
-    actor->UserPreTimeStepAction();
+  for (auto actor : fPreChemistryTimeStepActors) {
+    actor->PreChemistryTimeStepAction();
   }
 }
 
 void GateTimeStepAction::UserPostTimeStepAction() {
-  for (auto actor : fPostTimeStepActors) {
-    actor->UserPostTimeStepAction();
+  for (auto actor : fPostChemistryTimeStepActors) {
+    actor->PostChemistryTimeStepAction();
   }
 }
 
 void GateTimeStepAction::UserReactionAction(
     const G4Track &trackA, const G4Track &trackB,
     const std::vector<G4Track *> *products) {
-  for (auto actor : fReactionActors) {
-    actor->UserReactionAction(trackA, trackB, products);
+  for (auto actor : fChemistryReactionActors) {
+    actor->ChemistryReactionAction(trackA, trackB, products);
   }
 }
 
 void GateTimeStepAction::EndProcessing() {
-  for (auto actor : fEndProcessingActors) {
-    actor->EndProcessing();
+  for (auto actor : fEndChemistryProcessingActors) {
+    actor->EndChemistryProcessing();
   }
 }

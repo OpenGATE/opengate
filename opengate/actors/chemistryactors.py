@@ -336,12 +336,12 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                 "StartChemistryTracking",
                 "EndChemistryTracking",
                 "FinalizeChemistryTracking",
-                "StartProcessing",
-                "UserPreTimeStepAction",
-                "UserPostTimeStepAction",
-                "UserReactionAction",
+                "StartChemistryProcessing",
+                "PreChemistryTimeStepAction",
+                "PostChemistryTimeStepAction",
+                "ChemistryReactionAction",
                 "EndOfEventAction",
-                "EndProcessing",
+                "EndChemistryProcessing",
                 "EndSimulationAction",
             }
         )

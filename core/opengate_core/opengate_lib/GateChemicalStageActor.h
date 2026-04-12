@@ -35,12 +35,12 @@ public:
   void EndOfEventAction(const G4Event *event) override;
   void SteppingAction(G4Step *step) override;
   void NewStage() override;
-  void StartProcessing() override;
-  void UserPreTimeStepAction() override;
-  void UserPostTimeStepAction() override;
-  void UserReactionAction(const G4Track &trackA, const G4Track &trackB,
-                          const std::vector<G4Track *> *products) override;
-  void EndProcessing() override;
+  void StartChemistryProcessing() override;
+  void PreChemistryTimeStepAction() override;
+  void PostChemistryTimeStepAction() override;
+  void ChemistryReactionAction(const G4Track &trackA, const G4Track &trackB,
+                               const std::vector<G4Track *> *products) override;
+  void EndChemistryProcessing() override;
 
   long GetNumberOfKilledParticles() const { return fNbKilledParticles; }
   long GetNumberOfAbortedEvents() const { return fNbAbortedEvents; }

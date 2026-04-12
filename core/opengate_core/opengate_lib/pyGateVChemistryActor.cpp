@@ -50,9 +50,14 @@ void init_GateVChemistryActor(py::module &m) {
       .def("EndChemistryTracking", &GateVChemistryActor::EndChemistryTracking)
       .def("FinalizeChemistryTracking",
            &GateVChemistryActor::FinalizeChemistryTracking)
-      .def("StartProcessing", &GateVChemistryActor::StartProcessing)
-      .def("UserPreTimeStepAction", &GateVChemistryActor::UserPreTimeStepAction)
-      .def("UserPostTimeStepAction",
-           &GateVChemistryActor::UserPostTimeStepAction)
-      .def("EndProcessing", &GateVChemistryActor::EndProcessing);
+      .def("StartChemistryProcessing",
+           &GateVChemistryActor::StartChemistryProcessing)
+      .def("PreChemistryTimeStepAction",
+           &GateVChemistryActor::PreChemistryTimeStepAction)
+      .def("PostChemistryTimeStepAction",
+           &GateVChemistryActor::PostChemistryTimeStepAction)
+      .def("ChemistryReactionAction",
+           &GateVChemistryActor::ChemistryReactionAction)
+      .def("EndChemistryProcessing",
+           &GateVChemistryActor::EndChemistryProcessing);
 }
