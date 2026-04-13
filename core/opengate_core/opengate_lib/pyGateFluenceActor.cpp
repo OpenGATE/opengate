@@ -39,6 +39,15 @@ void init_GateFluenceActor(py::module &m) {
            &GateFluenceActor::EndOfRunActionMasterThread)
       .def("GetPhysicalVolumeName", &GateFluenceActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateFluenceActor::SetPhysicalVolumeName)
+      .def("GetEnergySquaredFlag", &GateFluenceActor::GetEnergySquaredFlag)
+      .def("SetEnergySquaredFlag", &GateFluenceActor::SetEnergySquaredFlag)
+      .def("GetEnergyFlag", &GateFluenceActor::GetEnergyFlag)
+      .def("SetEnergyFlag", &GateFluenceActor::SetEnergyFlag)
+      .def("GetCountsSquaredFlag", &GateFluenceActor::GetCountsSquaredFlag)
+      .def("SetCountsSquaredFlag", &GateFluenceActor::SetCountsSquaredFlag)
       .def_readwrite("NbOfEvent", &GateFluenceActor::NbOfEvent)
-      .def_readwrite("cpp_fluence_image", &GateFluenceActor::cpp_fluence_image);
+      .def_readwrite("cpp_counts_image", &GateFluenceActor::cpp_counts_image)
+      .def_readwrite("cpp_energy_image", &GateFluenceActor::cpp_energy_image)
+      .def_readwrite("cpp_counts_squared_image", &GateFluenceActor::cpp_counts_squared_image)
+      .def_readwrite("cpp_energy_squared_image", &GateFluenceActor::cpp_energy_squared_image);
 }
