@@ -2,6 +2,7 @@
 #include "GateDigiCollection.h"
 #include "GateDigiCollectionManager.h"
 #include "GateHelpersDigitizer.h"
+#include <G4Threading.hh>
 #include <memory>
 
 GateTimeSorter::TimeSortedStorage::TimeSortedStorage(
@@ -27,6 +28,12 @@ GateTimeSorter::TimeSortedStorage::TimeSortedStorage(
   // The GateDigiCollection contains the digis in the order in which they were
   // added using fillerIn, but the actual sorting happens in the priority queue
   // sortedIndices.
+}
+
+GateTimeSorter::GateTimeSorter() {
+  fNumThreads = G4Threading::GetNumberOfRunningWorkerThreads();
+  fMaxGlobalTimePerThread =
+      std::make_unique<std::atomic<double>[]>(fNumThreads);
 }
 
 void GateTimeSorter::Init(GateDigiCollection *input) {
@@ -72,6 +79,7 @@ void GateTimeSorter::SetSortingWindow(double duration) {
   if (fProcessingStarted) {
     Fatal("SetDelay() cannot be called after Process() has been called.");
   }
+  fMinimumSortingWindow = duration;
   fSortingWindow = duration;
 }
 
@@ -141,6 +149,11 @@ void GateTimeSorter::Process() {
         fSortingWindowWarningIssued = true;
       }
     } else {
+      if (fNumThreads > 1) {
+        const int tid = G4Threading::G4GetThreadId();
+        const double currentMax = fMaxGlobalTimePerThread[tid].load();
+        fMaxGlobalTimePerThread[tid].store(std::max(currentMax, digiTime));
+      }
       // Copy the digi into the temporary digi collection.
       fCurrentStorage->fillerIn->Fill(iter.fIndex);
       // Keep a time-sorted list of indices into the temporary digi collection.
@@ -149,6 +162,22 @@ void GateTimeSorter::Process() {
       // Keep track of the highest GlobalTime observed so far.
       if (!fMostRecentTimeArrived || (digiTime > *fMostRecentTimeArrived)) {
         fMostRecentTimeArrived = digiTime;
+      }
+      // Increase sorting window if needed.
+      if (fNumThreads > 1) {
+        auto [minIt, maxIt] = std::minmax_element(
+            fMaxGlobalTimePerThread.get(),
+            fMaxGlobalTimePerThread.get() + fNumThreads,
+            [](const std::atomic<double> &a, const std::atomic<double> &b) {
+              return a.load() < b.load();
+            });
+        double globalTimeSlowestThread = minIt->load();
+        double globalTimeFastestThread = maxIt->load();
+        const auto window = fMinimumSortingWindow + globalTimeFastestThread -
+                            globalTimeSlowestThread;
+        if (window > fSortingWindow) {
+          fSortingWindow = window;
+        }
       }
     }
     iter++;
@@ -206,7 +235,7 @@ void GateTimeSorter::Flush() {
     std::cout << fNumDroppedDigi
               << " digis have been dropped while time-sorting. Please increase "
                  "the sorting time to a value higher than "
-              << fSortingWindow << " ns\n";
+              << fMinimumSortingWindow << " ns\n";
   }
 }
 

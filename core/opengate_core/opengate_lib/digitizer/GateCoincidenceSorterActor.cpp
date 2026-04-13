@@ -46,8 +46,6 @@ GateCoincidenceSorterActor::~GateCoincidenceSorterActor() = default;
 
 void GateCoincidenceSorterActor::InitializeUserInfo(py::dict &user_info) {
 
-  // std::cout << "InitializeUserInfo " << G4Threading::G4GetThreadId() << "\n";
-
   GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
   if (py::len(user_info) > 0 && user_info.contains("window")) {
     fWindowSize = DictGetDouble(user_info, "window"); // nanoseconds
@@ -201,13 +199,14 @@ void GateCoincidenceSorterActor::EndOfEventAction(const G4Event *) {
 
 void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
   G4AutoLock lock(&fMutex);
-  if (fNumActiveWorkingThreads == 1) {
+  if (fNumActiveWorkingThreads > 1) {
+    fNumActiveWorkingThreads--;
+  } else {
     fTimeSorter->Flush();
     ProcessTimeSortedSingles();
     DetectCoincidences(true);
   }
   fOutputDigiCollection->FillToRootIfNeeded(true);
-  fNumActiveWorkingThreads--;
 }
 
 void GateCoincidenceSorterActor::ProcessTimeSortedSingles() {
