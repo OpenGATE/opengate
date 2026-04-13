@@ -35,6 +35,7 @@ def translate_particle_name_gate_to_geant4(name):
     except KeyError:
         return name
 
+
 class UserLimitsPhysics(g4.G4VPhysicsConstructor):
     """
     Class to be registered to physics list.
