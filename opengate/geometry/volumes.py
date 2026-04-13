@@ -557,6 +557,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
 
     @requires_fatal("volume_manager")
+<<<<<<< HEAD
     def add_field(self, field: FieldBase):
         if self.field is not None:
             fatal(
@@ -574,9 +575,9 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self.volume_manager.fields[field.name] = field
 
     @requires_fatal("volume_manager")
-    def set_dna_em_physics(self, dna_em_physics):
-        self.volume_manager.simulation.physics_manager.set_dna_em_physics(
-            self.name, dna_em_physics
+    def set_track_structure_em_physics(self, track_structure_em_physics):
+        self.volume_manager.simulation.physics_manager.set_track_structure_em_physics(
+            self.name, track_structure_em_physics
         )
 
 

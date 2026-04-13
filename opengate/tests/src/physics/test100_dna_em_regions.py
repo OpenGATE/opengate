@@ -120,12 +120,14 @@ if __name__ == "__main__":
     target_explicit_child.material = "G4_WATER"
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
-    target_auto.set_dna_em_physics("DNA_Opt2")
+    target_auto.set_track_structure_em_physics("DNA_Opt2")
 
     explicit_region = sim.physics_manager.add_region(EXPLICIT_REGION_NAME)
     explicit_region.associate_volume(target_explicit)
     explicit_region.associate_volume(target_explicit_child)
-    sim.physics_manager.set_dna_em_physics_in_region(EXPLICIT_REGION_NAME, "DNA_Opt4")
+    sim.physics_manager.set_track_structure_em_physics_in_region(
+        EXPLICIT_REGION_NAME, "DNA_Opt4"
+    )
 
     source = sim.add_source("GenericSource", "source")
     source.particle = "gamma"

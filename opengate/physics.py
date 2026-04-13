@@ -466,7 +466,7 @@ class PhysicsListBuilder(GateObject):
 class Region(GateObject):
     """FIXME: Documentation of the Region class."""
 
-    available_dna_em_physics = (
+    available_track_structure_em_physics = (
         "DNA_Opt0",
         "DNA_Opt2",
         "DNA_Opt4",
@@ -522,11 +522,11 @@ class Region(GateObject):
             "expose_items": True,
         },
     )
-    user_info_defaults["dna_em_physics"] = (
+    user_info_defaults["track_structure_em_physics"] = (
         None,
         {
-            "doc": "DNA EM physics option to activate in this region.",
-            "allowed_values": available_dna_em_physics + (None,),
+            "doc": "Track-structure EM physics option to activate in this region.",
+            "allowed_values": available_track_structure_em_physics + (None,),
         },
     )
 
