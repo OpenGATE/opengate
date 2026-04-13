@@ -3,9 +3,14 @@ import opengate_core as g4
 
 from .base import ActorBase
 from .actoroutput import ActorOutputBase
+from .chemistrycounters import (
+    CounterBase,
+    MoleculeCounterBase,
+    chemistry_counter_types,
+)
 from ..serialization import dump_json
 from ..exception import warning, fatal
-from ..base import process_cls
+from ..base import process_cls, create_gate_object_from_dict
 from ..utility import g4_units
 
 
@@ -31,6 +36,13 @@ class ChemistryActorBase(ActorBase):
                 "doc": "Chemistry list requested by this actor. ",
             },
         ),
+        "counters": (
+            {},
+            {
+                "doc": "Counters owned by this chemistry actor. Use add_counter() to create them.",
+                "read_only": True,
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -41,101 +53,80 @@ class ChemistryActorBase(ActorBase):
             "reset_master_counter_with_workers": None,
             "accumulate_counter_into_master": None,
         }
-        self.molecule_counter = {}
-        self.reaction_counter = {}
-        self.g4_molecule_counter = None
-        self.g4_reaction_counter = None
-        self.g4_molecule_counter_id = None
-        self.g4_reaction_counter_id = None
 
     def close(self):
-        self.g4_molecule_counter = None
-        self.g4_reaction_counter = None
-        self.g4_molecule_counter_id = None
-        self.g4_reaction_counter_id = None
+        for counter in self.counters.values():
+            counter.close()
         super().close()
 
     def initialize(self):
         ActorBase.initialize(self)
-        self._initialize_molecule_counter()
-        self._initialize_reaction_counter()
+        for counter in self.counters.values():
+            counter.simulation = self.simulation
+            counter.actor = self
+            counter.initialize()
 
-    def _create_time_comparer(self, config):
-        if not config:
-            return None
-        method = config.get("method", "fixed_precision")
-        if method == "fixed_precision":
+    def add_counter(self, counter, name=None):
+        new_counter = None
+        if isinstance(counter, str):
+            if name is None:
+                fatal("You must provide a name for the counter.")
             try:
-                precision = config["precision"]
+                counter_class = chemistry_counter_types[counter]
             except KeyError:
                 fatal(
-                    f"Chemistry actor '{self.name}' requests a fixed-precision time comparer "
-                    f"but did not provide a 'precision' entry."
+                    f"Unknown chemistry counter type '{counter}'. "
+                    f"Known types are: {list(chemistry_counter_types.keys())}"
                 )
-            return g4.G4MoleculeCounterTimeComparer.CreateWithFixedPrecision(precision)
-        fatal(
-            f"Unsupported molecule-counter time comparer method '{method}' "
-            f"in chemistry actor '{self.name}'."
+            new_counter = counter_class(name=name, simulation=self.simulation)
+        elif isinstance(counter, type):
+            if not issubclass(counter, CounterBase):
+                fatal(
+                    f"Counter class '{counter}' does not inherit from CounterBase."
+                )
+            if name is None:
+                fatal("You must provide a name for the counter.")
+            new_counter = counter(name=name, simulation=self.simulation)
+        elif isinstance(counter, CounterBase):
+            new_counter = counter
+        else:
+            fatal(
+                "You need to either provide a counter type and name, a counter class and name, "
+                "or a counter object."
+            )
+
+        if new_counter.name in self.counters:
+            fatal(
+                f"The chemistry counter named {new_counter.name} already exists "
+                f"in actor '{self.name}'. Existing counter names are: {list(self.counters.keys())}"
+            )
+        self.counters[new_counter.name] = new_counter
+        new_counter.simulation = self.simulation
+        new_counter.actor = self
+        if new_counter is not counter:
+            return new_counter
+        return counter
+
+    def _reconstruct_counters_from_dictionary(self, counter_dicts):
+        counters = {}
+        for counter_dict in counter_dicts.values():
+            counter = create_gate_object_from_dict(counter_dict)
+            if not isinstance(counter, CounterBase):
+                fatal(
+                    f"Expected a serialized CounterBase, but reconstructed {type(counter).__name__}."
+                )
+            counter.simulation = self.simulation
+            counter.actor = self
+            counter.from_dictionary(counter_dict)
+            counters[counter.name] = counter
+        return counters
+
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        user_info = d.get("user_info", {})
+        self.user_info["counters"] = self._reconstruct_counters_from_dictionary(
+            user_info.get("counters", {})
         )
-
-    def _configure_counter_common(self, counter, config):
-        time_comparer = self._create_time_comparer(config.get("time_comparer"))
-        if time_comparer is not None:
-            counter.SetTimeComparer(time_comparer)
-        if "verbose" in config:
-            counter.SetVerbose(config["verbose"])
-        if "check_time_consistency_with_scheduler" in config:
-            counter.SetCheckTimeConsistencyWithScheduler(
-                config["check_time_consistency_with_scheduler"]
-            )
-        if "check_recorded_time_consistency" in config:
-            counter.SetCheckRecordedTimeConsistency(
-                config["check_recorded_time_consistency"]
-            )
-        if "active_lower_bound" in config:
-            lower = config["active_lower_bound"]
-            counter.SetActiveLowerBound(lower["time"], lower.get("inclusive", True))
-        if "active_upper_bound" in config:
-            upper = config["active_upper_bound"]
-            counter.SetActiveUpperBound(upper["time"], upper.get("inclusive", True))
-
-    def _initialize_molecule_counter(self):
-        if not self.molecule_counter:
-            return
-        counter_type = self.molecule_counter.get("type", "G4MoleculeCounter")
-        if counter_type != "G4MoleculeCounter":
-            fatal(
-                f"Unsupported molecule counter type '{counter_type}' "
-                f"in chemistry actor '{self.name}'."
-            )
-        name = self.molecule_counter.get("name", f"{self.name}_molecule_counter")
-        counter = g4.G4MoleculeCounter(name)
-        self._configure_counter_common(counter, self.molecule_counter)
-        for molecule_name in self.molecule_counter.get("ignored_molecules", []):
-            counter.IgnoreMolecule(molecule_name)
-        if self.molecule_counter.get("register_all_molecules", False):
-            counter.RegisterAll()
-        counter.Initialize()
-        manager = g4.G4MoleculeCounterManager.Instance()
-        self.g4_molecule_counter_id = manager.RegisterMoleculeCounter(counter)
-        self.g4_molecule_counter = counter
-
-    def _initialize_reaction_counter(self):
-        if not self.reaction_counter:
-            return
-        counter_type = self.reaction_counter.get("type", "G4MoleculeReactionCounter")
-        if counter_type != "G4MoleculeReactionCounter":
-            fatal(
-                f"Unsupported reaction counter type '{counter_type}' "
-                f"in chemistry actor '{self.name}'."
-            )
-        name = self.reaction_counter.get("name", f"{self.name}_reaction_counter")
-        counter = g4.G4MoleculeReactionCounter(name)
-        self._configure_counter_common(counter, self.reaction_counter)
-        counter.Initialize()
-        manager = g4.G4MoleculeCounterManager.Instance()
-        self.g4_reaction_counter_id = manager.RegisterReactionCounter(counter)
-        self.g4_reaction_counter = counter
 
 
 def _setter_hook_chem_actor_output_filename(self, output_filename):
@@ -312,15 +303,14 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                 "accumulate_counter_into_master": False,
             }
         )
-        self.molecule_counter = {
-            "type": "G4MoleculeCounter",
-            "name": f"{self.name}_molecule_counter",
-            "time_comparer": {
-                "method": "fixed_precision",
-                "precision": 1 * g4_units.ps,
-            },
-            "ignored_molecules": ["H2O"],
+        molecule_counter = self.add_counter(
+            "BuiltinMoleculeCounter", f"{self.name}_molecule_counter"
+        )
+        molecule_counter.time_comparer = {
+            "method": "fixed_precision",
+            "precision": 1 * g4_units.ps,
         }
+        molecule_counter.ignored_molecules = ["H2O"]
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -349,8 +339,18 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     def initialize(self):
         ChemistryActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
-        if self.g4_molecule_counter_id is not None:
-            self.SetMoleculeCounterId(self.g4_molecule_counter_id)
+        molecule_counters = [
+            counter
+            for counter in self.counters.values()
+            if isinstance(counter, MoleculeCounterBase)
+        ]
+        if len(molecule_counters) > 1:
+            fatal(
+                f"ChemicalStageActor '{self.name}' currently supports at most one molecule counter "
+                "for its built-in C++ species sampling path."
+            )
+        if len(molecule_counters) == 1:
+            self.SetMoleculeCounterId(molecule_counters[0].g4_counter_id)
         self.InitializeCpp()
 
     def EndSimulationAction(self):
