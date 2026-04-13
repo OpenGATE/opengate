@@ -55,7 +55,7 @@ def create_simulation(use_actor_requested_dna_em, seed):
     target.material = "G4_WATER"
 
     if not use_actor_requested_dna_em:
-        target.set_dna_em_physics("DNA_Opt2")
+        target.set_track_structure_em_physics("DNA_Opt2")
 
     source = sim.add_source("GenericSource", "source")
     source.particle = "e-"
@@ -72,9 +72,9 @@ def create_simulation(use_actor_requested_dna_em, seed):
     chem_actor.attached_to = target
     chem_actor.number_of_time_bins = 50
     if use_actor_requested_dna_em:
-        chem_actor.dna_em_physics = "DNA_Opt2"
+        chem_actor.track_structure_em_physics = "DNA_Opt2"
     else:
-        chem_actor.dna_em_physics = None
+        chem_actor.track_structure_em_physics = None
 
     return sim, stats, chem_actor
 

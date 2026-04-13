@@ -297,7 +297,7 @@ class PhysicsEngine(EngineBase):
 
     def initialize_dna_physics_regions(self):
         if not any(
-            region.dna_em_physics is not None
+            region.track_structure_em_physics is not None
             for region in self.physics_manager.regions.values()
         ):
             return
@@ -420,8 +420,10 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
-            if region.dna_em_physics is not None:
-                self.g4_em_parameters.AddDNA(region.name, region.dna_em_physics)
+            if region.track_structure_em_physics is not None:
+                self.g4_em_parameters.AddDNA(
+                    region.name, region.track_structure_em_physics
+                )
 
     def initialize_physics_biasing(self):
         # get a dictionary {particle:[processes]}

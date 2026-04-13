@@ -519,8 +519,8 @@ def _setter_hook_physics_list_name(self, physics_list_name):
         fatal(
             f"Global DNA EM physics lists are not supported in GATE. "
             f"Received '{physics_list_name}'. "
-            f"Configure DNA EM only per region, e.g. via Region.dna_em_physics, "
-            f"PhysicsManager.set_dna_em_physics(...), or VolumeBase.set_dna_em_physics(...)."
+            f"Configure track-structure EM only per region, e.g. via Region.track_structure_em_physics, "
+            f"PhysicsManager.set_track_structure_em_physics(...), or VolumeBase.set_track_structure_em_physics(...)."
         )
     return physics_list_name
 
@@ -916,17 +916,23 @@ class PhysicsManager(GateObject):
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
 
-    def set_dna_em_physics(self, volume_name, dna_em_physics):
+    def set_track_structure_em_physics(
+        self, volume_name, track_structure_em_physics
+    ):
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
-        region.dna_em_physics = dna_em_physics
+        region.track_structure_em_physics = track_structure_em_physics
 
-    def set_dna_em_physics_in_region(self, region_name, dna_em_physics):
+    def set_track_structure_em_physics_in_region(
+        self, region_name, track_structure_em_physics
+    ):
         try:
             region = self.regions[region_name]
         except KeyError:
-            fatal(f"Cannot set DNA EM physics: region '{region_name}' does not exist.")
-        region.dna_em_physics = dna_em_physics
+            fatal(
+                f"Cannot set track-structure EM physics: region '{region_name}' does not exist."
+            )
+        region.track_structure_em_physics = track_structure_em_physics
 
     def set_user_limits_particles(self, particle_names):
         if not isinstance(particle_names, (list, set, tuple)):
@@ -947,29 +953,39 @@ class PhysicsManager(GateObject):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
-        # Chemistry actors may request region-based DNA EM physics on the
+        # Chemistry actors may request region-based track-structure EM physics on the
         # volumes they are attached to. This must be resolved before the
         # physics engine configures G4 EM parameters and registers the DNA
         # activator.
-        dna_em_requests = {}
+        track_structure_em_requests = {}
         for actor in self.simulation.actor_manager.sorted_actors:
-            request = actor.get_dna_em_physics_request()
+            request = actor.get_track_structure_em_physics_request()
             if request is None:
                 continue
-            volume_name, dna_em_physics = request
-            previous_request = dna_em_requests.get(volume_name)
+            volume_name, track_structure_em_physics = request
+            previous_request = track_structure_em_requests.get(volume_name)
             if previous_request is not None:
-                previous_dna_em_physics, previous_actor_name = previous_request
-                if previous_dna_em_physics != dna_em_physics:
+                previous_track_structure_em_physics, previous_actor_name = (
+                    previous_request
+                )
+                if previous_track_structure_em_physics != track_structure_em_physics:
                     fatal(
-                        f"Conflicting dna_em_physics requests for volume '{volume_name}': "
-                        f"actor '{previous_actor_name}' requests '{previous_dna_em_physics}' "
-                        f"while actor '{actor.name}' requests '{dna_em_physics}'."
+                        f"Conflicting track_structure_em_physics requests for volume '{volume_name}': "
+                        f"actor '{previous_actor_name}' requests '{previous_track_structure_em_physics}' "
+                        f"while actor '{actor.name}' requests '{track_structure_em_physics}'."
                     )
-            dna_em_requests[volume_name] = (dna_em_physics, actor.name)
+            track_structure_em_requests[volume_name] = (
+                track_structure_em_physics,
+                actor.name,
+            )
 
-        for volume_name, (dna_em_physics, _) in dna_em_requests.items():
-            self.set_dna_em_physics(volume_name, dna_em_physics)
+        for volume_name, (
+            track_structure_em_physics,
+            _,
+        ) in track_structure_em_requests.items():
+            self.set_track_structure_em_physics(
+                volume_name, track_structure_em_physics
+            )
 
 
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):

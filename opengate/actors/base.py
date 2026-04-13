@@ -136,11 +136,12 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
-        "dna_em_physics": (
+        "track_structure_em_physics": (
             None,
             {
-                "doc": "If not None, request region-based DNA EM physics in the volume to which this actor is attached.",
-                "allowed_values": Region.available_dna_em_physics + (None,),
+                "doc": "If not None, request region-based track-structure EM physics in the volume to which this actor is attached.",
+                "allowed_values": Region.available_track_structure_em_physics
+                + (None,),
             },
         ),
     }
@@ -163,19 +164,19 @@ class ActorBase(GateObject):
 
         return isinstance(self, ChemistryActorBase)
 
-    def get_dna_em_physics_request(self):
-        # Freeze-time hook for actors that request region-based DNA EM
+    def get_track_structure_em_physics_request(self):
+        # Freeze-time hook for actors that request region-based track-structure EM
         # activation before Geant4 physics initialization. Actors should
-        # return None or a (volume_name, dna_em_physics) tuple.
-        if self.dna_em_physics is None:
+        # return None or a (volume_name, track_structure_em_physics) tuple.
+        if self.track_structure_em_physics is None:
             return None
         if not isinstance(self.attached_to, str):
             fatal(
-                f"Actor '{self.name}' requests dna_em_physics='{self.dna_em_physics}' "
+                f"Actor '{self.name}' requests track_structure_em_physics='{self.track_structure_em_physics}' "
                 f"but is attached to {self.attached_to}. "
-                f"Actors currently support DNA EM activation only for a single attached volume."
+                f"Actors currently support track-structure EM activation only for a single attached volume."
             )
-        return self.attached_to, self.dna_em_physics
+        return self.attached_to, self.track_structure_em_physics
 
     @classmethod
     def _process_user_output_config(cls):
