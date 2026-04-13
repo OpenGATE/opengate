@@ -145,8 +145,7 @@ class ActorBase(GateObject):
                 "`G4EmDNAPhysics_option2`, `G4EmDNAPhysics_option4`, "
                 "`G4EmDNAPhysics_option6`, `G4EmDNAPhysics_option7`, or "
                 "`G4EmDNAPhysics_option8`.",
-                "allowed_values": Region.available_track_structure_em_physics
-                + (None,),
+                "allowed_values": Region.available_track_structure_em_physics + (None,),
             },
         ),
     }

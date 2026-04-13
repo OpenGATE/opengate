@@ -916,9 +916,7 @@ class PhysicsManager(GateObject):
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
 
-    def set_track_structure_em_physics(
-        self, volume_name, track_structure_em_physics
-    ):
+    def set_track_structure_em_physics(self, volume_name, track_structure_em_physics):
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.track_structure_em_physics = track_structure_em_physics
@@ -983,9 +981,7 @@ class PhysicsManager(GateObject):
             track_structure_em_physics,
             _,
         ) in track_structure_em_requests.items():
-            self.set_track_structure_em_physics(
-                volume_name, track_structure_em_physics
-            )
+            self.set_track_structure_em_physics(volume_name, track_structure_em_physics)
 
 
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
