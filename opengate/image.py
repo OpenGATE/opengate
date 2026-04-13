@@ -4,7 +4,6 @@ from box import Box
 from scipy.spatial.transform import Rotation
 import math
 import SimpleITK as sitk
-import warnings
 from .exception import fatal
 from .geometry.utility import (
     get_transform_world_to_local,
@@ -131,15 +130,6 @@ def read_image_info_sitk(image):
     n = len(info.size)
     info.dir = np.array(image.GetDirection()).reshape((n, n))
     return info
-
-
-def get_info_from_image_sitk(image):
-    warnings.warn(
-        "get_info_from_image_sitk() is deprecated; use read_image_info_sitk() instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return read_image_info_sitk(image)
 
 
 def read_image_info(path_to_image):
