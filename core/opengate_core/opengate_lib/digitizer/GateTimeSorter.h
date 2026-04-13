@@ -2,6 +2,7 @@
 #define GateTimeSorter_h
 
 #include "GateDigiCollectionIterator.h"
+#include <atomic>
 #include <memory>
 #include <optional>
 #include <queue>
@@ -11,7 +12,7 @@ class GateDigiAttributesFiller;
 
 class GateTimeSorter {
 public:
-  GateTimeSorter() = default;
+  GateTimeSorter();
 
   void Init(GateDigiCollection *input);
 
@@ -50,8 +51,11 @@ private:
     std::unique_ptr<GateDigiAttributesFiller> fillerOut;
   };
 
-  double fSortingWindow{1000.0}; // nanoseconds
+  double fMinimumSortingWindow{1000.0}; // nanoseconds
+  double fSortingWindow{1000.0};
   size_t fMaxSize{100'000};
+  std::unique_ptr<std::atomic<double>[]> fMaxGlobalTimePerThread;
+  int fNumThreads{0};
 
   GateDigiCollection *fInputCollection;
 
