@@ -23,6 +23,24 @@ from .base import GateSingletonFatal
 from .logger import logger
 
 
+def _translate_track_structure_em_physics_to_geant4(track_structure_em_physics):
+    translation = {
+        "G4EmDNAPhysics": "DNA_Opt0",
+        "G4EmDNAPhysics_option2": "DNA_Opt2",
+        "G4EmDNAPhysics_option4": "DNA_Opt4",
+        "G4EmDNAPhysics_option6": "DNA_Opt6",
+        "G4EmDNAPhysics_option7": "DNA_Opt7",
+        "G4EmDNAPhysics_option8": "DNA_Opt8",
+    }
+    try:
+        return translation[track_structure_em_physics]
+    except KeyError:
+        fatal(
+            f"Unknown track-structure EM physics option '{track_structure_em_physics}'. "
+            f"Allowed values are: {tuple(translation.keys())}."
+        )
+
+
 class EngineBase:
     """
     Base class for all engines (SimulationEngine, VolumeEngine, etc.)
@@ -422,7 +440,10 @@ class PhysicsEngine(EngineBase):
             region.initialize_em_switches()
             if region.track_structure_em_physics is not None:
                 self.g4_em_parameters.AddDNA(
-                    region.name, region.track_structure_em_physics
+                    region.name,
+                    _translate_track_structure_em_physics_to_geant4(
+                        region.track_structure_em_physics
+                    ),
                 )
 
     def initialize_physics_biasing(self):

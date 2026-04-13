@@ -35,29 +35,6 @@ def translate_particle_name_gate_to_geant4(name):
     except KeyError:
         return name
 
-
-track_structure_em_physics_aliases = {
-    "G4EmDNAPhysics": "DNA_Opt0",
-    "G4EmDNAPhysics_option2": "DNA_Opt2",
-    "G4EmDNAPhysics_option4": "DNA_Opt4",
-    "G4EmDNAPhysics_option6": "DNA_Opt6",
-    "G4EmDNAPhysics_option7": "DNA_Opt7",
-    "G4EmDNAPhysics_option8": "DNA_Opt8",
-}
-
-
-def _setter_hook_track_structure_em_physics(self, track_structure_em_physics):
-    if track_structure_em_physics is None:
-        return None
-    try:
-        return track_structure_em_physics_aliases[track_structure_em_physics]
-    except KeyError:
-        fatal(
-            f"Unknown track-structure EM physics option '{track_structure_em_physics}'. "
-            f"Allowed values are: {tuple(track_structure_em_physics_aliases.keys())}."
-        )
-
-
 class UserLimitsPhysics(g4.G4VPhysicsConstructor):
     """
     Class to be registered to physics list.
@@ -553,7 +530,6 @@ class Region(GateObject):
             "GATE maps these values internally to the shorter Geant4 region-activation "
             "identifiers required by `G4EmParameters::AddDNA(...)`.",
             "allowed_values": available_track_structure_em_physics + (None,),
-            "setter_hook": _setter_hook_track_structure_em_physics,
         },
     )
 

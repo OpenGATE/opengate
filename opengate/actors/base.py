@@ -4,7 +4,7 @@ from functools import wraps
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
 from ..base import GateObject, process_cls
-from ..physics import Region, _setter_hook_track_structure_em_physics
+from ..physics import Region
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
 
@@ -147,7 +147,6 @@ class ActorBase(GateObject):
                 "`G4EmDNAPhysics_option8`.",
                 "allowed_values": Region.available_track_structure_em_physics
                 + (None,),
-                "setter_hook": _setter_hook_track_structure_em_physics,
             },
         ),
     }
