@@ -6,7 +6,6 @@ from opengate.utility import g4_units
 import opengate.tests.utility as utility
 from opengate.actors.coincidences import *
 import opengate.contrib.compton_camera.macaco as macaco
-from scipy.spatial.transform import Rotation
 import opengate.contrib.compton_camera.coresi_helpers as coresi
 
 if __name__ == "__main__":
@@ -26,6 +25,7 @@ if __name__ == "__main__":
     Bq = g4_units.Bq
     MBq = 1e6 * g4_units.Bq
     sec = g4_units.s
+    ns = g4_units.ns
 
     # sim
     sim = gate.Simulation()
@@ -33,14 +33,15 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.random_seed = "auto"
     sim.output_dir = output_folder
-    sim.number_of_threads = 1
+    sim.number_of_threads = 4
+    sim.progress_bar = True
 
     # world
     world = sim.world
     world.size = [0.5 * m, 0.5 * m, 0.7 * m]
     sim.world.material = "G4_AIR"
 
-    # add two cameras
+    # add one camera
     name1 = "macaco1"
     macaco1 = macaco.add_macaco1_camera(sim, name1)
     camera1 = macaco1["camera"]
@@ -55,33 +56,14 @@ if __name__ == "__main__":
     camera2.translation = [0, 10 * cm, 0 * cm]
     """
 
+    # add the digitizer (output singles)
+    scatt_file, abs_file = macaco.add_macaco1_camera_digitizer(sim, scatterer, absorber)
+    print(f"Scatt file: {scatt_file}")
+    print(f"Abs file: {abs_file}")
+
     # stats
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.output_filename = "stats.txt"
-
-    # PhaseSpace Actor
-    phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp.attached_to = camera1  # [scatterer.name, absorber.name]
-    print(phsp.attached_to)
-    phsp.attributes = [
-        "TotalEnergyDeposit",
-        "PreKineticEnergy",
-        "PostKineticEnergy",
-        "PostPosition",
-        "ProcessDefinedStep",
-        "ParticleName",
-        "EventID",
-        "ParentID",
-        "PDGCode",
-        "TrackVertexKineticEnergy",
-        "GlobalTime",
-        "PreStepUniqueVolumeID",
-        "PreStepUniqueVolumeIDAsInt",
-    ]
-    phsp.output_filename = "phsp.root"
-    phsp.steps_to_store = "allsteps"
-
-    # macaco.add_macaco1_camera_digitizer(sim, scatterer, absorber)
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option2"
@@ -102,7 +84,7 @@ if __name__ == "__main__":
     # acquisition time
     if sim.visu:
         source.activity = 10 * Bq
-    sim.run_timing_intervals = [[0 * sec, 5 * sec]]
+    sim.run_timing_intervals = [[0 * sec, 30 * sec]]
 
     # special hook to prepare coresi config file.
     # For each camera, we must find the names of all layers (scatterer and absorber).
@@ -119,49 +101,52 @@ if __name__ == "__main__":
     param = coresi.set_hook_coresi_config(sim, cameras, yaml_filename)
 
     # go
-    sim.run()
+    # sim.run()
 
     # print stats
     print(stats)
 
-    # open the root file and create coincidences
-    print()
-    root_file = uproot.open(phsp.get_output_path())
-    tree = root_file["PhaseSpace"]
-    hits = tree.arrays(library="pd")
-    singles = ccmod_ideal_singles(hits)
-    print("ideal singles found:", len(singles))
-    coinc = ccmod_ideal_coincidences(singles)
-    print("ideal coincidences found:", len(coinc))
-    data_cones = ccmod_make_cones(coinc, energy_key_name="IdealTotalEnergyDeposit")
-
-    print(f"Output file: {phsp.get_output_path()}")
-    print(f"Number of hits: {len(hits)} ")
-    print(f"Found: {len(singles)} singles")
-    print(f"Found: {len(coinc)} coincidences")
-
-    # write the new root with coinc
-    coinc_filename = str(phsp.get_output_path()).replace(".root", "_coinc.root")
-    root_write_trees(
-        coinc_filename, ["hits", "singles", "coincidences"], [hits, singles, coinc]
+    # compute the coincidences
+    print(f"Computing coincidences from {scatt_file} and {abs_file}")
+    coinc_file = output_folder / "coincidences.root"
+    coincidences = macaco.macaco1_compute_coincidences(
+        scatt_file,
+        abs_file,
+        time_windows=12 * ns,
+        output_root_filename=coinc_file,
+        scatt_tree_name="ThrScatt",
+        abs_tree_name="ThrAbs",
+        merged_tree_name="Singles",
     )
-    print(f"Output file: {coinc_filename}")
-    print()
+    print(f"Coincidences file: {coinc_file}, {len(coincidences)} found")
 
-    # write cone for coresi
-    cones_filename = str(phsp.get_output_path()).replace(".root", "_cones.root")
+    # computes the cones from the coincidences
+    print()
+    print("Computing cones from the coincidences")
+    data_cones = ccmod_make_cones(coincidences, energy_key_name="TotalEnergyDeposit")
+    cones_filename = output_folder / "cones.root"
     root_write_trees(cones_filename, ["cones"], [data_cones])
-    print(f"Output file: {cones_filename}")
+    print(f"Cones file: {cones_filename}, {len(data_cones)} found")
     print()
 
-    # CORESI stage1: we retrieve the coresi config built during the hook
+    # CORESI stage1: convert the root file
+    data_filename = output_folder / "coincidences.dat"
+    coresi.coresi_convert_root_data(cones_filename, "cones", data_filename)
+
+    # CORESI stage2: we retrieve the coresi config built during the hook and write to disk
     coresi_config = param["coresi_config"]
     # optional: change the volume information
     # TODO LATER : set parameters from an image
     coresi_config["volume"]["volume_dimensions"] = [20, 20, 0.5]
+    coresi_config["data_file"] = str(data_filename)
+    coresi_config["n_events"] = len(data_cones)
+    coresi_config["E0"] = 662  # must be in keV
+    coresi_config["energy_range"] = [600, 700]  # unsure ?
     coresi.coresi_write_config(coresi_config, yaml_filename)
-    print(f"Coresi config file: {coinc_filename}")
+    print(f"Coresi config file: {yaml_filename}")
 
-    # CORESI stage2: convert the root file
-    data_filename = output_folder / "coincidences.dat"
-    coresi.coresi_convert_root_data(cones_filename, "cones", data_filename)
+    # run CORESI
+    print()
+    cmd = f"coresi -c {yaml_filename}"
+    print(f"{cmd}")
+    # os.system(cmd)
