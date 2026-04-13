@@ -859,7 +859,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         )
         g4.GateLETActor.BeginOfRunActionMasterThread(self, run_index)
 
-
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image(
             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
@@ -1708,7 +1707,8 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.check_user_input()
         self.user_output.counts_with_uncertainty.set_active(True, item=0)
 
-        if (self.user_output.counts_with_uncertainty.get_active(
+        if (
+            self.user_output.counts_with_uncertainty.get_active(
                 item=("uncertainty", "std", "variance")
             )
             is True
@@ -1716,12 +1716,15 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
             if not self.user_output.counts_with_uncertainty.get_active(item=1):
-                self.user_output.counts_with_uncertainty.set_write_to_disk(False, item=1)
+                self.user_output.counts_with_uncertainty.set_write_to_disk(
+                    False, item=1
+                )
                 self.user_output.counts_with_uncertainty.set_active(
                     True, item=1
                 )  # activate squared component
 
-        if (self.user_output.energy_with_uncertainty.get_active(
+        if (
+            self.user_output.energy_with_uncertainty.get_active(
                 item=("uncertainty", "std", "variance")
             )
             is True
@@ -1729,7 +1732,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
             if not self.user_output.energy_with_uncertainty.get_active(item=1):
-                self.user_output.energy_with_uncertainty.set_write_to_disk(False, item=1)
+                self.user_output.energy_with_uncertainty.set_write_to_disk(
+                    False, item=1
+                )
                 self.user_output.energy_with_uncertainty.set_active(
                     True, item=1
                 )  # activate squared component
@@ -1772,15 +1777,24 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
     def EndOfRunActionMasterThread(self, run_index):
 
-        self.fetch_from_cpp_image("counts_with_uncertainty", run_index, self.cpp_counts_image, self.cpp_counts_squared_image)
+        self.fetch_from_cpp_image(
+            "counts_with_uncertainty",
+            run_index,
+            self.cpp_counts_image,
+            self.cpp_counts_squared_image,
+        )
         self._update_output_coordinate_system("counts_with_uncertainty", run_index)
         self.user_output.counts_with_uncertainty.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
 
         if self.user_output.energy_with_uncertainty.get_active(item="any"):
-            self.fetch_from_cpp_image("energy_with_uncertainty", run_index, self.cpp_energy_image,
-                                      self.cpp_energy_squared_image)
+            self.fetch_from_cpp_image(
+                "energy_with_uncertainty",
+                run_index,
+                self.cpp_energy_image,
+                self.cpp_energy_squared_image,
+            )
             self._update_output_coordinate_system("energy_with_uncertainty", run_index)
             self.user_output.energy_with_uncertainty.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent

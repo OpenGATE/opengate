@@ -48,6 +48,8 @@ void init_GateFluenceActor(py::module &m) {
       .def_readwrite("NbOfEvent", &GateFluenceActor::NbOfEvent)
       .def_readwrite("cpp_counts_image", &GateFluenceActor::cpp_counts_image)
       .def_readwrite("cpp_energy_image", &GateFluenceActor::cpp_energy_image)
-      .def_readwrite("cpp_counts_squared_image", &GateFluenceActor::cpp_counts_squared_image)
-      .def_readwrite("cpp_energy_squared_image", &GateFluenceActor::cpp_energy_squared_image);
+      .def_readwrite("cpp_counts_squared_image",
+                     &GateFluenceActor::cpp_counts_squared_image)
+      .def_readwrite("cpp_energy_squared_image",
+                     &GateFluenceActor::cpp_energy_squared_image);
 }

@@ -56,16 +56,15 @@ public:
   using Size4DType = Image4DType::SizeType;
   Size4DType size_4D;
 
-  
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_counts_image;
   Image3DType::Pointer cpp_energy_image;
   Image3DType::Pointer cpp_counts_squared_image;
   Image3DType::Pointer cpp_energy_squared_image;
-  
+
   Image3DType::SizeType size_region{};
 
-  struct threadLocalT{
+  struct threadLocalT {
     G4EmCalculator emcalc;
     std::vector<double> squared_worker_flatimg;
     std::vector<int> lastid_worker_flatimg;
@@ -78,10 +77,15 @@ public:
   G4bool fEnergyFlag;
   G4bool fEnergySquaredFlag;
 
-  void FlushSquaredValues(threadLocalT &data, const Image3DType::Pointer &cpp_image);
-  void ScoreSquaredValue(threadLocalT &data,const Image3DType::Pointer &cpp_image,const double value, const int event_id,const Image3DType::IndexType &index);
+  void FlushSquaredValues(threadLocalT &data,
+                          const Image3DType::Pointer &cpp_image);
+  void ScoreSquaredValue(threadLocalT &data,
+                         const Image3DType::Pointer &cpp_image,
+                         const double value, const int event_id,
+                         const Image3DType::IndexType &index);
   int sub2ind(Image3DType::IndexType index3D);
-  void PrepareLocalDataForRun(threadLocalT &data, const unsigned int numberOfVoxels);
+  void PrepareLocalDataForRun(threadLocalT &data,
+                              const unsigned int numberOfVoxels);
 
   bool GetEnergySquaredFlag() const { return fEnergySquaredFlag; }
 
