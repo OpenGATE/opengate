@@ -303,7 +303,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     }
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("track_structure_em_physics", "DNA_Opt2")
+        kwargs.setdefault("track_structure_em_physics", "G4EmDNAPhysics_option2")
         ChemistryActorBase.__init__(self, *args, **kwargs)
         self.required_molecule_counter_manager_policy.update(
             {

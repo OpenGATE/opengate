@@ -36,6 +36,28 @@ def translate_particle_name_gate_to_geant4(name):
         return name
 
 
+track_structure_em_physics_aliases = {
+    "G4EmDNAPhysics": "DNA_Opt0",
+    "G4EmDNAPhysics_option2": "DNA_Opt2",
+    "G4EmDNAPhysics_option4": "DNA_Opt4",
+    "G4EmDNAPhysics_option6": "DNA_Opt6",
+    "G4EmDNAPhysics_option7": "DNA_Opt7",
+    "G4EmDNAPhysics_option8": "DNA_Opt8",
+}
+
+
+def _setter_hook_track_structure_em_physics(self, track_structure_em_physics):
+    if track_structure_em_physics is None:
+        return None
+    try:
+        return track_structure_em_physics_aliases[track_structure_em_physics]
+    except KeyError:
+        fatal(
+            f"Unknown track-structure EM physics option '{track_structure_em_physics}'. "
+            f"Allowed values are: {tuple(track_structure_em_physics_aliases.keys())}."
+        )
+
+
 class UserLimitsPhysics(g4.G4VPhysicsConstructor):
     """
     Class to be registered to physics list.
@@ -467,14 +489,12 @@ class Region(GateObject):
     """FIXME: Documentation of the Region class."""
 
     available_track_structure_em_physics = (
-        "DNA_Opt0",
-        "DNA_Opt2",
-        "DNA_Opt4",
-        "DNA_Opt4a",
-        "DNA_Opt6",
-        "DNA_Opt6a",
-        "DNA_Opt7",
-        "DNA_Opt8",
+        "G4EmDNAPhysics",
+        "G4EmDNAPhysics_option2",
+        "G4EmDNAPhysics_option4",
+        "G4EmDNAPhysics_option6",
+        "G4EmDNAPhysics_option7",
+        "G4EmDNAPhysics_option8",
     )
 
     user_info_defaults = {}
@@ -525,8 +545,15 @@ class Region(GateObject):
     user_info_defaults["track_structure_em_physics"] = (
         None,
         {
-            "doc": "Track-structure EM physics option to activate in this region.",
+            "doc": "Track-structure EM physics option to activate in this region. "
+            "Use the full Geant4 constructor names where they exist, for example "
+            "`G4EmDNAPhysics_option2`, `G4EmDNAPhysics_option4`, "
+            "`G4EmDNAPhysics_option6`, `G4EmDNAPhysics_option7`, and "
+            "`G4EmDNAPhysics_option8`. "
+            "GATE maps these values internally to the shorter Geant4 region-activation "
+            "identifiers required by `G4EmParameters::AddDNA(...)`.",
             "allowed_values": available_track_structure_em_physics + (None,),
+            "setter_hook": _setter_hook_track_structure_em_physics,
         },
     )
 
