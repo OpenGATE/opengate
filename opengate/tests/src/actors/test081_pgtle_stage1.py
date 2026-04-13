@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from opengate.tests import utility
-from opengate.definitions import elements_name_symbol
-
+import itk
+import numpy as np
 import uproot
 
-from box import Box
-import numpy as np
-
-import itk
-import hist
-
-import time
-import glob
+import opengate as gate
+from opengate.definitions import elements_name_symbol
+from opengate.tests import utility
 
 
 def compute_hist_mean(paths, method, particle, distrib):
