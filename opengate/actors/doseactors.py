@@ -1751,7 +1751,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         # item
 
     def BeginOfRunActionMasterThread(self, run_index):
-        print("yeah")
         self.prepare_output_for_run("counts_with_uncertainty", run_index)
         self.push_to_cpp_image(
             "counts_with_uncertainty",
