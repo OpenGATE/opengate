@@ -799,13 +799,20 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
 
+        chemistry_is_active = (
+            self.simulation_engine.simulation.chemistry_manager.check_chemistry_list_requests()
+            is not None
+        )
+
         # set the actions for Run
         ra = g4.GateRunAction(p)
+        ra.fChemistryIsActive = chemistry_is_active
         self.SetUserAction(ra)
         self.g4_RunAction.append(ra)
 
         # set the actions for Event
         ea = g4.GateEventAction()
+        ea.fChemistryIsActive = chemistry_is_active
         self.SetUserAction(ea)
         self.g4_EventAction.append(ea)
 
@@ -823,10 +830,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_SteppingAction.append(sa)
 
         sa = g4.GateStackingAction()
-        sa.fChemistryIsActive = (
-            self.simulation_engine.simulation.chemistry_manager.check_chemistry_list_requests()
-            is not None
-        )
+        sa.fChemistryIsActive = chemistry_is_active
         self.SetUserAction(sa)
         self.g4_StackingAction.append(sa)
 

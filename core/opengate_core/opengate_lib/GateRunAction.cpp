@@ -6,11 +6,13 @@
    -------------------------------------------------- */
 
 #include "GateRunAction.h"
+#include "G4MoleculeCounterManager.hh"
 #include "GateHelpers.h"
 #include "GateUniqueVolumeIDManager.h"
 
 GateRunAction::GateRunAction(GateSourceManager *sm) : G4UserRunAction() {
   fSourceManager = sm;
+  fChemistryIsActive = false;
 }
 
 void GateRunAction::RegisterActor(GateVActor *actor) {
@@ -30,6 +32,12 @@ void GateRunAction::BeginOfRunAction(const G4Run *run) {
   // The map should be reset each run because of the motion can change the
   // touchable properties
   GateUniqueVolumeIDManager::Clear();
+  if (fChemistryIsActive) {
+    // Chemistry scoring may instantiate the counter manager lazily. Once
+    // chemistry is known to be active for the simulation, ensure the run
+    // lifecycle reaches the live manager instance used by counters.
+    G4MoleculeCounterManager::Instance()->BeginOfRunAction(run);
+  }
   for (const auto actor : fBeginOfRunAction_actors) {
     actor->BeginOfRunAction(run);
   }
@@ -38,6 +46,9 @@ void GateRunAction::BeginOfRunAction(const G4Run *run) {
 void GateRunAction::EndOfRunAction(const G4Run *run) {
   for (const auto actor : fEndOfRunAction_actors) {
     actor->EndOfRunAction(run);
+  }
+  if (fChemistryIsActive) {
+    G4MoleculeCounterManager::Instance()->EndOfRunAction(run);
   }
   // If the simulation is about to end, we call the callback function for all
   // actors
