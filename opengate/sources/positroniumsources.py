@@ -71,11 +71,16 @@ class PositroniumSource(SourceBase, g4.GatePositroniumSource):
     def initialize(self, run_timing_intervals):
         SourceBase.initialize(self, run_timing_intervals)
 
-        if not all(
-                len(self.positronium_fractions) == len(x) for x in [
-                    self.positronium_lifetimes, self.decay_kinds, self.
-                    prompt_photon_probabilities, self.prompt_photon_energies
-                ]):
+        parameters = [
+            self.positronium_fractions, self.positronium_lifetimes,
+            self.decay_kinds, self.prompt_photon_probabilities,
+            self.prompt_photon_energies
+        ]
+
+        if any(len(p) == 0 for p in parameters):
+            fatal("Positronium must have at least one decay channel")
+
+        if not all(len(parameters[0]) == len(p) for p in parameters[1:]):
             fatal("Positronium source parameters have different lengths")
 
     def prepare_output(self):
