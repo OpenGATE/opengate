@@ -20,7 +20,7 @@
 class GatePositroniumDecayModel:public GateGammaEmissionModel
 {
   public:
-  static int getPositroniumDecayIndex(const std::vector<float>& fractions);
+  static int getPositroniumDecayIndex(const std::vector<double>& fractions);
 
   explicit GatePositroniumDecayModel(const PositroniumDecayModelParams& modelParams);
 
