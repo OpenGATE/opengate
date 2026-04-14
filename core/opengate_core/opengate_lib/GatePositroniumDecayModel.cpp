@@ -14,8 +14,8 @@
 
 #include "GatePositroniumDecayModel.h"
 
-int GatePositroniumDecayModel::getPositroniumDecayIndex(const std::vector<float>& fractions) {
-  auto r = G4UniformRand(); 
+int GatePositroniumDecayModel::getPositroniumDecayIndex(const std::vector<double>& fractions) {
+  std::cout << "FRACTIONS : " << fractions.size() << std::endl;
   float curr_frac_cumulative = 0.0;
   for (int i = 0; i < fractions.size(); ++i) {
     curr_frac_cumulative = curr_frac_cumulative + fractions[i];

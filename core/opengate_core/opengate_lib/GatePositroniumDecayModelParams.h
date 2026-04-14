@@ -16,10 +16,10 @@ enum PositronElectronInteraction {kParaPs, kDirect, kOrthoPs};
 
 struct PositroniumDecayModelParams
 {
-  std::vector<float> fFractions;
-  std::vector<float> fLifetimes;
-  std::vector<float> fPromptGammaProbabilities;
-  std::vector<float> fPromptGammaEnergy;
+  std::vector<double> fFractions;
+  std::vector<double> fLifetimes;
+  std::vector<double> fPromptGammaProbabilities;
+  std::vector<double> fPromptGammaEnergy;
   std::vector<PositroniumDecayKind> fDecayKind;
   std::vector<PositronElectronInteraction> fPositronInteractions;
 };

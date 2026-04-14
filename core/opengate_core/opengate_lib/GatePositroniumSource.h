@@ -14,6 +14,7 @@
 #include <pybind11/stl.h>
 
 #include "GateGammaEmissionModel.h"
+#include "GatePositroniumDecayModel.h"
 
 namespace py = pybind11;
 
@@ -60,6 +61,8 @@ protected:
   threadLocalGenericSource &GetThreadLocalDataGenericSource();
 
   virtual void CreateSPS();
+
+  std::vector<PositroniumDecayKind> ParsePositroniumDecayKind(const std::vector<string> & decayKindsStr);
 
   //virtual void InitializePosition(py::dict user_info);
 
