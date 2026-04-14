@@ -185,10 +185,9 @@ setuptools.setup(
     zip_safe=False,
     python_requires=">=3.9",
     include_package_data=True,
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
-    ),
+    ],
     install_requires=["colored>1.5", "requests"],
 )
