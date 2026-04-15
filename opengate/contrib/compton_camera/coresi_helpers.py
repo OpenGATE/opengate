@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate_core as g4
-from opengate.geometry.utility import vec_g4_as_np, rot_g4_as_np
-from opengate.exception import fatal
-from opengate.utility import g4_units
 import yaml
 import uproot
+from pathlib import Path
+import opengate_core as g4
+from opengate.exception import fatal
+from opengate.utility import g4_units
+from opengate.geometry.utility import vec_g4_as_np, rot_g4_as_np
 
 
 # --- Custom List for Inline YAML Formatting ---
@@ -47,52 +48,12 @@ def convert_to_flowlist(data):
 
 
 def coresi_new_config():
-    config = {
-        "data_file": "coinc.dat",
-        "data_type": "GATE",
-        "n_events": 0,
-        "starts_at": 0,
-        "E0": [],
-        "remove_out_of_range_energies": False,
-        "energy_range": [120, 150],
-        "energy_threshold": 5,
-        "log_dir": None,
-        "cameras": {
-            "n_cameras": 0,
-            "common_attributes": {
-                "n_sca_layers": 0,
-                "sca_material": "Si",
-                "abs_material": "Si",
-                "n_absorbers": 0,
-                # sca_layer_0 ...
-            },
-            "position_0": {
-                "frame_origin": [0, 0, 0],
-                "Ox": [1, 0, 0],  # parallel to scatterer edge
-                "Oy": [0, 1, 0],  # parallel to scatterer edge
-                "Oz": [0, 0, 1],  # orthogonal to the camera, tw the source"
-            },
-        },
-        "volume": {
-            "volume_dimensions": [10, 10, 10],  # in cm?
-            "n_voxels": [50, 50, 1],  # in voxels
-            "volume_centre": [0, 0, 0],  # in cm?
-        },
-        "lm_mlem": {
-            "cone_thickness": "angular",
-            "model": "cos1rho2",
-            "last_iter": 0,
-            "first_iter": 0,
-            "n_sigma": 2,
-            "width_factor": 1,
-            "checkpoint_dir": "checkpoints",
-            "save_every": 76,
-            "sensitivity": False,
-            "sensitivity_model": "like_system_matrix",
-            "sensitivity_point_samples": 1,
-        },
-    }
-
+    # get current path of the script
+    current_dir = Path(__file__).parent.resolve()
+    print(current_dir)
+    # read the yaml file
+    with open(current_dir / "coresi_default_config.yaml", "r") as f:
+        config = yaml.safe_load(f)
     return config
 
 
