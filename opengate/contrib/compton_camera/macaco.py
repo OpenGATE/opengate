@@ -247,7 +247,7 @@ def add_macaco1_camera_digitizer(sim, scatterer, absorber):
     return scatt_file, abs_file
 
 
-def macaco1_compute_coincidences(
+def macaco1_merge_and_compute_coincidences(
     scatt_root_filename,
     abs_root_filename,
     output_root_filename,

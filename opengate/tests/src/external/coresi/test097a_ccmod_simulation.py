@@ -4,9 +4,8 @@
 import opengate as gate
 from opengate.utility import g4_units
 import opengate.tests.utility as utility
-from opengate.actors.coincidences import *
+from scipy.spatial.transform import Rotation
 import opengate.contrib.compton_camera.macaco as macaco
-import opengate.contrib.compton_camera.coresi_helpers as coresi
 
 if __name__ == "__main__":
 
@@ -47,7 +46,9 @@ if __name__ == "__main__":
     camera1 = macaco1["camera"]
     scatterer = macaco1["scatterer"]
     absorber = macaco1["absorber"]
-    camera1.translation = [0, 0, 10 * cm]
+    # Coresi requires camera in the -Z direction
+    camera1.rotation = Rotation.from_euler("y", 180, degrees=True).as_matrix()
+    camera1.translation = [0, 0, -10 * cm]
 
     # add the digitizer (output singles)
     scatt_file, abs_file = macaco.add_macaco1_camera_digitizer(sim, scatterer, absorber)
@@ -80,24 +81,7 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[0 * sec, 30 * sec]]
 
     # go
-    # sim.run()
+    sim.run()
 
     # print stats
     print(stats)
-
-    # compute the coincidences
-    print()
-    print(f"Computing coincidences from {scatt_file.name} and {abs_file.name}")
-    coinc_file = output_folder / "coincidences.root"
-    coincidences = macaco.macaco1_compute_coincidences(
-        scatt_file,
-        abs_file,
-        time_windows=12 * ns,
-        output_root_filename=coinc_file,
-        scatt_tree_name="ThrScatt",
-        abs_tree_name="ThrAbs",
-        merged_tree_name="Singles",
-    )
-    root_write_trees(coinc_file, ["Coincidences"], [coincidences])
-    print(f"Coincidences file: {coinc_file}")
-    print(f"Number of coincidences {len(coincidences)}")

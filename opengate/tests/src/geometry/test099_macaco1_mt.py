@@ -156,7 +156,7 @@ def main():
     # ======================================================
 
     coinc_file = output_folder / "coincidences.root"
-    coincidences = macaco1_compute_coincidences(
+    coincidences = macaco1_merge_and_compute_coincidences(
         scatt_file,
         abs_file,
         time_windows=12 * ns,

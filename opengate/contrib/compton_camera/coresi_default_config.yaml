@@ -8,7 +8,7 @@ data_type: 'GATE'
 log_dir: 'logs'
 # Energy of the source. If set to -1 the gamma energy is the deposited energy i.e. E1 + E2
 # E0: [140, 245, 364, 511]
-E0: [511]
+E0: [511.0]
 remove_out_of_range_energies: False
 # Only needed if E0 is unknown and remove_out_of_range_energies is True, ignored
 # otherwise
@@ -17,7 +17,7 @@ energy_range: [100, 600]
 # tecteurs.
 # (valeurs Enrique, mais devrait être choisi en fonction de la résolution
 # des détecteurs)
-energy_threshold: []5
+energy_threshold: 5
 n_events: 10
 starts_at: 0
 
@@ -122,7 +122,7 @@ simulation:
 
 lm_mlem:
   cone_thickness: 'parallel' # angular or parallel
-  last_iter: 1
+  last_iter: 3
   model: 'cos0rho0' # Either cos0rho0, cos0rho2 or cos1rho2. Use cos0rho0 if sensitivity is disabled.
   first_iter: 0
   save_every: 1
