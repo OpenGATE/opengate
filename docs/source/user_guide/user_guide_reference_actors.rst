@@ -1138,8 +1138,8 @@ There are two actors to compute the 4D prompt-gamma (PG) energy and time distrib
 * **VoxelizedPromptGammaAnalogActor** for the analog Monte Carlo,
 * **VoxelizedPromptGammaTLEActor** for the track-length estimator (vpgTLE).
 
-Both variations have boolean variables to activate the computation of the energy and/or time distribution for proton and/or neutron particles. 
-For example for the analog: 
+Both variations have boolean variables to activate the computation of the energy and/or time distribution for proton and/or neutron particles.
+For example for the analog:
 
 .. code-block:: python
 
@@ -1159,8 +1159,8 @@ and for the vpgTLE:
     vpg_tle.prot_tof.active = True
     vpg_tle.neutr_tof.active = True
 
-In addition, the PG time distribution computed by the vpgTLE actor can be weigthed by a PG emission yield, 
-a 1D vector indexed by the proton or neutron energy. It makes it possible to take into account the fact that 
+In addition, the PG time distribution computed by the vpgTLE actor can be weigthed by a PG emission yield,
+a 1D vector indexed by the proton or neutron energy. It makes it possible to take into account the fact that
 when the proton kinetic energy is small (below a few tens of MeV), the prompt gamma yield can be small.
 These vectors should represent an composition-averaged human material, and they are computed off-line and stored
 in the PG database (ROOT file).
