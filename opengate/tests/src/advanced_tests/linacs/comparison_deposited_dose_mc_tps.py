@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+
 import click
 import itk
 import matplotlib.colors as mcolors
@@ -192,7 +193,7 @@ def gamma_index_comparison(path, path_output):
         "max_gamma": 1.5,
         "random_subset": None,
         "local_gamma": True,
-        "ram_available": 40 * 2**29,  # 40 * 1/2 GB
+        "ram_available": 7 * 2**30,  # < 8 GB
         "interp_algo": "scipy",
     }
 
