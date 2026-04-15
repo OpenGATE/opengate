@@ -7,6 +7,7 @@
 
 #include "G4LogicalVolume.hh"
 #include "GateHelpersGeometry.h"
+#include "G4RandomTools.hh"
 
 template<class ImageType>
 void ImageAddValue(typename ImageType::Pointer image,
@@ -52,4 +53,42 @@ void AttachImageToVolume(typename ImageType::Pointer image,
   }
   image->SetOrigin(o);
   image->SetDirection(dir);
+}
+
+template<class ImageType>
+void GetStepVoxelPosition(G4Step *step,
+                          std::string hitType,
+                          typename ImageType::Pointer cpp_image,
+                          G4ThreeVector &position,
+                          bool &isInside,
+                          typename ImageType::IndexType &index)
+{
+   auto preGlobal = step->GetPreStepPoint()->GetPosition();
+   auto postGlobal = step->GetPostStepPoint()->GetPosition();
+   auto touchable = step->GetPreStepPoint()->GetTouchable();
+
+   // consider random position between pre and post
+   if (hitType == "pre") {
+      position = preGlobal;
+   }
+   if (hitType == "random") {
+      auto x = G4UniformRand();
+      auto direction = postGlobal - preGlobal;
+      position = preGlobal + x * direction;
+   }
+   if (hitType == "middle") {
+      auto direction = postGlobal - preGlobal;
+      position = preGlobal + 0.5 * direction;
+   }
+
+   auto localPosition =
+       touchable->GetHistory()->GetTransform(0).TransformPoint(position);
+
+   // convert G4ThreeVector to itk PointType
+   typename ImageType::PointType point;
+   point[0] = localPosition[0];
+   point[1] = localPosition[1];
+   point[2] = localPosition[2];
+
+   isInside = cpp_image->TransformPhysicalPointToIndex(point, index);
 }
