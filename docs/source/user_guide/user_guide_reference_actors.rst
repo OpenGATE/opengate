@@ -1127,3 +1127,61 @@ Reference
 .. autoclass:: opengate.actors.freeflightactors.ScatterSplittingFreeFlightActor
 
 .. autofunction:: opengate.contrib.spect.spect_freeflight_helpers.merge_freeflight_uncertainty
+
+Voxelized Prompt-Gamma Actors
+-----------------------------
+
+Description
+~~~~~~~~~~~
+
+There are two actors to compute the 4D prompt-gamma (PG) energy and time distributions:
+* **VoxelizedPromptGammaAnalogActor** for the analog Monte Carlo,
+* **VoxelizedPromptGammaTLEActor** for the track-length estimator (vpgTLE).
+
+Both variations have boolean variables to activate the computation of the energy and/or time distribution for proton and/or neutron particles. 
+For example for the analog: 
+
+.. code-block:: python
+
+    vpg_analog = sim.add_actor("VoxelizedPromptGammaAnalogActor", "vpg_analog")
+    vpg_analog.prot_E.active = True
+    vpg_analog.neutr_E.active = True
+    vpg_analog.prot_tof.active = True
+    vpg_analog.neutr_tof.active = True
+
+and for the vpgTLE:
+
+.. code-block:: python
+
+    vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpg_tle")
+    vpg_tle.prot_E.active = True
+    vpg_tle.neutr_E.active = True
+    vpg_tle.prot_tof.active = True
+    vpg_tle.neutr_tof.active = True
+
+In addition, the PG time distribution computed by the vpgTLE actor can be weigthed by a PG emission yield, 
+a 1D vector indexed by the proton or neutron energy. It makes it possible to take into account the fact that 
+when the proton kinetic energy is small (below a few tens of MeV), the prompt gamma yield can be small.
+These vectors should represent an composition-averaged human material, and they are computed off-line and stored
+in the PG database (ROOT file).
+
+.. code-block:: python
+
+   # Get the 1D PG yield computed for a human-averaged material, for proton and neutron inelastic processes
+    with uproot.open(paths.data / "test081_pgtle" / "data_merge_proton.root") as root_file:
+        histo = root_file["standard_Weight"]["Weight"].to_hist()
+        vect_p = histo.to_numpy()[0]
+    with uproot.open(paths.data / "test081_pgtle" / "data_merge_neutron.root") as root_file:
+        histo = root_file["standard_Weight"]["Weight"].to_hist()
+        vect_n = histo.to_numpy()[0]
+
+    vpg_tle.weight = True
+    vpg_tle.vect_p = vect_p
+    vpg_tle.vect_n = vect_n
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaAnalogActor
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaTLEActor
