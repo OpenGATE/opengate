@@ -159,7 +159,7 @@ def main():
     coincidences = macaco1_merge_and_compute_coincidences(
         scatt_file,
         abs_file,
-        time_windows=12 * ns,
+        time_windows=50 * ns,
         output_root_filename=coinc_file,
         scatt_tree_name="ThrScatt",
         abs_tree_name="ThrAbs",
