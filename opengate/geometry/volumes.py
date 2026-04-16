@@ -551,9 +551,15 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 f"Volume '{self.name}' already has a field attached ('{self.field}'). "
                 f"A volume can only have one field. Remove the existing field first."
             )
+        existing = self.volume_manager.fields.get(field.name)
+        if existing is not None and existing is not field:
+            fatal(
+                f"A field named '{field.name}' is already registered in the volume manager. "
+                f"Field names must be unique, please choose a different name for this field."
+            )
         self.field = field.name
         field.attached_to.append(self.name)
-        self.volume_manager.fields.update({field.name: field})
+        self.volume_manager.fields[field.name] = field
 
 
 class RepeatableVolume(VolumeBase):
