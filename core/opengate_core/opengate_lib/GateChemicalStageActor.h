@@ -55,7 +55,6 @@ public:
   double GetMeanRestrictedLET() const;
   double GetStdRestrictedLET() const;
   py::dict GetSpeciesInfo() const;
-  py::dict GetReactionCounts() const;
   py::list GetRecordedTimes() const;
   void SetMoleculeCounterId(G4int id) { fMoleculeCounterId = id; }
 
@@ -63,9 +62,6 @@ protected:
   bool ShouldApplyPrimaryLogic(const G4Track *track) const;
   void ConfigureTimesToRecordIfNeeded();
   void RecordSpeciesAtEndOfChemicalStage();
-  std::string
-  GetReactionSignature(const G4Track &trackA, const G4Track &trackB,
-                       const std::vector<G4Track *> *products) const;
 
   bool fTrackOnlyPrimary{true};
   int fPrimaryPDGCode{11};
@@ -95,7 +91,6 @@ protected:
   long fNbReactions{0};
   long fNbRecordedEvents{0};
   std::map<double, std::map<std::string, SpeciesEntry>> fSpeciesInfoPerTime;
-  std::map<std::string, long> fReactionCounts;
 };
 
 #endif // GateChemicalStageActor_h

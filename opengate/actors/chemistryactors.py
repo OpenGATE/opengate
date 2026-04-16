@@ -247,7 +247,6 @@ class ActorOutputChemicalStageActor(ActorOutputBase):
                 "mean_restricted_let": 0.0,
                 "std_restricted_let": 0.0,
                 "species": {},
-                "reactions": {},
                 "times_to_record": [],
             }
         )
@@ -321,6 +320,16 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                     "precision": 1 * g4_units.ps,
                 },
                 "ignored_molecules": ["H2O"],
+            },
+        },
+        "reaction_counter": {
+            "counter_class": "BuiltinReactionCounter",
+            "output_name": "reaction_counter",
+            "counter_kwargs": {
+                "time_comparer": {
+                    "method": "fixed_precision",
+                    "precision": 1 * g4_units.ps,
+                },
             },
         },
     }
@@ -447,7 +456,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
             "mean_restricted_let": self.GetMeanRestrictedLET(),
             "std_restricted_let": self.GetStdRestrictedLET(),
             "species": self.GetSpeciesInfo(),
-            "reactions": self.GetReactionCounts(),
             "times_to_record": self.GetRecordedTimes(),
         }
         self.user_output.results.store_data(data)

@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 namespace {
 G4Mutex GateChemicalStageActorMutex = G4MUTEX_INITIALIZER;
@@ -62,7 +61,6 @@ void GateChemicalStageActor::StartSimulationAction() {
   fNbReactions = 0;
   fNbRecordedEvents = 0;
   fSpeciesInfoPerTime.clear();
-  fReactionCounts.clear();
 }
 
 void GateChemicalStageActor::BeginOfEventAction(const G4Event * /*event*/) {
@@ -196,12 +194,10 @@ void GateChemicalStageActor::PostChemistryTimeStepAction() {
 }
 
 void GateChemicalStageActor::ChemistryReactionAction(
-    const G4Track &trackA, const G4Track &trackB,
-    const std::vector<G4Track *> *products) {
-  const auto signature = GetReactionSignature(trackA, trackB, products);
+    const G4Track & /*trackA*/, const G4Track & /*trackB*/,
+    const std::vector<G4Track *> * /*products*/) {
   G4AutoLock lock(&GateChemicalStageActorMutex);
   fNbReactions++;
-  fReactionCounts[signature]++;
 }
 
 void GateChemicalStageActor::EndChemistryProcessing() {
@@ -239,14 +235,6 @@ py::dict GateChemicalStageActor::GetSpeciesInfo() const {
     speciesInfo[py::float_(time)] = speciesAtTime;
   }
   return speciesInfo;
-}
-
-py::dict GateChemicalStageActor::GetReactionCounts() const {
-  py::dict reactionCounts;
-  for (const auto &[signature, count] : fReactionCounts) {
-    reactionCounts[py::str(signature)] = count;
-  }
-  return reactionCounts;
 }
 
 py::list GateChemicalStageActor::GetRecordedTimes() const {
@@ -330,36 +318,4 @@ void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
       }
     }
   }
-}
-
-std::string GateChemicalStageActor::GetReactionSignature(
-    const G4Track &trackA, const G4Track &trackB,
-    const std::vector<G4Track *> *products) const {
-  std::ostringstream oss;
-  const auto *molA = GetMolecule(trackA);
-  const auto *molB = GetMolecule(trackB);
-  oss << (molA != nullptr ? molA->GetName() : "unknownA");
-  oss << " + ";
-  oss << (molB != nullptr ? molB->GetName() : "unknownB");
-  oss << " -> ";
-
-  if (products == nullptr || products->empty()) {
-    oss << "none";
-    return oss.str();
-  }
-
-  bool first = true;
-  for (const auto *product : *products) {
-    if (!first) {
-      oss << " + ";
-    }
-    first = false;
-    if (product == nullptr) {
-      oss << "null";
-      continue;
-    }
-    const auto *mol = GetMolecule(product);
-    oss << (mol != nullptr ? mol->GetName() : "unknown");
-  }
-  return oss.str();
 }
