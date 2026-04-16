@@ -31,6 +31,10 @@ public:
   void GetFieldValue(const G4double Point[4],
                      G4double *fieldArr) const override {
     py::gil_scoped_acquire gil;
+    // Always initialize output to a safe value.
+    for (size_t i = 0; i < G4Field::MAX_NUMBER_OF_COMPONENTS; ++i) {
+      fieldArr[i] = 0.;
+    }
 
     // Convert Point to Python list
     py::list pyPoint;
