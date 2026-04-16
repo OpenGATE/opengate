@@ -213,7 +213,6 @@ class BuiltinMoleculeCounter(MoleculeCounterBase, g4.G4MoleculeCounter):
         manager = g4.G4MoleculeCounterManager.Instance()
         self.g4_counter_id = manager.RegisterMoleculeCounter(self)
 
-
 class BuiltinReactionCounter(ReactionCounterBase, g4.G4MoleculeReactionCounter):
     def __init__(self, *args, **kwargs):
         ReactionCounterBase.__init__(self, *args, **kwargs)
@@ -231,7 +230,6 @@ class BuiltinReactionCounter(ReactionCounterBase, g4.G4MoleculeReactionCounter):
         self.Initialize()
         manager = g4.G4MoleculeCounterManager.Instance()
         self.g4_counter_id = manager.RegisterReactionCounter(self)
-
 
 chemistry_counter_types = {
     "BuiltinMoleculeCounter": BuiltinMoleculeCounter,

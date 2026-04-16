@@ -23,6 +23,8 @@ class ChemistryActorBase(ActorBase):
     type for configuration, validation and actor discovery.
     """
 
+    counter_config = {}
+
     user_info_defaults = {
         "confine_chemistry_to_volume": (
             True,
@@ -36,13 +38,6 @@ class ChemistryActorBase(ActorBase):
                 "doc": "Chemistry list requested by this actor. ",
             },
         ),
-        "counters": (
-            {},
-            {
-                "doc": "Counters owned by this chemistry actor. Use add_counter() to create them.",
-                "read_only": True,
-            },
-        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -53,6 +48,8 @@ class ChemistryActorBase(ActorBase):
             "reset_master_counter_with_workers": None,
             "accumulate_counter_into_master": None,
         }
+        self.counters = Box()
+        self._instantiate_configured_counters()
 
     def close(self):
         for counter in self.counters.values():
@@ -66,7 +63,7 @@ class ChemistryActorBase(ActorBase):
             counter.actor = self
             counter.initialize()
 
-    def add_counter(self, counter, name=None):
+    def _create_counter(self, counter, name=None, **kwargs):
         new_counter = None
         if isinstance(counter, str):
             if name is None:
@@ -78,7 +75,7 @@ class ChemistryActorBase(ActorBase):
                     f"Unknown chemistry counter type '{counter}'. "
                     f"Known types are: {list(chemistry_counter_types.keys())}"
                 )
-            new_counter = counter_class(name=name, simulation=self.simulation)
+            new_counter = counter_class(name=name, simulation=self.simulation, **kwargs)
         elif isinstance(counter, type):
             if not issubclass(counter, CounterBase):
                 fatal(
@@ -86,29 +83,52 @@ class ChemistryActorBase(ActorBase):
                 )
             if name is None:
                 fatal("You must provide a name for the counter.")
-            new_counter = counter(name=name, simulation=self.simulation)
+            new_counter = counter(name=name, simulation=self.simulation, **kwargs)
         elif isinstance(counter, CounterBase):
+            if kwargs:
+                fatal(
+                    "Cannot provide keyword configuration when passing an existing counter object."
+                )
             new_counter = counter
         else:
             fatal(
                 "You need to either provide a counter type and name, a counter class and name, "
                 "or a counter object."
             )
+        return new_counter
 
-        if new_counter.name in self.counters:
+    def _attach_counter(self, counter_name, counter):
+        if counter_name in self.counters:
             fatal(
-                f"The chemistry counter named {new_counter.name} already exists "
+                f"The chemistry counter named {counter_name} already exists "
                 f"in actor '{self.name}'. Existing counter names are: {list(self.counters.keys())}"
             )
-        self.counters[new_counter.name] = new_counter
-        new_counter.simulation = self.simulation
-        new_counter.actor = self
-        if new_counter is not counter:
-            return new_counter
-        return counter
+        self.counters[counter_name] = counter
+        counter.simulation = self.simulation
+        counter.actor = self
+
+    def _instantiate_counter_from_config(self, counter_name, counter_spec):
+        try:
+            counter_class = counter_spec["counter_class"]
+        except KeyError:
+            fatal(
+                f"Counter config for '{counter_name}' in actor '{self.name}' "
+                "does not define 'counter_class'."
+            )
+        counter_kwargs = dict(counter_spec.get("counter_kwargs", {}))
+        counter = self._create_counter(
+            counter_class,
+            name=counter_name,
+            **counter_kwargs,
+        )
+        self._attach_counter(counter_name, counter)
+
+    def _instantiate_configured_counters(self):
+        for counter_name, counter_spec in self.counter_config.items():
+            self._instantiate_counter_from_config(counter_name, counter_spec)
 
     def _reconstruct_counters_from_dictionary(self, counter_dicts):
-        counters = {}
+        counters = Box()
         for counter_dict in counter_dicts.values():
             counter = create_gate_object_from_dict(counter_dict)
             if not isinstance(counter, CounterBase):
@@ -121,12 +141,17 @@ class ChemistryActorBase(ActorBase):
             counters[counter.name] = counter
         return counters
 
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["counters"] = {
+            counter_name: counter.to_dictionary()
+            for counter_name, counter in self.counters.items()
+        }
+        return d
+
     def from_dictionary(self, d):
         super().from_dictionary(d)
-        user_info = d.get("user_info", {})
-        self.user_info["counters"] = self._reconstruct_counters_from_dictionary(
-            user_info.get("counters", {})
-        )
+        self.counters = self._reconstruct_counters_from_dictionary(d.get("counters", {}))
 
 
 def _setter_hook_chem_actor_output_filename(self, output_filename):
@@ -238,6 +263,19 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     - reaction counting
     """
 
+    counter_config = {
+        "molecule_counter": {
+            "counter_class": "BuiltinMoleculeCounter",
+            "counter_kwargs": {
+                "time_comparer": {
+                    "method": "fixed_precision",
+                    "precision": 1 * g4_units.ps,
+                },
+                "ignored_molecules": ["H2O"],
+            },
+        },
+    }
+
     user_info_defaults = {
         "track_only_primary": (
             True,
@@ -303,14 +341,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                 "accumulate_counter_into_master": False,
             }
         )
-        molecule_counter = self.add_counter(
-            "BuiltinMoleculeCounter", f"{self.name}_molecule_counter"
-        )
-        molecule_counter.time_comparer = {
-            "method": "fixed_precision",
-            "precision": 1 * g4_units.ps,
-        }
-        molecule_counter.ignored_molecules = ["H2O"]
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -340,9 +370,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         ChemistryActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         molecule_counters = [
-            counter
-            for counter in self.counters.values()
-            if isinstance(counter, MoleculeCounterBase)
+            counter for counter in self.counters.values() if isinstance(counter, MoleculeCounterBase)
         ]
         if len(molecule_counters) > 1:
             fatal(
