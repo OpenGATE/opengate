@@ -410,6 +410,9 @@ class CustomElectricField(ElectricField):
             def GetFieldValue(inner_self, point):
                 return inner_self._callback(*point)
 
+            def DoesFieldChangeEnergy(inner_self):
+                return True
+
         self.g4_field = _PyElectricField(self.field_function)
 
     def to_dictionary(self):
