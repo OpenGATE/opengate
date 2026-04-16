@@ -392,7 +392,7 @@ class CustomElectricField(ElectricField):
 
         self.g4_field = _PyElectricField(self.field_function)
 
-
+# TODO (@srmarcballestero): this implementation always goes through the Python trampoline, which compromises performance. Need to implement a more efficient way on the C++ side.
 class UniformElectroMagneticField(ElectroMagneticField):
     """Uniform electromagnetic field with constant magnetic and electric field vectors."""
 
@@ -416,6 +416,9 @@ class UniformElectroMagneticField(ElectroMagneticField):
     }
 
     def __init__(self, *args, **kwargs) -> None:
+        raise NotImplementedError(
+            "UniformElectroMagneticField is not implemented yet."
+        )
         super().__init__(*args, **kwargs)
 
     def _create_field(self) -> None:
