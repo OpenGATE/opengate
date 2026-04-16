@@ -29,9 +29,7 @@ from test099_fields_helpers import (
 )
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__, output_folder="test099_fields"
-    )
+    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
 
     Ex = 1e8 * g4_volt / g4_m
     T = 10 * g4_MeV

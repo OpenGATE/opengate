@@ -31,9 +31,7 @@ from test099_fields_helpers import (
 )
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__, output_folder="test099_fields"
-    )
+    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
 
     By = 5 * g4_tesla
     T = 10 * g4_MeV

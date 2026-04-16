@@ -20,6 +20,7 @@ g4_eplus = gate.g4_units.eplus
 # Proton mass
 PROTON_MASS = 938.27208943 * g4_MeV
 
+
 def cyclotron_radius(T, B, m, q):
     """
     Relativistic cyclotron radius:  r = p / (qBc).

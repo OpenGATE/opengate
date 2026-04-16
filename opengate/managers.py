@@ -1180,9 +1180,7 @@ class VolumeManager(GateObject):
         d = super().to_dictionary()
         d["volumes"] = dict([(k, v.to_dictionary()) for k, v in self.volumes.items()])
         d["parallel_world_volumes"] = list(self.parallel_world_volumes.keys())
-        d["fields"] = dict(
-            [(k, v.to_dictionary()) for k, v in self.fields.items()]
-        )
+        d["fields"] = dict([(k, v.to_dictionary()) for k, v in self.fields.items()])
         return d
 
     def from_dictionary(self, d):
