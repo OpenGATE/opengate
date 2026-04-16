@@ -175,6 +175,37 @@ Use :meth:`~opengate.geometry.volumes.VolumeBase.add_field` to attach a field to
 
 **Unique names.** Field names must be unique across the simulation. Two different field objects with the same name will raise an error.
 
+**Propagation to daughter volumes.** A field attached to a volume automatically propagates to all of its daughter volumes. A daughter volume can override this by attaching its own field. In that case, the parent's field stops at the daughter's boundary and the daughter's field is used inside. This mirrors standard Geant4 behaviour.
+
+.. code-block:: python
+
+   outer = sim.add_volume("Box", "outer")
+   inner = sim.add_volume("Box", "inner")
+   inner.mother = "outer"
+
+   field_outer = fields.UniformMagneticField(name="B_outer")
+   field_outer.field_vector = [0, 0, 1 * tesla]
+   outer.add_field(field_outer)
+   # "inner" inherits B_outer automatically.
+
+   # To override it inside the daughter, attach a different field:
+   field_inner = fields.UniformMagneticField(name="B_inner")
+   field_inner.field_vector = [0, 2 * tesla, 0]
+   inner.add_field(field_inner)
+   # Now "inner" uses B_inner; "outer" still uses B_outer outside of "inner".
+
+
+Visualizing fields
+------------------
+
+Geant4 can overlay field arrows on the visualization of the geometry. The Geant4 command is ``/vis/scene/add/magneticField <arrow density> <arrow type>`` (or ``/vis/scene/add/electricField`` for electric fields). It can be passed to GATE via the ``visu_commands`` parameter:
+
+.. code-block:: python
+
+   sim.visu = True
+   sim.visu_type = "qt"
+   sim.visu_commands.append("/vis/scene/add/magneticField 20 lightArrow")
+
 
 .. _user_guide_fields_performance:
 
