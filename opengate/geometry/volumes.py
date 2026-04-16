@@ -545,6 +545,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.name, min_range
         )
 
+    @requires_fatal("volume_manager")
     def add_field(self, field: FieldBase):
         if self.field is not None:
             fatal(
