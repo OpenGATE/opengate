@@ -83,7 +83,6 @@ class FieldBase(GateObject):
     def close(self) -> None:
         self.g4_field = None
         self._g4_runtime_objects = []
-        self.attached_to = []
         super().close()
 
 
