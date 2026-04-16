@@ -240,6 +240,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self.g4_vis_attributes = None
         self.g4_physical_volumes = []
         self.g4_material = None
+        self.g4_field_manager = None
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -249,6 +250,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         return_dict["g4_vis_attributes"] = None
         return_dict["g4_physical_volumes"] = []
         return_dict["g4_material"] = None
+        return_dict["g4_field_manager"] = None
         return_dict["volume_engine"] = None
         return_dict["_is_constructed"] = False
         return return_dict
