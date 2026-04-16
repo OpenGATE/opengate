@@ -18,7 +18,7 @@ from .definitions import __world_name__
 from .engines import SimulationEngine
 from .exception import fatal, warning, GateDeprecationError, GateImplementationError
 from .geometry.materials import MaterialDatabase
-from .geometry.fields import FieldBase
+from .geometry.fields import FieldBase, field_types
 
 from .utility import (
     g4_units,
@@ -1180,11 +1180,25 @@ class VolumeManager(GateObject):
         d = super().to_dictionary()
         d["volumes"] = dict([(k, v.to_dictionary()) for k, v in self.volumes.items()])
         d["parallel_world_volumes"] = list(self.parallel_world_volumes.keys())
+        d["fields"] = dict(
+            [(k, v.to_dictionary()) for k, v in self.fields.items()]
+        )
         return d
 
     def from_dictionary(self, d):
         self.reset()
         super().from_dictionary(d)
+        # Restore fields before volumes so that volume references are valid
+        for k, v in d.get("fields", {}).items():
+            field_type = v["object_type"]
+            if field_type not in field_types:
+                fatal(
+                    f"Unknown field type '{field_type}'. "
+                    f"Known types are: {list(field_types.keys())}."
+                )
+            field = field_types[field_type](name=v["user_info"]["name"])
+            field.from_dictionary(v)
+            self.fields[field.name] = field
         # First create all volumes
         for k, v in d["volumes"].items():
             # the world volume is always created in __init__

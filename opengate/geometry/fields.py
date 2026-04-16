@@ -86,6 +86,15 @@ class FieldBase(GateObject):
         msg = "create_field_manager() must be implemented in subclasses."
         raise NotImplementedError(msg)
 
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["attached_to"] = list(self.attached_to)
+        return d
+
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        self.attached_to = d.get("attached_to", [])
+
     def close(self) -> None:
         self.g4_field = None
         self._g4_runtime_objects = []
@@ -251,6 +260,11 @@ class CustomMagneticField(MagneticField):
 
         self.g4_field = _PyMagneticField(self.field_function)
 
+    def to_dictionary(self):
+        raise NotImplementedError(
+            "Custom fields with Python callbacks cannot be serialized."
+        )
+
 
 class ElectroMagneticField(FieldBase):
     """Base class for electromagnetic fields."""
@@ -398,6 +412,11 @@ class CustomElectricField(ElectricField):
 
         self.g4_field = _PyElectricField(self.field_function)
 
+    def to_dictionary(self):
+        raise NotImplementedError(
+            "Custom fields with Python callbacks cannot be serialized."
+        )
+
 # TODO (@srmarcballestero): this implementation always goes through the Python trampoline, which compromises performance. Need to implement a more efficient way on the C++ side.
 class UniformElectroMagneticField(ElectroMagneticField):
     """Uniform electromagnetic field with constant magnetic and electric field vectors."""
@@ -504,3 +523,19 @@ class CustomElectroMagneticField(ElectroMagneticField):
                 return True
 
         self.g4_field = _PyElectroMagneticField(self.field_function)
+
+    def to_dictionary(self):
+        raise NotImplementedError(
+            "Custom fields with Python callbacks cannot be serialized."
+        )
+
+
+field_types = {
+    "UniformMagneticField": UniformMagneticField,
+    "QuadrupoleMagneticField": QuadrupoleMagneticField,
+    "CustomMagneticField": CustomMagneticField,
+    "UniformElectricField": UniformElectricField,
+    "CustomElectricField": CustomElectricField,
+    "UniformElectroMagneticField": UniformElectroMagneticField,
+    "CustomElectroMagneticField": CustomElectroMagneticField,
+}
