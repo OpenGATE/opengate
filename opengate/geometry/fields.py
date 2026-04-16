@@ -223,6 +223,8 @@ class CustomMagneticField(MagneticField):
         """Create the custom magnetic field using the Python trampoline."""
         if self.field_function is None:
             raise ValueError("field_function must be provided for CustomMagneticField")
+        if not callable(self.field_function):
+            raise TypeError("field_function must be a callable function")
 
         # Check if the function returns 3 components
         test_point = [0, 0, 0, 0]
@@ -368,6 +370,8 @@ class CustomElectricField(ElectricField):
         """Create the custom electric field using the Python trampoline."""
         if self.field_function is None:
             raise ValueError("field_function must be provided for CustomElectricField")
+        if not callable(self.field_function):
+            raise TypeError("field_function must be a callable function")
 
         # Check if the function returns 3 components
         test_point = [0, 0, 0, 0]
@@ -467,6 +471,8 @@ class CustomElectroMagneticField(ElectroMagneticField):
             raise ValueError(
                 "field_function must be provided for CustomElectroMagneticField"
             )
+        if not callable(self.field_function):
+            raise TypeError("field_function must be a callable function")
 
         # Check if the function returns 6 components
         test_point = [0, 0, 0, 0]
