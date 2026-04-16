@@ -36,5 +36,24 @@ void init_G4MoleculeCounter(py::module &m) {
            py::arg("time"), py::arg("inclusive") = true)
       .def("SetActiveUpperBound", &G4MoleculeCounter::SetActiveUpperBound,
            py::arg("time"), py::arg("inclusive") = true)
+      .def("GetRecordedMolecules", &G4MoleculeCounter::GetRecordedMolecules)
+      .def("GetRecordedTimes", &G4MoleculeCounter::GetRecordedTimes)
+      .def(
+          "GetNbMoleculesAtTime",
+          [](const G4MoleculeCounter *self,
+             const G4MolecularConfiguration *molecule, G4double time) {
+            return self->GetNbMoleculesAtTime(G4MoleculeCounterIndex(molecule),
+                                              time);
+          },
+          py::arg("molecule"), py::arg("time"))
+      .def(
+          "GetNbMoleculesAtTimes",
+          [](const G4MoleculeCounter *self,
+             const G4MolecularConfiguration *molecule,
+             const std::vector<G4double> &times) {
+            return self->GetNbMoleculesAtTimes(G4MoleculeCounterIndex(molecule),
+                                               times);
+          },
+          py::arg("molecule"), py::arg("times"))
       .def("GetManagedId", &G4MoleculeCounter::GetManagedId);
 }

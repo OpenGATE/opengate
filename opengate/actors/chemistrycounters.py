@@ -1,11 +1,68 @@
+import re
+
+import numpy as np
 import opengate_core as g4
 
 from ..base import GateObject, process_cls
 from ..exception import fatal
 
 
+TIME_COUNT_DTYPE = np.dtype([("time", np.float64), ("count", np.int64)])
+
+
+def _make_time_count_series(times, counts):
+    if len(times) != len(counts):
+        fatal(
+            f"Implementation error: inconsistent time/count series lengths "
+            f"({len(times)} vs {len(counts)})."
+        )
+    output = np.empty(len(times), dtype=TIME_COUNT_DTYPE)
+    output["time"] = times
+    output["count"] = counts
+    return output
+
+
+def _sanitize_counter_key(label):
+    sanitized = re.sub(r"[^0-9A-Za-z]+", "_", label).strip("_")
+    if not sanitized:
+        sanitized = "unnamed"
+    return sanitized
+
+
+def _make_unique_key(preferred_key, existing_keys, fallback_suffix):
+    if preferred_key not in existing_keys:
+        return preferred_key
+    unique_key = f"{preferred_key}_{fallback_suffix}"
+    if unique_key not in existing_keys:
+        return unique_key
+    i = 1
+    while f"{unique_key}_{i}" in existing_keys:
+        i += 1
+    return f"{unique_key}_{i}"
+
+
+def _format_reaction_label(reaction):
+    reactant_1 = reaction.GetReactant1()
+    reactant_2 = reaction.GetReactant2()
+    product_names = [product.GetName() for product in reaction.GetProducts()]
+    left = f"{reactant_1.GetName()}_{reactant_2.GetName()}"
+    if len(product_names) > 0:
+        right = "_".join(product_names)
+    else:
+        right = "no_products"
+    return _sanitize_counter_key(f"{left}_to_{right}")
+
+
 class CounterBase(GateObject):
-    user_info_defaults = {}
+    user_info_defaults = {
+        "output_name": (
+            None,
+            {
+                "doc": "Name of the actor output associated with this counter.",
+                "read_only": True,
+            },
+        ),
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,10 +90,48 @@ class CounterBase(GateObject):
             f"Counter class {type(self).__name__} does not implement initialize()."
         )
 
-    def get_results(self):
+    def _collect_results(self):
         fatal(
-            f"Counter class {type(self).__name__} does not implement get_results()."
+            f"Counter class {type(self).__name__} does not implement _collect_results()."
         )
+
+    @property
+    def active(self):
+        if self.actor is None:
+            fatal(
+                f"Counter '{self.name}' is not attached to an actor, so its active state "
+                "cannot be resolved."
+            )
+        if self.output_name is None:
+            fatal(
+                f"Counter '{self.name}' is not associated with any actor output."
+            )
+        try:
+            return self.actor.user_output[self.output_name].get_active(item="any")
+        except KeyError:
+            fatal(
+                f"Counter '{self.name}' expects actor output '{self.output_name}', "
+                f"but actor '{self.actor.name}' does not define it."
+            )
+
+    @active.setter
+    def active(self, value):
+        if self.actor is None:
+            fatal(
+                f"Counter '{self.name}' is not attached to an actor, so its active state "
+                "cannot be changed."
+            )
+        if self.output_name is None:
+            fatal(
+                f"Counter '{self.name}' is not associated with any actor output."
+            )
+        try:
+            self.actor.user_output[self.output_name].set_active(value, item="all")
+        except KeyError:
+            fatal(
+                f"Counter '{self.name}' expects actor output '{self.output_name}', "
+                f"but actor '{self.actor.name}' does not define it."
+            )
 
     def _create_time_comparer(self, config):
         if not config:
@@ -213,6 +308,16 @@ class BuiltinMoleculeCounter(MoleculeCounterBase, g4.G4MoleculeCounter):
         manager = g4.G4MoleculeCounterManager.Instance()
         self.g4_counter_id = manager.RegisterMoleculeCounter(self)
 
+    def _collect_results(self):
+        times = sorted(self.GetRecordedTimes())
+        results = {}
+        for molecule in self.GetRecordedMolecules():
+            molecule_name = molecule.GetName()
+            counts = self.GetNbMoleculesAtTimes(molecule, times)
+            results[molecule_name] = _make_time_count_series(times, counts)
+        return results
+
+
 class BuiltinReactionCounter(ReactionCounterBase, g4.G4MoleculeReactionCounter):
     def __init__(self, *args, **kwargs):
         ReactionCounterBase.__init__(self, *args, **kwargs)
@@ -230,6 +335,19 @@ class BuiltinReactionCounter(ReactionCounterBase, g4.G4MoleculeReactionCounter):
         self.Initialize()
         manager = g4.G4MoleculeCounterManager.Instance()
         self.g4_counter_id = manager.RegisterReactionCounter(self)
+
+    def _collect_results(self):
+        times = sorted(self.GetRecordedTimes())
+        results = {}
+        for reaction in self.GetRecordedReactions():
+            preferred_key = _format_reaction_label(reaction)
+            reaction_key = _make_unique_key(
+                preferred_key, results.keys(), reaction.GetReactionID()
+            )
+            counts = self.GetNbReactionsAtTimes(reaction, times)
+            results[reaction_key] = _make_time_count_series(times, counts)
+        return results
+
 
 chemistry_counter_types = {
     "BuiltinMoleculeCounter": BuiltinMoleculeCounter,

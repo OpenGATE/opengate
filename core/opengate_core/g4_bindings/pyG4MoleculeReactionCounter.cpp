@@ -1,4 +1,5 @@
 #include "pybind11/pybind11.h"
+#include "pybind11/stl.h"
 
 #include "G4MoleculeReactionCounter.hh"
 
@@ -24,5 +25,24 @@ void init_G4MoleculeReactionCounter(py::module &m) {
       .def("SetActiveUpperBound",
            &G4MoleculeReactionCounter::SetActiveUpperBound, py::arg("time"),
            py::arg("inclusive") = true)
+      .def("GetRecordedReactions", &G4MoleculeReactionCounter::GetRecordedReactions)
+      .def("GetRecordedTimes", &G4MoleculeReactionCounter::GetRecordedTimes)
+      .def(
+          "GetNbReactionsAtTime",
+          [](const G4MoleculeReactionCounter *self,
+             const G4DNAMolecularReactionData *reaction, G4double time) {
+            return self->GetNbReactionsAtTime(
+                G4MoleculeReactionCounterIndex(reaction), time);
+          },
+          py::arg("reaction"), py::arg("time"))
+      .def(
+          "GetNbReactionsAtTimes",
+          [](const G4MoleculeReactionCounter *self,
+             const G4DNAMolecularReactionData *reaction,
+             const std::vector<G4double> &times) {
+            return self->GetNbReactionsAtTimes(
+                G4MoleculeReactionCounterIndex(reaction), times);
+          },
+          py::arg("reaction"), py::arg("times"))
       .def("GetManagedId", &G4MoleculeReactionCounter::GetManagedId);
 }

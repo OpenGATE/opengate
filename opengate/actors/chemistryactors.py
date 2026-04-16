@@ -2,7 +2,8 @@ from box import Box
 import opengate_core as g4
 
 from .base import ActorBase
-from .actoroutput import ActorOutputBase
+from .actoroutput import ActorOutputBase, ActorOutputUsingDataItemContainer
+from .dataitems import SingleTimeCountSeries
 from .chemistrycounters import (
     CounterBase,
     MoleculeCounterBase,
@@ -24,6 +25,7 @@ class ChemistryActorBase(ActorBase):
     """
 
     counter_config = {}
+    user_output_config = {}
 
     user_info_defaults = {
         "confine_chemistry_to_volume": (
@@ -61,7 +63,8 @@ class ChemistryActorBase(ActorBase):
         for counter in self.counters.values():
             counter.simulation = self.simulation
             counter.actor = self
-            counter.initialize()
+            if counter.active:
+                counter.initialize()
 
     def _create_counter(self, counter, name=None, **kwargs):
         new_counter = None
@@ -115,7 +118,9 @@ class ChemistryActorBase(ActorBase):
                 f"Counter config for '{counter_name}' in actor '{self.name}' "
                 "does not define 'counter_class'."
             )
+        output_name = counter_spec.get("output_name", counter_name)
         counter_kwargs = dict(counter_spec.get("counter_kwargs", {}))
+        counter_kwargs["output_name"] = output_name
         counter = self._create_counter(
             counter_class,
             name=counter_name,
@@ -126,6 +131,34 @@ class ChemistryActorBase(ActorBase):
     def _instantiate_configured_counters(self):
         for counter_name, counter_spec in self.counter_config.items():
             self._instantiate_counter_from_config(counter_name, counter_spec)
+
+    @classmethod
+    def _make_counter_output_config(cls):
+        output_config = {}
+        for counter_name, counter_spec in cls.counter_config.items():
+            output_name = counter_spec.get("output_name", counter_name)
+            if output_name in cls.user_output_config:
+                fatal(
+                    f"Chemistry actor class '{cls.__name__}' declares counter '{counter_name}' "
+                    f"with output_name '{output_name}', but this output name already exists "
+                    "in user_output_config."
+                )
+            output_config[output_name] = {
+                "actor_output_class": ActorOutputChemicalCounter,
+                "active": True,
+                "write_to_disk": False,
+            }
+        return output_config
+
+    @classmethod
+    def _process_user_output_config(cls):
+        original_output_config = cls.user_output_config
+        cls.user_output_config = dict(original_output_config)
+        cls.user_output_config.update(cls._make_counter_output_config())
+        try:
+            super()._process_user_output_config()
+        finally:
+            cls.user_output_config = original_output_config
 
     def _reconstruct_counters_from_dictionary(self, counter_dicts):
         counters = Box()
@@ -152,6 +185,13 @@ class ChemistryActorBase(ActorBase):
     def from_dictionary(self, d):
         super().from_dictionary(d)
         self.counters = self._reconstruct_counters_from_dictionary(d.get("counters", {}))
+
+    def _store_counter_results(self, which="merged"):
+        for counter in self.counters.values():
+            if counter.g4_counter_id is not None and counter.output_name is not None:
+                self.user_output[counter.output_name].store_data(
+                    which, counter._collect_results()
+                )
 
 
 def _setter_hook_chem_actor_output_filename(self, output_filename):
@@ -252,6 +292,14 @@ class ActorOutputChemicalStageActor(ActorOutputBase):
             self.write_data(**kwargs)
 
 
+class ActorOutputChemicalCounter(ActorOutputUsingDataItemContainer):
+    data_container_class = SingleTimeCountSeries
+
+    def write_data_if_requested(self, **kwargs):
+        if self.write_to_disk is True:
+            self.write_data(**kwargs)
+
+
 class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     """
     Minimal chemistry-aware actor inspired by chem6.
@@ -266,6 +314,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
     counter_config = {
         "molecule_counter": {
             "counter_class": "BuiltinMoleculeCounter",
+            "output_name": "molecule_counter",
             "counter_kwargs": {
                 "time_comparer": {
                     "method": "fixed_precision",
@@ -370,7 +419,9 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         ChemistryActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         molecule_counters = [
-            counter for counter in self.counters.values() if isinstance(counter, MoleculeCounterBase)
+            counter
+            for counter in self.counters.values()
+            if isinstance(counter, MoleculeCounterBase) and counter.g4_counter_id is not None
         ]
         if len(molecule_counters) > 1:
             fatal(
@@ -400,8 +451,10 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
             "times_to_record": self.GetRecordedTimes(),
         }
         self.user_output.results.store_data(data)
+        self._store_counter_results("merged")
 
 
 process_cls(ChemistryActorBase)
 process_cls(ActorOutputChemicalStageActor)
+process_cls(ActorOutputChemicalCounter)
 process_cls(ChemicalStageActor)

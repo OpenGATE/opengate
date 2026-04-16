@@ -63,11 +63,27 @@ void init_G4VUserChemistryList(py::module &m) {
                     const G4MolecularConfiguration *>(),
            py::arg("reaction_rate"), py::arg("reactant_a"),
            py::arg("reactant_b"))
+      .def("GetReactionID", &G4DNAMolecularReactionData::GetReactionID)
       .def("SetReactionType", &G4DNAMolecularReactionData::SetReactionType)
+      .def("GetReactionType", &G4DNAMolecularReactionData::GetReactionType)
+      .def("GetReactant1", &G4DNAMolecularReactionData::GetReactant1,
+           py::return_value_policy::reference)
+      .def("GetReactant2", &G4DNAMolecularReactionData::GetReactant2,
+           py::return_value_policy::reference)
       .def("AddProduct",
            py::overload_cast<const G4MolecularConfiguration *>(
                &G4DNAMolecularReactionData::AddProduct),
-           py::arg("product"));
+           py::arg("product"))
+      .def(
+          "GetProducts",
+          [](G4DNAMolecularReactionData *self) {
+            std::vector<const G4MolecularConfiguration *> products;
+            const auto *g4_products = self->GetProducts();
+            if (g4_products != nullptr) {
+              products.assign(g4_products->begin(), g4_products->end());
+            }
+            return products;
+          });
 
   py::class_<G4DNAMolecularReactionTable,
              std::unique_ptr<G4DNAMolecularReactionTable, py::nodelete>>(
