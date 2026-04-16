@@ -1,3 +1,5 @@
+import code
+
 from ..base import GateObject
 
 import opengate_core as g4
@@ -7,7 +9,11 @@ from ..utility import g4_units
 # ! - implement the possibility of choosing the stepper type and equation type
 # ! - bind the sextupole magnetic field geant4 implementation
 # ! - implement mapped fields (e.g., from a CSV file)
-# ! -
+# ! - Overhead for custom fields implementation: every GetFieldValue call crosses c++ -> Python -> c++, acquiring the GIL each time,
+# !   which is very inefficient. Need to implement a more efficient way on the C++ side.
+# ! - in MT mode, create_field_manager() is called per thread and overwrites shared instance attrs (g4_field, etc.),
+# !   so any code that relies on those attributes being available later on will get an arbitrary thread's copy.
+# !   Not sure if this is really an issue or not, but worth investigating.
 # ! =============================
 
 
