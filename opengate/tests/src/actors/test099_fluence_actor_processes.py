@@ -29,14 +29,16 @@ def img_generation_from_phsp(nb_pixel_x, nb_pixel_y, dim_x, dim_y, df, type="E",
     y_edges = np.linspace(-dim_y / 2, dim_y / 2, nb_pixel_y + 1)
     spacing = np.array([x_edges[1] - x_edges[0], y_edges[1] - y_edges[0]])
     origin = np.array([x_edges[0], y_edges[0]])
-    if process == "rayl":
+    if process == "rayleigh":
         process = "Rayl"
+    if process == "compton":
+        process = "compt"
     if process != None:
-        if process != "sec" and process != "prim":
+        if process != "secondaries" and process != "primaries":
             df = df[df["LastOccuringProcess__water"] ==process].copy()
-        elif process == "sec" :
+        elif process == "secondaries" :
             df = df[df["LastOccuringProcess__water"] != "Transportation"].copy()
-        elif process == "prim" :
+        elif process == "primaries" :
             df = df[df["LastOccuringProcess__water"] == "Transportation"].copy()
 
     df[["PrePositionLocal_X", "PrePositionLocal_Y"]] = (
@@ -140,7 +142,7 @@ if __name__ == "__main__":
 
     # add fluence actor
     fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
-    fluence_actor.secondaries = True
+    fluence_actor.images_for_scattering_processes = True
     # let the actor score other quantities additional to edep (default)
     fluence_actor.counts_uncertainty.active = True
     fluence_actor.counts_squared.active = True
@@ -184,7 +186,7 @@ if __name__ == "__main__":
 
 
 
-    processes = ["rayl","compt","sec","prim"]
+    processes = ["rayleigh","compton","secondaries","primaries"]
     types = ["counts","energy"]
 
     dict_comp = {}
