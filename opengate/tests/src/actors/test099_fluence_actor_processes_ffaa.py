@@ -19,12 +19,14 @@ def img_opening(img_to_open):
     img = itk.GetArrayFromImage(img)
     numpy_column_order = [2, 1, 0]
     img = np.transpose(img, numpy_column_order)
-    img = img.reshape((img.shape[0],img.shape[1]))
+    img = img.reshape((img.shape[0], img.shape[1]))
     img = img.transpose()
     return img
 
 
-def img_generation_from_phsp(nb_pixel_x, nb_pixel_y, dim_x, dim_y, df, type="E",process = None):
+def img_generation_from_phsp(
+    nb_pixel_x, nb_pixel_y, dim_x, dim_y, df, type="E", process=None
+):
     x_edges = np.linspace(-dim_x / 2, dim_x / 2, nb_pixel_x + 1)
     y_edges = np.linspace(-dim_y / 2, dim_y / 2, nb_pixel_y + 1)
     spacing = np.array([x_edges[1] - x_edges[0], y_edges[1] - y_edges[0]])
@@ -35,10 +37,10 @@ def img_generation_from_phsp(nb_pixel_x, nb_pixel_y, dim_x, dim_y, df, type="E",
         process = "biasWrapper(compt)"
     if process != None:
         if process != "secondaries" and process != "primaries":
-            df = df[df["TrackCreatorProcess"] ==process].copy()
-        elif process == "secondaries" :
+            df = df[df["TrackCreatorProcess"] == process].copy()
+        elif process == "secondaries":
             df = df[df["TrackCreatorProcess"] != "Transportation"].copy()
-        elif process == "primaries" :
+        elif process == "primaries":
             df = df[df["TrackCreatorProcess"] == "Transportation"].copy()
 
     df[["PrePositionLocal_X", "PrePositionLocal_Y"]] = (
@@ -132,20 +134,17 @@ if __name__ == "__main__":
     source.position.radius = 1 * cm
     source.position.translation = [0, 0, -80 * mm]
     source.direction.type = "momentum"
-    source.direction.momentum = [0,0,1]
+    source.direction.momentum = [0, 0, 1]
     source.n = 10000
 
-
-    water_box = sim.add_volume("Box","water")
-    water_box.size = [15*cm,15*cm,5*cm]
+    water_box = sim.add_volume("Box", "water")
+    water_box.size = [15 * cm, 15 * cm, 5 * cm]
     water_box.material = "G4_WATER"
-    water_box.translation = [0,0,-30*mm]
-
-
+    water_box.translation = [0, 0, -30 * mm]
 
     # add fluence actor
     fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
-    fluence_actor.images_for_scattering_processes= True
+    fluence_actor.images_for_scattering_processes = True
     # let the actor score other quantities additional to edep (default)
     fluence_actor.counts_uncertainty.active = True
     fluence_actor.counts_squared.active = True
@@ -183,7 +182,7 @@ if __name__ == "__main__":
         "Weight",
         "PrePositionLocal",
         "ParticleName",
-        "TrackCreatorProcess"
+        "TrackCreatorProcess",
     ]
     phsp.output_filename = f"test099_processes_ffaa.root"
 
@@ -200,44 +199,49 @@ if __name__ == "__main__":
     with uproot.open(f"{sim.output_dir}/{phsp.output_filename}:PhaseSpace") as tree:
         df = tree.arrays(library="pd")
 
-
-
-
-    processes = ["rayleigh","compton","secondaries","primaries"]
-    types = ["counts","energy"]
+    processes = ["rayleigh", "compton", "secondaries", "primaries"]
+    types = ["counts", "energy"]
 
     dict_comp = {}
-    for process in processes :
-        for type in types :
+    for process in processes:
+        for type in types:
             string = f"{process}_{type}"
-            img_fluence = img_opening(f"{sim.output_dir}/test099_processes_ffaa_{type}_{process}.mhd")
-            img_squared_fluence = img_opening(f"{sim.output_dir}/test099_processes_ffaa_{type}_squared_{process}.mhd")
-            img_uncertainty_fluence = img_opening(f"{sim.output_dir}/test099_processes_ffaa_{type}_uncertainty_{process}.mhd")
-            img_phsp,img_squared_phsp = img_generation_from_phsp(
-            fluence_actor.size[0],
-            fluence_actor.size[1],
-            fluence_plane.size[0],
-            fluence_plane.size[1],
-            df.copy(),
-            type=type,
-            process=process
+            img_fluence = img_opening(
+                f"{sim.output_dir}/test099_processes_ffaa_{type}_{process}.mhd"
+            )
+            img_squared_fluence = img_opening(
+                f"{sim.output_dir}/test099_processes_ffaa_{type}_squared_{process}.mhd"
+            )
+            img_uncertainty_fluence = img_opening(
+                f"{sim.output_dir}/test099_processes_ffaa_{type}_uncertainty_{process}.mhd"
+            )
+            img_phsp, img_squared_phsp = img_generation_from_phsp(
+                fluence_actor.size[0],
+                fluence_actor.size[1],
+                fluence_plane.size[0],
+                fluence_plane.size[1],
+                df.copy(),
+                type=type,
+                process=process,
             )
             std_dev_phsp = std_dev_img_calculation(source.n, img_phsp, img_squared_phsp)
             img_uncertainty_phsp = np.divide(std_dev_phsp, (img_phsp / source.n))
             img_uncertainty_phsp[np.isnan(img_uncertainty_phsp)] = 0
-            dict_comp[f"{string}"] = [img_fluence,img_phsp]
+            dict_comp[f"{string}"] = [img_fluence, img_phsp]
             dict_comp[f"{string}_squared"] = [img_squared_fluence, img_squared_phsp]
-            dict_comp[f"{string}_uncertainty"] = [img_uncertainty_fluence,img_uncertainty_phsp]
-
+            dict_comp[f"{string}_uncertainty"] = [
+                img_uncertainty_fluence,
+                img_uncertainty_phsp,
+            ]
 
     l_bool = []
-    for key,elem in dict_comp.items():
-        diff = np.round((elem[0] - elem[1])/elem[1])
-        diff = np.round(diff,decimals=5)
+    for key, elem in dict_comp.items():
+        diff = np.round((elem[0] - elem[1]) / elem[1])
+        diff = np.round(diff, decimals=5)
         diff[np.isnan(diff)] = 0
         is_ok = np.all(diff == 0)
         l_bool.append(is_ok)
 
-    l_bool = np.array(l_bool,dtype = 'bool')
+    l_bool = np.array(l_bool, dtype="bool")
     is_ok = np.all(l_bool)
     utility.test_ok(is_ok)
