@@ -167,6 +167,14 @@ class GenericBiasingActorBase(ActorBase):
         ),
     }
 
+    def initialize(self):
+        super().initialize()
+        if self.user_info.attached_to != "world":
+            fatal(
+                f"Biasing actors can only be attached to the world volume, "
+                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
+            )
+
 
 class SplitProcessActorBase(GenericBiasingActorBase):
     """
