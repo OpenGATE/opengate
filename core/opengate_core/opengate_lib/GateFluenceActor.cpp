@@ -131,14 +131,14 @@ void GateFluenceActor::InitializeCpp() {
   }
 }
 
-void GateFluenceActor::StartSimulationAction(){
-  if (fSecondaries){
-    auto* actorManager = GateActorManager::GetInstance();
-    auto* actor = actorManager->GetActor(this->fActorName +"_processes");
-    fLastProcessActor = dynamic_cast<GateDigiAttributeLastProcessDefinedStepInVolumeActor*>(actor);
+void GateFluenceActor::StartSimulationAction() {
+  if (fSecondaries) {
+    auto *actorManager = GateActorManager::GetInstance();
+    auto *actor = actorManager->GetActor(this->fActorName + "_processes");
+    fLastProcessActor =
+        dynamic_cast<GateDigiAttributeLastProcessDefinedStepInVolumeActor *>(
+            actor);
   }
-
-
 }
 
 void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
@@ -150,22 +150,20 @@ void GateFluenceActor::BeginOfRunAction(const G4Run *run) {
   const auto N_voxels = size_region[0] * size_region[1] * size_region[2];
   if (fEnergySquaredFlag) {
     PrepareLocalDataForRun(fThreadLocalDataEnergy.Get(), N_voxels);
-    if (fSecondaries){
+    if (fSecondaries) {
       PrepareLocalDataForRun(fThreadLocalDataComptEnergy.Get(), N_voxels);
-      PrepareLocalDataForRun(fThreadLocalDataRaylEnergy.Get(), N_voxels);    
-      PrepareLocalDataForRun(fThreadLocalDataSecEnergy.Get(), N_voxels);    
-      PrepareLocalDataForRun(fThreadLocalDataPrimEnergy.Get(), N_voxels);          
-
+      PrepareLocalDataForRun(fThreadLocalDataRaylEnergy.Get(), N_voxels);
+      PrepareLocalDataForRun(fThreadLocalDataSecEnergy.Get(), N_voxels);
+      PrepareLocalDataForRun(fThreadLocalDataPrimEnergy.Get(), N_voxels);
     }
   }
   if (fCountsSquaredFlag) {
     PrepareLocalDataForRun(fThreadLocalDataCounts.Get(), N_voxels);
-    if (fSecondaries){
+    if (fSecondaries) {
       PrepareLocalDataForRun(fThreadLocalDataComptCounts.Get(), N_voxels);
-      PrepareLocalDataForRun(fThreadLocalDataRaylCounts.Get(), N_voxels);    
-      PrepareLocalDataForRun(fThreadLocalDataSecCounts.Get(), N_voxels);    
-      PrepareLocalDataForRun(fThreadLocalDataPrimCounts.Get(), N_voxels);          
-
+      PrepareLocalDataForRun(fThreadLocalDataRaylCounts.Get(), N_voxels);
+      PrepareLocalDataForRun(fThreadLocalDataSecCounts.Get(), N_voxels);
+      PrepareLocalDataForRun(fThreadLocalDataPrimCounts.Get(), N_voxels);
     }
   }
 }
@@ -204,13 +202,13 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
 }
 
 void GateFluenceActor::SteppingAction(G4Step *step) {
-  
+
   // same method to consider only entering tracks
   if (step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary) {
     G4String lastProcessName;
     if (fSecondaries)
       lastProcessName = fLastProcessActor->GetLastProcess();
-  
+
     // the pre-position is at the edge
     const auto event_id =
         G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
@@ -240,7 +238,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
         cpp_counts_image->TransformPhysicalPointToIndex(point, index);
 
     // set value
-    
+
     if (isInside) {
       G4String creatorProcessName = "None";
       G4int particleID = step->GetTrack()->GetDynamicParticle()->GetPDGcode();
@@ -267,7 +265,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
             ImageAddValue<Image3DType>(cpp_counts_primaries_image, index, w);
           }
         }
-        if (fEnergyFlag){
+        if (fEnergyFlag) {
           ImageAddValue<Image3DType>(cpp_energy_image, index, energy * w);
           if ((fSecondaries) && (particleID ==22)){
             if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
@@ -284,7 +282,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
               ImageAddValue<Image3DType>(cpp_energy_primaries_image, index, energy * w);
             }
           }
-      }
+        }
       }
       // else : outside the image
 
@@ -299,13 +297,16 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
                             cpp_energy_squared_compton_image, energy * w, event_id,
                             index);
             }
-            if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
+            if ((lastProcessName == "Rayl") ||
+                (creatorProcessName == "biasWrapper(Rayl)")) {
               ScoreSquaredValue(fThreadLocalDataRaylEnergy.Get(),
                             cpp_energy_squared_rayleigh_image, energy * w, event_id,
                             index);
             }
-            if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
-            ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
+            if (((lastProcessName == "Rayl") ||
+                 (creatorProcessName == "biasWrapper(Rayl)")) ||
+                ((lastProcessName == "compt") ||
+                 (creatorProcessName == "biasWrapper(compt)"))) {
               ScoreSquaredValue(fThreadLocalDataSecEnergy.Get(),
                             cpp_energy_squared_secondaries_image, energy * w, event_id,
                             index);
@@ -327,13 +328,16 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
                             cpp_counts_squared_compton_image, w, event_id,
                             index);
             }
-            if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
+            if ((lastProcessName == "Rayl") ||
+                (creatorProcessName == "biasWrapper(Rayl)")) {
               ScoreSquaredValue(fThreadLocalDataRaylCounts.Get(),
                             cpp_counts_squared_rayleigh_image, w, event_id,
                             index);
             }
-            if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
-            ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
+            if (((lastProcessName == "Rayl") ||
+                 (creatorProcessName == "biasWrapper(Rayl)")) ||
+                ((lastProcessName == "compt") ||
+                 (creatorProcessName == "biasWrapper(compt)"))) {
               ScoreSquaredValue(fThreadLocalDataSecCounts.Get(),
                             cpp_counts_squared_secondaries_image, w, event_id,
                             index);
@@ -345,6 +349,10 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
                             index);
             }
 
+              ScoreSquaredValue(fThreadLocalDataPrimCounts.Get(),
+                                cpp_counts_squared_prim_image, w, event_id,
+                                index);
+            }
           }
         }
       }

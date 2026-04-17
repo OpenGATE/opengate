@@ -1630,7 +1630,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
     # hints for IDE
     images_for_scattering_processes : bool
-
     user_info_defaults = {
         "images_for_scattering_processes": (
             False,
@@ -1681,7 +1680,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
         "rayleigh_counts_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
@@ -1702,7 +1700,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
         "secondaries_counts_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
@@ -1723,8 +1720,8 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
         "primaries_counts_with_uncertainty": {
+
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
                 "counts_primaries": {
@@ -1744,8 +1741,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
-
         "energy_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
@@ -1766,8 +1761,8 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
         "compton_energy_with_uncertainty": {
+
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
                 "energy_compton": {
@@ -1787,14 +1782,14 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
         "rayleigh_energy_with_uncertainty": {
+
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
                 "energy_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
-                    "active":False,
+                    "active": False,
                 },
                 "energy_squared_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -1808,7 +1803,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
         "secondaries_energy_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
@@ -1829,7 +1823,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-
         "primaries_energy_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
@@ -1849,14 +1842,15 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                     "active": False,
                 },
             },
-        }
+        },
     }
-
 
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.actor = self.simulation.add_actor("DigiAttributeLastProcessDefinedStepInVolumeActor", self.name + "_processes")
+        self.actor = self.simulation.add_actor(
+            "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name + "_processes"
+        )
         self.actor.attached_to = self.simulation.world.name
         self.list_of_processes = ["compton", "rayleigh", "secondaries", "primaries"]
         self.list_of_output_counts = [self.user_output.compton_counts_with_uncertainty,
@@ -1879,11 +1873,24 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.list_of_energy_squared_images = [self.cpp_energy_squared_compton_image, self.cpp_energy_squared_rayleigh_image,
                                               self.cpp_energy_squared_secondaries_image, self.cpp_energy_squared_primaries_image]
 
+        self.list_of_energy_images = [
+            self.cpp_energy_compt_image,
+            self.cpp_energy_rayl_image,
+            self.cpp_energy_sec_image,
+            self.cpp_energy_prim_image,
+        ]
+        self.list_of_energy_squared_images = [
+            self.cpp_energy_squared_compt_image,
+            self.cpp_energy_squared_rayl_image,
+            self.cpp_energy_squared_sec_image,
+            self.cpp_energy_squared_prim_image,
+        ]
 
     def __initcpp__(self):
         g4.GateFluenceActor.__init__(self, self.user_info)
         self.AddActions(
-            {   "StartSimulationAction",
+            {
+                "StartSimulationAction",
                 "BeginOfRunActionMasterThread",
                 "BeginOfRunAction",
                 "EndOfRunActionMasterThread",
@@ -1917,11 +1924,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 self.user_output.counts_with_uncertainty.set_active(
                     True, item=1
                 )  # activate squared component
-                if secondary_flag :
-                    for user_output_images in self.list_of_output_counts :
-                        user_output_images.set_write_to_disk(
-                            False, item=1
-                        )
+                if secondary_flag:
+                    for user_output_images in self.list_of_output_counts:
+                        user_output_images.set_write_to_disk(False, item=1)
                         user_output_images.set_active(
                             True, item=1
                         )  # activate squared component
@@ -1929,10 +1934,14 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         if secondary_flag:
             if self.user_output.counts_with_uncertainty.get_active(item=1):
                 for user_output_images in self.list_of_output_counts:
-                    user_output_images.set_active(True, item=1)  # activate squared component
+                    user_output_images.set_active(
+                        True, item=1
+                    )  # activate squared component
             if self.user_output.energy_with_uncertainty.get_active(item=1):
                 for user_output_images in self.list_of_output_energy:
-                    user_output_images.set_active(True, item=1)  # activate squared component
+                    user_output_images.set_active(
+                        True, item=1
+                    )  # activate squared component
 
         if (
             self.user_output.energy_with_uncertainty.get_active(
@@ -1949,35 +1958,36 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 self.user_output.energy_with_uncertainty.set_active(
                     True, item=1
                 )  # activate squared component
-                if secondary_flag :
+                if secondary_flag:
                     if secondary_flag:
                         for user_output_images in self.list_of_output_energy:
-                            user_output_images.set_write_to_disk(
-                                False, item=1
-                            )
+                            user_output_images.set_write_to_disk(False, item=1)
                             user_output_images.set_active(
                                 True, item=1
                             )  # activate squared component
 
         #
 
-
-        for item in ["uncertainty","std","variance"] :
-            if secondary_flag :
+        for item in ["uncertainty", "std", "variance"]:
+            if secondary_flag:
                 if self.user_output.counts_with_uncertainty.get_active(item=item):
                     for user_output_images in self.list_of_output_counts:
-                        user_output_images.set_active(True, item = item)
+                        user_output_images.set_active(True, item=item)
                 if self.user_output.energy_with_uncertainty.get_active(item=item):
                     for user_output_images in self.list_of_output_energy:
-                        user_output_images.set_active(True, item = item)
-
+                        user_output_images.set_active(True, item=item)
 
         self.InitializeUserInfo(self.user_info)
-        self.SetCountsSquaredFlag(self.user_output.counts_with_uncertainty.get_active(item=1))
+        self.SetCountsSquaredFlag(
+            self.user_output.counts_with_uncertainty.get_active(item=1)
+        )
         self.SetEnergyFlag(self.user_output.energy_with_uncertainty.get_active(item=0))
-        if self.user_output.energy_with_uncertainty.get_active(item=0) and secondary_flag:
-            for user_output_image in self.list_of_output_energy :
-                user_output_image.set_active(True,item=0)
+        if (
+            self.user_output.energy_with_uncertainty.get_active(item=0)
+            and secondary_flag
+        ):
+            for user_output_image in self.list_of_output_energy:
+                user_output_image.set_active(True, item=0)
 
         self.SetEnergySquaredFlag(
             self.user_output.energy_with_uncertainty.get_active(item=1)
@@ -1991,7 +2001,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def StartSimulationAction(self):
         VoxelDepositActor.StartSimulationAction(self)
         g4.GateFluenceActor.StartSimulationAction(self)
-
 
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("counts_with_uncertainty", run_index)
@@ -2027,6 +2036,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                                            squared_img,
                                            )
 
+
         g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
@@ -2049,6 +2059,10 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 output.store_meta_data(
                     run_index, number_of_samples=self.NbOfEvent
                 )
+                self._update_output_coordinate_system(
+                    f"{process}_counts_with_uncertainty", run_index
+                )
+                output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         if self.user_output.energy_with_uncertainty.get_active(item="any"):
             self.fetch_from_cpp_image(
@@ -2070,6 +2084,10 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                     output.store_meta_data(
                         run_index, number_of_samples=self.NbOfEvent
                     )
+                    self._update_output_coordinate_system(
+                        f"{process}_energy_with_uncertainty", run_index
+                    )
+                    output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
