@@ -54,7 +54,7 @@ private:
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
   std::string fHitType;
-  int fClusterSize = 0;
+  std::string fIonizationParameter;
   std::vector<double> fClusterDatabaseEnergyGrid;
   std::vector<double> fClusterDatabaseCumulativeValues;
 };

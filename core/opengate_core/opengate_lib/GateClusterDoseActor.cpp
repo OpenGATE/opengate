@@ -25,7 +25,7 @@ void GateClusterDoseActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
   fHitType = DictGetStr(user_info, "hit_type");
-  fClusterSize = DictGetInt(user_info, "cluster_size");
+  fIonizationParameter = DictGetStr(user_info, "ionization_parameter");
 }
 
 void GateClusterDoseActor::InitializeCpp() {
@@ -92,7 +92,7 @@ void GateClusterDoseActor::SteppingAction(G4Step *step) {
       step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
   const auto postEnergy =
       step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
-  (void)fClusterSize;
+  (void)fIonizationParameter;
 
   const auto value =
       std::abs(InterpolateCumulativeValue(preEnergy) -

@@ -1703,14 +1703,14 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
     """Scores a voxelized map of cluster-dose values."""
 
-    cluster_size: int
+    ionization_parameter: str
     database: str
 
     user_info_defaults = {
-        "cluster_size": (
-            2,
+        "ionization_parameter": (
+            "cluster_size_2",
             {
-                "doc": "Cluster size scored by this actor.",
+                "doc": "Ionization parameter associated with the database scored by this actor.",
             },
         ),
         "database": (
@@ -1821,7 +1821,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.user_output.cluster_dose.store_meta_data(
             run_index,
             number_of_samples=self.NbOfEvent,
-            cluster_size=self.cluster_size,
+            ionization_parameter=self.ionization_parameter,
         )
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0

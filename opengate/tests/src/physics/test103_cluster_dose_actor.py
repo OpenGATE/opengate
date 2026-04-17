@@ -41,7 +41,7 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, 1]
     source.n = 200
 
-    database_path = paths.output / "cluster_size_database.txt"
+    database_path = paths.output / "ionization_parameter_database.txt"
     database = np.array(
         [
             [0.0, 0.0],
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     actor.attached_to = phantom.name
     actor.size = [20, 20, 20]
     actor.spacing = [5 * mm, 5 * mm, 5 * mm]
-    actor.cluster_size = 2
+    actor.ionization_parameter = "cluster_size_2"
     actor.database = database_path
     actor.hit_type = "random"
 
