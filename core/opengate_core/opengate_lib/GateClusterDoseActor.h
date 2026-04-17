@@ -30,7 +30,9 @@ public:
 
   std::string GetPhysicalVolumeName() const { return fPhysicalVolumeName; }
 
-  void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = std::move(s); }
+  void SetPhysicalVolumeName(std::string s) {
+    fPhysicalVolumeName = std::move(s);
+  }
 
   using Image3DType = itk::Image<double, 3>;
 
