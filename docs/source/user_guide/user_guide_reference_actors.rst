@@ -1123,10 +1123,11 @@ The helper function ``merge_freeflight_uncertainty`` automates this by processin
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.freeflightactors.GammaFreeFlightActor
-.. autoclass:: opengate.actors.freeflightactors.ScatterSplittingFreeFlightActor
+.. autoclass:: opengate.actors.biasingactors.GammaFreeFlightActor
+.. autoclass:: opengate.actors.biasingactors.ScatterSplittingFreeFlightActor
 
 .. autofunction:: opengate.contrib.spect.spect_freeflight_helpers.merge_freeflight_uncertainty
+
 
 Voxelized Prompt-Gamma Actors
 -----------------------------
