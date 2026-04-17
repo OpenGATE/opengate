@@ -1718,7 +1718,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         "database_file": (
             "",
             {
-                "doc": "Path to a file containing the cumulative F(E) database used by this actor.",
+                "doc": "Path to a file containing the database used by this actor.",
             },
         ),
         "database_energy": (
@@ -1730,7 +1730,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         "database_values": (
             None,
             {
-                "doc": "Optional direct array input for the cumulative database values.",
+                "doc": "Optional direct array input for the database values.",
             },
         ),
     }
@@ -1763,9 +1763,11 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
 
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-        self.database_data = None
+        self.raw_database_data = None
+        self.processed_database_data = None
         self.database_source = None
-        self.generated_database_path = None
+        self.generated_raw_database_path = None
+        self.generated_processed_database_path = None
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -1782,18 +1784,60 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.check_user_input()
         VoxelDepositActor.initialize(self)
 
-        self.database_data = self.load_database()
+        self.raw_database_data = self.load_database()
+        self.processed_database_data = self.preprocess_database(
+            self.raw_database_data
+        )
 
         self.InitializeUserInfo(self.user_info)
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
         self.push_database_to_cpp()
 
-    def _write_generated_database_file(self, energies, cumulative):
-        filename = f"cluster_dose_database_from_arrays_{self.name}.txt"
+    def _write_generated_database_file(self, energies, values, stem):
+        filename = f"{stem}_{self.name}.txt"
         output_path = self.simulation.get_output_path(filename)
-        np.savetxt(output_path, np.column_stack((energies, cumulative)))
+        np.savetxt(output_path, np.column_stack((energies, values)))
         return output_path
+
+    def _validate_database_arrays(self, energies, values, label="database"):
+        if energies.ndim != 1 or values.ndim != 1:
+            fatal(
+                f"ClusterDoseActor '{self.name}' expects the {label} energy and values "
+                f"to be one-dimensional arrays."
+            )
+        if len(energies) != len(values):
+            fatal(
+                f"ClusterDoseActor '{self.name}' expects the {label} energy and values "
+                f"to have the same length."
+            )
+        if len(energies) < 2:
+            fatal(
+                f"ClusterDoseActor '{self.name}' requires at least two database points."
+            )
+        if np.any(np.diff(energies) < 0):
+            fatal(
+                f"ClusterDoseActor '{self.name}' requires the energy grid in the "
+                f"{label} to be sorted in ascending order."
+            )
+
+    def preprocess_database(self, raw_database_data):
+        energies = np.ascontiguousarray(raw_database_data["energy"], dtype=np.float64)
+        values = np.ascontiguousarray(raw_database_data["values"], dtype=np.float64)
+
+        self._validate_database_arrays(
+            energies, values, label="preprocessed database"
+        )
+        self.generated_processed_database_path = self._write_generated_database_file(
+            energies,
+            values,
+            "cluster_dose_processed_database",
+        )
+
+        return {
+            "energy": energies,
+            "values": values,
+        }
 
     def load_database(self):
         has_database_file = self.database_file not in (None, "")
@@ -1818,12 +1862,12 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
             if data.ndim != 2 or data.shape[1] < 2:
                 fatal(
                     f"ClusterDoseActor '{self.name}' expects 'database_file' to be "
-                    "parseable into a 2D array with at least two columns: energy and cumulative value."
+                    "parseable into a 2D array with at least two columns: energy and value."
                 )
             energies = np.ascontiguousarray(data[:, 0], dtype=np.float64)
-            cumulative = np.ascontiguousarray(data[:, 1], dtype=np.float64)
+            values = np.ascontiguousarray(data[:, 1], dtype=np.float64)
             self.database_source = "file"
-            self.generated_database_path = None
+            self.generated_raw_database_path = None
         else:
             if self.database_energy is None or self.database_values is None:
                 fatal(
@@ -1831,45 +1875,31 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
                     f"and 'database_values' when using array input mode."
                 )
             energies = np.ascontiguousarray(self.database_energy, dtype=np.float64)
-            cumulative = np.ascontiguousarray(self.database_values, dtype=np.float64)
-            if energies.ndim != 1 or cumulative.ndim != 1:
-                fatal(
-                    f"ClusterDoseActor '{self.name}' expects 'database_energy' and "
-                    f"'database_values' to be one-dimensional arrays."
-                )
-            if len(energies) != len(cumulative):
-                fatal(
-                    f"ClusterDoseActor '{self.name}' expects 'database_energy' and "
-                    f"'database_values' to have the same length."
-                )
+            values = np.ascontiguousarray(self.database_values, dtype=np.float64)
             self.database_source = "arrays"
-            self.generated_database_path = self._write_generated_database_file(
-                energies, cumulative
+            self.generated_raw_database_path = self._write_generated_database_file(
+                energies,
+                values,
+                "cluster_dose_raw_database_from_arrays",
             )
 
-        if len(energies) < 2:
-            fatal(
-                f"ClusterDoseActor '{self.name}' requires at least two database points."
-            )
-        if np.any(np.diff(energies) < 0):
-            fatal(
-                f"ClusterDoseActor '{self.name}' requires the energy grid in the "
-                "database to be sorted in ascending order."
-            )
+        self._validate_database_arrays(energies, values, label="raw database")
 
         return {
             "energy": energies,
-            "cumulative": cumulative,
+            "values": values,
         }
 
     def push_database_to_cpp(self):
-        if self.database_data is None:
+        if self.processed_database_data is None:
             fatal(
-                f"ClusterDoseActor '{self.name}' has no parsed database to push to C++."
+                f"ClusterDoseActor '{self.name}' has no processed database to push to C++."
             )
-        self.SetClusterDatabaseEnergyGrid(self.database_data["energy"].tolist())
-        self.SetClusterDatabaseCumulativeValues(
-            self.database_data["cumulative"].tolist()
+        self.SetClusterDatabaseEnergyGrid(
+            self.processed_database_data["energy"].tolist()
+        )
+        self.SetClusterDatabaseValues(
+            self.processed_database_data["values"].tolist()
         )
 
     def BeginOfRunActionMasterThread(self, run_index):
@@ -1901,9 +1931,14 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
                 if self.database_source == "file" and self.database_file not in (None, "")
                 else None
             ),
-            generated_database_file=(
-                str(self.generated_database_path)
-                if self.generated_database_path is not None
+            generated_raw_database_file=(
+                str(self.generated_raw_database_path)
+                if self.generated_raw_database_path is not None
+                else None
+            ),
+            generated_processed_database_file=(
+                str(self.generated_processed_database_path)
+                if self.generated_processed_database_path is not None
                 else None
             ),
         )

@@ -41,8 +41,8 @@ public:
     fClusterDatabaseEnergyGrid = std::move(energyGrid);
   }
 
-  void SetClusterDatabaseCumulativeValues(std::vector<double> cumulativeValues) {
-    fClusterDatabaseCumulativeValues = std::move(cumulativeValues);
+  void SetClusterDatabaseValues(std::vector<double> values) {
+    fClusterDatabaseValues = std::move(values);
   }
 
   Image3DType::Pointer cpp_numerator_image;
@@ -50,14 +50,14 @@ public:
   int NbOfEvent = 0;
 
 private:
-  double InterpolateCumulativeValue(double energy) const;
+  double InterpolateDatabaseValue(double energy) const;
 
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
   std::string fHitType;
   std::string fIonizationParameter;
   std::vector<double> fClusterDatabaseEnergyGrid;
-  std::vector<double> fClusterDatabaseCumulativeValues;
+  std::vector<double> fClusterDatabaseValues;
 };
 
 #endif // GateClusterDoseActor_h

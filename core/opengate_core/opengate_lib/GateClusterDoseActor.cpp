@@ -47,18 +47,18 @@ void GateClusterDoseActor::BeginOfRunActionMasterThread(int run_id) {
   NbOfEvent = 0;
 }
 
-double GateClusterDoseActor::InterpolateCumulativeValue(const double energy) const {
+double GateClusterDoseActor::InterpolateDatabaseValue(const double energy) const {
   if (fClusterDatabaseEnergyGrid.empty() ||
-      fClusterDatabaseCumulativeValues.empty() ||
-      fClusterDatabaseEnergyGrid.size() != fClusterDatabaseCumulativeValues.size()) {
+      fClusterDatabaseValues.empty() ||
+      fClusterDatabaseEnergyGrid.size() != fClusterDatabaseValues.size()) {
     return 0.0;
   }
 
   if (energy <= fClusterDatabaseEnergyGrid.front()) {
-    return fClusterDatabaseCumulativeValues.front();
+    return fClusterDatabaseValues.front();
   }
   if (energy >= fClusterDatabaseEnergyGrid.back()) {
-    return fClusterDatabaseCumulativeValues.back();
+    return fClusterDatabaseValues.back();
   }
 
   const auto upper = std::upper_bound(fClusterDatabaseEnergyGrid.begin(),
@@ -69,8 +69,8 @@ double GateClusterDoseActor::InterpolateCumulativeValue(const double energy) con
 
   const auto e0 = fClusterDatabaseEnergyGrid[lowerIndex];
   const auto e1 = fClusterDatabaseEnergyGrid[upperIndex];
-  const auto f0 = fClusterDatabaseCumulativeValues[lowerIndex];
-  const auto f1 = fClusterDatabaseCumulativeValues[upperIndex];
+  const auto f0 = fClusterDatabaseValues[lowerIndex];
+  const auto f1 = fClusterDatabaseValues[upperIndex];
 
   if (e1 == e0) {
     return f0;
@@ -98,8 +98,8 @@ void GateClusterDoseActor::SteppingAction(G4Step *step) {
   (void)fIonizationParameter;
 
   const auto value =
-      std::abs(InterpolateCumulativeValue(preEnergy) -
-               InterpolateCumulativeValue(postEnergy));
+      std::abs(InterpolateDatabaseValue(preEnergy) -
+               InterpolateDatabaseValue(postEnergy));
   if (value <= 0.0) {
     return;
   }
