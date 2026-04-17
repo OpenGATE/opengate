@@ -71,6 +71,9 @@ void GetStepVoxelPosition(G4Step *step,
    if (hitType == "pre") {
       position = preGlobal;
    }
+   if (hitType == "post") {
+      position = postGlobal;
+   }
    if (hitType == "random") {
       auto x = G4UniformRand();
       auto direction = postGlobal - preGlobal;
