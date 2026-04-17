@@ -42,7 +42,8 @@ public:
     fClusterSizes = std::move(clusterSizes);
   }
 
-  void SetClusterDatabaseEnergyGrid(std::vector<std::vector<double>> energyGrid) {
+  void
+  SetClusterDatabaseEnergyGrid(std::vector<std::vector<double>> energyGrid) {
     fClusterDatabaseEnergyGrid = std::move(energyGrid);
   }
 

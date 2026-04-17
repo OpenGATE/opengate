@@ -60,13 +60,14 @@ void GateClusterDoseActor::BeginOfEventAction(const G4Event * /*event*/) {
 
 void GateClusterDoseActor::BeginOfRunActionMasterThread(int run_id) {
   cpp_cluster_dose_image->FillBuffer(0);
-  AttachImageToVolume<Image3DType>(cpp_cluster_volume_image, fPhysicalVolumeName,
-                                   fTranslation);
+  AttachImageToVolume<Image3DType>(cpp_cluster_volume_image,
+                                   fPhysicalVolumeName, fTranslation);
   NbOfEvent = 0;
 }
 
-double GateClusterDoseActor::InterpolateCumulativeValue(const size_t channelIndex,
-                                                        const double energy) const {
+double
+GateClusterDoseActor::InterpolateCumulativeValue(const size_t channelIndex,
+                                                 const double energy) const {
   if (channelIndex >= fClusterDatabaseEnergyGrid.size() ||
       channelIndex >= fClusterDatabaseCumulativeValues.size()) {
     return 0.0;
@@ -86,7 +87,8 @@ double GateClusterDoseActor::InterpolateCumulativeValue(const size_t channelInde
     return cumulativeValues.back();
   }
 
-  const auto upper = std::upper_bound(energyGrid.begin(), energyGrid.end(), energy);
+  const auto upper =
+      std::upper_bound(energyGrid.begin(), energyGrid.end(), energy);
   const auto upperIndex =
       static_cast<size_t>(std::distance(energyGrid.begin(), upper));
   const auto lowerIndex = upperIndex - 1;
@@ -115,13 +117,14 @@ void GateClusterDoseActor::SteppingAction(G4Step *step) {
     return;
   }
 
-  const auto preEnergy = step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
+  const auto preEnergy =
+      step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
   const auto postEnergy =
       step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
 
   G4AutoLock mutex(&SetPixelClusterDoseMutex);
-  for (size_t channelIndex = 0; channelIndex < fClusterDatabaseEnergyGrid.size();
-       ++channelIndex) {
+  for (size_t channelIndex = 0;
+       channelIndex < fClusterDatabaseEnergyGrid.size(); ++channelIndex) {
     const auto value =
         std::abs(InterpolateCumulativeValue(channelIndex, preEnergy) -
                  InterpolateCumulativeValue(channelIndex, postEnergy));
