@@ -10,6 +10,7 @@
 
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
+#include "digitizer/GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
@@ -32,6 +33,8 @@ public:
   // This where the scoring takes place
 
   void SteppingAction(G4Step *) override;
+
+  void StartSimulationAction() override;
 
   void BeginOfEventAction(const G4Event *event) override;
 
@@ -58,9 +61,30 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_counts_image;
+  Image3DType::Pointer cpp_counts_compt_image;
+  Image3DType::Pointer cpp_counts_rayl_image;
+  Image3DType::Pointer cpp_counts_sec_image;
+  Image3DType::Pointer cpp_counts_prim_image;
+
   Image3DType::Pointer cpp_energy_image;
+  Image3DType::Pointer cpp_energy_compt_image;
+  Image3DType::Pointer cpp_energy_rayl_image;
+  Image3DType::Pointer cpp_energy_sec_image;
+  Image3DType::Pointer cpp_energy_prim_image;
+
   Image3DType::Pointer cpp_counts_squared_image;
+  Image3DType::Pointer cpp_counts_squared_compt_image;
+  Image3DType::Pointer cpp_counts_squared_rayl_image;
+  Image3DType::Pointer cpp_counts_squared_sec_image;
+  Image3DType::Pointer cpp_counts_squared_prim_image;
+
+
   Image3DType::Pointer cpp_energy_squared_image;
+  Image3DType::Pointer cpp_energy_squared_compt_image;
+  Image3DType::Pointer cpp_energy_squared_rayl_image;
+  Image3DType::Pointer cpp_energy_squared_sec_image;
+  Image3DType::Pointer cpp_energy_squared_prim_image;
+
 
   Image3DType::SizeType size_region{};
 
@@ -71,11 +95,22 @@ public:
   };
 
   G4Cache<threadLocalT> fThreadLocalDataCounts;
+  G4Cache<threadLocalT> fThreadLocalDataComptCounts;
+  G4Cache<threadLocalT> fThreadLocalDataRaylCounts;
+  G4Cache<threadLocalT> fThreadLocalDataSecCounts;
+  G4Cache<threadLocalT> fThreadLocalDataPrimCounts;
   G4Cache<threadLocalT> fThreadLocalDataEnergy;
+  G4Cache<threadLocalT> fThreadLocalDataComptEnergy;
+  G4Cache<threadLocalT> fThreadLocalDataRaylEnergy;
+  G4Cache<threadLocalT> fThreadLocalDataSecEnergy;
+  G4Cache<threadLocalT> fThreadLocalDataPrimEnergy;
 
   G4bool fCountsSquaredFlag;
   G4bool fEnergyFlag;
   G4bool fEnergySquaredFlag;
+  G4bool fSecondaries;
+  GateDigiAttributeLastProcessDefinedStepInVolumeActor* fLastProcessActor;
+  //GateVActor* fLastProcessActor;
 
   void FlushSquaredValues(threadLocalT &data,
                           const Image3DType::Pointer &cpp_image);
@@ -98,6 +133,8 @@ public:
   void SetCountsSquaredFlag(const bool b) { fCountsSquaredFlag = b; }
 
   bool GetCountsSquaredFlag() const { return fCountsSquaredFlag; }
+
+
 
 private:
   std::string fPhysicalVolumeName;

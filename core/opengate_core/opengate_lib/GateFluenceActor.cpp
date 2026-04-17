@@ -8,6 +8,7 @@
 #include "G4Navigator.hh"
 #include "G4RunManager.hh"
 #include "G4Threading.hh"
+#include "GateActorManager.h"
 
 #include "GateFluenceActor.h"
 #include "GateHelpersDict.h"
@@ -86,6 +87,7 @@ void GateFluenceActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
+  fSecondaries = DictGetBool(user_info,"secondaries");
 }
 
 void GateFluenceActor::InitializeCpp() {
@@ -94,15 +96,49 @@ void GateFluenceActor::InitializeCpp() {
   // Create the image pointer
   // (the size and allocation will be performed on the py side)
   cpp_counts_image = Image3DType::New();
+  if (fSecondaries){
+    cpp_counts_rayl_image = Image3DType::New();
+    cpp_counts_compt_image = Image3DType::New();
+    cpp_counts_sec_image =  Image3DType::New();
+    cpp_counts_prim_image =  Image3DType::New();
+  }
   if (fCountsSquaredFlag) {
     cpp_counts_squared_image = Image3DType::New();
+    if (fSecondaries){
+      cpp_counts_squared_rayl_image = Image3DType::New();
+      cpp_counts_squared_compt_image = Image3DType::New();
+      cpp_counts_squared_sec_image =  Image3DType::New();
+      cpp_counts_squared_prim_image =  Image3DType::New();
+    }
   }
   if (fEnergyFlag) {
     cpp_energy_image = Image3DType::New();
+    if (fSecondaries){
+      cpp_energy_rayl_image = Image3DType::New();
+      cpp_energy_compt_image = Image3DType::New();
+      cpp_energy_sec_image =  Image3DType::New();
+      cpp_energy_prim_image =  Image3DType::New();
+    }
   }
   if (fEnergySquaredFlag) {
     cpp_energy_squared_image = Image3DType::New();
+    if (fSecondaries){
+      cpp_energy_squared_compt_image= Image3DType::New();
+      cpp_energy_squared_rayl_image= Image3DType::New();
+      cpp_energy_squared_sec_image= Image3DType::New();
+      cpp_energy_squared_prim_image=  Image3DType::New();
+    }
   }
+}
+
+void GateFluenceActor::StartSimulationAction(){
+  if (fSecondaries){
+    auto* actorManager = GateActorManager::GetInstance();
+    auto* actor = actorManager->GetActor(this->fActorName +"_processes");
+    fLastProcessActor = dynamic_cast<GateDigiAttributeLastProcessDefinedStepInVolumeActor*>(actor);
+  }
+
+
 }
 
 void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
@@ -114,9 +150,23 @@ void GateFluenceActor::BeginOfRunAction(const G4Run *run) {
   const auto N_voxels = size_region[0] * size_region[1] * size_region[2];
   if (fEnergySquaredFlag) {
     PrepareLocalDataForRun(fThreadLocalDataEnergy.Get(), N_voxels);
+    if (fSecondaries){
+      PrepareLocalDataForRun(fThreadLocalDataComptEnergy.Get(), N_voxels);
+      PrepareLocalDataForRun(fThreadLocalDataRaylEnergy.Get(), N_voxels);    
+      PrepareLocalDataForRun(fThreadLocalDataSecEnergy.Get(), N_voxels);    
+      PrepareLocalDataForRun(fThreadLocalDataPrimEnergy.Get(), N_voxels);          
+
+    }
   }
   if (fCountsSquaredFlag) {
     PrepareLocalDataForRun(fThreadLocalDataCounts.Get(), N_voxels);
+    if (fSecondaries){
+      PrepareLocalDataForRun(fThreadLocalDataComptCounts.Get(), N_voxels);
+      PrepareLocalDataForRun(fThreadLocalDataRaylCounts.Get(), N_voxels);    
+      PrepareLocalDataForRun(fThreadLocalDataSecCounts.Get(), N_voxels);    
+      PrepareLocalDataForRun(fThreadLocalDataPrimCounts.Get(), N_voxels);          
+
+    }
   }
 }
 
@@ -124,9 +174,29 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we (re-)attach each run
   AttachImageToVolume<Image3DType>(cpp_counts_image, fPhysicalVolumeName,
                                    fTranslation);
+  if (fSecondaries){
+    AttachImageToVolume<Image3DType>(cpp_counts_compt_image, fPhysicalVolumeName,
+                                   fTranslation);
+    AttachImageToVolume<Image3DType>(cpp_counts_rayl_image, fPhysicalVolumeName,
+                                   fTranslation);
+    AttachImageToVolume<Image3DType>(cpp_counts_sec_image, fPhysicalVolumeName,
+                                   fTranslation);
+    AttachImageToVolume<Image3DType>(cpp_counts_prim_image, fPhysicalVolumeName,
+                                   fTranslation);
+  }
   if (fEnergyFlag) {
     AttachImageToVolume<Image3DType>(cpp_energy_image, fPhysicalVolumeName,
                                      fTranslation);
+    if (fSecondaries){
+      AttachImageToVolume<Image3DType>(cpp_energy_compt_image, fPhysicalVolumeName,
+                                    fTranslation);
+      AttachImageToVolume<Image3DType>(cpp_energy_rayl_image, fPhysicalVolumeName,
+                                    fTranslation);
+      AttachImageToVolume<Image3DType>(cpp_energy_sec_image, fPhysicalVolumeName,
+                                    fTranslation);
+      AttachImageToVolume<Image3DType>(cpp_energy_prim_image, fPhysicalVolumeName,
+                                    fTranslation);
+  }
   }
   NbOfEvent = 0;
   Image3DType::RegionType region = cpp_counts_image->GetLargestPossibleRegion();
@@ -134,8 +204,13 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
 }
 
 void GateFluenceActor::SteppingAction(G4Step *step) {
+  
   // same method to consider only entering tracks
   if (step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary) {
+    G4String lastProcessName;
+    if (fSecondaries)
+      lastProcessName = fLastProcessActor->GetLastProcess();
+  
     // the pre-position is at the edge
     const auto event_id =
         G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
@@ -165,12 +240,52 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
         cpp_counts_image->TransformPhysicalPointToIndex(point, index);
 
     // set value
+    
     if (isInside) {
+      G4String creatorProcessName = "None";
+      if (step->GetTrack()->GetCreatorProcess() !=0 ){
+        creatorProcessName = step->GetTrack()->GetCreatorProcess()->GetProcessName();
+      }
       {
         G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
         ImageAddValue<Image3DType>(cpp_counts_image, index, w);
-        if (fEnergyFlag)
+
+
+        
+        if (fSecondaries){
+
+          if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
+            ImageAddValue<Image3DType>(cpp_counts_compt_image, index, w);
+          }
+          if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
+            ImageAddValue<Image3DType>(cpp_counts_rayl_image, index, w);
+          }
+          if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
+          ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
+            ImageAddValue<Image3DType>(cpp_counts_sec_image, index, w);
+          }
+          else{
+            ImageAddValue<Image3DType>(cpp_counts_prim_image, index, w);
+          }
+        }
+        if (fEnergyFlag){
           ImageAddValue<Image3DType>(cpp_energy_image, index, energy * w);
+          if (fSecondaries){
+            if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
+              ImageAddValue<Image3DType>(cpp_energy_compt_image, index, energy * w);
+            }
+            if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
+              ImageAddValue<Image3DType>(cpp_energy_rayl_image, index, energy * w);
+            }
+            if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
+            ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
+              ImageAddValue<Image3DType>(cpp_energy_sec_image, index, energy * w);
+            }
+            else{
+              ImageAddValue<Image3DType>(cpp_energy_prim_image, index, energy * w);
+            }
+          }
+      }
       }
       // else : outside the image
 
@@ -179,10 +294,59 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
           ScoreSquaredValue(fThreadLocalDataEnergy.Get(),
                             cpp_energy_squared_image, energy * w, event_id,
                             index);
+          if (fSecondaries){
+            if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
+              ScoreSquaredValue(fThreadLocalDataComptEnergy.Get(),
+                            cpp_energy_squared_compt_image, energy * w, event_id,
+                            index);
+            }
+            if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
+              ScoreSquaredValue(fThreadLocalDataRaylEnergy.Get(),
+                            cpp_energy_squared_rayl_image, energy * w, event_id,
+                            index);
+            }
+            if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
+            ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
+              ScoreSquaredValue(fThreadLocalDataSecEnergy.Get(),
+                            cpp_energy_squared_sec_image, energy * w, event_id,
+                            index);
+            }
+            else{
+              ScoreSquaredValue(fThreadLocalDataPrimEnergy.Get(),
+                            cpp_energy_squared_prim_image, energy * w, event_id,
+                            index);
+              
+            }
+          }
         }
         if (fCountsSquaredFlag) {
           ScoreSquaredValue(fThreadLocalDataCounts.Get(),
                             cpp_counts_squared_image, w, event_id, index);
+          if (fSecondaries){
+            if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
+              ScoreSquaredValue(fThreadLocalDataComptCounts.Get(),
+                            cpp_counts_squared_compt_image, w, event_id,
+                            index);
+            }
+            if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
+              ScoreSquaredValue(fThreadLocalDataRaylCounts.Get(),
+                            cpp_counts_squared_rayl_image, w, event_id,
+                            index);
+            }
+            if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
+            ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
+              ScoreSquaredValue(fThreadLocalDataSecCounts.Get(),
+                            cpp_counts_squared_sec_image, w, event_id,
+                            index);
+            }
+            else{
+              
+              ScoreSquaredValue(fThreadLocalDataPrimCounts.Get(),
+                            cpp_counts_squared_prim_image, w, event_id,
+                            index);
+            }
+
+          }
         }
       }
     }
@@ -192,8 +356,22 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
 void GateFluenceActor::EndOfEventAction(const G4Event *event) {
   if (fCountsSquaredFlag) {
     FlushSquaredValues(fThreadLocalDataCounts.Get(), cpp_counts_squared_image);
+    if (fSecondaries){
+          FlushSquaredValues(fThreadLocalDataComptCounts.Get(), cpp_counts_squared_compt_image);
+          FlushSquaredValues(fThreadLocalDataRaylCounts.Get(), cpp_counts_squared_rayl_image);
+          FlushSquaredValues(fThreadLocalDataSecCounts.Get(), cpp_counts_squared_sec_image);
+          FlushSquaredValues(fThreadLocalDataPrimCounts.Get(), cpp_counts_squared_prim_image);
+      }
+  
+
   }
   if (fEnergySquaredFlag) {
     FlushSquaredValues(fThreadLocalDataEnergy.Get(), cpp_energy_squared_image);
+    if (fSecondaries){
+        FlushSquaredValues(fThreadLocalDataComptEnergy.Get(), cpp_energy_squared_compt_image);
+        FlushSquaredValues(fThreadLocalDataRaylEnergy.Get(), cpp_energy_squared_rayl_image);
+        FlushSquaredValues(fThreadLocalDataSecEnergy.Get(), cpp_energy_squared_sec_image);
+        FlushSquaredValues(fThreadLocalDataPrimEnergy.Get(), cpp_energy_squared_prim_image);
+    }
   }
 }

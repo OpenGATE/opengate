@@ -48,8 +48,22 @@ void init_GateFluenceActor(py::module &m) {
       .def_readwrite("NbOfEvent", &GateFluenceActor::NbOfEvent)
       .def_readwrite("cpp_counts_image", &GateFluenceActor::cpp_counts_image)
       .def_readwrite("cpp_energy_image", &GateFluenceActor::cpp_energy_image)
-      .def_readwrite("cpp_counts_squared_image",
-                     &GateFluenceActor::cpp_counts_squared_image)
-      .def_readwrite("cpp_energy_squared_image",
-                     &GateFluenceActor::cpp_energy_squared_image);
+      .def_readwrite("cpp_counts_squared_image",&GateFluenceActor::cpp_counts_squared_image)
+      .def_readwrite("cpp_energy_squared_image",&GateFluenceActor::cpp_energy_squared_image)
+      .def_readwrite("cpp_counts_compt_image", &GateFluenceActor::cpp_counts_compt_image)
+      .def_readwrite("cpp_energy_compt_image", &GateFluenceActor::cpp_energy_compt_image)
+      .def_readwrite("cpp_counts_squared_compt_image",&GateFluenceActor::cpp_counts_squared_compt_image)
+      .def_readwrite("cpp_energy_squared_compt_image",&GateFluenceActor::cpp_energy_squared_compt_image)
+      .def_readwrite("cpp_counts_rayl_image", &GateFluenceActor::cpp_counts_rayl_image)
+      .def_readwrite("cpp_energy_rayl_image", &GateFluenceActor::cpp_energy_rayl_image)
+      .def_readwrite("cpp_counts_squared_rayl_image",&GateFluenceActor::cpp_counts_squared_rayl_image)
+      .def_readwrite("cpp_energy_squared_rayl_image",&GateFluenceActor::cpp_energy_squared_rayl_image)
+      .def_readwrite("cpp_counts_sec_image", &GateFluenceActor::cpp_counts_sec_image)
+      .def_readwrite("cpp_energy_sec_image", &GateFluenceActor::cpp_energy_sec_image)
+      .def_readwrite("cpp_counts_squared_sec_image",&GateFluenceActor::cpp_counts_squared_sec_image)
+      .def_readwrite("cpp_energy_squared_sec_image",&GateFluenceActor::cpp_energy_squared_sec_image)
+      .def_readwrite("cpp_counts_prim_image", &GateFluenceActor::cpp_counts_prim_image)
+      .def_readwrite("cpp_energy_prim_image", &GateFluenceActor::cpp_energy_prim_image)
+      .def_readwrite("cpp_counts_squared_prim_image",&GateFluenceActor::cpp_counts_squared_prim_image)
+      .def_readwrite("cpp_energy_squared_prim_image",&GateFluenceActor::cpp_energy_squared_prim_image);
 }
