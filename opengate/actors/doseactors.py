@@ -1795,7 +1795,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.push_database_to_cpp()
 
     def _write_generated_database_file(self, energies, values, stem):
-        filename = f"{stem}_{self.name}.txt"
+        filename = f"{self.name}_{stem}.txt"
         output_path = self.simulation.get_output_path(filename)
         np.savetxt(output_path, np.column_stack((energies, values)))
         return output_path
@@ -1831,7 +1831,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.generated_processed_database_path = self._write_generated_database_file(
             energies,
             values,
-            "cluster_dose_processed_database",
+            f"processed_database_{self.ionization_parameter}",
         )
 
         return {
@@ -1880,7 +1880,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
             self.generated_raw_database_path = self._write_generated_database_file(
                 energies,
                 values,
-                "cluster_dose_raw_database_from_arrays",
+                f"raw_database_{self.ionization_parameter}",
             )
 
         self._validate_database_arrays(energies, values, label="raw database")
