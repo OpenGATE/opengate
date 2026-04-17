@@ -24,7 +24,7 @@ The GE Discovery NM670 SPECT system can be simulated using the following command
 
 This configuration allows the simulation of two SPECT heads with different collimators (LEHR and MEGP) and digitizers optimized for Tc99m and Lu177, respectively. There are three collimator types: "lehr", "megp" and "hegp". There are two crystal size "3/8" and "5/8". Also the collimator can be rotated by few degrees, usually 15 deg like in reality.
 
-Detail of the head description is `available here <https://github.com/OpenGATE/opengate/blob/master/opengate/contrib/spect/ge_discovery_nm670.py#L53>`_
+Detail of the head description is `available here <https://github.com/OpenGATE/opengate/blob/master/opengate/contrib/spect/ge_discovery_nm670.py#L53>`__
 
 **Note**: the digitizer is still a very simple one, validation are still in progress.
 
@@ -139,6 +139,7 @@ PyTomography operates under the mathematical assumption that the scanner's axis 
 To resolve this discrepancy, the data must be mathematically aligned. By providing the physical coordinates of the Gate rotation axis via ``ad.acquisition.isocenter``, the adapter dynamically shifts the origin of the PyTomography "Working Grid." This guarantees that the attenuation maps (mu-maps) and the emission projections are co-registered to the mechanical axis of rotation, without requiring the user to manually translate the raw image arrays.
 
 * **Coordinate System Transformations (The Axis Swap)**
+
 Gate and SimpleITK operate in **millimeters**, while PyTomography natively computes in **centimeters**. Furthermore, the array axes and directional conventions differ. The adapter manages these spatial conversions automatically during the data hand-off:
 
 * **Memory Mapping (ITK to NumPy):** SimpleITK defines images using continuous spatial coordinates ordered as (X, Y, Z). When converted to a NumPy array, the data is mapped into C-contiguous memory (from slowest-varying to fastest-varying dimension), resulting in a shape of (Z, Y, X).
