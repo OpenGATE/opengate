@@ -243,16 +243,15 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
     
     if (isInside) {
       G4String creatorProcessName = "None";
+      G4int particleID = step->GetTrack()->GetDynamicParticle()->GetPDGcode();
       if (step->GetTrack()->GetCreatorProcess() !=0 ){
         creatorProcessName = step->GetTrack()->GetCreatorProcess()->GetProcessName();
       }
       {
         G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
         ImageAddValue<Image3DType>(cpp_counts_image, index, w);
-
-
         
-        if (fSecondaries){
+        if ((fSecondaries)&& (particleID ==22)){
 
           if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
             ImageAddValue<Image3DType>(cpp_counts_compton_image, index, w);
@@ -270,7 +269,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
         }
         if (fEnergyFlag){
           ImageAddValue<Image3DType>(cpp_energy_image, index, energy * w);
-          if (fSecondaries){
+          if ((fSecondaries) && (particleID ==22)){
             if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
               ImageAddValue<Image3DType>(cpp_energy_compton_image, index, energy * w);
             }
@@ -294,7 +293,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
           ScoreSquaredValue(fThreadLocalDataEnergy.Get(),
                             cpp_energy_squared_image, energy * w, event_id,
                             index);
-          if (fSecondaries){
+          if ((fSecondaries) && (particleID ==22)){
             if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
               ScoreSquaredValue(fThreadLocalDataComptEnergy.Get(),
                             cpp_energy_squared_compton_image, energy * w, event_id,
@@ -322,7 +321,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
         if (fCountsSquaredFlag) {
           ScoreSquaredValue(fThreadLocalDataCounts.Get(),
                             cpp_counts_squared_image, w, event_id, index);
-          if (fSecondaries){
+          if ((fSecondaries) && (particleID ==22)){
             if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
               ScoreSquaredValue(fThreadLocalDataComptCounts.Get(),
                             cpp_counts_squared_compton_image, w, event_id,
