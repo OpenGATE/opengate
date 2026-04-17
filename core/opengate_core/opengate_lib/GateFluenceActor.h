@@ -10,9 +10,9 @@
 
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
-#include "digitizer/GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
+#include "digitizer/GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 #include "itkImage.h"
 #include <iostream>
 #include <pybind11/stl.h>
@@ -78,13 +78,11 @@ public:
   Image3DType::Pointer cpp_counts_squared_sec_image;
   Image3DType::Pointer cpp_counts_squared_prim_image;
 
-
   Image3DType::Pointer cpp_energy_squared_image;
   Image3DType::Pointer cpp_energy_squared_compt_image;
   Image3DType::Pointer cpp_energy_squared_rayl_image;
   Image3DType::Pointer cpp_energy_squared_sec_image;
   Image3DType::Pointer cpp_energy_squared_prim_image;
-
 
   Image3DType::SizeType size_region{};
 
@@ -109,8 +107,8 @@ public:
   G4bool fEnergyFlag;
   G4bool fEnergySquaredFlag;
   G4bool fSecondaries;
-  GateDigiAttributeLastProcessDefinedStepInVolumeActor* fLastProcessActor;
-  //GateVActor* fLastProcessActor;
+  GateDigiAttributeLastProcessDefinedStepInVolumeActor *fLastProcessActor;
+  // GateVActor* fLastProcessActor;
 
   void FlushSquaredValues(threadLocalT &data,
                           const Image3DType::Pointer &cpp_image);
@@ -133,8 +131,6 @@ public:
   void SetCountsSquaredFlag(const bool b) { fCountsSquaredFlag = b; }
 
   bool GetCountsSquaredFlag() const { return fCountsSquaredFlag; }
-
-
 
 private:
   std::string fPhysicalVolumeName;
