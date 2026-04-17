@@ -348,17 +348,12 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
                             cpp_counts_squared_primaries_image, w, event_id,
                             index);
             }
-
-              ScoreSquaredValue(fThreadLocalDataPrimCounts.Get(),
-                                cpp_counts_squared_prim_image, w, event_id,
-                                index);
             }
           }
         }
       }
     }
   }
-}
 
 void GateFluenceActor::EndOfEventAction(const G4Event *event) {
   if (fCountsSquaredFlag) {

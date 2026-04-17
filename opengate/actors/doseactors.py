@@ -1874,16 +1874,16 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                                               self.cpp_energy_squared_secondaries_image, self.cpp_energy_squared_primaries_image]
 
         self.list_of_energy_images = [
-            self.cpp_energy_compt_image,
-            self.cpp_energy_rayl_image,
-            self.cpp_energy_sec_image,
-            self.cpp_energy_prim_image,
+            self.cpp_energy_compton_image,
+            self.cpp_energy_rayleigh_image,
+            self.cpp_energy_secondaries_image,
+            self.cpp_energy_primaries_image,
         ]
         self.list_of_energy_squared_images = [
-            self.cpp_energy_squared_compt_image,
-            self.cpp_energy_squared_rayl_image,
-            self.cpp_energy_squared_sec_image,
-            self.cpp_energy_squared_prim_image,
+            self.cpp_energy_squared_compton_image,
+            self.cpp_energy_squared_rayleigh_image,
+            self.cpp_energy_squared_secondaries_image,
+            self.cpp_energy_squared_primaries_image,
         ]
 
     def __initcpp__(self):
