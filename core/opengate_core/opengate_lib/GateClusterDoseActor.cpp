@@ -47,9 +47,9 @@ void GateClusterDoseActor::BeginOfRunActionMasterThread(int run_id) {
   NbOfEvent = 0;
 }
 
-double GateClusterDoseActor::InterpolateDatabaseValue(const double energy) const {
-  if (fClusterDatabaseEnergyGrid.empty() ||
-      fClusterDatabaseValues.empty() ||
+double
+GateClusterDoseActor::InterpolateDatabaseValue(const double energy) const {
+  if (fClusterDatabaseEnergyGrid.empty() || fClusterDatabaseValues.empty() ||
       fClusterDatabaseEnergyGrid.size() != fClusterDatabaseValues.size()) {
     return 0.0;
   }
@@ -63,8 +63,8 @@ double GateClusterDoseActor::InterpolateDatabaseValue(const double energy) const
 
   const auto upper = std::upper_bound(fClusterDatabaseEnergyGrid.begin(),
                                       fClusterDatabaseEnergyGrid.end(), energy);
-  const auto upperIndex =
-      static_cast<size_t>(std::distance(fClusterDatabaseEnergyGrid.begin(), upper));
+  const auto upperIndex = static_cast<size_t>(
+      std::distance(fClusterDatabaseEnergyGrid.begin(), upper));
   const auto lowerIndex = upperIndex - 1;
 
   const auto e0 = fClusterDatabaseEnergyGrid[lowerIndex];
@@ -97,9 +97,8 @@ void GateClusterDoseActor::SteppingAction(G4Step *step) {
       step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
   (void)fIonizationParameter;
 
-  const auto value =
-      std::abs(InterpolateDatabaseValue(preEnergy) -
-               InterpolateDatabaseValue(postEnergy));
+  const auto value = std::abs(InterpolateDatabaseValue(preEnergy) -
+                              InterpolateDatabaseValue(postEnergy));
   if (value <= 0.0) {
     return;
   }
