@@ -1704,7 +1704,9 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
     """Scores a voxelized map of cluster-dose values."""
 
     ionization_parameter: str
-    database: str
+    database_file: str
+    database_energy: list
+    database_values: list
 
     user_info_defaults = {
         "ionization_parameter": (
@@ -1713,10 +1715,22 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
                 "doc": "Ionization parameter associated with the database scored by this actor.",
             },
         ),
-        "database": (
+        "database_file": (
             "",
             {
-                "doc": "Path or identifier of the cumulative F(E) database used by this actor.",
+                "doc": "Path to a file containing the cumulative F(E) database used by this actor.",
+            },
+        ),
+        "database_energy": (
+            None,
+            {
+                "doc": "Optional direct array input for the database energy grid.",
+            },
+        ),
+        "database_values": (
+            None,
+            {
+                "doc": "Optional direct array input for the cumulative database values.",
             },
         ),
     }
@@ -1750,6 +1764,8 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
         self.database_data = None
+        self.database_source = None
+        self.generated_database_path = None
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -1773,28 +1789,63 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.InitializeCpp()
         self.push_database_to_cpp()
 
+    def _write_generated_database_file(self, energies, cumulative):
+        filename = f"cluster_dose_database_from_arrays_{self.name}.txt"
+        output_path = self.simulation.get_output_path(filename)
+        np.savetxt(output_path, np.column_stack((energies, cumulative)))
+        return output_path
+
     def load_database(self):
-        database = self.database
-        if database in (None, ""):
+        has_database_file = self.database_file not in (None, "")
+        has_database_arrays = (
+            self.database_energy is not None or self.database_values is not None
+        )
+
+        if has_database_file and has_database_arrays:
+            fatal(
+                f"ClusterDoseActor '{self.name}' received both 'database_file' and "
+                f"'database_energy'/'database_values'. Please provide only one database input mode."
+            )
+        if not has_database_file and not has_database_arrays:
             fatal(
                 f"ClusterDoseActor '{self.name}' requires a non-empty "
-                f"'database' input."
+                f"'database_file' input or both 'database_energy' and 'database_values'."
             )
 
-        if isinstance(database, (str, os.PathLike, Path)):
-            data = np.loadtxt(database)
+        if has_database_file:
+            data = np.loadtxt(self.database_file)
+            data = np.asarray(data, dtype=float)
+            if data.ndim != 2 or data.shape[1] < 2:
+                fatal(
+                    f"ClusterDoseActor '{self.name}' expects 'database_file' to be "
+                    "parseable into a 2D array with at least two columns: energy and cumulative value."
+                )
+            energies = np.ascontiguousarray(data[:, 0], dtype=np.float64)
+            cumulative = np.ascontiguousarray(data[:, 1], dtype=np.float64)
+            self.database_source = "file"
+            self.generated_database_path = None
         else:
-            data = np.asarray(database)
-
-        data = np.asarray(data, dtype=float)
-        if data.ndim != 2 or data.shape[1] < 2:
-            fatal(
-                f"ClusterDoseActor '{self.name}' expects the database to be "
-                "parseable into a 2D array with at least two columns: energy and cumulative value."
+            if self.database_energy is None or self.database_values is None:
+                fatal(
+                    f"ClusterDoseActor '{self.name}' requires both 'database_energy' "
+                    f"and 'database_values' when using array input mode."
+                )
+            energies = np.ascontiguousarray(self.database_energy, dtype=np.float64)
+            cumulative = np.ascontiguousarray(self.database_values, dtype=np.float64)
+            if energies.ndim != 1 or cumulative.ndim != 1:
+                fatal(
+                    f"ClusterDoseActor '{self.name}' expects 'database_energy' and "
+                    f"'database_values' to be one-dimensional arrays."
+                )
+            if len(energies) != len(cumulative):
+                fatal(
+                    f"ClusterDoseActor '{self.name}' expects 'database_energy' and "
+                    f"'database_values' to have the same length."
+                )
+            self.database_source = "arrays"
+            self.generated_database_path = self._write_generated_database_file(
+                energies, cumulative
             )
-
-        energies = np.ascontiguousarray(data[:, 0], dtype=np.float64)
-        cumulative = np.ascontiguousarray(data[:, 1], dtype=np.float64)
 
         if len(energies) < 2:
             fatal(
@@ -1844,6 +1895,17 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
             run_index,
             number_of_samples=self.NbOfEvent,
             ionization_parameter=self.ionization_parameter,
+            database_source=self.database_source,
+            database_file=(
+                str(self.database_file)
+                if self.database_source == "file" and self.database_file not in (None, "")
+                else None
+            ),
+            generated_database_file=(
+                str(self.generated_database_path)
+                if self.generated_database_path is not None
+                else None
+            ),
         )
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0

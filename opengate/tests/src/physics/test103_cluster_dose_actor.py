@@ -3,6 +3,7 @@
 
 import itk
 import numpy as np
+from pathlib import Path
 
 import opengate as gate
 from opengate.tests import utility
@@ -41,16 +42,10 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, 1]
     source.n = 200
 
-    database_path = paths.output / "ionization_parameter_database.txt"
-    database = np.array(
-        [
-            [0.0, 0.0],
-            [5.0, 2.5],
-            [10.0, 5.0],
-            [20.0, 10.0],
-            [30.0, 15.0],
-        ]
-    )
+    database_energy = np.array([0.0, 5.0, 10.0, 20.0, 30.0])
+    database_values = np.array([0.0, 2.5, 5.0, 10.0, 15.0])
+    database = np.column_stack((database_energy, database_values))
+    database_path = paths.output / "ionization_parameter_database_reference.txt"
     np.savetxt(database_path, database)
 
     actor = sim.add_actor("ClusterDoseActor", "cluster_dose_actor")
@@ -58,7 +53,8 @@ if __name__ == "__main__":
     actor.size = [20, 20, 20]
     actor.spacing = [5 * mm, 5 * mm, 5 * mm]
     actor.ionization_parameter = "cluster_size_2"
-    actor.database = database_path
+    actor.database_energy = database_energy
+    actor.database_values = database_values
     actor.hit_type = "random"
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -86,5 +82,10 @@ if __name__ == "__main__":
     is_ok = is_ok and np.sum(numerator_array) > 0
     is_ok = is_ok and np.sum(denominator_array) > 0
     is_ok = is_ok and np.max(array) > 0
+    generated_database_file = actor.user_output.cluster_dose.merged_data.meta_data[
+        "generated_database_file"
+    ]
+    is_ok = is_ok and generated_database_file is not None
+    is_ok = is_ok and Path(generated_database_file).exists()
 
     utility.test_ok(is_ok)
