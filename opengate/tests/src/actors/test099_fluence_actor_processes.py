@@ -37,10 +37,10 @@ def img_generation_from_phsp(
         process = "compt"
     if process != None:
         if process != "secondaries" and process != "primaries":
-            df = df[df["LastOccuringProcess__water"] ==process].copy()
-        elif process == "secondaries" :
+            df = df[df["LastOccuringProcess__water"] == process].copy()
+        elif process == "secondaries":
             df = df[df["LastOccuringProcess__water"] != "Transportation"].copy()
-        elif process == "primaries" :
+        elif process == "primaries":
             df = df[df["LastOccuringProcess__water"] == "Transportation"].copy()
 
     df[["PrePositionLocal_X", "PrePositionLocal_Y"]] = (
@@ -183,8 +183,8 @@ if __name__ == "__main__":
     with uproot.open(f"{sim.output_dir}/{phsp.output_filename}:PhaseSpace") as tree:
         df = tree.arrays(library="pd")
 
-    processes = ["rayleigh","compton","secondaries","primaries"]
-    types = ["counts","energy"]
+    processes = ["rayleigh", "compton", "secondaries", "primaries"]
+    types = ["counts", "energy"]
     dict_comp = {}
     for process in processes:
         for type in types:

@@ -1629,7 +1629,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
 
     # hints for IDE
-    images_for_scattering_processes : bool
+    images_for_scattering_processes: bool
     user_info_defaults = {
         "images_for_scattering_processes": (
             False,
@@ -1721,7 +1721,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
         "primaries_counts_with_uncertainty": {
-
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
                 "counts_primaries": {
@@ -1762,7 +1761,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
         "compton_energy_with_uncertainty": {
-
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
                 "energy_compton": {
@@ -1783,7 +1781,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
         "rayleigh_energy_with_uncertainty": {
-
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
                 "energy_rayleigh": {
@@ -1853,25 +1850,43 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         )
         self.actor.attached_to = self.simulation.world.name
         self.list_of_processes = ["compton", "rayleigh", "secondaries", "primaries"]
-        self.list_of_output_counts = [self.user_output.compton_counts_with_uncertainty,
-                                      self.user_output.rayleigh_counts_with_uncertainty,
-                                      self.user_output.secondaries_counts_with_uncertainty,
-                                      self.user_output.primaries_counts_with_uncertainty]
-        self.list_of_counts_images = [self.cpp_counts_compton_image, self.cpp_counts_rayleigh_image,
-                                      self.cpp_counts_secondaries_image,
-                                      self.cpp_counts_primaries_image]
-        self.list_of_counts_squared_images = [self.cpp_counts_squared_compton_image, self.cpp_counts_squared_rayleigh_image,
-                                              self.cpp_counts_squared_secondaries_image, self.cpp_counts_squared_primaries_image]
-        self.list_of_output_energy = [self.user_output.compton_energy_with_uncertainty,
-                                      self.user_output.rayleigh_energy_with_uncertainty,
-                                      self.user_output.secondaries_energy_with_uncertainty,
-                                      self.user_output.primaries_energy_with_uncertainty]
+        self.list_of_output_counts = [
+            self.user_output.compton_counts_with_uncertainty,
+            self.user_output.rayleigh_counts_with_uncertainty,
+            self.user_output.secondaries_counts_with_uncertainty,
+            self.user_output.primaries_counts_with_uncertainty,
+        ]
+        self.list_of_counts_images = [
+            self.cpp_counts_compton_image,
+            self.cpp_counts_rayleigh_image,
+            self.cpp_counts_secondaries_image,
+            self.cpp_counts_primaries_image,
+        ]
+        self.list_of_counts_squared_images = [
+            self.cpp_counts_squared_compton_image,
+            self.cpp_counts_squared_rayleigh_image,
+            self.cpp_counts_squared_secondaries_image,
+            self.cpp_counts_squared_primaries_image,
+        ]
+        self.list_of_output_energy = [
+            self.user_output.compton_energy_with_uncertainty,
+            self.user_output.rayleigh_energy_with_uncertainty,
+            self.user_output.secondaries_energy_with_uncertainty,
+            self.user_output.primaries_energy_with_uncertainty,
+        ]
 
-        self.list_of_energy_images = [self.cpp_energy_compton_image, self.cpp_energy_rayleigh_image,
-                                      self.cpp_energy_secondaries_image,
-                                      self.cpp_energy_primaries_image]
-        self.list_of_energy_squared_images = [self.cpp_energy_squared_compton_image, self.cpp_energy_squared_rayleigh_image,
-                                              self.cpp_energy_squared_secondaries_image, self.cpp_energy_squared_primaries_image]
+        self.list_of_energy_images = [
+            self.cpp_energy_compton_image,
+            self.cpp_energy_rayleigh_image,
+            self.cpp_energy_secondaries_image,
+            self.cpp_energy_primaries_image,
+        ]
+        self.list_of_energy_squared_images = [
+            self.cpp_energy_squared_compton_image,
+            self.cpp_energy_squared_rayleigh_image,
+            self.cpp_energy_squared_secondaries_image,
+            self.cpp_energy_squared_primaries_image,
+        ]
 
         self.list_of_energy_images = [
             self.cpp_energy_compt_image,
@@ -1906,7 +1921,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.check_user_input()
         secondary_flag = self.user_info.images_for_scattering_processes
         self.user_output.counts_with_uncertainty.set_active(True, item=0)
-        if secondary_flag :
+        if secondary_flag:
             for user_output_images in self.list_of_output_counts:
                 user_output_images.set_active(True, item=0)
         if (
@@ -2010,10 +2025,17 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.cpp_counts_image,
             self.cpp_counts_squared_image,
         )
-        if self.user_info.images_for_scattering_processes :
-            for process,img,squared_img in zip(self.list_of_processes,self.list_of_counts_images,self.list_of_counts_squared_images):
-                self.prepare_output_for_run(f"{process}_counts_with_uncertainty", run_index)
-                self.push_to_cpp_image(f"{process}_counts_with_uncertainty",
+        if self.user_info.images_for_scattering_processes:
+            for process, img, squared_img in zip(
+                self.list_of_processes,
+                self.list_of_counts_images,
+                self.list_of_counts_squared_images,
+            ):
+                self.prepare_output_for_run(
+                    f"{process}_counts_with_uncertainty", run_index
+                )
+                self.push_to_cpp_image(
+                    f"{process}_counts_with_uncertainty",
                     run_index,
                     img,
                     squared_img,
@@ -2028,14 +2050,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 self.cpp_energy_squared_image,
             )
             if self.user_info.images_for_scattering_processes:
-                for process, img, squared_img in zip(self.list_of_processes, self.list_of_energy_images, self.list_of_energy_squared_images):
-                    self.prepare_output_for_run(f"{process}_energy_with_uncertainty", run_index)
-                    self.push_to_cpp_image(f"{process}_energy_with_uncertainty",
-                                           run_index,
-                                           img,
-                                           squared_img,
-                                           )
-
+                for process, img, squared_img in zip(
+                    self.list_of_processes,
+                    self.list_of_energy_images,
+                    self.list_of_energy_squared_images,
+                ):
+                    self.prepare_output_for_run(
+                        f"{process}_energy_with_uncertainty", run_index
+                    )
+                    self.push_to_cpp_image(
+                        f"{process}_energy_with_uncertainty",
+                        run_index,
+                        img,
+                        squared_img,
+                    )
 
         g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
@@ -2052,13 +2080,19 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             run_index, number_of_samples=self.NbOfEvent
         )
         if self.user_info.images_for_scattering_processes:
-            for process, img, squared_img,output in zip(self.list_of_processes, self.list_of_counts_images,
-                                                 self.list_of_counts_squared_images, self.list_of_output_counts):
-                self.fetch_from_cpp_image(f"{process}_counts_with_uncertainty", run_index,img,squared_img)
-                self._update_output_coordinate_system(f"{process}_counts_with_uncertainty", run_index)
-                output.store_meta_data(
-                    run_index, number_of_samples=self.NbOfEvent
+            for process, img, squared_img, output in zip(
+                self.list_of_processes,
+                self.list_of_counts_images,
+                self.list_of_counts_squared_images,
+                self.list_of_output_counts,
+            ):
+                self.fetch_from_cpp_image(
+                    f"{process}_counts_with_uncertainty", run_index, img, squared_img
                 )
+                self._update_output_coordinate_system(
+                    f"{process}_counts_with_uncertainty", run_index
+                )
+                output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
                 self._update_output_coordinate_system(
                     f"{process}_counts_with_uncertainty", run_index
                 )
@@ -2076,14 +2110,22 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 run_index, number_of_samples=self.NbOfEvent
             )
             if self.user_info.images_for_scattering_processes:
-                for process, img, squared_img, output in zip(self.list_of_processes, self.list_of_energy_images,
-                                                             self.list_of_energy_squared_images,
-                                                             self.list_of_output_energy):
-                    self.fetch_from_cpp_image(f"{process}_energy_with_uncertainty", run_index, img, squared_img)
-                    self._update_output_coordinate_system(f"{process}_energy_with_uncertainty", run_index)
-                    output.store_meta_data(
-                        run_index, number_of_samples=self.NbOfEvent
+                for process, img, squared_img, output in zip(
+                    self.list_of_processes,
+                    self.list_of_energy_images,
+                    self.list_of_energy_squared_images,
+                    self.list_of_output_energy,
+                ):
+                    self.fetch_from_cpp_image(
+                        f"{process}_energy_with_uncertainty",
+                        run_index,
+                        img,
+                        squared_img,
                     )
+                    self._update_output_coordinate_system(
+                        f"{process}_energy_with_uncertainty", run_index
+                    )
+                    output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
                     self._update_output_coordinate_system(
                         f"{process}_energy_with_uncertainty", run_index
                     )

@@ -48,22 +48,40 @@ void init_GateFluenceActor(py::module &m) {
       .def_readwrite("NbOfEvent", &GateFluenceActor::NbOfEvent)
       .def_readwrite("cpp_counts_image", &GateFluenceActor::cpp_counts_image)
       .def_readwrite("cpp_energy_image", &GateFluenceActor::cpp_energy_image)
-      .def_readwrite("cpp_counts_squared_image",&GateFluenceActor::cpp_counts_squared_image)
-      .def_readwrite("cpp_energy_squared_image",&GateFluenceActor::cpp_energy_squared_image)
-      .def_readwrite("cpp_counts_compton_image", &GateFluenceActor::cpp_counts_compton_image)
-      .def_readwrite("cpp_energy_compton_image", &GateFluenceActor::cpp_energy_compton_image)
-      .def_readwrite("cpp_counts_squared_compton_image",&GateFluenceActor::cpp_counts_squared_compton_image)
-      .def_readwrite("cpp_energy_squared_compton_image",&GateFluenceActor::cpp_energy_squared_compton_image)
-      .def_readwrite("cpp_counts_rayleigh_image", &GateFluenceActor::cpp_counts_rayleigh_image)
-      .def_readwrite("cpp_energy_rayleigh_image", &GateFluenceActor::cpp_energy_rayleigh_image)
-      .def_readwrite("cpp_counts_squared_rayleigh_image",&GateFluenceActor::cpp_counts_squared_rayleigh_image)
-      .def_readwrite("cpp_energy_squared_rayleigh_image",&GateFluenceActor::cpp_energy_squared_rayleigh_image)
-      .def_readwrite("cpp_counts_secondaries_image", &GateFluenceActor::cpp_counts_secondaries_image)
-      .def_readwrite("cpp_energy_secondaries_image", &GateFluenceActor::cpp_energy_secondaries_image)
-      .def_readwrite("cpp_counts_squared_secondaries_image",&GateFluenceActor::cpp_counts_squared_secondaries_image)
-      .def_readwrite("cpp_energy_squared_secondaries_image",&GateFluenceActor::cpp_energy_squared_secondaries_image)
-      .def_readwrite("cpp_counts_primaries_image", &GateFluenceActor::cpp_counts_primaries_image)
-      .def_readwrite("cpp_energy_primaries_image", &GateFluenceActor::cpp_energy_primaries_image)
-      .def_readwrite("cpp_counts_squared_primaries_image",&GateFluenceActor::cpp_counts_squared_primaries_image)
-      .def_readwrite("cpp_energy_squared_primaries_image",&GateFluenceActor::cpp_energy_squared_primaries_image);
+      .def_readwrite("cpp_counts_squared_image",
+                     &GateFluenceActor::cpp_counts_squared_image)
+      .def_readwrite("cpp_energy_squared_image",
+                     &GateFluenceActor::cpp_energy_squared_image)
+      .def_readwrite("cpp_counts_compton_image",
+                     &GateFluenceActor::cpp_counts_compton_image)
+      .def_readwrite("cpp_energy_compton_image",
+                     &GateFluenceActor::cpp_energy_compton_image)
+      .def_readwrite("cpp_counts_squared_compton_image",
+                     &GateFluenceActor::cpp_counts_squared_compton_image)
+      .def_readwrite("cpp_energy_squared_compton_image",
+                     &GateFluenceActor::cpp_energy_squared_compton_image)
+      .def_readwrite("cpp_counts_rayleigh_image",
+                     &GateFluenceActor::cpp_counts_rayleigh_image)
+      .def_readwrite("cpp_energy_rayleigh_image",
+                     &GateFluenceActor::cpp_energy_rayleigh_image)
+      .def_readwrite("cpp_counts_squared_rayleigh_image",
+                     &GateFluenceActor::cpp_counts_squared_rayleigh_image)
+      .def_readwrite("cpp_energy_squared_rayleigh_image",
+                     &GateFluenceActor::cpp_energy_squared_rayleigh_image)
+      .def_readwrite("cpp_counts_secondaries_image",
+                     &GateFluenceActor::cpp_counts_secondaries_image)
+      .def_readwrite("cpp_energy_secondaries_image",
+                     &GateFluenceActor::cpp_energy_secondaries_image)
+      .def_readwrite("cpp_counts_squared_secondaries_image",
+                     &GateFluenceActor::cpp_counts_squared_secondaries_image)
+      .def_readwrite("cpp_energy_squared_secondaries_image",
+                     &GateFluenceActor::cpp_energy_squared_secondaries_image)
+      .def_readwrite("cpp_counts_primaries_image",
+                     &GateFluenceActor::cpp_counts_primaries_image)
+      .def_readwrite("cpp_energy_primaries_image",
+                     &GateFluenceActor::cpp_energy_primaries_image)
+      .def_readwrite("cpp_counts_squared_primaries_image",
+                     &GateFluenceActor::cpp_counts_squared_primaries_image)
+      .def_readwrite("cpp_energy_squared_primaries_image",
+                     &GateFluenceActor::cpp_energy_squared_primaries_image);
 }
