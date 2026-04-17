@@ -25,32 +25,12 @@ void GateClusterDoseActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
   fHitType = DictGetStr(user_info, "hit_type");
-  fsize = DictGetG4ThreeVector(user_info, "size");
-  fspacing = DictGetG4ThreeVector(user_info, "spacing");
+  fClusterSize = DictGetInt(user_info, "cluster_size");
 }
 
 void GateClusterDoseActor::InitializeCpp() {
   GateVActor::InitializeCpp();
-  cpp_cluster_dose_image = Image4DType::New();
-  cpp_cluster_volume_image = Image3DType::New();
-
-  Image3DType::RegionType region;
-  Image3DType::SizeType size;
-  Image3DType::SpacingType spacing;
-
-  size[0] = fsize[0];
-  size[1] = fsize[1];
-  size[2] = fsize[2];
-  region.SetSize(size);
-
-  spacing[0] = fspacing[0];
-  spacing[1] = fspacing[1];
-  spacing[2] = fspacing[2];
-
-  cpp_cluster_volume_image->SetRegions(region);
-  cpp_cluster_volume_image->SetSpacing(spacing);
-  cpp_cluster_volume_image->Allocate();
-  cpp_cluster_volume_image->FillBuffer(0);
+  cpp_cluster_dose_image = Image3DType::New();
 }
 
 void GateClusterDoseActor::BeginOfEventAction(const G4Event * /*event*/) {
@@ -59,44 +39,35 @@ void GateClusterDoseActor::BeginOfEventAction(const G4Event * /*event*/) {
 }
 
 void GateClusterDoseActor::BeginOfRunActionMasterThread(int run_id) {
-  cpp_cluster_dose_image->FillBuffer(0);
-  AttachImageToVolume<Image3DType>(cpp_cluster_volume_image,
-                                   fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image3DType>(cpp_cluster_dose_image, fPhysicalVolumeName,
+                                   fTranslation);
   NbOfEvent = 0;
 }
 
-double
-GateClusterDoseActor::InterpolateCumulativeValue(const size_t channelIndex,
-                                                 const double energy) const {
-  if (channelIndex >= fClusterDatabaseEnergyGrid.size() ||
-      channelIndex >= fClusterDatabaseCumulativeValues.size()) {
+double GateClusterDoseActor::InterpolateCumulativeValue(const double energy) const {
+  if (fClusterDatabaseEnergyGrid.empty() ||
+      fClusterDatabaseCumulativeValues.empty() ||
+      fClusterDatabaseEnergyGrid.size() != fClusterDatabaseCumulativeValues.size()) {
     return 0.0;
   }
 
-  const auto &energyGrid = fClusterDatabaseEnergyGrid[channelIndex];
-  const auto &cumulativeValues = fClusterDatabaseCumulativeValues[channelIndex];
-  if (energyGrid.empty() || cumulativeValues.empty() ||
-      energyGrid.size() != cumulativeValues.size()) {
-    return 0.0;
+  if (energy <= fClusterDatabaseEnergyGrid.front()) {
+    return fClusterDatabaseCumulativeValues.front();
+  }
+  if (energy >= fClusterDatabaseEnergyGrid.back()) {
+    return fClusterDatabaseCumulativeValues.back();
   }
 
-  if (energy <= energyGrid.front()) {
-    return cumulativeValues.front();
-  }
-  if (energy >= energyGrid.back()) {
-    return cumulativeValues.back();
-  }
-
-  const auto upper =
-      std::upper_bound(energyGrid.begin(), energyGrid.end(), energy);
+  const auto upper = std::upper_bound(fClusterDatabaseEnergyGrid.begin(),
+                                      fClusterDatabaseEnergyGrid.end(), energy);
   const auto upperIndex =
-      static_cast<size_t>(std::distance(energyGrid.begin(), upper));
+      static_cast<size_t>(std::distance(fClusterDatabaseEnergyGrid.begin(), upper));
   const auto lowerIndex = upperIndex - 1;
 
-  const auto e0 = energyGrid[lowerIndex];
-  const auto e1 = energyGrid[upperIndex];
-  const auto f0 = cumulativeValues[lowerIndex];
-  const auto f1 = cumulativeValues[upperIndex];
+  const auto e0 = fClusterDatabaseEnergyGrid[lowerIndex];
+  const auto e1 = fClusterDatabaseEnergyGrid[upperIndex];
+  const auto f0 = fClusterDatabaseCumulativeValues[lowerIndex];
+  const auto f1 = fClusterDatabaseCumulativeValues[upperIndex];
 
   if (e1 == e0) {
     return f0;
@@ -109,9 +80,9 @@ GateClusterDoseActor::InterpolateCumulativeValue(const size_t channelIndex,
 void GateClusterDoseActor::SteppingAction(G4Step *step) {
   G4ThreeVector position;
   bool isInside = false;
-  Image3DType::IndexType spatialIndex;
-  GetStepVoxelPosition<Image3DType>(step, fHitType, cpp_cluster_volume_image,
-                                    position, isInside, spatialIndex);
+  Image3DType::IndexType index;
+  GetStepVoxelPosition<Image3DType>(step, fHitType, cpp_cluster_dose_image,
+                                    position, isInside, index);
 
   if (!isInside) {
     return;
@@ -121,21 +92,15 @@ void GateClusterDoseActor::SteppingAction(G4Step *step) {
       step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
   const auto postEnergy =
       step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
+  (void)fClusterSize;
+
+  const auto value =
+      std::abs(InterpolateCumulativeValue(preEnergy) -
+               InterpolateCumulativeValue(postEnergy));
+  if (value <= 0.0) {
+    return;
+  }
 
   G4AutoLock mutex(&SetPixelClusterDoseMutex);
-  for (size_t channelIndex = 0;
-       channelIndex < fClusterDatabaseEnergyGrid.size(); ++channelIndex) {
-    const auto value =
-        std::abs(InterpolateCumulativeValue(channelIndex, preEnergy) -
-                 InterpolateCumulativeValue(channelIndex, postEnergy));
-    if (value <= 0.0) {
-      continue;
-    }
-    Image4DType::IndexType index4D;
-    index4D[0] = spatialIndex[0];
-    index4D[1] = spatialIndex[1];
-    index4D[2] = spatialIndex[2];
-    index4D[3] = static_cast<long>(channelIndex);
-    ImageAddValue<Image4DType>(cpp_cluster_dose_image, index4D, value);
-  }
+  ImageAddValue<Image3DType>(cpp_cluster_dose_image, index, value);
 }

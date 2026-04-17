@@ -41,7 +41,6 @@ void init_GateClusterDoseActor(py::module &m) {
            &GateClusterDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName",
            &GateClusterDoseActor::SetPhysicalVolumeName)
-      .def("SetClusterSizes", &GateClusterDoseActor::SetClusterSizes)
       .def("SetClusterDatabaseEnergyGrid",
            &GateClusterDoseActor::SetClusterDatabaseEnergyGrid)
       .def("SetClusterDatabaseCumulativeValues",

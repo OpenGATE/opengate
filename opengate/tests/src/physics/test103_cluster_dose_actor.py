@@ -41,10 +41,8 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, 1]
     source.n = 200
 
-    database_1_path = paths.output / "cluster_size_database_1.txt"
-    database_2_path = paths.output / "cluster_size_database_2.txt"
-    database_3_path = paths.output / "cluster_size_database_3.txt"
-    database_1 = np.array(
+    database_path = paths.output / "cluster_size_database.txt"
+    database = np.array(
         [
             [0.0, 0.0],
             [5.0, 2.5],
@@ -53,37 +51,14 @@ if __name__ == "__main__":
             [30.0, 15.0],
         ]
     )
-    database_2 = np.array(
-        [
-            [0.0, 0.0],
-            [5.0, 1.0],
-            [10.0, 2.0],
-            [20.0, 4.0],
-            [30.0, 6.0],
-        ]
-    )
-    database_3 = np.array(
-        [
-            [0.0, 0.0],
-            [5.0, 0.5],
-            [10.0, 1.0],
-            [20.0, 2.0],
-            [30.0, 3.0],
-        ]
-    )
-    np.savetxt(database_1_path, database_1)
-    np.savetxt(database_2_path, database_2)
-    np.savetxt(database_3_path, database_3)
+    np.savetxt(database_path, database)
 
     actor = sim.add_actor("ClusterDoseActor", "cluster_dose_actor")
     actor.attached_to = phantom.name
     actor.size = [20, 20, 20]
     actor.spacing = [5 * mm, 5 * mm, 5 * mm]
-    actor.cluster_size_database_config = [
-        {"cluster_size": 2, "database": database_1_path, "name": "c2"},
-        {"cluster_size": 5, "database": database_2_path, "name": "c5"},
-        {"cluster_size": 10, "database": database_3_path, "name": "c10"},
-    ]
+    actor.cluster_size = 2
+    actor.database = database_path
     actor.hit_type = "random"
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -100,8 +75,7 @@ if __name__ == "__main__":
     is_ok = True
     is_ok = is_ok and image is not None
     is_ok = is_ok and array.dtype == np.float64
-    is_ok = is_ok and array.ndim == 4
-    is_ok = is_ok and array.shape[0] == len(actor.cluster_size_database_config)
+    is_ok = is_ok and array.ndim == 3
     is_ok = is_ok and np.sum(array) > 0
     is_ok = is_ok and np.max(array) > 0
 

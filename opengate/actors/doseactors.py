@@ -16,7 +16,6 @@ from ..image import (
     itk_image_from_array,
     divide_itk_images,
     scale_itk_image,
-    create_4d_image,
 )
 from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
@@ -1704,15 +1703,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
     """Scores a voxelized map of cluster-dose values."""
 
-    cluster_size_database_config: list
+    cluster_size: int
+    database: str
 
     user_info_defaults = {
-        "cluster_size_database_config": (
-            [],
+        "cluster_size": (
+            2,
             {
-                "doc": "Ordered list of cluster size database configurations. "
-                "Each entry should at least define 'cluster_size' and 'database'. "
-                "The order of entries defines the 4th-axis channel index in the output image.",
+                "doc": "Cluster size scored by this actor.",
+            },
+        ),
+        "database": (
+            "",
+            {
+                "doc": "Path or identifier of the cumulative F(E) database used by this actor.",
             },
         ),
     }
@@ -1725,7 +1729,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
 
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-        self.cluster_size_database_data = None
+        self.database_data = None
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -1742,114 +1746,69 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.check_user_input()
         VoxelDepositActor.initialize(self)
 
-        self.cluster_size_database_data = self.load_cluster_size_database()
+        self.database_data = self.load_database()
 
         self.InitializeUserInfo(self.user_info)
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
-        self.push_cluster_size_database_to_cpp()
+        self.push_database_to_cpp()
 
-    def load_cluster_size_database(self):
-        config = self.cluster_size_database_config
-        if config in (None, "") or len(config) == 0:
+    def load_database(self):
+        database = self.database
+        if database in (None, ""):
             fatal(
                 f"ClusterDoseActor '{self.name}' requires a non-empty "
-                f"'cluster_size_database_config' input."
+                f"'database' input."
             )
 
-        parsed_data = []
-        for i, entry in enumerate(config):
-            try:
-                cluster_size = entry["cluster_size"]
-                database = entry["database"]
-            except (TypeError, KeyError):
-                fatal(
-                    f"ClusterDoseActor '{self.name}' expects every entry in "
-                    f"'cluster_size_database_config' to define at least "
-                    f"'cluster_size' and 'database'. Problematic entry index: {i}."
-                )
+        if isinstance(database, (str, os.PathLike, Path)):
+            data = np.loadtxt(database)
+        else:
+            data = np.asarray(database)
 
-            if isinstance(database, (str, os.PathLike, Path)):
-                data = np.loadtxt(database)
-            else:
-                data = np.asarray(database)
-
-            data = np.asarray(data, dtype=float)
-            if data.ndim != 2 or data.shape[1] < 2:
-                fatal(
-                    f"ClusterDoseActor '{self.name}' expects every cluster size "
-                    "database to be parseable into a 2D array with at least two "
-                    "columns: energy and cumulative value."
-                )
-
-            energies = np.ascontiguousarray(data[:, 0], dtype=np.float64)
-            cumulative = np.ascontiguousarray(data[:, 1], dtype=np.float64)
-
-            if len(energies) < 2:
-                fatal(
-                    f"ClusterDoseActor '{self.name}' requires at least two database "
-                    f"points for cluster size {cluster_size}."
-                )
-            if np.any(np.diff(energies) < 0):
-                fatal(
-                    f"ClusterDoseActor '{self.name}' requires the energy grid in the "
-                    f"cluster size database for cluster size {cluster_size} to be "
-                    "sorted in ascending order."
-                )
-
-            parsed_data.append(
-                {
-                    "cluster_size": int(cluster_size),
-                    "name": entry.get("name", f"cluster_size_{cluster_size}"),
-                    "energy": energies,
-                    "cumulative": cumulative,
-                }
-            )
-
-        return parsed_data
-
-    def push_cluster_size_database_to_cpp(self):
-        if self.cluster_size_database_data is None:
+        data = np.asarray(data, dtype=float)
+        if data.ndim != 2 or data.shape[1] < 2:
             fatal(
-                f"ClusterDoseActor '{self.name}' has no parsed cluster size database to push to C++."
+                f"ClusterDoseActor '{self.name}' expects the database to be "
+                "parseable into a 2D array with at least two columns: energy and cumulative value."
             )
-        self.SetClusterSizes(
-            [d["cluster_size"] for d in self.cluster_size_database_data]
-        )
-        self.SetClusterDatabaseEnergyGrid(
-            [d["energy"].tolist() for d in self.cluster_size_database_data]
-        )
-        self.SetClusterDatabaseCumulativeValues(
-            [d["cumulative"].tolist() for d in self.cluster_size_database_data]
-        )
 
-    def prepare_output_for_run(self, output_name, run_index, **kwargs):
-        self._assert_output_exists(output_name)
-        if run_index not in self.user_output[output_name].data_per_run:
-            self.user_output[output_name].data_per_run[run_index] = self.user_output[
-                output_name
-            ].data_container_class(belongs_to=self.user_output[output_name])
-        size = list(self.size) + [len(self.cluster_size_database_data)]
-        spacing = list(self.spacing) + [1.0]
-        origin = list(self.translation) + [0.0]
-        image = create_4d_image(
-            size,
-            spacing,
-            origin=origin,
-            pixel_type="double",
-            allocate=True,
+        energies = np.ascontiguousarray(data[:, 0], dtype=np.float64)
+        cumulative = np.ascontiguousarray(data[:, 1], dtype=np.float64)
+
+        if len(energies) < 2:
+            fatal(
+                f"ClusterDoseActor '{self.name}' requires at least two database points."
+            )
+        if np.any(np.diff(energies) < 0):
+            fatal(
+                f"ClusterDoseActor '{self.name}' requires the energy grid in the "
+                "database to be sorted in ascending order."
+            )
+
+        return {
+            "energy": energies,
+            "cumulative": cumulative,
+        }
+
+    def push_database_to_cpp(self):
+        if self.database_data is None:
+            fatal(
+                f"ClusterDoseActor '{self.name}' has no parsed database to push to C++."
+            )
+        self.SetClusterDatabaseEnergyGrid(self.database_data["energy"].tolist())
+        self.SetClusterDatabaseCumulativeValues(
+            self.database_data["cumulative"].tolist()
         )
-        image.FillBuffer(0)
-        self.user_output[output_name].store_data(run_index, image)
 
     def BeginOfRunActionMasterThread(self, run_index):
-        self.prepare_output_for_run("cluster_dose", run_index)
+        self.prepare_output_for_run("cluster_dose", run_index, pixel_type="double")
         self.push_to_cpp_image(
             "cluster_dose",
             run_index,
             self.cpp_cluster_dose_image,
         )
-        self.push_cluster_size_database_to_cpp()
+        self.push_database_to_cpp()
         g4.GateClusterDoseActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
@@ -1862,8 +1821,7 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.user_output.cluster_dose.store_meta_data(
             run_index,
             number_of_samples=self.NbOfEvent,
-            cluster_sizes=[d["cluster_size"] for d in self.cluster_size_database_data],
-            channel_names=[d["name"] for d in self.cluster_size_database_data],
+            cluster_size=self.cluster_size,
         )
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
