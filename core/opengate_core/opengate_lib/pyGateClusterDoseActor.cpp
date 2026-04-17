@@ -46,6 +46,7 @@ void init_GateClusterDoseActor(py::module &m) {
       .def("SetClusterDatabaseCumulativeValues",
            &GateClusterDoseActor::SetClusterDatabaseCumulativeValues)
       .def_readwrite("NbOfEvent", &GateClusterDoseActor::NbOfEvent)
-      .def_readwrite("cpp_cluster_dose_image",
-                     &GateClusterDoseActor::cpp_cluster_dose_image);
+      .def_readwrite("cpp_numerator_image", &GateClusterDoseActor::cpp_numerator_image)
+      .def_readwrite("cpp_denominator_image",
+                     &GateClusterDoseActor::cpp_denominator_image);
 }

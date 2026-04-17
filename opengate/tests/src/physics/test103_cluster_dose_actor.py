@@ -66,7 +66,11 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     image = actor.cluster_dose.image
+    numerator = actor.cluster_dose_numerator.image
+    denominator = actor.cluster_dose_denominator.image
     array = itk.array_view_from_image(image)
+    numerator_array = itk.array_view_from_image(numerator)
+    denominator_array = itk.array_view_from_image(denominator)
 
     print(stats)
     print(actor)
@@ -74,9 +78,13 @@ if __name__ == "__main__":
 
     is_ok = True
     is_ok = is_ok and image is not None
+    is_ok = is_ok and numerator is not None
+    is_ok = is_ok and denominator is not None
     is_ok = is_ok and array.dtype == np.float64
     is_ok = is_ok and array.ndim == 3
     is_ok = is_ok and np.sum(array) > 0
+    is_ok = is_ok and np.sum(numerator_array) > 0
+    is_ok = is_ok and np.sum(denominator_array) > 0
     is_ok = is_ok and np.max(array) > 0
 
     utility.test_ok(is_ok)

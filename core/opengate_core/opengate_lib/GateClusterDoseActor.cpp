@@ -30,7 +30,8 @@ void GateClusterDoseActor::InitializeUserInfo(py::dict &user_info) {
 
 void GateClusterDoseActor::InitializeCpp() {
   GateVActor::InitializeCpp();
-  cpp_cluster_dose_image = Image3DType::New();
+  cpp_numerator_image = Image3DType::New();
+  cpp_denominator_image = Image3DType::New();
 }
 
 void GateClusterDoseActor::BeginOfEventAction(const G4Event * /*event*/) {
@@ -39,7 +40,9 @@ void GateClusterDoseActor::BeginOfEventAction(const G4Event * /*event*/) {
 }
 
 void GateClusterDoseActor::BeginOfRunActionMasterThread(int run_id) {
-  AttachImageToVolume<Image3DType>(cpp_cluster_dose_image, fPhysicalVolumeName,
+  AttachImageToVolume<Image3DType>(cpp_numerator_image, fPhysicalVolumeName,
+                                   fTranslation);
+  AttachImageToVolume<Image3DType>(cpp_denominator_image, fPhysicalVolumeName,
                                    fTranslation);
   NbOfEvent = 0;
 }
@@ -81,7 +84,7 @@ void GateClusterDoseActor::SteppingAction(G4Step *step) {
   G4ThreeVector position;
   bool isInside = false;
   Image3DType::IndexType index;
-  GetStepVoxelPosition<Image3DType>(step, fHitType, cpp_cluster_dose_image,
+  GetStepVoxelPosition<Image3DType>(step, fHitType, cpp_numerator_image,
                                     position, isInside, index);
 
   if (!isInside) {
@@ -102,5 +105,6 @@ void GateClusterDoseActor::SteppingAction(G4Step *step) {
   }
 
   G4AutoLock mutex(&SetPixelClusterDoseMutex);
-  ImageAddValue<Image3DType>(cpp_cluster_dose_image, index, value);
+  ImageAddValue<Image3DType>(cpp_numerator_image, index, value);
+  ImageAddValue<Image3DType>(cpp_denominator_image, index, 1.0);
 }

@@ -45,7 +45,8 @@ public:
     fClusterDatabaseCumulativeValues = std::move(cumulativeValues);
   }
 
-  Image3DType::Pointer cpp_cluster_dose_image;
+  Image3DType::Pointer cpp_numerator_image;
+  Image3DType::Pointer cpp_denominator_image;
   int NbOfEvent = 0;
 
 private:

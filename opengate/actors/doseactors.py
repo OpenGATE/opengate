@@ -1723,7 +1723,27 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
 
     user_output_config = {
         "cluster_dose": {
-            "actor_output_class": ActorOutputSingleImage,
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                "cluster_dose_numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "cluster_dose_denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "cluster_dose": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "active": True,
+                    "write_to_disk": True,
+                },
+            },
         },
     }
 
@@ -1806,7 +1826,8 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.push_to_cpp_image(
             "cluster_dose",
             run_index,
-            self.cpp_cluster_dose_image,
+            self.cpp_numerator_image,
+            self.cpp_denominator_image,
         )
         self.push_database_to_cpp()
         g4.GateClusterDoseActor.BeginOfRunActionMasterThread(self, run_index)
@@ -1815,7 +1836,8 @@ class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
         self.fetch_from_cpp_image(
             "cluster_dose",
             run_index,
-            self.cpp_cluster_dose_image,
+            self.cpp_numerator_image,
+            self.cpp_denominator_image,
         )
         self._update_output_coordinate_system("cluster_dose", run_index)
         self.user_output.cluster_dose.store_meta_data(
