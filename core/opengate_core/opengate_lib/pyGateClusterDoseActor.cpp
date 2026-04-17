@@ -41,6 +41,11 @@ void init_GateClusterDoseActor(py::module &m) {
            &GateClusterDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName",
            &GateClusterDoseActor::SetPhysicalVolumeName)
+      .def("SetClusterSizes", &GateClusterDoseActor::SetClusterSizes)
+      .def("SetClusterDatabaseEnergyGrid",
+           &GateClusterDoseActor::SetClusterDatabaseEnergyGrid)
+      .def("SetClusterDatabaseCumulativeValues",
+           &GateClusterDoseActor::SetClusterDatabaseCumulativeValues)
       .def_readwrite("NbOfEvent", &GateClusterDoseActor::NbOfEvent)
       .def_readwrite("cpp_cluster_dose_image",
                      &GateClusterDoseActor::cpp_cluster_dose_image);

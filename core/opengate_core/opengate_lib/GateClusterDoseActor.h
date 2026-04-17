@@ -10,12 +10,16 @@
 
 #include "GateVActor.h"
 #include "itkImage.h"
+#include <vector>
 
 namespace py = pybind11;
 
 class GateClusterDoseActor : public GateVActor {
 
 public:
+  using Image4DType = itk::Image<double, 4>;
+  using Image3DType = itk::Image<double, 3>;
+
   explicit GateClusterDoseActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
@@ -34,17 +38,34 @@ public:
     fPhysicalVolumeName = std::move(s);
   }
 
-  using Image3DType = itk::Image<double, 3>;
+  void SetClusterSizes(std::vector<int> clusterSizes) {
+    fClusterSizes = std::move(clusterSizes);
+  }
 
-  Image3DType::Pointer cpp_cluster_dose_image;
+  void SetClusterDatabaseEnergyGrid(std::vector<std::vector<double>> energyGrid) {
+    fClusterDatabaseEnergyGrid = std::move(energyGrid);
+  }
+
+  void SetClusterDatabaseCumulativeValues(
+      std::vector<std::vector<double>> cumulativeValues) {
+    fClusterDatabaseCumulativeValues = std::move(cumulativeValues);
+  }
+
+  Image4DType::Pointer cpp_cluster_dose_image;
+  Image3DType::Pointer cpp_cluster_volume_image;
   int NbOfEvent = 0;
 
 private:
+  double InterpolateCumulativeValue(size_t channelIndex, double energy) const;
+
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
   std::string fHitType;
-  int fClusterSize = 0;
-  std::string fClusterSizeDatabase;
+  std::vector<int> fClusterSizes;
+  std::vector<std::vector<double>> fClusterDatabaseEnergyGrid;
+  std::vector<std::vector<double>> fClusterDatabaseCumulativeValues;
+  G4ThreeVector fsize;
+  G4ThreeVector fspacing;
 };
 
 #endif // GateClusterDoseActor_h
