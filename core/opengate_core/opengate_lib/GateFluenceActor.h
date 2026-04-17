@@ -61,29 +61,29 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_counts_image;
-  Image3DType::Pointer cpp_counts_compt_image;
-  Image3DType::Pointer cpp_counts_rayl_image;
-  Image3DType::Pointer cpp_counts_sec_image;
-  Image3DType::Pointer cpp_counts_prim_image;
+  Image3DType::Pointer cpp_counts_compton_image;
+  Image3DType::Pointer cpp_counts_rayleigh_image;
+  Image3DType::Pointer cpp_counts_secondaries_image;
+  Image3DType::Pointer cpp_counts_primaries_image;
 
   Image3DType::Pointer cpp_energy_image;
-  Image3DType::Pointer cpp_energy_compt_image;
-  Image3DType::Pointer cpp_energy_rayl_image;
-  Image3DType::Pointer cpp_energy_sec_image;
-  Image3DType::Pointer cpp_energy_prim_image;
+  Image3DType::Pointer cpp_energy_compton_image;
+  Image3DType::Pointer cpp_energy_rayleigh_image;
+  Image3DType::Pointer cpp_energy_secondaries_image;
+  Image3DType::Pointer cpp_energy_primaries_image;
 
   Image3DType::Pointer cpp_counts_squared_image;
-  Image3DType::Pointer cpp_counts_squared_compt_image;
-  Image3DType::Pointer cpp_counts_squared_rayl_image;
-  Image3DType::Pointer cpp_counts_squared_sec_image;
-  Image3DType::Pointer cpp_counts_squared_prim_image;
+  Image3DType::Pointer cpp_counts_squared_compton_image;
+  Image3DType::Pointer cpp_counts_squared_rayleigh_image;
+  Image3DType::Pointer cpp_counts_squared_secondaries_image;
+  Image3DType::Pointer cpp_counts_squared_primaries_image;
 
 
   Image3DType::Pointer cpp_energy_squared_image;
-  Image3DType::Pointer cpp_energy_squared_compt_image;
-  Image3DType::Pointer cpp_energy_squared_rayl_image;
-  Image3DType::Pointer cpp_energy_squared_sec_image;
-  Image3DType::Pointer cpp_energy_squared_prim_image;
+  Image3DType::Pointer cpp_energy_squared_compton_image;
+  Image3DType::Pointer cpp_energy_squared_rayleigh_image;
+  Image3DType::Pointer cpp_energy_squared_secondaries_image;
+  Image3DType::Pointer cpp_energy_squared_primaries_image;
 
 
   Image3DType::SizeType size_region{};

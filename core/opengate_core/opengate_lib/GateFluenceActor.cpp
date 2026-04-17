@@ -87,7 +87,7 @@ void GateFluenceActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
-  fSecondaries = DictGetBool(user_info,"secondaries");
+  fSecondaries = DictGetBool(user_info,"images_for_scattering_processes");
 }
 
 void GateFluenceActor::InitializeCpp() {
@@ -97,36 +97,36 @@ void GateFluenceActor::InitializeCpp() {
   // (the size and allocation will be performed on the py side)
   cpp_counts_image = Image3DType::New();
   if (fSecondaries){
-    cpp_counts_rayl_image = Image3DType::New();
-    cpp_counts_compt_image = Image3DType::New();
-    cpp_counts_sec_image =  Image3DType::New();
-    cpp_counts_prim_image =  Image3DType::New();
+    cpp_counts_rayleigh_image = Image3DType::New();
+    cpp_counts_compton_image = Image3DType::New();
+    cpp_counts_secondaries_image =  Image3DType::New();
+    cpp_counts_primaries_image =  Image3DType::New();
   }
   if (fCountsSquaredFlag) {
     cpp_counts_squared_image = Image3DType::New();
     if (fSecondaries){
-      cpp_counts_squared_rayl_image = Image3DType::New();
-      cpp_counts_squared_compt_image = Image3DType::New();
-      cpp_counts_squared_sec_image =  Image3DType::New();
-      cpp_counts_squared_prim_image =  Image3DType::New();
+      cpp_counts_squared_rayleigh_image = Image3DType::New();
+      cpp_counts_squared_compton_image = Image3DType::New();
+      cpp_counts_squared_secondaries_image =  Image3DType::New();
+      cpp_counts_squared_primaries_image =  Image3DType::New();
     }
   }
   if (fEnergyFlag) {
     cpp_energy_image = Image3DType::New();
     if (fSecondaries){
-      cpp_energy_rayl_image = Image3DType::New();
-      cpp_energy_compt_image = Image3DType::New();
-      cpp_energy_sec_image =  Image3DType::New();
-      cpp_energy_prim_image =  Image3DType::New();
+      cpp_energy_rayleigh_image = Image3DType::New();
+      cpp_energy_compton_image = Image3DType::New();
+      cpp_energy_secondaries_image =  Image3DType::New();
+      cpp_energy_primaries_image =  Image3DType::New();
     }
   }
   if (fEnergySquaredFlag) {
     cpp_energy_squared_image = Image3DType::New();
     if (fSecondaries){
-      cpp_energy_squared_compt_image= Image3DType::New();
-      cpp_energy_squared_rayl_image= Image3DType::New();
-      cpp_energy_squared_sec_image= Image3DType::New();
-      cpp_energy_squared_prim_image=  Image3DType::New();
+      cpp_energy_squared_compton_image= Image3DType::New();
+      cpp_energy_squared_rayleigh_image= Image3DType::New();
+      cpp_energy_squared_secondaries_image= Image3DType::New();
+      cpp_energy_squared_primaries_image=  Image3DType::New();
     }
   }
 }
@@ -175,26 +175,26 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   AttachImageToVolume<Image3DType>(cpp_counts_image, fPhysicalVolumeName,
                                    fTranslation);
   if (fSecondaries){
-    AttachImageToVolume<Image3DType>(cpp_counts_compt_image, fPhysicalVolumeName,
+    AttachImageToVolume<Image3DType>(cpp_counts_compton_image, fPhysicalVolumeName,
                                    fTranslation);
-    AttachImageToVolume<Image3DType>(cpp_counts_rayl_image, fPhysicalVolumeName,
+    AttachImageToVolume<Image3DType>(cpp_counts_rayleigh_image, fPhysicalVolumeName,
                                    fTranslation);
-    AttachImageToVolume<Image3DType>(cpp_counts_sec_image, fPhysicalVolumeName,
+    AttachImageToVolume<Image3DType>(cpp_counts_secondaries_image, fPhysicalVolumeName,
                                    fTranslation);
-    AttachImageToVolume<Image3DType>(cpp_counts_prim_image, fPhysicalVolumeName,
+    AttachImageToVolume<Image3DType>(cpp_counts_primaries_image, fPhysicalVolumeName,
                                    fTranslation);
   }
   if (fEnergyFlag) {
     AttachImageToVolume<Image3DType>(cpp_energy_image, fPhysicalVolumeName,
                                      fTranslation);
     if (fSecondaries){
-      AttachImageToVolume<Image3DType>(cpp_energy_compt_image, fPhysicalVolumeName,
+      AttachImageToVolume<Image3DType>(cpp_energy_compton_image, fPhysicalVolumeName,
                                     fTranslation);
-      AttachImageToVolume<Image3DType>(cpp_energy_rayl_image, fPhysicalVolumeName,
+      AttachImageToVolume<Image3DType>(cpp_energy_rayleigh_image, fPhysicalVolumeName,
                                     fTranslation);
-      AttachImageToVolume<Image3DType>(cpp_energy_sec_image, fPhysicalVolumeName,
+      AttachImageToVolume<Image3DType>(cpp_energy_secondaries_image, fPhysicalVolumeName,
                                     fTranslation);
-      AttachImageToVolume<Image3DType>(cpp_energy_prim_image, fPhysicalVolumeName,
+      AttachImageToVolume<Image3DType>(cpp_energy_primaries_image, fPhysicalVolumeName,
                                     fTranslation);
   }
   }
@@ -255,34 +255,34 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
         if (fSecondaries){
 
           if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
-            ImageAddValue<Image3DType>(cpp_counts_compt_image, index, w);
+            ImageAddValue<Image3DType>(cpp_counts_compton_image, index, w);
           }
           if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
-            ImageAddValue<Image3DType>(cpp_counts_rayl_image, index, w);
+            ImageAddValue<Image3DType>(cpp_counts_rayleigh_image, index, w);
           }
           if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
           ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
-            ImageAddValue<Image3DType>(cpp_counts_sec_image, index, w);
+            ImageAddValue<Image3DType>(cpp_counts_secondaries_image, index, w);
           }
           else{
-            ImageAddValue<Image3DType>(cpp_counts_prim_image, index, w);
+            ImageAddValue<Image3DType>(cpp_counts_primaries_image, index, w);
           }
         }
         if (fEnergyFlag){
           ImageAddValue<Image3DType>(cpp_energy_image, index, energy * w);
           if (fSecondaries){
             if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
-              ImageAddValue<Image3DType>(cpp_energy_compt_image, index, energy * w);
+              ImageAddValue<Image3DType>(cpp_energy_compton_image, index, energy * w);
             }
             if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
-              ImageAddValue<Image3DType>(cpp_energy_rayl_image, index, energy * w);
+              ImageAddValue<Image3DType>(cpp_energy_rayleigh_image, index, energy * w);
             }
             if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
             ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
-              ImageAddValue<Image3DType>(cpp_energy_sec_image, index, energy * w);
+              ImageAddValue<Image3DType>(cpp_energy_secondaries_image, index, energy * w);
             }
             else{
-              ImageAddValue<Image3DType>(cpp_energy_prim_image, index, energy * w);
+              ImageAddValue<Image3DType>(cpp_energy_primaries_image, index, energy * w);
             }
           }
       }
@@ -297,23 +297,23 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
           if (fSecondaries){
             if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
               ScoreSquaredValue(fThreadLocalDataComptEnergy.Get(),
-                            cpp_energy_squared_compt_image, energy * w, event_id,
+                            cpp_energy_squared_compton_image, energy * w, event_id,
                             index);
             }
             if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
               ScoreSquaredValue(fThreadLocalDataRaylEnergy.Get(),
-                            cpp_energy_squared_rayl_image, energy * w, event_id,
+                            cpp_energy_squared_rayleigh_image, energy * w, event_id,
                             index);
             }
             if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
             ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
               ScoreSquaredValue(fThreadLocalDataSecEnergy.Get(),
-                            cpp_energy_squared_sec_image, energy * w, event_id,
+                            cpp_energy_squared_secondaries_image, energy * w, event_id,
                             index);
             }
             else{
               ScoreSquaredValue(fThreadLocalDataPrimEnergy.Get(),
-                            cpp_energy_squared_prim_image, energy * w, event_id,
+                            cpp_energy_squared_primaries_image, energy * w, event_id,
                             index);
               
             }
@@ -325,24 +325,24 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
           if (fSecondaries){
             if ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)")){
               ScoreSquaredValue(fThreadLocalDataComptCounts.Get(),
-                            cpp_counts_squared_compt_image, w, event_id,
+                            cpp_counts_squared_compton_image, w, event_id,
                             index);
             }
             if ((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")){
               ScoreSquaredValue(fThreadLocalDataRaylCounts.Get(),
-                            cpp_counts_squared_rayl_image, w, event_id,
+                            cpp_counts_squared_rayleigh_image, w, event_id,
                             index);
             }
             if (((lastProcessName == "Rayl") || (creatorProcessName == "biasWrapper(Rayl)")) || 
             ((lastProcessName == "compt") || (creatorProcessName == "biasWrapper(compt)"))){
               ScoreSquaredValue(fThreadLocalDataSecCounts.Get(),
-                            cpp_counts_squared_sec_image, w, event_id,
+                            cpp_counts_squared_secondaries_image, w, event_id,
                             index);
             }
             else{
               
               ScoreSquaredValue(fThreadLocalDataPrimCounts.Get(),
-                            cpp_counts_squared_prim_image, w, event_id,
+                            cpp_counts_squared_primaries_image, w, event_id,
                             index);
             }
 
@@ -357,10 +357,10 @@ void GateFluenceActor::EndOfEventAction(const G4Event *event) {
   if (fCountsSquaredFlag) {
     FlushSquaredValues(fThreadLocalDataCounts.Get(), cpp_counts_squared_image);
     if (fSecondaries){
-          FlushSquaredValues(fThreadLocalDataComptCounts.Get(), cpp_counts_squared_compt_image);
-          FlushSquaredValues(fThreadLocalDataRaylCounts.Get(), cpp_counts_squared_rayl_image);
-          FlushSquaredValues(fThreadLocalDataSecCounts.Get(), cpp_counts_squared_sec_image);
-          FlushSquaredValues(fThreadLocalDataPrimCounts.Get(), cpp_counts_squared_prim_image);
+          FlushSquaredValues(fThreadLocalDataComptCounts.Get(), cpp_counts_squared_compton_image);
+          FlushSquaredValues(fThreadLocalDataRaylCounts.Get(), cpp_counts_squared_rayleigh_image);
+          FlushSquaredValues(fThreadLocalDataSecCounts.Get(), cpp_counts_squared_secondaries_image);
+          FlushSquaredValues(fThreadLocalDataPrimCounts.Get(), cpp_counts_squared_primaries_image);
       }
   
 
@@ -368,10 +368,10 @@ void GateFluenceActor::EndOfEventAction(const G4Event *event) {
   if (fEnergySquaredFlag) {
     FlushSquaredValues(fThreadLocalDataEnergy.Get(), cpp_energy_squared_image);
     if (fSecondaries){
-        FlushSquaredValues(fThreadLocalDataComptEnergy.Get(), cpp_energy_squared_compt_image);
-        FlushSquaredValues(fThreadLocalDataRaylEnergy.Get(), cpp_energy_squared_rayl_image);
-        FlushSquaredValues(fThreadLocalDataSecEnergy.Get(), cpp_energy_squared_sec_image);
-        FlushSquaredValues(fThreadLocalDataPrimEnergy.Get(), cpp_energy_squared_prim_image);
+        FlushSquaredValues(fThreadLocalDataComptEnergy.Get(), cpp_energy_squared_compton_image);
+        FlushSquaredValues(fThreadLocalDataRaylEnergy.Get(), cpp_energy_squared_rayleigh_image);
+        FlushSquaredValues(fThreadLocalDataSecEnergy.Get(), cpp_energy_squared_secondaries_image);
+        FlushSquaredValues(fThreadLocalDataPrimEnergy.Get(), cpp_energy_squared_primaries_image);
     }
   }
 }

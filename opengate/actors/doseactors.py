@@ -1629,10 +1629,10 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
 
     # hints for IDE
-    secondaries : bool
+    images_for_scattering_processes : bool
 
     user_info_defaults = {
-        "secondaries": (
+        "images_for_scattering_processes": (
             False,
             {
                 "doc": "If yes, realise imgs where scattering processes are also recorded separately",
@@ -1661,20 +1661,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 },
             },
         },
-        "compt_counts_with_uncertainty": {
+        "compton_counts_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "counts_compt": {
+                "counts_compton": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
-                "counts_squared_compt": {
+                "counts_squared_compton": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "counts_uncertainty_compt": {
+                "counts_uncertainty_compton": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1682,20 +1682,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
 
-        "rayl_counts_with_uncertainty": {
+        "rayleigh_counts_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "counts_rayl": {
+                "counts_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
-                "counts_squared_rayl": {
+                "counts_squared_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "counts_uncertainty_rayl": {
+                "counts_uncertainty_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1703,20 +1703,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
 
-        "sec_counts_with_uncertainty": {
+        "secondaries_counts_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "counts_sec": {
+                "counts_secondaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
-                "counts_squared_sec": {
+                "counts_squared_secondaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "counts_uncertainty_sec": {
+                "counts_uncertainty_secondaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1724,20 +1724,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
 
-        "prim_counts_with_uncertainty": {
+        "primaries_counts_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "counts_prim": {
+                "counts_primaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
-                "counts_squared_prim": {
+                "counts_squared_primaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "counts_uncertainty_prim": {
+                "counts_uncertainty_primaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1767,20 +1767,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
 
-        "compt_energy_with_uncertainty": {
+        "compton_energy_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "energy_compt": {
+                "energy_compton": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
-                "energy_squared_compt": {
+                "energy_squared_compton": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "energy_uncertainty_compt": {
+                "energy_uncertainty_compton": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1788,20 +1788,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
 
-        "rayl_energy_with_uncertainty": {
+        "rayleigh_energy_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "energy_rayl": {
+                "energy_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active":False,
                 },
-                "energy_squared_rayl": {
+                "energy_squared_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "energy_uncertainty_rayl": {
+                "energy_uncertainty_rayleigh": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1809,20 +1809,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
 
-        "sec_energy_with_uncertainty": {
+        "secondaries_energy_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "energy_sec": {
+                "energy_secondaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
-                "energy_squared_sec": {
+                "energy_squared_secondaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "energy_uncertainty_sec": {
+                "energy_uncertainty_secondaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1830,20 +1830,20 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             },
         },
 
-        "prim_energy_with_uncertainty": {
+        "primaries_energy_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "energy_prim": {
+                "energy_primaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
-                "energy_squared_prim": {
+                "energy_squared_primaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": False,
                 },
-                "energy_uncertainty_prim": {
+                "energy_uncertainty_primaries": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "uncertainty",
                     "active": False,
@@ -1858,26 +1858,26 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.__initcpp__()
         self.actor = self.simulation.add_actor("DigiAttributeLastProcessDefinedStepInVolumeActor", self.name + "_processes")
         self.actor.attached_to = self.simulation.world.name
-        self.list_of_processes = ["compt", "rayl", "sec", "prim"]
-        self.list_of_output_counts = [self.user_output.compt_counts_with_uncertainty,
-                                      self.user_output.rayl_counts_with_uncertainty,
-                                      self.user_output.sec_counts_with_uncertainty,
-                                      self.user_output.prim_counts_with_uncertainty]
-        self.list_of_counts_images = [self.cpp_counts_compt_image, self.cpp_counts_rayl_image,
-                                      self.cpp_counts_sec_image,
-                                      self.cpp_counts_prim_image]
-        self.list_of_counts_squared_images = [self.cpp_counts_squared_compt_image, self.cpp_counts_squared_rayl_image,
-                                              self.cpp_counts_squared_sec_image, self.cpp_counts_squared_prim_image]
-        self.list_of_output_energy = [self.user_output.compt_energy_with_uncertainty,
-                                      self.user_output.rayl_energy_with_uncertainty,
-                                      self.user_output.sec_energy_with_uncertainty,
-                                      self.user_output.prim_energy_with_uncertainty]
+        self.list_of_processes = ["compton", "rayleigh", "secondaries", "primaries"]
+        self.list_of_output_counts = [self.user_output.compton_counts_with_uncertainty,
+                                      self.user_output.rayleigh_counts_with_uncertainty,
+                                      self.user_output.secondaries_counts_with_uncertainty,
+                                      self.user_output.primaries_counts_with_uncertainty]
+        self.list_of_counts_images = [self.cpp_counts_compton_image, self.cpp_counts_rayleigh_image,
+                                      self.cpp_counts_secondaries_image,
+                                      self.cpp_counts_primaries_image]
+        self.list_of_counts_squared_images = [self.cpp_counts_squared_compton_image, self.cpp_counts_squared_rayleigh_image,
+                                              self.cpp_counts_squared_secondaries_image, self.cpp_counts_squared_primaries_image]
+        self.list_of_output_energy = [self.user_output.compton_energy_with_uncertainty,
+                                      self.user_output.rayleigh_energy_with_uncertainty,
+                                      self.user_output.secondaries_energy_with_uncertainty,
+                                      self.user_output.primaries_energy_with_uncertainty]
 
-        self.list_of_energy_images = [self.cpp_energy_compt_image, self.cpp_energy_rayl_image,
-                                      self.cpp_energy_sec_image,
-                                      self.cpp_energy_prim_image]
-        self.list_of_energy_squared_images = [self.cpp_energy_squared_compt_image, self.cpp_energy_squared_rayl_image,
-                                              self.cpp_energy_squared_sec_image, self.cpp_energy_squared_prim_image]
+        self.list_of_energy_images = [self.cpp_energy_compton_image, self.cpp_energy_rayleigh_image,
+                                      self.cpp_energy_secondaries_image,
+                                      self.cpp_energy_primaries_image]
+        self.list_of_energy_squared_images = [self.cpp_energy_squared_compton_image, self.cpp_energy_squared_rayleigh_image,
+                                              self.cpp_energy_squared_secondaries_image, self.cpp_energy_squared_primaries_image]
 
 
     def __initcpp__(self):
@@ -1897,13 +1897,11 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         VoxelDepositActor.initialize(self)
         self.check_user_input()
-        secondary_flag = self.user_info.secondaries
+        secondary_flag = self.user_info.images_for_scattering_processes
         self.user_output.counts_with_uncertainty.set_active(True, item=0)
         if secondary_flag :
-            self.user_output.compt_counts_with_uncertainty.set_active(True, item=0)
-            self.user_output.rayl_counts_with_uncertainty.set_active(True, item=0)
-            self.user_output.sec_counts_with_uncertainty.set_active(True, item=0)
-            self.user_output.prim_counts_with_uncertainty.set_active(True, item=0)
+            for user_output_images in self.list_of_output_counts:
+                user_output_images.set_active(True, item=0)
         if (
             self.user_output.counts_with_uncertainty.get_active(
                 item=("uncertainty", "std", "variance")
@@ -2003,7 +2001,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.cpp_counts_image,
             self.cpp_counts_squared_image,
         )
-        if self.user_info.secondaries :
+        if self.user_info.images_for_scattering_processes :
             for process,img,squared_img in zip(self.list_of_processes,self.list_of_counts_images,self.list_of_counts_squared_images):
                 self.prepare_output_for_run(f"{process}_counts_with_uncertainty", run_index)
                 self.push_to_cpp_image(f"{process}_counts_with_uncertainty",
@@ -2020,7 +2018,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 self.cpp_energy_image,
                 self.cpp_energy_squared_image,
             )
-            if self.user_info.secondaries:
+            if self.user_info.images_for_scattering_processes:
                 for process, img, squared_img in zip(self.list_of_processes, self.list_of_energy_images, self.list_of_energy_squared_images):
                     self.prepare_output_for_run(f"{process}_energy_with_uncertainty", run_index)
                     self.push_to_cpp_image(f"{process}_energy_with_uncertainty",
@@ -2043,7 +2041,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.user_output.counts_with_uncertainty.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
-        if self.user_info.secondaries:
+        if self.user_info.images_for_scattering_processes:
             for process, img, squared_img,output in zip(self.list_of_processes, self.list_of_counts_images,
                                                  self.list_of_counts_squared_images, self.list_of_output_counts):
                 self.fetch_from_cpp_image(f"{process}_counts_with_uncertainty", run_index,img,squared_img)
@@ -2063,7 +2061,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.user_output.energy_with_uncertainty.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-            if self.user_info.secondaries:
+            if self.user_info.images_for_scattering_processes:
                 for process, img, squared_img, output in zip(self.list_of_processes, self.list_of_energy_images,
                                                              self.list_of_energy_squared_images,
                                                              self.list_of_output_energy):
