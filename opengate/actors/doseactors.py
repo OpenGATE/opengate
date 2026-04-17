@@ -1700,6 +1700,82 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class ClusterDoseActor(VoxelDepositActor, g4.GateClusterDoseActor):
+    """Scores a voxelized map of cluster-dose values."""
+
+    cluster_size: int
+    cluster_size_database: str
+
+    user_info_defaults = {
+        "cluster_size": (
+            2,
+            {
+                "doc": "Minimum cluster size used for cluster-dose scoring.",
+            },
+        ),
+        "cluster_size_database": (
+            "",
+            {
+                "doc": "Path or identifier of the cluster-size database used by the actor.",
+            },
+        ),
+    }
+
+    user_output_config = {
+        "cluster_dose": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateClusterDoseActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfEventAction",
+            }
+        )
+
+    def initialize(self):
+        self.check_user_input()
+        VoxelDepositActor.initialize(self)
+
+        self.InitializeUserInfo(self.user_info)
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("cluster_dose", run_index, pixel_type="double")
+        self.push_to_cpp_image(
+            "cluster_dose",
+            run_index,
+            self.cpp_cluster_dose_image,
+        )
+        g4.GateClusterDoseActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(
+            "cluster_dose",
+            run_index,
+            self.cpp_cluster_dose_image,
+        )
+        self._update_output_coordinate_system("cluster_dose", run_index)
+        self.user_output.cluster_dose.store_meta_data(
+            run_index, number_of_samples=self.NbOfEvent
+        )
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+        return 0
+
+    def EndSimulationAction(self):
+        g4.GateClusterDoseActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
+
+
 class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
     user_info_defaults = {
         "is_ion": (
@@ -1772,5 +1848,6 @@ process_cls(RBEActor)
 process_cls(REActor)
 process_cls(BeamQualityActor)
 process_cls(FluenceActor)
+process_cls(ClusterDoseActor)
 process_cls(ProductionAndStoppingActor)
 process_cls(EmCalculatorActor)
