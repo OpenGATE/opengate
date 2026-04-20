@@ -350,21 +350,20 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
                 ((lastProcessName == "compt") ||
                  (creatorProcessName == "biasWrapper(compt)"))) {
               ScoreSquaredValue(fThreadLocalDataSecCounts.Get(),
-                            cpp_counts_squared_secondaries_image, w, event_id,
-                            index);
-            }
-            else{
-              
+                                cpp_counts_squared_secondaries_image, w,
+                                event_id, index);
+            } else {
+
               ScoreSquaredValue(fThreadLocalDataPrimCounts.Get(),
-                            cpp_counts_squared_primaries_image, w, event_id,
-                            index);
-            }
+                                cpp_counts_squared_primaries_image, w, event_id,
+                                index);
             }
           }
         }
       }
     }
   }
+}
 
 void GateFluenceActor::EndOfEventAction(const G4Event *event) {
   if (fCountsSquaredFlag) {
