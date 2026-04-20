@@ -191,9 +191,7 @@ if __name__ == "__main__":
     for process in processes:
         for type in types:
             string = f"{process}_{type}"
-            img_fluence = img_opening(
-                p / f"test099_processes_{type}_{process}.mhd"
-            )
+            img_fluence = img_opening(p / f"test099_processes_{type}_{process}.mhd")
             img_squared_fluence = img_opening(
                 p / f"test099_processes_{type}_squared_{process}.mhd"
             )
