@@ -1,7 +1,7 @@
 Details: Simulation object
 ==========================
 
-You can configure the general behavior of your simulation via the parameters of the :class:`opengate.Simulation` object.
+You can configure the general behavior of your simulation via the parameters of the :class:`opengate.managers.Simulation` object.
 
 Random Number Generator
 ------------------------
@@ -129,4 +129,3 @@ TODO
 .. [//]: # (   output = se.start(True))
 
 .. [//]: # (Here user can also define a function (``my_function`` in the above example) that will be called after the Geant4 engine is initialized, and before it starts the simulation. This function will be called in the newly created process, so all data it accesses must be serializable (Python's pickable) to be copied to the new process.)
-

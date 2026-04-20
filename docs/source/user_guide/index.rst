@@ -30,6 +30,7 @@ User Guide
    user_guide_reference_actors
    user_guide_reference_sources
    user_guide_reference_fields
+   user_guide_reference_filters
    user_guide_advanced
    user_guide_optical_photons
    user_guide_voxelization
