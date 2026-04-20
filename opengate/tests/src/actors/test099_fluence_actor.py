@@ -6,6 +6,7 @@ from opengate.tests import utility
 import numpy as np
 import uproot
 import itk
+from pathlib import Path
 import pandas as pd
 
 
@@ -147,9 +148,10 @@ if __name__ == "__main__":
     # start simulation
     sim.run(start_new_process=False)
     print(stats)
+    output_path = Path(sim.output_dir)
 
-    with uproot.open(f"{sim.output_dir}/{phsp.output_filename}:PhaseSpace") as tree:
-        df = tree.arrays(library="pd")
+    with uproot.open(output_path / phsp.output_filename) as root_file:
+        df = root_file["PhaseSpace"].arrays(library="pd")
 
     l_is_ok = np.zeros(2)
     for i, type in enumerate(("E", "C")):
@@ -165,9 +167,9 @@ if __name__ == "__main__":
         rel_err_tab_phsp = np.divide(std_dev_tab, (tab / source.n))
 
         if type == "E":
-            rel_err_img = itk.imread(f"{sim.output_dir}/test099_energy_uncertainty.mhd")
+            rel_err_img = itk.imread(output_path / "test099_energy_uncertainty.mhd")
         elif type == "C":
-            rel_err_img = itk.imread(f"{sim.output_dir}/test099_counts_uncertainty.mhd")
+            rel_err_img = itk.imread(output_path / "test099_counts_uncertainty.mhd")
         rel_err_tab_img = itk.GetArrayFromImage(rel_err_img)
         numpy_column_order = [2, 1, 0]
         rel_err_tab_img = np.transpose(rel_err_tab_img, numpy_column_order)

@@ -7,6 +7,7 @@ from opengate.actors.digitizers import *
 import numpy as np
 import uproot
 import itk
+from pathlib import Path
 import pandas as pd
 
 
@@ -179,9 +180,10 @@ if __name__ == "__main__":
     # start simulation
     sim.run(start_new_process=False)
     print(stats)
+    p = Path(sim.output_dir)
 
-    with uproot.open(f"{sim.output_dir}/{phsp.output_filename}:PhaseSpace") as tree:
-        df = tree.arrays(library="pd")
+    with uproot.open(p / phsp.output_filename) as root_file:
+        df = root_file["PhaseSpace"].arrays(library="pd")
 
     processes = ["rayleigh", "compton", "secondaries", "primaries"]
     types = ["counts", "energy"]
@@ -190,13 +192,13 @@ if __name__ == "__main__":
         for type in types:
             string = f"{process}_{type}"
             img_fluence = img_opening(
-                f"{sim.output_dir}/test099_processes_{type}_{process}.mhd"
+                p / f"test099_processes_{type}_{process}.mhd"
             )
             img_squared_fluence = img_opening(
-                f"{sim.output_dir}/test099_processes_{type}_squared_{process}.mhd"
+                p / f"test099_processes_{type}_squared_{process}.mhd"
             )
             img_uncertainty_fluence = img_opening(
-                f"{sim.output_dir}/test099_processes_{type}_uncertainty_{process}.mhd"
+                p / f"test099_processes_{type}_uncertainty_{process}.mhd"
             )
             img_phsp, img_squared_phsp = img_generation_from_phsp(
                 fluence_actor.size[0],
