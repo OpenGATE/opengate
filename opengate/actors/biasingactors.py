@@ -174,6 +174,13 @@ class GenericBiasingActorBase(ActorBase):
                 f"Biasing actors can only be attached to the world volume, "
                 f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
             )
+        em_parameters = g4.G4EmParameters.Instance()
+        if em_parameters.GeneralProcessActive():
+            fatal(
+                f"Biasing actors can only be used without GenericProcess. \n"
+                f" use : sim.g4_commands_before_init.append('/process/em/UseGeneralProcess false')"
+            )
+            # note: we CANNOT turn it off now because the physics list is already initialized
 
 
 class SplitProcessActorBase(GenericBiasingActorBase):
