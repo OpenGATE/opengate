@@ -169,11 +169,8 @@ class GenericBiasingActorBase(ActorBase):
 
     def initialize(self):
         super().initialize()
-        if self.user_info.attached_to != "world":
-            warning(
-                f"Biasing actors can only be attached to the world volume, "
-                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
-            )
+
+    def check_compatibility_with_generic_process(self):
         em_parameters = g4.G4EmParameters.Instance()
         if em_parameters.GeneralProcessActive():
             fatal(
@@ -272,6 +269,12 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
 
     def initialize(self):
         GenericBiasingActorBase.initialize(self)
+        if self.user_info.attached_to != "world":
+            warning(
+                f"GammaFreeFlightActor actors can only be attached to the world volume, "
+                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
+            )
+        self.check_compatibility_with_generic_process()
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
@@ -433,6 +436,12 @@ class ScatterSplittingFreeFlightActor(
 
     def initialize(self):
         SplitProcessActorBase.initialize(self)
+        if self.user_info.attached_to != "world":
+            warning(
+                f"ScatterSplittingFreeFlightActor actors can only be attached to the world volume, "
+                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
+            )
+        self.check_compatibility_with_generic_process()
         # Check the sub-parameters
         self._aa_validator.validate(self, "angular_acceptance")
         if self.user_info.compton_splitting_factor == -1:
