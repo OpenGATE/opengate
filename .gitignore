@@ -183,4 +183,5 @@ preload*
 **/external/
 build*/
 .clang-format
+a.txt
 
