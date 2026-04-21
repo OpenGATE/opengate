@@ -67,6 +67,10 @@ public:
 
   bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
 
+  bool IsStepEnteringVolumeAcrossAllWorlds(
+      const G4Step *step,
+      const std::vector<const G4LogicalVolume *> &volumes) const;
+
   std::vector<std::string> fExcludeVolumes;
   // The following cache the logical volumes for faster comparison
   // (lazy initialisation as this is complex with the parallel worlds)

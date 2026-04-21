@@ -153,17 +153,15 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
   return nullptr;
 }
 
-bool GateScatterSplittingFreeFlightOptrActor::IsInKillVolume(
-    const G4Track *track) const {
+const std::vector<const G4LogicalVolume *> &
+GateScatterSplittingFreeFlightOptrActor::GetKillVolumePointers() const {
   threadLocal_t &l = threadLocalData.Get();
-  // Lazy-build kill-volume cache on first call, then query parallel worlds
-  // using the exact same navigator trick as IsInExcludedVolumeAcrossAllWorlds
   if (!l.fIsKillVolumesCached) {
     BuildLVCache(fKillVolumes, l.fKillVolumePointers,
                  "kill_interacting_in_volumes");
     l.fIsKillVolumesCached = true;
   }
-  return IsInVolumeListAcrossAllWorlds(track, l.fKillVolumePointers);
+  return l.fKillVolumePointers;
 }
 
 G4VBiasingOperation *
@@ -179,6 +177,8 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
   }
   l.fIsTrackValidForStep = true;
 
+  const bool isFF = IsFreeFlight(track);
+
   // Evaluate the geometry
   const int currentStep = track->GetCurrentStepNumber();
   if (l.fLastStepNumber != currentStep) {
@@ -187,20 +187,10 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     l.fLastStepNumber = currentStep;
   }
 
-  // Apply Exclusions
-  if (l.fIsExcludedForStep) {
-    // This track is in an unbiased volume.
-    // Returning nullptr here disables FF occurrence.
-    // The cached flag will also disable splitting in ProposeFinalState.
+  if (!isFF && IsStepEnteringVolumeAcrossAllWorlds(track->GetStep(),
+                                                   GetKillVolumePointers())) {
+    l.fIsTrackValidForStep = false;
     return nullptr;
-  }
-
-  const bool isFF = IsFreeFlight(track);
-
-  if (!isFF && IsInKillVolume(track)) {
-    // Never here ?
-    l.fIsTrackValidForStep = false; // Flags it to be killed in SteppingAction
-    return nullptr;                 // Disables all occurrences
   }
 
   if (isFF) {
@@ -298,7 +288,7 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
 
   // if this is not a free flight, we kill the gamma when it enters some defined
   // volumes
-  if (IsInKillVolume(step->GetTrack())) {
+  if (IsStepEnteringVolumeAcrossAllWorlds(step, GetKillVolumePointers())) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
     return;

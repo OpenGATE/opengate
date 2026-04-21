@@ -34,8 +34,6 @@ public:
 
   void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
-  bool IsInKillVolume(const G4Track *track) const;
-
   static int IsScatterInteractionGeneralProcess_OLD(
       const G4BiasingProcessInterface *callingProcess);
 
@@ -72,6 +70,7 @@ protected:
     std::vector<const G4LogicalVolume *> fKillVolumePointers;
   };
   G4Cache<threadLocal_t> threadLocalData;
+  const std::vector<const G4LogicalVolume *> &GetKillVolumePointers() const;
 
   std::vector<std::string> fKillVolumes;
   std::vector<const G4LogicalVolume *> fKillLogicalVolumes;
