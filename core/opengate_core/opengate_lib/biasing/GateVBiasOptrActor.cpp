@@ -62,10 +62,6 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateVBiasOptrActor::Configure() {
-  if (G4EmParameters::Instance()->GeneralProcessActive()) {
-    Fatal("GeneralGammaProcess is active. Biasing can *not* work for "
-          "GateVBiasOptrActor");
-  }
   if (!G4Threading::IsMultithreadedApplication())
     ConfigureForWorker();
 }

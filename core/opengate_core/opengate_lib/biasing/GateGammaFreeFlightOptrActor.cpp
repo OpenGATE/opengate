@@ -9,6 +9,7 @@ Copyright (C): OpenGATE Collaboration
 #include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include "G4BiasingProcessInterface.hh"
+#include "G4EmParameters.hh"
 
 GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
     : GateVBiasOptrActor("GammaFreeFlightOperator", user_info, true) {
@@ -35,6 +36,10 @@ void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
   l.fFreeFlightOperation =
       new GateGammaFreeFlightOptn("GammaFreeFlightOperation");
   l.fIsFirstTime = true;
+  if (G4EmParameters::Instance()->GeneralProcessActive()) {
+    Fatal("GeneralGammaProcess is active. Biasing can *not* work for "
+          "GateVBiasOptrActor");
+  }
 }
 
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {

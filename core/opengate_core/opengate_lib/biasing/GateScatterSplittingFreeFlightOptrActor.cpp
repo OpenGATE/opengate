@@ -80,6 +80,11 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
 
   // Kill volumes
   fKillVolumes = DictGetVecStr(user_info, "kill_interacting_in_volumes");
+
+  if (G4EmParameters::Instance()->GeneralProcessActive()) {
+    Fatal("GeneralGammaProcess is active. Biasing can *not* work for "
+          "GateVBiasOptrActor");
+  }
 }
 
 void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
