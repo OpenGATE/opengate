@@ -9,6 +9,8 @@ Copyright (C): OpenGATE Collaboration
 #define GateVBiasOptrActor_h
 
 #include "../GateVActor.h"
+#include "G4Cache.hh"
+#include "G4Navigator.hh"
 #include "G4VBiasingOperator.hh"
 #include <pybind11/stl.h>
 
@@ -55,8 +57,19 @@ public:
 
   bool IsTrackValid(const G4Track *track) const;
 
+  bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
+
   std::vector<std::string> fExcludeVolumes;
-  std::vector<const G4LogicalVolume *> fUnbiasedLogicalVolumes;
+  // The following cache the logical volumes for faster comparison
+  // (lazy initialisation as this is complex with the parallel worlds)
+  struct threadLocalCache_t {
+    bool fIsVolumePointersCached = false;
+    std::vector<const G4LogicalVolume *> fExcludedVolumePointers;
+    G4Navigator fTmpNav;
+  };
+
+  mutable G4Cache<threadLocalCache_t> fThreadLocalCache;
+
   double fWeightCutoff;
   double fEnergyCutoff;
 };

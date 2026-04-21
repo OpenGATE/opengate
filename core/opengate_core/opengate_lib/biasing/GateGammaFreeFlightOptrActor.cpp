@@ -41,6 +41,8 @@ void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {
   threadLocal_t &l = threadLocalData.Get();
   l.fIsFirstTime = true;
   l.fIsTrackValidForStep = true;
+  l.fIsExcludedForStep = false;
+  l.fLastStepNumber = -1;
   /* WARNING:
    the weight is reset to the initial particle weight when we start tracking.
    However, the weight of the particle can change between the "StartTracking"
@@ -60,34 +62,59 @@ GateGammaFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateGammaFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  // For this particle, at this location, should we apply 'FreeFlight' biasing?
-  // return l.fFreeFlightOperation => use Free Flight VRT for this step
-  // return nullptr => not biased, use standard physics
 
   threadLocal_t &l = threadLocalData.Get();
+
   if (l.fIsFirstTime) {
     l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
     l.fIsFirstTime = false;
   }
-  // Is it a valid particle?
+
+  // Kill tracks below cutoffs
   if (!IsTrackValid(track)) {
     l.fIsTrackValidForStep = false;
+    l.fIsExcludedForStep = false;
     return nullptr;
+  }
+
+  // ----------------------------------------------------------------
+  // Make the FF-vs-excluded decision HERE, ONCE, at the start of the step.
+  // Store it in fIsExcludedForStep so ProposeFinalState uses the SAME answer.
+  // This is mandatory: ProposeOccurence and ProposeFinalState must be
+  // consistent for the same step (Geant4 rule, violation = BIAS.GEN.02).
+  // ----------------------------------------------------------------
+  const int currentStep = track->GetCurrentStepNumber();
+
+  if (l.fLastStepNumber != currentStep) {
+    // Only query the parallel navigator if this is a new step
+    l.fIsExcludedForStep = IsInExcludedVolumeAcrossAllWorlds(track);
+    l.fLastStepNumber = currentStep;
   }
   l.fIsTrackValidForStep = true;
 
-  // Go for FF
+  if (l.fIsExcludedForStep) {
+    return nullptr;
+  }
+
   return l.fFreeFlightOperation;
 }
 
 G4VBiasingOperation *
 GateGammaFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+
   threadLocal_t &l = threadLocalData.Get();
-  // Was it valid at the start of the step?
+
+  // ----------------------------------------------------------------
+  // MUST be consistent with ProposeOccurenceBiasingOperation for this step.
+  // We reuse the flags set there — no new navigator query here.
+  // ----------------------------------------------------------------
+
   if (!l.fIsTrackValidForStep)
-    return nullptr;
-  // Go for FF
+    return nullptr; // track is being killed
+  if (l.fIsExcludedForStep)
+    return nullptr; // normal physics, no FF
+
   return l.fFreeFlightOperation;
 }
 
@@ -97,8 +124,6 @@ void GateGammaFreeFlightOptrActor::BeginOfEventAction(const G4Event *event) {
 
 void GateGammaFreeFlightOptrActor::SteppingAction(G4Step *step) {
   threadLocal_t &l = threadLocalData.Get();
-  // Was it valid at the start of the step?
-  // Note: it only applies for FF particles, not analog ones
 
   if (!l.fIsTrackValidForStep) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);

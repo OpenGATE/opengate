@@ -45,6 +45,8 @@ protected:
     GateGammaFreeFlightOptn *fFreeFlightOperation;
     bool fIsFirstTime;
     bool fIsTrackValidForStep;
+    bool fIsExcludedForStep;
+    int fLastStepNumber;
   };
   G4Cache<threadLocal_t> threadLocalData;
 };
