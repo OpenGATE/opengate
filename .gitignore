@@ -179,6 +179,8 @@ preload*
 .vscode/
 **/*.save.py
 **/*.save.rst
+**/*.save2.rst
 **/external/
 build*/
+.clang-format
 
