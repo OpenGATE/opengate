@@ -100,12 +100,6 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
     l.fBiasInformationPerThread["nb_killed_gammas_compton_level"] = 0;
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] = 0;
     l.fBiasInformationPerThread["nb_killed_weight_too_low"] = 0;
-
-    // Check if GeneralGammaProcess is disabled
-    if (G4EmParameters::Instance()->GeneralProcessActive()) {
-      Fatal("GeneralGammaProcess is active. This do *not* work for "
-            "ScatterSplittingFreeFlightActor");
-    }
   }
 }
 

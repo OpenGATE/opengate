@@ -175,3 +175,10 @@ venv_osx_3.12
 preload*
 
 .zed/
+
+.vscode/
+**/*.save.py
+**/*.save.rst
+**/external/
+build*/
+

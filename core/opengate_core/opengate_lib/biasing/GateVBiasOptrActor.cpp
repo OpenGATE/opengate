@@ -8,11 +8,11 @@ Copyright (C): OpenGATE Collaboration
 #include "GateVBiasOptrActor.h"
 #include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
+#include "G4EmParameters.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4Navigator.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "G4RunManager.hh"
-#include "G4TouchableHistoryHandle.hh"
 #include "G4TransportationManager.hh"
 #include <functional> // Added for recursive lambda
 #include <vnl_matrix.h>
@@ -64,6 +64,10 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateVBiasOptrActor::Configure() {
+  if (G4EmParameters::Instance()->GeneralProcessActive()) {
+    Fatal("GeneralGammaProcess is active. Biasing can *not* work for "
+          "GateVBiasOptrActor");
+  }
   if (!G4Threading::IsMultithreadedApplication())
     ConfigureForWorker();
 }
