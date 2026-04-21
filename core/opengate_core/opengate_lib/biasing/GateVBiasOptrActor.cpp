@@ -22,8 +22,6 @@ GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
     : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {
   // It seems that it is necessary in MT (see PreUserTrackingAction)
   fActions.insert("PreUserTrackingAction");
-  // SteppingAction may kill when the weight is too low (we leave this to
-  // subclasses) fActions.insert("SteppingAction");
   fWeightCutoff = std::numeric_limits<double>::min(); // around 2.22507e-308
   fEnergyCutoff = 0;
 }
