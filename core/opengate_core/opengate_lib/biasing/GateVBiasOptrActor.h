@@ -57,6 +57,14 @@ public:
 
   bool IsTrackValid(const G4Track *track) const;
 
+  void BuildLVCache(const std::vector<std::string> &names,
+                    std::vector<const G4LogicalVolume *> &cache,
+                    const std::string &callerName) const;
+
+  bool IsInVolumeListAcrossAllWorlds(
+      const G4Track *track,
+      const std::vector<const G4LogicalVolume *> &cache) const;
+
   bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
 
   std::vector<std::string> fExcludeVolumes;

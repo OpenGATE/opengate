@@ -80,10 +80,6 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
 
   // Kill volumes
   fKillVolumes = DictGetVecStr(user_info, "kill_interacting_in_volumes");
-  for (auto &name : fKillVolumes) {
-    const auto *v = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
-    fKillLogicalVolumes.push_back(v);
-  }
 }
 
 void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
@@ -126,6 +122,8 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
   // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
   l.fIsTrackValidForStep = true;
+  l.fIsExcludedForStep = false;
+  l.fLastStepNumber = -1;
 
   if (!IsFreeFlight(track)) {
     // this is not an FF or secondary of an FF
@@ -150,21 +148,67 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
   return nullptr;
 }
 
+bool GateScatterSplittingFreeFlightOptrActor::IsInKillVolume(
+    const G4Track *track) const {
+  threadLocal_t &l = threadLocalData.Get();
+  // Lazy-build kill-volume cache on first call, then query parallel worlds
+  // using the exact same navigator trick as IsInExcludedVolumeAcrossAllWorlds
+  if (!l.fIsKillVolumesCached) {
+    BuildLVCache(fKillVolumes, l.fKillVolumePointers,
+                 "kill_interacting_in_volumes");
+    l.fIsKillVolumesCached = true;
+  }
+  return IsInVolumeListAcrossAllWorlds(track, l.fKillVolumePointers);
+}
+
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   threadLocal_t &l = threadLocalData.Get();
 
-  // Is it a valid particle?
+  // Is it a valid particle? (energy or weight cutoff).
+  // If not, will be killed in SteppingAction
   if (!IsTrackValid(track)) {
     l.fIsTrackValidForStep = false;
     return nullptr;
   }
   l.fIsTrackValidForStep = true;
 
-  if (IsFreeFlight(track)) {
+  // Evaluate the geometry
+  const int currentStep = track->GetCurrentStepNumber();
+  if (l.fLastStepNumber != currentStep) {
+    // Only query the parallel navigator if this is a new step
+    l.fIsExcludedForStep = IsInExcludedVolumeAcrossAllWorlds(track);
+    l.fLastStepNumber = currentStep;
+  }
+
+  // Apply Exclusions
+  if (l.fIsExcludedForStep) {
+    // This track is in an unbiased volume.
+    // Returning nullptr here disables FF occurrence.
+    // The cached flag will also disable splitting in ProposeFinalState.
+    return nullptr;
+  }
+
+  const bool isFF = IsFreeFlight(track);
+
+  if (!isFF && IsInKillVolume(track)) {
+    // Never here ?
+    l.fIsTrackValidForStep = false; // Flags it to be killed in SteppingAction
+    return nullptr;                 // Disables all occurrences
+  }
+
+  if (isFF) {
+    if (l.fIsExcludedForStep) {
+      // Track is in an unbiased volume.
+      // Returning nullptr disables FF occurrence, and the cached
+      // flag will disable splitting in ProposeFinalState.
+      return nullptr;
+    }
     return l.fFreeFlightOperation;
   }
+
+  // Conventional, analog tracking
   return nullptr;
 }
 
@@ -177,10 +221,16 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   threadLocal_t &l = threadLocalData.Get();
 
   // Was it valid at the start of the step?
+  // Revert to standard physics (no FF, no splitting)
   if (!l.fIsTrackValidForStep)
     return nullptr;
 
-  // If the weight is not 1, this is a FF
+  if (l.fIsExcludedForStep) {
+    // Revert to standard physics (no FF, no splitting)
+    return nullptr;
+  }
+
+  // Is this a FF ?
   if (IsFreeFlight(track)) {
     return l.fFreeFlightOperation;
   }
@@ -221,14 +271,29 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
 
   // Check if this is a free flight. If yes, we do nothing.
   // FF tracks this particle except if it is in an unbiased volume.
-  // This is managed by Optr/Optn Geant4 biasing logic.
-  if (IsFreeFlight(step->GetTrack())) {
+  // This is managed by Optr/Optn Geant4 biasing logic EXCEPT if
+  // the track is in parallel world.
+  const bool isFF = IsFreeFlight(step->GetTrack());
+
+  // PARALLEL GEOMETRY ROUTING LOGIC
+  if (l.fIsExcludedForStep) {
+    if (isFF) {
+      // FF Particle in excluded volume.
+      // It reverts to analog (ProposeOccurence returned nullptr).
+      // We let it continue so it can deposit energy.
+      return;
+    }
+  }
+
+  // Check if this is a free flight in the normal mass world.
+  // If yes, do nothing.
+  if (isFF) {
     return;
   }
 
   // if this is not a free flight, we kill the gamma when it enters some defined
   // volumes
-  if (IsStepEnteringVolume(step, fKillLogicalVolumes)) {
+  if (IsInKillVolume(step->GetTrack())) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
     return;
