@@ -53,7 +53,8 @@ void GateDepositedChargeActor::PreUserTrackingAction(const G4Track *track) {
   //     - charge of particles born in the attached volume.
 
   const auto *vol = track->GetVolume();
-  if (vol == nullptr || vol->GetName() != fAttachedToVolumeName)
+  const auto *logical = (vol == nullptr) ? nullptr : vol->GetLogicalVolume();
+  if (logical == nullptr || logical->GetName() != fAttachedToVolumeName)
     return;
 
   // Nominal charge is the charge of the particle definition.
@@ -78,7 +79,8 @@ void GateDepositedChargeActor::PreUserTrackingAction(const G4Track *track) {
 
 void GateDepositedChargeActor::PostUserTrackingAction(const G4Track *track) {
   const auto *vol = track->GetVolume();
-  if (vol == nullptr || vol->GetName() != fAttachedToVolumeName)
+  const auto *logical = (vol == nullptr) ? nullptr : vol->GetLogicalVolume();
+  if (logical == nullptr || logical->GetName() != fAttachedToVolumeName)
     return;
 
   // Nominal charge is the charge of the particle definition.
