@@ -354,6 +354,10 @@ for examples covering stopping electrons, stopping positrons, neutral beams, tra
 
    Nested geometries are treated as a partition of space: the charge scored in a mother volume does **not** include the contribution from its daughters. To score the daughter region, attach a second ``DepositedChargeActor`` to the daughter, so that the totals from both actors add up to the charge deposited in the mother's full geometric extent.
 
+.. note::
+
+   For repeated volume placements, the actor will score the total charge deposited across all instances of the volume.
+
 Reference
 ~~~~~~~~~
 .. autoclass:: opengate.actors.miscactors.DepositedChargeActor
