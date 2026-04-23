@@ -101,6 +101,7 @@ from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
     KillAccordingProcessesActor,
+    DepositedChargeActor,
     AttenuationImageActor,
 )
 from .actors.biasingactors import (
@@ -151,6 +152,7 @@ actor_types = {
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
+    "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
