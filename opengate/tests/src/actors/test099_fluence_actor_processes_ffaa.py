@@ -242,7 +242,7 @@ if __name__ == "__main__":
         diff = np.round(diff, decimals=5)
         diff[np.isnan(diff)] = 0
         is_ok = np.all(diff == 0)
-        if not is_ok :
+        if not is_ok:
             print(key)
             print(diff)
         l_bool.append(is_ok)
