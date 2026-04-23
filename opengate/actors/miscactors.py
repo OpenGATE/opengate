@@ -414,7 +414,14 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
     def __initcpp__(self):
         g4.GateDepositedChargeActor.__init__(self, self.user_info)
         self.AddActions(
-            {"StartSimulationAction", "EndSimulationAction", "SteppingAction"}
+            {
+                "StartSimulationAction",
+                "EndSimulationAction",
+                "BeginOfRunAction",
+                "PreUserTrackingAction",
+                "PostUserTrackingAction",
+                "EndOfSimulationWorkerAction",
+            }
         )
 
     def initialize(self):

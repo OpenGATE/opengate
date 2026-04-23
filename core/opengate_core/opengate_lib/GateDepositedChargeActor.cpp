@@ -39,7 +39,7 @@ void GateDepositedChargeActor::StartSimulationAction() {
 }
 
 void GateDepositedChargeActor::BeginOfRunAction(const G4Run *run) {
-  // Reset the thread-local charge accumulators at the begining of the first
+  // Reset the thread-local charge accumulators at the beginning of the first
   // run.
   if (run->GetRunID() == 0) {
     threadLocalData.Get().fNominalCharge = 0.0;
