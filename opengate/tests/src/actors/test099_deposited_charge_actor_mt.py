@@ -4,10 +4,10 @@
 """
 DepositedChargeActor — multithreaded reduction correctness.
 
-Runs the same setup as `test0NN_deposited_charge_actor.py`,
+Runs the same setup as `test099_deposited_charge_actor.py`,
 but with multithreading enabled.
 
-Additionally checks taht:
+Additionally checks that:
   The per-primary charge matches -1.0 e within numerical tolerance.
 """
 
@@ -16,7 +16,7 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, output_folder="test0NN_deposited_charge_mt"
+        __file__, output_folder="test099_deposited_charge_mt"
     )
 
     sim = gate.Simulation()

@@ -4,31 +4,31 @@
 """
 DepositedChargeActor: nested volumes.
 
-A 1 MeV electron beam is aimed at a 5 cm water cube (mother) that contains
-a 2 cm water cube daughter centered in it. Two actors are attached, one to
-each volume.
+A 1 MeV electron beam is aimed at a nested geometry composed of outer
+`G4_Galactic` containers (including `mother1` and `daughter13`) and an
+innermost `G4_WATER` target volume (`daughter131`). Actors are attached to
+nested volumes to verify that deposited charge is partitioned according to
+the actual region where transport occurs.
 
 Purpose:
   Verify partition semantics with nested volumes.
-  The mother and daughter are disjoint regions of space, so crossing the
-  inner interface must be counted as exiting one region and entering the other.
+  Crossing an inner interface must be counted as exiting one region and
+  entering the next, with charge assigned to the corresponding attached actor.
 
 Expected behavior:
-  - Mother actor charge: ~ 0, because primaries enter mother from world and
-    then leave mother when entering daughter.
-  - Daughter actor charge: ~ -N, because the daughter (2 cm) is much larger
-    than the e- CSDA range (~4 mm) so primaries that enter it stop inside.
-  - Mother + daughter should be ~ -N up to transport statistics.
+  - Volumes filled with `G4_Galactic` should contribute no deposited charge.
+  - The innermost water volume should collect the primary deposited charge,
+    since the electrons stop in water.
+  - The nested actors should therefore reflect the implemented geometry rather
+    than a mother/daughter water-only configuration.
 """
-
-from operator import is_
 
 import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, output_folder="test086_deposited_charge_nested"
+        __file__, output_folder="test099_deposited_charge_nested"
     )
 
     sim = gate.Simulation()
@@ -75,11 +75,11 @@ if __name__ == "__main__":
     daughter13.material = "G4_Galactic"
     daughter13.translation = [0, 0, 0]
 
-    daugther131 = sim.add_volume("Box", "daughter131")
-    daugther131.mother = daughter13.name
-    daugther131.size = [1 * cm, 1 * cm, 1 * cm]
-    daugther131.material = "G4_WATER"
-    daugther131.translation = [0, 0, 0]
+    daughter131 = sim.add_volume("Box", "daughter131")
+    daughter131.mother = daughter13.name
+    daughter131.size = [1 * cm, 1 * cm, 1 * cm]
+    daughter131.material = "G4_WATER"
+    daughter131.translation = [0, 0, 0]
 
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMV"
     sim.physics_manager.apply_cuts = True
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     charge_daughter13.attached_to = daughter13.name
 
     charge_daughter131 = sim.add_actor("DepositedChargeActor", "charge_daughter131")
-    charge_daughter131.attached_to = daugther131.name
+    charge_daughter131.attached_to = daughter131.name
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
@@ -187,7 +187,9 @@ if __name__ == "__main__":
             / abs(expected_total)
             < tol,
             f"Mother + daughters should be close to {expected_total} "
-            f"(mother={q_mother1}, daughter={q_daughter11})",
+            f"(total={q_mother1 + q_daughter11 + q_daughter12 + q_daughter13 + q_daughter131}, "
+            f"mother1={q_mother1}, daughter11={q_daughter11}, daughter12={q_daughter12}, "
+            f"daughter13={q_daughter13}, daughter131={q_daughter131})",
         )
         and is_ok
     )

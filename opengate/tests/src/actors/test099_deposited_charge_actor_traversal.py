@@ -18,7 +18,7 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, output_folder="test0NN_deposited_charge_traversal"
+        __file__, output_folder="test099_deposited_charge_traversal"
     )
 
     sim = gate.Simulation()
@@ -38,7 +38,6 @@ if __name__ == "__main__":
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
     MeV = gate.g4_units.MeV
-    mm = gate.g4_units.mm
 
     sim.world.size = [1 * m, 1 * m, 1 * m]
     sim.world.material = "G4_Galactic"

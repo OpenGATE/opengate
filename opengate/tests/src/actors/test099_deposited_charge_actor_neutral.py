@@ -15,7 +15,7 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, output_folder="test0NN_deposited_charge_neutral"
+        __file__, output_folder="test099_deposited_charge_neutral"
     )
 
     sim = gate.Simulation()
