@@ -314,6 +314,52 @@ Reference
 .. autoclass:: opengate.actors.doseactors.FluenceActor
 
 
+DepositedChargeActor
+--------------------
+
+Description
+~~~~~~~~~~~
+
+The DepositedChargeActor accumulates the net electric charge deposited in a volume during a simulation. The result is expressed in elementary-charge units (Geant4's ``eplus``).
+
+Charge is counted at track endpoints: when a charged track is *born* inside the attached volume, its charge is subtracted from the running total; when a charged track *dies* inside the volume, its charge is added. This counting method is robust with respect to nested geometries and to particles whose tracks end mid-volume from range cuts or in-flight interactions. Each contribution is weighted by the track weight, so totals remain correct under biasing or weighted sources.
+
+Two quantities are accumulated in parallel:
+
+  - ``deposited_nominal_charge``: uses the PDG charge from ``G4ParticleDefinition::GetPDGCharge``.
+  - ``deposited_dynamic_charge``: uses the effective charge from ``G4DynamicParticle::GetCharge``, which accounts for the ionisation state of heavy ions.
+
+For leptons and ordinary protons the two are identical. They diverge only when a track's effective charge differs from its nominal charge, e.g. for partially-stripped ions.
+
+.. code-block:: python
+
+    target = sim.add_volume("Box", "target")
+    target.size = [5 * cm, 5 * cm, 5 * cm]
+    target.material = "G4_WATER"
+
+    charge = sim.add_actor("DepositedChargeActor", "charge")
+    charge.attached_to = target.name
+
+    sim.run()
+    print(charge)
+    print(f"nominal: {charge.deposited_nominal_charge} e")
+    print(f"dynamic: {charge.deposited_dynamic_charge} e")
+
+
+Refer to the test files
+`test099_deposited_charge_actor*.py <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/actors>`_
+for examples covering stopping electrons, stopping positrons, neutral beams, traversal geometries, nested volumes, and multithreaded simulations.
+
+.. note::
+
+   Nested geometries are treated as a partition of space: the charge scored in a mother volume does **not** include the contribution from its daughters. To score the daughter region, attach a second ``DepositedChargeActor`` to the daughter, so that the totals from both actors add up to the charge deposited in the mother's full geometric extent.
+
+Reference
+~~~~~~~~~
+.. autoclass:: opengate.actors.miscactors.DepositedChargeActor
+
+
+
 TLEDoseActor
 ------------
 
