@@ -410,6 +410,10 @@ class ScatterSplittingFreeFlightActor(
                 "doc": "When a non-split particle enters one of those volumes, it is killed.",
             },
         ),
+        "debug": (
+            False,
+            {"doc": "Print debug information during the stepping action of the actor."},
+        ),
     }
 
     # Do NOT work with GammaGeneralProc
