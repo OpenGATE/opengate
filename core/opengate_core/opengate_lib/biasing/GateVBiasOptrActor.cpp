@@ -129,6 +129,8 @@ void GateVBiasOptrActor::BuildLVCache(
         // Prevent duplicates / infinite loops in unusual geometry graphs
         if (std::find(cache.begin(), cache.end(), lv) == cache.end()) {
           cache.push_back(lv);
+          G4cout << "\t " << callerName << ": caching LV " << lv->GetName()
+                 << G4endl;
         }
         for (size_t i = 0; i < lv->GetNoDaughters(); ++i)
           addWithDaughters(lv->GetDaughter(i)->GetLogicalVolume());
@@ -152,6 +154,13 @@ bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
 
   if (cache.empty())
     return false;
+
+  const auto *massVol =
+      track->GetVolume() ? track->GetVolume()->GetLogicalVolume() : nullptr;
+  if (massVol &&
+      std::find(cache.begin(), cache.end(), massVol) != cache.end()) {
+    return true; // Found instantly in the mass world
+  }
 
   G4TransportationManager *transport =
       G4TransportationManager::GetTransportationManager();
@@ -207,11 +216,11 @@ bool GateVBiasOptrActor::IsInExcludedVolumeAcrossAllWorlds(
   return IsInVolumeListAcrossAllWorlds(track, l.fExcludedVolumePointers);
 }
 
-bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds(
+bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds_NOT_USE(
     const G4Step *step,
     const std::vector<const G4LogicalVolume *> &volumes) const {
 
-  if (volumes.empty())
+  if (!step || volumes.empty())
     return false;
 
   // ----------------------------------------------------------------

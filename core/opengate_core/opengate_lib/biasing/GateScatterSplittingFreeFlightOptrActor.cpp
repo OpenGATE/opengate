@@ -24,6 +24,7 @@ GateScatterSplittingFreeFlightOptrActor::
   fComptonSplittingFactor = 1;
   fRayleighSplittingFactor = 1;
   fMaxComptonLevel = 1;
+  fDebug = false;
   fBiasInformation.clear();
   fActions.insert("BeginOfRunAction");
   fActions.insert("BeginOfEventAction");
@@ -52,6 +53,8 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
   fComptonSplittingFactor = DictGetInt(user_info, "compton_splitting_factor");
   fRayleighSplittingFactor = DictGetInt(user_info, "rayleigh_splitting_factor");
   fMaxComptonLevel = DictGetInt(user_info, "max_compton_level");
+  fDebug = DictGetBool(user_info, "debug");
+  DDD(fDebug);
 
   // Create the FF operation
   threadLocal_t &l = threadLocalData.Get();
@@ -126,9 +129,21 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
   // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
-  l.fIsTrackValidForStep = true;
-  l.fIsExcludedForStep = false;
+  l.fTrackMustBeKilled = false;
+  l.fIsStepInExcludedVolume = false;
   l.fLastStepNumber = -1;
+
+  if (fDebug) {
+    G4cout << G4endl
+           << "GateScatterSplittingFreeFlightOptrActor::StartTracking for ici "
+              "track "
+           << track->GetTrackID() << " of type "
+           << " to_kill=" << l.fTrackMustBeKilled
+           << " excluded=" << l.fIsStepInExcludedVolume
+           << " laststep=" << l.fLastStepNumber
+           << " weight=" << track->GetWeight()
+           << " energy=" << track->GetKineticEnergy() << G4endl;
+  }
 
   if (!IsFreeFlight(track)) {
     // this is not an FF or secondary of an FF
@@ -169,38 +184,89 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   threadLocal_t &l = threadLocalData.Get();
 
+  if (fDebug) {
+    auto p = callingProcess ? callingProcess->GetWrappedProcess() : nullptr;
+    G4String procName = p ? p->GetProcessName() : "null";
+    G4cout << "GateScatterSplittingFreeFlightOptrActor::"
+              "ProposeOccurenceBiasingOperation for track "
+           << track->GetTrackID() << " of type "
+           << " to_kill=" << l.fTrackMustBeKilled
+           << " excluded=" << l.fIsStepInExcludedVolume
+           << " laststep=" << l.fLastStepNumber
+           << " weight=" << track->GetWeight()
+           << " energy=" << track->GetKineticEnergy() << " process=" << procName
+           << G4endl;
+  }
+
+  // ==== CHECK 1 : energy, weight threshold ====
   // Is it a valid particle? (energy or weight cutoff).
   // If not, will be killed in SteppingAction
   if (!IsTrackValid(track)) {
-    l.fIsTrackValidForStep = false;
+    l.fTrackMustBeKilled = true;
+    if (fDebug) {
+      G4cout << "\t fIsTrackValidForStep = false, returning nullptr" << G4endl;
+    }
     return nullptr;
   }
-  l.fIsTrackValidForStep = true;
+  l.fTrackMustBeKilled = false;
 
-  const bool isFF = IsFreeFlight(track);
-
-  // Evaluate the geometry
+  // ==== CHECK 2 : excluded volumes for parallel world ====
+  // Evaluate if the track is within an excluded volume (for parallel world)
+  // Note: when there is not parallel world, thit is not useful
+  // Note: fLastStepNumber is used to avoid the check for all processes
   const int currentStep = track->GetCurrentStepNumber();
   if (l.fLastStepNumber != currentStep) {
     // Only query the parallel navigator if this is a new step
-    l.fIsExcludedForStep = IsInExcludedVolumeAcrossAllWorlds(track);
+    // (do not query if this is same step, another process)
+    l.fIsStepInExcludedVolume = IsInExcludedVolumeAcrossAllWorlds(track);
     l.fLastStepNumber = currentStep;
+    if (fDebug) {
+      G4cout << "\t fIsExcludedForStep=" << l.fIsStepInExcludedVolume
+             << " laststep=" << l.fLastStepNumber << G4endl;
+    }
   }
 
-  if (!isFF && IsStepEnteringVolumeAcrossAllWorlds(track->GetStep(),
-                                                   GetKillVolumePointers())) {
-    l.fIsTrackValidForStep = false;
-    return nullptr;
+  // ===========================================================================
+  // Cases matrix:
+  // - FF + in excluded volume          => analog tracking, NO splitting
+  // - FF + not in excluded volume      => FF tracking
+  // - FF + kill volume                 => FF tracking
+  // - not FF + in excluded volume      => analog but NO splitting
+  // - not FF §+ kill volume            => kill particle
+  // - not FF + not in excluded volume  => analog, splitting if Compt or Rayl
+  // ===========================================================================
+
+  const bool isFF = IsFreeFlight(track);
+  if (fDebug) {
+    G4cout << "\t isFF=" << isFF << G4endl;
   }
 
+  // ===========================================================================
+  // FF tracking
   if (isFF) {
-    if (l.fIsExcludedForStep) {
-      // Track is in an unbiased volume.
+    if (l.fIsStepInExcludedVolume) {
+      // Track is in an unbiased volume (parallel world)
       // Returning nullptr disables FF occurrence, and the cached
       // flag will disable splitting in ProposeFinalState.
+      if (fDebug) {
+        G4cout << "\t isFF but excluded, returning nullptr" << G4endl;
+      }
       return nullptr;
     }
+    if (fDebug) {
+      G4cout << "\t isFF and not excluded, returning FF operation" << G4endl;
+    }
     return l.fFreeFlightOperation;
+  }
+
+  // ===========================================================================
+  // Analog tracking (with possible splitting except if we are in kill volumes)
+  if (IsInVolumeListAcrossAllWorlds(track, GetKillVolumePointers())) {
+    l.fTrackMustBeKilled = true;
+    if (fDebug) {
+      G4cout << "\t no FF and  = false, returning nullptr" << G4endl;
+    }
+    return nullptr;
   }
 
   // Conventional, analog tracking
@@ -215,18 +281,41 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   // This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
 
+  if (fDebug) {
+    auto p = callingProcess ? callingProcess->GetWrappedProcess() : nullptr;
+    G4String procName = p ? p->GetProcessName() : "null";
+    G4cout << "ProposeFinalStateBiasingOperation " << procName << G4endl;
+  }
+
   // Was it valid at the start of the step?
   // Revert to standard physics (no FF, no splitting)
-  if (!l.fIsTrackValidForStep)
+  if (l.fTrackMustBeKilled) {
+    if (fDebug) {
+      G4cout
+          << "\t ProposeFinalStateBiasingOperation TrackMustBeKilled=True for "
+             "step, returning nullptr"
+          << G4endl;
+    }
     return nullptr;
+  }
 
-  if (l.fIsExcludedForStep) {
+  if (l.fIsStepInExcludedVolume) {
+    if (fDebug) {
+      G4cout << "\t ProposeFinalStateBiasingOperation Track in excluded "
+                "volume, returning nullptr"
+             << G4endl;
+    }
     // Revert to standard physics (no FF, no splitting)
     return nullptr;
   }
 
   // Is this a FF ?
   if (IsFreeFlight(track)) {
+    if (fDebug) {
+      G4cout << "\t ProposeFinalStateBiasingOperation Track is FF, returning "
+                "FF operation"
+             << G4endl;
+    }
     return l.fFreeFlightOperation;
   }
 
@@ -238,16 +327,31 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     l.fComptonInteractionCount++;
     if (l.fComptonInteractionCount <= fMaxComptonLevel) {
       l.fBiasInformationPerThread["nb_compt_splits"] += 1;
+      if (fDebug) {
+        G4cout << "\t ProposeFinalStateBiasingOperation Track is Compton, "
+                  "returning Compton splitting operation"
+               << G4endl;
+      }
       return l.fComptonSplittingOperation;
     }
   }
   // This is a Rayleigh, we split it
   if (sc == 11 && fRayleighSplittingFactor > 0) {
     l.fBiasInformationPerThread["nb_rayl_splits"] += 1;
+    if (fDebug) {
+      G4cout << "\t ProposeFinalStateBiasingOperation Track is Rayleigh, "
+                "returning Rayleigh splitting operation"
+             << G4endl;
+    }
     return l.fRayleighSplittingOperation;
   }
 
   // This is not a Compton nor a Rayleigh
+  if (fDebug) {
+    G4cout << "\t ProposeFinalStateBiasingOperation Track is not compt nor "
+              "rayl, returning ????"
+           << G4endl;
+  }
   return callingProcess
       ->GetCurrentFinalStateBiasingOperation(); // FIXME or nullptr ?
 }
@@ -258,9 +362,24 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   // (Go in this function every step, even Transportation)
   threadLocal_t &l = threadLocalData.Get();
 
-  if (!l.fIsTrackValidForStep) {
+  if (fDebug) {
+    G4cout
+        << "GateScatterSplittingFreeFlightOptrActor::SteppingAction for track "
+        << step->GetTrack()->GetTrackID() << " of type "
+        << " to_kill=" << l.fTrackMustBeKilled
+        << " excluded=" << l.fIsStepInExcludedVolume
+        << " laststep=" << l.fLastStepNumber
+        << " weight=" << step->GetTrack()->GetWeight()
+        << " energy=" << step->GetTrack()->GetKineticEnergy() << G4endl;
+  }
+
+  if (l.fTrackMustBeKilled) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
-    l.fIsTrackValidForStep = true;
+    l.fTrackMustBeKilled = false;
+    if (fDebug) {
+      G4cout << "\t Track not valid for step, killing track and returning"
+             << G4endl;
+    }
     return;
   }
 
@@ -270,12 +389,21 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   // the track is in parallel world.
   const bool isFF = IsFreeFlight(step->GetTrack());
 
+  if (fDebug) {
+    G4cout << "\t isFF=" << isFF << G4endl;
+  }
+
   // PARALLEL GEOMETRY ROUTING LOGIC
-  if (l.fIsExcludedForStep) {
+  if (l.fIsStepInExcludedVolume) {
     if (isFF) {
       // FF Particle in excluded volume.
       // It reverts to analog (ProposeOccurence returned nullptr).
       // We let it continue so it can deposit energy.
+      if (fDebug) {
+        G4cout << "\t isFF but excluded, letting track continue but it will "
+                  "not be FF anymore"
+               << G4endl;
+      }
       return;
     }
   }
@@ -283,16 +411,24 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   // Check if this is a free flight in the normal mass world.
   // If yes, do nothing.
   if (isFF) {
+    if (fDebug) {
+      G4cout << "\t isFF and not excluded, letting track continue" << G4endl;
+    }
     return;
   }
 
   // if this is not a free flight, we kill the gamma when it enters some defined
   // volumes
-  if (IsStepEnteringVolumeAcrossAllWorlds(step, GetKillVolumePointers())) {
-    step->GetTrack()->SetTrackStatus(fStopAndKill);
-    l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
-    return;
-  }
+  /*if (IsStepEnteringVolumeAcrossAllWorlds_NOT_USE(step,
+                                                   GetKillVolumePointers())) {
+     step->GetTrack()->SetTrackStatus(fStopAndKill);
+     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
+     if (fDebug) {
+       G4cout << "\t Track entering kill volume, killing track and returning"
+              << G4endl;
+     }
+     return;
+   }*/
 
   // if too much Compton, we also kill the gamma
   // (cannot be done during ProposeFinalStateBiasingOperation)

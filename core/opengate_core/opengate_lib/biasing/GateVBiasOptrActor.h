@@ -67,7 +67,7 @@ public:
 
   bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
 
-  bool IsStepEnteringVolumeAcrossAllWorlds(
+  bool IsStepEnteringVolumeAcrossAllWorlds_NOT_USE(
       const G4Step *step,
       const std::vector<const G4LogicalVolume *> &volumes) const;
 
