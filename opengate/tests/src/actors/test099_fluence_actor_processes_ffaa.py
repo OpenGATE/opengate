@@ -96,7 +96,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     # sim.visu = True
-    sim.random_seed = 123456
+    sim.random_seed = "auto"
     sim.output_dir = paths.output
     ui = sim.user_info
     # ui.running_verbose_level = gate.logger.EVENT
@@ -242,6 +242,9 @@ if __name__ == "__main__":
         diff = np.round(diff, decimals=5)
         diff[np.isnan(diff)] = 0
         is_ok = np.all(diff == 0)
+        if not is_ok :
+            print(key)
+            print(diff)
         l_bool.append(is_ok)
 
     l_bool = np.array(l_bool, dtype="bool")
