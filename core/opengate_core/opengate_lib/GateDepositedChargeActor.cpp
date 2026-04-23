@@ -57,14 +57,19 @@ void GateDepositedChargeActor::PreUserTrackingAction(const G4Track *track) {
     return;
 
   // Nominal charge is the charge of the particle definition.
-  const double q_nominal = track->GetDefinition()->GetPDGCharge();
+  double q_nominal = track->GetDefinition()->GetPDGCharge();
 
   // Dynamic (effective) charge at track birth.
-  const double q_dynamic = track->GetDynamicParticle()->GetCharge();
+  double q_dynamic = track->GetDynamicParticle()->GetCharge();
 
   // Neutral particle -> do nothing
   if (q_nominal == 0.0 && q_dynamic == 0.0)
     return;
+
+  // Get track weight and multiply charges to get the weighted contribution
+  const double weight = track->GetWeight();
+  q_nominal *= weight;
+  q_dynamic *= weight;
 
   auto &data = threadLocalData.Get();
   data.fNominalCharge -= q_nominal; // being born -> subtract nominal charge
@@ -77,14 +82,19 @@ void GateDepositedChargeActor::PostUserTrackingAction(const G4Track *track) {
     return;
 
   // Nominal charge is the charge of the particle definition.
-  const double q_nominal = track->GetDefinition()->GetPDGCharge();
+  double q_nominal = track->GetDefinition()->GetPDGCharge();
 
   // Dynamic (effective) charge at track death.
-  const double q_dynamic = track->GetDynamicParticle()->GetCharge();
+  double q_dynamic = track->GetDynamicParticle()->GetCharge();
 
   // Neutral particle -> do nothing
   if (q_nominal == 0.0 && q_dynamic == 0.0)
     return;
+
+  // Get track weight and multiply charges to get the weighted contribution
+  const double weight = track->GetWeight();
+  q_nominal *= weight;
+  q_dynamic *= weight;
 
   auto &data = threadLocalData.Get();
   data.fNominalCharge += q_nominal; // dying -> add nominal charge
