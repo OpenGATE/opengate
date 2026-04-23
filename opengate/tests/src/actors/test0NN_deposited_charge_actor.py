@@ -63,16 +63,23 @@ if __name__ == "__main__":
     charge = sim.add_actor("DepositedChargeActor", "charge")
     charge.attached_to = target.name
 
+    charge_world = sim.add_actor("DepositedChargeActor", "charge_world")
+    charge_world.attached_to = sim.world.name
+
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
     sim.run()
 
     print(stats)
     print(charge)
+    print(charge_world)
 
     expected = -float(n_events)
     got_nominal = charge.deposited_nominal_charge
     got_dynamic = charge.deposited_dynamic_charge
+
+    expected_world = float(n_events)
+    got_world = charge_world.deposited_nominal_charge
 
     tol = 0.05
     is_ok = True
@@ -88,6 +95,13 @@ if __name__ == "__main__":
             got_nominal == got_dynamic,
             f"Nominal and dynamic must match exactly for leptons "
             f"(nominal={got_nominal}, dynamic={got_dynamic})",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            abs(got_world - expected_world) < tol * n_events,
+            f"Deposited charge in world: expected {expected_world}, got {got_world}",
         )
         and is_ok
     )
