@@ -396,8 +396,8 @@ class KillActor(ActorBase, g4.GateKillActor):
 
 class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
     """Actor which accumulates the net electric charge deposited in a volume,
-    defined as the sum of the charge of charged particles entering the volume
-    minus the sum of the charge of charged particles leaving it. The result is
+    defined as the sum of the charge of charged particles dying in the volume
+    minus the sum of the charge of charged particles being born in it. The result is
     expressed in elementary-charge units (eplus).
 
         Two different quantities are accumulated:

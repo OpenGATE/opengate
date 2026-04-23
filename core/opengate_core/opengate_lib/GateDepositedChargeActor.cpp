@@ -18,7 +18,8 @@ GateDepositedChargeActor::GateDepositedChargeActor(py::dict &user_info)
   // Geant4 callbacks need by this actor.
   fActions.insert("StartSimulationAction");
   fActions.insert("BeginOfRunAction");
-  fActions.insert("SteppingAction");
+  fActions.insert("PreUserTrackingAction");
+  fActions.insert("PostUserTrackingAction");
   fActions.insert("EndOfSimulationWorkerAction");
 
   // Initialize the total deposited charge to zero
@@ -46,48 +47,48 @@ void GateDepositedChargeActor::BeginOfRunAction(const G4Run *run) {
   }
 }
 
-void GateDepositedChargeActor::SteppingAction(G4Step *step) {
+void GateDepositedChargeActor::PreUserTrackingAction(const G4Track *track) {
   // Net deposited charge =
-  //     + charge of particles entering the attached volume
-  //     - charge of particles leaving the attached volume.
+  //     + charge of particles dead in the attached volume
+  //     - charge of particles born in the attached volume.
 
-  // Step is entering the attached volume
-  const bool entering =
-      step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
-
-  // Step is exiting the attached volume
-  const bool exiting = IsStepExitingAttachedVolume(step);
-
-  // Entering nor exiting -> do nothing
-  if (!entering && !exiting)
+  const auto *vol = track->GetVolume();
+  if (vol == nullptr || vol->GetName() != fAttachedToVolumeName)
     return;
-
-  // Else:
-  //   Get the charge of the particle
-  const auto *track = step->GetTrack();
 
   // Nominal charge is the charge of the particle definition.
   const double q_nominal = track->GetDefinition()->GetPDGCharge();
 
-  // Dynamic (effective) charge at the moment of the boundary crossing.
-  // Use the pre-step charge so that charge-changing interactions
-  // during the step don't affect the crossing value.
-  const double q_dynamic = step->GetPreStepPoint()->GetCharge();
+  // Dynamic (effective) charge at track birth.
+  const double q_dynamic = track->GetDynamicParticle()->GetCharge();
 
-  //   Neutral particle -> do nothing
+  // Neutral particle -> do nothing
   if (q_nominal == 0.0 && q_dynamic == 0.0)
     return;
 
-  //   Update the thread-local charge accumulator
   auto &data = threadLocalData.Get();
-  if (entering) {
-    data.fNominalCharge += q_nominal; // entering -> add nominal charge
-    data.fDynamicCharge += q_dynamic; // entering -> add dynamic charge
-  }
-  if (exiting) {
-    data.fNominalCharge -= q_nominal; // exiting  -> subtract nominal charge
-    data.fDynamicCharge -= q_dynamic; // exiting  -> subtract dynamic charge
-  }
+  data.fNominalCharge -= q_nominal; // being born -> subtract nominal charge
+  data.fDynamicCharge -= q_dynamic; // being born -> subtract dynamic charge
+}
+
+void GateDepositedChargeActor::PostUserTrackingAction(const G4Track *track) {
+  const auto *vol = track->GetVolume();
+  if (vol == nullptr || vol->GetName() != fAttachedToVolumeName)
+    return;
+
+  // Nominal charge is the charge of the particle definition.
+  const double q_nominal = track->GetDefinition()->GetPDGCharge();
+
+  // Dynamic (effective) charge at track death.
+  const double q_dynamic = track->GetDynamicParticle()->GetCharge();
+
+  // Neutral particle -> do nothing
+  if (q_nominal == 0.0 && q_dynamic == 0.0)
+    return;
+
+  auto &data = threadLocalData.Get();
+  data.fNominalCharge += q_nominal; // dying -> add nominal charge
+  data.fDynamicCharge += q_dynamic; // dying -> add dynamic charge
 }
 
 void GateDepositedChargeActor::EndOfSimulationWorkerAction(

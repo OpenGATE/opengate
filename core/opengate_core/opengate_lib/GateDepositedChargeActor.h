@@ -25,7 +25,9 @@ public:
 
   void BeginOfRunAction(const G4Run *run) override;
 
-  void SteppingAction(G4Step *step) override;
+  void PreUserTrackingAction(const G4Track *track) override;
+
+  void PostUserTrackingAction(const G4Track *track) override;
 
   void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
 
@@ -35,8 +37,7 @@ public:
 protected:
   struct threadLocal_t {
     double fNominalCharge = 0.0; // nominal charge of the particle definition
-    double fDynamicCharge =
-        0.0; // effective charge accounting for ionisation state
+    double fDynamicCharge = 0.0; // effective charge due to ionisation
   };
   G4Cache<threadLocal_t> threadLocalData;
 
