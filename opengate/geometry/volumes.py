@@ -531,6 +531,12 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.name, min_range
         )
 
+    @requires_fatal("volume_manager")
+    def set_track_structure_em_physics(self, track_structure_em_physics):
+        self.volume_manager.simulation.physics_manager.set_track_structure_em_physics(
+            self.name, track_structure_em_physics
+        )
+
 
 class RepeatableVolume(VolumeBase):
     def get_repetition_name_from_index(self, index):

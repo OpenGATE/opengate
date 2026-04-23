@@ -14,6 +14,12 @@ namespace py = pybind11;
 #include "G4EmParameters.hh"
 
 void init_G4EmParameters(py::module &m) {
+  py::enum_<G4ChemTimeStepModel>(m, "G4ChemTimeStepModel")
+      .value("Unknown", G4ChemTimeStepModel::Unknown)
+      .value("SBS", G4ChemTimeStepModel::SBS)
+      .value("IRT", G4ChemTimeStepModel::IRT)
+      .value("IRT_syn", G4ChemTimeStepModel::IRT_syn);
+
   // (prevent to delete from py side with py::nodelete)
   py::class_<G4EmParameters, std::unique_ptr<G4EmParameters, py::nodelete>>(
       m, "G4EmParameters")
@@ -248,6 +254,9 @@ void init_G4EmParameters(py::module &m) {
 
       .def("SetNuclearFormfactorType",
            &G4EmParameters::SetNuclearFormfactorType)
+
+      .def("SetTimeStepModel", &G4EmParameters::SetTimeStepModel)
+      .def("GetTimeStepModel", &G4EmParameters::GetTimeStepModel)
 
       .def("SetDNAeSolvationSubType", &G4EmParameters::SetDNAeSolvationSubType)
 

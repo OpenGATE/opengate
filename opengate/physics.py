@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 
 import opengate_core as g4
 
-from .exception import warning, fatal
+from .exception import warning, fatal, GateImplementationError
 from .definitions import FLOAT_MAX
 from .decorators import requires_fatal
 from .base import GateObject, process_cls
@@ -128,8 +128,352 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
                     self.g4_special_user_cuts_storage[p_name] = g4_user_special_cuts
 
 
+def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
+    """
+    Dynamically retrieve the requested Geant4 physics-constructor class.
+    """
+    try:
+        g4_class = getattr(g4, g4_physics_constructor_class_name)
+        assert g4_physics_constructor_class_name == g4_class.__name__
+        return g4_class
+    except AttributeError:
+        fatal(
+            f"Cannot find the class {g4_physics_constructor_class_name} in opengate_core"
+        )
+
+
+def create_modular_physics_list_class(g4_physics_constructor_class_name):
+    """
+    Create a class (not an object) which:
+    - inherits from g4.G4VModularPhysicsList
+    - registers a single G4 PhysicsConstructor
+    - has the same name as this PhysicsConstructor
+    """
+    physics_constructor_class = retrieve_g4_physics_constructor_class(
+        g4_physics_constructor_class_name
+    )
+
+    class ModularPhysicsList(g4.G4VModularPhysicsList):
+        g4_physics_constructor_class = physics_constructor_class
+
+        def __init__(self, verbosity):
+            g4.G4VModularPhysicsList.__init__(self)
+            self.g4_physics_constructor = self.g4_physics_constructor_class(verbosity)
+            self.RegisterPhysics(self.g4_physics_constructor)
+
+    ModularPhysicsList.__name__ = g4_physics_constructor_class_name
+    ModularPhysicsList.__qualname__ = g4_physics_constructor_class_name
+    return ModularPhysicsList
+
+
+def create_augmented_physics_list_class(physics_list_class):
+    """
+    Create an augmented physics list class.
+
+    The augmented class remains a Geant4 physics list, while optionally
+    forwarding part of the initialization lifecycle to a chemistry list.
+    """
+
+    class AugmentedPhysicsList(physics_list_class):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.chemistry_list = None
+
+        def set_chemistry_list(self, chemistry_list):
+            self.chemistry_list = chemistry_list
+
+        def close(self):
+            self.chemistry_list = None
+
+        def ConstructParticle(self):
+            super().ConstructParticle()
+            if self.chemistry_list is not None:
+                self.chemistry_list.ConstructParticle()
+
+        def ConstructProcess(self):
+            super().ConstructProcess()
+            if self.chemistry_list is not None:
+                self.chemistry_list.ConstructProcess()
+
+    AugmentedPhysicsList.__name__ = f"{physics_list_class.__name__}Augmented"
+    AugmentedPhysicsList.__qualname__ = AugmentedPhysicsList.__name__
+    return AugmentedPhysicsList
+
+
+reference_physics_list_base_class_names = (
+    "FTFP_BERT",
+    "FTFP_BERT_ATL",
+    "FTFP_BERT_HP",
+    "FTFP_BERT_TRV",
+    "FTFQGSP_BERT",
+    "FTFP_INCLXX",
+    "FTFP_INCLXX_HP",
+    "FTF_BIC",
+    "LBE",
+    "NuBeam",
+    "QBBC",
+    "QGSP_BERT",
+    "QGSP_BERT_HP",
+    "QGSP_BIC",
+    "QGSP_BIC_HP",
+    "QGSP_BIC_AllHP",
+    "QGSP_BIC_HPT",
+    "QGSP_FTFP_BERT",
+    "QGSP_INCLXX",
+    "QGSP_INCLXX_HP",
+    "QGS_BIC",
+    "Shielding",
+    "ShieldingLEND",
+)
+
+reference_physics_list_em_extensions = {
+    "_EM0": None,
+    "_EMV": "G4EmStandardPhysics_option1",
+    "_EMX": "G4EmStandardPhysics_option2",
+    "_EMY": "G4EmStandardPhysics_option3",
+    "_EMZ": "G4EmStandardPhysics_option4",
+    "_LIV": "G4EmLivermorePhysics",
+    "_PEN": "G4EmPenelopePhysics",
+    "_GS": "G4EmStandardPhysicsGS",
+    "__GS": "G4EmStandardPhysicsGS",
+    "_LE": "G4EmLowEPPhysics",
+}
+
+reference_physics_list_special_builders = {
+    "Shielding_HP": {"base": "Shielding"},
+    "ShieldingM": {"base": "Shielding", "ctor_args": ("HP", "M", False)},
+    "ShieldingM_HP": {"base": "Shielding", "ctor_args": ("HP", "M", False)},
+    "ShieldingLIQMD": {"base": "Shielding", "ctor_args": ("HP", "", True)},
+    "ShieldingLIQMD_HP": {"base": "Shielding", "ctor_args": ("HP", "", True)},
+    "FTFP_BERT_HPT": {"base": "FTFP_BERT_HP", "add_thermal_neutrons": True},
+    "FTFP_INCLXX_HPT": {"base": "FTFP_INCLXX_HP", "add_thermal_neutrons": True},
+    "QGSP_BERT_HPT": {"base": "QGSP_BERT_HP", "add_thermal_neutrons": True},
+    "QGSP_BIC_AllHPT": {"base": "QGSP_BIC_AllHP", "add_thermal_neutrons": True},
+    "QGSP_INCLXX_HPT": {"base": "QGSP_INCLXX_HP", "add_thermal_neutrons": True},
+    "Shielding_HPT": {"base": "Shielding", "add_thermal_neutrons": True},
+    "ShieldingLIQMD_HPT": {
+        "base": "Shielding",
+        "ctor_args": ("HP", "", True),
+        "add_thermal_neutrons": True,
+    },
+    "ShieldingM_HPT": {
+        "base": "Shielding",
+        "ctor_args": ("HP", "M", False),
+        "add_thermal_neutrons": True,
+    },
+}
+
+
+def _split_reference_physics_list_name(physics_list_name):
+    for suffix in sorted(
+        reference_physics_list_em_extensions.keys(), key=len, reverse=True
+    ):
+        if suffix and physics_list_name.endswith(suffix):
+            return physics_list_name[: -len(suffix)], suffix
+    return physics_list_name, None
+
+
+def create_reference_physics_list_class(physics_list_name):
+    base_name, em_suffix = _split_reference_physics_list_name(physics_list_name)
+    em_constructor_name = reference_physics_list_em_extensions.get(em_suffix)
+
+    special_builder = reference_physics_list_special_builders.get(base_name)
+    if special_builder is not None:
+        bound_base_name = special_builder["base"]
+    else:
+        bound_base_name = base_name
+
+    try:
+        bound_base_class = getattr(g4, bound_base_name)
+    except AttributeError:
+        fatal(
+            f"Cannot construct the reference physics list {physics_list_name}. "
+            f"Missing bound base class {bound_base_name} in opengate_core."
+        )
+
+    def __init__(self, verbosity):
+        if bound_base_name == "LBE":
+            bound_base_class.__init__(self)
+        elif special_builder is not None and "ctor_args" in special_builder:
+            model, variant, use_liqmd = special_builder["ctor_args"]
+            bound_base_class.__init__(self, verbosity, model, variant, use_liqmd)
+        else:
+            bound_base_class.__init__(self, verbosity)
+
+        if special_builder is not None and special_builder.get("add_thermal_neutrons"):
+            self.RegisterPhysics(g4.G4ThermalNeutrons(verbosity))
+
+        if em_constructor_name is not None:
+            self.ReplacePhysics(
+                retrieve_g4_physics_constructor_class(em_constructor_name)(verbosity)
+            )
+
+    cls = type(physics_list_name, (bound_base_class,), {"__init__": __init__})
+    cls.__qualname__ = physics_list_name
+    return cls
+
+
+class PhysicsListBuilder(GateObject):
+    available_g4_physics_constructors = [
+        "G4EmStandardPhysics",
+        "G4EmStandardPhysics_option1",
+        "G4EmStandardPhysics_option2",
+        "G4EmStandardPhysics_option3",
+        "G4EmStandardPhysics_option4",
+        "G4EmStandardPhysicsGS",
+        "G4EmLowEPPhysics",
+        "G4EmLivermorePhysics",
+        "G4EmLivermorePolarizedPhysics",
+        "G4EmPenelopePhysics",
+        "G4OpticalPhysics",
+    ]
+
+    available_g4_reference_physics_lists = [
+        "FTFP_BERT",
+        "FTFP_BERT_EMV",
+        "FTFP_BERT_EMX",
+        "FTFP_BERT_EMY",
+        "FTFP_BERT_EMZ",
+        "FTFP_BERT_HP",
+        "FTFP_BERT_TRV",
+        "FTFP_BERT_ATL",
+        "FTFQGSP_BERT",
+        "FTFP_INCLXX",
+        "FTFP_INCLXX_HP",
+        "FTFP_BERT_HPT",
+        "FTFP_INCLXX_HPT",
+        "FTF_BIC",
+        "LBE",
+        "NuBeam",
+        "QBBC",
+        "QGSP_BERT",
+        "QGSP_BERT_EMV",
+        "QGSP_BERT_EMX",
+        "QGSP_BERT_EMY",
+        "QGSP_BERT_EMZ",
+        "QGSP_BERT_HP",
+        "QGSP_BERT_HPT",
+        "QGSP_BIC",
+        "QGSP_BIC_HP",
+        "QGSP_BIC_AllHP",
+        "QGSP_BIC_HPT",
+        "QGSP_BIC_AllHPT",
+        "QGSP_FTFP_BERT",
+        "QGSP_INCLXX",
+        "QGSP_INCLXX_HP",
+        "QGSP_INCLXX_HPT",
+        "QGS_BIC",
+        "Shielding",
+        "ShieldingLEND",
+        "Shielding_HP",
+        "Shielding_HPT",
+        "ShieldingM",
+        "ShieldingM_HP",
+        "ShieldingM_HPT",
+        "ShieldingLIQMD",
+        "ShieldingLIQMD_HP",
+        "ShieldingLIQMD_HPT",
+    ]
+
+    special_physics_constructor_classes = {
+        "G4DecayPhysics": g4.G4DecayPhysics,
+        "G4RadioactiveDecayPhysics": g4.G4RadioactiveDecayPhysics,
+        "G4OpticalPhysics": g4.G4OpticalPhysics,
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.created_physics_list_classes = self.create_physics_list_classes()
+        self.particle_with_biased_process_dictionary = {}
+
+    @property
+    def physics_manager(self):
+        if self.simulation is not None:
+            return self.simulation.physics_manager
+        else:
+            return None
+
+    def __getstate__(self):
+        raise GateImplementationError(
+            f"It seems like {self.type_name} is getting pickled, "
+            f"while this should never happen because the PhysicsManager should "
+            f"remove it from its state dictionary. In fact, {self.type_name} "
+            f"is not compatible with pickling. "
+        )
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.created_physics_list_classes = self.create_physics_list_classes()
+
+    def create_physics_list_classes(self):
+        created_physics_list_classes = {}
+        for g4pc_name in self.available_g4_physics_constructors:
+            physics_list_class = create_modular_physics_list_class(g4pc_name)
+            created_physics_list_classes[g4pc_name] = (
+                create_augmented_physics_list_class(physics_list_class)
+            )
+        for reference_name in self.available_g4_reference_physics_lists:
+            reference_class = create_reference_physics_list_class(reference_name)
+            created_physics_list_classes[reference_name] = (
+                create_augmented_physics_list_class(reference_class)
+            )
+        return created_physics_list_classes
+
+    @requires_fatal("simulation")
+    def create_physics_list(self, physics_list_name):
+        if physics_list_name in self.created_physics_list_classes:
+            physics_list = self.created_physics_list_classes[physics_list_name](
+                self.simulation.g4_verbose_level
+            )
+        else:
+            s = (
+                f"Cannot find the physic list: {physics_list_name}\n"
+                f"{self.dump_info_physics_lists()}"
+                f"Default is {self.physics_manager.user_info_defaults['physics_list_name']}\n"
+                f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
+            )
+            fatal(s)
+        for (
+            spc,
+            switch,
+        ) in self.simulation.physics_manager.special_physics_constructors.items():
+            if switch is True:
+                try:
+                    physics_list.ReplacePhysics(
+                        self.special_physics_constructor_classes[spc](
+                            self.physics_manager.simulation.g4_verbose_level
+                        )
+                    )
+                except KeyError:
+                    fatal(
+                        f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
+                    )
+        return physics_list
+
+    def dump_info_physics_lists(self):
+        g4_factory = g4.G4PhysListFactory()
+        s = (
+            "\n**** INFO about GATE physics lists ****\n"
+            f"* Known Geant4 lists are: {g4_factory.AvailablePhysLists()}\n"
+            f"* With EM options: {g4_factory.AvailablePhysListsEM()[1:]}\n"
+            f"* Or the following simple physics lists with a single PhysicsConstructor: \n"
+            f"* {self.available_g4_physics_constructors} \n"
+            "**** ----------------------------- ****\n\n"
+        )
+        return s
+
+
 class Region(GateObject):
     """FIXME: Documentation of the Region class."""
+
+    available_track_structure_em_physics = (
+        "G4EmDNAPhysics",
+        "G4EmDNAPhysics_option2",
+        "G4EmDNAPhysics_option4",
+        "G4EmDNAPhysics_option6",
+        "G4EmDNAPhysics_option7",
+        "G4EmDNAPhysics_option8",
+    )
 
     user_info_defaults = {}
     user_info_defaults["user_limits"] = (
@@ -174,6 +518,19 @@ class Region(GateObject):
             "doc": "Switch on/off EM parameters in this region. "
             "If None, the corresponding value from the world region is used.",
             "expose_items": True,
+        },
+    )
+    user_info_defaults["track_structure_em_physics"] = (
+        None,
+        {
+            "doc": "Track-structure EM physics option to activate in this region. "
+            "Use the full Geant4 constructor names where they exist, for example "
+            "`G4EmDNAPhysics_option2`, `G4EmDNAPhysics_option4`, "
+            "`G4EmDNAPhysics_option6`, `G4EmDNAPhysics_option7`, and "
+            "`G4EmDNAPhysics_option8`. "
+            "GATE maps these values internally to the shorter Geant4 region-activation "
+            "identifiers required by `G4EmParameters::AddDNA(...)`.",
+            "allowed_values": available_track_structure_em_physics + (None,),
         },
     )
 
@@ -271,14 +628,24 @@ class Region(GateObject):
         return s
 
     @requires_fatal("physics_engine")
-    def initialize(self):
-        """
-        This method wraps around all initialization methods of this class.
-
-        It should be called from the physics_engine,
-        after setting the self.physics_engine attribute.
-        """
+    def initialize_before_runmanager(self):
+        """Perform Python-side region setup before G4RunManager.Initialize()."""
+        # Only Python objects are touched here. The actual G4Region cannot be
+        # created yet because G4LogicalVolume objects appear during geometry
+        # construction inside G4RunManager.Initialize().
         self.initialize_volume_dictionaries()
+
+    @requires_fatal("physics_engine")
+    def initialize_during_runmanager(self):
+        """Create and attach the G4Region during geometry construction."""
+        # This runs from VolumeEngine.Construct(), i.e. after logical volumes
+        # exist but still early enough for Geant4 physics construction to see
+        # the region-based EM configuration.
+        self.initialize_g4_region()
+
+    @requires_fatal("physics_engine")
+    def initialize_after_runmanager(self):
+        """Finalize region-related G4 objects after G4RunManager.Initialize()."""
         self.initialize_g4_production_cuts()
         self.initialize_g4_user_limits()
         self.initialize_g4_region()
@@ -295,29 +662,27 @@ class Region(GateObject):
             )
 
     def initialize_g4_region(self):
-        if self._g4_region_initialized is True:
-            fatal("g4_region already initialized.")
+        if self._g4_region_initialized is not True:
+            rs = g4.G4RegionStore.GetInstance()
+            self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
 
-        rs = g4.G4RegionStore.GetInstance()
-        self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
+            for vol in self.root_logical_volumes.values():
+                self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
+                vol.g4_logical_volume.SetRegion(self.g4_region)
+
+            self._g4_region_initialized = True
 
         if self.g4_user_limits is not None:
             self.g4_region.SetUserLimits(self.g4_user_limits)
 
-        # if self.g4_production_cuts is not None:
-        self.g4_region.SetProductionCuts(self.g4_production_cuts)
-
-        for vol in self.root_logical_volumes.values():
-            self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
-            vol.g4_logical_volume.SetRegion(self.g4_region)
-
-        self._g4_region_initialized = True
+        if self.g4_production_cuts is not None:
+            self.g4_region.SetProductionCuts(self.g4_production_cuts)
 
     def initialize_g4_production_cuts(self):
         self.user_info = Box(self.user_info)
 
         if self._g4_production_cuts_initialized is True:
-            fatal("g4_production_cuts already initialized.")
+            return
         if self.g4_production_cuts is None:
             self.g4_production_cuts = g4.G4ProductionCuts()
 
@@ -343,8 +708,10 @@ class Region(GateObject):
                 # If no cut is specified by user for this particle,
                 # set it to the value specified for the world region
                 else:
-                    global_cut = self.physics_engine.g4_physics_list.GetCutValue(
-                        g4_pname
+                    global_cut = (
+                        self.physics_engine.g4_augmented_physics_list.GetCutValue(
+                            g4_pname
+                        )
                     )
                     self.g4_production_cuts.SetProductionCut(global_cut, g4_pname)
 
@@ -352,7 +719,7 @@ class Region(GateObject):
 
     def initialize_g4_user_limits(self):
         if self._g4_user_limits_initialized is True:
-            fatal("g4_user_limits already initialized.")
+            return
 
         # check if any user limits have been set
         # if not, it is not necessary to create g4 objects
@@ -841,5 +1208,6 @@ class OpticalSurface(GateObject):
         )
 
 
+process_cls(PhysicsListBuilder)
 process_cls(Region)
 process_cls(OpticalSurface)
