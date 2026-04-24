@@ -168,7 +168,7 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
   return nullptr;
 }
 
-const std::vector<const G4LogicalVolume *> &
+const std::unordered_set<const G4LogicalVolume *> &
 GateScatterSplittingFreeFlightOptrActor::GetKillVolumePointers() const {
   threadLocal_t &l = threadLocalData.Get();
   if (!l.fIsKillVolumesCached) {
@@ -416,19 +416,6 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
     }
     return;
   }
-
-  // if this is not a free flight, we kill the gamma when it enters some defined
-  // volumes
-  /*if (IsStepEnteringVolumeAcrossAllWorlds_NOT_USE(step,
-                                                   GetKillVolumePointers())) {
-     step->GetTrack()->SetTrackStatus(fStopAndKill);
-     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
-     if (fDebug) {
-       G4cout << "\t Track entering kill volume, killing track and returning"
-              << G4endl;
-     }
-     return;
-   }*/
 
   // if too much Compton, we also kill the gamma
   // (cannot be done during ProposeFinalStateBiasingOperation)

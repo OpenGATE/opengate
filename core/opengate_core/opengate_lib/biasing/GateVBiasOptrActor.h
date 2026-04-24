@@ -13,6 +13,7 @@ Copyright (C): OpenGATE Collaboration
 #include "G4Navigator.hh"
 #include "G4VBiasingOperator.hh"
 #include <pybind11/stl.h>
+#include <unordered_set>
 
 namespace py = pybind11;
 
@@ -58,25 +59,22 @@ public:
   bool IsTrackValid(const G4Track *track) const;
 
   void BuildLVCache(const std::vector<std::string> &names,
-                    std::vector<const G4LogicalVolume *> &cache,
+                    std::unordered_set<const G4LogicalVolume *> &cache,
                     const std::string &callerName) const;
 
   bool IsInVolumeListAcrossAllWorlds(
       const G4Track *track,
-      const std::vector<const G4LogicalVolume *> &cache) const;
+      const std::unordered_set<const G4LogicalVolume *> &cache) const;
 
   bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
 
-  bool IsStepEnteringVolumeAcrossAllWorlds_NOT_USE(
-      const G4Step *step,
-      const std::vector<const G4LogicalVolume *> &volumes) const;
-
   std::vector<std::string> fExcludeVolumes;
+
   // The following cache the logical volumes for faster comparison
   // (lazy initialisation as this is complex with the parallel worlds)
   struct threadLocalCache_t {
     bool fIsVolumePointersCached = false;
-    std::vector<const G4LogicalVolume *> fExcludedVolumePointers;
+    std::unordered_set<const G4LogicalVolume *> fExcludedVolumePointers;
     G4Navigator fTmpNav;
   };
 

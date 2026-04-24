@@ -119,7 +119,7 @@ void GateVBiasOptrActor::SteppingAction(G4Step *step) {
 
 void GateVBiasOptrActor::BuildLVCache(
     const std::vector<std::string> &names,
-    std::vector<const G4LogicalVolume *> &cache,
+    std::unordered_set<const G4LogicalVolume *> &cache,
     const std::string &callerName) const {
 
   std::function<void(const G4LogicalVolume *)> addWithDaughters =
@@ -127,8 +127,8 @@ void GateVBiasOptrActor::BuildLVCache(
         if (!lv)
           return;
         // Prevent duplicates / infinite loops in unusual geometry graphs
-        if (std::find(cache.begin(), cache.end(), lv) == cache.end()) {
-          cache.push_back(lv);
+        if (cache.count(lv) == 0) {
+          cache.insert(lv);
           G4cout << "\t " << callerName << ": caching LV " << lv->GetName()
                  << G4endl;
         }
@@ -150,15 +150,14 @@ void GateVBiasOptrActor::BuildLVCache(
 
 bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
     const G4Track *track,
-    const std::vector<const G4LogicalVolume *> &cache) const {
+    const std::unordered_set<const G4LogicalVolume *> &cache) const {
 
   if (cache.empty())
     return false;
 
   const auto *massVol =
       track->GetVolume() ? track->GetVolume()->GetLogicalVolume() : nullptr;
-  if (massVol &&
-      std::find(cache.begin(), cache.end(), massVol) != cache.end()) {
+  if (massVol && cache.count(massVol) > 0) {
     return true; // Found instantly in the mass world
   }
 
@@ -195,7 +194,7 @@ bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
     if (!lv)
       continue;
 
-    if (std::find(cache.begin(), cache.end(), lv) != cache.end())
+    if (cache.count(lv) > 0)
       return true;
   }
   return false;
@@ -214,80 +213,4 @@ bool GateVBiasOptrActor::IsInExcludedVolumeAcrossAllWorlds(
   }
 
   return IsInVolumeListAcrossAllWorlds(track, l.fExcludedVolumePointers);
-}
-
-bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds_NOT_USE(
-    const G4Step *step,
-    const std::vector<const G4LogicalVolume *> &volumes) const {
-
-  if (!step || volumes.empty())
-    return false;
-
-  // ----------------------------------------------------------------
-  // 1. FAST PATH: Mass Navigator Check (Boundary Trigger)
-  // ----------------------------------------------------------------
-  // If the step is limited by a mass geometry boundary, we check it instantly
-  if (step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary) {
-    const auto *massVol = step->GetPostStepPoint()
-                              ->GetTouchable()
-                              ->GetVolume()
-                              ->GetLogicalVolume();
-    if (std::find(volumes.begin(), volumes.end(), massVol) != volumes.end()) {
-      return true; // Hit a mass boundary and it's in the list
-    }
-  }
-
-  // ----------------------------------------------------------------
-  // 2. SLOW PATH: Parallel Navigators Check (Edge Detection)
-  // ----------------------------------------------------------------
-  G4TransportationManager *transport =
-      G4TransportationManager::GetTransportationManager();
-  const int numNav = transport->GetNoActiveNavigators();
-
-  if (numNav <= 1)
-    return false; // No parallel worlds exist, skip the math
-
-  // We detect "entering" by proving the particle was OUTSIDE the volume
-  // at the PreStepPoint, and INSIDE the volume at the PostStepPoint.
-  const G4ThreeVector &prePos = step->GetPreStepPoint()->GetPosition();
-  const G4ThreeVector &postPos = step->GetPostStepPoint()->GetPosition();
-  const G4ThreeVector &dir = step->GetTrack()->GetMomentumDirection();
-
-  G4Navigator &tmpNav = fThreadLocalCache.Get().fTmpNav;
-  const auto navIt = transport->GetActiveNavigatorsIterator();
-
-  // Start at i=1 to explicitly skip the Mass Navigator (already handled)
-  for (int i = 1; i < numNav; ++i) {
-    G4Navigator *realNav = *(navIt + i);
-    if (!realNav)
-      continue;
-
-    tmpNav.SetWorldVolume(realNav->GetWorldVolume());
-
-    // A. Check the END of the step
-    const G4VPhysicalVolume *postPV =
-        tmpNav.LocateGlobalPointAndSetup(postPos, &dir, false, false);
-
-    if (!postPV || postPV == realNav->GetWorldVolume())
-      continue;
-
-    const G4LogicalVolume *postLV = postPV->GetLogicalVolume();
-
-    // If the post-step volume is in our target list...
-    if (std::find(volumes.begin(), volumes.end(), postLV) != volumes.end()) {
-
-      // B. Check the START of the step
-      const G4VPhysicalVolume *prePV =
-          tmpNav.LocateGlobalPointAndSetup(prePos, &dir, false, false);
-      const G4LogicalVolume *preLV =
-          prePV ? prePV->GetLogicalVolume() : nullptr;
-
-      // If the volumes are different, we just crossed the boundary!
-      if (preLV != postLV) {
-        return true;
-      }
-    }
-  }
-
-  return false;
 }
