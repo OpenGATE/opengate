@@ -9,12 +9,12 @@ from .base import ActorBase
 from ..decorators import requires_fatal
 
 
-class DynamicGeometryActor(ActorBase, g4.GateVActor):
+class DynamicActorBase(ActorBase, g4.GateVActor):
 
     def __init__(self, *args, **kwargs):
         kwargs["attached_to"] = __world_name__
         ActorBase.__init__(self, *args, **kwargs)
-        self.geometry_changers = []
+        self.changers = []
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -22,17 +22,23 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
         self.AddActions({"BeginOfRunActionMasterThread"})
 
     def close(self):
-        for c in self.geometry_changers:
+        for c in self.changers:
             c.close()
-        self.geometry_changers = []
+        self.changers = []
         super().close()
 
     def to_dictionary(self):
         return_dict = super().to_dictionary()
-        return_dict["geometry_changers"] = dict(
-            [(v.name, v.to_dictionary()) for v in self.geometry_changers]
+        return_dict["changers"] = dict(
+            [(v.name, v.to_dictionary()) for v in self.changers]
         )
         return return_dict
+
+    def initialize(self):
+        ActorBase.initialize(self)
+
+
+class DynamicGeometryActor(DynamicActorBase, g4.GateVActor):
 
     def initialize(self):
         ActorBase.initialize(self)
@@ -53,6 +59,21 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
         if self.simulation.dyn_geom_open_close:
             # CloseGeometry: pOptimise=true, verbose=false, G4VPhysicalVolume *vol=0
             gm.CloseGeometry(self.simulation.dyn_geom_optimise, False, None)
+
+
+class DynamicSourceActor(DynamicActorBase, g4.GateVActor):
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        for c in self.source_changers:
+            if c.source_manager is None:
+                c.source_manager = self.simulation.source_manager
+            c.initialize()
+
+    def BeginOfRunActionMasterThread(self, run_id):
+        # FIXME: check if source engine needs to be informed
+        for c in self.source_changers:
+            c.apply_change(run_id)
 
 
 def _setter_hook_attached_to(self, value):
@@ -78,7 +99,7 @@ def _setter_hook_attached_to(self, value):
         return value
 
 
-class GeometryChanger(GateObject):
+class ChangerBase(GateObject):
 
     # hints for IDE
     attached_to: Optional[str]
@@ -115,6 +136,19 @@ class GeometryChanger(GateObject):
         if simulation is not None:
             self.simulation = simulation
 
+    def initialize(self):
+        # dummy implementation - nothing to do in the general case
+        pass
+
+    def apply_change(self, run_id):
+        raise NotImplementedError(
+            f"You are trying to call the method in the base class {type(self)}, "
+            f"but it is only available in classes inheriting from it. "
+        )
+
+
+class GeometryChanger(ChangerBase):
+
     @property
     def volume_manager(self):
         if self.simulation is not None:
@@ -127,15 +161,20 @@ class GeometryChanger(GateObject):
     def attached_to_volume(self):
         return self.volume_manager.get_volume(self.attached_to)
 
-    def initialize(self):
-        # dummy implementation - nothing to do in the general case
-        pass
 
-    def apply_change(self, run_id):
-        raise NotImplementedError(
-            f"You are trying to call the method in the base class {type(self)}, "
-            f"but it is only available in classes inheriting from it. "
-        )
+class SourceChanger(ChangerBase):
+
+    @property
+    def source_manager(self):
+        if self.simulation is not None:
+            return self.simulation.source_manager
+        else:
+            return None
+
+    @property
+    @requires_fatal("volume_manager")
+    def attached_to_source(self):
+        return self.source_manager[self.attached_to]
 
 
 class VolumeImageChanger(GeometryChanger):
@@ -267,6 +306,24 @@ class VolumeRotationChanger(GeometryChanger):
 
     def apply_change(self, run_id):
         self.g4_physical_volume.SetRotationHepRep3x3(self.g4_rotations[run_id])
+
+
+class SourceActivityImageChanger(SourceChanger):
+
+    # hints for IDE
+    activity_images: Optional[list]
+
+    user_info_defaults = {
+        "activity_images": (
+            None,
+            {
+                "doc": "List of activity map file names corresponding to the run timing intervals. ",
+            },
+        ),
+    }
+
+    def apply_change(self, run_id):
+        self.attached_to_source.update_activity_image(self.activity_images[run_id])
 
 
 process_cls(DynamicGeometryActor)
