@@ -68,6 +68,16 @@ public:
 
   bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
 
+  // Helper to abstract the Geant4 parallel navigator math
+  const G4LogicalVolume *
+  GetVolumeFromParallelNavigator(const G4ThreeVector &pos,
+                                 const G4ThreeVector &dir,
+                                 G4Navigator *realNav) const;
+
+  bool IsStepEnteringVolumeAcrossAllWorlds(
+      const G4Step *step,
+      const std::unordered_set<const G4LogicalVolume *> &volumes) const;
+
   std::vector<std::string> fExcludeVolumes;
 
   // The following cache the logical volumes for faster comparison

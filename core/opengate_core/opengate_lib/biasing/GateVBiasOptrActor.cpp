@@ -148,6 +148,27 @@ void GateVBiasOptrActor::BuildLVCache(
   }
 }
 
+const G4LogicalVolume *
+GateVBiasOptrActor::GetVolumeFromParallelNavigator(const G4ThreeVector &pos,
+                                                   const G4ThreeVector &dir,
+                                                   G4Navigator *realNav) const {
+
+  if (!realNav)
+    return nullptr;
+
+  G4Navigator &tmpNav = fThreadLocalCache.Get().fTmpNav;
+  tmpNav.SetWorldVolume(realNav->GetWorldVolume());
+
+  // Locate the point purely mathematically
+  const G4VPhysicalVolume *pv =
+      tmpNav.LocateGlobalPointAndSetup(pos, &dir, false, false);
+
+  if (!pv || pv == realNav->GetWorldVolume())
+    return nullptr;
+
+  return pv->GetLogicalVolume();
+}
+
 bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
     const G4Track *track,
     const std::unordered_set<const G4LogicalVolume *> &cache) const {
@@ -155,46 +176,28 @@ bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
   if (cache.empty())
     return false;
 
+  // 1. Mass Navigator Fast Path
   const auto *massVol =
       track->GetVolume() ? track->GetVolume()->GetLogicalVolume() : nullptr;
-  if (massVol && cache.count(massVol) > 0) {
-    return true; // Found instantly in the mass world
-  }
+  if (massVol && cache.count(massVol) > 0)
+    return true;
 
+  // 2. Parallel Navigators
   G4TransportationManager *transport =
       G4TransportationManager::GetTransportationManager();
   const int numNav = transport->GetNoActiveNavigators();
   if (numNav <= 1)
-    return false; // no parallel worlds
+    return false;
 
   const auto navIt = transport->GetActiveNavigatorsIterator();
   const G4ThreeVector &pos = track->GetPosition();
   const G4ThreeVector dir = track->GetMomentumDirection();
 
-  // Retrieve the shared thread-local navigator
-  G4Navigator &tmpNav = fThreadLocalCache.Get().fTmpNav;
-
   for (int i = 1; i < numNav; ++i) {
-    G4Navigator *realNav = *(navIt + i);
-    if (!realNav)
-      continue;
-
-    // Point tmpNav at this parallel world and do a pure mathematical
-    // point-in-volume query. This does NOT touch the real navigator state.
-    tmpNav.SetWorldVolume(realNav->GetWorldVolume());
-    const G4VPhysicalVolume *pv =
-        tmpNav.LocateGlobalPointAndSetup(pos, &dir, false, false);
-
-    if (!pv)
-      continue;
-    if (pv == realNav->GetWorldVolume())
-      continue; // parallel background
-
-    const G4LogicalVolume *lv = pv->GetLogicalVolume();
-    if (!lv)
-      continue;
-
-    if (cache.count(lv) > 0)
+    // REUSE HELPER
+    const G4LogicalVolume *lv =
+        GetVolumeFromParallelNavigator(pos, dir, *(navIt + i));
+    if (lv && cache.count(lv) > 0)
       return true;
   }
   return false;
@@ -213,4 +216,52 @@ bool GateVBiasOptrActor::IsInExcludedVolumeAcrossAllWorlds(
   }
 
   return IsInVolumeListAcrossAllWorlds(track, l.fExcludedVolumePointers);
+}
+
+bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds(
+    const G4Step *step,
+    const std::unordered_set<const G4LogicalVolume *> &volumes) const {
+
+  if (!step || volumes.empty())
+    return false;
+
+  // 1. Mass Navigator Fast Path (Boundary Trigger)
+  if (step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary) {
+    const auto *massVol = step->GetPostStepPoint()
+                              ->GetTouchable()
+                              ->GetVolume()
+                              ->GetLogicalVolume();
+    if (volumes.count(massVol) > 0)
+      return true;
+  }
+
+  // 2. Parallel Navigators Edge Detection
+  G4TransportationManager *transport =
+      G4TransportationManager::GetTransportationManager();
+  const int numNav = transport->GetNoActiveNavigators();
+  if (numNav <= 1)
+    return false;
+
+  const G4ThreeVector &prePos = step->GetPreStepPoint()->GetPosition();
+  const G4ThreeVector &postPos = step->GetPostStepPoint()->GetPosition();
+  const G4ThreeVector &dir = step->GetTrack()->GetMomentumDirection();
+  const auto navIt = transport->GetActiveNavigatorsIterator();
+
+  for (int i = 1; i < numNav; ++i) {
+    G4Navigator *realNav = *(navIt + i);
+
+    // REUSE HELPER FOR END OF STEP
+    const G4LogicalVolume *postLV =
+        GetVolumeFromParallelNavigator(postPos, dir, realNav);
+
+    if (postLV && volumes.count(postLV) > 0) {
+      // REUSE HELPER FOR START OF STEP
+      const G4LogicalVolume *preLV =
+          GetVolumeFromParallelNavigator(prePos, dir, realNav);
+
+      if (preLV != postLV)
+        return true;
+    }
+  }
+  return false;
 }
