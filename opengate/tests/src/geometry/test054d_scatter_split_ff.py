@@ -87,7 +87,7 @@ if __name__ == "__main__":
     source.activity = 5e5 * Bq
     source.activity = 5000 * Bq
     if sim.visu:
-        source.activity = 10 * Bq
+        source.activity = 100 * Bq
 
     # --- BIASING OPERATOR ---
     split_factor = 10
@@ -99,6 +99,7 @@ if __name__ == "__main__":
     bias.compton_splitting_factor = split_factor
     bias.rayleigh_splitting_factor = split_factor
     bias.max_compton_level = 1
+    bias.debug = True
 
     # --- OUTPUTS ---
     phsp_det = sim.add_actor("PhaseSpaceActor", "phsp_det")

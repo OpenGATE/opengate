@@ -129,8 +129,6 @@ void GateVBiasOptrActor::BuildLVCache(
         // Prevent duplicates / infinite loops in unusual geometry graphs
         if (cache.count(lv) == 0) {
           cache.insert(lv);
-          G4cout << "\t " << callerName << ": caching LV " << lv->GetName()
-                 << G4endl;
         }
         for (size_t i = 0; i < lv->GetNoDaughters(); ++i)
           addWithDaughters(lv->GetDaughter(i)->GetLogicalVolume());

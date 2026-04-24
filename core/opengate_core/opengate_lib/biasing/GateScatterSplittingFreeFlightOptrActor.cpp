@@ -54,8 +54,6 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
   fRayleighSplittingFactor = DictGetInt(user_info, "rayleigh_splitting_factor");
   fMaxComptonLevel = DictGetInt(user_info, "max_compton_level");
   fDebug = DictGetBool(user_info, "debug");
-  DDD(fDebug);
-  DDD(fDebug);
 
   // Create the FF operation
   threadLocal_t &l = threadLocalData.Get();
@@ -142,7 +140,9 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
         " energy=", track->GetKineticEnergy());
   }
 
-  if (!IsFreeFlight(track)) {
+  l.fCurrentTrackIsFreeFlight = IsFreeFlight(track);
+
+  if (!l.fCurrentTrackIsFreeFlight) {
     // this is not an FF or secondary of an FF
     l.fComptonInteractionCount = 0;
     l.fBiasInformationPerThread["nb_tracks"] += 1;
@@ -230,7 +230,7 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
   // - not FF + not in excluded volume  => analog, splitting if Compt or Rayl
   // ===========================================================================
 
-  const bool isFF = IsFreeFlight(track);
+  const bool isFF = l.fCurrentTrackIsFreeFlight;
   if (fDebug) {
     DDD("\t isFF=", isFF);
   }
@@ -301,7 +301,7 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   }
 
   // Is this a FF ?
-  if (IsFreeFlight(track)) {
+  if (l.fCurrentTrackIsFreeFlight) {
     if (fDebug) {
       DDD("\t ProposeFinalStateBiasingOperation Track is FF, returning "
           "FF operation");
@@ -371,7 +371,7 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   // FF tracks this particle except if it is in an unbiased volume.
   // This is managed by Optr/Optn Geant4 biasing logic EXCEPT if
   // the track is in parallel world.
-  const bool isFF = IsFreeFlight(step->GetTrack());
+  const bool isFF = l.fCurrentTrackIsFreeFlight;
   if (isFF) {
     if (fDebug) {
       DDD("\t isFF, letting track continue");
