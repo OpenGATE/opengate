@@ -2,32 +2,23 @@
 # -*- coding: utf-8 -*-
 
 """
-Test 054d: Scatter Splitting + Free Flight in Parallel Geometries
+Test 054e: Scatter Splitting + FF in Multi-Layer Parallel Worlds
 
 Objective:
-Verify that the ScatterSplittingFreeFlightActor correctly splits Compton/Rayleigh
-scattered gammas, applies Free Flight attenuation to the secondary tracks, and
-successfully restores analog physics when the split tracks enter an excluded
-parallel volume.
+Verify that the biasing operator correctly queries multiple parallel navigators
+simultaneously to enforce distinct topology rules (Kill vs. Exclude).
 
 Setup:
-- World (G4_AIR): Z = [-500 mm, +500 mm]. Biasing Operator attached.
-- Phantom (Mass World, G4_WATER): Z = [0 mm, +100 mm]. Scattering medium.
-- Detector (Parallel World, G4_BONE_COMPACT_ICRU): Z = [+150 mm, +160 mm]. Excluded.
+- Mass World: G4_WATER phantom (Z = 0 to 100 mm).
+- Parallel World 1 ("world_kill"): Virtual shield (Z = 120 to 121 mm). Kill zone.
+- Parallel World 2 ("world_exclude"): Detector (Z = 150 to 160 mm). Excluded zone.
 - Source: 500 keV gammas fired along +Z.
 
-Verification 1: Internal Splitting Statistics
-Validates that the number of secondary tracks generated exactly matches the
-number of splits multiplied by the requested `compton_splitting_factor`.
-
-Verification 2: Compound Variance Reduction (Weight)
-Validates that the split tracks underwent both initial splitting weight reduction
-(W_initial / Factor) and subsequent Free Flight attenuation. The mean weight
-of tracks reaching the detector must be strictly < (1.0 / splitting_factor).
-
-Verification 3: Analog Energy Deposition
-Validates that the biased secondary tracks successfully disable Free Flight
-upon entering the parallel detector, allowing for valid analog energy scoring.
+Expectation:
+1. Analog primaries leaving the phantom hit the virtual shield in PW1 and are
+   killed mathematically. They never reach the detector.
+2. Variance-reduced FF tracks ignore the kill zone in PW1 (as FF skips kill checks),
+   continue to the detector in PW2, disable FF, and score analog energy.
 """
 
 import uproot
@@ -36,13 +27,12 @@ from opengate.tests import utility
 import numpy as np
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, None, "test054d")
+    paths = utility.get_default_test_paths(__file__, None, "test054e")
 
     # Create the simulation
     sim = gate.Simulation()
     sim.visu_type = "qt"
-    # sim.visu = True
-    sim.number_of_threads = 1
+    sim.number_of_threads = 2
 
     # Units
     m = gate.g4_units.m
@@ -63,11 +53,21 @@ if __name__ == "__main__":
     phantom.material = "G4_WATER"
     phantom.color = [0, 0, 1, 0.5]
 
-    # --- PARALLEL WORLD VOLUME (Detector) ---
-    sim.add_parallel_world("world2")
+    # --- PARALLEL WORLD 1 (Kill Zone) ---
+    sim.add_parallel_world("world_kill")
+
+    virtual_shield = sim.add_volume("Box", "virtual_shield")
+    virtual_shield.mother = "world_kill"
+    virtual_shield.size = [15 * cm, 15 * cm, 1 * mm]
+    virtual_shield.translation = [0, 0, 120.5 * mm]  # Z: 120 to 121 mm
+    virtual_shield.material = "G4_AIR"  # Material doesn't matter in parallel world
+    virtual_shield.color = [1, 1, 0, 1]
+
+    # --- PARALLEL WORLD 2 (Excluded Zone) ---
+    sim.add_parallel_world("world_exclude")
 
     detector = sim.add_volume("Box", "detector")
-    detector.mother = "world2"
+    detector.mother = "world_exclude"
     detector.size = [10 * cm, 10 * cm, 1 * cm]
     detector.translation = [0, 0, 15.5 * cm]  # Z: 150 to 160 mm
     detector.material = "G4_BONE_COMPACT_ICRU"
@@ -84,7 +84,6 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, 1]
 
     sim.run_timing_intervals = [[0, 0.1 * sec]]
-    source.activity = 5e5 * Bq
     source.activity = 5000 * Bq
     if sim.visu:
         source.activity = 100 * Bq
@@ -94,12 +93,11 @@ if __name__ == "__main__":
 
     bias = sim.add_actor("ScatterSplittingFreeFlightActor", "bias")
     bias.attached_to = "world"
-    bias.exclude_volumes = ["detector"]
-    bias.kill_interacting_in_volumes = ["detector"]
+    bias.exclude_volumes = ["detector"]  # In Parallel World 2
+    bias.kill_interacting_in_volumes = ["virtual_shield"]  # In Parallel World 1
     bias.compton_splitting_factor = split_factor
     bias.rayleigh_splitting_factor = split_factor
     bias.max_compton_level = 1
-    # bias.debug = True # very verbose !
 
     # --- OUTPUTS ---
     phsp_det = sim.add_actor("PhaseSpaceActor", "phsp_det")
@@ -129,7 +127,6 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.set_production_cut("world", "all", 5000 * mm)
 
-    # Disable General Process for biasing compatibility
     s = f"/process/em/UseGeneralProcess false"
     if s not in sim.g4_commands_before_init:
         sim.g4_commands_before_init.append(s)
@@ -143,26 +140,7 @@ if __name__ == "__main__":
     # ==========================================================
 
     print("\n=============================================")
-    print("--- 1. ANALYZING INTERNAL SPLITTING STATS ---")
-    print("=============================================")
-
-    # Extract internal actor statistics
-    split_info = bias.user_output["info"].split_info
-
-    nb_splits = split_info.nb_compt_splits
-    nb_tracks = split_info.nb_compt_tracks
-
-    print(f"Recorded Compton Splits: {nb_splits}")
-    print(f"Generated Secondary Tracks: {nb_tracks}")
-
-    is_split_logic_ok = (nb_splits > 0) and (nb_tracks == nb_splits * split_factor)
-    utility.print_test(
-        is_split_logic_ok,
-        f"Check exact splitting factor ({split_factor}x) multiplication",
-    )
-
-    print("\n=============================================")
-    print("--- 2. ANALYZING COMPOUND TRACK WEIGHTS ---")
+    print("--- 1. VERIFYING PARALLEL KILL ZONE (PW1) ---")
     print("=============================================")
 
     with uproot.open(paths.output / "detector_phsp.root") as f1:
@@ -170,31 +148,23 @@ if __name__ == "__main__":
         z_post = f1["phsp_det"]["PostPosition_Z"].array(library="np")
         weight = f1["phsp_det"]["Weight"].array(library="np")
 
-    # Isolate steps entering the detector boundary (Z = 150.0 mm)
-    # Using midpoint filtering to capture the active track weight within the volume
     z_mid = (z_pre + z_post) / 2.0
     mask_inside = (z_mid > 150.001) & (z_mid < 159.999)
     weights_inside = weight[mask_inside]
 
     max_expected_weight = 1.0 / split_factor
-    mean_weight = np.mean(weights_inside) if len(weights_inside) > 0 else 0.0
     max_weight = np.max(weights_inside) if len(weights_inside) > 0 else 0.0
 
-    print(f"Steps recorded inside detector: {len(weights_inside)}")
-    print(f"Max Track Weight: {max_weight:.4f} (Must be <= {max_expected_weight:.4f})")
-    print(
-        f"Mean Track Weight: {mean_weight:.4f} (Must be < {max_expected_weight:.4f} due to FF)"
-    )
+    print(f"Max Track Weight in Detector: {max_weight:.4f}")
 
-    is_weight_ok = (
-        (len(weights_inside) > 0)
-        and (max_weight <= max_expected_weight)
-        and (mean_weight < max_expected_weight)
+    # If the virtual shield failed, analog primaries (Weight = 1.0) would reach the detector.
+    is_kill_ok = (len(weights_inside) > 0) and (max_weight <= max_expected_weight)
+    utility.print_test(
+        is_kill_ok, "Virtual Shield successfully intercepted Analog Primaries"
     )
-    utility.print_test(is_weight_ok, "Check Compound Variance Reduction (Split + FF)")
 
     print("\n=============================================")
-    print("--- 3. ANALYZING ANALOG SCORING (DIGITIZER) ---")
+    print("--- 2. VERIFYING PARALLEL EXCLUDE ZONE (PW2) ---")
     print("=============================================")
 
     with uproot.open(paths.output / "detector_digi.root") as f2:
@@ -211,8 +181,11 @@ if __name__ == "__main__":
     print(f"Digitizer Hits in Excluded Volume: {hits_in_excluded}")
     print(f"Total Edep in Excluded Volume: {total_edep_excluded:.4f} MeV")
 
-    is_edep_ok = total_edep_excluded > 0.0
-    utility.print_test(is_edep_ok, "Check Analog Energy Deposition of Split Tracks")
+    # If the exclude zone failed, FF tracks would never deposit analog energy.
+    is_exclude_ok = total_edep_excluded > 0.0
+    utility.print_test(
+        is_exclude_ok, "Detector successfully disabled FF for energy scoring"
+    )
 
     # Final Test Status
-    utility.test_ok(is_split_logic_ok and is_weight_ok and is_edep_ok)
+    utility.test_ok(is_kill_ok and is_exclude_ok)
