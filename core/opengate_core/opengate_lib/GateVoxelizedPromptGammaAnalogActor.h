@@ -31,13 +31,13 @@ public:
 
   void InitializeCpp() override;
 
-  void BeginOfRunActionMasterThread(int run_id);
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   int EndOfRunActionMasterThread(int run_id) override;
 
-  void EndOfRunAction(const G4Run *run);
+  void EndOfRunAction(const G4Run *run) override;
 
-  void BeginOfRunAction(const G4Run *run);
+  void BeginOfRunAction(const G4Run *run) override;
 
   void BeginOfEventAction(const G4Event *event) override;
 
