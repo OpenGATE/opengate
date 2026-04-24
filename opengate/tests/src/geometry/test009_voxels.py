@@ -1,6 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Test 009: Voxelized Volumes (Image) and Dose Scoring
+
+Objective:
+Verify the creation and handling of voxelized volumes from image files (MHD)
+and the assignment of materials to voxel intensity ranges.
+It also validates proton dose scoring within a rotated and nested voxelized volume.
+
+Setup:
+- World (G4_AIR): 1 x 1 x 1 m.
+- Fake (Box, G4_AIR): A 40 x 40 x 40 cm rotated mother volume.
+- Patient (Image, varying materials): Voxelized volume loaded from an MHD image,
+  nested inside the rotated fake volume. Materials are mapped from image
+  intensities using explicit ranges or an external text file.
+- Source: 130 MeV protons emitted from a spherical source, directed along +Z.
+
+Verification 1: Material Mapping
+Validates that the voxel-to-material mapping defined manually matches the
+mapping loaded from the Gate-like external text file.
+
+Verification 2: Simulation Statistics
+Validates that the fundamental tracking steps, tracks, and events match the
+expected reference statistics within an acceptable tolerance.
+
+Verification 3: Dose Deposition
+Validates the 3D dose (energy deposition) distribution scored inside the
+voxelized patient volume by comparing it against a reference image.
+"""
+
 import opengate as gate
 from opengate.geometry.materials import (
     read_voxel_materials,
