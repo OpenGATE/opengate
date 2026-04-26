@@ -206,10 +206,7 @@ void GateCoincidenceSorterActor::EndOfEventAction(const G4Event *) {
 }
 
 void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
-  G4AutoLock lock(&fMutex);
-  if (fNumActiveWorkingThreads > 1) {
-    fNumActiveWorkingThreads--;
-  } else {
+  if (fNumActiveWorkingThreads.fetch_sub(1, std::memory_order_acq_rel) <= 1) {
     fTimeSorter->Flush();
     ProcessTimeSortedSingles();
     DetectCoincidences(true);
