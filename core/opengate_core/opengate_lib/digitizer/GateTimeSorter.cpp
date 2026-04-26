@@ -240,7 +240,8 @@ void GateTimeSorter::Process() {
   // The temporary digi collection keeps growing as more digis are processed.
   // The digis that have already been copied to the output must be removed once
   // in a while to limit memory usage.
-  if (fCurrentStorage->digis->GetSize() > fMaxSize) {
+  if (fSortedCollectionA->GetSize() > fMaxSize &&
+      fSortedIndicesA->size() < fMaxSize / 2) {
     Prune();
   }
 }
