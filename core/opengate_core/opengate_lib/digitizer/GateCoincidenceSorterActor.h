@@ -83,9 +83,9 @@ protected:
   std::unique_ptr<TemporaryStorage> fCurrentStorage;
   std::unique_ptr<TemporaryStorage> fFutureStorage;
 
-  G4Mutex fMutex;
-  std::atomic<size_t> fIterPosition{};
-  std::atomic<size_t> fNumActiveWorkingThreads{};
+  size_t fIterPosition{};
+  std::atomic<int> fNumActiveWorkingThreads{};
+  std::atomic<bool> fProcessing{};
 
   void ProcessTimeSortedSingles();
   void DetectCoincidences(bool lastCall = false);

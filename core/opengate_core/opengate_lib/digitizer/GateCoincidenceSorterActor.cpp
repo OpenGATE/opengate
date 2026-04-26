@@ -191,10 +191,18 @@ void GateCoincidenceSorterActor::DigitInitialize(
 }
 
 void GateCoincidenceSorterActor::EndOfEventAction(const G4Event *) {
-  G4AutoLock lock(&fMutex);
-  fTimeSorter->Process();
-  ProcessTimeSortedSingles();
-  DetectCoincidences();
+  fTimeSorter->Ingest();
+  if (!fProcessing.load(std::memory_order_relaxed)) {
+    bool expected = false;
+    if (fProcessing.compare_exchange_strong(expected, true,
+                                            std::memory_order_acquire,
+                                            std::memory_order_relaxed)) {
+      fTimeSorter->Process();
+      ProcessTimeSortedSingles();
+      DetectCoincidences();
+      fProcessing.store(false, std::memory_order_release);
+    }
+  }
 }
 
 void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
