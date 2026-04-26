@@ -24,12 +24,7 @@ GateCoincidenceSorterActor::TemporaryStorage::TemporaryStorage(
   // TODO name OK?
   digis = manager->NewDigiCollection(input->GetName() + "_" + name_suffix);
   digis->InitDigiAttributesFromCopy(input);
-
-  iter = digis->NewIterator();
-  iter.TrackAttribute("GlobalTime", &currentTime);
-  iter.TrackAttribute("PreStepUniqueVolumeID", &currentVolID);
-  iter.TrackAttribute("PostPosition", &currentPos);
-  iter.TrackAttribute("TotalEnergyDeposit", &currentEdep);
+  digis->SetSharedStorage(true);
 
   // Filler to copy from input collection to temporary collection
   fillerIn =
@@ -41,10 +36,10 @@ GateCoincidenceSorterActor::TemporaryStorage::TemporaryStorage(
 }
 
 GateCoincidenceSorterActor::GateCoincidenceSorterActor(py::dict &user_info)
-    : GateVDigitizerWithOutputActor(user_info, false) {
+    : GateVDigitizerWithOutputActor(user_info, true) {
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
-  fActions.insert("EndOfRunAction");
+  fActions.insert("EndOfRunAction"); // Works without?
 }
 
 GateCoincidenceSorterActor::~GateCoincidenceSorterActor() = default;
@@ -172,69 +167,86 @@ void GateCoincidenceSorterActor::StartSimulationAction() {
   }
 }
 
+void GateCoincidenceSorterActor::BeginOfRunActionMasterThread(int run_id) {
+  fTimeSorter = std::make_unique<GateTimeSorter>();
+  fTimeSorter->Init(fInputDigiCollection);
+  fTimeSorter->SetSortingWindow(fSortingTime);
+  fTimeSorter->SetMaxSize(fClearEveryNEvents);
+
+  fCurrentStorage = std::make_unique<TemporaryStorage>(
+      fTimeSorter->OutputCollection(), fOutputDigiCollection, "A");
+  fFutureStorage = std::make_unique<TemporaryStorage>(
+      fTimeSorter->OutputCollection(), fOutputDigiCollection, "B");
+
+  fNumActiveWorkingThreads = G4Threading::GetNumberOfRunningWorkerThreads();
+}
+
 void GateCoincidenceSorterActor::SetGroupVolumeDepth(const int depth) {
   fGroupVolumeDepth = depth;
 }
 
 void GateCoincidenceSorterActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
-
-  // Set up pointers to track specific attributes
-  auto &lr = fThreadLocalVDigitizerData.Get();
-  auto &l = fThreadLocalData.Get();
-
-  fTimeSorter.Init(fInputDigiCollection);
-  fTimeSorter.OutputIterator().TrackAttribute("GlobalTime", &l.time);
-  fTimeSorter.OutputIterator().TrackAttribute("PreStepUniqueVolumeID",
-                                              &l.volID);
-  fTimeSorter.SetSortingWindow(fSortingTime);
-  fTimeSorter.SetMaxSize(fClearEveryNEvents);
-
-  fCurrentStorage = std::make_unique<TemporaryStorage>(
-      fTimeSorter.OutputCollection(), fOutputDigiCollection, "A");
-  fFutureStorage = std::make_unique<TemporaryStorage>(
-      fTimeSorter.OutputCollection(), fOutputDigiCollection, "B");
+  fOutputDigiCollection->RootInitializeTupleForWorker();
 }
 
 void GateCoincidenceSorterActor::EndOfEventAction(const G4Event *) {
-  auto &l = fThreadLocalData.Get();
-  fTimeSorter.Process();
-  ProcessTimeSortedSingles();
-  DetectCoincidences();
+  fTimeSorter->Ingest();
+  if (!fProcessing.load(std::memory_order_relaxed)) {
+    bool expected = false;
+    if (fProcessing.compare_exchange_strong(expected, true,
+                                            std::memory_order_acquire,
+                                            std::memory_order_relaxed)) {
+      fTimeSorter->Process();
+      ProcessTimeSortedSingles();
+      DetectCoincidences();
+      fProcessing.store(false, std::memory_order_release);
+    }
+  }
 }
 
 void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
-  fTimeSorter.Flush();
-  ProcessTimeSortedSingles();
-  DetectCoincidences(true);
+  if (fNumActiveWorkingThreads.fetch_sub(1, std::memory_order_acq_rel) <= 1) {
+    fTimeSorter->Flush();
+    ProcessTimeSortedSingles();
+    DetectCoincidences(true);
+  }
   fOutputDigiCollection->FillToRootIfNeeded(true);
 }
 
 void GateCoincidenceSorterActor::ProcessTimeSortedSingles() {
-  auto &l = fThreadLocalData.Get();
-  auto &iter = fTimeSorter.OutputIterator();
+  auto &timeVec = fTimeSorter->OutputCollection()
+                      ->GetDigiAttribute("GlobalTime")
+                      ->GetDValues();
+  auto &iter = fTimeSorter->OutputIterator();
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
     fCurrentStorage->fillerIn->Fill(iter.fIndex);
+    const double t = timeVec[iter.fIndex];
     if (!fCurrentStorage->earliestTime) {
-      fCurrentStorage->earliestTime = *l.time;
+      fCurrentStorage->earliestTime = t;
     }
-    fCurrentStorage->latestTime = *l.time;
+    fCurrentStorage->latestTime = t;
     iter++;
   }
-  fTimeSorter.MarkOutputAsProcessed();
+  fTimeSorter->MarkOutputAsProcessed();
 }
 
 void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
 
   if (fCurrentStorage->earliestTime && fCurrentStorage->latestTime) {
-    auto &iter = fCurrentStorage->iter;
-    auto &t = fCurrentStorage->currentTime;
-    auto &v = fCurrentStorage->currentVolID;
-    auto &p = fCurrentStorage->currentPos;
-    auto &e = fCurrentStorage->currentEdep;
+    double *t;
+    GateUniqueVolumeID::Pointer *v;
+    G4ThreeVector *p;
+    double *e;
+    auto iter = fCurrentStorage->digis->NewIterator();
+    iter.TrackAttribute("GlobalTime", &t);
+    iter.TrackAttribute("PreStepUniqueVolumeID", &v);
+    iter.TrackAttribute("PostPosition", &p);
+    iter.TrackAttribute("TotalEnergyDeposit", &e);
 
-    iter.GoToBegin();
+    iter.fIndex = fIterPosition;
+    iter.GoTo(fIterPosition);
     while ((*fCurrentStorage->latestTime - *fCurrentStorage->earliestTime >
             fWindowSize + fWindowOffset) ||
            (lastCall &&
@@ -273,15 +285,14 @@ void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
           fCurrentStorage->fillerOut->Fill(i0, index);
         }
       }
-      iter.GoToBegin();
 
       if (fMultiWindow) {
-        fCurrentStorage->digis->SetBeginOfEventIndex(iter.fIndex + 1);
+        fIterPosition += 1;
       } else {
-        fCurrentStorage->digis->SetBeginOfEventIndex(iter.fIndex + 1 +
-                                                     numCoincidences);
+        fIterPosition += 1 + numCoincidences;
       }
-      iter.GoToBegin();
+      iter.fIndex = fIterPosition;
+      iter.GoTo(fIterPosition);
       if (iter.IsAtEnd()) {
         break;
       }
@@ -385,8 +396,9 @@ void GateCoincidenceSorterActor::ClearProcessedSingles() {
       fCurrentStorage->digis, fFutureStorage->digis,
       fCurrentStorage->digis->GetDigiAttributeNames());
 
-  auto &iter = fCurrentStorage->iter;
-  iter.GoToBegin();
+  auto iter = fCurrentStorage->digis->NewIterator();
+  iter.fIndex = fIterPosition;
+  iter.GoTo(fIterPosition);
 
   while (!iter.IsAtEnd()) {
     transferFiller.Fill(iter.fIndex);
@@ -401,4 +413,5 @@ void GateCoincidenceSorterActor::ClearProcessedSingles() {
   fCurrentStorage->latestTime.reset();
 
   std::swap(fCurrentStorage, fFutureStorage);
+  fIterPosition = 0;
 }
