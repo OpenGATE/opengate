@@ -49,9 +49,6 @@ GateVoxelizedPromptGammaAnalogActor::~GateVoxelizedPromptGammaAnalogActor() {
 
   // Release the 3D volume
   volume = nullptr;
-  std::cout << "GateVoxelizedPromptGammaAnalogActor destructor called. "
-               "Resources released."
-            << std::endl;
 }
 
 void GateVoxelizedPromptGammaAnalogActor::InitializeUserInfo(
@@ -250,7 +247,6 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
 }
 
 void GateVoxelizedPromptGammaAnalogActor::EndOfRunAction(const G4Run *run) {
-  // std::cout << "incident particles : " << incidentParticles << std::endl;
   if (incidentParticles == 0) {
     std::cerr << "Error: incidentParticles is zero. Skipping scaling."
               << std::endl;
