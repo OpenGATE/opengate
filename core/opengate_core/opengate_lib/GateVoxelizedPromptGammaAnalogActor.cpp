@@ -105,14 +105,13 @@ void GateVoxelizedPromptGammaAnalogActor::InitializeCpp() {
   volume->Allocate();
   volume->FillBuffer(0);
 
-  incidentParticles =
-      0; // initiate the conuter of incidente protons - scaling factor
+  // initiate the counter of incidente protons - scaling factor
+  incidentParticles = 0;
 }
 
 void GateVoxelizedPromptGammaAnalogActor::BeginOfRunActionMasterThread(
     int run_id) {
   // Attach the 3D volume used to
-
   // Fill the 4D volume of interest with 0 to ensure that it is well initiated
   if (fProtonTimeFlag) {
     cpp_tof_proton_image->FillBuffer(0);
