@@ -274,6 +274,7 @@ class VoxelDepositActor(ActorBase):
         return 0
 
     def StartSimulationAction(self):
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
         # inform actor output that this simulation is starting
         for u in self.user_output.values():
             if u.get_active(item="any"):
@@ -605,7 +606,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
-        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
@@ -852,7 +853,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
-        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
@@ -1056,7 +1057,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
-        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def read_lookup_table_txt(self, table_path):
@@ -1450,7 +1451,7 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
-        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def EndSimulationAction(self):
@@ -1598,7 +1599,7 @@ class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStopping
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
-        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
@@ -1678,7 +1679,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
-        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
