@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
     # add fluence actor
     fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
-    fluence_actor.images_for_scattering_processes = True
+    fluence_actor.score_by_process = True
     # let the actor score other quantities additional to edep (default)
     fluence_actor.counts_uncertainty.active = True
     fluence_actor.counts_squared.active = True
@@ -227,8 +227,12 @@ if __name__ == "__main__":
                 process=process,
             )
             std_dev_phsp = std_dev_img_calculation(source.n, img_phsp, img_squared_phsp)
-            img_uncertainty_phsp = np.divide(std_dev_phsp, (img_phsp / source.n))
-            img_uncertainty_phsp[np.isnan(img_uncertainty_phsp)] = 0
+            img_uncertainty_phsp = np.divide(
+                std_dev_phsp,
+                (img_phsp / source.n),
+                out=np.zeros_like(std_dev_phsp),
+                where=(img_phsp != 0),
+            )
             dict_comp[f"{string}"] = [img_fluence, img_phsp]
             dict_comp[f"{string}_squared"] = [img_squared_fluence, img_squared_phsp]
             dict_comp[f"{string}_uncertainty"] = [
@@ -238,9 +242,10 @@ if __name__ == "__main__":
 
     l_bool = []
     for key, elem in dict_comp.items():
-        diff = np.round((elem[0] - elem[1]) / elem[1])
+        diff = np.divide(
+            elem[0] - elem[1], elem[1], out=np.zeros_like(elem[0]), where=(elem[1] != 0)
+        )
         diff = np.round(diff, decimals=5)
-        diff[np.isnan(diff)] = 0
         is_ok = np.all(diff == 0)
         if not is_ok:
             print(key)

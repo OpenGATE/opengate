@@ -94,6 +94,8 @@ opengate_temporaire
 /opengate/tests/src/test030_save
 /opengate/tests/src/test_log*
 /opengate/tests/src/save_tests
+/opengate/tests/src/external/coresi/logs/*
+/opengate/tests/src/external/coresi/checkpoi*
 
 /opengate/data/isomeric_transition/save
 /opengate/data/isomeric_transition/save2

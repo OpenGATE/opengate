@@ -1629,9 +1629,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
 
     # hints for IDE
-    images_for_scattering_processes: bool
+    score_by_process: bool
     user_info_defaults = {
-        "images_for_scattering_processes": (
+        "score_by_process": (
             False,
             {
                 "doc": "If yes, realise imgs where scattering processes are also recorded separately",
@@ -1919,7 +1919,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         VoxelDepositActor.initialize(self)
         self.check_user_input()
-        secondary_flag = self.user_info.images_for_scattering_processes
+        secondary_flag = self.user_info.score_by_process
         self.user_output.counts_with_uncertainty.set_active(True, item=0)
         if secondary_flag:
             for user_output_images in self.list_of_output_counts:
@@ -2025,7 +2025,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.cpp_counts_image,
             self.cpp_counts_squared_image,
         )
-        if self.user_info.images_for_scattering_processes:
+        if self.user_info.score_by_process:
             for process, img, squared_img in zip(
                 self.list_of_processes,
                 self.list_of_counts_images,
@@ -2049,7 +2049,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 self.cpp_energy_image,
                 self.cpp_energy_squared_image,
             )
-            if self.user_info.images_for_scattering_processes:
+            if self.user_info.score_by_process:
                 for process, img, squared_img in zip(
                     self.list_of_processes,
                     self.list_of_energy_images,
@@ -2068,7 +2068,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-
         self.fetch_from_cpp_image(
             "counts_with_uncertainty",
             run_index,
@@ -2079,7 +2078,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.user_output.counts_with_uncertainty.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
-        if self.user_info.images_for_scattering_processes:
+        if self.user_info.score_by_process:
             for process, img, squared_img, output in zip(
                 self.list_of_processes,
                 self.list_of_counts_images,
@@ -2109,7 +2108,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.user_output.energy_with_uncertainty.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-            if self.user_info.images_for_scattering_processes:
+            if self.user_info.score_by_process:
                 for process, img, squared_img, output in zip(
                     self.list_of_processes,
                     self.list_of_energy_images,

@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     # print output statistics
     print(stats)
-    out_path = detector_actor.get_output_path()
+    out_path = detector_actor.get_output_path("counts")
 
     # check images
     is_ok = utility.assert_images(

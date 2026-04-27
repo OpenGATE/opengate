@@ -164,7 +164,12 @@ if __name__ == "__main__":
             type=type,
         )
         std_dev_tab = std_dev_img_calculation(source.n, tab, s_tab)
-        rel_err_tab_phsp = np.divide(std_dev_tab, (tab / source.n))
+        rel_err_tab_phsp = np.divide(
+            std_dev_tab,
+            (tab / source.n),
+            out=np.zeros_like(std_dev_tab),
+            where=(tab != 0),
+        )
 
         if type == "E":
             rel_err_img = itk.imread(output_path / "test099_energy_uncertainty.mhd")

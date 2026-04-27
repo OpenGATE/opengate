@@ -323,11 +323,11 @@ This actor scores the particle fluence on a voxel grid, essentially by counting 
     fluence_actor.hit_type = "random"
 
 
-In addition, it is possible to generate fluence maps for individual scattering processes (Compton and Rayleigh), as well as a combined map including both processes. These maps are created as follows: if the incoming particle is a gamma photon and its last interaction was either Compton or Rayleigh scattering, the counts (and optionally the photon energy) are recorded in the corresponding scattering-process maps. At present, pair production is not yet included as a recordable process. This actor is also compatible with the FreeFlightAngularAcceptance variance reduction technique. To enable the recording of these additional maps, simply set the following boolean to True:
+In addition, it is possible to generate separate fluence maps resolving the particle's tracking state and underlying physics processes (`primaries`, `secondaries`, `compton`, and `rayleigh`). These maps are created as follows: particles originating directly from the source without interacting are recorded as `primaries`, while all others are recorded as `secondaries`. Furthermore, if the incoming particle is a gamma photon and its last interaction was either Compton or Rayleigh scattering, the counts (and optionally the photon energy) are also recorded in the corresponding scattering-process maps. At present, pair production is not yet included as a recordable process. This actor is also compatible with the FreeFlightAngularAcceptance variance reduction technique. To enable the recording of these additional maps, simply set the following boolean to True:
 
 .. code-block:: python
 
-    fluence_actor.images_for_scattering_processes = True
+    fluence_actor.score_by_process = True
 
 The activation of the squared counts (and energies) and their associated uncertainty maps is handled automatically, according to the global settings defined by the user for counts and energy scoring.
 

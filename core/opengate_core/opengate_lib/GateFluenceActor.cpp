@@ -87,7 +87,7 @@ void GateFluenceActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
-  fSecondaries = DictGetBool(user_info, "images_for_scattering_processes");
+  fSecondaries = DictGetBool(user_info, "score_by_process");
 }
 
 void GateFluenceActor::InitializeCpp() {
