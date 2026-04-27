@@ -228,8 +228,6 @@ Common parameters and functions
 
 .. autoproperty:: opengate.actors.base.ActorBase.attached_to
 
-.. autoproperty:: opengate.actors.base.ActorBase.filters
-
 .. autoproperty:: opengate.actors.base.ActorBase.priority
 
 Actor output
@@ -246,4 +244,3 @@ Actor output
 .. autoproperty:: opengate.actors.actoroutput.BaseUserInterfaceToActorOutput.keep_data_per_run
 
 .. autoproperty:: opengate.actors.actoroutput.BaseUserInterfaceToActorOutput.active
-

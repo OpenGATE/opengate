@@ -122,6 +122,7 @@ from .actors.digitizers import (
     CoincidenceSorterActor,
     PhaseSpaceActor,
     DigiAttributeProcessDefinedStepInVolumeActor,
+    DigiAttributeLastProcessDefinedStepInVolumeActor,
 )
 
 particle_names_Gate_to_G4 = {
@@ -166,6 +167,7 @@ actor_types = {
     "DigitizerPileupActor": DigitizerPileupActor,
     "CoincidenceSorterActor": CoincidenceSorterActor,
     "DigiAttributeProcessDefinedStepInVolumeActor": DigiAttributeProcessDefinedStepInVolumeActor,
+    "DigiAttributeLastProcessDefinedStepInVolumeActor": DigiAttributeLastProcessDefinedStepInVolumeActor,
     # biasing
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,

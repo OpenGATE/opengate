@@ -1630,69 +1630,507 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
 
     # hints for IDE
-    uncertainty: bool
-    scatter: bool
-
+    score_by_process: bool
     user_info_defaults = {
-        "uncertainty": (
+        "score_by_process": (
             False,
             {
-                "doc": "FIXME",
-            },
-        ),
-        "scatter": (
-            False,
-            {
-                "doc": "FIXME",
+                "doc": "If yes, realise imgs where scattering processes are also recorded separately",
             },
         ),
     }
 
     user_output_config = {
-        "fluence": {
-            "actor_output_class": ActorOutputSingleImage,
+        "counts_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "counts": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                },
+                "counts_squared": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "counts_uncertainty": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "compton_counts_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "counts_compton": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "counts_squared_compton": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "counts_uncertainty_compton": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "rayleigh_counts_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "counts_rayleigh": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "counts_squared_rayleigh": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "counts_uncertainty_rayleigh": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "secondaries_counts_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "counts_secondaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "counts_squared_secondaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "counts_uncertainty_secondaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "primaries_counts_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "counts_primaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "counts_squared_primaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "counts_uncertainty_primaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "energy_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "energy": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "energy_squared": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "energy_uncertainty": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "compton_energy_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "energy_compton": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "energy_squared_compton": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "energy_uncertainty_compton": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "rayleigh_energy_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "energy_rayleigh": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "energy_squared_rayleigh": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "energy_uncertainty_rayleigh": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "secondaries_energy_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "energy_secondaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "energy_squared_secondaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "energy_uncertainty_secondaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "primaries_energy_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "energy_primaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "energy_squared_primaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "energy_uncertainty_primaries": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
         },
     }
 
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.actor = self.simulation.add_actor(
+            "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name + "_processes"
+        )
+        self.actor.attached_to = self.simulation.world.name
+        self.list_of_processes = ["compton", "rayleigh", "secondaries", "primaries"]
+        self.list_of_output_counts = [
+            self.user_output.compton_counts_with_uncertainty,
+            self.user_output.rayleigh_counts_with_uncertainty,
+            self.user_output.secondaries_counts_with_uncertainty,
+            self.user_output.primaries_counts_with_uncertainty,
+        ]
+        self.list_of_counts_images = [
+            self.cpp_counts_compton_image,
+            self.cpp_counts_rayleigh_image,
+            self.cpp_counts_secondaries_image,
+            self.cpp_counts_primaries_image,
+        ]
+        self.list_of_counts_squared_images = [
+            self.cpp_counts_squared_compton_image,
+            self.cpp_counts_squared_rayleigh_image,
+            self.cpp_counts_squared_secondaries_image,
+            self.cpp_counts_squared_primaries_image,
+        ]
+        self.list_of_output_energy = [
+            self.user_output.compton_energy_with_uncertainty,
+            self.user_output.rayleigh_energy_with_uncertainty,
+            self.user_output.secondaries_energy_with_uncertainty,
+            self.user_output.primaries_energy_with_uncertainty,
+        ]
+
+        self.list_of_energy_images = [
+            self.cpp_energy_compton_image,
+            self.cpp_energy_rayleigh_image,
+            self.cpp_energy_secondaries_image,
+            self.cpp_energy_primaries_image,
+        ]
+        self.list_of_energy_squared_images = [
+            self.cpp_energy_squared_compton_image,
+            self.cpp_energy_squared_rayleigh_image,
+            self.cpp_energy_squared_secondaries_image,
+            self.cpp_energy_squared_primaries_image,
+        ]
+
+        self.list_of_energy_images = [
+            self.cpp_energy_compton_image,
+            self.cpp_energy_rayleigh_image,
+            self.cpp_energy_secondaries_image,
+            self.cpp_energy_primaries_image,
+        ]
+        self.list_of_energy_squared_images = [
+            self.cpp_energy_squared_compton_image,
+            self.cpp_energy_squared_rayleigh_image,
+            self.cpp_energy_squared_secondaries_image,
+            self.cpp_energy_squared_primaries_image,
+        ]
 
     def __initcpp__(self):
         g4.GateFluenceActor.__init__(self, self.user_info)
         self.AddActions(
             {
+                "StartSimulationAction",
                 "BeginOfRunActionMasterThread",
+                "BeginOfRunAction",
                 "EndOfRunActionMasterThread",
+                "SteppingAction",
                 "BeginOfEventAction",
+                "EndOfEventAction",
             }
         )
 
     def initialize(self):
+
         VoxelDepositActor.initialize(self)
-
         self.check_user_input()
+        secondary_flag = self.user_info.score_by_process
+        self.user_output.counts_with_uncertainty.set_active(True, item=0)
+        if secondary_flag:
+            for user_output_images in self.list_of_output_counts:
+                user_output_images.set_active(True, item=0)
+        if (
+            self.user_output.counts_with_uncertainty.get_active(
+                item=("uncertainty", "std", "variance")
+            )
+            is True
+        ):
+            # activate the squared component, but avoid writing it to disk
+            # because the user has not activated it and thus most likely does not want it
+            if not self.user_output.counts_with_uncertainty.get_active(item=1):
+                self.user_output.counts_with_uncertainty.set_write_to_disk(
+                    False, item=1
+                )
+                self.user_output.counts_with_uncertainty.set_active(
+                    True, item=1
+                )  # activate squared component
+                if secondary_flag:
+                    for user_output_images in self.list_of_output_counts:
+                        user_output_images.set_write_to_disk(False, item=1)
+                        user_output_images.set_active(
+                            True, item=1
+                        )  # activate squared component
 
-        # no options yet
-        if self.uncertainty or self.scatter:
-            fatal("FluenceActor : uncertainty and scatter not implemented yet")
+        if secondary_flag:
+            if self.user_output.counts_with_uncertainty.get_active(item=1):
+                for user_output_images in self.list_of_output_counts:
+                    user_output_images.set_active(
+                        True, item=1
+                    )  # activate squared component
+            if self.user_output.energy_with_uncertainty.get_active(item=1):
+                for user_output_images in self.list_of_output_energy:
+                    user_output_images.set_active(
+                        True, item=1
+                    )  # activate squared component
+
+        if (
+            self.user_output.energy_with_uncertainty.get_active(
+                item=("uncertainty", "std", "variance")
+            )
+            is True
+        ):
+            # activate the squared component, but avoid writing it to disk
+            # because the user has not activated it and thus most likely does not want it
+            if not self.user_output.energy_with_uncertainty.get_active(item=1):
+                self.user_output.energy_with_uncertainty.set_write_to_disk(
+                    False, item=1
+                )
+                self.user_output.energy_with_uncertainty.set_active(
+                    True, item=1
+                )  # activate squared component
+                if secondary_flag:
+                    if secondary_flag:
+                        for user_output_images in self.list_of_output_energy:
+                            user_output_images.set_write_to_disk(False, item=1)
+                            user_output_images.set_active(
+                                True, item=1
+                            )  # activate squared component
+
+        #
+
+        for item in ["uncertainty", "std", "variance"]:
+            if secondary_flag:
+                if self.user_output.counts_with_uncertainty.get_active(item=item):
+                    for user_output_images in self.list_of_output_counts:
+                        user_output_images.set_active(True, item=item)
+                if self.user_output.energy_with_uncertainty.get_active(item=item):
+                    for user_output_images in self.list_of_output_energy:
+                        user_output_images.set_active(True, item=item)
 
         self.InitializeUserInfo(self.user_info)
+        self.SetCountsSquaredFlag(
+            self.user_output.counts_with_uncertainty.get_active(item=1)
+        )
+        self.SetEnergyFlag(self.user_output.energy_with_uncertainty.get_active(item=0))
+        if (
+            self.user_output.energy_with_uncertainty.get_active(item=0)
+            and secondary_flag
+        ):
+            for user_output_image in self.list_of_output_energy:
+                user_output_image.set_active(True, item=0)
+
+        self.SetEnergySquaredFlag(
+            self.user_output.energy_with_uncertainty.get_active(item=1)
+        )
         # Set the physical volume name on the C++ side
         # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
+        # item
+
+    def StartSimulationAction(self):
+        VoxelDepositActor.StartSimulationAction(self)
+        g4.GateFluenceActor.StartSimulationAction(self)
+
     def BeginOfRunActionMasterThread(self, run_index):
-        self.prepare_output_for_run("fluence", run_index)
-        self.push_to_cpp_image("fluence", run_index, self.cpp_fluence_image)
+        self.prepare_output_for_run("counts_with_uncertainty", run_index)
+        self.push_to_cpp_image(
+            "counts_with_uncertainty",
+            run_index,
+            self.cpp_counts_image,
+            self.cpp_counts_squared_image,
+        )
+        if self.user_info.score_by_process:
+            for process, img, squared_img in zip(
+                self.list_of_processes,
+                self.list_of_counts_images,
+                self.list_of_counts_squared_images,
+            ):
+                self.prepare_output_for_run(
+                    f"{process}_counts_with_uncertainty", run_index
+                )
+                self.push_to_cpp_image(
+                    f"{process}_counts_with_uncertainty",
+                    run_index,
+                    img,
+                    squared_img,
+                )
+
+        if self.user_output.energy_with_uncertainty.get_active(item="any"):
+            self.prepare_output_for_run("energy_with_uncertainty", run_index)
+            self.push_to_cpp_image(
+                "energy_with_uncertainty",
+                run_index,
+                self.cpp_energy_image,
+                self.cpp_energy_squared_image,
+            )
+            if self.user_info.score_by_process:
+                for process, img, squared_img in zip(
+                    self.list_of_processes,
+                    self.list_of_energy_images,
+                    self.list_of_energy_squared_images,
+                ):
+                    self.prepare_output_for_run(
+                        f"{process}_energy_with_uncertainty", run_index
+                    )
+                    self.push_to_cpp_image(
+                        f"{process}_energy_with_uncertainty",
+                        run_index,
+                        img,
+                        squared_img,
+                    )
+
         g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-        self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
-        self._update_output_coordinate_system("fluence", run_index)
-        self.user_output.fluence.store_meta_data(
+        self.fetch_from_cpp_image(
+            "counts_with_uncertainty",
+            run_index,
+            self.cpp_counts_image,
+            self.cpp_counts_squared_image,
+        )
+        self._update_output_coordinate_system("counts_with_uncertainty", run_index)
+        self.user_output.counts_with_uncertainty.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
+        if self.user_info.score_by_process:
+            for process, img, squared_img, output in zip(
+                self.list_of_processes,
+                self.list_of_counts_images,
+                self.list_of_counts_squared_images,
+                self.list_of_output_counts,
+            ):
+                self.fetch_from_cpp_image(
+                    f"{process}_counts_with_uncertainty", run_index, img, squared_img
+                )
+                self._update_output_coordinate_system(
+                    f"{process}_counts_with_uncertainty", run_index
+                )
+                output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
+                self._update_output_coordinate_system(
+                    f"{process}_counts_with_uncertainty", run_index
+                )
+                output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
+
+        if self.user_output.energy_with_uncertainty.get_active(item="any"):
+            self.fetch_from_cpp_image(
+                "energy_with_uncertainty",
+                run_index,
+                self.cpp_energy_image,
+                self.cpp_energy_squared_image,
+            )
+            self._update_output_coordinate_system("energy_with_uncertainty", run_index)
+            self.user_output.energy_with_uncertainty.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+            if self.user_info.score_by_process:
+                for process, img, squared_img, output in zip(
+                    self.list_of_processes,
+                    self.list_of_energy_images,
+                    self.list_of_energy_squared_images,
+                    self.list_of_output_energy,
+                ):
+                    self.fetch_from_cpp_image(
+                        f"{process}_energy_with_uncertainty",
+                        run_index,
+                        img,
+                        squared_img,
+                    )
+                    self._update_output_coordinate_system(
+                        f"{process}_energy_with_uncertainty", run_index
+                    )
+                    output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
+                    self._update_output_coordinate_system(
+                        f"{process}_energy_with_uncertainty", run_index
+                    )
+                    output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
+
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 

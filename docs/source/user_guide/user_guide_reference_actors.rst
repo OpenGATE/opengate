@@ -305,8 +305,31 @@ FluenceActor
 Description
 ~~~~~~~~~~~
 
-This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. The FluenceActor will be extended in the future with features to handle scattered radiation, e.g. in cone beam CT imaging.
+This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. When a particle enters a voxel, it records either the counts or the kinetic energy of the incoming particle. If a particle is created within a voxel of the geometry to which the Fluence Actor is attached, this particle is not counted as part of the incoming flux for that voxel. A basic example of its usage is provided below:
 
+.. code-block:: python
+
+    fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
+    fluence_actor.counts_uncertainty.active = True
+    fluence_actor.counts_squared.active = True
+    fluence_actor.energy.active = True
+    fluence_actor.energy_uncertainty.active = True
+    fluence_actor.energy_squared.active = True
+    fluence_actor.output_filename = "test099.mhd"
+    fluence_actor.attached_to = fluence_plane
+    fluence_actor.size = [10, 10, 1]
+    ts = [10 * cm, 10 * cm, 1 * nm]
+    fluence_actor.spacing = [x / y for x, y in zip(ts, fluence_actor.size)]
+    fluence_actor.hit_type = "random"
+
+
+In addition, it is possible to generate separate fluence maps resolving the particle's tracking state and underlying physics processes (`primaries`, `secondaries`, `compton`, and `rayleigh`). These maps are created as follows: particles originating directly from the source without interacting are recorded as `primaries`, while all others are recorded as `secondaries`. Furthermore, if the incoming particle is a gamma photon and its last interaction was either Compton or Rayleigh scattering, the counts (and optionally the photon energy) are also recorded in the corresponding scattering-process maps. At present, pair production is not yet included as a recordable process. This actor is also compatible with the FreeFlightAngularAcceptance variance reduction technique. To enable the recording of these additional maps, simply set the following boolean to True:
+
+.. code-block:: python
+
+    fluence_actor.score_by_process = True
+
+The activation of the squared counts (and energies) and their associated uncertainty maps is handled automatically, according to the global settings defined by the user for counts and energy scoring.
 
 Reference
 ~~~~~~~~~
@@ -1123,7 +1146,67 @@ The helper function ``merge_freeflight_uncertainty`` automates this by processin
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.freeflightactors.GammaFreeFlightActor
-.. autoclass:: opengate.actors.freeflightactors.ScatterSplittingFreeFlightActor
+.. autoclass:: opengate.actors.biasingactors.GammaFreeFlightActor
+.. autoclass:: opengate.actors.biasingactors.ScatterSplittingFreeFlightActor
 
 .. autofunction:: opengate.contrib.spect.spect_freeflight_helpers.merge_freeflight_uncertainty
+
+
+Voxelized Prompt-Gamma Actors
+-----------------------------
+
+Description
+~~~~~~~~~~~
+
+There are two actors to compute the 4D prompt-gamma (PG) energy and time distributions:
+
+* **VoxelizedPromptGammaAnalogActor** for the analog Monte Carlo,
+* **VoxelizedPromptGammaTLEActor** for the track-length estimator (vpgTLE).
+
+Both variations have boolean variables to activate the computation of the energy and/or time distribution for proton and/or neutron particles.
+For example for the analog:
+
+.. code-block:: python
+
+    vpg_analog = sim.add_actor("VoxelizedPromptGammaAnalogActor", "vpg_analog")
+    vpg_analog.prot_E.active = True
+    vpg_analog.neutr_E.active = True
+    vpg_analog.prot_tof.active = True
+    vpg_analog.neutr_tof.active = True
+
+and for the vpgTLE:
+
+.. code-block:: python
+
+    vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpg_tle")
+    vpg_tle.prot_E.active = True
+    vpg_tle.neutr_E.active = True
+    vpg_tle.prot_tof.active = True
+    vpg_tle.neutr_tof.active = True
+
+In addition, the PG time distribution computed by the vpgTLE actor can be weigthed by a PG emission yield,
+a 1D vector indexed by the proton or neutron energy. It makes it possible to take into account the fact that
+when the proton kinetic energy is small (below a few tens of MeV), the prompt gamma yield can be small.
+These vectors should represent an composition-averaged human material, and they are computed off-line and stored
+in the PG database (ROOT file).
+
+.. code-block:: python
+
+   # Get the 1D PG yield computed for a human-averaged material, for proton and neutron inelastic processes
+   with uproot.open(paths.data / "test081_pgtle" / "data_merge_proton.root") as root_file:
+      histo = root_file["standard_Weight"]["Weight"].to_hist()
+      vect_p = histo.to_numpy()[0]
+   with uproot.open(paths.data / "test081_pgtle" / "data_merge_neutron.root") as root_file:
+      histo = root_file["standard_Weight"]["Weight"].to_hist()
+      vect_n = histo.to_numpy()[0]
+
+   vpg_tle.weight = True
+   vpg_tle.vect_p = vect_p
+   vpg_tle.vect_n = vect_n
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaAnalogActor
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaTLEActor

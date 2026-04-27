@@ -35,7 +35,7 @@ image own coordinate system (ITK’s origin) is not considered here. If
 you want to align a voxelized activity with a CT image that have the
 same coordinate system you should compute the correct translation. This
 is done by the function
-:func:`gate.image.get_translation_between_images_center`. See the contrib
+:func:`opengate.image.get_translation_between_images_center`. See the contrib
 example ``dose_rate.py``.
 
 .. image:: ../figures/image_coord_system.png
@@ -46,5 +46,3 @@ Reference
 
 .. autofunction:: opengate.image.get_translation_between_images_center
 .. autoclass :: opengate.sources.voxelsources.VoxelSource
-
-
