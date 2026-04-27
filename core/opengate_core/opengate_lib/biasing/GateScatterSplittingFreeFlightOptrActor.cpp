@@ -55,30 +55,8 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
   fMaxComptonLevel = DictGetInt(user_info, "max_compton_level");
   fDebug = DictGetBool(user_info, "debug");
 
-  // Create the FF operation
-  threadLocal_t &l = threadLocalData.Get();
-  l.fFreeFlightOperation = new GateGammaFreeFlightOptn("FreeFlightOperation");
-
-  // Create the Compton splitting operation
-  l.fComptonSplittingOperation = new GateScatterSplittingFreeFlightOptn(
-      "ComptonSplittingOperation",
-      &l.fBiasInformationPerThread["nb_compt_tracks"]);
-  l.fComptonSplittingOperation->SetSplittingFactor(fComptonSplittingFactor);
-  l.fComptonSplittingOperation->fActor = this;
-
-  // Create the Rayleigh splitting operation
-  l.fRayleighSplittingOperation = new GateScatterSplittingFreeFlightOptn(
-      "RayleighSplittingOperation",
-      &l.fBiasInformationPerThread["nb_rayl_tracks"]);
-  l.fRayleighSplittingOperation->SetSplittingFactor(fRayleighSplittingFactor);
-  l.fRayleighSplittingOperation->fActor = this;
-
   // Initialize the AA (Angular Acceptance) for the Compton operation
-  const auto dd = DictToMap(user_info["angular_acceptance"]);
-  l.fComptonSplittingOperation->InitializeAAManager(dd);
-  l.fRayleighSplittingOperation->InitializeAAManager(dd);
-  l.fComptonSplittingOperation->SetInvolvedBiasActor(this);
-  l.fRayleighSplittingOperation->SetInvolvedBiasActor(this);
+  fAAParameters = DictToMap(user_info["angular_acceptance"]);
 
   // Kill volumes
   fKillVolumes = DictGetVecStr(user_info, "kill_interacting_in_volumes");
@@ -124,10 +102,40 @@ bool GateScatterSplittingFreeFlightOptrActor::IsFreeFlight(
   return false;
 }
 
+void GateScatterSplittingFreeFlightOptrActor::InitializePerThreadData() {
+  // Create the FF operation
+  threadLocal_t &l = threadLocalData.Get();
+  l.fFreeFlightOperation = new GateGammaFreeFlightOptn("FreeFlightOperation");
+
+  // Create the Compton splitting operation
+  l.fComptonSplittingOperation = new GateScatterSplittingFreeFlightOptn(
+      "ComptonSplittingOperation",
+      &l.fBiasInformationPerThread["nb_compt_tracks"]);
+  l.fComptonSplittingOperation->SetSplittingFactor(fComptonSplittingFactor);
+  l.fComptonSplittingOperation->fActor = this;
+
+  // Create the Rayleigh splitting operation
+  l.fRayleighSplittingOperation = new GateScatterSplittingFreeFlightOptn(
+      "RayleighSplittingOperation",
+      &l.fBiasInformationPerThread["nb_rayl_tracks"]);
+  l.fRayleighSplittingOperation->SetSplittingFactor(fRayleighSplittingFactor);
+  l.fRayleighSplittingOperation->fActor = this;
+
+  // Initialize the AA (Angular Acceptance) for the Compton operation
+  l.fComptonSplittingOperation->InitializeAAManager(fAAParameters);
+  l.fRayleighSplittingOperation->InitializeAAManager(fAAParameters);
+  l.fComptonSplittingOperation->SetInvolvedBiasActor(this);
+  l.fRayleighSplittingOperation->SetInvolvedBiasActor(this);
+}
+
 void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
-  // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
+  if (l.fFreeFlightOperation == nullptr) {
+    InitializePerThreadData();
+  }
+
+  // A new track is being tracked
   l.fTrackMustBeKilled = false;
   l.fIsStepInExcludedVolume = false;
   l.fLastStepNumber = -1;

@@ -17,8 +17,6 @@ GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
   l.fFreeFlightOperation = nullptr;
   l.fIsFirstTime = true;
   fActions.insert("SteppingAction");
-  // fActions.insert("EndOfRunAction");
-  // fActions.insert("BeginOfEventAction");
 }
 
 GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
@@ -32,18 +30,26 @@ void GateGammaFreeFlightOptrActor::InitializeCpp() {}
 
 void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVBiasOptrActor::InitializeUserInfo(user_info);
-  threadLocal_t &l = threadLocalData.Get();
-  l.fFreeFlightOperation =
-      new GateGammaFreeFlightOptn("GammaFreeFlightOperation");
-  l.fIsFirstTime = true;
   if (G4EmParameters::Instance()->GeneralProcessActive()) {
     Fatal("GeneralGammaProcess is active. Biasing can *not* work for "
           "GateVBiasOptrActor");
   }
 }
 
+void GateGammaFreeFlightOptrActor::InitializePerThreadData() {
+  threadLocal_t &l = threadLocalData.Get();
+  l.fFreeFlightOperation =
+      new GateGammaFreeFlightOptn("GammaFreeFlightOperation");
+  l.fIsFirstTime = true;
+}
+
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {
   threadLocal_t &l = threadLocalData.Get();
+
+  if (l.fFreeFlightOperation == nullptr) {
+    InitializePerThreadData();
+  }
+
   l.fIsFirstTime = true;
   l.fIsTrackValidForStep = true;
   l.fIsExcludedForStep = false;

@@ -23,7 +23,7 @@ public:
   ~GateScatterSplittingFreeFlightOptrActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
-
+  void InitializePerThreadData();
   void BeginOfRunAction(const G4Run *run) override;
   void BeginOfEventAction(const G4Event *) override;
 
@@ -74,6 +74,7 @@ protected:
 
   const std::unordered_set<const G4LogicalVolume *> &
   GetKillVolumePointers() const;
+  std::map<std::string, std::string> fAAParameters;
 
   std::vector<std::string> fKillVolumes;
   std::map<std::string, double> fBiasInformation;
