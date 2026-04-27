@@ -60,14 +60,13 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &b) {
   // This is the reference pure G4 version
-  // return ApplyFinalStateBiasing_V1_PostStepDoIt(callingProcess, track, step,
-  // b);
+  return ApplyFinalStateBiasing_V1_PostStepDoIt(callingProcess, track, step, b);
 
   // This is a faster (1x5 speedup) version with direct Compton sampling
   // return ApplyFinalStateBiasing_V3_SampleScatter(callingProcess, track, step,
   // b);
-  return ApplyFinalStateBiasing_V4_SampleComptonOnly(callingProcess, track,
-                                                     step, b);
+  // return ApplyFinalStateBiasing_V4_SampleComptonOnly(callingProcess, track,
+  //                                                 step, b);
 
   // Those are tests, not conclusive
   // return ApplyFinalStateBiasing_V2_SampleSecondaries(callingProcess, track,

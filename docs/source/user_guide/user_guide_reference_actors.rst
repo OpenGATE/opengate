@@ -305,8 +305,31 @@ FluenceActor
 Description
 ~~~~~~~~~~~
 
-This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. The FluenceActor will be extended in the future with features to handle scattered radiation, e.g. in cone beam CT imaging.
+This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. When a particle enters a voxel, it records either the counts or the kinetic energy of the incoming particle. If a particle is created within a voxel of the geometry to which the Fluence Actor is attached, this particle is not counted as part of the incoming flux for that voxel. A basic example of its usage is provided below:
 
+.. code-block:: python
+
+    fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
+    fluence_actor.counts_uncertainty.active = True
+    fluence_actor.counts_squared.active = True
+    fluence_actor.energy.active = True
+    fluence_actor.energy_uncertainty.active = True
+    fluence_actor.energy_squared.active = True
+    fluence_actor.output_filename = "test099.mhd"
+    fluence_actor.attached_to = fluence_plane
+    fluence_actor.size = [10, 10, 1]
+    ts = [10 * cm, 10 * cm, 1 * nm]
+    fluence_actor.spacing = [x / y for x, y in zip(ts, fluence_actor.size)]
+    fluence_actor.hit_type = "random"
+
+
+In addition, it is possible to generate separate fluence maps resolving the particle's tracking state and underlying physics processes (`primaries`, `secondaries`, `compton`, and `rayleigh`). These maps are created as follows: particles originating directly from the source without interacting are recorded as `primaries`, while all others are recorded as `secondaries`. Furthermore, if the incoming particle is a gamma photon and its last interaction was either Compton or Rayleigh scattering, the counts (and optionally the photon energy) are also recorded in the corresponding scattering-process maps. At present, pair production is not yet included as a recordable process. This actor is also compatible with the FreeFlightAngularAcceptance variance reduction technique. To enable the recording of these additional maps, simply set the following boolean to True:
+
+.. code-block:: python
+
+    fluence_actor.score_by_process = True
+
+The activation of the squared counts (and energies) and their associated uncertainty maps is handled automatically, according to the global settings defined by the user for counts and energy scoring.
 
 Reference
 ~~~~~~~~~
