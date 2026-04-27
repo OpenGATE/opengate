@@ -10,7 +10,6 @@ from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
 
-
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
     However, it is VERY time consuming. For SteppingAction, expect large performance drop.

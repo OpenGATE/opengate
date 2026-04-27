@@ -6,7 +6,6 @@ from .phspsources import PhaseSpaceSource
 from .phidsources import PhotonFromIonDecaySource
 from ..utility import make_builders
 
-
 """
     List of source types: Generic, Voxels etc
 
