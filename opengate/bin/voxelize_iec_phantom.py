@@ -30,7 +30,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--no_shell",
     is_flag=True,
     default=False,
-    help="If set, do not consider the shell of the sphere (for high resolution)",
+    help="If set, do not consider the shell of the sphere (for low resolution)",
 )
 def go(output, spacing, output_source, activities, no_shell, bg, cyl):
     # create the simulation

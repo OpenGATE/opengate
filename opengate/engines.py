@@ -302,6 +302,7 @@ class PhysicsEngine(EngineBase):
         for (
             world
         ) in self.physics_manager.simulation.volume_manager.parallel_world_names:
+            # flag "True" for Layered Mass Geometry (parallel world is enabled for all interactions)
             pwp = g4.G4ParallelWorldPhysics(world, True)
             self.g4_parallel_world_physics.append(pwp)
             self.g4_physics_list.RegisterPhysics(pwp)
@@ -657,9 +658,50 @@ class ActorEngine(EngineBase):
 
     def register_sensitive_detectors(self, world_name):
         for actor in self.actor_manager.sorted_actors:
+            # 1. Determine which volumes this actor is attached to
+            if isinstance(actor.attached_to, str):
+                mothers = [actor.attached_to]
+            else:
+                mothers = actor.attached_to
+
+            # 2. Check if the actor belongs to the world currently being constructed
+            actor_in_current_world = False
+            for volume_name in mothers:
+                volume = self.simulation_engine.simulation.volume_manager.get_volume(
+                    volume_name
+                )
+                if volume.world_volume.name == world_name:
+                    actor_in_current_world = True
+                    break
+
+            # 3. Handle Sensitive Detectors
+            if actor.IsSensitiveDetector() is True:
+                # add SD for all mothers in the current world
+                for volume_name in mothers:
+                    volume = (
+                        self.simulation_engine.simulation.volume_manager.get_volume(
+                            volume_name
+                        )
+                    )
+                    if volume.world_volume.name == world_name:
+                        register_sensitive_detector_to_children(
+                            actor, volume.g4_logical_volume
+                        )
+
+            # 4. Handle Biasing Operators/Actors (specific)
+            # this is needed for MultiThread run
+            if hasattr(actor, "ConfigureForWorker"):
+                # ONLY configure if the actor belongs to the current world.
+                # This prevents looking up volumes in parallel worlds before they are built
+                if actor_in_current_world:
+                    actor.InitializeUserInfo(actor.user_info)
+                    actor.ConfigureForWorker()
+
+    def register_sensitive_detectors_OLD(self, world_name):
+        for actor in self.actor_manager.sorted_actors:
             if actor.IsSensitiveDetector() is True:
                 # Step: only enabled if attachTo a given volume.
-                # Propagated to all child and sub-child
+                # Propagated to all child and sub-child.
                 # tree = volume_manager.volumes_tree
                 if isinstance(actor.attached_to, str):
                     # make a list with one single element
@@ -749,7 +791,6 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
             volume.construct()
 
     def ConstructSD(self):
-        # FIXME
         self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.parallel_world_name,
         )

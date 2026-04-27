@@ -12,6 +12,7 @@ Copyright (C): OpenGATE Collaboration
 #include "GateGammaFreeFlightOptn.h"
 #include "GateScatterSplittingFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
+#include <unordered_set>
 
 namespace py = pybind11;
 
@@ -63,16 +64,23 @@ protected:
     int fComptonInteractionCount;
     std::map<std::string, double> fBiasInformationPerThread;
     bool fCurrentTrackIsFreeFlight;
-    bool fIsTrackValidForStep;
+    bool fTrackMustBeKilled;
+    int fLastStepNumber = -1;
+    bool fIsStepInExcludedVolume = false;
+    bool fIsKillVolumesCached = false;
+    std::unordered_set<const G4LogicalVolume *> fKillVolumePointers;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
+  const std::unordered_set<const G4LogicalVolume *> &
+  GetKillVolumePointers() const;
+
   std::vector<std::string> fKillVolumes;
-  std::vector<const G4LogicalVolume *> fKillLogicalVolumes;
   std::map<std::string, double> fBiasInformation;
   int fComptonSplittingFactor;
   int fRayleighSplittingFactor;
   int fMaxComptonLevel;
+  bool fDebug;
   GateVBiasOptrActor *fActor = nullptr;
 };
 

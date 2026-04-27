@@ -1306,6 +1306,21 @@ class ParallelWorldVolume(NodeMixin):
         self.g4_world_phys_vol = None
         self.g4_world_log_vol = None
 
+    @property
+    def world_volume(self):
+        """A parallel world acts as its own world volume."""
+        return self
+
+    @property
+    def g4_logical_volume(self):
+        """Map the standard logical volume property to the parallel world's specific attribute."""
+        return self.g4_world_log_vol
+
+    @property
+    def mother(self):
+        """A parallel world is the root of its own geometry tree and has no mother."""
+        return None
+
     def release_g4_references(self):
         self.g4_world_phys_vol = None
         self.g4_world_log_vol = None

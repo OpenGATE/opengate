@@ -199,15 +199,34 @@ class MumapBlock(_ConfigBlock):
         self._origin = None
 
     def initialize_and_validate(self):
-        if self.filename is not None:
-            reader = sitk.ImageFileReader()
-            reader.SetFileName(str(self.filename))
-            reader.ReadImageInformation()
+        if self.filename is None:
+            return
+        # Read the full image to check both geometry and voxel values
+        img = sitk.ReadImage(str(self.filename))
 
-            # Store these temporarily/internally for the main adapter to check
-            self._size = list(reader.GetSize())
-            self._spacing = list(reader.GetSpacing())
-            self._origin = list(reader.GetOrigin())
+        # Store these temporarily/internally for the main adapter to check
+        self._size = list(img.GetSize())
+        self._spacing = list(img.GetSpacing())
+        self._origin = list(img.GetOrigin())
+
+        # --- Unit Validation (cm^-1) ---
+        # Get a memory view to avoid duplicating the array in RAM
+        mu_arr = sitk.GetArrayViewFromImage(img)
+        max_mu = float(np.max(mu_arr))
+
+        if max_mu > 0:
+            if max_mu < 0.05:
+                print(f"\n⚠️ WARNING: Mumap max value ({max_mu:.4f}) is very low!")
+                print(f"   PyTomography strictly requires cm^-1 (Water is ~0.135).")
+                print(f"   If your map is in mm^-1, multiply it by 10.\n")
+            elif max_mu > 0.4:
+                print(
+                    f"\n🛑 CRITICAL WARNING: Mumap max value ({max_mu:.4f}) is unusually high!"
+                )
+                print(
+                    f"   Ensure you did not accidentally load a Label Map, or unscaled CT (HU) data."
+                )
+                print(f"   The physics engine expects values around 0.15 cm^-1.\n")
 
     def resample_like_working_grid(self, work_ref_img):
         mu_img = sitk.ReadImage(str(self.filename))

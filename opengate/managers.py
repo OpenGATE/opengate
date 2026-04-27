@@ -1531,7 +1531,7 @@ class Simulation(GateObject):
                 "By default, the Geant4 visualisation commands are the ones "
                 "provided in the file ``opengate/mac/default_visu_commands_qt.mac``. "
                 "Custom commands can be loaded via a .mac file, e.g.  "
-                "``sim.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')``.",
+                "``sim.visu_commands = gate.utility.read_mac_file_to_commands('my_visu_commands.mac')``.",
             },
         ),
         "visu_commands_vrml": (
