@@ -86,10 +86,10 @@ if __name__ == "__main__":
 
     # jaws
 
-    jaws = versa.add_jaws(sim, linac.name)
+    jaws = versa.add_jaws(sim, linac.name, linac.name)
 
     # mlc
-    mlc = versa.add_mlc(sim, linac.name)
+    mlc = versa.add_mlc(sim, linac.name, linac.name)
     x_field = np.random.randint(10, 20, 1)[0] * cm
     y_field = np.random.randint(10, 20, 1)[0] * cm
 

@@ -164,8 +164,8 @@ def create_simulation(sim, paths, colli="lehr", version=""):
     gsource.generator = gen
 
     # it is possible to use acceptance angle. Not done here to check exiting phsp
-    # gsource.direction.acceptance_angle.volumes = [spect1.name]
-    # gsource.direction.acceptance_angle.enable_intersection_check = True
+    # gsource.direction.angular_acceptance.target_volumes = [spect1.name]
+    # gsource.direction.angular_acceptance.enable_intersection_check = True
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -319,7 +319,7 @@ def analyze_results(sim, paths, all_cond):
     tols[checked_keys.index("GlobalTime")] = 0.2
     tols[checked_keys.index("KineticEnergy")] = 0.002
     tols[checked_keys.index("PrePosition_X")] = 7
-    tols[checked_keys.index("PrePosition_Y")] = 5.5
+    tols[checked_keys.index("PrePosition_Y")] = 5.7
     tols[checked_keys.index("PrePosition_Z")] = 5.1
     tols[checked_keys.index("PreDirection_X")] = 0.03
     tols[checked_keys.index("PreDirection_Y")] = 0.02

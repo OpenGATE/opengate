@@ -3,8 +3,8 @@
 
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate.actors.filters import GateFilterBuilder
 from opengate.tests import utility
-
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test038")
@@ -81,11 +81,8 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.output_filename = "test038_train_stats.txt"
 
-    # filter gamma only
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-
     # phsp
+    F = GateFilterBuilder()
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
     phsp.attached_to = "phase_space_sphere"
     # we use PrePosition because this is the first step in the volume
@@ -104,7 +101,7 @@ if __name__ == "__main__":
     phsp.output_filename = "test038_train.root"
     # this option allow to store all events even if absorbed
     phsp.store_absorbed_event = True
-    phsp.filters.append(f)
+    phsp.filter = F.ParticleName == "gamma"
     print(phsp)
     print(phsp.get_output_path())
 

@@ -4,7 +4,6 @@
 import opengate as gate
 import opengate.tests.utility as utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, "gate_test004_simulation_stats_actor"

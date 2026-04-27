@@ -3,10 +3,9 @@
 
 import opengate as gate
 import uproot
-from opengate.actors.coincidences import coincidences_sorter
+from opengate.actors.coincidences import CoincidenceSorter
 from opengate.exception import GateImplementationError
 import opengate.tests.utility as utility
-
 
 g_cm3 = gate.g4_units.g_cm3
 mm = gate.g4_units.mm
@@ -87,19 +86,17 @@ if __name__ == "__main__":
 
         sim.run(start_new_process=True)
 
-        root_file = uproot.open(hc.get_output_path())
-        singles_tree = root_file["singles"]
-        num_singles = int(singles_tree.num_entries)
+        with uproot.open(hc.get_output_path()) as f:
+            num_singles = int(f["singles"].num_entries)
 
-        coincidences = coincidences_sorter(
-            singles_tree,
-            time_window=2 * ns,
-            min_transaxial_distance=0 * mm,
-            transaxial_plane="xy",
-            max_axial_distance=60 * mm,
-            policy="takeAllGoods",
-            chunk_size=100000,
-        )
+        sorter = CoincidenceSorter()
+        sorter.window = 2 * ns
+        sorter.multiples_policy = "TakeAllGoods"
+        sorter.transaxial_plane = "XY"
+        sorter.max_axial_distance = 60 * mm
+
+        coincidences = sorter.run(hc.get_output_path(), "singles")
+
         num_coincidences = len(coincidences["GlobalTime1"])
         print(f"{num_singles} single(s), {num_coincidences} coincidence(s)")
 

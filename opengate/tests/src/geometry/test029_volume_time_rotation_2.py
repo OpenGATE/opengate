@@ -5,7 +5,6 @@ import test029_volume_time_rotation_helpers as test029
 import opengate as gate
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, "gate_test029_volume_time_rotation", "test029"
@@ -14,7 +13,7 @@ if __name__ == "__main__":
     # create the main simulation object
     sim = gate.Simulation()
 
-    # create sim without AA
+    # create sim with AA (angular acceptance)
     test029.create_simulation(sim, True, paths, "_trot2")
 
     # for later reference, get the actors that were created by the helper function above
@@ -25,7 +24,7 @@ if __name__ == "__main__":
     sim.run()
 
     """
-    WARNING when "angle_acceptance_volume" is enabled, it is a bit faster (+50%) but the result is not
+    WARNING when "angular_acceptance" (AA) is enabled, it is a bit faster (+50%) but the result is not
     exactly the same as without. This is because, even if the initial particle is not in the direction of
     the spect system, it can scatter and still reach the detector.
 
@@ -38,7 +37,7 @@ if __name__ == "__main__":
     print(stats)
     stats_ref = utility.read_stats_file(paths.output_ref / "stats029.txt")
     print(
-        f"Number of steps was {stats.counts.steps}, forced to the same value (because of angle acceptance). "
+        f"Number of steps was {stats.counts.steps}, forced to the same value (because of angular acceptance). "
     )
     stats.counts.steps = stats_ref.counts.steps  # force these to be identical
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)

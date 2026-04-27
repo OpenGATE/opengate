@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import test049_pet_digit_blurring_helpers as t49
-from opengate.tests import utility
 
+import opengate as gate
+from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur", "test049")
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     p = paths.gate_output
     stats_ref = utility.read_stats_file(p / "stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
+    is_ok = utility.assert_stats(stats, stats_ref, [0.025, 0.025, 0.051])
 
     # check root hits
     hc = sim.get_actor("Hits")

@@ -5,13 +5,13 @@ Created on Wed Apr  2 09:48:30 2025
 
 @author: fava
 """
+
 import opengate as gate
 from opengate.utility import g4_units
 import opengate.tests.utility as utility
 import uproot
 import numpy as np
 from scipy.spatial.transform import Rotation
-
 
 if __name__ == "__main__":
 

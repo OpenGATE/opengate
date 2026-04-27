@@ -13,7 +13,6 @@ from test079_acollin_helpers import *
 import opengate.tests.utility as tu
 import matplotlib.pyplot as plt
 
-
 #########################################################################################
 # Simulations configuration that may be relevant to change
 #########################################################################################

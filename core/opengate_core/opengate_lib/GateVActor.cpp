@@ -6,23 +6,21 @@
    -------------------------------------------------- */
 
 #include "GateVActor.h"
-
-#include <G4LogicalVolumeStore.hh>
-
-#include "G4SDManager.hh"
 #include "GateActorManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateMultiFunctionalDetector.h"
 #include "GateSourceManager.h"
+#include <G4LogicalVolumeStore.hh>
+#include <G4SDManager.hh>
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
   // register this actor to the global list of actors
   fMultiThreadReady = MT_ready;
-  fOperatorIsAnd = true;
   fSourceManager = nullptr;
   fWriteToDisk = false;
+  fFilter = nullptr;
 }
 
 GateVActor::~GateVActor() = default;
@@ -45,12 +43,6 @@ void GateVActor::SetMotherAttachedToVolumeName(
 
 void GateVActor::InitializeUserInfo(py::dict &user_info) {
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
-  auto op = DictGetStr(user_info, "filters_boolean_operator");
-  if (op == "and") {
-    fOperatorIsAnd = true;
-  } else {
-    fOperatorIsAnd = false;
-  }
   fActorName = DictGetStr(user_info, "name");
 }
 
@@ -109,19 +101,9 @@ bool GateVActor::HasAction(const std::string &action) {
 
 bool GateVActor::IsSensitiveDetector() { return HasAction("SteppingAction"); };
 
-void GateVActor::PreUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
-    if (!f->Accept(track))
-      return;
-  }
-}
+void GateVActor::PreUserTrackingAction(const G4Track *track) {}
 
-void GateVActor::PostUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
-    if (!f->Accept(track))
-      return;
-  }
-}
+void GateVActor::PostUserTrackingAction(const G4Track *track) {}
 
 G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
   /*
@@ -139,34 +121,21 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
 
     => so we decide to simplify and remove "touchable" in the following.
    */
-
-  // if the operator is AND, we perform the SteppingAction only if ALL filters
-  // are true (If only one is false, we stop and return)
-  if (fOperatorIsAnd) {
-    for (auto f : fFilters) {
-      if (!f->Accept(step))
-        return true;
-    }
-    SteppingAction(step);
-    return true;
-  }
-  // if the operator is OR, we accept as soon as one filter is OK
-  for (auto f : fFilters) {
-    if (f->Accept(step)) {
-      SteppingAction(step);
+  if (fFilter != nullptr) {
+    if (!fFilter->Accept(step))
       return true;
-    }
   }
+  SteppingAction(step);
   return true;
 }
 
 void GateVActor::RegisterSD(G4LogicalVolume *lv) {
   // Look is a SD already exist for this LV
-  auto currentSD = lv->GetSensitiveDetector();
+  const auto currentSD = lv->GetSensitiveDetector();
   GateMultiFunctionalDetector *mfd;
   if (!currentSD) {
     // This is the first time a SD is set to this LV
-    auto f = new GateMultiFunctionalDetector("mfd_" + lv->GetName());
+    const auto f = new GateMultiFunctionalDetector("mfd_" + lv->GetName());
     G4SDManager::GetSDMpointer()->AddNewDetector(f);
     lv->SetSensitiveDetector(f);
     mfd = f;
@@ -225,7 +194,8 @@ bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
   // boundaries overlap fAttachedToVolume boundaries, post step gives the
   // daughter.
 
-  // if the post step is at boundary AND if it is in the mother volume: exiting
+  // if the post step is at the boundary AND if it is in the mother volume:
+  // exiting
   const auto *vol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
   const auto vol_name = vol->GetName();
   return vol_name == fAttachedToVolumeMotherName;

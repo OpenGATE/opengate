@@ -12,7 +12,6 @@ from ..decorators import requires_fatal
 
 from .utility import ensure_is_g4_rotation, ensure_is_g4_translation, vec_np_as_g4
 
-
 logger = logging.getLogger(__name__)
 
 

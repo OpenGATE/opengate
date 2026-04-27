@@ -1,6 +1,5 @@
 from opengate.utility import g4_units
 
-
 # colors (similar to the ones of Gate)
 red = [1, 0, 0, 1]
 blue = [0, 0, 1, 1]

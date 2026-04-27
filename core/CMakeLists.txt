@@ -44,7 +44,17 @@ ELSE ()
     add_definitions(-DUSE_VISU=0)
 ENDIF ()
 
+# Force CMake to use Python passed from setup.py
+set(Python_EXECUTABLE "${Python_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+set(Python3_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+set(Python_ROOT_DIR "${Python_ROOT_DIR}" CACHE PATH "" FORCE)
+set(Python3_ROOT_DIR "${Python3_ROOT_DIR}" CACHE PATH "" FORCE)
+
+message(STATUS "Python_EXECUTABLE = ${Python_EXECUTABLE}")
+message(STATUS "Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
+
 # Need pybind11
+set(PYBIND11_FINDPYTHON "NEW")
 add_subdirectory(external/pybind11)
 #find_package(pybind11 REQUIRED)
 #message(STATUS "OPENGATE - pybind11 version = ${pybind11_VERSION}")
@@ -68,6 +78,7 @@ file(GLOB all_SRCS
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/digitizer/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/biasing/*.cpp"
+        "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/filters/*.cpp"
         )
 pybind11_add_module(opengate_core
         #NO_EXTRAS

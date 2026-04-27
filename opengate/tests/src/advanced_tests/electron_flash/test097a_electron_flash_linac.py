@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from test097_electron_flash_linac_helper import *
 
 import opengate as gate

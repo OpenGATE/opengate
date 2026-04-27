@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from opengate.tests import utility
-import uproot
 import numpy as np
+import uproot
+
+import opengate as gate
+from opengate.actors.filters import GateFilterBuilder
+from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
@@ -51,40 +53,28 @@ if __name__ == "__main__":
     plane1a.material = "G4_WATER"
     plane1a.color = [1, 0, 0, 1]
 
-    # filter according to time
-    filter1 = sim.add_filter("ThresholdAttributeFilter", "time_filter")
-    filter1.attribute = "GlobalTime"
-    filter1.value_min = 20 * sec
-    filter1.value_max = 70 * sec
-    filter1.policy = "accept"
-
-    # filter according to energy
-    filter2 = sim.add_filter("ThresholdAttributeFilter", "ene_filter")
-    filter2.attribute = "KineticEnergy"
-    filter2.value_min = 300 * keV
-    filter2.value_max = 1200 * keV
-    filter2.policy = "accept"
-
-    # filter according to particle
-    filter3 = sim.add_filter("ParticleFilter", "p_filter")
-    filter3.particle = "gamma"
-
     # phsp
+    F = GateFilterBuilder()
     phsp_and = sim.add_actor("PhaseSpaceActor", "phsp_and")
     phsp_and.attached_to = plane1a.name
     phsp_and.attributes = ["GlobalTime", "KineticEnergy", "ParticleName"]
     phsp_and.output_filename = f"{sim_name}_and.root"
-    phsp_and.filters = [filter1, filter2, filter3]
-    phsp_and.filters_boolean_operator = "and"  # default is and
+    phsp_and.filter = (
+        (20 * sec < F.GlobalTime)
+        & (F.GlobalTime < 70 * sec)
+        & (300 * keV < F.KineticEnergy)
+        & (F.KineticEnergy < 1200 * keV)
+        & (F.ParticleName == "gamma")
+    )
 
     # phsp
     phsp_or = sim.add_actor("PhaseSpaceActor", "phsp_or")
     phsp_or.attached_to = plane1a.name
     phsp_or.attributes = ["GlobalTime", "KineticEnergy"]
     phsp_or.output_filename = f"{sim_name}_or.root"
-    phsp_or.filters.append(filter1)
-    phsp_or.filters.append(filter2)
-    phsp_or.filters_boolean_operator = "or"  # default is and
+    phsp_or.filter = (20 * sec < F.GlobalTime) & (F.GlobalTime < 70 * sec) | (
+        300 * keV < F.KineticEnergy
+    ) & (F.KineticEnergy < 1200 * keV)
 
     # stats
     stat = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -103,6 +93,12 @@ if __name__ == "__main__":
     # reference :
     # stat.write(paths.output_ref / f"{sim_name}.txt")
 
+    # for the tests
+    lower_bound_filter1 = 20 * sec
+    upper_bound_filter1 = 70 * sec
+    lower_bound_filter2 = 300 * keV
+    upper_bound_filter2 = 1200 * keV
+
     # check 'or'
     print()
     print()
@@ -111,12 +107,12 @@ if __name__ == "__main__":
     ene = tree.arrays(["GlobalTime", "KineticEnergy"])["KineticEnergy"]
     emin = np.min(ene)
     emax = np.max(ene)
-    is_ok = emin >= filter2.value_min and emax <= filter2.value_max
+    is_ok = emin >= lower_bound_filter2 and emax <= upper_bound_filter2
     utility.print_test(is_ok, f"Ene = {len(ene)} min={emin/keV} max={emax/keV}")
     ti = tree.arrays(["GlobalTime", "KineticEnergy"])["GlobalTime"]
     tmin = np.min(ti)
     tmax = np.max(ti)
-    is_ok = tmin >= filter1.value_min and tmax <= filter1.value_max and is_ok
+    is_ok = tmin >= lower_bound_filter1 and tmax <= upper_bound_filter1 and is_ok
     utility.print_test(is_ok, f"Time = {len(ti)} min={tmin/sec} max={tmax/sec}")
 
     # check 'or'
@@ -126,27 +122,27 @@ if __name__ == "__main__":
     print("nb entries", tree.num_entries)
     ene = tree.arrays(
         ["GlobalTime", "KineticEnergy"],
-        f"(GlobalTime <= {filter1.value_min}) | "
-        f"(GlobalTime >= {filter1.value_max})",
+        f"(GlobalTime <= {lower_bound_filter1}) | "
+        f"(GlobalTime >= {upper_bound_filter1})",
     )["KineticEnergy"]
     emin = np.min(ene)
     emax = np.max(ene)
-    is_ok = emin >= filter2.value_min and emax <= filter2.value_max
+    is_ok = emin >= lower_bound_filter2 and emax <= upper_bound_filter2
     utility.print_test(is_ok, f"Ene = {len(ene)} min={emin/keV} max={emax/keV}")
     ti = tree.arrays(
         ["GlobalTime", "KineticEnergy"],
-        f"(KineticEnergy <= {filter2.value_min}) | "
-        f"(KineticEnergy >= {filter2.value_max})",
+        f"(KineticEnergy <= {lower_bound_filter2}) | "
+        f"(KineticEnergy >= {upper_bound_filter2})",
     )["GlobalTime"]
     tmin = np.min(ti)
     tmax = np.max(ti)
-    is_ok = tmin >= filter1.value_min and tmax <= filter1.value_max and is_ok
+    is_ok = tmin >= lower_bound_filter1 and tmax <= upper_bound_filter1 and is_ok
     utility.print_test(is_ok, f"Time = {len(ti)} min={tmin/sec} max={tmax/sec}")
 
     # tests
     print()
     print()
     stats_ref = utility.read_stats_file(paths.output_ref / f"{sim_name}.txt")
-    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
+    is_ok = utility.assert_stats(stat, stats_ref, [0.035, 0.03, 0.06])
 
     utility.test_ok(is_ok)

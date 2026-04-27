@@ -4,12 +4,13 @@ from opengate.devtools import find_unprocessed_gateobject_classes
 from opengate.exception import GateImplementationError
 import opengate.tests.utility as utility
 
-
 if __name__ == "__main__":
     is_ok = True
     exceptions = []
 
+    print("here")
     unprocessed_classes = find_unprocessed_gateobject_classes()
+    print("->", unprocessed_classes)
     if len(unprocessed_classes) > 0:
         is_ok = False
         s = "\n".join([f"{i}) {w}" for i, w in enumerate(unprocessed_classes)])
@@ -20,4 +21,5 @@ if __name__ == "__main__":
         )
     else:
         print("All classes inheriting from GateObject are properly processed .")
+    print(is_ok)
     utility.test_ok(is_ok, exceptions=exceptions)

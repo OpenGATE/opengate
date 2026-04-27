@@ -1160,6 +1160,7 @@ def get_pytomography_detector_physics_data(colli_name):
 def get_default_size_and_spacing():
     mm = g4_units.mm
     return [128, 128], [2.21 * mm * 2, 2.21 * mm * 2]
+    # 4.4167 mm ?
 
 
 def add_digitizer(

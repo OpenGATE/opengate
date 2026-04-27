@@ -6,7 +6,6 @@ import pickle
 import opengate as gate
 import opengate.tests.utility as tu
 
-
 if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()

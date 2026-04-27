@@ -1,0 +1,48 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#ifndef GateAttributeComparisonFilter_h
+#define GateAttributeComparisonFilter_h
+
+#include "../GateHelpersDict.h"
+#include "../digitizer/GateTDigiAttribute.h"
+#include "GateVFilter.h"
+
+template <typename T> class GateAttributeComparisonFilter : public GateVFilter {
+public:
+  GateAttributeComparisonFilter();
+
+  void InitializeUserInfo(py::dict &user_info) override;
+
+  bool Evaluate(G4Step *step) const override;
+
+  std::string fAttributeName;
+  T fCompareValue;
+  std::string fCompareOperation;
+  GateTDigiAttribute<T> *fAttribute{nullptr};
+};
+
+// Typedefs for common use cases
+using GateAttributeFilterDouble = GateAttributeComparisonFilter<double>;
+using GateAttributeFilterInt = GateAttributeComparisonFilter<int>;
+using GateAttributeFilterString = GateAttributeComparisonFilter<std::string>;
+
+// --------------------------------------------------------------------
+// NEW: Explicit Specialization Declarations
+// This tells the compiler NOT to instantiate the generic .txx version
+// for std::string, preventing the LNK2005 error on Windows.
+template <>
+void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
+    py::dict &user_info);
+
+template <>
+bool GateAttributeComparisonFilter<std::string>::Evaluate(G4Step *step) const;
+// --------------------------------------------------------------------
+
+#include "GateAttributeComparisonFilter.txx"
+
+#endif // GateAttributeComparisonFilter_h

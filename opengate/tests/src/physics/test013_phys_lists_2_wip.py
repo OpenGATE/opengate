@@ -4,7 +4,6 @@
 from opengate.tests import utility
 from test013_phys_lists_helpers import create_pl_sim
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
 

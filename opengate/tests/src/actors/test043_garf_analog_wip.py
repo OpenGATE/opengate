@@ -10,7 +10,6 @@ import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()

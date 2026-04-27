@@ -1,27 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import time
-from datetime import timedelta, datetime
-import click
-import random
-import sys
-import json
-import re
-from pathlib import Path
-import subprocess
-from multiprocessing import Pool
-import yaml
-from box import Box
 import ast
 import hashlib
+import json
+import os
+import random
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timedelta
+from multiprocessing import Pool
+from pathlib import Path
 
-from opengate.exception import fatal, colored, color_ok, color_error, color_warning
-from opengate_core.testsDataSetup import check_tests_data_folder
-from opengate.bin.opengate_library_path import return_tests_path
+import click
+import yaml
+from box import Box
 from opengate_core import GateInfo
-from opengate.exception import warning
+from opengate_core.testsDataSetup import check_tests_data_folder
+
+from opengate.bin.opengate_library_path import return_tests_path
+from opengate.exception import (
+    color_error,
+    color_ok,
+    color_warning,
+    colored,
+    fatal,
+    warning,
+)
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -71,7 +78,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.2",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.0",
 )
 def go(
     start_id,
@@ -92,7 +99,7 @@ def go(
         try:
             g4_version = get_required_g4_version(path_tests_src)
         except:
-            g4_version = "v11.3.2"
+            g4_version = "v11.4.0"
     if not check_g4_version(g4_version):
         warning(f'The geant4 version "{g4_version}" is not the expected version.')
         # return 0
@@ -187,9 +194,6 @@ def get_files_to_run():
         "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
         "test081_simulation_optigan_with_random_seed.py",
-        "test085_free_flight_mt.py",
-        "test085_free_flight_ref_mt.py",
-        "test085_free_flight_rotation.py",
     ]
     try:
         import torch
@@ -198,6 +202,9 @@ def get_files_to_run():
 
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
+        "test094a_spect_simu_prim",  # to compute the reference data
+        "test094b_spect_simu_scatter",  # to compute the reference data
+        "test094c_build_sinogram",  # to compute the reference data
     ]
     path_tests_src = Path(path_tests_src)
     all_file_paths = []
@@ -497,13 +504,13 @@ def run_test_cases(
 def status_summary_report(runs_status_info, files, no_log_on_fail):
 
     dashboard_dict = {
-        str(Path(k).name): [shell_output_k.returncode == 0]
+        k: [shell_output_k.returncode == 0]
         for k, shell_output_k in zip(files, runs_status_info)
     }
 
-    tests_passed = [f for f in files if dashboard_dict[os.path.basename(f)][0]]
+    tests_passed = [f for f in files if dashboard_dict[f][0]]
     tests_passed.sort()
-    tests_failed = [f for f in files if not dashboard_dict[os.path.basename(f)][0]]
+    tests_failed = [f for f in files if not dashboard_dict[f][0]]
     tests_failed.sort()
 
     n_passed = sum([k[0] for k in dashboard_dict.values()])
@@ -513,7 +520,7 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
     for file, shell_output_k in zip(files, runs_status_info):
         if shell_output_k.returncode != 0 and not no_log_on_fail:
             print(
-                str(Path(file).name),
+                file,
                 colored.stylize(": failed", color_error),
                 end="\n",
             )
@@ -524,12 +531,12 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
 
     print(f"Summary pass: {n_passed}/{len(files)} passed the tests:")
     for k in tests_passed:
-        print(str(Path(k).name), colored.stylize(": passed", color_ok), end="\n")
+        print(k, colored.stylize(": passed", color_ok), end="\n")
 
     if n_failed > 0:
         print(f"Summary fail: {n_failed}/{len(files)} failed the tests:")
         for k in tests_failed:
-            print(str(Path(k).name), colored.stylize(": failed", color_error), end="\n")
+            print(k, colored.stylize(": failed", color_error), end="\n")
 
     fail_status = 0
     if n_passed == len(files) and n_failed == 0:

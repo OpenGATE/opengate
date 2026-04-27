@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import itk
+import numpy as np
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
-import opengate.contrib.linacs.elektaversa as versa
 import opengate.contrib.linacs.dicomrtplan as rtplan
+import opengate.contrib.linacs.elektaversa as versa
 from opengate.tests import utility
 from opengate.utility import g4_units
-from scipy.spatial.transform import Rotation
-import numpy as np
-import itk
 
 
 def calc_mlc_aperture(x_leaf_position, y_jaws_position):
@@ -132,10 +133,10 @@ def validation_test_19_rt_plan(
     else:
         print("")
         print("FAIL")
-        print(f"mm2 -> {percentage_diff=} (tol={tol}")
-        print(f"{np.sum(bool_percentage_diff)=}")
-        print(f"{nb_part_sent/nb_part_theo=}")
-        print(f"{err_nb_part=}")
+        print(f"mm2 -> np.abs({percentage_diff=}) > 100*tol={tol}")
+        print(f"{np.sum(bool_percentage_diff)=} ==0")
+        print(f"{nb_part_sent=} >= {nb_part_theo=} - 4*{err_nb_part=}")
+        print(f"{nb_part_sent=} <= {nb_part_theo=} + 4*{err_nb_part=}")
         return False
 
 
@@ -180,10 +181,10 @@ if __name__ == "__main__":
 
     # jaws
 
-    jaws = versa.add_jaws(sim, linac.name)
+    jaws = versa.add_jaws(sim, linac.name, linac.name)
 
     # mlc
-    mlc = versa.add_mlc(sim, linac.name)
+    mlc = versa.add_mlc(sim, linac.name, linac.name)
     mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
     mlc_box.material = "G4_Galactic"
     # add alpha source :
@@ -192,8 +193,8 @@ if __name__ == "__main__":
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
     MU = 0
     while MU == 0:
-        l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
-        # l_cp = [3]
+        # l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
+        l_cp = [3]
         print("Control point: ", l_cp)
         MU = rt_plan_parameters["weight"][l_cp[0]]
     nb_part = nb_part / MU

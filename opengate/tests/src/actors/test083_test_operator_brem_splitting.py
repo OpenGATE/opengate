@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
+import numpy as np
 import opengate_core as g4
 import uproot
-import numpy as np
 from scipy.spatial.transform import Rotation
+
+import opengate as gate
 from opengate.tests import utility
 
 
@@ -37,25 +38,25 @@ def check_process_user_hook(simulation_engine):
 
 
 def validation_test(arr, nb_split, tol=0.04):
-    arr = arr[arr["ParticleName"] == "gamma"]
-    EventID = arr["EventID"]
-    Weights = arr["Weight"][EventID == EventID[0]]
-    sum_Weights = np.round(np.sum(Weights), 4)
+    arr2 = arr[arr["ParticleName"] == "gamma"]
+    EventID_arr = arr2["EventID"]
+    Weights_arr = arr2["Weight"][EventID_arr == EventID_arr[0]]
+    sum_Weights = np.round(np.sum(Weights_arr), 4)
     if 1 - tol < sum_Weights < 1 + tol and nb_split * (1 - tol) < len(
-        Weights
+        Weights_arr
     ) < nb_split * (1 + tol):
         return True
     else:
         print("Test failed:")
         print(f"{sum_Weights=} vs 1, tol={tol}")
-        print(f"{Weights=}  {len(Weights)=}")
+        print(f"{Weights_arr=}  {len(Weights_arr)=}")
         print(f"{nb_split=}")
         return False
 
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "test070test_operator_brem_splitting", output_folder="test070"
+        __file__, "test083test_operator_brem_splitting", output_folder="test083"
     )
 
     # create the simulation
@@ -153,7 +154,7 @@ if __name__ == "__main__":
         "ParticleName",
     ]
 
-    phsp_actor.output_filename = "test070_output_data.root"
+    phsp_actor.output_filename = "test083_output_data.root"
 
     ##### MODIFIED PHYSICS LIST ###############
 

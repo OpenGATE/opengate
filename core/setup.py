@@ -1,12 +1,13 @@
-import os
-import re
-import sys
-import platform
-import subprocess
 import json
-import setuptools
+import os
+import platform
+import re
+import subprocess
+import sys
 import sysconfig
 from pathlib import Path
+
+import setuptools
 
 
 def warning(s):
@@ -29,9 +30,10 @@ def get_base_dir() -> Path:
 with open("../VERSION", "r") as fh:
     version = fh.read()[:-1]
 
+from distutils.version import LooseVersion
+
 from setuptools import Extension, find_packages
 from setuptools.command.build_ext import build_ext
-from distutils.version import LooseVersion
 
 
 class CMakeExtension(Extension):
@@ -69,7 +71,12 @@ class CMakeBuild(build_ext):
 
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
-            "-DPYTHON_EXECUTABLE=" + sys.executable,
+            f"-DPython_EXECUTABLE={sys.executable}",
+            f"-DPython3_EXECUTABLE={sys.executable}",
+            "-DPython_FIND_STRATEGY=LOCATION",  # avoid picking newer Python
+            "-DPython_FIND_REGISTRY=NEVER",  # Linux safe default
+            f"-DPython_ROOT_DIR={sys.exec_prefix}",
+            f"-DPython3_ROOT_DIR={sys.exec_prefix}",
         ]
 
         # cfg = "Debug" if self.debug else 'Release'
@@ -178,10 +185,9 @@ setuptools.setup(
     zip_safe=False,
     python_requires=">=3.9",
     include_package_data=True,
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
-    ),
-    install_requires=["wget", "colored>1.5", "requests"],
+    ],
+    install_requires=["colored>1.5", "requests"],
 )

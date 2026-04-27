@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import test039_hits_memory_check_helpers as test39
+
 from opengate.tests import utility
 
 if __name__ == "__main__":

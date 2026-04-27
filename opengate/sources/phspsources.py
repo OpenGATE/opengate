@@ -29,6 +29,17 @@ class PhaseSpaceSourceGenerator:
         self.points = None
         self.current_index = 0
         self.w = None
+        # need to avoid garbage collection
+        self.pos_x = None
+        self.pos_y = None
+        self.pos_z = None
+        self.dir_x = None
+        self.dir_y = None
+        self.dir_z = None
+        self.energy = None
+        self.pdg = None
+        self.name = None
+        self.weight = None
 
     def initialize(self, phsp_source):
         self.phsp_source = phsp_source
@@ -105,138 +116,136 @@ class PhaseSpaceSourceGenerator:
 
     def generate(self, source, pid):
         """
-        Main function that will be called from the cpp side every time a batch
-        of particles should be created.
-        Once created here, the particles are copied to cpp.
-        (Yes maybe the copy could be avoided, but I did not manage to do it)
+        Main function called from C++ to generate a batch of particles.
         """
+        # --- 1. Cycle Management ---
+        if self.current_index >= self.num_entries:
+            self.current_index = 0
 
-        # warn phsp is recycled
         if self.cycle_changed_flag:
             warning(
                 f"End of the phase-space {self.num_entries} elements, "
                 f"restart from beginning. Cycle count = {self.cycle_count}"
             )
             self.cycle_changed_flag = False
-            self.current_index = 0
 
-        # read data from root tree
-        current_batch_size = source.batch_size
-        if self.current_index + source.batch_size >= self.num_entries:
-            current_batch_size = self.num_entries - self.current_index
+        # --- 2. Calculate Batch Size ---
+        requested_batch_size = source.batch_size
+
+        if self.current_index + requested_batch_size >= self.num_entries:
+            requested_batch_size = self.num_entries - self.current_index
+            self.cycle_count += 1
+            self.cycle_changed_flag = True
+
+        if requested_batch_size == 0:
+            self.current_index = 0
+            requested_batch_size = min(source.batch_size, self.num_entries)
             self.cycle_count += 1
             self.cycle_changed_flag = True
 
         if source.verbose_batch:
             print(
-                f"Thread {g4.G4GetThreadId()} "
-                f"generate {current_batch_size} starting {self.current_index} "
-                f" (phsp as n = {self.num_entries} entries)"
+                f"Thread {g4.G4GetThreadId()} reading {requested_batch_size} events from index {self.current_index}"
             )
 
-        # read a batch of particles in the phsp (keep the reference)
+        # --- 3. Read Data ---
+        # We store 'batch' in self to keep the raw data alive
         self.batch = self.root_file.arrays(
             entry_start=self.current_index,
-            entry_stop=self.current_index + current_batch_size,
+            entry_stop=self.current_index + requested_batch_size,
             library="numpy",
         )
         batch = self.batch
-        self.current_index += current_batch_size
+        self.current_index += requested_batch_size
 
-        # ensure encoding is float32
-        for key in batch:
-            # Convert to float32 if the array contains floating-point values
-            if np.issubdtype(batch[key].dtype, np.floating):
-                batch[key] = batch[key].astype(np.float32)
-            else:
-                if np.issubdtype(batch[key].dtype, np.integer):
-                    batch[key] = batch[key].astype(np.int32)
+        # --- 4. Paranoid Data Extractor ---
+        def get_data(key, dtype, must_exist=True):
+            raw = None
+            if hasattr(batch, "dtype") and batch.dtype.names:
+                if key in batch.dtype.names:
+                    raw = batch[key]
+            elif isinstance(batch, dict) and key in batch:
+                raw = batch[key]
 
-        # set particle type
-        if source.particle == "" or source.particle is None:
-            # check if the keys for PDGCode are in the root file
-            if source.PDGCode_key not in batch:
-                fatal(
-                    f"PhaseSpaceSource: no PDGCode key ({source.PDGCode_key}) "
-                    f"in the phsp file and no source.particle"
-                )
+            if raw is None:
+                if must_exist:
+                    avail = (
+                        batch.dtype.names
+                        if hasattr(batch, "dtype")
+                        else list(batch.keys())
+                    )
+                    fatal(
+                        f"PhaseSpaceSource: Key '{key}' not found. Available: {avail}"
+                    )
+                return None
 
-        # if translate_position is set to True, the position
-        # supplied will be added to the phsp file position
+            try:
+                # copy=True creates a new array. We MUST store this new array in 'self' later!
+                return np.array(raw, dtype=dtype, copy=True, order="C")
+            except Exception as e:
+                fatal(f"PhaseSpaceSource: Conversion error for '{key}'. {e}")
+
+        # --- 5. Extract & STORE IN SELF (Prevent GC) ---
+
+        # We assign to 'self.X' to ensure the Python object survives
+        # as long as the C++ side needs it (until the next batch overwrites it).
+
+        self.pos_x = get_data(source.position_key_x, np.float32)
+        actual_size = len(self.pos_x)
+
+        self.pos_y = get_data(source.position_key_y, np.float32)
+        self.pos_z = get_data(source.position_key_z, np.float32)
+
+        self.dir_x = get_data(source.direction_key_x, np.float32)
+        self.dir_y = get_data(source.direction_key_y, np.float32)
+        self.dir_z = get_data(source.direction_key_z, np.float32)
+
+        self.energy = get_data(source.energy_key, np.float32)
+
+        # Weights
+        self.weight = None
+        if source.weight_key:
+            self.weight = get_data(source.weight_key, np.float32, must_exist=False)
+        if self.weight is None:
+            self.weight = np.ones(actual_size, dtype=np.float32)
+
+        # PDG Code
+        self.pdg = None
+        if not source.particle:
+            self.pdg = get_data(source.PDGCode_key, np.int32)
+
+        # --- 6. Transforms (Modify SELF) ---
         if source.translate_position:
-            batch[source.position_key_x] += float(source.position.translation[0])
-            batch[source.position_key_y] += float(source.position.translation[1])
-            batch[source.position_key_z] += float(source.position.translation[2])
+            self.pos_x += float(source.position.translation[0])
+            self.pos_y += float(source.position.translation[1])
+            self.pos_z += float(source.position.translation[2])
 
-        # direction is a rotation of the stored direction
-        # if rotate_direction is set to True, the direction
-        # in the root file will be rotated based on the supplied rotation matrix
         if source.rotate_direction:
-            # create point vectors
-            self.points = np.column_stack(
-                (
-                    batch[source.direction_key_x],
-                    batch[source.direction_key_y],
-                    batch[source.direction_key_z],
-                )
-            )
-            # create rotation matrix
+            points = np.column_stack((self.dir_x, self.dir_y, self.dir_z))
             r = Rotation.from_matrix(source.position.rotation)
-            if source.verbose:
-                print("Rotation matrix: ", r.as_matrix())
-            # rotate vector with rotation matrix
-            points = r.apply(self.points)
-            # source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
-            batch[source.direction_key_x] = points[:, 0].astype(np.float32)
-            batch[source.direction_key_y] = points[:, 1].astype(np.float32)
-            batch[source.direction_key_z] = points[:, 2].astype(np.float32)
+            rotated = r.apply(points)
+            self.dir_x = np.ascontiguousarray(rotated[:, 0], dtype=np.float32)
+            self.dir_y = np.ascontiguousarray(rotated[:, 1], dtype=np.float32)
+            self.dir_z = np.ascontiguousarray(rotated[:, 2], dtype=np.float32)
 
-        # set weight
-        if source.weight_key != "" and source.weight_key is not None:
-            if source.weight_key not in batch:
-                fatal(
-                    f"PhaseSpaceSource: no Weight key ({source.weight_key}) in the phsp file."
-                )
-        else:
-            self.w = np.ones(current_batch_size, dtype=np.float32)
-            batch[source.weight_key] = self.w.astype(np.float32)
+        # --- 7. Send to C++ ---
+        if len(self.energy) != actual_size:
+            fatal(f"Size mismatch: Pos {actual_size} vs Energy {len(self.energy)}")
 
-        # send to cpp
-        # set position
-        source.SetPositionXBatch(batch[source.position_key_x])
-        source.SetPositionYBatch(batch[source.position_key_y])
-        source.SetPositionZBatch(batch[source.position_key_z])
+        # Pass the SELF variables to C++
+        source.SetPositionXBatch(self.pos_x)
+        source.SetPositionYBatch(self.pos_y)
+        source.SetPositionZBatch(self.pos_z)
+        source.SetDirectionXBatch(self.dir_x)
+        source.SetDirectionYBatch(self.dir_y)
+        source.SetDirectionZBatch(self.dir_z)
+        source.SetEnergyBatch(self.energy)
+        source.SetWeightBatch(self.weight)
 
-        # set direction
-        source.SetDirectionXBatch(batch[source.direction_key_x])
-        source.SetDirectionYBatch(batch[source.direction_key_y])
-        source.SetDirectionZBatch(batch[source.direction_key_z])
+        if self.pdg is not None:
+            source.SetPDGCodeBatch(self.pdg)
 
-        # set energy
-        source.SetEnergyBatch(batch[source.energy_key])
-
-        # set PDGCode
-        if source.PDGCode_key in batch:
-            source.SetPDGCodeBatch(batch[source.PDGCode_key])
-        # set weight
-        source.SetWeightBatch(batch[source.weight_key])
-
-        if source.verbose:
-            print("PhaseSpaceSourceGenerator: batch generated: ")
-            print("particle name: ", source.particle)
-            if source.PDGCode_key in batch:
-                print("source.fPDGCode: ", batch[source.PDGCode_key])
-            print("source.fEnergy: ", batch[source.energy_key])
-            print("source.fWeight: ", batch[source.weight_key])
-            print("source.fPositionX: ", batch[source.position_key_x])
-            print("source.fPositionY: ", batch[source.position_key_y])
-            print("source.fPositionZ: ", batch[source.position_key_z])
-            print("source.fDirectionX: ", batch[source.direction_key_x])
-            print("source.fDirectionY: ", batch[source.direction_key_y])
-            print("source.fDirectionZ: ", batch[source.direction_key_z])
-            print("source.fEnergy dtype: ", batch[source.energy_key].dtype)
-
-        return current_batch_size
+        return actual_size
 
 
 class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):

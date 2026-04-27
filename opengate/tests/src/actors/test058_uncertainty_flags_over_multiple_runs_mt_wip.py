@@ -7,7 +7,6 @@ from opengate.tests import utility
 import itk
 import numpy as np
 
-
 # WARNING: This test does currently not work correctly
 # because the tested functionality od the dose actor is currently not available
 # Test should be successful, but that is meaningless

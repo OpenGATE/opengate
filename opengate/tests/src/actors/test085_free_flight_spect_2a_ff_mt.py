@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests import utility
 from test085_free_flight_helpers import *
+
 from opengate.contrib.spect.spect_helpers import *
+from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -18,7 +19,7 @@ if __name__ == "__main__":
     source, actors = create_simulation_test085(
         sim,
         paths,
-        simu_name="ff",
+        simu_name="ffa",
         ac=ac,
         use_spect_head=True,
         use_spect_arf=False,
@@ -46,10 +47,10 @@ if __name__ == "__main__":
 
     # uncertainty
     uncer, _, _ = compute_history_by_history_relative_uncertainty_from_files(
-        paths.output / "projection_1_ff_counts.mhd",
-        paths.output / "projection_1_ff_squared_counts.mhd",
+        paths.output / "projection_1_ffa_counts.mhd",
+        paths.output / "projection_1_ffa_squared_counts.mhd",
         ac,
-        paths.output / "projection_1_ff_uncertainty.mhd",
+        paths.output / "projection_1_ffa_uncertainty.mhd",
     )
 
     # compare to noFF
@@ -57,15 +58,15 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "projection_1_ff_counts.mhd",
-            paths.output / "projection_1_ff_counts.mhd",
+            paths.output / "projection_1_ffa_counts.mhd",
             stats,
             tolerance=80,
             ignore_value_data1=0,
             sum_tolerance=14,
             sad_profile_tolerance=32,
-            scaleImageValuesFactor=2e5 / ac,
+            scale_image_values_factor=2e5 / ac,
             axis="x",
-            fig_name=paths.output / "projection_ff_check_1.png",
+            fig_name=paths.output / "projection_ffa_check_1.png",
         )
         and is_ok
     )

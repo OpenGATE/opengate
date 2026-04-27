@@ -3,11 +3,11 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
-from opengate.contrib.spect.spect_helpers import *
 from opengate.contrib.spect.spect_freeflight_helpers import *
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
+from opengate.actors.filters import GateFilterBuilder
 from pathlib import Path
 import numpy as np
 import opengate_core as g4
@@ -104,7 +104,7 @@ def create_simulation_test085(
         # voxelize_iec_phantom -o data/iec_4mm.mhd --spacing 4 --output_source data/iec_4mm_activity.mhd -a 1 1 1 1 1 1
 
     # phantom
-    if not sim.visu:
+    if sim.visu is True:
         iec_vox_filename = data_folder / "iec_4mm.mhd"
         iec_label_filename = data_folder / "iec_4mm_labels.json"
         db_filename = data_folder / "iec_4mm.db"
@@ -216,10 +216,8 @@ def add_phsp(sim, simu_name, radius, size, spacing, use_parallel_world, sph_rad=
     phsp1.output_filename = f"phsp_sphere_{simu_name}.root"
 
     # gamma only
-    fe = sim.add_filter("ParticleFilter", "fe")
-    fe.particle = "gamma"
-    fe.policy = "accept"
-    phsp1.filters.append(fe)
+    F = GateFilterBuilder()
+    phsp1.filter = F.ParticleName == "gamma"
 
     phsps = [phsp1]
     planes = [phsp_sphere]

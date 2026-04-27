@@ -496,9 +496,18 @@ class GateObject:
 
     @simulation.setter
     def simulation(self, sim):
-        sim.warnings.extend(self._temporary_warning_cache)
-        self._temporary_warning_cache = []
-        self._simulation = sim
+        if sim is None:
+            if self._simulation is not None:
+                self.warn_user(
+                    f"The simulation reference of {self.type_name} '{self.name}' "
+                    "is now being cleared after it had already been assigned once. "
+                    "This is unusual."
+                )
+            self._simulation = None
+        else:
+            sim.warnings.extend(self._temporary_warning_cache)
+            self._temporary_warning_cache = []
+            self._simulation = sim
 
     def __str__(self):
         ret_string = (

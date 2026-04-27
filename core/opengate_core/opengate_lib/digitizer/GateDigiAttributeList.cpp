@@ -5,9 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "../GatePrimaryScatterFilter.h"
 #include "../GateUniqueVolumeIDManager.h"
 #include "../GateUserEventInformation.h"
+#include "../filters/GatePrimaryScatterFilter.h"
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4Step.hh"
@@ -53,6 +53,15 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
         att->FillDValue(e);
       });
+
+  // -----------------------------------------------------
+  // Velocity in mm/ns
+  DefineDigiAttribute(
+      "PostVelocity", 'D',
+      FILLF { att->FillDValue(step->GetPostStepPoint()->GetVelocity()); });
+  DefineDigiAttribute(
+      "PreVelocity", 'D',
+      FILLF { att->FillDValue(step->GetPreStepPoint()->GetVelocity()); });
 
   // -----------------------------------------------------
   // Time

@@ -1,0 +1,47 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#ifndef GateVFilter_h
+#define GateVFilter_h
+
+#include "G4Event.hh"
+#include "G4Run.hh"
+#include "G4Step.hh"
+#include <pybind11/stl.h>
+
+namespace py = pybind11;
+
+class GateVFilter {
+
+public:
+  GateVFilter();
+
+  virtual ~GateVFilter();
+
+  virtual void InitializeUserInfo(py::dict &user_info);
+
+  bool Accept(const G4Run *run) const;
+
+  bool Accept(const G4Event *event) const;
+
+  bool Accept(const G4Track *track) const;
+
+  bool Accept(G4Step *step) const;
+
+  virtual bool Evaluate(const G4Run *run) const;
+
+  virtual bool Evaluate(const G4Event *event) const;
+
+  virtual bool Evaluate(const G4Track *track) const;
+
+  virtual bool Evaluate(G4Step *step) const;
+
+  std::string fName;
+  bool fNegate = false;
+};
+
+#endif // GateVFilter_h

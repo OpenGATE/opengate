@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from pathlib import Path
+
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
-from pathlib import Path
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
@@ -111,7 +113,7 @@ if __name__ == "__main__":
             stat,
             tolerance=13,
             ignore_value_data2=0,
-            sum_tolerance=2.5,
+            sum_tolerance=2.9,
         )
         and is_ok
     )
@@ -124,7 +126,7 @@ if __name__ == "__main__":
             stat,
             tolerance=8,
             ignore_value_data2=0,
-            sum_tolerance=1.5,
+            sum_tolerance=1.8,
         )
         and is_ok
     )

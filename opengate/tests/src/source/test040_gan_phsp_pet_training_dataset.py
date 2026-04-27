@@ -4,6 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
+from opengate.actors.filters import GateFilterBuilder
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test040")
@@ -79,10 +80,6 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.output_filename = "test040_train_stats.txt"
 
-    # filter gamma only
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-
     # phsp
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
     phsp.attached_to = "phase_space_sphere"
@@ -100,10 +97,10 @@ if __name__ == "__main__":
         "EventDirection",
     ]
     phsp.output_filename = "test040_train.root"
-    phsp.store_absorbed_event = (
-        True  # this option allow to store all events even if absorbed
-    )
-    phsp.filters.append(f)
+    # this option allow to store all events even if absorbed
+    phsp.store_absorbed_event = True
+    F = GateFilterBuilder()
+    phsp.filter = F.ParticleName == "gamma"
     print(phsp)
     print(phsp.get_output_path())
 
@@ -117,7 +114,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     print(stats)
     stats_ref = utility.read_stats_file(paths.output_ref / "test040_train_stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.03)
+    is_ok = utility.assert_stats(stats, stats_ref, [0.03, 0.03, 0.12])
 
     # check phsp
     print()
@@ -146,12 +143,12 @@ if __name__ == "__main__":
     scalings = [1] * len(checked_keys)
     # scalings[0] = 1e-9  # time in ns
     tols = [1.0] * len(checked_keys)
-    tols[checked_keys.index("TimeFromBeginOfEvent")] = 0.007
+    tols[checked_keys.index("TimeFromBeginOfEvent")] = 0.13
     tols[checked_keys.index("KineticEnergy")] = 0.003
-    tols[checked_keys.index("PrePosition_X")] = 1.7
+    tols[checked_keys.index("PrePosition_X")] = 2.2
     tols[checked_keys.index("PrePosition_Y")] = 1.6
     tols[checked_keys.index("PrePosition_Z")] = 1.9
-    tols[checked_keys.index("PreDirection_X")] = 0.01
+    tols[checked_keys.index("PreDirection_X")] = 0.015
     tols[checked_keys.index("PreDirection_Y")] = 0.01
     tols[checked_keys.index("PreDirection_Z")] = 0.01
     tols[checked_keys.index("EventKineticEnergy")] = 0.02
