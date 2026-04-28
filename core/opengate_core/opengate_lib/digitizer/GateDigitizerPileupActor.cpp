@@ -103,6 +103,7 @@ void GateDigitizerPileupActor::DigitInitialize(
 
 void GateDigitizerPileupActor::EndOfEventAction(const G4Event *) {
   auto &l = fThreadLocalData.Get();
+  l.fTimeSorter.Ingest();
   l.fTimeSorter.Process();
   ProcessTimeSortedDigis();
 }
