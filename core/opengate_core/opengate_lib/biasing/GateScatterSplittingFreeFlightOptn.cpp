@@ -49,11 +49,6 @@ void GateScatterSplittingFreeFlightOptn::InitializeAAManager(
     const std::map<std::string, std::string> &user_info) {
   fAAManager = new GateAcceptanceAngleManager();
   fAAManager->Initialize(user_info, true);
-
-  if (G4EmParameters::Instance()->GeneralProcessActive()) {
-    Fatal("GeneralGammaProcess is not active. . This do *not* work for "
-          "ScatterSplittingFreeFlight");
-  }
 }
 
 G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(

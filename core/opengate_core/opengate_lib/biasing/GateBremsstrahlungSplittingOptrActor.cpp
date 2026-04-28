@@ -22,6 +22,17 @@ GateBremsstrahlungSplittingOptrActor::GateBremsstrahlungSplittingOptrActor(
   fBremSplittingOperation = nullptr;
 }
 
+void GateBremsstrahlungSplittingOptrActor::Configure() {
+  GateVBiasOptrActor::Configure();
+}
+
+void GateBremsstrahlungSplittingOptrActor::ConfigureForWorker() {
+  GateVBiasOptrActor::ConfigureForWorker();
+  const G4LogicalVolume *biasingVolume =
+      G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
+  AttachTo(biasingVolume);
+}
+
 void GateBremsstrahlungSplittingOptrActor::InitializeUserInfo(
     py::dict &user_info) {
   // IMPORTANT: call the base class method
@@ -29,18 +40,12 @@ void GateBremsstrahlungSplittingOptrActor::InitializeUserInfo(
   fSplittingFactor = DictGetInt(user_info, "splitting_factor");
   fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
   fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
-}
-
-void GateBremsstrahlungSplittingOptrActor::InitializeCpp() {
   fBremSplittingOperation =
       new GateBremsstrahlungSplittingOptn("BremSplittingOperation");
 }
 
 void GateBremsstrahlungSplittingOptrActor::StartRun() {
   fBremSplittingOperation->SetSplittingFactor(fSplittingFactor);
-  const G4LogicalVolume *biasingVolume =
-      G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
-  AttachTo(biasingVolume);
 }
 
 void GateBremsstrahlungSplittingOptrActor::StartTracking(const G4Track *track) {

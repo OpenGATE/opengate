@@ -149,30 +149,6 @@ def read_image_info(path_to_image):
     return info
 
 
-def read_image_info_itk_OLD(path_to_image):
-    path_to_image = str(path_to_image)
-    image_IO = itk.ImageIOFactory.CreateImageIO(
-        path_to_image, itk.CommonEnums.IOFileMode_ReadMode
-    )
-    if not image_IO:
-        fatal(f"Cannot read the image file (itk): {path_to_image}")
-    image_IO.SetFileName(path_to_image)
-    image_IO.ReadImageInformation()
-    info = Box()
-    info.filename = path_to_image
-    n = info.size = image_IO.GetNumberOfDimensions()
-    info.size = np.ones(n).astype(int)
-    info.spacing = np.ones(n)
-    info.origin = np.ones(n)
-    info.dir = np.ones((n, n))
-    for i in range(n):
-        info.size[i] = image_IO.GetDimensions(i)
-        info.spacing[i] = image_IO.GetSpacing(i)
-        info.origin[i] = image_IO.GetOrigin(i)
-        info.dir[i] = image_IO.GetDirection(i)
-    return info
-
-
 def get_translation_between_images_center(img_name1, img_name2):
     """
     The two images are considered in the same physical space (coordinate system).
