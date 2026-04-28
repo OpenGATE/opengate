@@ -366,6 +366,8 @@ void init_GateKillActor(py::module &);
 
 void init_GateKillAccordingProcessesActor(py::module &);
 
+void init_GateDepositedChargeActor(py::module &);
+
 void init_GateAttenuationImageActor(py::module &);
 
 void init_itk_image(py::module &);
@@ -703,6 +705,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
   init_GateKillAccordingProcessesActor(m);
+  init_GateDepositedChargeActor(m);
   init_GateAttenuationImageActor(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
