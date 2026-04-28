@@ -23,7 +23,7 @@ G4Mutex SetPixelFluenceMutex = G4MUTEX_INITIALIZER;
 G4Mutex SetNbEventMutexFluence = G4MUTEX_INITIALIZER;
 
 GateFluenceActor::GateFluenceActor(py::dict &user_info)
-    : GateVActor(user_info, true) {
+    : GateVActor(user_info, false) {
   fNbOfEvent = 0;
 }
 
@@ -34,7 +34,6 @@ int GateFluenceActor::sub2ind(Image3DType::IndexType index3D) {
 
 void GateFluenceActor::FlushSquaredValues(
     threadLocalT &data, const Image3DType::Pointer &cpp_image) {
-
   G4AutoLock mutex(&SetPixelFluenceMutex);
   itk::ImageRegionIterator<Image3DType> iterator3D(
       cpp_image, cpp_image->GetLargestPossibleRegion());
@@ -80,7 +79,7 @@ void GateFluenceActor::PrepareLocalDataForRun(
             data.squared_worker_flatimg.end(), 0.0);
   data.lastid_worker_flatimg.resize(numberOfVoxels);
   std::fill(data.lastid_worker_flatimg.begin(),
-            data.lastid_worker_flatimg.end(), 0);
+            data.lastid_worker_flatimg.end(), -1);
 }
 
 void GateFluenceActor::InitializeUserInfo(py::dict &user_info) {
@@ -143,7 +142,7 @@ void GateFluenceActor::StartSimulationAction() {
 
 void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
   G4AutoLock mutex(&SetNbEventMutexFluence);
-  NbOfEvent++;
+  fNbOfEvent++;
 }
 
 void GateFluenceActor::BeginOfRunAction(const G4Run *run) {
@@ -196,7 +195,7 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
                                        fPhysicalVolumeName, fTranslation);
     }
   }
-  NbOfEvent = 0;
+  fNbOfEvent = 0;
   Image3DType::RegionType region = cpp_counts_image->GetLargestPossibleRegion();
   size_region = region.GetSize();
 }
@@ -365,7 +364,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
   }
 }
 
-void GateFluenceActor::EndOfEventAction(const G4Event *event) {
+void GateFluenceActor::EndOfRunAction(const G4Run *run) {
   if (fCountsSquaredFlag) {
     FlushSquaredValues(fThreadLocalDataCounts.Get(), cpp_counts_squared_image);
     if (fSecondaries) {

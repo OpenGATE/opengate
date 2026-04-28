@@ -45,7 +45,7 @@ void init_GateFluenceActor(py::module &m) {
       .def("SetEnergyFlag", &GateFluenceActor::SetEnergyFlag)
       .def("GetCountsSquaredFlag", &GateFluenceActor::GetCountsSquaredFlag)
       .def("SetCountsSquaredFlag", &GateFluenceActor::SetCountsSquaredFlag)
-      .def_readwrite("NbOfEvent", &GateFluenceActor::NbOfEvent)
+      .def_readwrite("NbOfEvent", &GateFluenceActor::fNbOfEvent)
       .def_readwrite("cpp_counts_image", &GateFluenceActor::cpp_counts_image)
       .def_readwrite("cpp_energy_image", &GateFluenceActor::cpp_energy_image)
       .def_readwrite("cpp_counts_squared_image",

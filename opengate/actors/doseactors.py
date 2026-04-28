@@ -1912,12 +1912,11 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 "EndOfRunActionMasterThread",
                 "SteppingAction",
                 "BeginOfEventAction",
-                "EndOfEventAction",
+                "EndOfRunAction",
             }
         )
 
     def initialize(self):
-
         VoxelDepositActor.initialize(self)
         self.check_user_input()
         secondary_flag = self.user_info.score_by_process
@@ -2009,10 +2008,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.user_output.energy_with_uncertainty.get_active(item=1)
         )
         # Set the physical volume name on the C++ side
-        # self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
-
-        # item
 
     def StartSimulationAction(self):
         VoxelDepositActor.StartSimulationAction(self)
@@ -2132,7 +2128,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                     output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
-        return 0
+        return 0  # required by GateFluenceActor.EndOfRunActionMasterThread
 
     def EndSimulationAction(self):
         g4.GateFluenceActor.EndSimulationAction(self)
