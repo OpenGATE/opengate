@@ -153,6 +153,10 @@ void GateTimeSorter::Process() {
   // Processes all digis from the input collection by copying and sorting them
   // according to GlobalTime. Next, copies the oldest sorted digis to the output
   // collection.
+  const int tid = std::max(0, G4Threading::G4GetThreadId());
+  if (tid != fFastestThread.load()) {
+    return;
+  }
 
   if (fFlushed) {
     Fatal("Process() called after Flush(). The time sorter must not be used "
@@ -244,6 +248,8 @@ void GateTimeSorter::Process() {
       fSortedIndicesA->size() < fMaxSize / 2) {
     Prune();
   }
+
+  IdentifyFastestThread();
 }
 
 void GateTimeSorter::MarkOutputAsProcessed() {
@@ -257,6 +263,23 @@ void GateTimeSorter::MarkOutputAsProcessed() {
     fOutputCollection->Clear();
     fOutputIter.Reset();
   }
+}
+
+void GateTimeSorter::MarkThreadAsFinished(int threadId) {
+  fMaxGlobalTimePerThread[threadId].value.store(0.0);
+  IdentifyFastestThread();
+}
+
+void GateTimeSorter::IdentifyFastestThread() {
+  // Look up the index of the thread that currently has the largest GlobalTime
+  // value.
+  const auto maxIt = std::max_element(
+      fMaxGlobalTimePerThread.get(),
+      fMaxGlobalTimePerThread.get() + fNumThreads,
+      [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
+        return a.value.load() < b.value.load();
+      });
+  fFastestThread.store(std::distance(fMaxGlobalTimePerThread.get(), maxIt));
 }
 
 void GateTimeSorter::Flush() {

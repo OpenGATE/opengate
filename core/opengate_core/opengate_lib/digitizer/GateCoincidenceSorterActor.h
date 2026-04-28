@@ -86,6 +86,7 @@ protected:
   size_t fIterPosition{};
   std::atomic<int> fNumActiveWorkingThreads{};
   std::atomic<bool> fProcessing{};
+  std::atomic<int> fNumIngestions{};
 
   void ProcessTimeSortedSingles();
   void DetectCoincidences(bool lastCall = false);
