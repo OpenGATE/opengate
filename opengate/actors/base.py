@@ -4,6 +4,7 @@ from functools import wraps
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
 from ..base import GateObject, process_cls
+from ..physics import Region
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
 
@@ -135,6 +136,18 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
+        "track_structure_em_physics": (
+            None,
+            {
+                "doc": "If not None, request region-based track-structure EM physics "
+                "in the volume to which this actor is attached. "
+                "Use the full Geant4 constructor names where they exist, such as "
+                "`G4EmDNAPhysics_option2`, `G4EmDNAPhysics_option4`, "
+                "`G4EmDNAPhysics_option6`, `G4EmDNAPhysics_option7`, or "
+                "`G4EmDNAPhysics_option8`.",
+                "allowed_values": Region.available_track_structure_em_physics + (None,),
+            },
+        ),
     }
 
     # this dictionary is filled by the developer in each inheriting actor class
@@ -148,6 +161,26 @@ class ActorBase(GateObject):
     # The list is filled automatically during the class manufacturing process triggered by __process_this__
     # Do not redefine this in inheriting classes!
     _existing_properties_to_interfaces = []
+
+    @property
+    def is_chemistry_actor(self):
+        from .chemistryactors import ChemistryActorBase
+
+        return isinstance(self, ChemistryActorBase)
+
+    def get_track_structure_em_physics_request(self):
+        # Freeze-time hook for actors that request region-based track-structure EM
+        # activation before Geant4 physics initialization. Actors should
+        # return None or a (volume_name, track_structure_em_physics) tuple.
+        if self.track_structure_em_physics is None:
+            return None
+        if not isinstance(self.attached_to, str):
+            fatal(
+                f"Actor '{self.name}' requests track_structure_em_physics='{self.track_structure_em_physics}' "
+                f"but is attached to {self.attached_to}. "
+                f"Actors currently support track-structure EM activation only for a single attached volume."
+            )
+        return self.attached_to, self.track_structure_em_physics
 
     @classmethod
     def _process_user_output_config(cls):

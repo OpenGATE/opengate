@@ -6,6 +6,7 @@ import shutil
 import weakref
 from pathlib import Path
 import io
+import sys
 
 import opengate_core as g4
 from .base import (
@@ -16,7 +17,7 @@ from .base import (
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
-from .exception import fatal, warning, GateDeprecationError, GateImplementationError
+from .exception import fatal, warning, GateDeprecationError
 from .geometry.materials import MaterialDatabase
 
 from .utility import (
@@ -28,9 +29,12 @@ from .utility import (
 )
 from .logger import *
 
+from .decorators import requires_fatal
+
 from .physics import (
     Region,
     OpticalSurface,
+    PhysicsListBuilder,
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
 )
@@ -96,6 +100,8 @@ from .actors.pgactors import (
 )
 
 from .actors.dynamicactors import DynamicGeometryActor
+from .actors.chemistryactors import ChemistryActorBase, ChemicalStageActor
+from .chemistry import ChemistryList
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
@@ -152,6 +158,7 @@ actor_types = {
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "DynamicGeometryActor": DynamicGeometryActor,
+    "ChemicalStageActor": ChemicalStageActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     # digit
@@ -173,55 +180,6 @@ actor_types = {
     "GammaFreeFlightActor": GammaFreeFlightActor,
     "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
 }
-
-
-def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
-    """
-    Dynamically create a class with the given PhysicList
-    Only possible if the class exist in g4
-    """
-    # Retrieve the G4VPhysicsConstructor class
-    try:
-        a = getattr(sys.modules["opengate_core"], g4_physics_constructor_class_name)
-        # sanity check:
-        assert g4_physics_constructor_class_name == a.__name__
-        return a
-    except AttributeError:
-        s = f"Cannot find the class {g4_physics_constructor_class_name} in opengate_core"
-        fatal(s)
-
-
-def create_modular_physics_list_class(g4_physics_constructor_class_name):
-    """
-    Create a class (not on object!) which:
-    - inherit from g4.G4VModularPhysicsList
-    - register a single G4 PhysicsConstructor (inherited from G4VPhysicsConstructor)
-    - has the same name as this PhysicsConstructor
-    """
-    g4_physics_constructor_class = retrieve_g4_physics_constructor_class(
-        g4_physics_constructor_class_name
-    )
-    # create the class with __init__ method
-    cls = type(
-        g4_physics_constructor_class_name,
-        (g4.G4VModularPhysicsList,),
-        {
-            "g4_physics_constructor_class": g4_physics_constructor_class,
-            "__init__": init_method,
-        },
-    )
-    return cls
-
-
-def init_method(self, verbosity):
-    """
-    Init method of the dynamically created physics list class.
-    - call the init method of the super class (G4VModularPhysicsList)
-    - Create and register the physics constructor (G4VPhysicsConstructor)
-    """
-    g4.G4VModularPhysicsList.__init__(self)
-    self.g4_physics_constructor = self.g4_physics_constructor_class(verbosity)
-    self.RegisterPhysics(self.g4_physics_constructor)
 
 
 class FilterManager:
@@ -433,6 +391,11 @@ class ActorManager(GateObject):
         ]
         return dynamic_geometry_actors + sorted_actors
 
+    def has_chemistry_actors(self):
+        return any(
+            isinstance(actor, ChemistryActorBase) for actor in self.actors.values()
+        )
+
     def reset(self):
         self.__init__(simulation=self.simulation)
 
@@ -561,118 +524,15 @@ class ActorManager(GateObject):
         return cls(name=name, simulation=self.simulation)
 
 
-class PhysicsListManager(GateObject):
-    # Names of the physics constructors that can be created dynamically
-    available_g4_physics_constructors = [
-        "G4EmStandardPhysics",
-        "G4EmStandardPhysics_option1",
-        "G4EmStandardPhysics_option2",
-        "G4EmStandardPhysics_option3",
-        "G4EmStandardPhysics_option4",
-        "G4EmStandardPhysicsGS",
-        "G4EmLowEPPhysics",
-        "G4EmLivermorePhysics",
-        "G4EmLivermorePolarizedPhysics",
-        "G4EmPenelopePhysics",
-        "G4EmDNAPhysics",
-        "G4OpticalPhysics",
-    ]
-
-    special_physics_constructor_classes = {
-        "G4DecayPhysics": g4.G4DecayPhysics,
-        "G4RadioactiveDecayPhysics": g4.G4RadioactiveDecayPhysics,
-        "G4OpticalPhysics": g4.G4OpticalPhysics,
-        "G4EmDNAPhysics": g4.G4EmDNAPhysics,
-        "G4EmDNAPhysics_option1": g4.G4EmDNAPhysics_option1,
-        "G4EmDNAPhysics_option2": g4.G4EmDNAPhysics_option2,
-        "G4EmDNAPhysics_option3": g4.G4EmDNAPhysics_option3,
-        "G4EmDNAPhysics_option4": g4.G4EmDNAPhysics_option4,
-        "G4EmDNAPhysics_option5": g4.G4EmDNAPhysics_option5,
-        "G4EmDNAPhysics_option6": g4.G4EmDNAPhysics_option6,
-        "G4EmDNAPhysics_option7": g4.G4EmDNAPhysics_option7,
-        "G4EmDNAPhysics_option8": g4.G4EmDNAPhysics_option8,
-    }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # declare the attribute here as None;
-        # set to dict in create_physics_list_classes()
-        self.created_physics_list_classes = None
-        self.create_physics_list_classes()
-        self.particle_with_biased_process_dictionary = {}
-
-    @property
-    def physics_manager(self):
-        if self.simulation is not None:
-            return self.simulation.physics_manager
-        else:
-            return None
-
-    def __getstate__(self):
-        raise GateImplementationError(
-            f"It seems like {self.type_name} is getting pickled, "
-            f"while this should never happen because the PhysicsManager should "
-            f"remove it from its state dictionary. In fact, {self.type_name} "
-            f"is not compatible with pickling. "
+def _setter_hook_physics_list_name(self, physics_list_name):
+    if physics_list_name.startswith("G4EmDNAPhysics"):
+        fatal(
+            f"Global DNA EM physics lists are not supported in GATE. "
+            f"Received '{physics_list_name}'. "
+            f"Configure track-structure EM only per region, e.g. via Region.track_structure_em_physics, "
+            f"PhysicsManager.set_track_structure_em_physics(...), or VolumeBase.set_track_structure_em_physics(...)."
         )
-
-    def __setstate__(self, d):
-        self.__dict__ = d
-        self.create_physics_list_classes()
-
-    def create_physics_list_classes(self):
-        self.created_physics_list_classes = {}
-        for g4pc_name in self.available_g4_physics_constructors:
-            self.created_physics_list_classes[g4pc_name] = (
-                create_modular_physics_list_class(g4pc_name)
-            )
-
-    def get_physics_list(self, physics_list_name):
-        if physics_list_name in self.created_physics_list_classes:
-            physics_list = self.created_physics_list_classes[physics_list_name](
-                self.physics_manager.simulation.g4_verbose_level
-            )
-        else:
-            g4_factory = g4.G4PhysListFactory()
-            if g4_factory.IsReferencePhysList(physics_list_name):
-                physics_list = g4_factory.GetReferencePhysList(physics_list_name)
-            else:
-                s = (
-                    f"Cannot find the physic list: {physics_list_name}\n"
-                    f"{self.dump_info_physics_lists()}"
-                    f"Default is {self.physics_manager.user_info_defaults['physics_list_name']}\n"
-                    f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
-                )
-                fatal(s)
-        # add special physics constructors
-        for (
-            spc,
-            switch,
-        ) in self.physics_manager.special_physics_constructors.items():
-            if switch is True:
-                try:
-                    physics_list.ReplacePhysics(
-                        self.special_physics_constructor_classes[spc](
-                            self.physics_manager.simulation.g4_verbose_level
-                        )
-                    )
-                except KeyError:
-                    fatal(
-                        f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
-                    )
-        return physics_list
-
-    def dump_info_physics_lists(self):
-        g4_factory = g4.G4PhysListFactory()
-        s = (
-            "\n**** INFO about GATE physics lists ****\n"
-            f"* Known Geant4 lists are: {g4_factory.AvailablePhysLists()}\n"
-            f"* With EM options: {g4_factory.AvailablePhysListsEM()[1:]}\n"
-            f"* Or the following simple physics lists with a single PhysicsConstructor: \n"
-            f"* {self.available_g4_physics_constructors} \n"
-            "**** ----------------------------- ****\n\n"
-        )
-        return s
+    return physics_list_name
 
 
 class PhysicsManager(GateObject):
@@ -683,7 +543,10 @@ class PhysicsManager(GateObject):
     user_info_defaults = {
         "physics_list_name": (
             "QGSP_BERT_EMV",
-            {"doc": "Name of the Geant4 physics list. "},
+            {
+                "doc": "Name of the Geant4 physics list. DNA EM physics must be configured per region, not as a global physics list.",
+                "setter_hook": _setter_hook_physics_list_name,
+            },
         ),
         "global_production_cuts": (
             Box([("all", None)] + [(pname, None) for pname in cut_particle_names]),
@@ -765,7 +628,7 @@ class PhysicsManager(GateObject):
             Box(
                 [
                     (spc, False)
-                    for spc in PhysicsListManager.special_physics_constructor_classes
+                    for spc in PhysicsListBuilder.special_physics_constructor_classes
                 ]
             ),
             {
@@ -807,8 +670,8 @@ class PhysicsManager(GateObject):
 
         # Keep a pointer to the current simulation
         self.simulation = simulation
-        self.physics_list_manager = PhysicsListManager(
-            simulation=self.simulation, name="PhysicsListManager"
+        self.physics_list_builder = PhysicsListBuilder(
+            simulation=self.simulation, name="PhysicsListBuilder"
         )
 
         # dictionary containing all the region objects
@@ -861,15 +724,15 @@ class PhysicsManager(GateObject):
 
         # in the case of the PhysicsManager, we make a copy of super().__getstate__()
         # rather than just using super().__getstate__() (which does not make a copy).
-        # Reason: physics_list_manager would become None also in the base process
+        # Reason: physics_list_builder would become None also in the base process
         dict_to_return = dict([(k, v) for k, v in super().__getstate__().items()])
-        dict_to_return["physics_list_manager"] = None
+        dict_to_return["physics_list_builder"] = None
         return dict_to_return
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self.physics_list_manager = PhysicsListManager(
-            simulation=self.simulation, name="PhysicsListManager"
+        self.physics_list_builder = PhysicsListBuilder(
+            simulation=self.simulation, name="PhysicsListBuilder"
         )
 
     def _simulation_engine_closing(self):
@@ -882,10 +745,10 @@ class PhysicsManager(GateObject):
             r.close()
 
     def dump_available_physics_lists(self):
-        return self.physics_list_manager.dump_info_physics_lists()
+        return self.physics_list_builder.dump_info_physics_lists()
 
     def dump_info_physics_lists(self):
-        return self.physics_list_manager.dump_info_physics_lists()
+        return self.physics_list_builder.dump_info_physics_lists()
 
     def dump_production_cuts(self):
         s = "*** Production cuts for World: ***\n"
@@ -969,6 +832,14 @@ class PhysicsManager(GateObject):
         self.regions[name] = Region(name=name, simulation=self.simulation)
         return self.regions[name]
 
+    def _normalize_volume_name(self, volume):
+        if isinstance(volume, str):
+            return volume
+        try:
+            return volume.name
+        except AttributeError:
+            fatal(f"Expected a volume name or a volume object, but received: {volume}")
+
     def find_or_create_region(self, volume_name):
         if volume_name not in self.volumes_regions_lut:
             region = self.add_region(volume_name + "_region")
@@ -1018,6 +889,7 @@ class PhysicsManager(GateObject):
 
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):
+        volume_name = self._normalize_volume_name(volume_name)
         if volume_name == self.simulation.world.name:
             self.global_production_cuts[particle_name] = value
         else:
@@ -1030,24 +902,45 @@ class PhysicsManager(GateObject):
     # Outlook: These setter methods might be linked to properties
     # implemented in a future version of the Volume class
     def set_max_step_size(self, volume_name, max_step_size):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_step_size"] = max_step_size
 
     def set_max_track_length(self, volume_name, max_track_length):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_track_length"] = max_track_length
 
     def set_min_ekine(self, volume_name, min_ekine):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_ekine"] = min_ekine
 
     def set_max_time(self, volume_name, max_time):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_time"] = max_time
 
     def set_min_range(self, volume_name, min_range):
+        volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
+
+    def set_track_structure_em_physics(self, volume_name, track_structure_em_physics):
+        volume_name = self._normalize_volume_name(volume_name)
+        region = self.find_or_create_region(volume_name)
+        region.track_structure_em_physics = track_structure_em_physics
+
+    def set_track_structure_em_physics_in_region(
+        self, region_name, track_structure_em_physics
+    ):
+        try:
+            region = self.regions[region_name]
+        except KeyError:
+            fatal(
+                f"Cannot set track-structure EM physics: region '{region_name}' does not exist."
+            )
+        region.track_structure_em_physics = track_structure_em_physics
 
     def set_user_limits_particles(self, particle_names):
         if not isinstance(particle_names, (list, set, tuple)):
@@ -1063,6 +956,161 @@ class PhysicsManager(GateObject):
                     + "."
                 )
             self.user_info.user_limits_particles[pn] = True
+
+    def freeze_config(self):
+        # Freeze the Python-side configuration before any SimulationEngine is
+        # created. This phase may negotiate requests across managers and
+        # actors, but it must not instantiate Geant4 objects yet.
+        # Chemistry actors may request region-based track-structure EM physics on the
+        # volumes they are attached to. This must be resolved before the
+        # physics engine configures G4 EM parameters and registers the DNA
+        # activator.
+        track_structure_em_requests = {}
+        for actor in self.simulation.actor_manager.sorted_actors:
+            request = actor.get_track_structure_em_physics_request()
+            if request is None:
+                continue
+            volume_name, track_structure_em_physics = request
+            previous_request = track_structure_em_requests.get(volume_name)
+            if previous_request is not None:
+                previous_track_structure_em_physics, previous_actor_name = (
+                    previous_request
+                )
+                if previous_track_structure_em_physics != track_structure_em_physics:
+                    fatal(
+                        f"Conflicting track_structure_em_physics requests for volume '{volume_name}': "
+                        f"actor '{previous_actor_name}' requests '{previous_track_structure_em_physics}' "
+                        f"while actor '{actor.name}' requests '{track_structure_em_physics}'."
+                    )
+            track_structure_em_requests[volume_name] = (
+                track_structure_em_physics,
+                actor.name,
+            )
+
+        for volume_name, (
+            track_structure_em_physics,
+            _,
+        ) in track_structure_em_requests.items():
+            self.set_track_structure_em_physics(volume_name, track_structure_em_physics)
+
+
+def _setter_hook_chemistry_list_name(self, chemistry_list_name):
+    if chemistry_list_name in ("default"):
+        return self.inherited_user_info_defaults["chemistry_list_name"][0]
+    return chemistry_list_name
+
+
+class ChemistryManager(GateObject):
+    """
+    Everything related to chemistry (Geant4-DNA) should be here.
+    """
+
+    user_info_defaults = {
+        "chemistry_list_name": (
+            "G4EmDNAChemistry",
+            {
+                "doc": "Name of the Geant4 chemistry list. ",
+                "setter_hook": _setter_hook_chemistry_list_name,
+            },
+        ),
+        "time_step_model": (
+            "SBS",
+            {
+                "doc": "The Geant4 chemistry time-step model to use. ",
+                "allowed_values": ("SBS", "IRT", "IRT_syn"),
+            },
+        ),
+    }
+
+    def __init__(self, simulation, *args, **kwargs) -> None:
+        kwargs["simulation"] = simulation
+        super().__init__(name="chemistry_manager", *args, **kwargs)
+
+        self.chemistry_list = ChemistryList(
+            name="chemistry_list",
+            simulation=simulation,
+        )
+
+    def reset(self):
+        self.__init__(self.simulation)
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["chemistry_list"] = self.chemistry_list.to_dictionary()
+        return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        if "chemistry_list" in d:
+            self.chemistry_list.from_dictionary(d["chemistry_list"])
+
+    def __str__(self):
+        s = ""
+        for k, v in self.user_info.items():
+            s += f"{k}: {v}\n"
+        return s
+
+    def __getstate__(self):
+        # if self.simulation.verbose_getstate:
+        #     self.warn_user("Getstate PhysicsManager")
+
+        return dict([(k, v) for k, v in super().__getstate__().items()])
+
+    def _simulation_engine_closing(self):
+        """This function should be called from the simulation engine
+        when it is closing to make sure that G4 references are set to None.
+
+        """
+        self.chemistry_list.close()
+
+    def check_chemistry_list_requests(self):
+        requested_chemistry_lists = set()
+
+        if self.chemistry_list_name not in (None, ""):
+            requested_chemistry_lists.add(self.chemistry_list_name)
+
+        for actor in self.simulation.actor_manager.sorted_actors:
+            if not actor.is_chemistry_actor:
+                continue
+            try:
+                actor_chemistry_list_name = actor.chemistry_list_name
+            except AttributeError:
+                fatal(
+                    f"Chemistry actor '{actor.name}' is missing required attribute "
+                    f"'chemistry_list_name'. Check that it inherits correctly from "
+                    f"ChemistryActorBase."
+                )
+            if actor_chemistry_list_name not in (None, ""):
+                requested_chemistry_lists.add(actor_chemistry_list_name)
+
+        # Chemistry must run with one coherent chemistry list. Actor-level and
+        # manager-level requests therefore participate in one uniqueness check.
+        if len(requested_chemistry_lists) > 1:
+            fatal(
+                f"Incompatible chemistry list requests were found: {sorted(requested_chemistry_lists)}. "
+                f"All chemistry actors and the ChemistryManager must request the same chemistry list."
+            )
+
+        if len(requested_chemistry_lists) == 1:
+            chemistry_list_name = next(iter(requested_chemistry_lists))
+        else:
+            chemistry_list_name = None
+
+        self.chemistry_list_name = chemistry_list_name
+        return chemistry_list_name
+
+    def prepare_chemistry_list_if_needed(self):
+        chemistry_list_name = self.check_chemistry_list_requests()
+        self.chemistry_list.list_name = chemistry_list_name
+
+        if (
+            chemistry_list_name is None
+            and self.chemistry_list.has_customizations() is False
+        ):
+            return False
+        else:
+            return True
 
 
 class PostProcessingManager(GateObject):
@@ -1676,6 +1724,7 @@ class Simulation(GateObject):
         self.source_manager = SourceManager(self)
         self.actor_manager = ActorManager(self)
         self.physics_manager = PhysicsManager(self)
+        self.chemistry_manager = ChemistryManager(self)
         self.filter_manager = FilterManager(self)
 
         # hook functions
@@ -1880,6 +1929,12 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
+    def freeze_config(self):
+        # Keep this phase limited to Python-side configuration resolution and
+        # negotiation before runtime initialization. It may tie managers and
+        # actors together, but it must not create any Geant4 objects yet.
+        self.physics_manager.freeze_config()
+
     def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
         Args:
@@ -1888,7 +1943,7 @@ class Simulation(GateObject):
         Returns:
             obj:SimulationOutput : The output of the simulation run.
         """
-
+        self.freeze_config()
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
@@ -2006,7 +2061,6 @@ def create_sim_from_json(path):
 
 
 process_cls(PhysicsManager)
-process_cls(PhysicsListManager)
 process_cls(VolumeManager)
 process_cls(ActorManager)
 process_cls(PostProcessingManager)

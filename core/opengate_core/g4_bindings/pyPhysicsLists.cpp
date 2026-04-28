@@ -18,6 +18,7 @@ namespace py = pybind11;
 #include "FTFP_BERT_TRV.hh"
 #include "FTFP_INCLXX.hh"
 #include "FTFP_INCLXX_HP.hh"
+#include "FTFQGSP_BERT.hh"
 #include "FTF_BIC.hh"
 #include "LBE.hh"
 
@@ -28,11 +29,13 @@ namespace py = pybind11;
 #include "QGSP_BIC.hh"
 #include "QGSP_BIC_AllHP.hh"
 #include "QGSP_BIC_HP.hh"
+#include "QGSP_BIC_HPT.hh"
 #include "QGSP_FTFP_BERT.hh"
 #include "QGSP_INCLXX.hh"
 #include "QGSP_INCLXX_HP.hh"
 #include "QGS_BIC.hh"
 #include "Shielding.hh"
+#include "ShieldingLEND.hh"
 
 #include "G4EmStandardPhysics.hh"
 #include "G4EmStandardPhysics_option1.hh"
@@ -40,7 +43,12 @@ namespace py = pybind11;
 #include "G4EmStandardPhysics_option3.hh"
 #include "G4EmStandardPhysics_option4.hh"
 
+#include "G4EmDNAChemistry.hh"
+#include "G4EmDNAChemistry_option1.hh"
+#include "G4EmDNAChemistry_option2.hh"
+#include "G4EmDNAChemistry_option3.hh"
 #include "G4EmDNAPhysics.hh"
+#include "G4EmDNAPhysicsActivator.hh"
 #include "G4EmDNAPhysics_option1.hh"
 #include "G4EmDNAPhysics_option2.hh"
 #include "G4EmDNAPhysics_option3.hh"
@@ -59,26 +67,32 @@ namespace py = pybind11;
 
 #include "G4DecayPhysics.hh"
 #include "G4RadioactiveDecayPhysics.hh"
+#include "G4ThermalNeutrons.hh"
 
 #include "G4VModularPhysicsList.hh"
 #include "G4VPhysicsConstructor.hh"
+#include "G4VUserChemistryList.hh"
 #include "G4VUserPhysicsList.hh"
 
-// macro for adding physics lists: no parameter
-// #define ADD_PHYSICS_LIST0(m, plname) \
-//   py::class_<plname, G4VModularPhysicsList>(m, #plname).def(py::init<>()); \
-//   AddPhysicsList(#plname);
+// macro for adding reference physics lists
+#define ADD_REFERENCE_PHYSICS_LIST0(plname)                                    \
+  py::class_<plname, G4VModularPhysicsList,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<>());                                                      \
+  AddPhysicsList(#plname);
 
-// macro for adding physics lists: one int parameter
-// #define ADD_PHYSICS_LIST1(m, plname) \
-//   py::class_<plname, G4VUserPhysicsList>(m, #plname).def(py::init<G4int>());
-//   \ AddPhysicsList(#plname);
+#define ADD_REFERENCE_PHYSICS_LIST1(plname)                                    \
+  py::class_<plname, G4VModularPhysicsList,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<G4int>(), py::arg("verbosity") = 1);                       \
+  AddPhysicsList(#plname);
 
-// macro for adding physics lists: int+str parameter
-// #define ADD_PHYSICS_LIST2(m, plname) \
-//   py::class_<plname, G4VUserPhysicsList>(m, #plname) \
-//       .def(py::init<G4int, G4String>()); \
-//   AddPhysicsList(#plname);
+#define ADD_REFERENCE_PHYSICS_LIST2(plname, default_type)                      \
+  py::class_<plname, G4VModularPhysicsList,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<G4int, G4String>(), py::arg("verbosity") = 1,              \
+           py::arg("type") = G4String(default_type));                          \
+  AddPhysicsList(#plname);
 
 // macro for adding physics constructor: one int parameter (verbosity),
 // nodelete is needed because the G4 run manager deletes the physics list
@@ -87,6 +101,13 @@ namespace py = pybind11;
   py::class_<plname, G4VPhysicsConstructor,                                    \
              std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
       .def(py::init<G4int>());
+
+#define ADD_CHEMISTRY_LIST(plname)                                             \
+  py::class_<plname, G4VUserChemistryList,                                     \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<>())                                                       \
+      .def("ConstructParticle", &plname::ConstructParticle)                    \
+      .def("ConstructProcess", &plname::ConstructProcess);
 
 // FIXME ? A bit different for the biasing classe which do not take as argument
 // a int. Moreover, we need at least the function PhysicsBias to put a bias, so
@@ -113,7 +134,7 @@ namespace pyPhysicsLists {
 static std::vector<std::string> plList;
 
 void AddPhysicsList(const G4String &plname) {
-  std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
+  // std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
   plList.push_back(plname);
 }
 
@@ -139,32 +160,31 @@ void init_G4PhysicsLists(py::module &m) {
   m.def("ClearPhysicsList", ClearPhysicsList);
 
   // G4VUserPhysicsList
-  // -> not use for now. Instead, py side use :
-  // G4PhysListFactory GetReferencePhysList
-  /*
-  ADD_PHYSICS_LIST1(m, FTFP_BERT);
-  ADD_PHYSICS_LIST1(m, FTFP_BERT_ATL);
-  ADD_PHYSICS_LIST1(m, FTFP_BERT_HP);
-  ADD_PHYSICS_LIST1(m, FTFP_BERT_TRV);
-  ADD_PHYSICS_LIST1(m, FTFP_INCLXX);
-  ADD_PHYSICS_LIST1(m, FTFP_INCLXX_HP);
-  ADD_PHYSICS_LIST1(m, FTF_BIC);
-  ADD_PHYSICS_LIST1(m, LBE);
-  ADD_PHYSICS_LIST1(m, NuBeam);
+  ADD_REFERENCE_PHYSICS_LIST1(FTFP_BERT)
+  ADD_REFERENCE_PHYSICS_LIST1(FTFP_BERT_ATL)
+  ADD_REFERENCE_PHYSICS_LIST1(FTFP_BERT_HP)
+  ADD_REFERENCE_PHYSICS_LIST1(FTFP_BERT_TRV)
+  ADD_REFERENCE_PHYSICS_LIST1(FTFQGSP_BERT)
+  ADD_REFERENCE_PHYSICS_LIST1(FTFP_INCLXX)
+  ADD_REFERENCE_PHYSICS_LIST1(FTFP_INCLXX_HP)
+  ADD_REFERENCE_PHYSICS_LIST1(FTF_BIC)
+  ADD_REFERENCE_PHYSICS_LIST0(LBE)
+  ADD_REFERENCE_PHYSICS_LIST1(NuBeam)
 
-  ADD_PHYSICS_LIST2(m, QBBC);
+  ADD_REFERENCE_PHYSICS_LIST2(QBBC, "QBBC")
 
-  ADD_PHYSICS_LIST1(m, QGSP_BERT);
-  ADD_PHYSICS_LIST1(m, QGSP_BERT_HP);
-  ADD_PHYSICS_LIST1(m, QGSP_BIC);
-  ADD_PHYSICS_LIST1(m, QGSP_BIC_AllHP);
-  ADD_PHYSICS_LIST1(m, QGSP_BIC_HP);
-  ADD_PHYSICS_LIST1(m, QGSP_FTFP_BERT);
-  ADD_PHYSICS_LIST1(m, QGSP_INCLXX);
-  ADD_PHYSICS_LIST1(m, QGSP_INCLXX_HP);
-  ADD_PHYSICS_LIST1(m, QGS_BIC);
-  ADD_PHYSICS_LIST2(m, Shielding);
-   */
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_BERT)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_BERT_HP)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_BIC)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_BIC_AllHP)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_BIC_HP)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_BIC_HPT)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_FTFP_BERT)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_INCLXX)
+  ADD_REFERENCE_PHYSICS_LIST1(QGSP_INCLXX_HP)
+  ADD_REFERENCE_PHYSICS_LIST1(QGS_BIC)
+  ADD_REFERENCE_PHYSICS_LIST2(Shielding, "HP")
+  ADD_REFERENCE_PHYSICS_LIST1(ShieldingLEND)
 
   // G4VPhysicsConstructor
   ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics)
@@ -187,10 +207,16 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option6)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option7)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option8)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysicsActivator)
+  ADD_CHEMISTRY_LIST(G4EmDNAChemistry)
+  ADD_CHEMISTRY_LIST(G4EmDNAChemistry_option1)
+  ADD_CHEMISTRY_LIST(G4EmDNAChemistry_option2)
+  ADD_CHEMISTRY_LIST(G4EmDNAChemistry_option3)
   ADD_PHYSICS_CONSTRUCTOR(G4OpticalPhysics)
 
   ADD_PHYSICS_CONSTRUCTOR(G4DecayPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4RadioactiveDecayPhysics)
+  ADD_PHYSICS_CONSTRUCTOR(G4ThermalNeutrons)
 
   ADD_PHYSICS_CONSTRUCTOR_BIASING(G4GenericBiasingPhysics)
 
