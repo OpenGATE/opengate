@@ -200,15 +200,133 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   size_region = region.GetSize();
 }
 
-void GateFluenceActor::SteppingAction(G4Step *step) {
+void GateFluenceActor::ScoreCounts(const Image3DType::IndexType &index,
+                                   double w, int particleID,
+                                   const G4String &lastProcessName,
+                                   const G4String &creatorProcessName) {
+  ImageAddValue<Image3DType>(cpp_counts_image, index, w);
 
-  // same method to consider only entering tracks
+  if ((fSecondaries) && (particleID == 22)) {
+    bool secondary = false;
+    if ((lastProcessName == "compt") ||
+        (creatorProcessName == "biasWrapper(compt)")) {
+      ImageAddValue<Image3DType>(cpp_counts_compton_image, index, w);
+      secondary = true;
+    }
+    if ((lastProcessName == "Rayl") ||
+        (creatorProcessName == "biasWrapper(Rayl)")) {
+      ImageAddValue<Image3DType>(cpp_counts_rayleigh_image, index, w);
+      secondary = true;
+    }
+    if (secondary) {
+      ImageAddValue<Image3DType>(cpp_counts_secondaries_image, index, w);
+    } else {
+      ImageAddValue<Image3DType>(cpp_counts_primaries_image, index, w);
+    }
+  }
+}
+
+void GateFluenceActor::ScoreEnergy(const Image3DType::IndexType &index,
+                                   double w, double energy, int particleID,
+                                   const G4String &lastProcessName,
+                                   const G4String &creatorProcessName) {
+  ImageAddValue<Image3DType>(cpp_energy_image, index, energy * w);
+
+  if ((fSecondaries) && (particleID == 22)) {
+    bool secondary = false;
+    if ((lastProcessName == "compt") ||
+        (creatorProcessName == "biasWrapper(compt)")) {
+      ImageAddValue<Image3DType>(cpp_energy_compton_image, index, energy * w);
+      secondary = true;
+    }
+    if ((lastProcessName == "Rayl") ||
+        (creatorProcessName == "biasWrapper(Rayl)")) {
+      ImageAddValue<Image3DType>(cpp_energy_rayleigh_image, index, energy * w);
+      secondary = true;
+    }
+    if (secondary) {
+      ImageAddValue<Image3DType>(cpp_energy_secondaries_image, index,
+                                 energy * w);
+    } else {
+      ImageAddValue<Image3DType>(cpp_energy_primaries_image, index, energy * w);
+    }
+  }
+}
+
+void GateFluenceActor::ScoreUncertainties(const Image3DType::IndexType &index,
+                                          double w, double energy,
+                                          int particleID,
+                                          const G4String &lastProcessName,
+                                          const G4String &creatorProcessName,
+                                          int event_id) {
+  if (fEnergySquaredFlag) {
+    ScoreSquaredValue(fThreadLocalDataEnergy.Get(), cpp_energy_squared_image,
+                      energy * w, event_id, index);
+    if ((fSecondaries) && (particleID == 22)) {
+      bool secondary = false;
+      if ((lastProcessName == "compt") ||
+          (creatorProcessName == "biasWrapper(compt)")) {
+        ScoreSquaredValue(fThreadLocalDataComptEnergy.Get(),
+                          cpp_energy_squared_compton_image, energy * w,
+                          event_id, index);
+        secondary = true;
+      }
+      if ((lastProcessName == "Rayl") ||
+          (creatorProcessName == "biasWrapper(Rayl)")) {
+        ScoreSquaredValue(fThreadLocalDataRaylEnergy.Get(),
+                          cpp_energy_squared_rayleigh_image, energy * w,
+                          event_id, index);
+        secondary = true;
+      }
+      if (secondary) {
+        ScoreSquaredValue(fThreadLocalDataSecEnergy.Get(),
+                          cpp_energy_squared_secondaries_image, energy * w,
+                          event_id, index);
+      } else {
+        ScoreSquaredValue(fThreadLocalDataPrimEnergy.Get(),
+                          cpp_energy_squared_primaries_image, energy * w,
+                          event_id, index);
+      }
+    }
+  }
+
+  if (fCountsSquaredFlag) {
+    ScoreSquaredValue(fThreadLocalDataCounts.Get(), cpp_counts_squared_image, w,
+                      event_id, index);
+    if ((fSecondaries) && (particleID == 22)) {
+      bool secondary = false;
+      if ((lastProcessName == "compt") ||
+          (creatorProcessName == "biasWrapper(compt)")) {
+        ScoreSquaredValue(fThreadLocalDataComptCounts.Get(),
+                          cpp_counts_squared_compton_image, w, event_id, index);
+        secondary = true;
+      }
+      if ((lastProcessName == "Rayl") ||
+          (creatorProcessName == "biasWrapper(Rayl)")) {
+        ScoreSquaredValue(fThreadLocalDataRaylCounts.Get(),
+                          cpp_counts_squared_rayleigh_image, w, event_id,
+                          index);
+        secondary = true;
+      }
+      if (secondary) {
+        ScoreSquaredValue(fThreadLocalDataSecCounts.Get(),
+                          cpp_counts_squared_secondaries_image, w, event_id,
+                          index);
+      } else {
+        ScoreSquaredValue(fThreadLocalDataPrimCounts.Get(),
+                          cpp_counts_squared_primaries_image, w, event_id,
+                          index);
+      }
+    }
+  }
+}
+
+void GateFluenceActor::SteppingAction(G4Step *step) {
   if (step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary) {
     G4String lastProcessName;
     if (fSecondaries)
       lastProcessName = fLastProcessActor->GetLastProcess();
 
-    // the pre-position is at the edge
     const auto event_id =
         G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     auto preGlobal = step->GetPreStepPoint()->GetPosition();
@@ -216,149 +334,40 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
     auto touchable = step->GetPreStepPoint()->GetTouchable();
     auto energy = step->GetPreStepPoint()->GetKineticEnergy();
 
-    // consider position in the local volume, slightly shifted by 0.1 nm because
-    // otherwise, it can be considered as outside the volume by isInside.
     auto position = preGlobal + 0.1 * CLHEP::nm * dir;
     auto localPosition =
         touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
-    // convert G4ThreeVector to itk PointType
     Image3DType::PointType point;
     point[0] = localPosition[0];
     point[1] = localPosition[1];
     point[2] = localPosition[2];
 
-    // get weight
     auto w = step->GetTrack()->GetWeight();
-
-    // get pixel index
     Image3DType::IndexType index;
     bool isInside =
         cpp_counts_image->TransformPhysicalPointToIndex(point, index);
 
-    // set value
-
     if (isInside) {
       G4String creatorProcessName = "None";
       G4int particleID = step->GetTrack()->GetDynamicParticle()->GetPDGcode();
-      if (step->GetTrack()->GetCreatorProcess() != 0) {
+      if (step->GetTrack()->GetCreatorProcess() != nullptr) {
         creatorProcessName =
             step->GetTrack()->GetCreatorProcess()->GetProcessName();
       }
+
       {
         G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
-        ImageAddValue<Image3DType>(cpp_counts_image, index, w);
-
-        if ((fSecondaries) && (particleID == 22)) {
-
-          if ((lastProcessName == "compt") ||
-              (creatorProcessName == "biasWrapper(compt)")) {
-            ImageAddValue<Image3DType>(cpp_counts_compton_image, index, w);
-          }
-          if ((lastProcessName == "Rayl") ||
-              (creatorProcessName == "biasWrapper(Rayl)")) {
-            ImageAddValue<Image3DType>(cpp_counts_rayleigh_image, index, w);
-          }
-          if (((lastProcessName == "Rayl") ||
-               (creatorProcessName == "biasWrapper(Rayl)")) ||
-              ((lastProcessName == "compt") ||
-               (creatorProcessName == "biasWrapper(compt)"))) {
-            ImageAddValue<Image3DType>(cpp_counts_secondaries_image, index, w);
-          } else {
-            ImageAddValue<Image3DType>(cpp_counts_primaries_image, index, w);
-          }
-        }
+        ScoreCounts(index, w, particleID, lastProcessName, creatorProcessName);
         if (fEnergyFlag) {
-          ImageAddValue<Image3DType>(cpp_energy_image, index, energy * w);
-          if ((fSecondaries) && (particleID == 22)) {
-            if ((lastProcessName == "compt") ||
-                (creatorProcessName == "biasWrapper(compt)")) {
-              ImageAddValue<Image3DType>(cpp_energy_compton_image, index,
-                                         energy * w);
-            }
-            if ((lastProcessName == "Rayl") ||
-                (creatorProcessName == "biasWrapper(Rayl)")) {
-              ImageAddValue<Image3DType>(cpp_energy_rayleigh_image, index,
-                                         energy * w);
-            }
-            if (((lastProcessName == "Rayl") ||
-                 (creatorProcessName == "biasWrapper(Rayl)")) ||
-                ((lastProcessName == "compt") ||
-                 (creatorProcessName == "biasWrapper(compt)"))) {
-              ImageAddValue<Image3DType>(cpp_energy_secondaries_image, index,
-                                         energy * w);
-            } else {
-              ImageAddValue<Image3DType>(cpp_energy_primaries_image, index,
-                                         energy * w);
-            }
-          }
+          ScoreEnergy(index, w, energy, particleID, lastProcessName,
+                      creatorProcessName);
         }
       }
-      // else : outside the image
 
       if (fCountsSquaredFlag || fEnergySquaredFlag) {
-        if (fEnergySquaredFlag) {
-          ScoreSquaredValue(fThreadLocalDataEnergy.Get(),
-                            cpp_energy_squared_image, energy * w, event_id,
-                            index);
-          if ((fSecondaries) && (particleID == 22)) {
-            if ((lastProcessName == "compt") ||
-                (creatorProcessName == "biasWrapper(compt)")) {
-              ScoreSquaredValue(fThreadLocalDataComptEnergy.Get(),
-                                cpp_energy_squared_compton_image, energy * w,
-                                event_id, index);
-            }
-            if ((lastProcessName == "Rayl") ||
-                (creatorProcessName == "biasWrapper(Rayl)")) {
-              ScoreSquaredValue(fThreadLocalDataRaylEnergy.Get(),
-                                cpp_energy_squared_rayleigh_image, energy * w,
-                                event_id, index);
-            }
-            if (((lastProcessName == "Rayl") ||
-                 (creatorProcessName == "biasWrapper(Rayl)")) ||
-                ((lastProcessName == "compt") ||
-                 (creatorProcessName == "biasWrapper(compt)"))) {
-              ScoreSquaredValue(fThreadLocalDataSecEnergy.Get(),
-                                cpp_energy_squared_secondaries_image,
-                                energy * w, event_id, index);
-            } else {
-              ScoreSquaredValue(fThreadLocalDataPrimEnergy.Get(),
-                                cpp_energy_squared_primaries_image, energy * w,
-                                event_id, index);
-            }
-          }
-        }
-        if (fCountsSquaredFlag) {
-          ScoreSquaredValue(fThreadLocalDataCounts.Get(),
-                            cpp_counts_squared_image, w, event_id, index);
-          if ((fSecondaries) && (particleID == 22)) {
-            if ((lastProcessName == "compt") ||
-                (creatorProcessName == "biasWrapper(compt)")) {
-              ScoreSquaredValue(fThreadLocalDataComptCounts.Get(),
-                                cpp_counts_squared_compton_image, w, event_id,
-                                index);
-            }
-            if ((lastProcessName == "Rayl") ||
-                (creatorProcessName == "biasWrapper(Rayl)")) {
-              ScoreSquaredValue(fThreadLocalDataRaylCounts.Get(),
-                                cpp_counts_squared_rayleigh_image, w, event_id,
-                                index);
-            }
-            if (((lastProcessName == "Rayl") ||
-                 (creatorProcessName == "biasWrapper(Rayl)")) ||
-                ((lastProcessName == "compt") ||
-                 (creatorProcessName == "biasWrapper(compt)"))) {
-              ScoreSquaredValue(fThreadLocalDataSecCounts.Get(),
-                                cpp_counts_squared_secondaries_image, w,
-                                event_id, index);
-            } else {
-
-              ScoreSquaredValue(fThreadLocalDataPrimCounts.Get(),
-                                cpp_counts_squared_primaries_image, w, event_id,
-                                index);
-            }
-          }
-        }
+        ScoreUncertainties(index, w, energy, particleID, lastProcessName,
+                           creatorProcessName, event_id);
       }
     }
   }

@@ -98,6 +98,8 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.random_seed = "auto"
     sim.output_dir = paths.output
+    sim.progress_bar = True
+    sim.number_of_threads = 1
     ui = sim.user_info
     # ui.running_verbose_level = gate.logger.EVENT
 

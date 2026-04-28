@@ -113,6 +113,19 @@ public:
   void SetCountsSquaredFlag(const bool b) { fCountsSquaredFlag = b; }
   bool GetCountsSquaredFlag() const { return fCountsSquaredFlag; }
 
+  void ScoreCounts(const Image3DType::IndexType &index, double w,
+                   int particleID, const G4String &lastProcessName,
+                   const G4String &creatorProcessName);
+
+  void ScoreEnergy(const Image3DType::IndexType &index, double w, double energy,
+                   int particleID, const G4String &lastProcessName,
+                   const G4String &creatorProcessName);
+
+  void ScoreUncertainties(const Image3DType::IndexType &index, double w,
+                          double energy, int particleID,
+                          const G4String &lastProcessName,
+                          const G4String &creatorProcessName, int event_id);
+
 protected:
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
