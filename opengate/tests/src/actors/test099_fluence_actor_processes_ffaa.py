@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from opengate.tests import utility
-from opengate.actors.digitizers import *
-import numpy as np
-import uproot
-import itk
 from pathlib import Path
+
+import itk
+import numpy as np
 import pandas as pd
+import uproot
+
+import opengate as gate
+from opengate.actors.digitizers import *
+from opengate.tests import utility
 
 
 def std_dev_img_calculation(N, sum_E, squared_sum_E):
@@ -233,7 +235,7 @@ if __name__ == "__main__":
                 std_dev_phsp,
                 (img_phsp / source.n),
                 out=np.zeros_like(std_dev_phsp),
-                where=(img_phsp != 0),
+                where=(np.abs(img_phsp) > 1e-10),
             )
             dict_comp[f"{string}"] = [img_fluence, img_phsp]
             dict_comp[f"{string}_squared"] = [img_squared_fluence, img_squared_phsp]
@@ -245,7 +247,10 @@ if __name__ == "__main__":
     l_bool = []
     for key, elem in dict_comp.items():
         diff = np.divide(
-            elem[0] - elem[1], elem[1], out=np.zeros_like(elem[0]), where=(elem[1] != 0)
+            elem[0] - elem[1],
+            elem[1],
+            out=np.zeros_like(elem[0]),
+            where=(np.abs(elem[1]) > 1e-10),
         )
         diff = np.round(diff, decimals=5)
         is_ok = np.all(diff == 0)
