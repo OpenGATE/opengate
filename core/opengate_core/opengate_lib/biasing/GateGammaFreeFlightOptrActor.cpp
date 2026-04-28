@@ -13,9 +13,6 @@ Copyright (C): OpenGATE Collaboration
 
 GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
     : GateVBiasOptrActor("GammaFreeFlightOperator", user_info, true) {
-  threadLocal_t &l = threadLocalData.Get();
-  l.fFreeFlightOperation = nullptr;
-  l.fIsFirstTime = true;
   fActions.insert("SteppingAction");
 }
 
@@ -26,8 +23,6 @@ GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
   // delete l.fFreeFlightOperation;
 }
 
-void GateGammaFreeFlightOptrActor::InitializeCpp() {}
-
 void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVBiasOptrActor::InitializeUserInfo(user_info);
   if (G4EmParameters::Instance()->GeneralProcessActive()) {
@@ -36,19 +31,17 @@ void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
   }
 }
 
-void GateGammaFreeFlightOptrActor::InitializePerThreadData() {
+void GateGammaFreeFlightOptrActor::ConfigureForWorker() {
+  // ConfigureForWorker attaches the biasing operator to the volumes
+  GateVBiasOptrActor::ConfigureForWorker();
   threadLocal_t &l = threadLocalData.Get();
+  l.fIsFirstTime = true;
   l.fFreeFlightOperation =
       new GateGammaFreeFlightOptn("GammaFreeFlightOperation");
-  l.fIsFirstTime = true;
 }
 
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {
   threadLocal_t &l = threadLocalData.Get();
-
-  if (l.fFreeFlightOperation == nullptr) {
-    InitializePerThreadData();
-  }
 
   l.fIsFirstTime = true;
   l.fIsTrackValidForStep = true;

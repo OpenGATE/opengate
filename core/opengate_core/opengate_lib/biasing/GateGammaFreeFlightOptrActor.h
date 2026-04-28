@@ -20,9 +20,8 @@ public:
   explicit GateGammaFreeFlightOptrActor(py::dict &user_info);
   ~GateGammaFreeFlightOptrActor() override;
 
-  void InitializeCpp() override;
   void InitializeUserInfo(py::dict &user_info) override;
-  void InitializePerThreadData();
+  void ConfigureForWorker() override;
   void StartTracking(const G4Track *) override;
 
   void BeginOfEventAction(const G4Event *event) override;

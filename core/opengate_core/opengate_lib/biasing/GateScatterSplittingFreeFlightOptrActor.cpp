@@ -102,7 +102,9 @@ bool GateScatterSplittingFreeFlightOptrActor::IsFreeFlight(
   return false;
 }
 
-void GateScatterSplittingFreeFlightOptrActor::InitializePerThreadData() {
+void GateScatterSplittingFreeFlightOptrActor::ConfigureForWorker() {
+  // ConfigureForWorker attaches the biasing operator to the volumes
+  GateVBiasOptrActor::ConfigureForWorker();
   // Create the FF operation
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation = new GateGammaFreeFlightOptn("FreeFlightOperation");
@@ -126,14 +128,15 @@ void GateScatterSplittingFreeFlightOptrActor::InitializePerThreadData() {
   l.fRayleighSplittingOperation->InitializeAAManager(fAAParameters);
   l.fComptonSplittingOperation->SetInvolvedBiasActor(this);
   l.fRayleighSplittingOperation->SetInvolvedBiasActor(this);
+
+  l.fTrackMustBeKilled = false;
+  l.fIsStepInExcludedVolume = false;
+  l.fLastStepNumber = -1;
 }
 
 void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
   threadLocal_t &l = threadLocalData.Get();
-  if (l.fFreeFlightOperation == nullptr) {
-    InitializePerThreadData();
-  }
 
   // A new track is being tracked
   l.fTrackMustBeKilled = false;

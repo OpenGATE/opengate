@@ -23,16 +23,15 @@ public:
   ~GateScatterSplittingFreeFlightOptrActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
-  void InitializePerThreadData();
+  void ConfigureForWorker() override;
+  void StartTracking(const G4Track *) override;
+
   void BeginOfRunAction(const G4Run *run) override;
   void BeginOfEventAction(const G4Event *) override;
-
-  void StartTracking(const G4Track *) override;
   void SteppingAction(G4Step *) override;
   void EndOfSimulationWorkerAction(const G4Run *) override;
 
   std::map<std::string, double> GetBiasInformation();
-
   void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
   static int IsScatterInteractionGeneralProcess_OLD(
