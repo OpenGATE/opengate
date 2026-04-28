@@ -1451,8 +1451,6 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
-        # action
-
         # Visu
         if self.simulation.visu:
             logger.info("Simulation: initialize Visualization")
@@ -1485,6 +1483,7 @@ class SimulationEngine(GateSingletonFatal):
         else:
             logger.info("Simulation: initialize G4RunManager")
             self.g4_RunManager.Initialize()
+            # A this point, ConstructSDandField and Configure are called once
 
         logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
@@ -1492,15 +1491,17 @@ class SimulationEngine(GateSingletonFatal):
 
         # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
-            logger.info("Simulation: initialize Workers (MT mode)")
+            logger.info("Simulation: initialize the worker threads (MT mode)")
             self.g4_RunManager.FakeBeamOn()
+            # ConstructSDandField then ConfigureForWorker are called for each worker thread
 
         # Actions initialisation
         # This must come after the G4RunManager initialisation
         # because the RM initialisation calls ActionEngine.Build()
         # which is required to register actions
-        logger.info("Simulation: register Actions")
+        logger.info("Simulation: initialize Actor-Source links")
         self.source_engine.initialize_actors()
+        logger.info("Simulation: register Actions of actors")
         self.actor_engine.register_actions()
 
         self.is_initialized = True
