@@ -173,20 +173,6 @@ if __name__ == "__main__":
     test_name = "test081_pgtle"
     paths = utility.get_default_test_paths(__file__, output_folder=test_name)
 
-    # def get_default_test_paths(f, gate_folder=None, output_folder=None):
-    #
-    #    paths = utility.get_default_test_paths(
-    #    __file__, "gate_test042_gauss_gps", "test008"
-    # )
-    # gives
-    # {'current': PosixPath('/home/letang/opengate/opengate/tests/src'),
-    # 'data': PosixPath('/home/letang/opengate/opengate/tests/data'),
-    # 'gate': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps'),
-    # 'gate_output': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/output'),
-    # 'gate_data': PosixPath('/home/letang/opengate/opengate/tests/data/gate/gate_test042_gauss_gps/data'),
-    # 'output': PosixPath('/home/letang/opengate/opengate/tests/output/test008'),
-    # 'output_ref': PosixPath('/home/letang/opengate/opengate/tests/data/output_ref/test008')}
-
     job_id = 0
     visu = False
 
@@ -195,8 +181,7 @@ if __name__ == "__main__":
     # main options
     sim.visu = visu
     sim.g4_verbose = False
-    sim.random_seed = "auto"  # FIXME to be replaced by a fixed number at the end
-    sim.random_engine = "MersenneTwister"
+    sim.random_seed = 123456
     sim.output_dir = paths.output
     sim.number_of_threads = 1
     sim.progress_bar = False
