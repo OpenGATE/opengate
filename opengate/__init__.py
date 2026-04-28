@@ -135,6 +135,7 @@ import opengate.geometry.materials
 import opengate.geometry.solids
 import opengate.geometry.utility
 import opengate.geometry.volumes
+import opengate.geometry.fields
 import opengate.actors
 import opengate.contrib
 
