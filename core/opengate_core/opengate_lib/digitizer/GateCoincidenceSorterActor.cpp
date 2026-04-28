@@ -192,6 +192,16 @@ void GateCoincidenceSorterActor::DigitInitialize(
 
 void GateCoincidenceSorterActor::EndOfEventAction(const G4Event *) {
   fTimeSorter->Ingest();
+
+  constexpr int numIngestionsPerProcessCall = 10;
+  if (fNumIngestions.fetch_add(1, std::memory_order_relaxed) <
+      numIngestionsPerProcessCall - 1) {
+    return;
+  } else {
+    fNumIngestions.fetch_sub(numIngestionsPerProcessCall,
+                             std::memory_order_relaxed);
+  }
+
   if (!fProcessing.load(std::memory_order_relaxed)) {
     bool expected = false;
     if (fProcessing.compare_exchange_strong(expected, true,
@@ -212,6 +222,7 @@ void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
     DetectCoincidences(true);
   }
   fOutputDigiCollection->FillToRootIfNeeded(true);
+  fTimeSorter->MarkThreadAsFinished(std::max(0, G4Threading::G4GetThreadId()));
 }
 
 void GateCoincidenceSorterActor::ProcessTimeSortedSingles() {

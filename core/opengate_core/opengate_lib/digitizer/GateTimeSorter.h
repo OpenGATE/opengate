@@ -28,6 +28,8 @@ public:
   void Ingest();
   void Process();
   void MarkOutputAsProcessed();
+  void MarkThreadAsFinished(int threadId);
+  void IdentifyFastestThread();
   void Flush();
 
 private:
@@ -57,6 +59,7 @@ private:
   };
 
   std::unique_ptr<PaddedAtomicDouble[]> fMaxGlobalTimePerThread;
+  std::atomic<int> fFastestThread;
   int fNumThreads{0};
   G4Mutex fMutex;
 
