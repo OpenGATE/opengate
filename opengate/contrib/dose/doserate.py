@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-from opengate.managers import Simulation
-from opengate.utility import g4_units, g4_best_unit
+
+from opengate.geometry.materials import HounsfieldUnit_to_material
 from opengate.image import get_translation_between_images_center, read_image_info
 from opengate.logger import INFO
-from opengate.geometry.materials import HounsfieldUnit_to_material
+from opengate.managers import Simulation
+from opengate.sources.utility import set_source_energy_spectrum
+from opengate.utility import g4_best_unit, g4_units
 
 
 def create_simulation(param):
@@ -102,9 +104,26 @@ def create_simulation(param):
     sim.physics_manager.set_production_cut("world", "all", 1 * m)
     sim.physics_manager.set_production_cut("ct", "all", 2 * mm)
 
+    if param.mode == "e-":
+        # electron source
+        source.particle = "e-"
+        set_source_energy_spectrum(source, param.radionuclide)
+        sim.physics_manager.set_production_cut("ct", "all", 1 * m)
+    elif param.mode == "gamma_tle":
+        # electron source
+        source.particle = "gamma"
+        set_source_energy_spectrum(source, param.radionuclide)
+        sim.physics_manager.set_production_cut("ct", "all", 1 * m)
+
     # add dose actor (get the same size as the source)
     source_info = read_image_info(param.activity_image)
-    dose = sim.add_actor("DoseActor", "dose")
+    if param.mode == "gamma_tle":
+        dose = sim.add_actor("TLEDoseActor", "dose")
+        dose.tle_threshold_type = "energy"
+        dose.tle_threshold = source.energy.spectrum_energies[-1]
+        print(f"tle_threshold = {dose.tle_threshold/keV} keV")
+    else:
+        dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "edep.mhd"
     dose.dose_uncertainty.active = True
     dose.dose_squared.active = True
