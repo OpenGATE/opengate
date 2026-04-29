@@ -12,7 +12,6 @@
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Threading.hh>
 #include <G4ThreeVector.hh>
-#include <atomic>
 #include <memory>
 #include <pybind11/stl.h>
 
@@ -84,9 +83,6 @@ protected:
   std::unique_ptr<TemporaryStorage> fFutureStorage;
 
   size_t fIterPosition{};
-  std::atomic<int> fNumActiveWorkingThreads{};
-  std::atomic<bool> fProcessing{};
-  std::atomic<int> fNumIngestions{};
 
   void ProcessTimeSortedSingles();
   void DetectCoincidences(bool lastCall = false);

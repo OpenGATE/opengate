@@ -8,6 +8,7 @@
 
 GateTimeSorter::GateTimeSorter() {
   fNumThreads = std::max(1, G4Threading::GetNumberOfRunningWorkerThreads());
+  fNumActiveWorkingThreads.store(fNumThreads);
   fMaxGlobalTimePerThread = std::make_unique<PaddedAtomicDouble[]>(fNumThreads);
 }
 
@@ -330,4 +331,39 @@ void GateTimeSorter::Prune() {
   // Step 3
   std::swap(fSortedCollectionA, fSortedCollectionB);
   std::swap(fSortedIndicesA, fSortedIndicesB);
+}
+
+void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
+  Ingest();
+
+  constexpr int numIngestionsPerProcessCall = 10;
+  if (fNumIngestions.fetch_add(1, std::memory_order_relaxed) <
+      numIngestionsPerProcessCall - 1) {
+    return;
+  } else {
+    fNumIngestions.fetch_sub(numIngestionsPerProcessCall,
+                             std::memory_order_relaxed);
+  }
+
+  if (!fProcessing.load(std::memory_order_relaxed)) {
+    bool expected = false;
+    if (fProcessing.compare_exchange_strong(expected, true,
+                                            std::memory_order_acquire,
+                                            std::memory_order_relaxed)) {
+      Process();
+      work();
+      fProcessing.store(false, std::memory_order_release);
+    }
+  }
+}
+
+void GateTimeSorter::OnEndOfRunAction(
+    std::function<void(void)> anyThreadWork,
+    std::function<void(void)> lastThreadWork) {
+  if (fNumActiveWorkingThreads.fetch_sub(1, std::memory_order_acq_rel) <= 1) {
+    Flush();
+    lastThreadWork();
+  }
+  anyThreadWork();
+  MarkThreadAsFinished(std::max(0, G4Threading::G4GetThreadId()));
 }
