@@ -64,7 +64,7 @@ private:
   };
 
   std::unique_ptr<PaddedAtomicDouble[]> fMaxGlobalTimePerThread;
-  std::atomic<int> fFastestThread;
+  std::atomic<int> fFastestThread{};
   std::atomic<int> fNumActiveWorkingThreads{};
   std::atomic<bool> fProcessing{};
   std::atomic<int> fNumIngestions{};
