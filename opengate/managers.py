@@ -1,53 +1,53 @@
 import copy
-from typing import Optional, List, Union
-from box import Box
-from anytree import RenderTree, LoopError
+import io
 import shutil
 import weakref
 from pathlib import Path
-import io
+from typing import List, Optional, Union
 
 import opengate_core as g4
+from anytree import LoopError, RenderTree
+from box import Box
+
 from .base import (
     GateObject,
-    process_cls,
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
+    process_cls,
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
-from .exception import fatal, warning, GateDeprecationError, GateImplementationError
-from .geometry.materials import MaterialDatabase
+from .exception import GateDeprecationError, GateImplementationError, fatal, warning
 from .geometry.fields import FieldBase, field_types
-
-from .utility import (
-    g4_units,
-    indent,
-    read_mac_file_to_commands,
-    ensure_directory_exists,
-    insert_suffix_before_extension,
-)
+from .geometry.materials import MaterialDatabase
 from .logger import *
-
 from .physics import (
-    Region,
     OpticalSurface,
+    Region,
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
 )
-from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
-
-from .sources.generic import SourceBase, GenericSource
-from .sources.phspsources import PhaseSpaceSource
-from .sources.voxelsources import VoxelSource, VoxelizedPromptGammaTLESource
-from .sources.gansources import GANSource, GANPairsSource
+from .serialization import dump_json, dumps_json, load_json, loads_json
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
+from .sources.gansources import GANPairsSource, GANSource
+from .sources.generic import GenericSource, SourceBase
+from .sources.lastvertexsources import LastVertexSource
 from .sources.phidsources import PhotonFromIonDecaySource
+from .sources.phspsources import PhaseSpaceSource
+from .sources.voxelsources import VoxelizedPromptGammaTLESource, VoxelSource
+from .utility import (
+    ensure_directory_exists,
+    g4_units,
+    indent,
+    insert_suffix_before_extension,
+    read_mac_file_to_commands,
+)
 from .voxelize import voxelize_geometry
 
 source_types = {
     "GenericSource": GenericSource,
+    "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
     "GANSource": GANSource,
@@ -58,73 +58,73 @@ source_types = {
     "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
 }
 
-from .geometry.volumes import (
-    VolumeBase,
-    BoxVolume,
-    SphereVolume,
-    EllipsoidVolume,
-    TrapVolume,
-    ImageVolume,
-    TubsVolume,
-    PolyhedraVolume,
-    HexagonVolume,
-    TesselatedVolume,
-    ConsVolume,
-    TrdVolume,
-    BooleanVolume,
-    RepeatParametrisedVolume,
-    ParallelWorldVolume,
-    VolumeTreeRoot,
-)
-from .actors.filters import get_filter_class, FilterBase, filter_classes
-from .actors.base import ActorBase
-
-from .actors.doseactors import (
-    DoseActor,
-    TLEDoseActor,
-    LETActor,
-    FluenceActor,
-    ProductionAndStoppingActor,
-    RBEActor,
-    REActor,
-    BeamQualityActor,
-    EmCalculatorActor,
-)
-
-from .actors.pgactors import (
-    VoxelizedPromptGammaTLEActor,
-    VoxelizedPromptGammaAnalogActor,
-)
-
-from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
-from .actors.miscactors import (
-    SimulationStatisticsActor,
-    KillActor,
-    KillAccordingProcessesActor,
-    DepositedChargeActor,
-    AttenuationImageActor,
-)
+from .actors.base import ActorBase
 from .actors.biasingactors import (
-    GenericBiasingActorBase,
     BremsstrahlungSplittingActor,
     GammaFreeFlightActor,
+    GenericBiasingActorBase,
+    LastVertexInteractionSplittingActor,
     ScatterSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
+    CoincidenceSorterActor,
+    DigiAttributeLastProcessDefinedStepInVolumeActor,
+    DigiAttributeProcessDefinedStepInVolumeActor,
     DigitizerAdderActor,
     DigitizerBlurringActor,
-    DigitizerSpatialBlurringActor,
-    DigitizerReadoutActor,
     DigitizerEfficiencyActor,
-    DigitizerProjectionActor,
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
     DigitizerPileupActor,
-    CoincidenceSorterActor,
+    DigitizerProjectionActor,
+    DigitizerReadoutActor,
+    DigitizerSpatialBlurringActor,
     PhaseSpaceActor,
-    DigiAttributeProcessDefinedStepInVolumeActor,
-    DigiAttributeLastProcessDefinedStepInVolumeActor,
+)
+from .actors.doseactors import (
+    BeamQualityActor,
+    DoseActor,
+    EmCalculatorActor,
+    FluenceActor,
+    LETActor,
+    ProductionAndStoppingActor,
+    RBEActor,
+    REActor,
+    TLEDoseActor,
+)
+from .actors.dynamicactors import DynamicGeometryActor
+from .actors.filters import FilterBase, filter_classes, get_filter_class
+from .actors.miscactors import (
+    AttenuationImageActor,
+    DepositedChargeActor,
+    KillAccordingParticleNameActor,
+    KillAccordingProcessesActor,
+    KillActor,
+    KillNonInteractingParticleActor,
+    SimulationStatisticsActor,
+)
+from .actors.pgactors import (
+    VoxelizedPromptGammaAnalogActor,
+    VoxelizedPromptGammaTLEActor,
+)
+from .geometry.volumes import (
+    BooleanVolume,
+    BoxVolume,
+    ConsVolume,
+    EllipsoidVolume,
+    HexagonVolume,
+    ImageVolume,
+    ParallelWorldVolume,
+    PolyhedraVolume,
+    RepeatParametrisedVolume,
+    SphereVolume,
+    TesselatedVolume,
+    TrapVolume,
+    TrdVolume,
+    TubsVolume,
+    VolumeBase,
+    VolumeTreeRoot,
 )
 
 particle_names_Gate_to_G4 = {
@@ -153,6 +153,8 @@ actor_types = {
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
+    "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
+    "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
     "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
@@ -167,6 +169,8 @@ actor_types = {
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "PhaseSpaceActor": PhaseSpaceActor,
+    "AttenuationImageActor": AttenuationImageActor,
     "DigitizerPileupActor": DigitizerPileupActor,
     "CoincidenceSorterActor": CoincidenceSorterActor,
     "DigiAttributeProcessDefinedStepInVolumeActor": DigiAttributeProcessDefinedStepInVolumeActor,
@@ -175,6 +179,7 @@ actor_types = {
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,
     "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
+    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
 }
 
 
@@ -1370,11 +1375,23 @@ class VolumeManager(GateObject):
             s += f"{vt} "
         return s
 
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
     def print_volume_types(self):
         print(self.dump_volume_types())
 
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
 
     def print_material_database_names(self):
         print(self.dump_material_database_names())

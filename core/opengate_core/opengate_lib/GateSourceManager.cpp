@@ -254,8 +254,8 @@ void GateSourceManager::PrepareNextSource() const {
       l.fNextSimulationTime = t;
     }
   }
-  // If no next time in the current interval,
-  // the next active source is nullptr
+
+  // If no next time in the current interval, active source is NULL
 }
 
 void GateSourceManager::CheckForNextRun() const {
