@@ -330,6 +330,8 @@ void init_GateWeightedEdepActor(py::module &);
 
 void init_GateActorManager(py::module &);
 
+void init_GateInternalActions(py::module &m);
+
 // Gate filters
 void init_GateVFilter(py::module &);
 
@@ -644,6 +646,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateVActor(m);
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
+  init_GateInternalActions(m);
   init_GateVFilter(m);
   init_GatePrimaryScatterFilter(m);
   init_GateTrackCreatorProcessFilter(m);
