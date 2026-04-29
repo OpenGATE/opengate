@@ -4,6 +4,7 @@
 #include "GateDigiCollectionIterator.h"
 #include <G4Threading.hh>
 #include <atomic>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -31,6 +32,10 @@ public:
   void MarkThreadAsFinished(int threadId);
   void IdentifyFastestThread();
   void Flush();
+
+  void OnEndOfEventAction(std::function<void(void)> work);
+  void OnEndOfRunAction(std::function<void(void)> anyThreadWork,
+                        std::function<void(void)> lastThreadWork);
 
 private:
   void Prune();
@@ -60,6 +65,10 @@ private:
 
   std::unique_ptr<PaddedAtomicDouble[]> fMaxGlobalTimePerThread;
   std::atomic<int> fFastestThread;
+  std::atomic<int> fNumActiveWorkingThreads{};
+  std::atomic<bool> fProcessing{};
+  std::atomic<int> fNumIngestions{};
+
   int fNumThreads{0};
   G4Mutex fMutex;
 

@@ -177,8 +177,6 @@ void GateCoincidenceSorterActor::BeginOfRunActionMasterThread(int run_id) {
       fTimeSorter->OutputCollection(), fOutputDigiCollection, "A");
   fFutureStorage = std::make_unique<TemporaryStorage>(
       fTimeSorter->OutputCollection(), fOutputDigiCollection, "B");
-
-  fNumActiveWorkingThreads = G4Threading::GetNumberOfRunningWorkerThreads();
 }
 
 void GateCoincidenceSorterActor::SetGroupVolumeDepth(const int depth) {
@@ -191,38 +189,21 @@ void GateCoincidenceSorterActor::DigitInitialize(
 }
 
 void GateCoincidenceSorterActor::EndOfEventAction(const G4Event *) {
-  fTimeSorter->Ingest();
 
-  constexpr int numIngestionsPerProcessCall = 10;
-  if (fNumIngestions.fetch_add(1, std::memory_order_relaxed) <
-      numIngestionsPerProcessCall - 1) {
-    return;
-  } else {
-    fNumIngestions.fetch_sub(numIngestionsPerProcessCall,
-                             std::memory_order_relaxed);
-  }
-
-  if (!fProcessing.load(std::memory_order_relaxed)) {
-    bool expected = false;
-    if (fProcessing.compare_exchange_strong(expected, true,
-                                            std::memory_order_acquire,
-                                            std::memory_order_relaxed)) {
-      fTimeSorter->Process();
-      ProcessTimeSortedSingles();
-      DetectCoincidences();
-      fProcessing.store(false, std::memory_order_release);
-    }
-  }
+  fTimeSorter->OnEndOfEventAction([this]() {
+    ProcessTimeSortedSingles();
+    DetectCoincidences();
+  });
 }
 
 void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
-  if (fNumActiveWorkingThreads.fetch_sub(1, std::memory_order_acq_rel) <= 1) {
-    fTimeSorter->Flush();
-    ProcessTimeSortedSingles();
-    DetectCoincidences(true);
-  }
-  fOutputDigiCollection->FillToRootIfNeeded(true);
-  fTimeSorter->MarkThreadAsFinished(std::max(0, G4Threading::G4GetThreadId()));
+
+  fTimeSorter->OnEndOfRunAction(
+      [this]() { fOutputDigiCollection->FillToRootIfNeeded(true); },
+      [this]() {
+        ProcessTimeSortedSingles();
+        DetectCoincidences(true);
+      });
 }
 
 void GateCoincidenceSorterActor::ProcessTimeSortedSingles() {
