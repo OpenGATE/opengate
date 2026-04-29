@@ -1,14 +1,15 @@
-from box import Box
 import platform
-from anytree import Node, RenderTree
+
 import opengate_core as g4
 from anytree import Node, RenderTree
-from .base import ActorBase
-from ..utility import g4_units, g4_best_unit_tuple
-from .actoroutput import ActorOutputBase, ActorOutputSingleImage
-from ..serialization import dump_json
-from ..exception import fatal, warning
+from box import Box
+
 from ..base import process_cls
+from ..exception import fatal, warning
+from ..serialization import dump_json
+from ..utility import g4_best_unit_tuple, g4_units
+from .actoroutput import ActorOutputBase, ActorOutputSingleImage
+from .base import ActorBase
 
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
@@ -518,6 +519,53 @@ def _setter_hook_particles(self, value):
         return list(value)
 
 
+class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
+    """Actor which accumulates the net electric charge deposited in a volume,
+    defined as the sum of the charge of charged particles dying in the volume
+    minus the sum of the charge of charged particles being born in it. The result is
+    expressed in elementary-charge units (eplus).
+
+        Two different quantities are accumulated:
+            - Nominal deposited charge: uses the PDG charge of the particles.
+            - Dynamic deposited charge: uses the effective charge of the particles, accounting for ionisation.
+    """
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.deposited_nominal_charge = 0.0
+        self.deposited_dynamic_charge = 0.0
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDepositedChargeActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "StartSimulationAction",
+                "EndSimulationAction",
+                "BeginOfRunAction",
+                "PreUserTrackingAction",
+                "PostUserTrackingAction",
+                "EndOfSimulationWorkerAction",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def EndSimulationAction(self):
+        self.deposited_nominal_charge = self.GetDepositedNominalCharge()
+        self.deposited_dynamic_charge = self.GetDepositedDynamicCharge()
+
+    def __str__(self):
+        return (
+            f"DepositedChargeActor {self.name}:"
+            f"  Nominal: {self.deposited_nominal_charge} e"
+            f"  Dynamic: {self.deposited_dynamic_charge} e"
+        )
+
+
 class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     """
     This actor generates an attenuation image for a simulation run.
@@ -590,6 +638,7 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
+process_cls(DepositedChargeActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
 process_cls(KillNonInteractingParticleActor)

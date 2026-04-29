@@ -13,6 +13,7 @@
 #include "GateSourceManager.h"
 #include <G4LogicalVolumeStore.hh>
 #include <G4SDManager.hh>
+#include <unordered_set>
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
@@ -158,21 +159,20 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
 void GateVActor::SetSourceManager(GateSourceManager *s) { fSourceManager = s; }
 
 bool GateVActor::IsStepEnteringVolume(
-    const G4Step *step, const std::vector<const G4LogicalVolume *> &volumes) {
+    const G4Step *step,
+    const std::unordered_set<const G4LogicalVolume *> &volumes) {
   // empty list ? do nothing
-  if (volumes.size() == 0)
+  if (volumes.empty())
     return false;
 
+  // If the pre step is NOT at a volume boundary, return False
   if (step->GetPostStepPoint()->GetStepStatus() != fGeomBoundary)
     return false;
 
+  // Check it the entering volume (post step) is in the list of volumes.
   const auto *vol =
       step->GetPostStepPoint()->GetTouchable()->GetVolume()->GetLogicalVolume();
-  auto i = std::find(volumes.begin(), volumes.end(), vol);
-  if (i != volumes.end()) {
-    return true;
-  }
-  return false;
+  return volumes.count(vol) > 0;
 }
 
 bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {

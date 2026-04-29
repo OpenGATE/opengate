@@ -170,6 +170,18 @@ class GenericBiasingActorBase(ActorBase):
         ),
     }
 
+    def initialize(self):
+        super().initialize()
+
+    def check_compatibility_with_generic_process(self):
+        em_parameters = g4.G4EmParameters.Instance()
+        if em_parameters.GeneralProcessActive():
+            fatal(
+                f"Biasing actors can only be used without GenericProcess. \n"
+                f" use : sim.g4_commands_before_init.append('/process/em/UseGeneralProcess false')"
+            )
+            # note: we CANNOT turn it off now because the physics list is already initialized
+
 
 class SplitProcessActorBase(GenericBiasingActorBase):
     """
@@ -260,6 +272,12 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
 
     def initialize(self):
         GenericBiasingActorBase.initialize(self)
+        if self.user_info.attached_to != "world":
+            warning(
+                f"GammaFreeFlightActor actors can only be attached to the world volume, "
+                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
+            )
+        self.check_compatibility_with_generic_process()
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
@@ -395,6 +413,10 @@ class ScatterSplittingFreeFlightActor(
                 "doc": "When a non-split particle enters one of those volumes, it is killed.",
             },
         ),
+        "debug": (
+            False,
+            {"doc": "Print debug information during the stepping action of the actor."},
+        ),
     }
 
     # Do NOT work with GammaGeneralProc
@@ -421,6 +443,12 @@ class ScatterSplittingFreeFlightActor(
 
     def initialize(self):
         SplitProcessActorBase.initialize(self)
+        if self.user_info.attached_to != "world":
+            warning(
+                f"ScatterSplittingFreeFlightActor actors can only be attached to the world volume, "
+                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
+            )
+        self.check_compatibility_with_generic_process()
         # Check the sub-parameters
         self._aa_validator.validate(self, "angular_acceptance")
         if self.user_info.compton_splitting_factor == -1:

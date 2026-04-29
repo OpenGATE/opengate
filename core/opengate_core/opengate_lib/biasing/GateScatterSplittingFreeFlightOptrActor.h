@@ -12,6 +12,7 @@ Copyright (C): OpenGATE Collaboration
 #include "GateGammaFreeFlightOptn.h"
 #include "GateScatterSplittingFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
+#include <unordered_set>
 
 namespace py = pybind11;
 
@@ -22,16 +23,15 @@ public:
   ~GateScatterSplittingFreeFlightOptrActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
+  void ConfigureForWorker() override;
+  void StartTracking(const G4Track *) override;
 
   void BeginOfRunAction(const G4Run *run) override;
   void BeginOfEventAction(const G4Event *) override;
-
-  void StartTracking(const G4Track *) override;
   void SteppingAction(G4Step *) override;
   void EndOfSimulationWorkerAction(const G4Run *) override;
 
   std::map<std::string, double> GetBiasInformation();
-
   void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
   static int IsScatterInteractionGeneralProcess_OLD(
@@ -63,16 +63,24 @@ protected:
     int fComptonInteractionCount;
     std::map<std::string, double> fBiasInformationPerThread;
     bool fCurrentTrackIsFreeFlight;
-    bool fIsTrackValidForStep;
+    bool fTrackMustBeKilled;
+    int fLastStepNumber = -1;
+    bool fIsStepInExcludedVolume = false;
+    bool fIsKillVolumesCached = false;
+    std::unordered_set<const G4LogicalVolume *> fKillVolumePointers;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
+  const std::unordered_set<const G4LogicalVolume *> &
+  GetKillVolumePointers() const;
+  std::map<std::string, std::string> fAAParameters;
+
   std::vector<std::string> fKillVolumes;
-  std::vector<const G4LogicalVolume *> fKillLogicalVolumes;
   std::map<std::string, double> fBiasInformation;
   int fComptonSplittingFactor;
   int fRayleighSplittingFactor;
   int fMaxComptonLevel;
+  bool fDebug;
   GateVBiasOptrActor *fActor = nullptr;
 };
 

@@ -26,31 +26,18 @@ public:
   GateFluenceActor(py::dict &user_info);
 
   void InitializeCpp() override;
-
   void InitializeUserInfo(py::dict &user_info) override;
-
-  // Function called every step in attached volume
-  // This where the scoring takes place
-
-  void SteppingAction(G4Step *) override;
-
   void StartSimulationAction() override;
-
   void BeginOfEventAction(const G4Event *event) override;
-
-  void EndOfEventAction(const G4Event *event) override;
-
+  void SteppingAction(G4Step *) override;
   void BeginOfRunActionMasterThread(int run_id) override;
-
   void BeginOfRunAction(const G4Run *run) override;
+  void EndOfRunAction(const G4Run *run) override;
 
   inline std::string GetPhysicalVolumeName() { return fPhysicalVolumeName; }
-
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
-  int fNbOfEvent;
-
-  int NbOfEvent = 0;
+  int fNbOfEvent = 0;
 
   // Image type is 3D float by default
   typedef itk::Image<float, 3> Image3DType;
@@ -108,7 +95,6 @@ public:
   G4bool fEnergySquaredFlag;
   G4bool fSecondaries;
   GateDigiAttributeLastProcessDefinedStepInVolumeActor *fLastProcessActor;
-  // GateVActor* fLastProcessActor;
 
   void FlushSquaredValues(threadLocalT &data,
                           const Image3DType::Pointer &cpp_image);
@@ -121,18 +107,26 @@ public:
                               const unsigned int numberOfVoxels);
 
   bool GetEnergySquaredFlag() const { return fEnergySquaredFlag; }
-
   void SetEnergySquaredFlag(const bool b) { fEnergySquaredFlag = b; }
-
   void SetEnergyFlag(const bool b) { fEnergyFlag = b; }
-
   bool GetEnergyFlag() const { return fEnergyFlag; }
-
   void SetCountsSquaredFlag(const bool b) { fCountsSquaredFlag = b; }
-
   bool GetCountsSquaredFlag() const { return fCountsSquaredFlag; }
 
-private:
+  void ScoreCounts(const Image3DType::IndexType &index, double w,
+                   int particleID, const G4String &lastProcessName,
+                   const G4String &creatorProcessName);
+
+  void ScoreEnergy(const Image3DType::IndexType &index, double w, double energy,
+                   int particleID, const G4String &lastProcessName,
+                   const G4String &creatorProcessName);
+
+  void ScoreUncertainties(const Image3DType::IndexType &index, double w,
+                          double energy, int particleID,
+                          const G4String &lastProcessName,
+                          const G4String &creatorProcessName, int event_id);
+
+protected:
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
   std::string fHitType;

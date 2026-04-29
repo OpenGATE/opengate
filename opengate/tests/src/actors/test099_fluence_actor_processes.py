@@ -98,6 +98,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.random_seed = 123456
     sim.output_dir = paths.output
+    sim.progress_bar = True
     ui = sim.user_info
     # ui.running_verbose_level = gate.logger.EVENT
 
@@ -191,6 +192,7 @@ if __name__ == "__main__":
     for process in processes:
         for type in types:
             string = f"{process}_{type}"
+            print(f"Processing {string}")
             img_fluence = img_opening(p / f"test099_processes_{type}_{process}.mhd")
             img_squared_fluence = img_opening(
                 p / f"test099_processes_{type}_squared_{process}.mhd"
@@ -229,4 +231,7 @@ if __name__ == "__main__":
 
     l_bool = np.array(l_bool, dtype="bool")
     is_ok = np.all(l_bool)
+    if not is_ok:
+        print("Some processes did not match.")
+        print(diff, l_bool)
     utility.test_ok(is_ok)

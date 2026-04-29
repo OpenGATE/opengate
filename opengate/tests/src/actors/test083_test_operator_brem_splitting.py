@@ -69,7 +69,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 1
-    sim.random_seed = 123456789
+    # sim.random_seed = 123456789
     sim.output_dir = paths.output
 
     # units

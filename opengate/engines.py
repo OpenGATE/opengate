@@ -302,6 +302,7 @@ class PhysicsEngine(EngineBase):
         for (
             world
         ) in self.physics_manager.simulation.volume_manager.parallel_world_names:
+            # flag "True" for Layered Mass Geometry (parallel world is enabled for all interactions)
             pwp = g4.G4ParallelWorldPhysics(world, True)
             self.g4_parallel_world_physics.append(pwp)
             self.g4_physics_list.RegisterPhysics(pwp)
@@ -646,10 +647,14 @@ class ActorEngine(EngineBase):
     def initialize(self):
         for actor in self.actor_manager.sorted_actors:
             logger.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
-            self.simulation_engine.action_engine.register_all_actions(actor)
+            # self.simulation_engine.action_engine.register_all_actions(actor)
             actor.initialize()
             # warning: the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
+
+    def register_actions(self):
+        for actor in self.actor_manager.sorted_actors:
+            self.simulation_engine.action_engine.register_all_actions(actor)
 
     def register_to_actors(self):
         for actor in self.actor_manager.actors.values():
@@ -657,9 +662,49 @@ class ActorEngine(EngineBase):
 
     def register_sensitive_detectors(self, world_name):
         for actor in self.actor_manager.sorted_actors:
+            # 1. Determine which volumes this actor is attached to
+            if isinstance(actor.attached_to, str):
+                mothers = [actor.attached_to]
+            else:
+                mothers = actor.attached_to
+
+            # 2. Check if the actor belongs to the world currently being constructed
+            actor_in_current_world = False
+            for volume_name in mothers:
+                volume = self.simulation_engine.simulation.volume_manager.get_volume(
+                    volume_name
+                )
+                if volume.world_volume.name == world_name:
+                    actor_in_current_world = True
+                    break
+
+            # 3. Handle Sensitive Detectors
+            if actor.IsSensitiveDetector() is True:
+                # add SD for all mothers in the current world
+                for volume_name in mothers:
+                    volume = (
+                        self.simulation_engine.simulation.volume_manager.get_volume(
+                            volume_name
+                        )
+                    )
+                    if volume.world_volume.name == world_name:
+                        register_sensitive_detector_to_children(
+                            actor, volume.g4_logical_volume
+                        )
+
+            # 4. Handle Biasing Operators/Actors (specific)
+            # this is needed for MultiThread run
+            if hasattr(actor, "ConfigureForWorker"):
+                # ONLY configure if the actor belongs to the current world.
+                # This prevents looking up volumes in parallel worlds before they are built
+                if actor_in_current_world:
+                    actor.ConfigureForWorker()
+
+    def register_sensitive_detectors_OLD(self, world_name):
+        for actor in self.actor_manager.sorted_actors:
             if actor.IsSensitiveDetector() is True:
                 # Step: only enabled if attachTo a given volume.
-                # Propagated to all child and sub-child
+                # Propagated to all child and sub-child.
                 # tree = volume_manager.volumes_tree
                 if isinstance(actor.attached_to, str):
                     # make a list with one single element
@@ -681,7 +726,6 @@ class ActorEngine(EngineBase):
             # this is specific for BiasingOperator/Actor
             # this is needed for MultiThread run
             if hasattr(actor, "ConfigureForWorker"):
-                actor.InitializeUserInfo(actor.user_info)
                 actor.ConfigureForWorker()
 
     def start_simulation(self):
@@ -749,7 +793,6 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
             volume.construct()
 
     def ConstructSD(self):
-        # FIXME
         self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.parallel_world_name,
         )
@@ -860,6 +903,14 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.volume_manager.world_volume.name,
         )
+
+        for field in self.simulation_engine.simulation.volume_manager.fields.values():
+            for volume_name in field.attached_to:
+                volume_obj = self.volume_manager.get_volume(volume_name)
+                volume_obj.g4_field_manager = field.create_field_manager()
+                volume_obj.g4_logical_volume.SetFieldManager(
+                    volume_obj.g4_field_manager, True
+                )
 
     def get_volume(self, name):
         return self.volume_manager.get_volume(name)
@@ -1408,8 +1459,6 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
-        # action
-
         # Visu
         if self.simulation.visu:
             logger.info("Simulation: initialize Visualization")
@@ -1421,6 +1470,12 @@ class SimulationEngine(GateSingletonFatal):
         self.g4_RunManager.SetUserInitialization(
             self.action_engine
         )  # G4 internally calls action_engine.Build()
+
+        # Actors initialization (before the RunManager initializes)
+        # This pushes user_info to C++ before workers (or master) call ConfigureForWorker()
+        logger.info("Simulation: initialize Actors")
+        self.actor_engine.initialize()
+        self.filter_engine.initialize()
 
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
@@ -1436,6 +1491,7 @@ class SimulationEngine(GateSingletonFatal):
         else:
             logger.info("Simulation: initialize G4RunManager")
             self.g4_RunManager.Initialize()
+            # A this point, ConstructSDandField and Configure are called once
 
         logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
@@ -1443,19 +1499,18 @@ class SimulationEngine(GateSingletonFatal):
 
         # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
-            logger.info("Simulation: initialize Workers (MT mode)")
+            logger.info("Simulation: initialize the worker threads (MT mode)")
             self.g4_RunManager.FakeBeamOn()
+            # ConstructSDandField then ConfigureForWorker are called for each worker thread
 
         # Actions initialisation
         # This must come after the G4RunManager initialisation
         # because the RM initialisation calls ActionEngine.Build()
-        # which is required for initialize()
-        # Actors initialization (before the RunManager Initialize)
-        # self.actor_engine.create_actors()  # calls the actors' constructors
-        logger.info("Simulation: initialize Actors")
+        # which is required to register actions
+        logger.info("Simulation: initialize Actor-Source links")
         self.source_engine.initialize_actors()
-        self.actor_engine.initialize()
-        self.filter_engine.initialize()
+        logger.info("Simulation: register Actions of actors")
+        self.actor_engine.register_actions()
 
         self.is_initialized = True
 

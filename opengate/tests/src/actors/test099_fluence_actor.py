@@ -74,6 +74,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.random_seed = 123456
     sim.output_dir = paths.output
+    sim.progress_bar = True
     ui = sim.user_info
     # ui.running_verbose_level = gate.logger.EVENT
 
@@ -155,6 +156,9 @@ if __name__ == "__main__":
 
     l_is_ok = np.zeros(2)
     for i, type in enumerate(("E", "C")):
+        print(
+            f"\nComparing relative errors on {type} between fluence actor and phsp..."
+        )
         tab, s_tab = img_generation_from_phsp(
             fluence_actor.size[0],
             fluence_actor.size[1],

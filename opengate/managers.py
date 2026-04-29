@@ -1,49 +1,48 @@
 import copy
-from typing import Optional, List, Union
-from box import Box
-from anytree import RenderTree, LoopError
+import io
 import shutil
 import weakref
 from pathlib import Path
-import io
+from typing import List, Optional, Union
 
 import opengate_core as g4
+from anytree import LoopError, RenderTree
+from box import Box
+
 from .base import (
     GateObject,
-    process_cls,
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
+    process_cls,
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
-from .exception import fatal, warning, GateDeprecationError, GateImplementationError
+from .exception import GateDeprecationError, GateImplementationError, fatal, warning
+from .geometry.fields import FieldBase, field_types
 from .geometry.materials import MaterialDatabase
-
-from .utility import (
-    g4_units,
-    indent,
-    read_mac_file_to_commands,
-    ensure_directory_exists,
-    insert_suffix_before_extension,
-)
 from .logger import *
-
 from .physics import (
-    Region,
     OpticalSurface,
+    Region,
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
 )
-from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
-
-from .sources.generic import SourceBase, GenericSource
-from .sources.lastvertexsources import LastVertexSource
-from .sources.phspsources import PhaseSpaceSource
-from .sources.voxelsources import VoxelSource, VoxelizedPromptGammaTLESource
-from .sources.gansources import GANSource, GANPairsSource
+from .serialization import dump_json, dumps_json, load_json, loads_json
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
+from .sources.gansources import GANPairsSource, GANSource
+from .sources.generic import GenericSource, SourceBase
+from .sources.lastvertexsources import LastVertexSource
 from .sources.phidsources import PhotonFromIonDecaySource
+from .sources.phspsources import PhaseSpaceSource
+from .sources.voxelsources import VoxelizedPromptGammaTLESource, VoxelSource
+from .utility import (
+    ensure_directory_exists,
+    g4_units,
+    indent,
+    insert_suffix_before_extension,
+    read_mac_file_to_commands,
+)
 from .voxelize import voxelize_geometry
 
 source_types = {
@@ -59,75 +58,73 @@ source_types = {
     "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
 }
 
-from .geometry.volumes import (
-    VolumeBase,
-    BoxVolume,
-    SphereVolume,
-    EllipsoidVolume,
-    TrapVolume,
-    ImageVolume,
-    TubsVolume,
-    PolyhedraVolume,
-    HexagonVolume,
-    TesselatedVolume,
-    ConsVolume,
-    TrdVolume,
-    BooleanVolume,
-    RepeatParametrisedVolume,
-    ParallelWorldVolume,
-    VolumeTreeRoot,
-)
-from .actors.filters import get_filter_class, FilterBase, filter_classes
-from .actors.base import ActorBase
-
-from .actors.doseactors import (
-    DoseActor,
-    TLEDoseActor,
-    LETActor,
-    FluenceActor,
-    ProductionAndStoppingActor,
-    RBEActor,
-    REActor,
-    BeamQualityActor,
-    EmCalculatorActor,
-)
-
-from .actors.pgactors import (
-    VoxelizedPromptGammaTLEActor,
-    VoxelizedPromptGammaAnalogActor,
-)
-
-from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
-from .actors.miscactors import (
-    SimulationStatisticsActor,
-    KillActor,
-    KillAccordingProcessesActor,
-    KillNonInteractingParticleActor,
-    KillAccordingParticleNameActor,
-    AttenuationImageActor,
-)
+from .actors.base import ActorBase
 from .actors.biasingactors import (
-    GenericBiasingActorBase,
     BremsstrahlungSplittingActor,
     GammaFreeFlightActor,
-    ScatterSplittingFreeFlightActor,
+    GenericBiasingActorBase,
     LastVertexInteractionSplittingActor,
+    ScatterSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
+    CoincidenceSorterActor,
+    DigiAttributeLastProcessDefinedStepInVolumeActor,
+    DigiAttributeProcessDefinedStepInVolumeActor,
     DigitizerAdderActor,
     DigitizerBlurringActor,
-    DigitizerSpatialBlurringActor,
-    DigitizerReadoutActor,
     DigitizerEfficiencyActor,
-    DigitizerProjectionActor,
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
     DigitizerPileupActor,
-    CoincidenceSorterActor,
+    DigitizerProjectionActor,
+    DigitizerReadoutActor,
+    DigitizerSpatialBlurringActor,
     PhaseSpaceActor,
-    DigiAttributeProcessDefinedStepInVolumeActor,
-    DigiAttributeLastProcessDefinedStepInVolumeActor,
+)
+from .actors.doseactors import (
+    BeamQualityActor,
+    DoseActor,
+    EmCalculatorActor,
+    FluenceActor,
+    LETActor,
+    ProductionAndStoppingActor,
+    RBEActor,
+    REActor,
+    TLEDoseActor,
+)
+from .actors.dynamicactors import DynamicGeometryActor
+from .actors.filters import FilterBase, filter_classes, get_filter_class
+from .actors.miscactors import (
+    AttenuationImageActor,
+    DepositedChargeActor,
+    KillAccordingParticleNameActor,
+    KillAccordingProcessesActor,
+    KillActor,
+    KillNonInteractingParticleActor,
+    SimulationStatisticsActor,
+)
+from .actors.pgactors import (
+    VoxelizedPromptGammaAnalogActor,
+    VoxelizedPromptGammaTLEActor,
+)
+from .geometry.volumes import (
+    BooleanVolume,
+    BoxVolume,
+    ConsVolume,
+    EllipsoidVolume,
+    HexagonVolume,
+    ImageVolume,
+    ParallelWorldVolume,
+    PolyhedraVolume,
+    RepeatParametrisedVolume,
+    SphereVolume,
+    TesselatedVolume,
+    TrapVolume,
+    TrdVolume,
+    TubsVolume,
+    VolumeBase,
+    VolumeTreeRoot,
 )
 
 particle_names_Gate_to_G4 = {
@@ -158,6 +155,7 @@ actor_types = {
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
     "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
+    "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
@@ -1171,6 +1169,9 @@ class VolumeManager(GateObject):
         # Store them to init them later
         self.solid_with_texture_init = []
 
+        # fields
+        self.fields: dict[str, FieldBase] = {}
+
     def reset(self):
         self.__init__(self.simulation)
 
@@ -1188,11 +1189,23 @@ class VolumeManager(GateObject):
         d = super().to_dictionary()
         d["volumes"] = dict([(k, v.to_dictionary()) for k, v in self.volumes.items()])
         d["parallel_world_volumes"] = list(self.parallel_world_volumes.keys())
+        d["fields"] = dict([(k, v.to_dictionary()) for k, v in self.fields.items()])
         return d
 
     def from_dictionary(self, d):
         self.reset()
         super().from_dictionary(d)
+        # Restore fields before volumes so that volume references are valid
+        for k, v in d.get("fields", {}).items():
+            field_type = v["object_type"]
+            if field_type not in field_types:
+                fatal(
+                    f"Unknown field type '{field_type}'. "
+                    f"Known types are: {list(field_types.keys())}."
+                )
+            field = field_types[field_type](name=v["user_info"]["name"])
+            field.from_dictionary(v)
+            self.fields[field.name] = field
         # First create all volumes
         for k, v in d["volumes"].items():
             # the world volume is always created in __init__
@@ -1553,7 +1566,7 @@ class Simulation(GateObject):
                 "By default, the Geant4 visualisation commands are the ones "
                 "provided in the file ``opengate/mac/default_visu_commands_qt.mac``. "
                 "Custom commands can be loaded via a .mac file, e.g.  "
-                "``sim.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')``.",
+                "``sim.visu_commands = gate.utility.read_mac_file_to_commands('my_visu_commands.mac')``.",
             },
         ),
         "visu_commands_vrml": (

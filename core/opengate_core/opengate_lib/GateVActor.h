@@ -118,9 +118,9 @@ public:
 
   void AddActorOutputInfo(const std::string &outputName);
 
-  static bool
-  IsStepEnteringVolume(const G4Step *step,
-                       const std::vector<const G4LogicalVolume *> &volumes);
+  static bool IsStepEnteringVolume(
+      const G4Step *step,
+      const std::unordered_set<const G4LogicalVolume *> &volumes);
 
   bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
