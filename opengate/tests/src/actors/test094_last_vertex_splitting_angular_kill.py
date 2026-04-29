@@ -34,7 +34,7 @@ def validation_test(arr_data, vector_director, max_theta):
 if __name__ == "__main__":
     bias = True
     paths = utility.get_default_test_paths(
-        __file__, "test084_last_vertex_splitting", output_folder="test084"
+        __file__, "test092_last_vertex_splitting", output_folder="test092"
     )
 
     # create the simulation
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         "TrackCreatorProcess",
     ]
     if bias:
-        phsp_actor.output_filename = "test084_output_data_last_vertex_angular_kill.root"
+        phsp_actor.output_filename = "test092_output_data_last_vertex_angular_kill.root"
 
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     print(s)
 
     f_data = uproot.open(
-        paths.output / "test084_output_data_last_vertex_angular_kill.root"
+        paths.output / "test092_output_data_last_vertex_angular_kill.root"
     )
     arr_data = f_data["PhaseSpace"].arrays()
     is_ok = validation_test(arr_data, vector_director, vertex_splitting_actor.max_theta)
