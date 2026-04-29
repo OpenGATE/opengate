@@ -122,6 +122,8 @@ public:
       const G4Step *step,
       const std::unordered_set<const G4LogicalVolume *> &volumes);
 
+  bool IsStepInTopAttachedVolume(const G4Step *step) const;
+
   bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
   inline static std::string fOutputNameRoot = "root_output";
