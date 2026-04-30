@@ -48,8 +48,8 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("PositroniumSource", "source")
     source.activity = 1000 * Bq / sim.number_of_threads
-    #source.position.type = "sphere"
-    #source.position.radius = 2 * mm
+    source.position.type = "sphere"
+    source.position.radius = 20 * cm
 
     source.positronium_fractions = [0.4, 0.3, 0.2, 0.1]
     source.positronium_lifetimes = [0.122 * ns, 2 * ns, 5 * ns, 12 * ns]
