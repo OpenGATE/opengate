@@ -13,7 +13,7 @@ namespace py = pybind11;
 
 void init_GatePositroniumSource(py::module &m) {
 
-  py::class_<GatePositroniumSource, GateVSource>(m, "GatePositroniumSource")
+  py::class_<GatePositroniumSource, GateGenericSource>(m, "GatePositroniumSource")
       .def(py::init())
       .def("InitializeUserInfo", &GatePositroniumSource::InitializeUserInfo);
 }
