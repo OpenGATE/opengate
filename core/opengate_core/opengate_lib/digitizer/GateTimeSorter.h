@@ -22,21 +22,44 @@ public:
   void SetSortingWindow(double duration);
   void SetMaxSize(size_t size);
 
-  GateDigiCollection *OutputCollection() const;
-  GateDigiCollection::Iterator &OutputIterator();
-  void MarkOutputAsProcessed();
-  void Ingest();
-  void Process();
-  void MarkThreadAsFinished(int threadId);
-  void IdentifyFastestThread();
-  void Flush();
-
   void OnEndOfEventAction(std::function<void(void)> work);
   void OnEndOfRunAction(std::function<void(void)> anyThreadWork,
                         std::function<void(void)> lastThreadWork);
 
+  GateDigiCollection *OutputCollection() const;
+  GateDigiCollection::Iterator &OutputIterator();
+  void MarkOutputAsProcessed();
+
+  void Ingest();
+  void Process();
+  void Flush();
+
 private:
+  void IdentifyFastestThread();
+  void MarkThreadAsFinished(int threadId);
   void Prune();
+
+  double fMinimumSortingWindow{1000.0}; // nanoseconds
+  double fSortingWindow{1000.0};        // nanoseconds
+  size_t fMaxSize{100'000};             // digis
+
+  // Threading
+
+  G4Mutex fIngestionMutex;
+  int fNumWorkingThreads{};
+  std::atomic<int> fFastestThread{};
+  std::atomic<int> fNumActiveWorkingThreads{};
+  std::atomic<bool> fProcessingOngoing{};
+  std::atomic<int> fNumIngestions{};
+
+  struct alignas(64) PaddedAtomicDouble {
+    // Pad atomic<double> to one cache line (64 bytes) to prevent false sharing
+    // when N threads each write to their own element in a tight loop.
+    std::atomic<double> value{};
+  };
+  std::unique_ptr<PaddedAtomicDouble[]> fMaxGlobalTimePerThread;
+
+  // Digi storage, sorting and copying
 
   struct TimedDigiIndex {
     size_t index;
@@ -51,29 +74,10 @@ private:
                               std::greater<TimedDigiIndex>>
       TimeSortedIndices;
 
-  double fMinimumSortingWindow{1000.0}; // nanoseconds
-  double fSortingWindow{1000.0};        // nanoseconds
-  size_t fMaxSize{100'000};
-
-  // Pad atomic<double> to one cache line (64 bytes) to prevent false sharing
-  // when N threads each write to their own element in a tight loop.
-  struct alignas(64) PaddedAtomicDouble {
-    std::atomic<double> value{0.0};
-  };
-
-  std::unique_ptr<PaddedAtomicDouble[]> fMaxGlobalTimePerThread;
-  std::atomic<int> fFastestThread{};
-  std::atomic<int> fNumActiveWorkingThreads{};
-  std::atomic<bool> fProcessing{};
-  std::atomic<int> fNumIngestions{};
-
-  int fNumThreads{0};
-  G4Mutex fMutex;
-
   GateDigiCollection *fInputCollection;
 
-  GateDigiCollection *fBufferA;
-  GateDigiCollection *fBufferB;
+  GateDigiCollection *fIngestionBufferA;
+  GateDigiCollection *fIngestionBufferB;
 
   GateDigiCollection *fSortedCollectionA;
   std::unique_ptr<TimeSortedIndices> fSortedIndicesA;
@@ -86,6 +90,8 @@ private:
   std::map<std::pair<GateDigiCollection *, GateDigiCollection *>,
            std::unique_ptr<GateDigiAttributesFiller>>
       fFillers;
+
+  // GateTimeSorter internal state
 
   bool fInitialized{false};
   bool fProcessingStarted{false};
