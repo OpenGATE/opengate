@@ -106,19 +106,6 @@ GateDigiCollection *GateTimeSorter::OutputCollection() const {
   return fOutputCollection;
 }
 
-std::unique_ptr<GateDigiAttributesFiller>
-GateTimeSorter::CreateFiller(GateDigiCollection *destination) {
-  // Creates a GateDigiAttributesFiller from the TimeSorter's output collection
-  // into the given destination GateDigiCollection.
-
-  if (!fInitialized) {
-    Fatal("CreateFiller() called before Init().");
-  }
-  return std::make_unique<GateDigiAttributesFiller>(
-      fOutputCollection, destination,
-      fOutputCollection->GetDigiAttributeNames());
-}
-
 GateDigiCollection::Iterator &GateTimeSorter::OutputIterator() {
   // Provides access to the GateTimeSorter's output iterator.
   return fOutputIter;

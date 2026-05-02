@@ -150,7 +150,9 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     window.digiIter.TrackAttribute("PostPosition", &l.pos);
     // Create a filler to copy all digi attributes from the sorted collection
     // into the collection of the window.
-    window.fillerIn = l.fTimeSorter.CreateFiller(window.digis);
+    window.fillerIn = std::make_unique<GateDigiAttributesFiller>(
+        l.fTimeSorter.OutputCollection(), window.digis,
+        l.fTimeSorter.OutputCollection()->GetDigiAttributeNames());
     // Create a filler to copy digi attributes from the collection of the window
     // to the output collection (used for the digis that will result from
     // pile-up).
