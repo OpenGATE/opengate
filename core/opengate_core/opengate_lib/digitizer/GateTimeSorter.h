@@ -23,12 +23,10 @@ public:
   void SetMaxSize(size_t size);
 
   GateDigiCollection *OutputCollection() const;
-  std::unique_ptr<GateDigiAttributesFiller>
-  CreateFiller(GateDigiCollection *destination);
   GateDigiCollection::Iterator &OutputIterator();
+  void MarkOutputAsProcessed();
   void Ingest();
   void Process();
-  void MarkOutputAsProcessed();
   void MarkThreadAsFinished(int threadId);
   void IdentifyFastestThread();
   void Flush();
