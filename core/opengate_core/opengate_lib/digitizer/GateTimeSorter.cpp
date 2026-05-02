@@ -190,6 +190,7 @@ void GateTimeSorter::OnEndOfRunAction(
   // lastThreadWork allows the calling actor to execute logic that is intended
   // to run after the GateTimeSorter has finalized all digi sorting.
   if (fNumActiveWorkingThreads.fetch_sub(1, std::memory_order_acq_rel) <= 1) {
+    Process();
     Flush();
     lastThreadWork();
   }

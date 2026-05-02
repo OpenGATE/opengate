@@ -245,11 +245,12 @@ End of Run — Flush
 
 ``OnEndOfRunAction()`` atomically decrements ``fNumActiveWorkingThreads``.
 The thread that takes the counter to zero is the last active worker; it calls
-``Flush()``, which drains all remaining digis from ``fSortedIndicesA`` into
-``fOutputCollection`` without applying the sorting window, since no further
-digis will arrive.  It then calls ``lastThreadWork()``.  Every thread
-subsequently calls ``anyThreadWork()``.  Before ``OnEndOfRunAction()``
-returns, each thread calls ``MarkThreadAsFinished()``, which zeroes its
+``Process()`` and ``Flush()``, which drains all remaining digis from
+``fSortedIndicesA`` into ``fOutputCollection`` without applying the sorting
+window, since no further digis will arrive.
+It then calls ``lastThreadWork()``.  Every thread subsequently calls
+``anyThreadWork()``.  Before ``OnEndOfRunAction()`` returns,
+each thread calls ``MarkThreadAsFinished()``, which zeroes its
 ``fMaxGlobalTimePerThread`` entry so it is no longer eligible to be selected
 as the fastest thread.
 
