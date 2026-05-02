@@ -48,9 +48,11 @@ protected:
     TakeWinnerIfIsGood,
     TakeWinnerIfAllAreGoods
   };
+
   enum class TransaxialPlane { XY, YZ, XZ };
 
   // Coincidence sorter parameters.
+
   double fWindowSize;
   double fWindowOffset;
   MultiplesPolicy fMultiplesPolicy;
