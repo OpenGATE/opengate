@@ -71,7 +71,11 @@ if __name__ == "__main__":
     cc.window = 1e-9 * sec
     cc.output_filename = root_filename
 
-    sim.run_timing_intervals = [[0, 0.001 * sec]]
+    run_duration = 0.001 * sec
+    num_runs = 2
+    sim.run_timing_intervals = [
+        [2 * r * run_duration, (2 * r + 1) * run_duration] for r in range(num_runs)
+    ]
 
     for policy in [
         "RemoveMultiples",
