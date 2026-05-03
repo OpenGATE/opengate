@@ -219,6 +219,7 @@ void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
       [this]() {
         ProcessTimeSortedSingles();
         DetectCoincidences(true);
+        ClearProcessedSingles();
       });
 }
 
