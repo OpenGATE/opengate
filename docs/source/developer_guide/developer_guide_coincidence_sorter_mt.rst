@@ -120,8 +120,12 @@ GateTimeSorter: Design and Threading Model
 Phase 1 — Ingestion
 ^^^^^^^^^^^^^^^^^^^
 
-Every call to ``OnEndOfEventAction()`` begins with ``Ingest()``.  Under the
-protection of ``fIngestionMutex``, ``Ingest()``:
+Every call to ``OnEndOfEventAction()`` begins with ``Ingest()``.  If the
+calling thread's input collection has no new digis, ``Ingest()`` returns ``false``
+and ``OnEndOfEventAction()`` returns immediately — an event with no digis
+contributes nothing to the ingestion counter and requires no further work.
+
+Otherwise, under the protection of ``fIngestionMutex``, ``Ingest()``:
 
 1. Iterates over all digis in the calling thread's input collection.
 2. Copies each digi into ``fIngestionBufferA`` via a pre-built
@@ -129,10 +133,13 @@ protection of ``fIngestionMutex``, ``Ingest()``:
 3. Updates ``fMaxGlobalTimePerThread[tid]``, a cache-line-padded atomic
    ``double`` (``PaddedAtomicDouble``) indexed by thread ID, to record the
    highest ``GlobalTime`` value seen by this thread so far.
+4. If the per-thread maximum actually increased, extends ``fSortingWindow``
+   to cover the current spread of ``GlobalTime`` across all threads (see
+   `The Sorting Window`_).
 
-The critical section is intentionally minimal: a sequential copy of a
-typically small batch of digis, no sorting, no downstream processing.
-Threads therefore block each other for only a very short time.
+The critical section contains a sequential digi copy plus the (rare) sorting
+window extension.  Threads therefore block each other for only a very short
+time.
 
 
 Phase 2 — Sorting and Output
@@ -186,16 +193,12 @@ Inside ``Process()``:
    buffer, while ``Process()`` owns the data in ``fIngestionBufferB``
    exclusively (see `Exclusive Ownership of fIngestionBufferB After the Swap`_).
 
-2. **Sorting-window extension.** In multi-threaded mode the sorting window
-   is extended if the current thread spread requires it (see
-   `The Sorting Window`_).
-
-3. **Sort.** Digis from ``fIngestionBufferB`` are iterated in arrival order.
+2. **Sort.** Digis from ``fIngestionBufferB`` are iterated in arrival order.
    Each digi is appended to ``fSortedCollectionA`` and its (index, time) pair
    is pushed onto the min-heap ``fSortedIndicesA``.  The heap thereby provides
    a globally time-sorted view of all digis ingested so far.
 
-4. **Drain.** Digis are popped from the heap and copied to
+3. **Drain.** Digis are popped from the heap and copied to
    ``fOutputCollection`` as long as::
 
        fMostRecentTimeArrived - fSortedIndicesA.top().time > fSortingWindow
@@ -204,7 +207,7 @@ Inside ``Process()``:
    stream: no future ingestion can produce a digi with a low enough
    ``GlobalTime`` to be inserted before anything already drained.
 
-5. **Fastest-thread re-evaluation.** Because the current thread has been
+4. **Fastest-thread re-evaluation.** Because the current thread has been
    doing sorting and coincidence detection work since it was identified
    as the fastest, it may no longer hold that distinction.
    ``IdentifyFastestThread()`` refreshes ``fFastestThread`` so that
@@ -226,8 +229,8 @@ monotonically.  Sources of non-monotonicity include:
 oldest unsorted digi and the most recently arrived digi before the oldest
 digi is considered safe to emit.  A user-specified minimum
 ``fMinimumSortingWindow`` provides the baseline.  In multi-threaded mode the
-window is automatically extended to cover the current spread of ``GlobalTime``
-across all threads:
+window is automatically extended inside ``Ingest()``, whenever the ingesting
+thread observes a new maximum ``GlobalTime`` difference across threads:
 
 .. code-block:: text
 
@@ -261,8 +264,10 @@ Correctness of the Lock-Free Processing Path
 After the buffer swap inside ``Process()``, the remainder of that function
 reads and writes ``fIngestionBufferB``, ``fSortedCollectionA``,
 ``fSortedIndicesA``, ``fOutputCollection``, ``fMostRecentTimeArrived``,
-``fMostRecentTimeDeparted``, ``fSortingWindow``, and ``fFastestThread``
-**without holding any mutex**.  This section explains why that is safe.
+``fMostRecentTimeDeparted``, and ``fFastestThread``
+**without holding any mutex**, and reads ``fSortingWindow`` via an atomic
+load (``fSortingWindow`` is ``std::atomic<double>`` because ``Ingest()``
+writes to it concurrently).  This section explains why that is safe.
 
 
 Exclusive Ownership of ``fIngestionBufferB`` After the Swap
@@ -295,9 +300,10 @@ section around the body of ``Process()``:
   relationship with the **release** store at the end of the *previous*
   ``Process()`` invocation.  All writes made by that invocation to
   ``fSortedCollectionA``, ``fSortedIndicesA``, ``fOutputCollection``,
-  ``fMostRecentTimeArrived``, ``fMostRecentTimeDeparted``, ``fSortingWindow``,
-  and ``fFastestThread`` are therefore visible to the current invocation,
-  even though no mutex guards those fields directly.
+  ``fMostRecentTimeArrived``, ``fMostRecentTimeDeparted``, and ``fFastestThread``
+  are therefore visible to the current invocation, even though no mutex guards
+  those fields directly.  (``fSortingWindow`` is excluded from this list
+  because it is an atomic written by ``Ingest()`` independently of the CAS.)
 * The **release** store at the end of ``Process()`` makes all writes of the
   current invocation visible to the next thread that successfully acquires the
   token.
@@ -328,25 +334,24 @@ Visibility of ``fMaxGlobalTimePerThread``
 
 ``fMaxGlobalTimePerThread`` is an array of ``PaddedAtomicDouble`` values, each
 padded to one cache-line (64 bytes) to prevent false sharing.  Each thread
-writes only to its own element inside ``Ingest()``; ``Process()`` reads all
-elements to compute the sorting window extension and to re-evaluate the fastest
-thread.
+writes only to its own element inside ``Ingest()``.  ``Ingest()`` also reads
+all elements (under ``fIngestionMutex``) to compute the sorting window
+extension.  ``Process()`` reads all elements to re-evaluate the fastest thread.
 
 Concurrent access is safe because:
 
 * **Per-thread ownership of writes.** Each element is written by exactly one
   thread (its owner), so there are no write-write races.
-* **Read ordering.** The reads in ``Process()`` happen after the acquire CAS
-  and before the release store of ``fProcessingOngoing``.  All values written
-  by any ``Ingest()`` call that completed before the previous
-  ``Process()``-release-store are therefore visible.
-* **Benign races on in-flight values.** ``Ingest()`` can run concurrently
-  with ``Process()`` after the buffer swap.  A read in ``Process()`` may
-  therefore see a value that is one ingestion stale.  This is harmless: the
-  sorting window extension is conservative (a slightly underestimated spread
-  is corrected in the next ``Process()`` call, and the window never shrinks)
-  and fastest-thread selection is heuristic (routing to a slightly suboptimal
-  thread does not affect correctness).
+* **Read ordering for window extension.** The reads of all elements in
+  ``Ingest()`` happen under ``fIngestionMutex``, which serialises concurrent
+  ``Ingest()`` calls.  The resulting ``fSortingWindow`` update is an atomic
+  store, immediately visible to any subsequent atomic load in ``Process()``.
+* **Benign races for fastest-thread selection.** ``Ingest()`` can run
+  concurrently with ``Process()`` after the buffer swap.  A load of
+  ``fMaxGlobalTimePerThread[tid]`` inside ``IdentifyFastestThread()`` may
+  therefore see a value that is one ingestion stale.  This is harmless:
+  fastest-thread selection is heuristic and routing processing to a slightly
+  suboptimal thread does not affect correctness.
 
 
 GateCoincidenceSorterActor: Consuming the Sorted Stream
@@ -414,8 +419,9 @@ Thread Lifecycle Summary
      - Creates ``GateTimeSorter`` and ``TemporaryStorage`` A/B.  No mutex.
    * - ``EndOfEventAction``
      - All workers
-     - ``Ingest()`` — acquires ``fIngestionMutex`` briefly (copy + atomic
-       store to per-thread max).  Increment ``fNumIngestions`` (relaxed
+     - ``Ingest()`` — acquires ``fIngestionMutex`` briefly (copy, atomic store
+       to per-thread max, occasional ``fSortingWindow`` extension).  Returns
+       early if no digis; otherwise increment ``fNumIngestions`` (relaxed
        atomic).  If threshold reached: attempt CAS on ``fProcessingOngoing``
        (atomic, non-blocking).  If CAS succeeds and thread is fastest:
        ``Process()`` — acquires ``fIngestionMutex`` for buffer swap only,
@@ -423,6 +429,7 @@ Thread Lifecycle Summary
    * - ``EndOfRunAction``
      - All workers
      - Decrement ``fNumActiveWorkingThreads`` (atomic).  Last thread:
-       ``Flush()`` (single-threaded at this point) then ``lastThreadWork()``.
+       ``Process()`` then ``Flush()`` (both single-threaded at this point)
+       then ``lastThreadWork()``.
        All threads: ``anyThreadWork()``.  Each thread: ``MarkThreadAsFinished()``
        (atomic store).

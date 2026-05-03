@@ -30,7 +30,7 @@ public:
   GateDigiCollection::Iterator &OutputIterator();
   void MarkOutputAsProcessed();
 
-  void Ingest();
+  bool Ingest();
   void Process();
   void Flush();
 
@@ -40,13 +40,13 @@ private:
   void Prune();
 
   double fMinimumSortingWindow{1000.0}; // nanoseconds
-  double fSortingWindow{1000.0};        // nanoseconds
   size_t fMaxSize{100'000};             // digis
 
   // Threading
 
   G4Mutex fIngestionMutex;
   int fNumWorkingThreads{};
+  std::atomic<double> fSortingWindow{1000.0}; // nanoseconds
   std::atomic<int> fFastestThread{};
   std::atomic<int> fNumActiveWorkingThreads{};
   std::atomic<bool> fProcessingOngoing{};
