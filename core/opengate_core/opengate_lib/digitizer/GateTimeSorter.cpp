@@ -106,7 +106,7 @@ void GateTimeSorter::SetSortingWindow(double duration) {
         "SetSortingWindow() cannot be called after Ingest() has been called.");
   }
   fMinimumSortingWindow = duration;
-  fSortingWindow = duration;
+  fSortingWindow.store(duration);
 }
 
 void GateTimeSorter::SetMaxSize(size_t maxSize) {
@@ -142,7 +142,10 @@ void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
 
   // Phase 1
 
-  Ingest();
+  if (!Ingest()) {
+    // Return early if no digis were ingested.
+    return;
+  }
 
   // Phase 2
 
@@ -224,7 +227,7 @@ void GateTimeSorter::MarkOutputAsProcessed() {
   }
 }
 
-void GateTimeSorter::Ingest() {
+bool GateTimeSorter::Ingest() {
   // Locks the mutex and copies all digis from the input collection into
   // ingestion buffer A. Remembers the highest GlobalTime value observed so far
   // for the current thread.
@@ -236,16 +239,22 @@ void GateTimeSorter::Ingest() {
 
   fProcessingStarted = true;
 
-  // Look up the appropriate filler.
-  auto filler = fFillers[{fInputCollection, fIngestionBufferA}].get();
-
   // Create an iterator that tracks GlobalTime.
   auto iter = fInputCollection->NewIterator();
   double *t;
   iter.TrackAttribute("GlobalTime", &t);
 
-  // Copy digis while keeping track of the maximum GlobalTime value.
   iter.GoToBegin();
+
+  if (iter.IsAtEnd()) {
+    // The event has no digis.
+    return false;
+  }
+
+  // Look up the appropriate filler.
+  auto filler = fFillers[{fInputCollection, fIngestionBufferA}].get();
+
+  // Copy digis while keeping track of the maximum GlobalTime value.
   const int tid = std::max(0, G4Threading::G4GetThreadId());
   const double currentMax = fMaxGlobalTimePerThread[tid].value.load();
   double newMax = currentMax;
@@ -254,7 +263,24 @@ void GateTimeSorter::Ingest() {
     newMax = std::max(newMax, *t);
     iter++;
   }
-  fMaxGlobalTimePerThread[tid].value.store(newMax);
+
+  // In case of a multi-threaded simulation, extend the sorting time if needed,
+  // depending on the GlobalTime difference between the slowest and fastest
+  // progressing working thread.
+  if (fNumWorkingThreads > 1 && newMax > currentMax) {
+    fMaxGlobalTimePerThread[tid].value.store(newMax);
+    auto [minIt, maxIt] = std::minmax_element(
+        fMaxGlobalTimePerThread.get(),
+        fMaxGlobalTimePerThread.get() + fNumWorkingThreads,
+        [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
+          return a.value.load() < b.value.load();
+        });
+    fSortingWindow.store(std::max(fSortingWindow.load(),
+                                  fMinimumSortingWindow + maxIt->value.load() -
+                                      minIt->value.load()));
+  }
+
+  return true;
 }
 
 void GateTimeSorter::Process() {
@@ -287,23 +313,6 @@ void GateTimeSorter::Process() {
     return;
   }
 
-  // In case of a multi-threaded simulation, extend the sorting time if needed,
-  // depending on the GlobalTime difference between the slowest and fastest
-  // progressing working thread.
-  if (fNumWorkingThreads > 1) {
-    auto [minIt, maxIt] = std::minmax_element(
-        fMaxGlobalTimePerThread.get(),
-        fMaxGlobalTimePerThread.get() + fNumWorkingThreads,
-        [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
-          return a.value.load() < b.value.load();
-        });
-    const auto window =
-        fMinimumSortingWindow + maxIt->value.load() - minIt->value.load();
-    if (window > fSortingWindow) {
-      fSortingWindow = window;
-    }
-  }
-
   // Look up the fillers needed to copy the digis from ingestion buffer to
   // sorted collection, and from sorted collection to output collection.
   auto fillerIn = fFillers[{fIngestionBufferB, fSortedCollectionA}].get();
@@ -334,7 +343,7 @@ void GateTimeSorter::Process() {
         std::cout << "The digis in " << fInputCollection->GetName()
                   << " have non-monotonicities in the GlobalTime attribute "
                      "that exceed the sorting time ("
-                  << fSortingWindow
+                  << fMinimumSortingWindow
                   << " ns). Please increase the sorting window to avoid "
                      "dropped digis\n";
         fSortingWindowWarningIssued = true;
@@ -363,7 +372,7 @@ void GateTimeSorter::Process() {
   // time-monotonicity in the output collection.
   while (!fSortedIndicesA->empty() &&
          (*fMostRecentTimeArrived - fSortedIndicesA->top().time >
-          fSortingWindow)) {
+          fSortingWindow.load())) {
     // Copy oldest digi into the output collection.
     fillerOut->Fill(fSortedIndicesA->top().index);
     // Keep track of the GlobalTime of the last digi that was copied.
