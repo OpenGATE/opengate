@@ -929,8 +929,6 @@ The following policies are supported to deal with multiple coincidences in the s
 
 On-line coincidence sorting does not require saving singles to a file,
 which is more economical in terms of disk space if the singles are not needed after the simulation.
-The current limitation, however, is that :class:`~.opengate.actors.digitizers.CoincidenceSorterActor` can only be used
-in single-threaded simulations.
 
 With off-line coincidence sorting, coincidences are returned from the `CoincidenceSorter.run()`` method as a pandas DataFrame.
 Alternatively, `output_file_path` can be specified for saving the coincidences to a file. In this case, the run() method returns `None`.
