@@ -51,6 +51,9 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
         if not all(len(parameters[0]) == len(p) for p in parameters[1:]):
             fatal("Positronium source parameters have different lengths")
 
+        if self.particle != "gamma":
+            fatal("Positronium source can only emit gamma particles")
+
         GenericSource.initialize(self, run_timing_intervals)
 
 
