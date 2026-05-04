@@ -18,7 +18,7 @@ class GatePositroniumDecayChannel : public G4GeneralPhaseSpaceDecay
   //Describes for which positronium we need decay
   enum PositroniumKind { NotDefined, ParaPositronium, OrthoPositronium };
 
-  GatePositroniumDecayChannel( const G4String& parentName, G4double BR);
+  GatePositroniumDecayChannel( const G4String& parentName);
   virtual ~GatePositroniumDecayChannel() = default;
   /** Return gammas from positronium decay
   **/
