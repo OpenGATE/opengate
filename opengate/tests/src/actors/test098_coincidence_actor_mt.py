@@ -9,12 +9,12 @@ from test098_coincidence_simulation import create_simulation
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, gate_folder="", output_folder="test098_coincidence_actor"
+        __file__, gate_folder="", output_folder="test098_coincidence_actor_mt"
     )
 
     sec = gate.g4_units.s
 
-    sim, cc, root_filename = create_simulation(paths, num_threads=1)
+    sim, cc, root_filename = create_simulation(paths, num_threads=2)
 
     for policy in [
         "RemoveMultiples",

@@ -23,8 +23,8 @@ def compare_coincidences(
         )
         return False
 
-    expected_coincidences.sort_values(by=["GlobalTime1"], inplace=True)
-    actual_coincidences.sort_values(by=["GlobalTime1"], inplace=True)
+    expected_coincidences.sort_values(by=["GlobalTime1", "GlobalTime2"], inplace=True)
+    actual_coincidences.sort_values(by=["GlobalTime1", "GlobalTime2"], inplace=True)
 
     # Columns corresponding with attributes of type "3", e.g. PostPosition, are named differently
     # in the CoincidenceSorterActor and the Python CoincidenceSorter,

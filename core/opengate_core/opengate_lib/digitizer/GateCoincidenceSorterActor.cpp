@@ -21,15 +21,9 @@ GateCoincidenceSorterActor::TemporaryStorage::TemporaryStorage(
   const auto attribute_names = input->GetDigiAttributeNames();
 
   // GateDigiCollection for temporary storage
-  // TODO name OK?
   digis = manager->NewDigiCollection(input->GetName() + "_" + name_suffix);
   digis->InitDigiAttributesFromCopy(input);
-
-  iter = digis->NewIterator();
-  iter.TrackAttribute("GlobalTime", &currentTime);
-  iter.TrackAttribute("PreStepUniqueVolumeID", &currentVolID);
-  iter.TrackAttribute("PostPosition", &currentPos);
-  iter.TrackAttribute("TotalEnergyDeposit", &currentEdep);
+  digis->SetSharedStorage(true);
 
   // Filler to copy from input collection to temporary collection
   fillerIn =
@@ -41,7 +35,7 @@ GateCoincidenceSorterActor::TemporaryStorage::TemporaryStorage(
 }
 
 GateCoincidenceSorterActor::GateCoincidenceSorterActor(py::dict &user_info)
-    : GateVDigitizerWithOutputActor(user_info, false) {
+    : GateVDigitizerWithOutputActor(user_info, true) {
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
   fActions.insert("EndOfRunAction");
@@ -127,6 +121,9 @@ void GateCoincidenceSorterActor::StartSimulationAction() {
   }
   fOutputDigiCollection->SetFilenameAndInitRoot(outputPath);
 
+  // Create the attributes for coincidence digis. They have the same names as
+  // the attributes of the single digis, but with a "1" or "2" suffix (for the
+  // first and second single in the coincidence pair).
   const auto attribute_names = fInputDigiCollection->GetDigiAttributeNames();
   const std::string suffix1 = "1";
   const std::string suffix2 = "2";
@@ -172,83 +169,125 @@ void GateCoincidenceSorterActor::StartSimulationAction() {
   }
 }
 
+void GateCoincidenceSorterActor::BeginOfRunActionMasterThread(int run_id) {
+
+  // Create, initialize and configure the time sorter.
+  // The time sorter will create a single time-sorted stream containing all
+  // digis from all threads, so that the coincidence actor can identify
+  // coincidences between singles, irrespective of the thread in which they were
+  // simulated (prompt as well as random coincidences).
+  fTimeSorter = std::make_unique<GateTimeSorter>();
+  fTimeSorter->Init(fInputDigiCollection);
+  fTimeSorter->SetSortingWindow(fSortingTime);
+  fTimeSorter->SetMaxSize(fClearEveryNEvents);
+
+  // Create temporary storage, which stores time-sorted digis until a
+  // sufficiently large GlobalTime range is covered to allow for coincidence
+  // detection.
+  // The memory consumption of the "current" temporary storage grows as the
+  // simulation progresses, because already processed digis remain in the
+  // storage. For that reason, a second "future" temporary storage is created,
+  // which will be used later for taking over the not-yet-processed digis, so
+  // that the "current" one can be cleared to reclaim memory.
+  fCurrentStorage = std::make_unique<TemporaryStorage>(
+      fTimeSorter->OutputCollection(), fOutputDigiCollection, "A");
+  fFutureStorage = std::make_unique<TemporaryStorage>(
+      fTimeSorter->OutputCollection(), fOutputDigiCollection, "B");
+}
+
 void GateCoincidenceSorterActor::SetGroupVolumeDepth(const int depth) {
   fGroupVolumeDepth = depth;
 }
 
 void GateCoincidenceSorterActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
-
-  // Set up pointers to track specific attributes
-  auto &lr = fThreadLocalVDigitizerData.Get();
-  auto &l = fThreadLocalData.Get();
-
-  fTimeSorter.Init(fInputDigiCollection);
-  fTimeSorter.OutputIterator().TrackAttribute("GlobalTime", &l.time);
-  fTimeSorter.OutputIterator().TrackAttribute("PreStepUniqueVolumeID",
-                                              &l.volID);
-  fTimeSorter.SetSortingWindow(fSortingTime);
-  fTimeSorter.SetMaxSize(fClearEveryNEvents);
-
-  fCurrentStorage = std::make_unique<TemporaryStorage>(
-      fTimeSorter.OutputCollection(), fOutputDigiCollection, "A");
-  fFutureStorage = std::make_unique<TemporaryStorage>(
-      fTimeSorter.OutputCollection(), fOutputDigiCollection, "B");
+  fOutputDigiCollection->RootInitializeTupleForWorker();
 }
 
 void GateCoincidenceSorterActor::EndOfEventAction(const G4Event *) {
-  auto &l = fThreadLocalData.Get();
-  fTimeSorter.Process();
-  ProcessTimeSortedSingles();
-  DetectCoincidences();
+
+  fTimeSorter->OnEndOfEventAction([this]() {
+    ProcessTimeSortedSingles();
+    DetectCoincidences();
+  });
 }
 
 void GateCoincidenceSorterActor::EndOfRunAction(const G4Run *) {
-  fTimeSorter.Flush();
-  ProcessTimeSortedSingles();
-  DetectCoincidences(true);
-  fOutputDigiCollection->FillToRootIfNeeded(true);
+
+  fTimeSorter->OnEndOfRunAction(
+      [this]() { fOutputDigiCollection->FillToRootIfNeeded(true); },
+      [this]() {
+        ProcessTimeSortedSingles();
+        DetectCoincidences(true);
+        ClearProcessedSingles();
+      });
 }
 
 void GateCoincidenceSorterActor::ProcessTimeSortedSingles() {
-  auto &l = fThreadLocalData.Get();
-  auto &iter = fTimeSorter.OutputIterator();
+
+  // Copies digis from the output of the time sorter to the temporary storage,
+  // while keeping track GlobalTime of the most recently copied digi.
+
+  auto &timeVec = fTimeSorter->OutputCollection()
+                      ->GetDigiAttribute("GlobalTime")
+                      ->GetDValues();
+  auto &iter = fTimeSorter->OutputIterator();
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
     fCurrentStorage->fillerIn->Fill(iter.fIndex);
+    const double t = timeVec[iter.fIndex];
     if (!fCurrentStorage->earliestTime) {
-      fCurrentStorage->earliestTime = *l.time;
+      fCurrentStorage->earliestTime = t;
     }
-    fCurrentStorage->latestTime = *l.time;
+    fCurrentStorage->latestTime = t;
     iter++;
   }
-  fTimeSorter.MarkOutputAsProcessed();
+  fTimeSorter->MarkOutputAsProcessed();
 }
 
 void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
 
   if (fCurrentStorage->earliestTime && fCurrentStorage->latestTime) {
-    auto &iter = fCurrentStorage->iter;
-    auto &t = fCurrentStorage->currentTime;
-    auto &v = fCurrentStorage->currentVolID;
-    auto &p = fCurrentStorage->currentPos;
-    auto &e = fCurrentStorage->currentEdep;
+    double *t;
+    GateUniqueVolumeID::Pointer *v;
+    G4ThreeVector *p;
+    double *e;
+    auto iter = fCurrentStorage->digis->NewIterator();
+    iter.TrackAttribute("GlobalTime", &t);
+    iter.TrackAttribute("PreStepUniqueVolumeID", &v);
+    iter.TrackAttribute("PostPosition", &p);
+    iter.TrackAttribute("TotalEnergyDeposit", &e);
 
-    iter.GoToBegin();
+    // Iterate over the time-sorted digis in the temporary storage, as long as
+    // the GlobalTime difference between the oldest and newest digi in the
+    // collection is at least equal to the coincidence window size + the window
+    // offset.
+    iter.fIndex = fIterPosition;
+    iter.GoTo(fIterPosition);
     while ((*fCurrentStorage->latestTime - *fCurrentStorage->earliestTime >
             fWindowSize + fWindowOffset) ||
            (lastCall &&
             *fCurrentStorage->latestTime - *fCurrentStorage->earliestTime >
                 fWindowOffset)) {
 
+      // "0" refers to the oldest digi in the storage, which is the digi that
+      // "opens the coincidence time window".
       const auto i0 = iter.fIndex;
       const auto t0 = *t;
       const auto v0 = v->get()->GetIdUpToDepthAsHash(fGroupVolumeDepth);
       const auto p0 = *p;
+      // The digis that are in coincidence with digi "0" are referred to as the
+      // "second" digis. The following vectors store their index in the
+      // collection, their deposited energy, and whether they are a "good"
+      // coincidence with digi "0". A "good" coincidence is one where the
+      // location of both singles satisfy the minimal transaxial distance and
+      // the maximal axial distance.
       std::vector<size_t> secondSingleIndex;
       std::vector<double> secondSingleEdep;
       std::vector<uint8_t> goodCoincidence;
       iter++;
+      // Iterate over the "second" digis, as long as they are in the coincidence
+      // window.
       while (!iter.IsAtEnd()) {
         const auto deltaT = *t - t0;
         if (fWindowOffset <= deltaT && deltaT <= fWindowOffset + fWindowSize) {
@@ -263,6 +302,10 @@ void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
         }
         iter++;
       }
+      // If there is only one coincidence in the window opened by digi "0", then
+      // simply add the coincidence to the output collection.
+      // If there are multiple, then first apply the multiples policy before
+      // adding the remaining coincidences to the output collection.
       const auto numCoincidences = secondSingleIndex.size();
       if (numCoincidences == 1) {
         fCurrentStorage->fillerOut->Fill(i0, secondSingleIndex[0]);
@@ -273,21 +316,27 @@ void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
           fCurrentStorage->fillerOut->Fill(i0, index);
         }
       }
-      iter.GoToBegin();
 
+      // If every digi can open a coincidence window, then advance the window to
+      // the next digi, otherwise advance to the first digi beyond the current
+      // coincidence window.
       if (fMultiWindow) {
-        fCurrentStorage->digis->SetBeginOfEventIndex(iter.fIndex + 1);
+        fIterPosition += 1;
       } else {
-        fCurrentStorage->digis->SetBeginOfEventIndex(iter.fIndex + 1 +
-                                                     numCoincidences);
+        fIterPosition += 1 + numCoincidences;
       }
-      iter.GoToBegin();
+      iter.fIndex = fIterPosition;
+      iter.GoTo(fIterPosition);
       if (iter.IsAtEnd()) {
         break;
       }
+      // The digi pointed to by the iterator is now the oldest one in the
+      // temporary storage.
       fCurrentStorage->earliestTime = *t;
     }
 
+    // If the temporary storage has grown too large, then reclaim the memory of
+    // the digis that have already been processed.
     if (fCurrentStorage->digis->GetSize() >= fClearEveryNEvents) {
       ClearProcessedSingles();
     }
@@ -296,6 +345,10 @@ void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
 
 bool GateCoincidenceSorterActor::CoincidenceIsGood(
     const G4ThreeVector &pos1, const G4ThreeVector &pos2) const {
+
+  // Determines whether the given pair of digi locations satisfies the maximal
+  // axial distance and the minimal transaxial distance.
+
   if (!fMaxAxialDistance && !fMinTransaxialDistance2) {
     return true;
   }
@@ -328,6 +381,11 @@ std::vector<size_t> GateCoincidenceSorterActor::ApplyPolicy(
     const std::vector<size_t> &secondSingleIndex,
     const std::vector<double> &secondSingleEdep,
     const std::vector<uint8_t> &goodCoincidence) const {
+
+  // Applies the multiples policy, given the index, energy and "good"-ness of
+  // the N "second" digis in the multiple coincidences.
+  // The result is a vector containing between 0 and N indices, indicating which
+  // coincidences satisfy the policy.
 
   const auto numCoincidences = secondSingleIndex.size();
   std::vector<size_t> filteredIndices;
@@ -375,18 +433,26 @@ std::vector<size_t> GateCoincidenceSorterActor::ApplyPolicy(
       filteredIndices.push_back(ssi[winnerIndex]);
     }
   }
-  // MultiplesPolicy::RemoveMultiples: do nothing.
+  // MultiplesPolicy::RemoveMultiples: do nothing, filteredIndices remains
+  // empty.
 
   return filteredIndices;
 }
 
 void GateCoincidenceSorterActor::ClearProcessedSingles() {
+
+  // Frees the memory occupied by already-processed digis:
+  // copy the not-yet-processed digis and the earliest/latest time from the
+  // "current" storage to the "future" storage, then clear the "current" storage
+  // and swap the pointers of both storages.
+
   GateDigiAttributesFiller transferFiller(
       fCurrentStorage->digis, fFutureStorage->digis,
       fCurrentStorage->digis->GetDigiAttributeNames());
 
-  auto &iter = fCurrentStorage->iter;
-  iter.GoToBegin();
+  auto iter = fCurrentStorage->digis->NewIterator();
+  iter.fIndex = fIterPosition;
+  iter.GoTo(fIterPosition);
 
   while (!iter.IsAtEnd()) {
     transferFiller.Fill(iter.fIndex);
@@ -401,4 +467,5 @@ void GateCoincidenceSorterActor::ClearProcessedSingles() {
   fCurrentStorage->latestTime.reset();
 
   std::swap(fCurrentStorage, fFutureStorage);
+  fIterPosition = 0;
 }
