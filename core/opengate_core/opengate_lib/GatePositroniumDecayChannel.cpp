@@ -10,11 +10,11 @@
 #include "G4DecayProducts.hh"
 #include "Randomize.hh"
 #include "G4LorentzVector.hh"
+#include "GateHelpers.h"
 
-GatePositroniumDecayChannel::GatePositroniumDecayChannel(const G4String& parentName, G4double BR)
+GatePositroniumDecayChannel::GatePositroniumDecayChannel(const G4String& parentName)
 {
   G4int daughters_number = 0;
-  std::cout << "GatePositroniumDecayChannel:"<< parentName<< std::endl;
 
   if (parentName == kParaPositroniumName) {
     daughters_number = kParaPositroniumAnnihilationGammasNumber;
@@ -25,23 +25,11 @@ GatePositroniumDecayChannel::GatePositroniumDecayChannel(const G4String& parentN
     fPositroniumKind =
         GatePositroniumDecayChannel::PositroniumKind::OrthoPositronium;
   } else {
-//WK: only temporarly
-    std::cout << "I set it up for ParaPositronium" << std::endl;
-    daughters_number = kParaPositroniumAnnihilationGammasNumber;
-    fPositroniumKind =
-        GatePositroniumDecayChannel::PositroniumKind::ParaPositronium;
-#ifdef G4VERBOSE
-    if (GetVerboseLevel() > 0) {
-      G4cout << "GatePositroniumDecayChannel:: constructor :";
-      G4cout << " parent particle is not positronium (pPs,oPs) but ";
-      G4cout << parentName << G4endl;
-    }
-#endif
+    Fatal("Incorrect parentName '" + parentName + "' in GatePositroniumDecayChannel");
   }
 
   SetParentMass(kPositroniumMass);
-  SetBR(BR);
-  SetParent(parentName);
+  SetParent("gamma");
   SetNumberOfDaughters(daughters_number);
   for (G4int daughter_index = 0; daughter_index < daughters_number;
        ++daughter_index) {
