@@ -18,8 +18,8 @@ ns = gate.g4_units.ns
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__,
-        "gate_test666_positronium_statistics",
-        output_folder="test666")
+        "gate_test089_positronium_statistics",
+        output_folder="test089")
     print("Starting")
 
     # create the simulation
