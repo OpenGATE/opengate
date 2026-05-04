@@ -47,13 +47,13 @@ void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
 
 std::vector<PositroniumDecayKind> GatePositroniumSource::ParsePositroniumDecayKind(const std::vector<string> & decayKindsStr) {
   std::vector<PositroniumDecayKind> decayKinds;
-  for(auto decayKindStr : decayKindsStr) {
+  for(auto const & decayKindStr : decayKindsStr) {
     if (decayKindStr == "k2Gamma") {
       decayKinds.push_back(PositroniumDecayKind::k2Gamma);
     } else if (decayKindStr == "k3Gamma") {
       decayKinds.push_back(PositroniumDecayKind::k3Gamma);
     } else {
-      // TODO raise an error?
+      Fatal("GatePositroniumSource: invalid decay kind '" + decayKindStr + '"');
     }
   }
   return decayKinds;
