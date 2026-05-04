@@ -2,7 +2,7 @@ import opengate as gate
 import opengate.contrib.pet.philipsvereos as vereos
 
 
-def create_simulation(paths):
+def create_simulation(paths, num_threads):
 
     root_filename = paths.output / "output_singles.root"
 
@@ -14,6 +14,7 @@ def create_simulation(paths):
 
     # options
     sim = gate.Simulation()
+    sim.number_of_threads = num_threads
     sim.random_seed = 1234
     sim.output_dir = paths.output
     sim.verbose_level = gate.logger.NONE

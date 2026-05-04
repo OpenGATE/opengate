@@ -14,9 +14,7 @@ if __name__ == "__main__":
 
     sec = gate.g4_units.s
 
-    sim, cc, root_filename = create_simulation(paths)
-
-    sim.number_of_threads = 2
+    sim, cc, root_filename = create_simulation(paths, num_threads=2)
 
     for policy in [
         "RemoveMultiples",
