@@ -56,6 +56,7 @@ void init_GateDoseActor(py::module &m) {
       .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
       .def("SetUncertaintyGoal", &GateDoseActor::SetUncertaintyGoal)
+      .def("SetTopVoxelsCount", &GateDoseActor::SetTopVoxelsCount)
       .def("SetThreshEdepPerc", &GateDoseActor::SetThreshEdepPerc)
       .def("SetOvershoot", &GateDoseActor::SetOvershoot)
       .def("SetNbEventsFirstCheck", &GateDoseActor::SetNbEventsFirstCheck)
