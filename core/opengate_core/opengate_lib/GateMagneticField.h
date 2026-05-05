@@ -22,37 +22,31 @@ class G4VSolid;
 // transforms the field vector back to world coordinates.
 
 // wrapper for an internal G4MagneticField converted to local coordinates
-class GateMagneticField : public G4MagneticField, protected GateField
-{
+class GateMagneticField : public G4MagneticField, protected GateField {
 public:
   // constructor — deltaChordMM is the chord-finder tolerance (delta_chord),
   // forwarded to GateField to compute the fallback-fatal distance internally.
-  GateMagneticField(
-    G4MagneticField *inner, // wrapped inner field
-    const G4VSolid *solid,  // solid of the logical volume the field is attached to
-    std::vector<G4ThreeVector> translations, // translations of the physical placements
-    std::vector<G4RotationMatrix> rotations, // rotations of the physical placements of the logical volume
-    double deltaChordMM
-  );
+  GateMagneticField(G4MagneticField *inner, // wrapped inner field
+                    const G4VSolid *solid,  // solid of the logical volume the
+                                            // field is attached to
+                    std::vector<G4ThreeVector>
+                        translations, // translations of the physical placements
+                    std::vector<G4RotationMatrix>
+                        rotations, // rotations of the physical placements of
+                                   // the logical volume
+                    double deltaChordMM);
 
   // override of G4MagneticField interface
-  void GetFieldValue(
-    const G4double Point[4],
-    G4double *Bfield
-  ) const override;
+  void GetFieldValue(const G4double Point[4], G4double *Bfield) const override;
 
   // forward override of GateField::SetTransforms
-  inline void SetTransforms(
-    std::vector<G4ThreeVector> translations,
-    std::vector<G4RotationMatrix> rotations
-  )
-  {
+  inline void SetTransforms(std::vector<G4ThreeVector> translations,
+                            std::vector<G4RotationMatrix> rotations) {
     GateField::SetTransforms(std::move(translations), std::move(rotations));
   }
 
 private:
   G4MagneticField *m_inner; // wrapped inner field
-
 };
 
 #endif // GateMagneticField_h

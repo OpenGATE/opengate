@@ -79,7 +79,9 @@ class FieldBase(GateObject):
 
         self.g4_field = None
         self._g4_runtime_objects = []
-        self._field_volume_obj: Any = None  # set by engines.py before create_field_manager() is called
+        self._field_volume_obj: Any = (
+            None  # set by engines.py before create_field_manager() is called
+        )
 
         self.attached_to = []
         self._field_changes_energy = False
@@ -150,7 +152,9 @@ class MagneticField(FieldBase):
     def _create_inner_field(self):
         """Create and return the inner G4MagneticField in local volume coordinates.
         Override in subclasses."""
-        raise NotImplementedError("_create_inner_field() must be implemented in subclasses.")
+        raise NotImplementedError(
+            "_create_inner_field() must be implemented in subclasses."
+        )
 
     def create_field_manager(self) -> g4.G4FieldManager:
         """Construct the field and return a configured G4FieldManager."""
