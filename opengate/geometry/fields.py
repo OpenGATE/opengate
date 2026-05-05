@@ -14,7 +14,6 @@ from ..utility import g4_units
 
 # ! ======= KNOWN TODO'S ========
 # ! - implement the possibility of choosing the stepper type and equation type
-# ! - bind the sextupole magnetic field geant4 implementation
 # ! WIP - implement mapped fields (e.g., from a CSV file)
 # ! - Overhead for custom fields implementation: every GetFieldValue call crosses c++ -> Python -> c++, acquiring the GIL each time,
 # !   which is very inefficient. Need to implement a more efficient way on the C++ side.
