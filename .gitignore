@@ -184,4 +184,6 @@ preload*
 build*/
 .clang-format
 a.txt
+*.so
+
 
