@@ -30,7 +30,8 @@ public:
   void StartTracking(const G4Track *) override;
   void EndTracking() override {}
   void InitializeUserInfo(py::dict &user_info) override;
-  void InitializeCpp() override;
+  void Configure() override;
+  void ConfigureForWorker() override;
 
 protected:
   G4VBiasingOperation *ProposeNonPhysicsBiasingOperation(

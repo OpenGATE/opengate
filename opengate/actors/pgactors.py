@@ -149,7 +149,6 @@ class VoxelizedPromptGammaTLEActor(
 
         self.SetVector(self.user_info.get("vect_p"), self.user_info.get("vect_n"))
 
-        self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
@@ -346,7 +345,6 @@ class VoxelizedPromptGammaAnalogActor(
         self.SetNeutronEnergyFlag(self.user_output.n_E.get_active(item=0))
         self.SetNeutronTimeFlag(self.user_output.n_tof.get_active(item=0))
 
-        self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):

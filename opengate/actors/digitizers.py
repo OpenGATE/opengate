@@ -206,12 +206,12 @@ class Digitizer:
                 return m
         return None
 
-    def find_module_by_type(this, module_type):
-        for m in this.actors:
+    def find_module_by_type(self, module_type):
+        for m in self.actors:
             if m.type_name == module_type:
                 return m
         fatal(
-            f'Error, the module type "{module_type}" is not found in the digitizer "{this.name}"'
+            f'Error, the module type "{module_type}" is not found in the digitizer "{self.name}"'
         )
         return None
 
@@ -259,7 +259,11 @@ class DigitizerBase(ActorBase):
             att = [self.attached_to]
         for a in att:
             current = self.simulation.volume_manager.get_volume(a).parent
-            while current.name != "world" and hasattr(current, "g4_transform"):
+            while (
+                current is not None
+                and current.name != "world"
+                and hasattr(current, "g4_transform")
+            ):
                 if len(current.g4_transform) > 1:
                     fatal(
                         f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}'. "
@@ -1083,7 +1087,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         solid.BoundingLimits(pMin, pMax)
         d = np.array([0, 0, 1.0])
         d = np.dot(self.detector_orientation_matrix, d)
-        imax = np.argmax(d)
+        imax = np.argmax(np.abs(d))
         thickness = (pMax[imax] - pMin[imax]) / channels
         return thickness
 

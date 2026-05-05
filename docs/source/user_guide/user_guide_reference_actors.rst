@@ -305,13 +305,86 @@ FluenceActor
 Description
 ~~~~~~~~~~~
 
-This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. The FluenceActor will be extended in the future with features to handle scattered radiation, e.g. in cone beam CT imaging.
+This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. When a particle enters a voxel, it records either the counts or the kinetic energy of the incoming particle. If a particle is created within a voxel of the geometry to which the Fluence Actor is attached, this particle is not counted as part of the incoming flux for that voxel. A basic example of its usage is provided below:
 
+.. code-block:: python
+
+    fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
+    fluence_actor.counts_uncertainty.active = True
+    fluence_actor.counts_squared.active = True
+    fluence_actor.energy.active = True
+    fluence_actor.energy_uncertainty.active = True
+    fluence_actor.energy_squared.active = True
+    fluence_actor.output_filename = "test099.mhd"
+    fluence_actor.attached_to = fluence_plane
+    fluence_actor.size = [10, 10, 1]
+    ts = [10 * cm, 10 * cm, 1 * nm]
+    fluence_actor.spacing = [x / y for x, y in zip(ts, fluence_actor.size)]
+    fluence_actor.hit_type = "random"
+
+
+In addition, it is possible to generate separate fluence maps resolving the particle's tracking state and underlying physics processes (`primaries`, `secondaries`, `compton`, and `rayleigh`). These maps are created as follows: particles originating directly from the source without interacting are recorded as `primaries`, while all others are recorded as `secondaries`. Furthermore, if the incoming particle is a gamma photon and its last interaction was either Compton or Rayleigh scattering, the counts (and optionally the photon energy) are also recorded in the corresponding scattering-process maps. At present, pair production is not yet included as a recordable process. This actor is also compatible with the FreeFlightAngularAcceptance variance reduction technique. To enable the recording of these additional maps, simply set the following boolean to True:
+
+.. code-block:: python
+
+    fluence_actor.score_by_process = True
+
+The activation of the squared counts (and energies) and their associated uncertainty maps is handled automatically, according to the global settings defined by the user for counts and energy scoring.
 
 Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.doseactors.FluenceActor
+
+
+DepositedChargeActor
+--------------------
+
+Description
+~~~~~~~~~~~
+
+The DepositedChargeActor accumulates the net electric charge deposited in a volume during a simulation. The result is expressed in elementary-charge units (Geant4's ``eplus``).
+
+Charge is counted at track endpoints: when a charged track is *born* inside the attached volume, its charge is subtracted from the running total; when a charged track *dies* inside the volume, its charge is added. This counting method is robust with respect to nested geometries and to particles whose tracks end mid-volume from range cuts or in-flight interactions. Each contribution is weighted by the track weight, so totals remain correct under biasing or weighted sources.
+
+Two quantities are accumulated in parallel:
+
+  - ``deposited_nominal_charge``: uses the PDG charge from ``G4ParticleDefinition::GetPDGCharge``.
+  - ``deposited_dynamic_charge``: uses the effective charge from ``G4DynamicParticle::GetCharge``, which accounts for the ionisation state of heavy ions.
+
+For leptons and ordinary protons the two are identical. They diverge only when a track's effective charge differs from its nominal charge, e.g. for partially-stripped ions.
+
+.. code-block:: python
+
+    target = sim.add_volume("Box", "target")
+    target.size = [5 * cm, 5 * cm, 5 * cm]
+    target.material = "G4_WATER"
+
+    charge = sim.add_actor("DepositedChargeActor", "charge")
+    charge.attached_to = target.name
+
+    sim.run()
+    print(charge)
+    print(f"nominal: {charge.deposited_nominal_charge} e")
+    print(f"dynamic: {charge.deposited_dynamic_charge} e")
+
+
+Refer to the test files
+`test099_deposited_charge_actor*.py <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/actors>`_
+for examples covering stopping electrons, stopping positrons, neutral beams, traversal geometries, nested volumes, and multithreaded simulations.
+
+.. note::
+
+   Nested geometries are treated as a partition of space: the charge scored in a mother volume does **not** include the contribution from its daughters. To score the daughter region, attach a second ``DepositedChargeActor`` to the daughter, so that the totals from both actors add up to the charge deposited in the mother's full geometric extent.
+
+.. note::
+
+   For repeated volume placements, the actor will score the total charge deposited across all instances of the volume.
+
+Reference
+~~~~~~~~~
+.. autoclass:: opengate.actors.miscactors.DepositedChargeActor
+
 
 
 TLEDoseActor

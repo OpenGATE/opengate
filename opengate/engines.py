@@ -647,10 +647,14 @@ class ActorEngine(EngineBase):
     def initialize(self):
         for actor in self.actor_manager.sorted_actors:
             logger.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
-            self.simulation_engine.action_engine.register_all_actions(actor)
+            # self.simulation_engine.action_engine.register_all_actions(actor)
             actor.initialize()
             # warning: the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
+
+    def register_actions(self):
+        for actor in self.actor_manager.sorted_actors:
+            self.simulation_engine.action_engine.register_all_actions(actor)
 
     def register_to_actors(self):
         for actor in self.actor_manager.actors.values():
@@ -694,7 +698,6 @@ class ActorEngine(EngineBase):
                 # ONLY configure if the actor belongs to the current world.
                 # This prevents looking up volumes in parallel worlds before they are built
                 if actor_in_current_world:
-                    actor.InitializeUserInfo(actor.user_info)
                     actor.ConfigureForWorker()
 
     def register_sensitive_detectors_OLD(self, world_name):
@@ -723,7 +726,6 @@ class ActorEngine(EngineBase):
             # this is specific for BiasingOperator/Actor
             # this is needed for MultiThread run
             if hasattr(actor, "ConfigureForWorker"):
-                actor.InitializeUserInfo(actor.user_info)
                 actor.ConfigureForWorker()
 
     def start_simulation(self):
@@ -901,6 +903,14 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.volume_manager.world_volume.name,
         )
+
+        for field in self.simulation_engine.simulation.volume_manager.fields.values():
+            for volume_name in field.attached_to:
+                volume_obj = self.volume_manager.get_volume(volume_name)
+                volume_obj.g4_field_manager = field.create_field_manager()
+                volume_obj.g4_logical_volume.SetFieldManager(
+                    volume_obj.g4_field_manager, True
+                )
 
     def get_volume(self, name):
         return self.volume_manager.get_volume(name)
@@ -1449,8 +1459,6 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
-        # action
-
         # Visu
         if self.simulation.visu:
             logger.info("Simulation: initialize Visualization")
@@ -1462,6 +1470,12 @@ class SimulationEngine(GateSingletonFatal):
         self.g4_RunManager.SetUserInitialization(
             self.action_engine
         )  # G4 internally calls action_engine.Build()
+
+        # Actors initialization (before the RunManager initializes)
+        # This pushes user_info to C++ before workers (or master) call ConfigureForWorker()
+        logger.info("Simulation: initialize Actors")
+        self.actor_engine.initialize()
+        self.filter_engine.initialize()
 
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
@@ -1477,6 +1491,7 @@ class SimulationEngine(GateSingletonFatal):
         else:
             logger.info("Simulation: initialize G4RunManager")
             self.g4_RunManager.Initialize()
+            # A this point, ConstructSDandField and Configure are called once
 
         logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
@@ -1484,19 +1499,18 @@ class SimulationEngine(GateSingletonFatal):
 
         # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
-            logger.info("Simulation: initialize Workers (MT mode)")
+            logger.info("Simulation: initialize the worker threads (MT mode)")
             self.g4_RunManager.FakeBeamOn()
+            # ConstructSDandField then ConfigureForWorker are called for each worker thread
 
         # Actions initialisation
         # This must come after the G4RunManager initialisation
         # because the RM initialisation calls ActionEngine.Build()
-        # which is required for initialize()
-        # Actors initialization (before the RunManager Initialize)
-        # self.actor_engine.create_actors()  # calls the actors' constructors
-        logger.info("Simulation: initialize Actors")
+        # which is required to register actions
+        logger.info("Simulation: initialize Actor-Source links")
         self.source_engine.initialize_actors()
-        self.actor_engine.initialize()
-        self.filter_engine.initialize()
+        logger.info("Simulation: register Actions of actors")
+        self.actor_engine.register_actions()
 
         self.is_initialized = True
 
