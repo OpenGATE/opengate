@@ -26,44 +26,36 @@ class GateField {
 public:
   // constructor — deltaChordMM is the chord-finder tolerance (delta_chord),
   // used to compute the fallback-fatal distance internally.
-  GateField(
-    const G4VSolid *solid,
-    std::vector<G4ThreeVector> translations,
-    std::vector<G4RotationMatrix> rotations,
-    double deltaChordMM
-  );
+  GateField(const G4VSolid *solid, std::vector<G4ThreeVector> translations,
+            std::vector<G4RotationMatrix> rotations, double deltaChordMM);
 
   // update the transforms (e.g. after a geometry change between runs)
-  void SetTransforms(
-    std::vector<G4ThreeVector> translations,
-    std::vector<G4RotationMatrix> rotations
-  );
+  void SetTransforms(std::vector<G4ThreeVector> translations,
+                     std::vector<G4RotationMatrix> rotations);
 
 protected:
   // find the local coordinates of worldPoint in the containing placement, and
   // return the world-to-local transform of that placement in outTransform.
-  G4ThreeVector findContainingPlacement(
-    const G4ThreeVector &worldPoint,
-    const G4AffineTransform *&outTransform
-  ) const;
+  G4ThreeVector
+  findContainingPlacement(const G4ThreeVector &worldPoint,
+                          const G4AffineTransform *&outTransform) const;
 
   // rotate a field vector from local to world coordinates using the given
   // transform.
-  static G4ThreeVector rotateToWorld(
-    const G4ThreeVector &localField,
-    const G4AffineTransform &transform
-  );
+  static G4ThreeVector rotateToWorld(const G4ThreeVector &localField,
+                                     const G4AffineTransform &transform);
 
-  const G4VSolid *m_solid; // solid of the logical volume the field is attached to
+  const G4VSolid
+      *m_solid; // solid of the logical volume the field is attached to
 
-  double m_fallbackFatalDistanceMM; // computed from deltaChordMM at construction
+  double
+      m_fallbackFatalDistanceMM; // computed from deltaChordMM at construction
 
   std::vector<G4AffineTransform> m_transforms; // one per physical placement
 
   // Upper bound on the radius of curvature [mm] used to derive
   // the fallback-fatal distance.
   static constexpr double kMaxCurvatureRadiusMM = 100.0e3;
-
 };
 
 #endif // GateField_h

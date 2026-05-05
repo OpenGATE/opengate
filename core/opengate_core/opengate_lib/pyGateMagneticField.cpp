@@ -15,8 +15,7 @@ namespace py = pybind11;
 #include "GateMagneticField.h"
 
 // python bindings for GateMagneticField
-void init_GateMagneticField(py::module &m)
-{
+void init_GateMagneticField(py::module &m) {
 
   py::class_<GateMagneticField, G4MagneticField,
              std::unique_ptr<GateMagneticField, py::nodelete>>(
@@ -26,8 +25,8 @@ void init_GateMagneticField(py::module &m)
                        std::vector<G4ThreeVector> translations,
                        std::vector<G4RotationMatrix> rotations,
                        double delta_chord_mm) {
-             return new GateMagneticField(inner, solid, translations,
-                                         rotations, delta_chord_mm);
+             return new GateMagneticField(inner, solid, translations, rotations,
+                                          delta_chord_mm);
            }),
            py::arg("inner_field"), py::arg("solid"), py::arg("translations"),
            py::arg("rotations"), py::arg("delta_chord_mm"))
