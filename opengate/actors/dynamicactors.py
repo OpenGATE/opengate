@@ -60,6 +60,23 @@ class DynamicGeometryActor(DynamicActorBase, g4.GateVActor):
             # CloseGeometry: pOptimise=true, verbose=false, G4VPhysicalVolume *vol=0
             gm.CloseGeometry(self.simulation.dyn_geom_optimise, False, None)
 
+        # Refresh field transforms after geometry changes
+        # This ensures fields attached to moving volumes use the updated transforms
+        self._refresh_field_transforms(run_id)
+
+    def _refresh_field_transforms(self, run_id):
+        """Recompute world-to-local transforms for every registered field.
+
+        Called after the geometry-changers for `run_id` have been applied,
+        so that fields attached to moving volumes see the updated placement
+        transforms in the upcoming run.
+        """
+        fields = getattr(self.simulation.volume_manager, "fields", None)
+        if not fields:
+            return
+        for field in fields.values():
+            field.refresh_transforms()
+
 
 class DynamicSourceActor(DynamicActorBase, g4.GateVActor):
 
