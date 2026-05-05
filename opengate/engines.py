@@ -907,6 +907,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         for field in self.simulation_engine.simulation.volume_manager.fields.values():
             for volume_name in field.attached_to:
                 volume_obj = self.volume_manager.get_volume(volume_name)
+                field._field_volume_obj = volume_obj
                 volume_obj.g4_field_manager = field.create_field_manager()
                 volume_obj.g4_logical_volume.SetFieldManager(
                     volume_obj.g4_field_manager, True
