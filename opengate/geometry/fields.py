@@ -78,9 +78,7 @@ class FieldBase(GateObject):
 
         self.g4_field = None
         self._g4_runtime_objects = []
-        self._field_volume_obj: Any = (
-            None  # set by engines.py before create_field_manager() is called
-        )
+        self._field_volume_obj: Any = None
 
         self.attached_to = []
         self._field_changes_energy = False
@@ -125,7 +123,7 @@ class FieldBase(GateObject):
 
             g4_field.SetTransforms(g4_translations, g4_rotations)
 
-    def create_field_manager(self) -> g4.G4FieldManager:
+    def create_field_manager(self, volume_obj) -> g4.G4FieldManager:
         """Construct the field and return a configured G4FieldManager."""
         msg = "create_field_manager() must be implemented in subclasses."
         raise NotImplementedError(msg)
@@ -154,7 +152,9 @@ class FieldBase(GateObject):
                 f"got {len(result)}"
             )
 
-    def _build_field_manager(self, inner_field, gate_field, equation_cls, n_vars):
+    def _build_field_manager(
+        self, inner_field, gate_field, equation_cls, n_vars, volume_obj
+    ):
         """Build equation/stepper/driver/chord_finder/fm, record runtime objects, return fm."""
         self.g4_field = gate_field
         self.g4_equation_of_motion = equation_cls(gate_field)
@@ -185,6 +185,7 @@ class FieldBase(GateObject):
                 "driver": self.g4_integration_driver,
                 "chord_finder": self.g4_chord_finder,
                 "field_manager": fm,
+                "volume": volume_obj,
             }
         )
 
@@ -219,8 +220,9 @@ class MagneticField(FieldBase):
             "_create_inner_field() must be implemented in subclasses."
         )
 
-    def create_field_manager(self) -> g4.G4FieldManager:
+    def create_field_manager(self, volume_obj) -> g4.G4FieldManager:
         """Construct the field and return a configured G4FieldManager."""
+        self._field_volume_obj = volume_obj
         inner = self._create_inner_field()
         g4_translations, g4_rotations = self._make_g4_transforms()
         gate_field = g4.GateMagneticField(
@@ -231,7 +233,9 @@ class MagneticField(FieldBase):
             self.delta_chord,
         )
         # TODO: allow user choice of stepper and equation type
-        return self._build_field_manager(inner, gate_field, g4.G4Mag_UsualEqRhs, 6)
+        return self._build_field_manager(
+            inner, gate_field, g4.G4Mag_UsualEqRhs, 6, volume_obj
+        )
 
 
 class UniformMagneticField(MagneticField):
@@ -352,8 +356,9 @@ class ElectroMagneticField(FieldBase):
             "_create_inner_field() must be implemented in subclasses."
         )
 
-    def create_field_manager(self) -> g4.G4FieldManager:
+    def create_field_manager(self, volume_obj) -> g4.G4FieldManager:
         """Construct the field and return a configured G4FieldManager."""
+        self._field_volume_obj = volume_obj
         inner = self._create_inner_field()
         g4_translations, g4_rotations = self._make_g4_transforms()
         gate_field = g4.GateElectroMagneticField(
@@ -365,7 +370,9 @@ class ElectroMagneticField(FieldBase):
         )
         # TODO: allow user choice of stepper and equation type
         # 8 variables: x,y,z + px,py,pz + t + E
-        return self._build_field_manager(inner, gate_field, g4.G4EqMagElectricField, 8)
+        return self._build_field_manager(
+            inner, gate_field, g4.G4EqMagElectricField, 8, volume_obj
+        )
 
 
 class ElectricField(ElectroMagneticField):
@@ -632,6 +639,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
 field_types = {
     "UniformMagneticField": UniformMagneticField,
     "QuadrupoleMagneticField": QuadrupoleMagneticField,
+    "SextupoleMagneticField": SextupoleMagneticField,
     "CustomMagneticField": CustomMagneticField,
     # "MappedMagneticField": MappedMagneticField,
     "UniformElectricField": UniformElectricField,
@@ -644,6 +652,7 @@ process_cls(FieldBase)
 process_cls(MagneticField)
 process_cls(UniformMagneticField)
 process_cls(QuadrupoleMagneticField)
+process_cls(SextupoleMagneticField)
 process_cls(CustomMagneticField)
 # process_cls(MappedMagneticField)
 process_cls(ElectroMagneticField)
