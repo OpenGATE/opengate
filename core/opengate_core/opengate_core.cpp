@@ -210,6 +210,8 @@ void init_G4MagInt_Driver(py::module &);
 void init_G4ChordFinder(py::module &);
 
 void init_GateMagneticField(py::module &);
+void init_GateElectroMagneticField(py::module &);
+void init_GateUniformElectroMagneticField(py::module &);
 
 // void init_GateMappedMagneticField(py::module &);
 
@@ -565,6 +567,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4MagInt_Driver(m);
   init_G4ChordFinder(m);
   init_GateMagneticField(m);
+  init_GateElectroMagneticField(m);
+  init_GateUniformElectroMagneticField(m);
   // init_GateMappedMagneticField(m);
 
   init_G4Box(m);

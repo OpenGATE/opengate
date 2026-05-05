@@ -909,6 +909,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
                 volume_obj = self.volume_manager.get_volume(volume_name)
                 field._field_volume_obj = volume_obj
                 volume_obj.g4_field_manager = field.create_field_manager()
+                field._g4_runtime_objects[-1]["volume"] = volume_obj
                 volume_obj.g4_logical_volume.SetFieldManager(
                     volume_obj.g4_field_manager, True
                 )
