@@ -35,7 +35,6 @@ def run_test_free_flight_phsp_2_ff_mt():
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
-    ff.attached_to = "phantom"
 
     # go
     sim.run(start_new_process=True)
