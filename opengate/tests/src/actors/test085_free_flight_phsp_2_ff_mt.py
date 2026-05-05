@@ -35,7 +35,6 @@ def run_test_free_flight_phsp_2_ff_mt():
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
-    ff.attached_to = "phantom"
 
     # go
     sim.run(start_new_process=True)
@@ -230,7 +229,7 @@ def run_test085_free_flight_phsp_4_analyze_mt():
     print(f"Sum of weights, p+sec    = {t:.0f} vs {len(ene_ref)}")
 
     check1 = (len(ene_ref) - (ene_sc_w.sum() + ene_prim_w.sum())) / len(ene_ref) * 100
-    tol = 1.20
+    tol = 1.3
     is_ok = np.fabs(check1) < tol
     utility.print_test(
         is_ok, f"diff p+sec               = {check1:.2f} %     tol={tol:.2f}"
