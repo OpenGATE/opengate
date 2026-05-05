@@ -279,6 +279,25 @@ class QuadrupoleMagneticField(MagneticField):
         return g4.G4QuadrupoleMagField(self.gradient)
 
 
+class SextupoleMagneticField(MagneticField):
+    """Sextupole magnetic field with gradient."""
+
+    # hints for IDE
+    gradient: float
+
+    user_info_defaults = {
+        "gradient": (
+            0,
+            {
+                "doc": "Field gradient in magnetic field strength units per unit length (e.g., Tesla/meter).",
+            },
+        ),
+    }
+
+    def _create_inner_field(self):
+        return g4.G4SextupoleMagField(self.gradient)
+
+
 class CustomMagneticField(MagneticField):
     """Custom magnetic field defined by a Python callback function."""
 
