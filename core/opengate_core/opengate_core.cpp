@@ -217,7 +217,7 @@ void init_GateUniformElectroMagneticField(py::module &);
 void init_GateGridInterpolator(py::module &);
 void init_GateMappedMagneticField(py::module &);
 void init_GateMappedElectricField(py::module &);
-// void init_GateMappedElectroMagneticField(py::module &);
+void init_GateMappedElectroMagneticField(py::module &);
 
 // geometry/solids
 void init_G4Box(py::module &);
@@ -577,7 +577,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateGridInterpolator(m);
   init_GateMappedMagneticField(m);
   init_GateMappedElectricField(m);
-  // init_GateMappedElectroMagneticField(m);
+  init_GateMappedElectroMagneticField(m);
 
   init_G4Box(m);
   init_G4Ellipsoid(m);
