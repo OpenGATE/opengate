@@ -447,17 +447,17 @@ class UniformElectroMagneticField(ElectroMagneticField):
     """Uniform electromagnetic field with constant magnetic and electric field vectors."""
 
     # hints for IDE
-    magnetic_field_vector: list
-    electric_field_vector: list
+    field_vector_B: list
+    field_vector_E: list
 
     user_info_defaults = {
-        "magnetic_field_vector": (
+        "field_vector_B": (
             [0, 0, 0],
             {
                 "doc": "Magnetic field vector [Bx, By, Bz] in local volume coordinates.",
             },
         ),
-        "electric_field_vector": (
+        "field_vector_E": (
             [0, 0, 0],
             {
                 "doc": "Electric field vector [Ex, Ey, Ez] in local volume coordinates.",
@@ -467,8 +467,8 @@ class UniformElectroMagneticField(ElectroMagneticField):
 
     def _create_inner_field(self):
         return g4.GateUniformElectroMagneticField(
-            g4.G4ThreeVector(*self.electric_field_vector),
-            g4.G4ThreeVector(*self.magnetic_field_vector),
+            g4.G4ThreeVector(*self.field_vector_E),
+            g4.G4ThreeVector(*self.field_vector_B),
         )
 
 
@@ -681,13 +681,105 @@ class MappedElectricField(ElectricField):
 
 
 class MappedElectroMagneticField(ElectroMagneticField):
-    """Electromagnetic field defined by values on a regular 3D Cartesian grid.
+    """Electromagnetic field with separate B and E grids on regular 3D Cartesian grids.
 
-    FIXME: implement this class.
+    field_matrix_B and field_matrix_E must have columns [x, y, z, Bx, By, Bz]
+    and [x, y, z, Ex, Ey, Ez] respectively, in Geant4 units.
+    Field lookup is performed entirely in C++ using trilinear or nearest-neighbour
+    interpolation, with B and E computed independently on their respective grids.
     """
 
+    field_matrix_B: np.ndarray
+    field_matrix_E: np.ndarray
+    interpolation: str
+
+    user_info_defaults = {
+        "field_matrix_B": (
+            None,
+            {
+                "doc": (
+                    "2D numpy array on a regular Cartesian grid in Geant4 units. "
+                    "Columns: [x, y, z, Bx, By, Bz]."
+                ),
+            },
+        ),
+        "field_matrix_E": (
+            None,
+            {
+                "doc": (
+                    "2D numpy array on a regular Cartesian grid in Geant4 units. "
+                    "Columns: [x, y, z, Ex, Ey, Ez]."
+                ),
+            },
+        ),
+        "interpolation": (
+            "trilinear",
+            {
+                "doc": "Interpolation method: 'trilinear' (default) or 'nearest'.",
+            },
+        ),
+    }
+
     def create_field_manager(self, volume_obj) -> g4.G4FieldManager:
-        raise NotImplementedError("MappedElectroMagneticField is not yet implemented.")
+        if self.field_matrix_B is None:
+            raise ValueError(
+                "field_matrix_B must be provided for MappedElectroMagneticField"
+            )
+        if self.field_matrix_E is None:
+            raise ValueError(
+                "field_matrix_E must be provided for MappedElectroMagneticField"
+            )
+        if self.interpolation not in _interp_map:
+            raise ValueError(
+                f"Unknown interpolation '{self.interpolation}'. "
+                f"Choose 'trilinear' or 'nearest'."
+            )
+        self._field_volume_obj = volume_obj
+        nx_B, ny_B, nz_B, x0_B, y0_B, z0_B, dx_B, dy_B, dz_B, (Bx, By, Bz) = (
+            _parse_field_matrix(
+                self.field_matrix_B, "MappedElectroMagneticField (B grid)"
+            )
+        )
+        nx_E, ny_E, nz_E, x0_E, y0_E, z0_E, dx_E, dy_E, dz_E, (Ex, Ey, Ez) = (
+            _parse_field_matrix(
+                self.field_matrix_E, "MappedElectroMagneticField (E grid)"
+            )
+        )
+        g4_translations, g4_rotations = self._make_g4_transforms()
+        gate_field = g4.GateMappedElectroMagneticField(
+            self._field_volume_obj.g4_solid,
+            g4_translations,
+            g4_rotations,
+            self.delta_chord,
+            nx_B,
+            ny_B,
+            nz_B,
+            x0_B,
+            y0_B,
+            z0_B,
+            dx_B,
+            dy_B,
+            dz_B,
+            Bx,
+            By,
+            Bz,
+            nx_E,
+            ny_E,
+            nz_E,
+            x0_E,
+            y0_E,
+            z0_E,
+            dx_E,
+            dy_E,
+            dz_E,
+            Ex,
+            Ey,
+            Ez,
+            _interp_map[self.interpolation],
+        )
+        return self._build_field_manager(
+            None, gate_field, g4.G4EqMagElectricField, 8, volume_obj
+        )
 
 
 field_types = {
