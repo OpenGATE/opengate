@@ -131,7 +131,7 @@ if __name__ == "__main__":
     f = fields.CustomMagneticField(name="B_bad")
     f.field_function = "i'm a string, not a function! will i fool you?"
     ok = _expect_error(
-        lambda: f._create_field(),
+        lambda: f._create_inner_field(),
         "non-callable field_function",
     )
     is_ok = is_ok and ok
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     f = fields.CustomMagneticField(name="B_wrong_dims")
     f.field_function = lambda x, y, z, t: [0, 0, 0, 0, 0, 0]
     ok = _expect_error(
-        lambda: f._create_field(),
+        lambda: f._create_inner_field(),
         "wrong component count",
     )
     is_ok = is_ok and ok

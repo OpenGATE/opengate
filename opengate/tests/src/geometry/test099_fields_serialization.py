@@ -76,6 +76,24 @@ if __name__ == "__main__":
     is_ok = is_ok and ok
     print(f"Quadrupole round-trip: {'OK' if ok else 'FAIL'}")
 
+    # Sextupole round-trip
+    sim, box = _make_sim_with_box()
+    field = fields.SextupoleMagneticField(name="B_sext")
+    field.gradient = 5 * g4_tesla / g4_m
+    box.add_field(field)
+
+    d = sim.to_dictionary()
+    sim2 = gate.Simulation()
+    sim2.from_dictionary(d)
+    restored = sim2.volume_manager.fields["B_sext"]
+    ok = (
+        isinstance(restored, fields.SextupoleMagneticField)
+        and restored.gradient == 5 * g4_tesla / g4_m
+        and restored.attached_to == ["box"]
+    )
+    is_ok = is_ok and ok
+    print(f"Sextupole round-trip: {'OK' if ok else 'FAIL'}")
+
     # Uniform electric field round-trip
     sim, box = _make_sim_with_box()
     field = fields.UniformElectricField(name="E_uniform")
