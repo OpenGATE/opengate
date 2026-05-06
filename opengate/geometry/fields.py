@@ -316,7 +316,7 @@ class CustomMagneticField(MagneticField):
         "field_function": (
             None,
             {
-                "doc": "Python function that takes [x, y, z, t] and returns [Bx, By, Bz].",
+                "doc": "Python function that takes [x, y, z, t] and returns [Bx, By, Bz], all in local volume coordinates.",
             },
         ),
     }
@@ -416,7 +416,7 @@ class CustomElectricField(ElectricField):
         "field_function": (
             None,
             {
-                "doc": "Python function that takes [x, y, z, t] and returns [Ex, Ey, Ez].",
+                "doc": "Python function that takes [x, y, z, t] and returns [Ex, Ey, Ez], all in local volume coordinates.",
             },
         ),
     }
@@ -482,7 +482,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
         "field_function": (
             None,
             {
-                "doc": "Python function that takes [x, y, z, t] and returns [Bx, By, Bz, Ex, Ey, Ez].",
+                "doc": "Python function that takes [x, y, z, t] and returns [Bx, By, Bz, Ex, Ey, Ez], all in local volume coordinates.",
             },
         ),
     }

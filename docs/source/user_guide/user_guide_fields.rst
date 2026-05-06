@@ -3,7 +3,11 @@ How to: Electromagnetic fields
 
 GATE provides an interface to define electromagnetic fields within simulation volumes. Under the hood, GATE configures Geant4's field tracking machinery (equation of motion, Runge-Kutta stepper, chord finder) for you.
 
-Fields are defined as standalone objects, then attached to one or more volumes with :meth:`~opengate.geometry.volumes.VolumeBase.add_field`. Each volume can hold at most one field. A single field object can be shared across multiple volumes.
+Fields are defined as standalone objects, then attached to one or more volumes with ``add_field()``. Each volume can hold at most one field. A single field object can be shared across multiple volumes.
+
+Fields are attached to logical volumes, so they automatically propagate to all physical placements of that volume. Dynamic geometry changes are supported: if a field is attached to a volume that is later moved or rotated, the field will move/rotate with it.
+
+All field definitions are relative to the local coordinate system they are attached to. This means that, for instance, if a field is attached to a volume that is rotated, the field vector will be rotated accordingly.
 
 Quick example
 -------------
@@ -37,10 +41,10 @@ Magnetic fields
 .. code-block:: python
 
    field = fields.UniformMagneticField(name="B_uniform")
-   field.field_vector = [0, 0, 2 * tesla]   # [Bx, By, Bz]
+   field.field_vector = [0, 0, 2 * tesla]   # [Bx, By, Bz] <- relative to the volume's local coordinate system
    box.add_field(field)
 
-**QuadrupoleMagneticField** -- Quadrupole magnetic field defined via a field gradient. Uses the native Geant4 ``G4QuadrupoleMagField`` under the hood.
+**QuadrupoleMagneticField** -- Quadrupole magnetic field defined via a field gradient. Uses the native Geant4 ``G4QuadrupoleMagField`` under the hood. The field is always oriented such that the optical axis is along the local Z direction of the volume and one of the south poles sits in the +XY quadrant.
 
 .. code-block:: python
 
@@ -48,13 +52,21 @@ Magnetic fields
    field.gradient = 10 * tesla / m   # field gradient (T/m)
    box.add_field(field)
 
+**SextupoleMagneticField** -- Sextupole magnetic field defined via a field gradient. Uses the native Geant4 ``G4SextupoleMagField`` under the hood. The field is always oriented such that the optical axis is along the local Z direction of the volume and one of the north poles sits in the +Y direction.
+
+.. code-block:: python
+
+   field = fields.SextupoleMagneticField(name="B_sext")
+   field.gradient = 10 * tesla / m   # field gradient (T/m)
+   box.add_field(field)
+
 **CustomMagneticField** -- Arbitrary magnetic field defined by a Python callback. The function receives ``(x, y, z, t)`` in Geant4 internal units and must return ``[Bx, By, Bz]``.
 
 .. code-block:: python
 
-   def my_B_field(x, y, z, t):
+   def my_B_field(x, y, z, t): # <- relative to the volume's local coordinate system
        # Spatially varying field
-       return [0, (1 + x * z / m**2) * tesla, 0]
+       return [0, (1 + x * z / m**2) * tesla, 0] # <- relative to the volume's local coordinate system
 
    field = fields.CustomMagneticField(name="B_custom")
    field.field_function = my_B_field
@@ -76,15 +88,15 @@ Electric fields
    m = gate.g4_units.m
 
    field = fields.UniformElectricField(name="E_uniform")
-   field.field_vector = [1e6 * volt / m, 0, 0]   # [Ex, Ey, Ez]
+   field.field_vector = [1e6 * volt / m, 0, 0]   # [Ex, Ey, Ez] <- relative to the volume's local coordinate system
    box.add_field(field)
 
 **CustomElectricField** -- Arbitrary electric field defined by a Python callback. The function receives ``(x, y, z, t)`` in Geant4 internal units and must return ``[Ex, Ey, Ez]``.
 
 .. code-block:: python
 
-   def my_E_field(x, y, z, t):
-       return [1e6 * volt / m, 0, 0]
+   def my_E_field(x, y, z, t): # <- relative to the volume's local coordinate system
+       return [1e6 * volt / m, 0, 0] # <- relative to the volume's local coordinate system
 
    field = fields.CustomElectricField(name="E_custom")
    field.field_function = my_E_field
@@ -95,6 +107,17 @@ Electromagnetic fields
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Combined magnetic and electric fields.
+
+**UniformElectroMagneticField** -- Constant electromagnetic field. Uses the GATE C++ implementation ``GateUniformElectroMagneticField`` under the hood.
+
+.. code-block:: python
+
+   volt = gate.g4_units.volt
+   m = gate.g4_units.m
+
+   field = fields.UniformElectroMagneticField(name="EM_uniform")
+   field.field_vector = [0, 0, 1 * tesla, 1e6 * volt / m, 0, 0]   # [Bx, By, Bz, Ex, Ey, Ez] <- relative to the volume's local coordinate system
+   box.add_field(field)
 
 **CustomElectroMagneticField** -- Arbitrary combined field. The callback must return all six components ``[Bx, By, Bz, Ex, Ey, Ez]``.
 
@@ -153,7 +176,7 @@ Example:
 Attaching fields to volumes
 ----------------------------
 
-Use :meth:`~opengate.geometry.volumes.VolumeBase.add_field` to attach a field to a volume. The volume must already be added to the simulation.
+Use ``add_field()`` to attach a field to a volume. The volume must already be added to the simulation.
 
 .. code-block:: python
 
@@ -176,6 +199,10 @@ Use :meth:`~opengate.geometry.volumes.VolumeBase.add_field` to attach a field to
 **Unique names.** Field names must be unique across the simulation. Two different field objects with the same name will raise an error.
 
 **Propagation to daughter volumes.** A field attached to a volume automatically propagates to all of its daughter volumes. A daughter volume can override this by attaching its own field. In that case, the parent's field stops at the daughter's boundary and the daughter's field is used inside. This mirrors standard Geant4 behaviour.
+
+**Behaviour with repeated placements.** When a volume with a field is repeatedly placed (i.e. a logical volume with several physical placements), each physical instance will have the field in its own local coordinate system.
+
+**Behaviour with dynamic geometry changes.** If a field is attached to a volume that is later moved or rotated, the field will move/rotate with it.
 
 .. code-block:: python
 
@@ -204,7 +231,8 @@ Geant4 can overlay field arrows on the visualization of the geometry. The Geant4
 
    sim.visu = True
    sim.visu_type = "qt"
-   sim.visu_commands.append("/vis/scene/add/magneticField 20 lightArrow")
+   sim.visu_commands.append("/vis/scene/add/magneticField 20 fullArrow")
+   sim.visu_commands.append("/vis/scene/add/electricField 20 fullArrow")
 
 
 .. _user_guide_fields_performance:
@@ -212,7 +240,7 @@ Geant4 can overlay field arrows on the visualization of the geometry. The Geant4
 Performance: native vs custom fields
 ------------------------------------
 
-Native field types (``UniformMagneticField``, ``UniformElectricField``, ``QuadrupoleMagneticField``) are evaluated entirely in C++ by Geant4. They have no Python overhead and are the recommended choice when they match your use case.
+Native field types (``UniformMagneticField``, ``UniformElectricField``, ``QuadrupoleMagneticField``, ``SextupoleMagneticField``, ``UniformElectroMagneticField``) are evaluated entirely in C++ by Geant4 (or GATE in the case of the uniform electromagnetic field). They have no Python overhead and are the recommended choice when they match your use case.
 
 Custom fields (``CustomMagneticField``, ``CustomElectricField``, ``CustomElectroMagneticField``) call a Python function for **every evaluation** of ``GetFieldValue`` during tracking. This means that the GIL is acquired and released on every call, which can significantly slow down the simulation, especially in multithreaded mode where all threads serialize through the Python callback.
 
@@ -243,6 +271,9 @@ The field implementation is covered by the ``test099_fields_*`` tests in ``openg
 - ``test099_fields_analytical_E`` -- Uniform E field vs analytical energy gain.
 - ``test099_fields_custom_vs_native_B`` -- Custom trampoline B vs native G4 (bit-identical).
 - ``test099_fields_custom_vs_native_E`` -- Custom trampoline E vs native G4 (bit-identical).
+- ``test099_fields_multi_volume_refresh`` -- Testing field updates when volumes are dynamically modified between runs.
+- ``test099_fields_repeated_placements`` -- Testing field behaviour with repeated physical placements of the same logical volume.
+- ``test099_fields_rotated_volume`` -- Test that fields rotate with their attached volume.
 - ``test099_fields_serialization`` -- Round-trip serialization for all non-custom types.
 - ``test099_fields_api`` -- API guards.
 
@@ -257,6 +288,9 @@ Class reference
    :members:
 
 .. autoclass:: opengate.geometry.fields.QuadrupoleMagneticField
+   :members:
+
+.. autoclass:: opengate.geometry.fields.SextupoleMagneticField
    :members:
 
 .. autoclass:: opengate.geometry.fields.CustomMagneticField
