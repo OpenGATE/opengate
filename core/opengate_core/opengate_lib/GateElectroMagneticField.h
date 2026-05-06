@@ -9,32 +9,29 @@
 #define GateElectroMagneticField_h
 
 #include "G4ElectroMagneticField.hh"
-#include "G4RotationMatrix.hh"
-#include "G4ThreeVector.hh"
-#include "GateField.h"
+#include "GateFieldBase.h"
 #include <vector>
 
 class G4VSolid;
 
-// GATE wrapper for G4ElectroMagneticField
+// GATE wrapper for G4ElectroMagneticField.
 class GateElectroMagneticField : public G4ElectroMagneticField,
-                                 protected GateField {
+                                 public GateFieldBase {
 public:
+  // constructor
   GateElectroMagneticField(G4ElectroMagneticField *inner, const G4VSolid *solid,
                            std::vector<G4ThreeVector> translations,
                            std::vector<G4RotationMatrix> rotations,
                            double deltaChordMM);
 
+  // override GetFieldValue to apply the coordinate transforms
   void GetFieldValue(const G4double Point[4], G4double *BEfield) const override;
 
+  // override DoesFieldChangeEnergy to return true for electro-magnetic fields
   G4bool DoesFieldChangeEnergy() const override { return true; }
 
-  inline void SetTransforms(std::vector<G4ThreeVector> translations,
-                            std::vector<G4RotationMatrix> rotations) {
-    GateField::SetTransforms(std::move(translations), std::move(rotations));
-  }
-
 private:
+  // the inner field in the volume's local frame
   G4ElectroMagneticField *m_inner;
 };
 
