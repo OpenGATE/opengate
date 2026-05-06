@@ -1,5 +1,6 @@
 from typing import Any
 
+import numpy as np
 import opengate_core as g4
 
 from ..base import GateObject, process_cls
@@ -109,13 +110,17 @@ class FieldBase(GateObject):
             for i in range(volume.number_of_repetitions):
                 pv = volume.get_g4_physical_volume(i)
                 T = vec_g4_as_np(pv.GetObjectTranslation())
-                R = rot_g4_as_np(pv.GetObjectRotation())
+                rot = pv.GetObjectRotation()
+                R = rot_g4_as_np(rot) if rot is not None else np.eye(3)
                 for anc in volume.ancestor_volumes[::-1]:
-                    anc_pv = getattr(anc, "g4_physical_volume", None)
-                    if anc_pv is None:
+                    # Ancestors are assumed to be singly placed, so we use idx 0
+                    anc_pvs = getattr(anc, "g4_physical_volumes", None)
+                    if not anc_pvs:
                         continue
+                    anc_pv = anc_pvs[0]
                     anc_T = vec_g4_as_np(anc_pv.GetObjectTranslation())
-                    anc_R = rot_g4_as_np(anc_pv.GetObjectRotation())
+                    anc_rot = anc_pv.GetObjectRotation()
+                    anc_R = rot_g4_as_np(anc_rot) if anc_rot is not None else np.eye(3)
                     T = anc_R @ T + anc_T
                     R = anc_R @ R
                 g4_translations.append(vec_np_as_g4(T))
