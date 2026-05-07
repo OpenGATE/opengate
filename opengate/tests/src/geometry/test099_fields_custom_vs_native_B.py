@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — Custom trampoline B field vs native G4 uniform B field.
+Test 099 - Custom trampoline B field vs native G4 uniform B field.
 
 Places two boxes side-by-side in one simulation: one with the native
 G4UniformMagField, the other with a CustomMagneticField returning the
@@ -141,10 +141,10 @@ if __name__ == "__main__":
     is_ok_z = np.all(dz < r_TOL)
     is_ok_e = np.all(dKE < e_TOL)
 
-    print(f"dx max: {dx.max():.6f} mm  — OK: {is_ok_x}")
-    print(f"dy max: {dy.max():.6f} mm  — OK: {is_ok_y}")
-    print(f"dz max: {dz.max():.6f} mm  — OK: {is_ok_z}")
-    print(f"dKE max: {dKE.max():.6f} MeV — OK: {is_ok_e}")
+    print(f"dx max: {dx.max():.6f} mm  - OK: {is_ok_x}")
+    print(f"dy max: {dy.max():.6f} mm  - OK: {is_ok_y}")
+    print(f"dz max: {dz.max():.6f} mm  - OK: {is_ok_z}")
+    print(f"dKE max: {dKE.max():.6f} MeV - OK: {is_ok_e}")
 
     # Compare custom to analytical
     r = cyclotron_radius(T, By, PROTON_MASS, 1 * g4_eplus)
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     cx, cz = 0.0 - r, -box_half_z
     residual = np.sqrt((custom_x - cx) ** 2 + (custom_z - cz) ** 2) - r
     is_ok_analytical = np.all(np.abs(residual) < r_TOL)
-    print(f"Custom vs analytical circle residual: {residual}  — OK: {is_ok_analytical}")
+    print(f"Custom vs analytical circle residual: {residual}  - OK: {is_ok_analytical}")
 
     is_ok = is_ok_x and is_ok_y and is_ok_z and is_ok_e and is_ok_analytical
     utility.test_ok(is_ok)

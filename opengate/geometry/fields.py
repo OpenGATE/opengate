@@ -84,7 +84,7 @@ class FieldBase(GateObject):
         self.attached_to = []
         self._field_changes_energy = False
 
-        # Integration objects — shared by all field subclasses
+        # Integration objects - shared by all field subclasses
         self.g4_equation_of_motion = None
         self.g4_integrator_stepper = None
         self.g4_integration_driver = None

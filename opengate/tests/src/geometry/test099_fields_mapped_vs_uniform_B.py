@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — MappedMagneticField with uniform grid vs UniformMagneticField.
+Test 099 - MappedMagneticField with uniform grid vs UniformMagneticField.
 
 Places two boxes side-by-side: one with UniformMagneticField, the other with
 a MappedMagneticField whose grid contains a constant B value everywhere. A
@@ -141,9 +141,9 @@ if __name__ == "__main__":
     is_ok_z = np.all(dz < r_TOL)
     is_ok_e = np.all(dKE < e_TOL)
 
-    print(f"Uniform vs mapped — dx max : {dx.max() / g4_mm:.6f} mm  — OK: {is_ok_x}")
-    print(f"Uniform vs mapped — dz max : {dz.max() / g4_mm:.6f} mm  — OK: {is_ok_z}")
-    print(f"Uniform vs mapped — dKE max: {dKE.max() / g4_MeV:.6f} MeV — OK: {is_ok_e}")
+    print(f"Uniform vs mapped - dx max : {dx.max() / g4_mm:.6f} mm  - OK: {is_ok_x}")
+    print(f"Uniform vs mapped - dz max : {dz.max() / g4_mm:.6f} mm  - OK: {is_ok_z}")
+    print(f"Uniform vs mapped - dKE max: {dKE.max() / g4_MeV:.6f} MeV - OK: {is_ok_e}")
 
     # Analytical cyclotron check on the mapped result
     r = cyclotron_radius(T, By, PROTON_MASS, 1 * g4_eplus)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     residual = np.sqrt((mapped_x - cx) ** 2 + (mapped_z - cz) ** 2) - r
     is_ok_analytical = np.all(np.abs(residual) < r_TOL)
     print(
-        f"Mapped vs analytical circle residual: {residual / g4_mm} mm — OK: {is_ok_analytical}"
+        f"Mapped vs analytical circle residual: {residual / g4_mm} mm - OK: {is_ok_analytical}"
     )
 
     is_ok = is_ok_x and is_ok_z and is_ok_e and is_ok_analytical

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — Field serialization round-trip.
+Test 099 - Field serialization round-trip.
 
 Tests that non-custom field types survive serialization
 and that custom fields correctly refuse it.
