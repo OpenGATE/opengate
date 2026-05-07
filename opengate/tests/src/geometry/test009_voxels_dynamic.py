@@ -1,6 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Test 009: Dynamic Voxelized Volumes and Dose Scoring
+
+Objective:
+Verify the creation and handling of voxelized volumes (Image) with dynamic
+parametrisation (e.g., varying properties over time). It validates that the
+simulation correctly handles run timing intervals in conjunction with dynamic
+image definitions, and validates proton dose scoring.
+
+Setup:
+- World (G4_AIR): 1 x 1 x 1 m.
+- Fake (Box, G4_AIR): A 40 x 40 x 40 cm rotated mother volume.
+- Patient (Image, varying materials): Voxelized volume loaded with dynamic
+  parametrisation (multiple image paths for different time intervals).
+- Source: 130 MeV protons emitted from a spherical source, directed along +Z.
+
+Verification 1: Timing Validation
+Validates that the simulation correctly throws an exception when run timing
+intervals do not match the dynamic parametrisation, and successfully runs
+when they do match.
+
+Verification 2: Simulation Statistics
+Validates that the fundamental tracking steps, tracks, and events match the
+expected reference statistics within an acceptable tolerance.
+
+Verification 3: Dose Deposition
+Validates the 3D dose (energy deposition) distribution scored inside the
+voxelized patient volume by comparing it against a reference image.
+"""
+
 import opengate as gate
 from opengate.geometry.materials import (
     read_voxel_materials,
