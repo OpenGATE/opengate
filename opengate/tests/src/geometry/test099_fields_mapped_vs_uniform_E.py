@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — MappedMagneticField with uniform grid vs UniformMagneticField.
+Test 099 - MappedMagneticField with uniform grid vs UniformMagneticField.
 
 Places two boxes side-by-side: one with UniformMagneticField, the other with
 a MappedMagneticField whose grid contains a constant B value everywhere. A

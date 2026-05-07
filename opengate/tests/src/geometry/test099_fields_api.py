@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — Field API tests.
+Test 099 - Field API tests.
 
 Checks the following behaviours:
   1. add_field() before volume is added to simulation -> fatal
@@ -23,10 +23,10 @@ def _expect_error(fn, error_msg):
     """Run fn, expect an exception (fatal() raises Exception, others raise specific types)."""
     try:
         fn()
-        print(f"  FAIL — expected error: {error_msg}")
+        print(f"  FAIL - expected error: {error_msg}")
         return False
     except Exception as e:
-        print(f"  OK — got {type(e).__name__}: {error_msg}")
+        print(f"  OK - got {type(e).__name__}: {error_msg}")
         return True
 
 
@@ -120,9 +120,9 @@ if __name__ == "__main__":
             and box1.field == "B_shared"
             and box2.field == "B_shared"
         )
-        print(f"  {'OK' if ok else 'FAIL'} — same field on two volumes")
+        print(f"  {'OK' if ok else 'FAIL'} - same field on two volumes")
     except Exception as e:
-        print(f"  FAIL — unexpected error: {e}")
+        print(f"  FAIL - unexpected error: {e}")
         ok = False
     is_ok = is_ok and ok
 
