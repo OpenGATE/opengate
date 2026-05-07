@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Test 099 - MappedMagneticField with uniform grid vs UniformMagneticField.
+Test 099 - MappedElectricField with uniform grid vs UniformElectricField.
 
-Places two boxes side-by-side: one with UniformMagneticField, the other with
-a MappedMagneticField whose grid contains a constant B value everywhere. A
+Places two boxes side-by-side: one with UniformElectricField, the other with
+a MappedElectricField whose grid contains a constant E value everywhere. A
 proton source fires into each box.
 
 Checks that:
