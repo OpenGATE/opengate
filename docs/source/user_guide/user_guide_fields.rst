@@ -76,6 +76,30 @@ Magnetic fields
 
    Custom fields are evaluated via a Python callback for every field evaluation during tracking. This will significantly slow down the simulation. Prefer native types when possible. We are currently working on developing a faster custom field implementation. For more details, see :ref:`user_guide_fields_performance`.
 
+**MappedMagneticField** -- Magnetic field defined by values on a regular 3D Cartesian grid. Field values are interpolated between grid points (trilinear by default). This is the recommended approach for importing fields from external calculations (e.g. finite element solvers) or for replacing a slow ``CustomMagneticField`` with a pre-sampled C++ equivalent.
+
+The field is specified as a 2D array with columns ``[x, y, z, Bx, By, Bz]`` in Geant4 internal units. The grid must be regular (uniform spacing along each axis) and complete (every combination of the sampled x, y, z values must be present). All coordinates are in the local frame of the attached volume. Degenerate axes are not allowed, so the minimum valid grid is 2×2×2 (eight corner points).
+
+.. code-block:: python
+
+   import numpy as np
+
+   # data.csv has columns: x, y, z (in mm), Bx, By, Bz (in T)
+   mm = gate.g4_units.mm
+   tesla = gate.g4_units.tesla
+
+   field_matrix = np.loadtxt("data.csv", delimiter=",")
+   field_matrix[:, :3] *= mm      # convert positions to Geant4 internal length units
+   field_matrix[:, 3:] *= tesla   # convert field to Geant4 internal field units
+
+   field = fields.MappedMagneticField(name="B_mapped")
+   field.field_matrix = field_matrix
+   box.add_field(field)
+
+.. warning:: Points outside the grid
+
+   If the grid does not cover the entire volume, field values will be extrapolated outside the grid using the nearest valid value (i.e. clamping to the edge). We recommend defining the grid to cover the entire volume to avoid unexpected behaviour.
+
 
 Electric fields
 ~~~~~~~~~~~~~~~
@@ -102,6 +126,18 @@ Electric fields
    field.field_function = my_E_field
    box.add_field(field)
 
+.. warning:: Performance warning
+
+   Same GIL overhead as ``CustomMagneticField``. See :ref:`user_guide_fields_performance`.
+
+**MappedElectricField** -- Electric field defined on a regular 3D Cartesian grid, same interface as ``MappedMagneticField``. Columns are ``[x, y, z, Ex, Ey, Ez]``.
+
+.. code-block:: python
+
+   field = fields.MappedElectricField(name="E_mapped")
+   field.field_matrix = field_matrix   # columns: [x, y, z, Ex, Ey, Ez], values in Geant4 internal units
+   box.add_field(field)
+
 
 Electromagnetic fields
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -116,7 +152,8 @@ Combined magnetic and electric fields.
    m = gate.g4_units.m
 
    field = fields.UniformElectroMagneticField(name="EM_uniform")
-   field.field_vector = [0, 0, 1 * tesla, 1e6 * volt / m, 0, 0]   # [Bx, By, Bz, Ex, Ey, Ez] <- relative to the volume's local coordinate system
+   field.field_vector_B = [0, 0, 1 * tesla]          # [Bx, By, Bz] in local coordinates
+   field.field_vector_E = [1e6 * volt / m, 0, 0]     # [Ex, Ey, Ez] in local coordinates
    box.add_field(field)
 
 **CustomElectroMagneticField** -- Arbitrary combined field. The callback must return all six components ``[Bx, By, Bz, Ex, Ey, Ez]``.
@@ -128,6 +165,19 @@ Combined magnetic and electric fields.
 
    field = fields.CustomElectroMagneticField(name="EM_custom")
    field.field_function = my_EM_field
+   box.add_field(field)
+
+.. warning:: Performance warning
+
+   Same GIL overhead as ``CustomMagneticField``. See :ref:`user_guide_fields_performance`.
+
+**MappedElectroMagneticField** -- Combined B and E field, each defined on its own independent regular 3D Cartesian grid. The two grids do not need to share the same resolution or spatial extent.
+
+.. code-block:: python
+
+   field = fields.MappedElectroMagneticField(name="EM_mapped")
+   field.field_matrix_B = b_matrix   # columns: [x, y, z, Bx, By, Bz], values in Geant4 internal units
+   field.field_matrix_E = e_matrix   # columns: [x, y, z, Ex, Ey, Ez], values in Geant4 internal units
    box.add_field(field)
 
 
@@ -244,7 +294,7 @@ Native field types (``UniformMagneticField``, ``UniformElectricField``, ``Quadru
 
 Custom fields (``CustomMagneticField``, ``CustomElectricField``, ``CustomElectroMagneticField``) call a Python function for **every evaluation** of ``GetFieldValue`` during tracking. This means that the GIL is acquired and released on every call, which can significantly slow down the simulation, especially in multithreaded mode where all threads serialize through the Python callback.
 
-**Recommendation:** Use native types whenever possible.
+**Recommendation:** Use native types whenever possible. For spatially varying fields, use a mapped field type (``MappedMagneticField``, ``MappedElectricField``, ``MappedElectroMagneticField``): define the field on a grid once at setup and let the C++ interpolator handle all evaluations during tracking with zero Python overhead.
 
 .. I am keeping this as a comment for now because sources are not serialized yet, so the round-trip for a full simulation object does not work.
 .. Serialization
@@ -271,9 +321,14 @@ The field implementation is covered by the ``test099_fields_*`` tests in ``openg
 - ``test099_fields_analytical_E`` -- Uniform E field vs analytical energy gain.
 - ``test099_fields_custom_vs_native_B`` -- Custom trampoline B vs native G4 (bit-identical).
 - ``test099_fields_custom_vs_native_E`` -- Custom trampoline E vs native G4 (bit-identical).
-- ``test099_fields_multi_volume_refresh`` -- Testing field updates when volumes are dynamically modified between runs.
-- ``test099_fields_repeated_placements`` -- Testing field behaviour with repeated physical placements of the same logical volume.
-- ``test099_fields_rotated_volume`` -- Test that fields rotate with their attached volume.
+- ``test099_fields_mapped_vs_uniform_B`` -- MappedMagneticField (constant grid) vs UniformMagneticField.
+- ``test099_fields_mapped_vs_uniform_E`` -- MappedElectricField (constant grid) vs UniformElectricField.
+- ``test099_fields_multi_volume_refresh`` -- Uniform field shared across two volumes; one is dynamically rotated between runs.
+- ``test099_fields_mapped_multi_volume_refresh`` -- Same as above with a MappedMagneticField.
+- ``test099_fields_repeated_placements`` -- Uniform field on a single box vs the same total depth split into repeated slabs.
+- ``test099_fields_mapped_repeated_placements`` -- Same as above with a MappedMagneticField.
+- ``test099_fields_rotated_volume`` -- Uniform field shared between an unrotated and a rotated volume.
+- ``test099_fields_mapped_rotated_volume`` -- Same as above with a MappedMagneticField.
 - ``test099_fields_serialization`` -- Round-trip serialization for all non-custom types.
 - ``test099_fields_api`` -- API guards.
 
@@ -283,6 +338,7 @@ Class reference
 
 .. autoclass:: opengate.geometry.fields.FieldBase
    :members:
+   :no-index:
 
 .. autoclass:: opengate.geometry.fields.UniformMagneticField
    :members:
@@ -296,11 +352,23 @@ Class reference
 .. autoclass:: opengate.geometry.fields.CustomMagneticField
    :members:
 
+.. autoclass:: opengate.geometry.fields.MappedMagneticField
+   :members:
+
 .. autoclass:: opengate.geometry.fields.UniformElectricField
    :members:
 
 .. autoclass:: opengate.geometry.fields.CustomElectricField
    :members:
 
+.. autoclass:: opengate.geometry.fields.MappedElectricField
+   :members:
+
+.. autoclass:: opengate.geometry.fields.UniformElectroMagneticField
+   :members:
+
 .. autoclass:: opengate.geometry.fields.CustomElectroMagneticField
+   :members:
+
+.. autoclass:: opengate.geometry.fields.MappedElectroMagneticField
    :members:

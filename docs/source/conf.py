@@ -128,6 +128,11 @@ add_module_names = False
 # Enable nitpicky mode for broken references/links
 nitpicky = True
 
+# Suppress warnings for pybind11-bound C++ types that have no Sphinx docs entry
+nitpick_ignore = [
+    ("py:class", "opengate_core.G4FieldManager"),
+]
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
