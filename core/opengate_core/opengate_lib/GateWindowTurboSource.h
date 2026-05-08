@@ -19,14 +19,16 @@ azimuthal angles of source point seeing pphi1 and pphi2.
 
 */
 
-class GateSourceTurbo : public GateVSource {
+class GateWindowTurboSource : public GateVSource {
 public:
-  GateSourceTurbo(G4String name);
-  ~GateSourceTurbo() { G4cout << "GateSourceTurbo destructs" << G4endl; };
+  GateWindowTurboSource(G4String name);
+  ~GateWindowTurboSource() {
+    G4cout << "GateWindowTurboSource destructs" << G4endl;
+  };
 
-  void GeneratePrimaries(G4Event *event, double current_simulation_time) override;
+  void GeneratePrimaries(G4Event *event,
+                         double current_simulation_time) override;
 
-  
   virtual double PrepareNextTime(double current_simulation_time,
                                  double NumberOfGeneratedEvents);
 
@@ -37,19 +39,28 @@ public:
   void SetB1(G4double b) { b1 = b; };
   void SetB2(G4double b) { b2 = b; };
   void SetPlaneDistance(G4double distance) { plane_distance = distance; };
-  void SetPlanePhi(G4double phi) { plane_phi = phi; sin_plane_phi = sin(phi); cos_plane_phi = cos(phi); };
+  void SetPlanePhi(G4double phi) {
+    plane_phi = phi;
+    sin_plane_phi = sin(phi);
+    cos_plane_phi = cos(phi);
+  };
 
-
-
-  void SetActRatio(G4double actRatio){act_ratio = actRatio;act_ratio_set = true;};
-  void SetMaxSolidAngle(G4double maxSolidAngle) { max_solid_angle = maxSolidAngle; max_solid_angle_set = true; };
+  void SetActRatio(G4double actRatio) {
+    act_ratio = actRatio;
+    act_ratio_set = true;
+  };
+  void SetMaxSolidAngle(G4double maxSolidAngle) {
+    max_solid_angle = maxSolidAngle;
+    max_solid_angle_set = true;
+  };
   void Initialize(G4int samplingCount);
   void LoadVoxelizedPhantom(G4String filename);
   void SetPhantomPosition(G4ThreeVector pos);
-  void GetWindowVertex(G4ThreeVector &pos1, G4ThreeVector &pos2, G4ThreeVector &pos3, G4ThreeVector &pos4) const;
+  void GetWindowVertex(G4ThreeVector &pos1, G4ThreeVector &pos2,
+                       G4ThreeVector &pos3, G4ThreeVector &pos4) const;
 
 private:
-  static G4bool random_engine_initialized;
+  // static G4bool random_engine_initialized;
   void SetPhiTheta(const G4ThreeVector &pos) const;
   G4bool CheckPosDirValid(const G4ThreeVector &pos,
                           const G4ThreeVector &dir) const;

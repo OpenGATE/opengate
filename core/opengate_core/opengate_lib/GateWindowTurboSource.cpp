@@ -1,12 +1,12 @@
 #include "GateWindowTurboSource.h"
-// #include "GateSourceTurboMessenger.hh"
+// #include "GateWindowTurboSourceMessenger.hh"
 #include "GateRandomEngine.hh"
 #include "GateVoxelizedPosDistribution.hh"
 #include <G4Event.hh>
 
-G4bool GateSourceTurbo::random_engine_initialized = false;
+// G4bool GateWindowTurboSource::random_engine_initialized = false;
 
-G4int GateSourceTurbo::GeneratePrimaries(G4Event *event) {
+G4int GateWindowTurboSource::GeneratePrimaries(G4Event *event) {
   if (event)
     GateMessage("Beam", 2,
                 "Generating particle " << event->GetEventID() << G4endl);
@@ -42,11 +42,12 @@ G4int GateSourceTurbo::GeneratePrimaries(G4Event *event) {
   return numVertices;
 }
 
-GateSourceTurbo::GateSourceTurbo(G4String name) : GateVSource(name) {
-  m_sourceMessenger = new GateSourceTurboMessenger(this);
+GateWindowTurboSource::GateWindowTurboSource(G4String name)
+    : GateVSource(name) {
+  m_sourceMessenger = new GateWindowTurboSourceMessenger(this);
 }
-G4bool GateSourceTurbo::CheckPosDirValid(const G4ThreeVector &pos,
-                                         const G4ThreeVector &dir) const {
+G4bool GateWindowTurboSource::CheckPosDirValid(const G4ThreeVector &pos,
+                                               const G4ThreeVector &dir) const {
   // compare theta with cos2, to avoid complex calculation
   //   G4double cot2theta = std::copysign(1.0, dir.z()) * dir.z() * dir.z() /
   //                        (dir.x() * dir.x() + dir.y() * dir.y());
@@ -96,14 +97,14 @@ void verify_one(const G4ThreeVector start, const G4ThreeVector end,
     // G4cerr << "theta_max " << theta_max << " theta_min " << theta_min << "
     // phi_max " << phi_max << " phi_min " << phi_min << G4endl;
     fflush(stderr);
-    G4Exception("GateSourceTurbo::VerifyPhiTheta", "VerifyPhiThetaError",
+    G4Exception("GateWindowTurboSource::VerifyPhiTheta", "VerifyPhiThetaError",
                 FatalException, "phi or theta not in range");
   }
   return;
 }
 
-void GateSourceTurbo::VerifyPhiTheta(G4int number_pos,
-                                     G4double interval) const {
+void GateWindowTurboSource::VerifyPhiTheta(G4int number_pos,
+                                           G4double interval) const {
   G4ThreeVector pos;
   G4ThreeVector window_vt1, window_vt2, window_vt3, window_vt4;
   GetWindowVertex(window_vt1, window_vt2, window_vt3, window_vt4);
@@ -143,7 +144,7 @@ void GateSourceTurbo::VerifyPhiTheta(G4int number_pos,
          << G4endl;
 }
 
-void GateSourceTurbo::SetPhiTheta(const G4ThreeVector &pos) const {
+void GateWindowTurboSource::SetPhiTheta(const G4ThreeVector &pos) const {
   // compare theta with cos2, to avoid complex calculation
   //   G4double cot2theta = std::copysign(1.0, dir.z()) * dir.z() * dir.z() /
   //                        (dir.x() * dir.x() + dir.y() * dir.y());
@@ -190,21 +191,22 @@ G4double solid_angle_pyramid(G4double a, G4double b, G4double d) {
   return 4 * atan(a * b / (2 * d * sqrt(a * a + b * b + 4 * d * d)));
 }
 
-void GateSourceTurbo::Initialize(G4int samplingCount) {
+void GateWindowTurboSource::Initialize(G4int samplingCount, std::string) {
 
-  GateRandomEngine *theRandomEngine = GateRandomEngine::GetInstance();
-  if (!random_engine_initialized) {
-    theRandomEngine->Initialize();
-    random_engine_initialized = true;
-  }
+  // depends on python side to do random engine initialization
+  // GateRandomEngine *theRandomEngine = GateRandomEngine::GetInstance();
+  // if (!random_engine_initialized) {
+  //   theRandomEngine->Initialize();
+  //   random_engine_initialized = true;
+  // }
   if (a1 != a1 || a2 != a2 || b1 != b1 || b2 != b2 ||
       plane_distance != plane_distance || plane_phi != plane_phi) {
-    G4Exception("GateSourceTurbo::SetActRatio", "SetActRatioError",
+    G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
                 FatalException, "Not all parameters needed points are set");
   }
 
   if (a1 >= a2 || b1 >= b2) {
-    G4Exception("GateSourceTurbo::SetActRatio", "SetActRatioError",
+    G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
                 FatalException, "a1 >= a2 or b1 >= b2");
   }
   GateVVolume *v = mVolume;
@@ -216,7 +218,7 @@ void GateSourceTurbo::Initialize(G4int samplingCount) {
 
     if (G4RotationMatrix({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}) !=
         v->GetPhysicalVolume(0)->GetObjectRotationValue()) {
-      G4Exception("GateSourceTurbo::SetActRatio", "SetActRatioError",
+      G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
                   FatalException,
                   "Turbo source must not attach to a rotated volume");
     }
@@ -248,7 +250,7 @@ void GateSourceTurbo::Initialize(G4int samplingCount) {
   // VerifyPhiTheta(samplingCount, 0.01);
 }
 
-G4double GateSourceTurbo::GetNextTime(G4double timeStart) {
+G4double GateWindowTurboSource::GetNextTime(G4double timeStart) {
 
   /* GetVolumeID ??? */
 
@@ -329,14 +331,14 @@ G4double GateSourceTurbo::GetNextTime(G4double timeStart) {
   return aTime;
 }
 
-void GateSourceTurbo::LoadVoxelizedPhantom(G4String filename) {
+void GateWindowTurboSource::LoadVoxelizedPhantom(G4String filename) {
   if (m_posSPS)
     delete m_posSPS;
   m_posSPS = new GateVoxelizedPosDistribution(filename);
   m_angSPS->SetPosDistribution(m_posSPS);
 }
 
-void GateSourceTurbo::SetPhantomPosition(G4ThreeVector pos) {
+void GateWindowTurboSource::SetPhantomPosition(G4ThreeVector pos) {
   GateVoxelizedPosDistribution *posDist =
       dynamic_cast<GateVoxelizedPosDistribution *>(m_posSPS);
   if (posDist)
@@ -347,9 +349,10 @@ void GateSourceTurbo::SetPhantomPosition(G4ThreeVector pos) {
            << G4endl;
 }
 
-void GateSourceTurbo::GetWindowVertex(G4ThreeVector &pos1, G4ThreeVector &pos2,
-                                      G4ThreeVector &pos3,
-                                      G4ThreeVector &pos4) const {
+void GateWindowTurboSource::GetWindowVertex(G4ThreeVector &pos1,
+                                            G4ThreeVector &pos2,
+                                            G4ThreeVector &pos3,
+                                            G4ThreeVector &pos4) const {
   pos1 = {plane_distance, a1, b1};
   pos2 = {plane_distance, a1, b2};
   pos3 = {plane_distance, a2, b1};

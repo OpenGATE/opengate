@@ -22,7 +22,7 @@ G4double GateSingleParticleSourceWindowTurbo::GetSolidAngle(
     const G4ThreeVector &pos) const {
   // if (pos.mag2() >= mPth1.mag2() || pos.mag2() >= mPth2.mag2() ||
   //     pos.mag2() >= mPphi1.mag2() || pos.mag2() >= mPphi2.mag2()) {
-  //   G4Exception("GateSourceTurbo::GetSolidAngle", "GetSolidAngleError",
+  //   G4Exception("GateWindowTurboSource::GetSolidAngle", "GetSolidAngleError",
   //               FatalException, "source position not inside edge point");
   // }
 
@@ -49,7 +49,7 @@ void GateSingleParticleSourceWindowTurbo::GeneratePrimaryVertex(
     G4String error_msg =
         "activity ratio or max solid angle not set for source: ";
     error_msg += m_name;
-    G4Exception("GateSourceTurbo::GeneratePrimaryVertex",
+    G4Exception("GateWindowTurboSource::GeneratePrimaryVertex",
                 "GeneratePrimaryVertexError", FatalException, error_msg);
   }
   G4ThreeVector position = m_posSPS->GenerateOne();
@@ -63,7 +63,7 @@ void GateSingleParticleSourceWindowTurbo::GeneratePrimaryVertex(
           "solid angle of position is larger than max solid angle for source: ";
       error_msg += m_name;
       error_msg += "\nyou may increase max solid angle and try again";
-      G4Exception("GateSourceTurbo::GeneratePrimaryVertex",
+      G4Exception("GateWindowTurboSource::GeneratePrimaryVertex",
                   "GeneratePrimaryVertexError", FatalException, error_msg);
     }
     if (G4UniformRand() < solid_angle / max_solid_angle / 1.1) {
