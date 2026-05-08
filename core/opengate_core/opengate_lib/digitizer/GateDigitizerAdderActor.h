@@ -112,6 +112,8 @@ protected:
     double *time;
     double *weight;
     int64_t *track_info_id;
+
+    ~threadLocalT();
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

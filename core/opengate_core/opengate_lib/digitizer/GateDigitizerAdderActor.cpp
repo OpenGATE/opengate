@@ -13,6 +13,8 @@
 #include <functional>
 #include <sstream>
 
+GateDigitizerAdderActor::threadLocalT::~threadLocalT() = default;
+
 GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
   // actions (in addition to the ones in GateVDigitizerWithOutputActor)
