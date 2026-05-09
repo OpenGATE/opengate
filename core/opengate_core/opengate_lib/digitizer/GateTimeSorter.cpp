@@ -29,7 +29,7 @@ void GateTimeSorter::Init(GateDigiCollection *input) {
   fIngestionBufferA->InitDigiAttributesFromCopy(fInputCollection);
   fIngestionBufferA->SetSharedStorage(true);
 
-  fIngestionBufferB = manager->NewDigiCollection(name + "_bufferA");
+  fIngestionBufferB = manager->NewDigiCollection(name + "_bufferB");
   fIngestionBufferB->InitDigiAttributesFromCopy(fInputCollection);
   fIngestionBufferB->SetSharedStorage(true);
 
