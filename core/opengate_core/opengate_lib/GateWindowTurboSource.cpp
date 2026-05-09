@@ -191,39 +191,46 @@ G4double solid_angle_pyramid(G4double a, G4double b, G4double d) {
   return 4 * atan(a * b / (2 * d * sqrt(a * a + b * b + 4 * d * d)));
 }
 
-void GateWindowTurboSource::Initialize(G4int samplingCount, std::string) {
+void GateWindowTurboSource::CheckMotherVolumeIsNotRotated() const {
+  // TODO: reimplement
+  //  GateVVolume *v = mVolume;
+  //  if (v == nullptr) {
+  //    SetRelativePlacementVolume("world");
+  //    v = mVolume;
+  //  }
+  //  while (v->GetObjectName() != "world") {
 
-  // depends on python side to do random engine initialization
+  //   if (G4RotationMatrix({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}) !=
+  //       v->GetPhysicalVolume(0)->GetObjectRotationValue()) {
+  //     G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
+  //                 FatalException,
+  //                 "Turbo source must not attach to a rotated volume");
+  //   }
+  //   v = v->GetParentVolume();
+  // }
+}
+
+void GateWindowTurboSource::Initialize(G4int samplingCount) {
+
+  // TODO: implement random engine init in python
   // GateRandomEngine *theRandomEngine = GateRandomEngine::GetInstance();
   // if (!random_engine_initialized) {
   //   theRandomEngine->Initialize();
   //   random_engine_initialized = true;
   // }
-  if (a1 != a1 || a2 != a2 || b1 != b1 || b2 != b2 ||
-      plane_distance != plane_distance || plane_phi != plane_phi) {
-    G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-                FatalException, "Not all parameters needed points are set");
-  }
 
-  if (a1 >= a2 || b1 >= b2) {
-    G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-                FatalException, "a1 >= a2 or b1 >= b2");
-  }
-  GateVVolume *v = mVolume;
-  if (v == nullptr) {
-    SetRelativePlacementVolume("world");
-    v = mVolume;
-  }
-  while (v->GetObjectName() != "world") {
+  // TODO: check paramenters in python
+  // if (a1 != a1 || a2 != a2 || b1 != b1 || b2 != b2 ||
+  //     plane_distance != plane_distance || plane_phi != plane_phi) {
+  //   G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
+  //               FatalException, "Not all parameters needed points are set");
+  // }
 
-    if (G4RotationMatrix({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}) !=
-        v->GetPhysicalVolume(0)->GetObjectRotationValue()) {
-      G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-                  FatalException,
-                  "Turbo source must not attach to a rotated volume");
-    }
-    v = v->GetParentVolume();
-  }
+  // if (a1 >= a2 || b1 >= b2) {
+  //   G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
+  //               FatalException, "a1 >= a2 or b1 >= b2");
+  // }
+
   auto start_time = std::chrono::high_resolution_clock::now();
   G4double act_ratio_all = 0;
   G4ThreeVector pos;

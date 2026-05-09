@@ -34,17 +34,6 @@ public:
 
   // should be reimplemented
   G4double GetNextTime(G4double timeStart) override;
-  void SetA1(G4double a) { a1 = a; };
-  void SetA2(G4double a) { a2 = a; };
-  void SetB1(G4double b) { b1 = b; };
-  void SetB2(G4double b) { b2 = b; };
-  void SetPlaneDistance(G4double distance) { plane_distance = distance; };
-  void SetPlanePhi(G4double phi) {
-    plane_phi = phi;
-    sin_plane_phi = sin(phi);
-    cos_plane_phi = cos(phi);
-  };
-
   void SetActRatio(G4double actRatio) {
     act_ratio = actRatio;
     act_ratio_set = true;
@@ -64,14 +53,11 @@ private:
   void SetPhiTheta(const G4ThreeVector &pos) const;
   G4bool CheckPosDirValid(const G4ThreeVector &pos,
                           const G4ThreeVector &dir) const;
+  void CheckMotherVolumeIsNotRotated() const;
   G4double act_ratio = 1;
   G4double max_solid_angle = 0;
   G4bool act_ratio_set;
   G4bool max_solid_angle_set;
-  G4double plane_distance{NAN};
-  G4double plane_phi{NAN};
-  G4double sin_plane_phi{NAN}, cos_plane_phi{NAN};
-  G4double a1{NAN}, a2{NAN}, b1{NAN}, b2{NAN};
   void VerifyPhiTheta(G4int number_pos, G4double interval) const;
   // G4ThreeVector mPth1;
   // G4ThreeVector mPth2;
