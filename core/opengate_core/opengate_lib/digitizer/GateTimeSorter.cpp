@@ -212,8 +212,6 @@ GateDigiCollection::Iterator &GateTimeSorter::OutputIterator() {
   return fOutputIter;
 }
 
-// CONTINUE HERE
-
 void GateTimeSorter::MarkOutputAsProcessed() {
   // Modifies the index of the output iterator, to ensure that future use of the
   // iterator starts with the output digis that have not been processed yet.
@@ -383,10 +381,15 @@ void GateTimeSorter::Process() {
 
   // The sorted digi collection keeps growing as more digis are processed.
   // The digis that have already been copied to the output must be removed
-  // once in a while to limit memory usage. This is only done if at least 50% of
-  // the occupied memory can be reclaimed.
-  if (fSortedCollectionA->GetSize() > fMaxSize &&
-      fSortedIndicesA->size() < fMaxSize / 2) {
+  // once in a while to limit memory usage.
+  constexpr size_t n1 = 100'000;
+  constexpr size_t n2 = 1'000'000;
+  // n is the number of digis that can be removed.
+  const size_t n = fSortedCollectionA->GetSize() - fSortedIndicesA->size();
+  // Pruning removes digis that can be removed, and copies the others.
+  // So make sure to not do this too frequently, otherwise the memory gain is
+  // low and the time required for copying is relatively high.
+  if ((n >= n1 && n >= fSortedCollectionA->GetSize() / 2) || n >= n2) {
     Prune();
   }
 
