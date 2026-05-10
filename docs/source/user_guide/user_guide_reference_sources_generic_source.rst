@@ -22,7 +22,7 @@ energy, see the following example:
    source.particle = 'proton'
    source.activity = 10000 * Bq
    source.position.type = 'box'
-   source.position.dimension = [4 * cm, 4 * cm, 4 * cm]
+   source.position.size = [4 * cm, 4 * cm, 4 * cm]
    source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
    source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
    source.direction.type = 'iso'

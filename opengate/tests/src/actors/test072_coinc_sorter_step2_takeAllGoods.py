@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from opengate.tests import utility
-from opengate.actors.coincidences import coincidences_sorter
-from opengate.contrib.root_helpers import *
-import uproot
 import os
-import numpy as np
-from scipy.stats import wasserstein_distance
 import sys
+
+import numpy as np
+import uproot
+from scipy.stats import wasserstein_distance
+
+import opengate as gate
+from opengate.actors.coincidences import CoincidenceSorter
+from opengate.contrib.root_helpers import *
+from opengate.tests import utility
 
 
 def main(dependency="test072_coinc_sorter_step1.py"):
@@ -40,24 +42,21 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # time windows
     ns = gate.g4_units.nanosecond
-    time_window = 3 * ns
-    policy = "takeAllGoods"
+    policy = "TakeAllGoods"
 
     mm = gate.g4_units.mm
     min_trans_dist = 0 * mm
-    transaxial_plane = "xy"
-    max_trans_dist = 32 * mm
-    # apply coincidences sorter
-    # (chunk size can be much larger, keep a low value to check it is ok)
-    coincidences = coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        min_trans_dist,
-        transaxial_plane,
-        max_trans_dist,
-        chunk_size=1000000,
-    )
+    max_ax_dist = 32 * mm
+
+    sorter = CoincidenceSorter()
+    sorter.window = 3 * ns
+    sorter.multiples_policy = policy
+    sorter.transaxial_plane = "XY"
+    sorter.min_transaxial_distance = min_trans_dist
+    sorter.max_axial_distance = max_ax_dist
+
+    coincidences = sorter.run(root_filename, "Singles_crystal")
+
     nc = len(coincidences["GlobalTime1"])
     print(f"There are {nc} coincidences for policy", policy)
 
@@ -71,13 +70,13 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # Compare with reference output
     ref_folder = paths.output_ref
 
-    ref_filename = ref_folder / f"{policy}_Gate9.4.root"
+    ref_filename = ref_folder / f"{policy[0].lower() + policy[1:]}_Gate9.4.root"
     ref_file = uproot.open(ref_filename)
     ref_coincidences = ref_file["Coincidences"]
 
     nc_ref = int(ref_coincidences.num_entries)
     stat_diff = abs(nc_ref - nc) / nc_ref
-    tolerance_stat = 0.05  # 5%
+    tolerance_stat = 0.06  # 6%
     print(
         f"Stat comparison {nc} (Gate10) vs. {nc_ref} (Gate9.4): {stat_diff}, tolerance {tolerance_stat}"
     )

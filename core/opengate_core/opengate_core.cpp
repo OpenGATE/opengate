@@ -173,6 +173,42 @@ void init_G4Region(py::module &);
 
 void init_G4RegionStore(py::module &);
 
+void init_G4FieldManager(py::module &);
+
+void init_G4Field(py::module &);
+
+void init_G4MagneticField(py::module &);
+
+void init_G4ElectroMagneticField(py::module &);
+
+void init_G4ElectricField(py::module &);
+
+void init_G4UniformMagField(py::module &);
+
+void init_G4QuadrupoleMagField(py::module &);
+
+void init_G4UniformElectricField(py::module &);
+
+void init_G4EquationOfMotion(py::module &);
+
+void init_G4Mag_EqRhs(py::module &);
+
+void init_G4Mag_UsualEqRhs(py::module &);
+
+void init_G4EqMagElectricField(py::module &);
+
+void init_G4MagIntegratorStepper(py::module &);
+
+void init_G4MagErrorStepper(py::module &);
+
+void init_G4ClassicalRK4(py::module &);
+
+void init_G4VIntegrationDriver(py::module &);
+
+void init_G4MagInt_Driver(py::module &);
+
+void init_G4ChordFinder(py::module &);
+
 // geometry/solids
 void init_G4Box(py::module &);
 
@@ -297,18 +333,20 @@ void init_GateActorManager(py::module &);
 // Gate filters
 void init_GateVFilter(py::module &);
 
-void init_GateParticleFilter(py::module &);
-
 void init_GatePrimaryScatterFilter(py::module &);
-
-void init_GateThresholdAttributeFilter(py::module &);
 
 void init_GateTrackCreatorProcessFilter(py::module &);
 
-void init_GateKineticEnergyFilter(py::module &);
+void init_GateBooleanFilter(py::module &);
+
+void init_GateAttributeComparisonFilter(py::module &);
 
 // Gate actors
 void init_GateDoseActor(py::module &m);
+
+void init_GateVoxelizedPromptGammaTLEActor(py::module &m);
+
+void init_GateVoxelizedPromptGammaAnalogActor(py::module &m);
 
 void init_GateFluenceActor(py::module &m);
 
@@ -327,6 +365,8 @@ void init_GateARFTrainingDatasetActor(py::module &m);
 void init_GateKillActor(py::module &);
 
 void init_GateKillAccordingProcessesActor(py::module &);
+
+void init_GateDepositedChargeActor(py::module &);
 
 void init_GateAttenuationImageActor(py::module &);
 
@@ -364,6 +404,8 @@ void init_GateHitsCollectionActor(py::module &);
 
 void init_GateHitsAdderActor(py::module &);
 
+void init_GateDigitizerPileupActor(py::module &);
+
 void init_GateDigitizerReadoutActor(py::module &m);
 
 void init_GateDigitizerBlurringActor(py::module &m);
@@ -374,9 +416,13 @@ void init_GateDigitizerSpatialBlurringActor(py::module &m);
 
 void init_GateDigitizerEnergyWindowsActor(py::module &m);
 
+void init_GateDigiAttributeLastProcessDefinedStepInVolumeActor(py::module &m);
+
 void init_GateDigiAttributeProcessDefinedStepInVolumeActor(py::module &m);
 
 void init_GateDigitizerProjectionActor(py::module &m);
+
+void init_GateCoincidenceSorterActor(py::module &m);
 
 void init_GateDigiAttributeManager(py::module &m);
 
@@ -402,6 +448,8 @@ void init_GateTemplateSource(py::module &);
 void init_GatePencilBeamSource(py::module &m);
 
 void init_GateVoxelSource(py::module &);
+
+void init_GateVoxelizedPromptGammaTLESource(py::module &);
 
 void init_GateGANSource(py::module &);
 
@@ -494,6 +542,25 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Region(m);
   init_G4RegionStore(m);
 
+  init_G4FieldManager(m);
+  init_G4Field(m);
+  init_G4MagneticField(m);
+  init_G4ElectroMagneticField(m);
+  init_G4ElectricField(m);
+  init_G4UniformMagField(m);
+  init_G4QuadrupoleMagField(m);
+  init_G4UniformElectricField(m);
+  init_G4EquationOfMotion(m);
+  init_G4Mag_EqRhs(m);
+  init_G4Mag_UsualEqRhs(m);
+  init_G4EqMagElectricField(m);
+  init_G4MagIntegratorStepper(m);
+  init_G4MagErrorStepper(m);
+  init_G4ClassicalRK4(m);
+  init_G4VIntegrationDriver(m);
+  init_G4MagInt_Driver(m);
+  init_G4ChordFinder(m);
+
   init_G4Box(m);
   init_G4Ellipsoid(m);
   init_G4Polyhedra(m);
@@ -578,11 +645,10 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
-  init_GateParticleFilter(m);
   init_GatePrimaryScatterFilter(m);
   init_GateTrackCreatorProcessFilter(m);
-  init_GateKineticEnergyFilter(m);
-  init_GateThresholdAttributeFilter(m);
+  init_GateBooleanFilter(m);
+  init_GateAttributeComparisonFilter(m);
   init_itk_image(m);
   init_GateImageNestedParameterisation(m);
   init_GateRepeatParameterisation(m);
@@ -593,6 +659,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
   init_GateVoxelSource(m);
+  init_GateVoxelizedPromptGammaTLESource(m);
   init_GateGANSource(m);
   init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);
@@ -604,6 +671,8 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_GateDoseActor(m);
   init_GateTLEDoseActor(m);
+  init_GateVoxelizedPromptGammaTLEActor(m);
+  init_GateVoxelizedPromptGammaAnalogActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateProductionAndStoppingActor(m);
@@ -621,18 +690,22 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateHitsAdderActor(m);
+  init_GateDigitizerPileupActor(m);
   init_GateDigitizerReadoutActor(m);
   init_GateDigitizerBlurringActor(m);
   init_GateDigitizerEfficiencyActor(m);
   init_GateDigitizerSpatialBlurringActor(m);
   init_GateDigitizerEnergyWindowsActor(m);
   init_GateDigitizerProjectionActor(m);
+  init_GateDigiAttributeLastProcessDefinedStepInVolumeActor(m);
+  init_GateCoincidenceSorterActor(m);
   init_GateDigiAttributeProcessDefinedStepInVolumeActor(m);
 
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
   init_GateKillAccordingProcessesActor(m);
+  init_GateDepositedChargeActor(m);
   init_GateAttenuationImageActor(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);

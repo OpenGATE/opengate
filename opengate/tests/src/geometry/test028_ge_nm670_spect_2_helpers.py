@@ -108,7 +108,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     # add stat actor
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats_actor.track_types_flag = True
-    stats_actor.output_filename = "stats.txt"
+    stats_actor.output_filename = f"stats.txt"
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
@@ -118,7 +118,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
             crystal = v
     hc.attached_to = crystal.name
     print("Crystal :", crystal.name)
-    hc.output_filename = "test028.root"
+    hc.output_filename = f"test028.root"
     print(hc.output_filename)
     hc.attributes = [
         "PostPosition",

@@ -5,7 +5,7 @@ import opengate as gate
 from opengate.tests import utility
 
 
-def define_simulation(sim, threads=1):
+def define_simulation(sim, paths, threads=1):
     um = gate.g4_units.um
     cm = gate.g4_units.cm
     m = gate.g4_units.m
@@ -18,6 +18,7 @@ def define_simulation(sim, threads=1):
     sim.random_engine = "MersenneTwister"
     sim.random_seed = 123654789
     sim.number_of_threads = threads
+    sim.output_dir = paths.output
     print(sim)
 
     world = sim.world

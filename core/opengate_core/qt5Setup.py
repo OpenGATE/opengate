@@ -1,8 +1,6 @@
-import wget
 import os
-import tarfile
 import platform
-import sys
+
 from .g4DataSetup import *
 
 

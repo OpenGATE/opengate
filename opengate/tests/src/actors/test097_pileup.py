@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import opengate as gate
+from opengate.tests import utility
+from test097_pileup_helpers import (
+    check_gate_pileup,
+    TimeWindowPolicy,
+    PositionAttributePolicy,
+    AttributePolicy,
+)
+
+green = [0, 1, 0, 1]
+gray = [0.5, 0.5, 0.5, 1]
+white = [1, 1, 1, 0.8]
+
+if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "gate_test097", "test097")
+
+    sim = gate.Simulation()
+
+    sim.visu = False
+    sim.visu_type = "vrml"
+    sim.random_seed = 1234
+    sim.number_of_threads = 1
+
+    # Units
+    mm = gate.g4_units.mm
+    sec = gate.g4_units.s
+    ns = gate.g4_units.ns
+    keV = gate.g4_units.keV
+    Bq = gate.g4_units.Bq
+    gcm3 = gate.g4_units.g_cm3
+    deg = gate.g4_units.deg
+
+    # Folders
+    data_path = paths.data
+    output_path = paths.output
+
+    # World
+    world = sim.world
+    world.size = [450 * mm, 450 * mm, 70 * mm]
+    world.material = "G4_AIR"
+
+    sim.volume_manager.material_database.add_material_weights(
+        "LYSO",
+        ["Lu", "Y", "Si", "O"],
+        [0.31101534, 0.368765605, 0.083209699, 0.237009356],
+        5.37 * gcm3,
+    )
+
+    # Ring volume
+    pet = sim.add_volume("Tubs", "pet")
+    pet.rmax = 200 * mm
+    pet.rmin = 127 * mm
+    pet.dz = 32 * mm
+    pet.color = gray
+    pet.material = "G4_AIR"
+
+    # Block
+    block = sim.add_volume("Box", "block")
+    block.mother = pet.name
+    block.size = [60 * mm, 20 * mm, 20 * mm]
+    translations_ring, rotations_ring = gate.geometry.utility.get_circular_repetition(
+        40, [160 * mm, 0.0 * mm, 0], start_angle_deg=180, axis=[0, 0, 1]
+    )
+    block.translation = translations_ring
+    block.rotation = rotations_ring
+    block.material = "G4_AIR"
+    block.color = white
+
+    # Crystal
+    crystal = sim.add_volume("Box", "crystal")
+    crystal.mother = block.name
+    crystal.size = [60 * mm, 20 * mm, 20 * mm]
+    crystal.material = "LYSO"
+    crystal.color = green
+
+    source1 = sim.add_source("GenericSource", "b2b_1")
+    source1.particle = "back_to_back"
+    source1.activity = 5 * 1e6 * Bq
+    source1.position.type = "point"
+    source1.position.translation = [100 * mm, 0, 0]
+    source1.direction.theta = [90 * deg, 90 * deg]
+    source1.direction.phi = [0, 360 * deg]
+
+    source2 = sim.add_source("GenericSource", "b2b_2")
+    source2.particle = "back_to_back"
+    source2.activity = 5 * 1e6 * Bq
+    source1.position.translation = [-100 * mm, 0, 0]
+    source2.position.type = "point"
+    source2.direction.theta = [90 * deg, 90 * deg]
+    source2.direction.phi = [0, 360 * deg]
+
+    # Physics
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+
+    # Hits
+    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
+    hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
+    hc.root_output.write_to_disk = False
+    hc.attributes = [
+        "EventID",
+        "PostPosition",
+        "TotalEnergyDeposit",
+        "PreStepUniqueVolumeID",
+        "GlobalTime",
+    ]
+
+    # Singles
+    sc = sim.add_actor("DigitizerAdderActor", "Singles_before_pileup")
+    sc.attached_to = hc.attached_to
+    sc.authorize_repeated_volumes = True
+    sc.input_digi_collection = hc.name
+    sc.policy = "EnergyWinnerPosition"
+    sc.output_filename = output_path / "output_singles.root"
+
+    # Pile-up
+    pu = sim.add_actor("DigitizerPileupActor", "Singles_after_pileup")
+    pu.input_digi_collection = sc.name
+    pu.group_volume = crystal.name
+    pu.authorize_repeated_volumes = True
+    pu.time_window = 2000.0 * ns
+    pu.clear_every = 1e4
+    pu.output_filename = sc.output_filename
+
+    # Timing
+    sim.run_timing_intervals = [[0, 0.001 * sec]]
+
+    test_all_parameter_combinations = False
+
+    if test_all_parameter_combinations:
+        tested_parameter_combinations = []
+        for twp in [
+            TimeWindowPolicy.NonParalyzable,
+            TimeWindowPolicy.Paralyzable,
+            TimeWindowPolicy.EnergyWinnerParalyzable,
+        ]:
+            for pap in [
+                PositionAttributePolicy.EnergyWeightedCentroid,
+                PositionAttributePolicy.EnergyWinner,
+            ]:
+                for ap in [
+                    AttributePolicy.First,
+                    AttributePolicy.EnergyWinner,
+                    AttributePolicy.Last,
+                ]:
+                    tested_parameter_combinations.append((twp, pap, ap))
+    else:
+        tested_parameter_combinations = [
+            # Default
+            (
+                TimeWindowPolicy.NonParalyzable,
+                PositionAttributePolicy.EnergyWeightedCentroid,
+                AttributePolicy.First,
+            ),
+            # GATE 9 behavior
+            (
+                TimeWindowPolicy.EnergyWinnerParalyzable,
+                PositionAttributePolicy.EnergyWinner,
+                AttributePolicy.EnergyWinner,
+            ),
+        ]
+
+    all_tests_ok = True
+
+    for c in tested_parameter_combinations:
+        twp, pap, ap = c
+
+        pu.time_window_policy = twp.name
+        pu.position_attribute_policy = pap.name
+        pu.attribute_policy = ap.name
+
+        sim.run(start_new_process=True)
+
+        all_match = check_gate_pileup(
+            sc.output_filename,
+            "Singles_before_pileup",
+            "Singles_after_pileup",
+            pu.time_window,
+            twp,
+            pap,
+            ap,
+        )
+
+        if not all_match:
+            print(f"Pileup test failed for {twp}, {pap}, {ap}")
+            all_tests_ok = False
+
+    utility.test_ok(all_tests_ok)

@@ -13,7 +13,6 @@ Teaching Resources and Examples
 
 - `Geant 4 66th Forum end 2025 <https://indico.cern.ch/event/1615896/timetable/?view=standard>`_  Geant4 information
 
-- `Geant 4 events <https://geant4.web.cern.ch/collaboration/events`_
+- `Geant 4 events <https://geant4.web.cern.ch/collaboration/events>`_ Geant4 events
 
-- `Geant 4 past events <https://geant4.web.cern.ch/collaboration/events?past`_
-
+- `Geant 4 past events <https://geant4.web.cern.ch/collaboration/events?past>`_ Geant4 past events

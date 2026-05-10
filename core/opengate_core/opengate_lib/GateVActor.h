@@ -8,7 +8,7 @@
 #ifndef GateVActor_h
 #define GateVActor_h
 
-#include "GateVFilter.h"
+#include "filters/GateVFilter.h"
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
@@ -51,7 +51,7 @@ public:
   virtual void Close() {}
 
   // Called by Geant4 every hit. Call SteppingAction and return True
-  // Take care about the filters
+  // Take care about the filter
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
   /*
@@ -118,9 +118,9 @@ public:
 
   void AddActorOutputInfo(const std::string &outputName);
 
-  static bool
-  IsStepEnteringVolume(const G4Step *step,
-                       const std::vector<const G4LogicalVolume *> &volumes);
+  static bool IsStepEnteringVolume(
+      const G4Step *step,
+      const std::unordered_set<const G4LogicalVolume *> &volumes);
 
   bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
@@ -148,19 +148,16 @@ public:
   std::string fAttachedToVolumeName;
   std::string fAttachedToVolumeMotherName;
 
-  // List of active filters
-  std::vector<GateVFilter *> fFilters;
+  // Pointer to the filter
+  GateVFilter *fFilter;
 
-  // Is this actor ok for multi-thread ?
+  // Is this actor ok for multi-thread?
   bool fMultiThreadReady;
 
   // Name of the actor
   std::string fActorName;
 
-  // Is the boolean operator between filters an 'and' ?
-  bool fOperatorIsAnd;
-
-  // Should this actor write to disk ?
+  // Should this actor write to disk?
   bool fWriteToDisk;
 
   GateSourceManager *fSourceManager;

@@ -96,14 +96,13 @@ FindAllTouchables(const G4String &targetLVName) {
     const G4Navigator *navigator = *(navigatorsBegin + i);
 
     if (!navigator) {
-      DDD("Warning: Navigator " + std::to_string(i) + " is null");
+      DDD("Warning: Navigator ", i, " is null");
       continue;
     }
 
     G4VPhysicalVolume *worldVolume = navigator->GetWorldVolume();
     if (!worldVolume) {
-      DDD("Warning: World volume for navigator " + std::to_string(i) +
-          " is null");
+      DDD("Warning: World volume for navigator ", i, " is null");
       continue;
     }
 

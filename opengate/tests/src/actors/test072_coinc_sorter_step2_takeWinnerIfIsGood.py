@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.coincidences import coincidences_sorter
+from opengate.actors.coincidences import CoincidenceSorter
 from opengate.contrib.root_helpers import *
 import uproot
 import os
@@ -40,25 +40,21 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # time windows
     ns = gate.g4_units.nanosecond
-    ms = gate.g4_units.millisecond
-    time_window = 3 * ns
-    policy = "takeWinnerIfIsGood"
-    transaxial_plane = "xy"
+    policy = "TakeWinnerIfIsGood"
 
     mm = gate.g4_units.mm
     minDistanceXY = 226.27417 * mm  # 160 *sqrt(2) * mm
     maxDistanceZ = 32 * mm
-    # apply coincidences sorter
-    # (chunk size can be much larger, keep a low value to check it is ok)
-    coincidences = coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        minDistanceXY,
-        transaxial_plane,
-        maxDistanceZ,
-        chunk_size=1000000,
-    )
+
+    sorter = CoincidenceSorter()
+    sorter.window = 3 * ns
+    sorter.multiples_policy = policy
+    sorter.transaxial_plane = "XY"
+    sorter.min_transaxial_distance = minDistanceXY
+    sorter.max_axial_distance = maxDistanceZ
+
+    coincidences = sorter.run(root_filename, "Singles_crystal")
+
     nc = len(coincidences["GlobalTime1"])
     print(f"There are {nc} coincidences for policy", policy)
 
@@ -71,7 +67,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # Compare with reference output
     ref_folder = paths.output_ref
 
-    ref_filename = ref_folder / f"{policy}_Gate9.4.root"
+    ref_filename = ref_folder / f"{policy[0].lower() + policy[1:]}_Gate9.4.root"
     # print(ref_filename)
     ref_file = uproot.open(ref_filename)
     ref_coincidences = ref_file["Coincidences"]

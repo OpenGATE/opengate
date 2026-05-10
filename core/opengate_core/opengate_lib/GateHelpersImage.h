@@ -24,6 +24,12 @@ void AttachImageToVolume(typename ImageType::Pointer image,
                          G4ThreeVector initial_translation = G4ThreeVector(),
                          G4RotationMatrix img_rotation = G4RotationMatrix());
 
+template <class ImageType>
+void GetStepVoxelPosition(G4Step *step, std::string hitType,
+                          typename ImageType::Pointer cpp_image,
+                          G4ThreeVector &position, bool &isInside,
+                          typename ImageType::IndexType &index);
+
 #include "GateHelpersImage.txx"
 
 #endif // OPENGATE_CORE_OPENGATEHELPERSIMAGE_H

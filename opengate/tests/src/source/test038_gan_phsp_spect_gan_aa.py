@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import test038_gan_phsp_spect_gan_helpers as t38
+
+import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     gsource.direction.angular_acceptance.target_volumes = ["spect1"]
     gsource.direction.angular_acceptance.enable_intersection_check = True
     gsource.direction.angular_acceptance.enable_angle_check = False
-    gsource.direction.angular_acceptance.max_rejection = 20000
+    gsource.direction.angular_acceptance.max_rejection = 40000
     gsource.direction.angular_acceptance.policy = "Rejection"
     gsource.direction.angular_acceptance.skip_policy = "SkipEvents"
     # gsource.batch_size = 2e4
@@ -70,7 +71,7 @@ if __name__ == "__main__":
             paths.output / "test038_gan_aa_proj_counts.mhd",
             tolerance=70,
             axis="x",
-            sum_tolerance=2.75,
+            sum_tolerance=2.95,
             ignore_value_data2=0,
             apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior
         )

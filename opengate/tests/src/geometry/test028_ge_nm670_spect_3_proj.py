@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 import test028_ge_nm670_spect_2_helpers as test028
+
+import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":

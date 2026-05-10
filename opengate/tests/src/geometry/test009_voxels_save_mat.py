@@ -1,6 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Test 009: Voxel Material Serialization
+
+Objective:
+Verify the ability to properly serialize (write) and deserialize (read)
+material databases and label-to-material mappings associated with voxelized
+image volumes.
+
+Setup:
+- Image Volumes: Loads standard MHD patient images.
+- Materials: Assesses two material mapping methods:
+  1) Automated HU-to-Material conversion (Schneider 2000).
+  2) Explicit label range mapping (e.g., [-2000, -900, "G4_AIR"]).
+
+Verification 1: HU Material Serialization
+Validates that saving the dynamically generated HU-to-material database and
+associated JSON mappings to disk, then reading them back, produces the exact
+same voxel materials array.
+
+Verification 2: Explicit Material Serialization
+Validates that saving a manually defined label-to-material mapping and
+database, then reading them back, produces the exact same voxel materials array.
+"""
+
 import opengate as gate
 from opengate.geometry.materials import MaterialDatabase
 from opengate.tests import utility

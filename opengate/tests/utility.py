@@ -5,7 +5,6 @@ import pathlib
 import shutil
 import sys
 from pathlib import Path
-
 import colored
 import gatetools.phsp
 import itk
@@ -22,9 +21,9 @@ from opengate.actors.simulation_stats_helpers import *
 from ..exception import color_error, color_ok, fatal
 from ..image import (
     get_info_from_image,
-    get_info_from_image_sitk,
     itk_image_from_array,
     write_itk_image,
+    read_image_info_sitk,
 )
 from ..utility import (
     LazyModuleLoader,
@@ -278,8 +277,8 @@ def assert_images(
     filename2 = ensure_filename_is_str(filename2)
     img1 = sitk.ReadImage(ref_filename1)
     img2 = sitk.ReadImage(filename2)
-    info1 = get_info_from_image_sitk(img1)
-    info2 = get_info_from_image_sitk(img2)
+    info1 = read_image_info_sitk(img1)
+    info2 = read_image_info_sitk(img2)
 
     is_ok = assert_images_properties(info1, info2)
 

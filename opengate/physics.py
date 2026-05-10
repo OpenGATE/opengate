@@ -677,6 +677,9 @@ class OpticalSurface(GateObject):
         self.g4_logical_border_surface = None
         # Store Geant4 object for material properties table
         self.g4_optical_surface_table = None
+        # Temporary cache set by PhysicsEngine.initialize_optical_surfaces()
+        # before calling initialize(). Deleted again after initialize() returns.
+        self.g4_optical_surface_cache = None
 
     # shortcut for convenience
     @property
@@ -708,72 +711,114 @@ class OpticalSurface(GateObject):
 
     @requires_fatal("physics_engine")
     def initialize(self):
-        # Create object of Geant4 Optical Surface
-        self.g4_optical_surface = g4.G4OpticalSurface(g4.G4String(self.g4_surface_name))
+        """Initialize this optical border surface.
 
-        self.optical_surface_properties_dict = load_optical_surface_properties_from_xml(
-            self.physics_manager.surface_properties_file,
-            self.g4_surface_name,
-        )
+        G4OpticalSurface objects are shared across all border surfaces that use
+        the same surface name: the XML is parsed once and only one G4OpticalSurface
+        C++ object is created per unique surface name.  The shared cache is passed
+        in via the temporary attribute self.g4_optical_surface_cache, set by
+        PhysicsEngine.initialize_optical_surfaces() before calling this method.
+        G4LogicalBorderSurface is always created fresh (unique per volume pair).
+        """
 
-        # Set properties to create G4 Optical Surface object
-        surface_base_properties = self.optical_surface_properties_dict[
-            "base_properties"
-        ]
+        g4_optical_surface_cache = self.g4_optical_surface_cache
 
-        # Set model (eg. Unified, LUT_Davis)
-        model_name = surface_base_properties["surface_model"]
-        try:
-            model = getattr(g4.G4OpticalSurfaceModel, model_name)
-            self.g4_optical_surface.SetModel(model)
-        except AttributeError:
-            fatal(
-                f"Unknown Model - {model_name} \n"
-                f"Available models are {get_enum_values(g4.G4OpticalSurfaceModel)}"
+        if (
+            g4_optical_surface_cache is not None
+            and self.g4_surface_name in g4_optical_surface_cache
+        ):
+            # Cache hit: reuse the already-built G4OpticalSurface object.
+            (
+                self.optical_surface_properties_dict,
+                self.g4_optical_surface,
+                self.g4_optical_surface_table,
+            ) = g4_optical_surface_cache[self.g4_surface_name]
+        else:
+            # Cache miss: build everything from scratch.
+
+            self.optical_surface_properties_dict = (
+                load_optical_surface_properties_from_xml(
+                    self.physics_manager.surface_properties_file,
+                    self.g4_surface_name,
+                )
             )
 
-        # Set surface type
-        surface_type_name = surface_base_properties["surface_type"]
-        try:
-            surface_type = getattr(g4.G4SurfaceType, surface_type_name)
-            self.g4_optical_surface.SetType(surface_type)
-        except AttributeError:
-            fatal(
-                f"Unknown Surface Type - {surface_type_name} \n"
-                f"Available Surface Types are {get_enum_values(g4.G4SurfaceType)}"
+            # Set properties to create G4 Optical Surface object
+            surface_base_properties = self.optical_surface_properties_dict[
+                "base_properties"
+            ]
+
+            # Create object of Geant4 Optical Surface
+            self.g4_optical_surface = g4.G4OpticalSurface(
+                g4.G4String(self.g4_surface_name)
             )
 
-        # Set finish
-        surface_finish_name = surface_base_properties["surface_finish"]
-        try:
-            surface_finish = getattr(
-                g4.G4OpticalSurfaceFinish, surface_finish_name, None
+            # Set model (eg. Unified, LUT_Davis)
+            model_name = surface_base_properties["surface_model"]
+            try:
+                model = getattr(g4.G4OpticalSurfaceModel, model_name)
+                self.g4_optical_surface.SetModel(model)
+            except AttributeError:
+                fatal(
+                    f"Unknown Model - {model_name} \n"
+                    f"Available models are {get_enum_values(g4.G4OpticalSurfaceModel)}"
+                )
+
+            # Set surface type
+            surface_type_name = surface_base_properties["surface_type"]
+            try:
+                surface_type = getattr(g4.G4SurfaceType, surface_type_name)
+                self.g4_optical_surface.SetType(surface_type)
+            except AttributeError:
+                fatal(
+                    f"Unknown Surface Type - {surface_type_name} \n"
+                    f"Available Surface Types are {get_enum_values(g4.G4SurfaceType)}"
+                )
+
+            # Set finish
+            surface_finish_name = surface_base_properties["surface_finish"]
+            try:
+                surface_finish = getattr(
+                    g4.G4OpticalSurfaceFinish, surface_finish_name, None
+                )
+                self.g4_optical_surface.SetFinish(surface_finish)
+            except AttributeError:
+                fatal(
+                    f"Unknown Surface Finish - {surface_finish_name} \n"
+                    f"Available Surface Finishes are {get_enum_values(g4.G4OpticalSurfaceFinish)}"
+                )
+
+            # Set sigma alpha
+            surface_sigma_alpha = surface_base_properties["surface_sigma_alpha"]
+
+            if surface_sigma_alpha is not None:
+                self.g4_optical_surface.SetSigmaAlpha(
+                    float(surface_sigma_alpha) * g4_units.deg
+                )
+
+            # Set surface properties table
+            self.g4_optical_surface_table = create_g4_optical_properties_table(
+                self.optical_surface_properties_dict
             )
-            self.g4_optical_surface.SetFinish(surface_finish)
-        except AttributeError:
-            fatal(
-                f"Unknown Surface Finish - {surface_finish_name} \n"
-                f"Available Surface Finishes are {get_enum_values(g4.G4OpticalSurfaceFinish)}"
+
+            self.g4_optical_surface.SetMaterialPropertiesTable(
+                self.g4_optical_surface_table
             )
 
-        # Set sigma alpha
-        surface_sigma_alpha = surface_base_properties["surface_sigma_alpha"]
+            # Store in cache for all subsequent border surfaces with the same name.
+            if g4_optical_surface_cache is not None:
+                g4_optical_surface_cache[self.g4_surface_name] = (
+                    self.optical_surface_properties_dict,
+                    self.g4_optical_surface,
+                    self.g4_optical_surface_table,
+                )
 
-        if surface_sigma_alpha is not None:
-            self.g4_optical_surface.SetSigmaAlpha(
-                float(surface_sigma_alpha) * g4_units.deg
-            )
+        # Clean up the temporary cache attribute.
+        self.g4_optical_surface_cache = None
 
-        # Set surface properties table
-        self.g4_optical_surface_table = create_g4_optical_properties_table(
-            self.optical_surface_properties_dict
-        )
-
-        self.g4_optical_surface.SetMaterialPropertiesTable(
-            self.g4_optical_surface_table
-        )
-
-        # Set the Optical Surface between two volumes
+        # Set the Optical Surface between two volumes.
+        # G4LogicalBorderSurface must always be unique per (volume_from, volume_to)
+        # pair, so it is never cached.
         # g4_physical_volumes (local variables are OK because
         # permanent references are stored inside the respective python Volume instances)
         g4_physical_volume_from = (

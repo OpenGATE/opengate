@@ -16,7 +16,7 @@ def create_simu(nb_threads, paths):
     sim.number_of_threads = nb_threads
     sim.random_seed = 987654321
     sim.check_volumes_overlap = False
-    sim.output_dir = paths.output
+    sim.output_dir = paths.output / str(nb_threads)
 
     # units
     m = gate.g4_units.m
@@ -211,6 +211,7 @@ def test_results(sim, paths):
     tols[checked_keys.index("PostPosition_Y")] = 0.2
     tols[checked_keys.index("PostPosition_Z")] = 0.2
     print(scalings, tols)
+    png_filename = "test039_singles_" + str(sim.number_of_threads) + ".png"
     is_ok = (
         utility.compare_root3(
             ref_file,
@@ -222,7 +223,7 @@ def test_results(sim, paths):
             tols,
             scalings,
             scalings,
-            paths.output / "test039_singles.png",
+            paths.output / png_filename,
             hits_tol=1,
         )
         and is_ok

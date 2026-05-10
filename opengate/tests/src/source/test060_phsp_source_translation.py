@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import test060_phsp_source_helpers as t
+
 import opengate as gate
 from opengate.tests import utility
 
@@ -23,13 +24,13 @@ def main():
     print("create reference PhS file")
     t.create_test_phs(
         particle="proton",
-        phs_name=paths.output / "test_proton_offset",
+        phs_name=paths.output / "test_proton_offset_transl",
         number_of_particles=1,
         translation=[10 * cm, 5 * cm, 0 * mm],
     )
     print("testing translation")
     t.test_source_translation(
-        source_file_name=paths.output / "test_proton_offset.root",
+        source_file_name=paths.output / "test_proton_offset_transl.root",
         phs_file_name_out=paths.output / "test_source_translation.root",
     )
     is_ok = t.check_value_from_root_file(

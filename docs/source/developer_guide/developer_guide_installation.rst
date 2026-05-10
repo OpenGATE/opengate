@@ -23,26 +23,19 @@ Virtual environment
   environment prior to the installation, for example with
   `venv <https://docs.python.org/3/library/venv.html#module-venv>`__.
 
-:warning: If you use
-  `conda <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#>`__
-  instead to create your environment, be sure to instruct conda to install
-  python when creating your environment. You do so by adding ‘python’
-  after the new environment name. Optionally, you can select a specific
-  python version by adding ‘=3.XX’.
-
-Example: You can create a new conda environment with Python 3.10
-installed in it via:
+Example: You can create a new virtual environment via:
 
 .. code:: bash
 
-     conda create --name opengate_env python=3.10
-     conda activate opengate_env
+     python -m venv --name opengate_env
+     source opengate_env/bin/activate
 
 To **develop** in GATE 10, you need 1) to compile and create the
 ``opengate_core`` subpackage (this is the hardest part) and 2) install
 the main ``opengate`` package (Python only, fast and easy).
 
-First, clone the unique repository that contains both packages:
+First, be sure to have git-lfs installed on your computer.
+Then clone the unique repository that contains both packages:
 
 .. code:: bash
 
@@ -61,22 +54,11 @@ ITK are shipped pre-compiled via pip.
 STEP 1 - Geant4 and Qt
 ----------------------
 
-:warning: When using conda, be sure to activate your environment before
-  compiling Geant4. The reason is that conda comes with its own compiler
-  and you will likely have mismatched libraries, e.g. lib c++, if not all
-  installation steps involving compilaton are performed in the same conda
-  environment.
-
 Installing QT is optional. Currently, QT visualisation is not working on
 all architectures.
 
 If you wish to use QT, you must install qt6 **before** installing Geant4
-so that Geant4 can find the correct qt lib. It can be done for example
-with conda:
-
-.. code:: bash
-
-     conda install conda-forge::qt6-main conda-forge::qt6-3d
+so that Geant4 can find the correct qt lib.
 
 For **Geant4**, you need to compile with the following options:
 
@@ -92,30 +74,21 @@ For **Geant4**, you need to compile with the following options:
          -DGEANT4_USE_OPENGL_X11=ON \
          -DGEANT4_USE_QT_QT6=ON \
          -DGEANT4_BUILD_MULTITHREADED=ON \
+         -DGEANT4_BUILD_TLS_MODEL=global-dynamic \
          ../geant4
    make -j 32
 
-Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
+Change the QT flags (GEANT4_USE_QT and DGEANT4_USE_OPENGL_X11) to OFF if you did not install QT.
 
-:note: If you use Linux OS, it's preferable to add this option.
+:note: The option GEANT4_BUILD_TLS_MODEL is preferable if you use Linux.
   It will avoid the `TLS problem <#step-5-before-running>`_ but it slows
   your simulation by about 10%:
-
-.. code:: bash
-
-    -DGEANT4_BUILD_TLS_MODEL=global-dynamic
 
 :warning: since January 2026, `Geant4
   v11.4.0 <https://geant4.web.cern.ch/download/11.4.0.html>`__ is needed.
 
 STEP 2 - ITK
 ------------
-
-**WARNING** When using conda, be sure to activate your environment
-before compiling Geant4. The reason is that conda comes with its own
-compiler and you will likely have mismatched libraries, e.g. lib c++, if
-not all installation steps involving compilaton are performed in the
-same conda environment.
 
 For **ITK**, you need to compile with the following options:
 
@@ -126,9 +99,6 @@ For **ITK**, you need to compile with the following options:
    cd itk-build
    cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
          -DBUILD_TESTING=OFF \
-         -DITK_USE_FFTWD=ON \
-         -DITK_USE_FFTWF=ON \
-         -DITK_USE_SYSTEM_FFTW:BOOL=ON \
          ../ITK
    make -j 32
 
@@ -139,10 +109,9 @@ Once it is done, you can compile ``opengate_core``.
 
 .. code:: bash
 
-   pip install colored
    cd <path-to-opengate>/core
    export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
-   pip install -e . -v
+   pip install -v -e .
 
 The pip install will run cmake, compile the sources and create the
 module. If you are curious you can have a look the compilation folder in
@@ -162,7 +131,7 @@ The second part is easier : just go in the main folder and pip install:
 .. code:: bash
 
    cd <path-to-opengate>
-   pip install -e . -v
+   pip install -v -e .
 
 STEP 5 - Before running
 -----------------------

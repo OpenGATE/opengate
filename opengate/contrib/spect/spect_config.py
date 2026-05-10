@@ -860,7 +860,9 @@ class FreeFlightConfig(ConfigBase):
             if "angle_tolerance" in key:
                 s += f"FreeFlight angular_acceptance: {key} = {value/g4_units.deg:.2f} deg\n"
             else:
-                s += f"FreeFlight angular_acceptance: {key} = {value}\n"
+                if key != "target_volumes":
+                    s += f"FreeFlight angular_acceptance: {key} = {value}\n"
+                # dont print for target volume because it is linked to the sources
         return s
 
     def validate(self):

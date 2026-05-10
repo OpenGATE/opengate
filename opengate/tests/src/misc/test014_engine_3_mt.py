@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import test014_engine_helpers as test014
+
 import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, output_folder="test014_3")
     sim = gate.Simulation()
-    test014.define_simulation(sim, 3)
+    test014.define_simulation(sim, paths, 3)
 
     # go with a new process that will use 3 threads
     sim.run(start_new_process=True)

@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import gc
-import os
-import sys
-import time
-from pathlib import Path
-
 from test085_free_flight_helpers import *
-
 from opengate.contrib.root_helpers import *
 from opengate.sources.utility import *
 from opengate.tests import utility
 
-if __name__ == "__main__":
+
+def main():
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
 
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    # sim.visu = True
+    sim.visu = False
     source, actors = create_simulation_test085(
         sim,
         paths,
@@ -32,17 +26,11 @@ if __name__ == "__main__":
 
     # go
     sim.run()
-    time.sleep(3)
     stats = sim.get_actor("stats")
     print(stats)
 
     rad_spectrum = get_spectrum("tc99m", "gamma", "radar")
     print(rad_spectrum)
-
-    # Force destruction of the simulation to trigger
-    # the merging/closing of ROOT files in MT mode before reading them.
-    del sim
-    gc.collect()
 
     # split tree
     ref_root = paths.output_ref / "phsp_sphere_ref.root"
@@ -66,17 +54,6 @@ if __name__ == "__main__":
     )
 
     # compare histo
-    if os.path.isfile(str(paths.output / "phsp_sphere_ref.root")):
-        print("File is present")
-        size_file = os.path.getsize(str(paths.output / "phsp_sphere_ref.root"))
-        print(size_file)
-        if size_file < 1000:
-            print("File is present: " + str(paths.output / "phsp_sphere_ref.root"))
-            print("The size of the file is low (B): " + str(size_file))
-            print("Warning: maybe the file was not saved correctly, do not test it")
-            utility.test_ok(True)
-            sys.exit(0)
-
     is_ok = utility.compare_root3(
         paths.output_ref / "phsp_sphere_ref.root",
         paths.output / "phsp_sphere_ref.root",
@@ -110,3 +87,7 @@ if __name__ == "__main__":
     print(f"Saved plot to {fig}")
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

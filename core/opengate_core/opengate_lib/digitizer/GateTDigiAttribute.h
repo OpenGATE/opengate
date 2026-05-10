@@ -32,6 +32,8 @@ public:
 
   const std::vector<T> &GetValues() const;
 
+  T GetSingleValue() const;
+
   void FillToRoot(size_t index) const override;
 
   void FillDValue(double v) override;
@@ -54,11 +56,15 @@ public:
 
   std::string Dump(int i) const override;
 
+  void SetSingleValueMode(bool b) { fSingleValueMode = b; }
+
 protected:
   struct threadLocal_t {
     std::vector<T> fValues;
+    T fSingleValue; // Use by the filters (only one value needed)
   };
   G4Cache<threadLocal_t> threadLocalData;
+  bool fSingleValueMode = false; // Default to false (Digi mode)
 
   void InitDefaultProcessHitsFunction();
 };

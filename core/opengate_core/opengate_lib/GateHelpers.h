@@ -26,12 +26,20 @@ void FatalKeyError(std::string s);
 #define DD(a) std::cout << #a << " = [ " << (a) << " ]\n";
 
 // debug print
-#define DDD(a)                                                                 \
+#define DDD(...)                                                               \
   {                                                                            \
     G4AutoLock __l__(&DebugMutex);                                             \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
-              << __func__ << ") ==> " << #a << " = [ " << (a) << " ]"          \
-              << std::endl;                                                    \
+              << __func__ << ") ==> ";                                         \
+    /* 1. Define a lambda that takes a real parameter pack */                  \
+    auto __print__ = [](auto &&...args) {                                      \
+      /* 2. Use the expander trick on the REAL pack 'args' */                  \
+      using expander = int[];                                                  \
+      (void)expander{0, (std::cout << args, 0)...};                            \
+    };                                                                         \
+    /* 3. Call the lambda with your macro arguments */                         \
+    __print__(__VA_ARGS__);                                                    \
+    std::cout << std::endl;                                                    \
   }
 
 // for vector
