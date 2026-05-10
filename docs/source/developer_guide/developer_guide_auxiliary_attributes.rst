@@ -4,14 +4,22 @@ How to implement an auxiliary attribute
 Overview
 --------
 
-Auxiliary attributes are simulation-level objects that store and expose
-track-associated state across multiple steps. They are useful whenever a value
-cannot be obtained from the current step alone, for example:
+Auxiliary attributes are simulation-level runtime attributes. Their main role
+is to expose a named, typed getter interface that can be consumed uniformly by
+ROOT-backed actors, filters, and other runtime C++ components.
+
+Some auxiliary attributes compute their value directly from the current step.
+Others maintain state along a track and therefore store auxiliary track
+information across multiple steps.
+
+They are useful whenever a value cannot be obtained conveniently through the
+native conventional DigiAttribute path, for example:
 
 - number of times a process occurred so far
 - last process seen in a volume
 - last interaction position
-- future per-track state/history needed by actors or filters
+- unscattered-primary flag
+- future runtime values needed by actors or filters
 
 An auxiliary attribute has two sides:
 
@@ -20,17 +28,23 @@ An auxiliary attribute has two sides:
 
 The C++ class is responsible for:
 
-- declaring Geant4 hooks such as ``SteppingAction()``
-- storing/retrieving track information
 - exposing the runtime value through typed getters
+- optionally declaring Geant4 hooks such as ``SteppingAction()``
+- optionally storing/retrieving track information
 - optionally registering a DigiAttribute view for ROOT-based output
 
 
 When to use an auxiliary attribute
 ----------------------------------
 
-Use an auxiliary attribute when you need a value that must persist along a
-track and evolve over time.
+Use an auxiliary attribute when you need a named runtime attribute that should
+be accessible consistently from multiple consumers such as ROOT-backed actors,
+filters, or non-ROOT actors.
+
+This includes two important cases:
+
+1. values that must persist along a track and evolve over time
+2. values that are stateless and can be computed directly from the current step
 
 Do **not** use a plain DigiAttribute if the value:
 
@@ -57,8 +71,8 @@ At runtime:
 .. code-block:: text
 
    GateTrackingAction / GateSteppingAction
-     -> dispatch hook calls to GateVAuxiliaryAttribute instances
-     -> attributes update per-track auxiliary track information
+     -> optionally dispatch hook calls to GateVAuxiliaryAttribute instances
+     -> some attributes update per-track auxiliary track information
 
 Consumers can access auxiliary attributes in two ways:
 
@@ -116,6 +130,14 @@ Implementing the C++-side class
 
 The C++ class must derive from ``GateVAuxiliaryAttribute``.
 
+``GateVAuxiliaryAttribute`` should be thought of as a runtime attribute base
+class with optional hook and storage support. A concrete auxiliary attribute
+may use:
+
+- the typed getter interface only
+- the getter interface plus Geant4 hooks
+- the getter interface plus hooks plus per-track storage
+
 Typical structure:
 
 .. code-block:: cpp
@@ -138,7 +160,7 @@ Typical structure:
 In the constructor, typically:
 
 - set ``fDigiAttributeType``
-- declare implemented actions in ``fActions``
+- optionally declare implemented actions in ``fActions``
 
 Example:
 
@@ -151,10 +173,48 @@ Example:
    }
 
 
+Example: stateless getter-only attribute
+----------------------------------------
+
+Not every auxiliary attribute needs hooks or track-attached storage.
+
+Example:
+
+.. code-block:: cpp
+
+   class GateMyFlagAttribute : public GateVAuxiliaryAttribute {
+   public:
+     explicit GateMyFlagAttribute(py::dict &user_info)
+         : GateVAuxiliaryAttribute(user_info) {
+       fDigiAttributeType = 'I';
+     }
+
+     void InitializeCpp() override {
+       GateVAuxiliaryAttribute::InitializeCpp();
+       auto fill = [=](GateVDigiAttribute *att, G4Step *step) {
+         att->FillIValue(GetIValue(step));
+       };
+       auto *manager = GateDigiAttributeManager::GetInstance();
+       manager->DefineDigiAttribute(fName, fDigiAttributeType, fill);
+     }
+
+     int GetIValue(const G4Step *step) const override {
+       return SomeStepLocalComputation(step);
+     }
+   };
+
+This pattern is appropriate when the attribute is mainly a getter interface and
+does not need persistent state.
+
+
 Storing per-track information
 -----------------------------
 
-Persistent per-track state is stored using ``G4VAuxiliaryTrackInformation``.
+Persistent per-track state is optional. Use it only when the attribute really
+needs state to survive across steps or to be propagated to secondaries.
+
+When needed, per-track state is stored using
+``G4VAuxiliaryTrackInformation``.
 
 OpenGATE currently provides generic typed holders in:
 
@@ -344,7 +404,7 @@ This is appropriate for:
 - voxel actors
 - dose-like actors
 - runtime scorers
-- any non-ROOT logic that needs per-track state
+- any non-ROOT logic that needs runtime attribute values
 
 
 Accessing an auxiliary attribute from a filter
@@ -408,15 +468,21 @@ Checklist for a new auxiliary attribute
 ---------------------------------------
 
 1. Add the C++ header and source deriving from ``GateVAuxiliaryAttribute``.
-2. Add or reuse a suitable track-information type.
-3. Implement ``InitializeUserInfo()``.
-4. Implement ``InitializeCpp()``.
-5. Implement the required Geant4 hooks.
-6. Override the typed runtime getter matching the exposed value type.
-7. Add the pybind binding.
-8. Add the Python-side class in ``opengate/auxiliary_attributes.py``.
-9. Register it in ``auxiliary_attribute_types``.
-10. Add a test:
+2. Decide whether the attribute is:
+
+   - getter-only
+   - hook-driven but stateless
+   - hook-driven with per-track storage
+
+3. Add or reuse a suitable track-information type, if needed.
+4. Implement ``InitializeUserInfo()``, if needed.
+5. Implement ``InitializeCpp()``.
+6. Implement the required Geant4 hooks, if any.
+7. Override the typed runtime getter matching the exposed value type.
+8. Add the pybind binding.
+9. Add the Python-side class in ``opengate/auxiliary_attributes.py``.
+10. Register it in ``auxiliary_attribute_types``.
+11. Add a test:
 
    - direct output through a ROOT-backed actor, if applicable
    - and/or runtime consumption from a filter or another actor
