@@ -556,6 +556,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_SteppingAction = []
 
     def close(self):
         if self.verbose_close:
@@ -569,6 +570,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_SteppingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
@@ -586,6 +588,12 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def register_auxiliary_attribute_actions(self, attribute):
+        for ta in self.g4_TrackingAction:
+            ta.RegisterAuxiliaryAttribute(attribute)
+        for sa in self.g4_SteppingAction:
+            sa.RegisterAuxiliaryAttribute(attribute)
 
     def BuildForMaster(self):
         # This function is called only in MT mode, for the master thread
@@ -627,6 +635,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
+
+        # set the global stepping action for auxiliary attributes
+        sa = g4.GateSteppingAction()
+        self.SetUserAction(sa)
+        self.g4_SteppingAction.append(sa)
 
 
 def register_sensitive_detector_to_children(actor, lv):
@@ -1486,6 +1499,11 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
+        # Auxiliary attributes must register their runtime IDs and DigiAttribute
+        # views before worker tracking starts.
+        logger.info("Simulation: initialize Auxiliary attributes")
+        self.simulation.initialize_auxiliary_attributes()
+
         # Visu
         if self.simulation.visu:
             logger.info("Simulation: initialize Visualization")
@@ -1538,6 +1556,9 @@ class SimulationEngine(GateSingletonFatal):
         self.source_engine.initialize_actors()
         logger.info("Simulation: register Actions of actors")
         self.actor_engine.register_actions()
+        logger.info("Simulation: register Actions of auxiliary attributes")
+        for attribute in self.simulation.auxiliary_attributes.values():
+            self.action_engine.register_auxiliary_attribute_actions(attribute)
 
         self.is_initialized = True
 

@@ -126,6 +126,7 @@ from .geometry.volumes import (
     VolumeBase,
     VolumeTreeRoot,
 )
+from .auxiliary_attributes import AuxiliaryAttributeBase, auxiliary_attribute_types
 
 particle_names_Gate_to_G4 = {
     "gamma": "gamma",
@@ -1701,6 +1702,7 @@ class Simulation(GateObject):
         self.volume_manager = VolumeManager(self)
         self.source_manager = SourceManager(self)
         self.actor_manager = ActorManager(self)
+        self.auxiliary_attributes = {}
         self.physics_manager = PhysicsManager(self)
         self.filter_manager = FilterManager(self)
 
@@ -1714,6 +1716,12 @@ class Simulation(GateObject):
         self._current_random_seed = None
 
         self.expected_number_of_events = None
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        if hasattr(self, "auxiliary_attributes"):
+            for auxiliary_attribute in self.auxiliary_attributes.values():
+                auxiliary_attribute.simulation = self
 
     def __str__(self):
         s = (
@@ -1763,6 +1771,9 @@ class Simulation(GateObject):
         d["volume_manager"] = self.volume_manager.to_dictionary()
         d["physics_manager"] = self.physics_manager.to_dictionary()
         d["actor_manager"] = self.actor_manager.to_dictionary()
+        d["auxiliary_attributes"] = dict(
+            [(k, v.to_dictionary()) for k, v in self.auxiliary_attributes.items()]
+        )
         return d
 
     def from_dictionary(self, d):
@@ -1770,6 +1781,12 @@ class Simulation(GateObject):
         self.volume_manager.from_dictionary(d["volume_manager"])
         self.physics_manager.from_dictionary(d["physics_manager"])
         self.actor_manager.from_dictionary(d["actor_manager"])
+        self.auxiliary_attributes = {}
+        for _, v in d.get("auxiliary_attributes", {}).items():
+            a = self.add_auxiliary_attribute(
+                v["object_type"], name=v["user_info"]["name"]
+            )
+            a.from_dictionary(v)
 
     def to_json_string(self):
         warning("Only parts of the simulation can currently be dumped as JSON")
@@ -1880,6 +1897,57 @@ class Simulation(GateObject):
 
     def add_actor(self, actor_type, name):
         return self.actor_manager.add_actor(actor_type, name)
+
+    def add_auxiliary_attribute(self, attribute_type, name):
+        return self._add_auxiliary_attribute(attribute_type, name)
+
+    def _add_auxiliary_attribute(self, attribute_type, name):
+        if name is None:
+            fatal("You must provide a name for the auxiliary attribute.")
+
+        if isinstance(attribute_type, str):
+            try:
+                cls = auxiliary_attribute_types[attribute_type]
+            except KeyError:
+                fatal(
+                    f"Unknown auxiliary attribute type {attribute_type}. "
+                    f"Known types are: {list(auxiliary_attribute_types.keys())}."
+                )
+            new_attribute = cls(name=name, simulation=self)
+        elif isinstance(attribute_type, AuxiliaryAttributeBase):
+            new_attribute = attribute_type
+        else:
+            fatal(
+                "You need to either provide an auxiliary attribute type and name, "
+                "or an auxiliary attribute object."
+            )
+
+        if new_attribute.name in self.auxiliary_attributes:
+            fatal(
+                f"The auxiliary attribute named {new_attribute.name} already exists. "
+                f"Existing auxiliary attribute names are: "
+                f"{self.auxiliary_attributes.keys()}"
+            )
+
+        digi_attribute_names = (
+            g4.GateDigiAttributeManager.GetInstance().GetAvailableDigiAttributeNames()
+        )
+        if new_attribute.name in digi_attribute_names:
+            fatal(
+                f"The auxiliary attribute name '{new_attribute.name}' collides "
+                "with an existing DigiAttribute name. Auxiliary attribute names "
+                "are also output/DigiAttribute names and must be unique."
+            )
+
+        self.auxiliary_attributes[new_attribute.name] = new_attribute
+        new_attribute.simulation = self
+        if new_attribute is not attribute_type:
+            return new_attribute
+
+    def initialize_auxiliary_attributes(self):
+        for attribute in self.auxiliary_attributes.values():
+            attribute.simulation = self
+            attribute.initialize()
 
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
