@@ -1775,7 +1775,7 @@ class Simulation(GateObject):
         self.actor_manager.from_dictionary(d["actor_manager"])
         self.auxiliary_attributes = {}
         for _, v in d.get("auxiliary_attributes", {}).items():
-            a = self.add_auxiliary_attribute(
+            a = self.activate_auxiliary_attribute(
                 v["object_type"], name=v["user_info"]["name"]
             )
             a.from_dictionary(v)
@@ -1890,10 +1890,10 @@ class Simulation(GateObject):
     def add_actor(self, actor_type, name):
         return self.actor_manager.add_actor(actor_type, name)
 
-    def add_auxiliary_attribute(self, attribute_type, name):
-        return self._add_auxiliary_attribute(attribute_type, name)
+    def activate_auxiliary_attribute(self, attribute_type, name):
+        return self._activate_auxiliary_attribute(attribute_type, name)
 
-    def _add_auxiliary_attribute(self, attribute_type, name):
+    def _activate_auxiliary_attribute(self, attribute_type, name):
         if name is None:
             fatal("You must provide a name for the auxiliary attribute.")
 

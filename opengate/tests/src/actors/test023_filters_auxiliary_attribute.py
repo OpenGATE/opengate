@@ -42,7 +42,7 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, 1]
     source.n = 5000
 
-    aux = sim.add_auxiliary_attribute(
+    aux = sim.activate_auxiliary_attribute(
         "ProcessDefinedStepInVolumeAttribute",
         "ProcessDefinedStep__compt__water_box",
     )
