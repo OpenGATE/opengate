@@ -201,11 +201,28 @@ class LastInteractionPositionInVolumeAttribute(
         AuxiliaryAttributeBase.initialize(self)
 
 
+class UnscatteredPrimaryAttribute(
+    AuxiliaryAttributeBase, g4.GateUnscatteredPrimaryAttribute
+):
+    """
+    Return 1 when the current step belongs to an unscattered primary particle,
+    and 0 otherwise.
+    """
+
+    def __init__(self, *args, **kwargs):
+        AuxiliaryAttributeBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateUnscatteredPrimaryAttribute.__init__(self, self.user_info)
+
+
 auxiliary_attribute_types = {
     "InteractionCounterAttribute": InteractionCounterAttribute,
     "LastInteractionPositionInVolumeAttribute": LastInteractionPositionInVolumeAttribute,
     "LastProcessDefinedStepInVolumeAttribute": LastProcessDefinedStepInVolumeAttribute,
     "ProcessDefinedStepInVolumeAttribute": ProcessDefinedStepInVolumeAttribute,
+    "UnscatteredPrimaryAttribute": UnscatteredPrimaryAttribute,
 }
 
 
@@ -214,3 +231,4 @@ process_cls(InteractionCounterAttribute)
 process_cls(LastInteractionPositionInVolumeAttribute)
 process_cls(LastProcessDefinedStepInVolumeAttribute)
 process_cls(ProcessDefinedStepInVolumeAttribute)
+process_cls(UnscatteredPrimaryAttribute)
