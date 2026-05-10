@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp.attached_to = detector_plan.name
-    att = LastProcessDefinedStepInVolumeAttribute(sim, vacuum_box.name)
+    att = LastProcessDefinedStepInVolumeAttributeLegacy(sim, vacuum_box.name)
 
     l_att = []
     l_att.append(att.name)

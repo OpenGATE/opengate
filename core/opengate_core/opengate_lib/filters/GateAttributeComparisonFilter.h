@@ -9,6 +9,7 @@
 #define GateAttributeComparisonFilter_h
 
 #include "../GateHelpersDict.h"
+#include "../GateVAuxiliaryAttribute.h"
 #include "../digitizer/GateTDigiAttribute.h"
 #include "GateVFilter.h"
 
@@ -24,6 +25,7 @@ public:
   T fCompareValue;
   std::string fCompareOperation;
   GateTDigiAttribute<T> *fAttribute{nullptr};
+  GateVAuxiliaryAttribute *fAuxiliaryAttribute{nullptr};
 };
 
 // Typedefs for common use cases

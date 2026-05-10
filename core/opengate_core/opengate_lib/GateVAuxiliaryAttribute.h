@@ -12,6 +12,7 @@
 #include "G4Track.hh"
 #include "G4VAuxiliaryTrackInformation.hh"
 #include "GateHelpers.h"
+#include "GateUniqueVolumeID.h"
 #include <map>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -34,10 +35,20 @@ public:
   std::string GetName() const { return fName; }
   int GetTrackInfoID() const { return fTrackInfoID; }
   char GetDigiAttributeType() const { return fDigiAttributeType; }
+  virtual double GetDValue(const G4Step *step) const;
+  virtual int GetIValue(const G4Step *step) const;
+  virtual int64_t GetLValue(const G4Step *step) const;
+  virtual std::string GetSValue(const G4Step *step) const;
+  virtual G4ThreeVector Get3Value(const G4Step *step) const;
+  virtual GateUniqueVolumeID::Pointer GetUValue(const G4Step *step) const;
 
   virtual void PreUserTrackingAction(const G4Track *track);
   virtual void PostUserTrackingAction(const G4Track *track);
   virtual void SteppingAction(const G4Step *step);
+
+  static void ClearRegistry();
+  static GateVAuxiliaryAttribute *
+  GetAuxiliaryAttributeByName(const std::string &name);
 
 protected:
   int RegisterAuxiliaryAttributeName(const std::string &name) const;
@@ -46,6 +57,7 @@ protected:
   void
   SetAuxiliaryTrackInformation(const G4Track *track,
                                G4VAuxiliaryTrackInformation *track_info) const;
+  bool IsStepInVolume(const G4Step *step, const std::string &volume_name) const;
 
   template <typename TrackInformationType>
   TrackInformationType *
@@ -96,6 +108,28 @@ protected:
         step->GetTrack(), default_value, getter);
   }
 
+  template <typename TrackInformationType, typename ValueType>
+  ValueType GetAuxiliaryTrackInformationStoredValue(
+      const G4Track *track, ValueType default_value) const {
+    return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
+        track, default_value, &TrackInformationType::GetValue);
+  }
+
+  template <typename TrackInformationType, typename ValueType>
+  ValueType GetAuxiliaryTrackInformationStoredValue(
+      const G4Step *step, ValueType default_value) const {
+    return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
+        step, default_value, &TrackInformationType::GetValue);
+  }
+
+  template <typename TrackInformationType, typename ValueType>
+  void SetAuxiliaryTrackInformationStoredValue(const G4Track *track,
+                                               const ValueType &value) const {
+    auto *info = GetOrCreateAuxiliaryTrackInformation<TrackInformationType>(
+        track);
+    info->SetValue(value);
+  }
+
   template <typename TrackInformationType>
   void CopyAuxiliaryTrackInformation(const G4Track *source_track,
                                      const G4Track *target_track) const {
@@ -129,6 +163,8 @@ protected:
   std::set<std::string> fActions;
 
   static std::map<std::string, int> fRegisteredAuxiliaryAttributeIDs;
+  static std::map<std::string, GateVAuxiliaryAttribute *>
+      fRegisteredAuxiliaryAttributes;
   static int fNextAuxiliaryAttributeID;
 };
 

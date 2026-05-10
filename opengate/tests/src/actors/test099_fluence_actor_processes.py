@@ -160,7 +160,7 @@ if __name__ == "__main__":
     fluence_actor.hit_type = "random"
 
     ##add phase space actor
-    att = LastProcessDefinedStepInVolumeAttribute(sim, water_box.name)
+    att = LastProcessDefinedStepInVolumeAttributeLegacy(sim, water_box.name)
 
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp.attached_to = fluence_plane.name
