@@ -28,12 +28,16 @@ void GateInteractionCounterAttribute::InitializeCpp() {
   GateVAuxiliaryAttribute::InitializeCpp();
 
   auto fill = [=](GateVDigiAttribute *att, G4Step *step) {
-    att->FillIValue(GetAuxiliaryTrackInformationValue<
-                    GateIntegerCounterAuxiliaryTrackInformation, int>(
-        step, 0, &GateIntegerCounterAuxiliaryTrackInformation::GetCount));
+    att->FillIValue(GetIValue(step));
   };
   auto *manager = GateDigiAttributeManager::GetInstance();
   manager->DefineDigiAttribute(fName, fDigiAttributeType, fill);
+}
+
+int GateInteractionCounterAttribute::GetIValue(const G4Step *step) const {
+  return GetAuxiliaryTrackInformationValue<
+      GateIntegerCounterAuxiliaryTrackInformation, int>(
+      step, 0, &GateIntegerCounterAuxiliaryTrackInformation::GetCount);
 }
 
 void GateInteractionCounterAttribute::SteppingAction(const G4Step *step) {

@@ -561,6 +561,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def close(self):
         if self.verbose_close:
             warning("Closing ActionEngine")
+        g4.GateVAuxiliaryAttribute.ClearRegistry()
         self.release_g4_references()
         super().close()
 
@@ -1219,6 +1220,8 @@ class SimulationEngine(GateSingletonFatal):
             self.action_engine.close()
         if self.actor_engine:
             self.actor_engine.close()
+        if self.filter_engine:
+            self.filter_engine.close()
         if self.visu_engine:
             self.visu_engine.close()
 
@@ -1228,6 +1231,7 @@ class SimulationEngine(GateSingletonFatal):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.filter_engine = None
         self.visu_engine = None
 
     def release_g4_references(self):

@@ -5,24 +5,25 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateInteractionCounterAttribute_h
-#define GateInteractionCounterAttribute_h
+#ifndef GateLastInteractionPositionInVolumeAttribute_h
+#define GateLastInteractionPositionInVolumeAttribute_h
 
 #include "GateAuxiliaryTrackInformation.h"
 #include "GateVAuxiliaryAttribute.h"
 
-class GateInteractionCounterAttribute : public GateVAuxiliaryAttribute {
+class GateLastInteractionPositionInVolumeAttribute
+    : public GateVAuxiliaryAttribute {
 public:
-  explicit GateInteractionCounterAttribute(py::dict &user_info);
+  explicit GateLastInteractionPositionInVolumeAttribute(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
   void InitializeCpp() override;
-  int GetIValue(const G4Step *step) const override;
+  G4ThreeVector Get3Value(const G4Step *step) const override;
   void SteppingAction(const G4Step *step) override;
 
 protected:
-  std::string fProcessName;
+  std::string fVolumeName;
   bool fPropagateFromParentTrack{false};
 };
 
-#endif // GateInteractionCounterAttribute_h
+#endif // GateLastInteractionPositionInVolumeAttribute_h

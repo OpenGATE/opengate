@@ -1544,7 +1544,7 @@ class DigiAttributeLastProcessDefinedStepInVolumeActor(
         )
 
 
-class LastProcessDefinedStepInVolumeAttribute:
+class LastProcessDefinedStepInVolumeAttributeLegacy:
     """ """
 
     def __init__(self, sim, volume_name):

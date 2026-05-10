@@ -17,6 +17,7 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
   void InitializeCpp() override;
+  int GetIValue(const G4Step *step) const override;
   void SteppingAction(const G4Step *step) override;
 
 protected:
