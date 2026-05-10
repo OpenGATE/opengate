@@ -10,8 +10,8 @@
 
 #include "G4Track.hh"
 #include "G4UserTrackingAction.hh"
-#include "GateVAuxiliaryAttribute.h"
 #include "GateVActor.h"
+#include "GateVAuxiliaryAttribute.h"
 #include <vector>
 
 class GateTrackingAction : public G4UserTrackingAction {
