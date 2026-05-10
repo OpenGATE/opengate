@@ -8,13 +8,13 @@
 #ifndef GateVAuxiliaryAttribute_h
 #define GateVAuxiliaryAttribute_h
 
-#include "GateHelpers.h"
 #include "G4Step.hh"
 #include "G4Track.hh"
 #include "G4VAuxiliaryTrackInformation.hh"
+#include "GateHelpers.h"
+#include <map>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <map>
 #include <set>
 #include <sstream>
 
@@ -43,11 +43,13 @@ protected:
   int RegisterAuxiliaryAttributeName(const std::string &name) const;
   G4VAuxiliaryTrackInformation *
   GetAuxiliaryTrackInformation(const G4Track *track) const;
-  void SetAuxiliaryTrackInformation(
-      const G4Track *track, G4VAuxiliaryTrackInformation *track_info) const;
+  void
+  SetAuxiliaryTrackInformation(const G4Track *track,
+                               G4VAuxiliaryTrackInformation *track_info) const;
 
   template <typename TrackInformationType>
-  TrackInformationType *GetAuxiliaryTrackInformation(const G4Track *track) const {
+  TrackInformationType *
+  GetAuxiliaryTrackInformation(const G4Track *track) const {
     auto *info = GetAuxiliaryTrackInformation(track);
     if (info == nullptr)
       return nullptr;
@@ -76,16 +78,18 @@ protected:
   ValueType GetAuxiliaryTrackInformationValue(
       const G4Track *track, ValueType default_value,
       ValueType (TrackInformationType::*getter)() const) const {
-    const auto *info = GetAuxiliaryTrackInformation<TrackInformationType>(track);
+    const auto *info =
+        GetAuxiliaryTrackInformation<TrackInformationType>(track);
     if (info == nullptr)
       return default_value;
     return (info->*getter)();
   }
 
   template <typename TrackInformationType, typename ValueType>
-  ValueType GetAuxiliaryTrackInformationValue(
-      const G4Step *step, ValueType default_value,
-      ValueType (TrackInformationType::*getter)() const) const {
+  ValueType
+  GetAuxiliaryTrackInformationValue(const G4Step *step, ValueType default_value,
+                                    ValueType (TrackInformationType::*getter)()
+                                        const) const {
     if (step == nullptr)
       return default_value;
     return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
@@ -93,14 +97,15 @@ protected:
   }
 
   template <typename TrackInformationType>
-  void CopyAuxiliaryTrackInformation(
-      const G4Track *source_track, const G4Track *target_track) const {
+  void CopyAuxiliaryTrackInformation(const G4Track *source_track,
+                                     const G4Track *target_track) const {
     const auto *source_info =
         GetAuxiliaryTrackInformation<TrackInformationType>(source_track);
     if (source_info == nullptr)
       return;
     auto *target_info =
-        GetOrCreateAuxiliaryTrackInformation<TrackInformationType>(target_track);
+        GetOrCreateAuxiliaryTrackInformation<TrackInformationType>(
+            target_track);
     *target_info = *source_info;
   }
 

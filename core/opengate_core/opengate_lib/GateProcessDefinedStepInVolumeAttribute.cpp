@@ -12,8 +12,8 @@
 #include <G4VPhysicalVolume.hh>
 #include <G4VProcess.hh>
 
-GateProcessDefinedStepInVolumeAttribute::GateProcessDefinedStepInVolumeAttribute(
-    py::dict &user_info)
+GateProcessDefinedStepInVolumeAttribute::
+    GateProcessDefinedStepInVolumeAttribute(py::dict &user_info)
     : GateVAuxiliaryAttribute(user_info) {
   fDigiAttributeType = 'I';
   fActions.insert("SteppingAction");
@@ -24,7 +24,8 @@ void GateProcessDefinedStepInVolumeAttribute::InitializeUserInfo(
   GateVAuxiliaryAttribute::InitializeUserInfo(user_info);
   fProcessName = DictGetStr(user_info, "process_name");
   fVolumeName = DictGetStr(user_info, "volume_name");
-  fPropagateFromParentTrack = DictGetBool(user_info, "propagate_from_parent_track");
+  fPropagateFromParentTrack =
+      DictGetBool(user_info, "propagate_from_parent_track");
 }
 
 void GateProcessDefinedStepInVolumeAttribute::InitializeCpp() {
