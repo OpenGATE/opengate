@@ -392,6 +392,8 @@ void init_GateVAuxiliaryAttribute(py::module &);
 
 void init_GateInteractionCounterAttribute(py::module &);
 
+void init_GateUnscatteredPrimaryAttribute(py::module &);
+
 void init_GateLastInteractionPositionInVolumeAttribute(py::module &);
 
 void init_GateLastProcessDefinedStepInVolumeAttribute(py::module &);
@@ -692,6 +694,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateSteppingAction(m);
   init_GateVAuxiliaryAttribute(m);
   init_GateInteractionCounterAttribute(m);
+  init_GateUnscatteredPrimaryAttribute(m);
   init_GateLastInteractionPositionInVolumeAttribute(m);
   init_GateLastProcessDefinedStepInVolumeAttribute(m);
   init_GateProcessDefinedStepInVolumeAttribute(m);
