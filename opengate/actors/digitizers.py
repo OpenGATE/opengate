@@ -1473,7 +1473,7 @@ class DigiAttributeProcessDefinedStepInVolumeActor(
         g4.GateDigiAttributeProcessDefinedStepInVolumeActor.StartSimulationAction(self)
 
 
-class ProcessDefinedStepInVolumeAttribute:
+class ProcessDefinedStepInVolumeAttributeLegacy:
     """ """
 
     def __init__(self, sim, process_name, volume_name):

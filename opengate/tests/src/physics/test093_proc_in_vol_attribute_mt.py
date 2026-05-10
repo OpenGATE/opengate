@@ -64,10 +64,10 @@ if __name__ == "__main__":
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp.attached_to = detector
 
-    att1 = ProcessDefinedStepInVolumeAttribute(sim, "compt", waterbox1.name)
-    att2 = ProcessDefinedStepInVolumeAttribute(sim, "compt", "world")
-    att3 = ProcessDefinedStepInVolumeAttribute(sim, "Rayl", "world")
-    att4 = ProcessDefinedStepInVolumeAttribute(sim, "Rayl", waterbox2.name)
+    att1 = ProcessDefinedStepInVolumeAttributeLegacy(sim, "compt", waterbox1.name)
+    att2 = ProcessDefinedStepInVolumeAttributeLegacy(sim, "compt", "world")
+    att3 = ProcessDefinedStepInVolumeAttributeLegacy(sim, "Rayl", "world")
+    att4 = ProcessDefinedStepInVolumeAttributeLegacy(sim, "Rayl", waterbox2.name)
     phsp.attributes = [
         "KineticEnergy",
         "PrePosition",
