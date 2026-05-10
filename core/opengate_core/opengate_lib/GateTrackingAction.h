@@ -10,7 +10,9 @@
 
 #include "G4Track.hh"
 #include "G4UserTrackingAction.hh"
+#include "GateVAuxiliaryAttribute.h"
 #include "GateVActor.h"
+#include <vector>
 
 class GateTrackingAction : public G4UserTrackingAction {
 
@@ -21,6 +23,8 @@ public:
 
   void RegisterActor(GateVActor *actor);
 
+  void RegisterAuxiliaryAttribute(GateVAuxiliaryAttribute *attribute);
+
   virtual void PreUserTrackingAction(const G4Track *track);
 
   virtual void PostUserTrackingAction(const G4Track *track);
@@ -28,6 +32,8 @@ public:
   bool fUserEventInformationFlag;
 
 protected:
+  std::vector<GateVAuxiliaryAttribute *> fPreUserTrackingActionAttributes;
+  std::vector<GateVAuxiliaryAttribute *> fPostUserTrackingActionAttributes;
   std::vector<GateVActor *> fPreUserTrackingActionActors;
   std::vector<GateVActor *> fPostUserTrackingActionActors;
 };
