@@ -34,6 +34,21 @@ The C++ class is responsible for:
 - optionally registering a DigiAttribute view for ROOT-based output
 
 
+Mental model
+------------
+
+The most useful way to think about this subsystem is:
+
+- the core abstraction is a named runtime attribute with typed getters
+- Geant4 hooks are optional implementation tools
+- track-attached storage is optional implementation detail
+- DigiAttribute exposure is an optional adapter for ROOT-backed output
+
+So not every auxiliary attribute needs to be historic or stateful. Some are
+getter-only attributes that simply make a value available through the same
+runtime interface used by filters and actors.
+
+
 When to use an auxiliary attribute
 ----------------------------------
 
@@ -79,6 +94,22 @@ Consumers can access auxiliary attributes in two ways:
 1. through a DigiAttribute/ROOT-backed branch
 2. directly at runtime from C++ using the auxiliary-attribute registry and
    typed getters
+
+
+Where to look in the code
+-------------------------
+
+The main entry points are:
+
+- ``opengate/auxiliary_attributes.py`` for the Python-side activation classes
+- ``core/opengate_core/opengate_lib/GateVAuxiliaryAttribute.h`` for the core
+  C++ runtime interface
+- ``core/opengate_core/opengate_lib/GateTrackingAction.*`` and
+  ``GateSteppingAction.*`` for hook dispatch
+- ``core/opengate_core/opengate_lib/filters/GateAttributeComparisonFilter.*``
+  for filter-side consumption
+- ``core/opengate_core/opengate_lib/digitizer/GateDigiAttributeManager.*`` for
+  optional ROOT-backed exposure
 
 
 Implementing the Python-side class

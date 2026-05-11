@@ -12,6 +12,14 @@
 #include "GateVAuxiliaryAttribute.h"
 #include <vector>
 
+/*
+ * Stepping-action aggregator for auxiliary attributes.
+ *
+ * Auxiliary attributes that implement ``SteppingAction`` are registered here
+ * by the action engine. The stepping action is intentionally global and is not
+ * tied to actor ``ProcessHits`` dispatch, which keeps runtime attribute
+ * updates independent from scoring-actor attachment mechanics.
+ */
 class GateSteppingAction : public G4UserSteppingAction {
 
 public:

@@ -1,3 +1,22 @@
+"""
+Python-side wrappers for simulation-level auxiliary attributes.
+
+Auxiliary attributes are named runtime attributes that can be consumed from
+multiple places in GATE, such as ROOT-backed actors, generic filters, and
+other C++ runtime components. Their defining feature is the typed getter
+interface exposed by ``GateVAuxiliaryAttribute`` on the C++ side.
+
+Some auxiliary attributes are stateful and use Geant4 hooks plus optional
+``G4VAuxiliaryTrackInformation`` storage to accumulate or propagate values
+along a track. Others are stateless getter-only attributes that compute their
+value directly from the current ``G4Step``.
+
+These Python classes activate and configure the corresponding C++ attributes
+for a given simulation. Attribute names are user-facing and must be unique
+within a simulation because they are used for lookup by filters, actors, and
+optional DigiAttribute exposure.
+"""
+
 from .base import GateObject, process_cls
 from .exception import fatal
 

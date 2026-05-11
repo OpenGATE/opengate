@@ -21,6 +21,21 @@
 
 namespace py = pybind11;
 
+/*
+ * Base class for simulation-level runtime attributes that are exposed through
+ * a named, typed getter interface.
+ *
+ * A concrete auxiliary attribute may use only a subset of the mechanisms
+ * provided here:
+ * - typed runtime getters, which are the core public interface
+ * - optional Geant4 hooks (stepping/tracking)
+ * - optional per-track storage using G4VAuxiliaryTrackInformation
+ * - optional DigiAttribute exposure for ROOT-backed actors
+ *
+ * The registry managed by this class is non-owning. Ownership stays with the
+ * simulation-side objects that created the attributes, and resolved pointers
+ * are valid only during engine lifetime.
+ */
 class GateVAuxiliaryAttribute {
 public:
   explicit GateVAuxiliaryAttribute(py::dict &user_info);
