@@ -6,7 +6,6 @@ import opengate.tests.utility as utility
 import opengate.contrib.pet.philipsvereos as vereos
 from opengate.actors.coincidences import CoincidenceSorter
 from test098_coincidence_helpers import compare_coincidences
-import uproot
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -16,6 +15,7 @@ if __name__ == "__main__":
 
     # units
     m = gate.g4_units.m
+    mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     Bq = gate.g4_units.Bq
     sec = gate.g4_units.s
@@ -69,6 +69,8 @@ if __name__ == "__main__":
     cc = sim.add_actor("CoincidenceSorterActor", "coincidences")
     cc.input_digi_collection = sc.name
     cc.window = 1e-9 * sec
+    cc.min_transaxial_distance = 260 * mm
+    cc.max_axial_distance = 100 * mm
     cc.output_filename = root_filename
 
     sim.run_timing_intervals = [[0, 0.001 * sec]]
@@ -88,6 +90,8 @@ if __name__ == "__main__":
         # Calculate the coincidences using the Python implementation.
         sorter = CoincidenceSorter()
         sorter.window = 1e-9 * sec
+        sorter.min_transaxial_distance = 260 * mm
+        sorter.max_axial_distance = 100 * mm
         sorter.multiples_policy = policy
 
         coincidences_python = sorter.run(root_filename, "singles")
