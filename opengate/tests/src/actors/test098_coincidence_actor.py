@@ -5,73 +5,20 @@ import opengate as gate
 import opengate.tests.utility as utility
 from opengate.actors.coincidences import CoincidenceSorter
 from test098_coincidence_helpers import compare_coincidences
+from test098_coincidence_simulation import create_simulation
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, gate_folder="", output_folder="test098_coincidence_actor"
     )
 
-    # units
-    m = gate.g4_units.m
-    mm = gate.g4_units.mm
-    cm = gate.g4_units.cm
-    Bq = gate.g4_units.Bq
     sec = gate.g4_units.s
+    mm = gate.g4_units.mm
 
-    # options
-    sim = gate.Simulation()
-    sim.random_seed = 1234
-    sim.number_of_threads = 1
-    sim.output_dir = paths.output
-    sim.verbose_level = gate.logger.NONE
+    sim, cc, root_filename = create_simulation(paths, num_threads=1)
 
-    # world
-    world = sim.world
-    world.size = [1.5 * m, 1.5 * m, 1.5 * m]
-    world.material = "G4_AIR"
-
-    # Pet
-    pet = vereos.add_pet(sim, "pet")
-    crystal = sim.volume_manager.get_volume("pet_crystal")
-
-    # Point source
-    source = sim.add_source("GenericSource", "source")
-    source.particle = "back_to_back"
-    source.activity = 1e6 * Bq / sim.number_of_threads
-    source.position.type = "point"
-    source.position.translation = [0 * cm, 0 * cm, 0 * cm]
-    source.direction.type = "iso"
-
-    # Hits
-    hc = sim.add_actor("DigitizerHitsCollectionActor", "hits")
-    hc.attached_to = crystal.name
-    hc.authorize_repeated_volumes = True
-    hc.attributes = [
-        "EventID",
-        "PostPosition",
-        "TotalEnergyDeposit",
-        "PreStepUniqueVolumeID",
-        "GlobalTime",
-    ]
-
-    # Singles
-    sc = sim.add_actor("DigitizerAdderActor", "singles")
-    sc.attached_to = hc.attached_to
-    sc.authorize_repeated_volumes = True
-    sc.input_digi_collection = hc.name
-    sc.policy = "EnergyWeightedCentroidPosition"
-    sc.group_volume = crystal.name
-    sc.output_filename = root_filename
-
-    # Coincidence sorter
-    cc = sim.add_actor("CoincidenceSorterActor", "coincidences")
-    cc.input_digi_collection = sc.name
-    cc.window = 1e-9 * sec
     cc.min_transaxial_distance = 260 * mm
     cc.max_axial_distance = 100 * mm
-    cc.output_filename = root_filename
-
-    sim.run_timing_intervals = [[0, 0.001 * sec]]
 
     for policy in [
         "RemoveMultiples",
