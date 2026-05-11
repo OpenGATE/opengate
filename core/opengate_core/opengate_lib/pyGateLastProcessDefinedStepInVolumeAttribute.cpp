@@ -14,7 +14,7 @@ namespace py = pybind11;
 
 void init_GateLastProcessDefinedStepInVolumeAttribute(py::module &m) {
   py::class_<GateLastProcessDefinedStepInVolumeAttribute,
-             GateVAuxiliaryAttribute>(m,
-                                      "GateLastProcessDefinedStepInVolumeAttribute")
+             GateVAuxiliaryAttribute>(
+      m, "GateLastProcessDefinedStepInVolumeAttribute")
       .def(py::init<py::dict &>());
 }
