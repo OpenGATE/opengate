@@ -307,7 +307,7 @@ void GateCoincidenceSorterActor::DetectCoincidences(bool lastCall) {
       // If there are multiple, then first apply the multiples policy before
       // adding the remaining coincidences to the output collection.
       const auto numCoincidences = secondSingleIndex.size();
-      if (numCoincidences == 1) {
+      if (numCoincidences == 1 && goodCoincidence[0] == 1) {
         fCurrentStorage->fillerOut->Fill(i0, secondSingleIndex[0]);
       } else if (numCoincidences > 1) {
         const auto filteredIndices =
