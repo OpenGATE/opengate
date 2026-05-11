@@ -1,37 +1,36 @@
-import re
+import json
 import os
+import re
 from typing import List
 
-import numpy as np
 import itk
-import json
+import numpy as np
+import opengate_core as g4
 from anytree import NodeMixin
 from scipy.spatial.transform import Rotation
 
-import opengate_core as g4
-
-from ..base import DynamicGateObject, process_cls
-from . import solids
-from ..utility import ensure_filename_is_str
-from ..exception import fatal, warning
-from ..image import write_itk_image
-from ..image import update_image_py_to_cpp
-from .utility import (
-    vec_np_as_g4,
-    rot_np_as_g4,
-    ensure_is_g4_transform,
-)
-from ..decorators import requires_fatal, requires_attribute_fatal
-from ..definitions import __world_name__, __gate_list_objects__
-from .fields import FieldBase
-from ..actors.dynamicactors import (
-    VolumeImageChanger,
-    VolumeTranslationChanger,
-    VolumeRotationChanger,
-)
-from .materials import create_density_img, write_material_database
 from opengate.serialization import dump_json
 from opengate.utility import g4_units
+
+from ..actors.dynamicactors import (
+    VolumeImageChanger,
+    VolumeRotationChanger,
+    VolumeTranslationChanger,
+)
+from ..base import DynamicGateObject, process_cls
+from ..decorators import requires_attribute_fatal, requires_fatal
+from ..definitions import __gate_list_objects__, __world_name__
+from ..exception import fatal, warning
+from ..image import update_image_py_to_cpp, write_itk_image
+from ..utility import ensure_filename_is_str
+from . import solids
+from .fields import FieldBase
+from .materials import create_density_img, write_material_database
+from .utility import (
+    ensure_is_g4_transform,
+    rot_np_as_g4,
+    vec_np_as_g4,
+)
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -959,6 +958,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     @itk_image.setter
     def itk_image(self, image):
+        print("Setting itk_image in ImageVolume. ")
         self._itk_image = image
 
     # @requires_fatal('itk_image')
@@ -1028,6 +1028,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # make sure the materials are created in Geant4
         for m in self.material_to_label_lut:
             self.volume_manager.find_or_build_material(m)
+        print("construct")
         self.itk_image = self.load_input_image()
         self.label_image = self.create_label_image()
         if self.dump_label_image:
