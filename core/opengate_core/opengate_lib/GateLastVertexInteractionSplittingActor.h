@@ -40,8 +40,8 @@
 #include "GateLastVertexSplittingDataContainer.h"
 #include "GateSimulationStatisticsActor.h"
 #include "GateVActor.h"
-#include "tree.hh"
-#include "tree_util.hh"
+#include "tree/tree.hh"
+#include "tree/tree_util.hh"
 #include <iostream>
 #include <pybind11/stl.h>
 using CLHEP::Hep3Vector;
