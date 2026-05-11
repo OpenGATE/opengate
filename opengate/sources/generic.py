@@ -1,22 +1,22 @@
+import numpy as np
+import opengate_core as g4
 from box import Box
 from scipy.spatial.transform import Rotation
-import opengate_core as g4
+
+from opengate.actors.biasingactors import (
+    AngularAcceptanceValidator,
+    generic_source_default_aa,
+)
+
+from ..base import UserInfoValidatorBase, process_cls
+from ..exception import fatal, warning
+from ..utility import g4_units
 from .base import SourceBase
 from .utility import (
-    get_spectrum,
-    compute_cdf_and_total_yield,
     all_beta_plus_radionuclides,
+    compute_cdf_and_total_yield,
+    get_spectrum,
 )
-from ..base import process_cls
-from ..utility import g4_units
-from ..exception import warning
-from opengate.actors.biasingactors import (
-    generic_source_default_aa,
-    AngularAcceptanceValidator,
-)
-from ..base import UserInfoValidatorBase
-from ..exception import fatal
-import numpy as np
 
 
 def _position_parameters():
@@ -468,43 +468,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 return True
             return False
         return True
-
-
-class TemplateSource(SourceBase):
-    """
-    Source template: to create a new type of source, copy-paste
-    this file and adapt to your needs.
-    Also declare the source type in the file helpers_source.py
-    """
-
-    type_name = "TemplateSource"
-
-    @staticmethod
-    def set_default_user_info(user_info):
-        SourceBase.set_default_user_info(user_info)
-        # initial user info
-        user_info.float_value = None
-        user_info.vector_value = None
-
-    def create_g4_source(self):
-        return opengate_core.GateTemplateSource()
-
-    def __init__(self, user_info):
-        super().__init__(user_info)
-
-    def initialize(self, run_timing_intervals):
-        # Check user_info type
-        if self.user_info.float_value is None:
-            fatal(
-                f"Error for source {self.user_info.name}, float_value must be a float"
-            )
-        if self.user_info.vector_value is None:
-            fatal(
-                f"Error for source {self.user_info.name}, vector_value must be a vector"
-            )
-
-        # initialize
-        SourceBase.initialize(self, run_timing_intervals)
 
 
 process_cls(GenericSource)

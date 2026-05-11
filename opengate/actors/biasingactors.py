@@ -1,15 +1,16 @@
+import itk
+import numpy as np
 import opengate_core as g4
-import opengate as gate
-from .base import ActorBase
-from ..base import process_cls
+from anytree import RenderTree
 from box import Box
+
+import opengate as gate
+
+from ..base import UserInfoValidatorBase, process_cls
+from ..exception import fatal, warning
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
-from anytree import RenderTree
-from ..base import UserInfoValidatorBase
-from ..exception import fatal, warning
-import numpy as np
-import itk
+from .base import ActorBase
 
 
 def generic_source_default_aa():
