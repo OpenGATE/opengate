@@ -1,27 +1,21 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import opengate as gate
-import opengate.tests.utility as utility
-from opengate.actors.coincidences import CoincidenceSorter
-from test098_coincidence_helpers import compare_coincidences
+import opengate.contrib.pet.philipsvereos as vereos
 
-if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__, gate_folder="", output_folder="test098_coincidence_actor"
-    )
+
+def create_simulation(paths, num_threads):
+
+    root_filename = paths.output / "output_singles.root"
 
     # units
     m = gate.g4_units.m
-    mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     Bq = gate.g4_units.Bq
     sec = gate.g4_units.s
 
     # options
     sim = gate.Simulation()
+    sim.number_of_threads = num_threads
     sim.random_seed = 1234
-    sim.number_of_threads = 1
     sim.output_dir = paths.output
     sim.verbose_level = gate.logger.NONE
 
@@ -67,38 +61,12 @@ if __name__ == "__main__":
     cc = sim.add_actor("CoincidenceSorterActor", "coincidences")
     cc.input_digi_collection = sc.name
     cc.window = 1e-9 * sec
-    cc.min_transaxial_distance = 260 * mm
-    cc.max_axial_distance = 100 * mm
     cc.output_filename = root_filename
 
-    sim.run_timing_intervals = [[0, 0.001 * sec]]
+    run_duration = 0.001 * sec
+    num_runs = 2
+    sim.run_timing_intervals = [
+        [2 * r * run_duration, (2 * r + 1) * run_duration] for r in range(num_runs)
+    ]
 
-    for policy in [
-        "RemoveMultiples",
-        "TakeAllGoods",
-        "TakeWinnerOfGoods",
-        "TakeIfOnlyOneGood",
-        "TakeWinnerIfIsGood",
-        "TakeWinnerIfAllAreGoods",
-    ]:
-        cc.multiples_policy = policy
-        sim.run(start_new_process=True)
-
-        # Calculate the coincidences using the Python implementation.
-        sorter = CoincidenceSorter()
-        sorter.window = 1e-9 * sec
-        sorter.min_transaxial_distance = 260 * mm
-        sorter.max_axial_distance = 100 * mm
-        sorter.multiples_policy = policy
-
-        coincidences_python = sorter.run(root_filename, "singles")
-
-        # Check that the coincidences from the CoincidenceSorterActor are identical.
-        identical = compare_coincidences(coincidences_python, str(root_filename))
-        if identical:
-            print(f"Policy '{policy}': OK")
-        else:
-            print(f"Policy '{policy}': not OK")
-            utility.test_ok(False)
-
-    utility.test_ok(True)
+    return (sim, cc, root_filename)
