@@ -1094,14 +1094,13 @@ Reference
 
 .. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
-Free Flight Actors
-------------------
+Free Flight Actors and Directional Biasing
+------------------------------------------
 
 Description
 ~~~~~~~~~~~
 
-Free Flight is a variance reduction technique designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations[cite: 248]. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See paper [Sarrut et al, PMB, 2026, to appear].
-
+Free Flight is a variance reduction technique (VRT) designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See `[Sarrut et al, PMB, 2026] <https://doi.org/10.1088/1361-6560/ae622a>`_.
 
 OpenGATE provides two main actors for this purpose:
 
@@ -1122,6 +1121,22 @@ This actor is typically attached to the world or a specific phantom volume. It e
    # Optionally exclude specific volumes like the detector crystal
    # to let standard Geant4 tracking take over once the particle reaches the detector.
    ff.exclude_volumes = ["spect_1_crystal"]
+
+
+Angular Acceptance and Forced Direction Policies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When configuring directional biasing, the choice of policy is important.
+
+.. warning::
+   The **Rejection** policy should only be used when the acceptance probability is spatially uniform (e.g., for point sources or far-field approximations). When the acceptance probability varies spatially, as is common with volumetric sources near a detector, this policy introduces a systematic spatial bias by "warping" the simulated activity distribution.
+
+For quantitative SPECT simulations, use one of the following:
+
+* **ForceDirection (Recommended)**: This forces particles into the acceptance cone and adjusts their statistical weight (w = w_initial * P_acc). This preserves the correct spatial activity distribution.
+* **ZeroEnergy (or Kill)**: This maintains correct timing and event counts by simply terminating particles that fall outside the acceptance criteria, though it is less computationally efficient than weighting.
+
+**Multi-Target Strategy**: For systems with multiple detector heads, use the "Copy Source" method. Create N copies of the source, each targeting a different detector. If the angular acceptance cones of the targets **do not overlap**, maintain the full activity A for each copy to ensure correct absolute counts in each detector head. If the cones **do overlap**, another strategy is needed to avoid double counting, such as splitting the activity A across the N copies (A/N) or using a single source with an acceptance cone that encompasses all targets. This is not currently implemented in OpenGATE but is planned for future releases.
 
 
 
