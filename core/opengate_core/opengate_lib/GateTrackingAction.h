@@ -14,6 +14,15 @@
 #include "GateVAuxiliaryAttribute.h"
 #include <vector>
 
+/*
+ * Tracking-action aggregator for both actors and auxiliary attributes.
+ *
+ * Actors and auxiliary attributes share the same Geant4 tracking hooks but
+ * play different roles: actors usually score or write output, while auxiliary
+ * attributes expose runtime values and may optionally maintain track state.
+ * This class dispatches only the tracking hooks that each registered object
+ * explicitly declares.
+ */
 class GateTrackingAction : public G4UserTrackingAction {
 
 public:

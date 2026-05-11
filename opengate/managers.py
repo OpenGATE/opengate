@@ -1891,6 +1891,14 @@ class Simulation(GateObject):
         return self.actor_manager.add_actor(actor_type, name)
 
     def activate_auxiliary_attribute(self, attribute_type, name):
+        """
+        Activate a simulation-level runtime attribute.
+
+        Auxiliary attributes are named runtime attributes that may be consumed
+        from ROOT-backed actors, generic filters, or other C++ runtime
+        components. Some attributes are getter-only; others additionally use
+        Geant4 hooks and optional per-track storage.
+        """
         return self._activate_auxiliary_attribute(attribute_type, name)
 
     def _activate_auxiliary_attribute(self, attribute_type, name):
@@ -1937,6 +1945,14 @@ class Simulation(GateObject):
             return new_attribute
 
     def initialize_auxiliary_attributes(self):
+        """
+        Initialize all activated auxiliary attributes before engine runtime.
+
+        This is the moment when Python-side configuration is pushed to the C++
+        objects, optional DigiAttribute exposure is declared, and the
+        auxiliary-attribute registry becomes ready for lookup by filters or
+        other consumers.
+        """
         for attribute in self.auxiliary_attributes.values():
             attribute.simulation = self
             attribute.initialize()

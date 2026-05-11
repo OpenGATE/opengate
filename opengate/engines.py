@@ -574,6 +574,10 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
             ta.RegisterActor(actor)
 
     def register_auxiliary_attribute_actions(self, attribute):
+        # Auxiliary attributes are simulation-level runtime attributes, but the
+        # Geant4 user action objects are worker-local. Registration therefore
+        # pushes each activated attribute into the appropriate per-worker
+        # tracking/stepping aggregators based on the hooks it implements.
         for ta in self.g4_TrackingAction:
             ta.RegisterAuxiliaryAttribute(attribute)
         for sa in self.g4_SteppingAction:
