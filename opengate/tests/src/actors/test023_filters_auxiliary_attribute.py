@@ -7,7 +7,6 @@ from opengate.actors.filters import GateFilterBuilder
 import uproot
 import numpy as np
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test023")
 

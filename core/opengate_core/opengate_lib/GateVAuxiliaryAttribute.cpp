@@ -86,8 +86,7 @@ void GateVAuxiliaryAttribute::ClearRegistry() {
 }
 
 GateVAuxiliaryAttribute *
-GateVAuxiliaryAttribute::GetAuxiliaryAttributeByName(
-    const std::string &name) {
+GateVAuxiliaryAttribute::GetAuxiliaryAttributeByName(const std::string &name) {
   const auto it = fRegisteredAuxiliaryAttributes.find(name);
   if (it == fRegisteredAuxiliaryAttributes.end())
     return nullptr;

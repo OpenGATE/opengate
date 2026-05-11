@@ -144,9 +144,7 @@ class LastProcessDefinedStepInVolumeAttribute(
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateLastProcessDefinedStepInVolumeAttribute.__init__(
-            self, self.user_info
-        )
+        g4.GateLastProcessDefinedStepInVolumeAttribute.__init__(self, self.user_info)
 
     def initialize(self):
         if self.volume_name is None:
@@ -188,9 +186,7 @@ class LastInteractionPositionInVolumeAttribute(
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateLastInteractionPositionInVolumeAttribute.__init__(
-            self, self.user_info
-        )
+        g4.GateLastInteractionPositionInVolumeAttribute.__init__(self, self.user_info)
 
     def initialize(self):
         if self.volume_name is None:

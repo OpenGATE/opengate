@@ -37,12 +37,11 @@ void GateLastInteractionPositionInVolumeAttribute::InitializeCpp() {
   manager->DefineDigiAttribute(fName, fDigiAttributeType, fill);
 }
 
-G4ThreeVector
-GateLastInteractionPositionInVolumeAttribute::Get3Value(
+G4ThreeVector GateLastInteractionPositionInVolumeAttribute::Get3Value(
     const G4Step *step) const {
   return GetAuxiliaryTrackInformationStoredValue<
-      GateThreeVectorAuxiliaryTrackInformation, G4ThreeVector>(
-      step, G4ThreeVector());
+      GateThreeVectorAuxiliaryTrackInformation, G4ThreeVector>(step,
+                                                               G4ThreeVector());
 }
 
 void GateLastInteractionPositionInVolumeAttribute::SteppingAction(

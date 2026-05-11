@@ -37,12 +37,10 @@ void GateLastProcessDefinedStepInVolumeAttribute::InitializeCpp() {
   manager->DefineDigiAttribute(fName, fDigiAttributeType, fill);
 }
 
-std::string
-GateLastProcessDefinedStepInVolumeAttribute::GetSValue(
+std::string GateLastProcessDefinedStepInVolumeAttribute::GetSValue(
     const G4Step *step) const {
   return GetAuxiliaryTrackInformationStoredValue<
-      GateStringAuxiliaryTrackInformation, std::string>(step,
-                                                        "Transportation");
+      GateStringAuxiliaryTrackInformation, std::string>(step, "Transportation");
 }
 
 void GateLastProcessDefinedStepInVolumeAttribute::SteppingAction(

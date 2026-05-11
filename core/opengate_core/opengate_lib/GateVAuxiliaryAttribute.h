@@ -109,15 +109,17 @@ protected:
   }
 
   template <typename TrackInformationType, typename ValueType>
-  ValueType GetAuxiliaryTrackInformationStoredValue(
-      const G4Track *track, ValueType default_value) const {
+  ValueType
+  GetAuxiliaryTrackInformationStoredValue(const G4Track *track,
+                                          ValueType default_value) const {
     return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
         track, default_value, &TrackInformationType::GetValue);
   }
 
   template <typename TrackInformationType, typename ValueType>
-  ValueType GetAuxiliaryTrackInformationStoredValue(
-      const G4Step *step, ValueType default_value) const {
+  ValueType
+  GetAuxiliaryTrackInformationStoredValue(const G4Step *step,
+                                          ValueType default_value) const {
     return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
         step, default_value, &TrackInformationType::GetValue);
   }
@@ -125,8 +127,8 @@ protected:
   template <typename TrackInformationType, typename ValueType>
   void SetAuxiliaryTrackInformationStoredValue(const G4Track *track,
                                                const ValueType &value) const {
-    auto *info = GetOrCreateAuxiliaryTrackInformation<TrackInformationType>(
-        track);
+    auto *info =
+        GetOrCreateAuxiliaryTrackInformation<TrackInformationType>(track);
     info->SetValue(value);
   }
 
