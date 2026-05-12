@@ -14,6 +14,7 @@
 #include "GateSPRCache.h"
 #include "GateVActor.h"
 #include "itkImage.h"
+#include <memory>
 
 namespace py = pybind11;
 
@@ -108,7 +109,7 @@ public:
   Image3DType::SizeType size_edep{};
 
   struct threadLocalT {
-    G4EmCalculator emcalc;
+    std::unique_ptr<G4EmCalculator> emcalc;
     std::vector<double> squared_worker_flatimg;
     std::vector<int> lastid_worker_flatimg;
   };
