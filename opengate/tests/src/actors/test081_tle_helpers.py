@@ -104,6 +104,7 @@ def activate_tle_track_mode_attribute(
     tle_threshold,
     database="EPDL",
     energy_min=0.0,
+    volume_name="",
 ):
     """Activate a TLE runtime attribute configured like a legacy TLEDoseActor.
 
@@ -117,6 +118,7 @@ def activate_tle_track_mode_attribute(
     attribute.tle_threshold = tle_threshold
     attribute.database = database
     attribute.energy_min = energy_min
+    attribute.volume_name = volume_name
     return attribute
 
 

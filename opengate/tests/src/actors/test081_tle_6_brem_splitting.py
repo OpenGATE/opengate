@@ -120,6 +120,7 @@ def main(argv):
         tle_dose_actor.tle_threshold,
         database=tle_dose_actor.database,
         energy_min=tle_dose_actor.energy_min,
+        volume_name=tle_dose_actor.attached_to,
     )
 
     tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")

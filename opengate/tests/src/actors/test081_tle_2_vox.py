@@ -72,6 +72,7 @@ if __name__ == "__main__":
         tle_dose_actor.tle_threshold,
         database=tle_dose_actor.database,
         energy_min=tle_dose_actor.energy_min,
+        volume_name=tle_dose_actor.attached_to,
     )
 
     tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
@@ -120,8 +121,8 @@ if __name__ == "__main__":
     is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.17) and is_ok
 
     print()
-    f1 = tle_dose_actor.dose.get_output_path()
-    f2 = tle_dose_actor_aux.dose.get_output_path()
+    f1 = tle_dose_actor.edep.get_output_path()
+    f2 = tle_dose_actor_aux.edep.get_output_path()
     is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.05) and is_ok
 
     # output

@@ -77,6 +77,7 @@ if __name__ == "__main__":
         tle_dose_actor.tle_threshold,
         database=tle_dose_actor.database,
         energy_min=tle_dose_actor.energy_min,
+        volume_name=tle_dose_actor.attached_to,
     )
 
     tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
@@ -111,6 +112,7 @@ if __name__ == "__main__":
         dose_actor.tle_threshold,
         database=dose_actor.database,
         energy_min=dose_actor.energy_min,
+        volume_name=dose_actor.attached_to,
     )
 
     dose_actor_aux = sim.add_actor("TLEDoseActor", "dose_actor_aux")

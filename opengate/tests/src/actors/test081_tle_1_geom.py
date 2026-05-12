@@ -68,6 +68,11 @@ def main(argv):
     tle_track_mode = sim.activate_auxiliary_attribute(
         "TLETrackModeAttribute", "tle_track_mode"
     )
+    tle_track_mode.tle_threshold_type = tle_dose_actor.tle_threshold_type
+    tle_track_mode.tle_threshold = tle_dose_actor.tle_threshold
+    tle_track_mode.database = tle_dose_actor.database
+    tle_track_mode.energy_min = tle_dose_actor.energy_min
+    tle_track_mode.volume_name = tle_dose_actor.attached_to
 
     tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
     tle_dose_actor_aux.output_filename = "test081_tle_aux.mhd"
