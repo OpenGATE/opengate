@@ -147,6 +147,20 @@ protected:
     info->SetValue(value);
   }
 
+  template <typename TrackInformationType, typename ValueType>
+  void SetAuxiliaryTrackInformationStoredValueOnSecondariesInCurrentStep(
+      const G4Step *step, const ValueType &value) const {
+    if (step == nullptr)
+      return;
+    const auto *secondaries = step->GetSecondaryInCurrentStep();
+    if (secondaries == nullptr)
+      return;
+    for (const auto *secondary_track : *secondaries) {
+      SetAuxiliaryTrackInformationStoredValue<TrackInformationType, ValueType>(
+          secondary_track, value);
+    }
+  }
+
   template <typename TrackInformationType>
   void CopyAuxiliaryTrackInformation(const G4Track *source_track,
                                      const G4Track *target_track) const {

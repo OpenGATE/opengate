@@ -716,7 +716,19 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
 
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
-    """TLE = Track Length Estimator"""
+    """
+    TLE = Track Length Estimator.
+
+    This actor currently supports two internal mechanisms for TLE track state:
+
+    - ``tle_state_mode="legacy"`` keeps the historical actor-local
+      ``GateUserTrackInformation`` path for regression testing.
+    - ``tle_state_mode="auxiliary"`` consumes a simulation-level
+      ``TLETrackModeAttribute`` and is the new architectural direction.
+
+    In this first refactor pass, only the track-state policy is externalized.
+    The actual TLE dose/edep scoring kernel remains inside the actor.
+    """
 
     energy_min: float
     range_type: str
@@ -724,6 +736,19 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     database: str
 
     user_info_defaults = {
+        "tle_state_mode": (
+            "legacy",
+            {
+                "doc": "Select whether TLE track-state logic is handled by the legacy actor-local mechanism or by an auxiliary attribute.",
+                "allowed_values": ("legacy", "auxiliary"),
+            },
+        ),
+        "tle_state_attribute": (
+            "",
+            {
+                "doc": "Name of the auxiliary attribute providing the TLE track mode when tle_state_mode='auxiliary'.",
+            },
+        ),
         "energy_min": (
             0.0,
             {"doc": "Kill the gamma if below this energy"},
@@ -765,6 +790,11 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
         if self.score_in != "material":
             fatal(
                 f"TLEDoseActor cannot score in {self.score_in}, only 'material' is allowed."
+            )
+        if self.tle_state_mode == "auxiliary" and not self.tle_state_attribute:
+            fatal(
+                f"TLEDoseActor '{self.name}' requires tle_state_attribute when "
+                "tle_state_mode='auxiliary'."
             )
         super().initialize(args)
 
