@@ -5,14 +5,11 @@ import opengate as gate
 from opengate import g4_units
 from opengate.tests import utility
 from opengate.tests.src.actors.test081_tle_helpers import (
-    add_waterbox,
-    voxelize_waterbox,
-    add_source,
     add_iso_source,
+    activate_tle_track_mode_attribute,
     plot_pdd,
     compare_pdd,
 )
-from opengate.tests.utility import get_image_1d_profile
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test081_tle")
@@ -84,6 +81,27 @@ if __name__ == "__main__":
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {box_size} mm")
 
+    tle_track_mode = activate_tle_track_mode_attribute(
+        sim,
+        "tle_track_mode",
+        tle_dose_actor.tle_threshold_type,
+        tle_dose_actor.tle_threshold,
+        database=tle_dose_actor.database,
+        energy_min=tle_dose_actor.energy_min,
+    )
+
+    tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
+    tle_dose_actor_aux.output_filename = "test081_vox_tle_rd_HU_aux.mhd"
+    tle_dose_actor_aux.attached_to = box
+    tle_dose_actor_aux.dose_uncertainty.active = True
+    tle_dose_actor_aux.dose.active = True
+    tle_dose_actor_aux.size = tle_dose_actor.size
+    tle_dose_actor_aux.spacing = tle_dose_actor.spacing
+    tle_dose_actor_aux.density.active = True
+    tle_dose_actor_aux.score_in = "material"
+    tle_dose_actor_aux.tle_state_mode = "auxiliary"
+    tle_dose_actor_aux.tle_state_attribute = tle_track_mode.name
+
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
     dose_actor.output_filename = "test081_vox_rd_HU.mhd"
@@ -116,6 +134,11 @@ if __name__ == "__main__":
     f2 = tle_dose_actor.dose.get_output_path()
     is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.1) and is_ok
 
+    print()
+    f1 = tle_dose_actor.dose.get_output_path()
+    f2 = tle_dose_actor_aux.dose.get_output_path()
+    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.05) and is_ok
+
     # output
     f = paths.output / f"pdd_vox_rd_HU.png"
     plt.savefig(f)
@@ -125,6 +148,11 @@ if __name__ == "__main__":
     utility.assert_images(
         dose_actor.density.get_output_path(),
         tle_dose_actor.density.get_output_path(),
+        tolerance=0.001,
+    )
+    utility.assert_images(
+        tle_dose_actor.density.get_output_path(),
+        tle_dose_actor_aux.density.get_output_path(),
         tolerance=0.001,
     )
 

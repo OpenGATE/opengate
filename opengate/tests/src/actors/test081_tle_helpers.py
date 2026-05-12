@@ -97,6 +97,29 @@ def add_iso_source(
     return source
 
 
+def activate_tle_track_mode_attribute(
+    sim,
+    name,
+    tle_threshold_type,
+    tle_threshold,
+    database="EPDL",
+    energy_min=0.0,
+):
+    """Activate a TLE runtime attribute configured like a legacy TLEDoseActor.
+
+    The helper keeps the legacy-vs-auxiliary test setup concise: the actor still
+    scores dose, while the named auxiliary attribute owns the TLE state policy in
+    auxiliary mode.
+    """
+
+    attribute = sim.activate_auxiliary_attribute("TLETrackModeAttribute", name)
+    attribute.tle_threshold_type = tle_threshold_type
+    attribute.tle_threshold = tle_threshold
+    attribute.database = database
+    attribute.energy_min = energy_min
+    return attribute
+
+
 def voxelize_waterbox(sim, output_folder):
     mm = gate.g4_units.mm
     a = sim.output_dir
