@@ -81,7 +81,7 @@ if __name__ == "__main__":
     sim.actor_manager.remove_actor("dose_actor")
 
     # start simulation
-    sim.run()
+    sim.run(start_new_process=True)
     pps2 = stats.user_output.stats.pps
 
     tle_track_mode = activate_tle_track_mode_attribute(
@@ -91,6 +91,7 @@ if __name__ == "__main__":
         tle_dose_actor.tle_threshold,
         database=tle_dose_actor.database,
         energy_min=tle_dose_actor.energy_min,
+        volume_name=tle_dose_actor.attached_to,
     )
 
     tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     sim.actor_manager.remove_actor("tle_dose_actor")
 
     # start simulation with auxiliary-mode TLE
-    sim.run()
+    sim.run(start_new_process=True)
     pps3 = stats.user_output.stats.pps
 
     print()
