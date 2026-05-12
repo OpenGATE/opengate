@@ -243,7 +243,9 @@ class TLETrackModeAttribute(AuxiliaryAttributeBase, g4.GateTLETrackModeAttribute
     The attribute owns the TLE policy configuration and genealogy propagation
     logic. TLEDoseActor can then consume the resulting mode through the common
     auxiliary-attribute getter interface instead of maintaining its own private
-    propagated state.
+    propagated state. When used with TLEDoseActor, ``volume_name`` should match
+    the actor's attached volume so the policy is evaluated on the same steps as
+    the legacy actor-local logic.
     """
 
     user_info_defaults = {
@@ -269,6 +271,12 @@ class TLETrackModeAttribute(AuxiliaryAttributeBase, g4.GateTLETrackModeAttribute
             {
                 "doc": "Cross-section database used for TLE policy.",
                 "allowed_values": ("EPDL", "NIST"),
+            },
+        ),
+        "volume_name": (
+            "",
+            {
+                "doc": "Optional volume hierarchy in which to evaluate the TLE policy. For TLEDoseActor auxiliary mode this should match the actor's attached volume.",
             },
         ),
     }

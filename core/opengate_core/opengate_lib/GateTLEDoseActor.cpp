@@ -85,6 +85,18 @@ void GateTLEDoseActor::InitializeCpp() {
     fTLEThreshold = tle_attribute->GetTLEThreshold();
     fTLEThresholdType = tle_attribute->GetTLEThresholdType();
     fDatabase = tle_attribute->GetDatabase();
+    if (tle_attribute->GetVolumeName().empty()) {
+      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
+            "' for actor '" + GetName() +
+            "' must define volume_name so its policy matches the actor "
+            "attachment volume.");
+    }
+    if (tle_attribute->GetVolumeName() != fAttachedToVolumeName) {
+      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
+            "' for actor '" + GetName() + "' is configured for volume '" +
+            tle_attribute->GetVolumeName() + "' but the actor is attached to '" +
+            fAttachedToVolumeName + "'.");
+    }
   }
 }
 
