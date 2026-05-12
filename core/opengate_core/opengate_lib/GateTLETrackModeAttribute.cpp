@@ -32,6 +32,7 @@ void GateTLETrackModeAttribute::InitializeUserInfo(py::dict &user_info) {
   fTLEThreshold = DictGetDouble(user_info, "tle_threshold");
   fEnergyMin = DictGetDouble(user_info, "energy_min");
   fDatabase = DictGetStr(user_info, "database");
+  fVolumeName = DictGetStr(user_info, "volume_name");
   if (fStrTLEThresholdType == "max range") {
     fTLEThresholdType = 0;
   } else if (fStrTLEThresholdType == "average range") {
@@ -57,7 +58,7 @@ void GateTLETrackModeAttribute::InitializeCpp() {
   manager->DefineDigiAttribute(fName, fDigiAttributeType, fill);
 }
 
-void GateTLETrackModeAttribute::EnsureRuntimeInitialized() {
+void GateTLETrackModeAttribute::EnsureRuntimeInitialized() const {
   if (fEmCalc != nullptr && fMaterialMuHandler != nullptr)
     return;
 
@@ -88,7 +89,7 @@ void GateTLETrackModeAttribute::EnsureRuntimeInitialized() {
   }
 }
 
-G4double GateTLETrackModeAttribute::FindEkinMaxForTLE() {
+G4double GateTLETrackModeAttribute::FindEkinMaxForTLE() const {
   G4MaterialTable *matTable = G4Material::GetMaterialTable();
   G4int nbOfMaterials = G4Material::GetNumberOfMaterials();
   G4double ekinMax = 0;
@@ -103,8 +104,8 @@ G4double GateTLETrackModeAttribute::FindEkinMaxForTLE() {
   return ekinMax;
 }
 
-void GateTLETrackModeAttribute::InitializeCSDAForNewGamma(bool isFirstStep,
-                                                          const G4Step *step) {
+void GateTLETrackModeAttribute::InitializeCSDAForNewGamma(
+    bool isFirstStep, const G4Step *step) const {
   if (!isFirstStep)
     return;
   if (step->GetTrack()->GetDefinition()->GetParticleName() != "gamma")
@@ -115,11 +116,10 @@ void GateTLETrackModeAttribute::InitializeCSDAForNewGamma(bool isFirstStep,
   const auto *currentMat = pre_step->GetMaterial();
   l.fCsda = fEmCalc->GetCSDARange(energy, G4Electron::Definition(), currentMat);
   l.fPreviousMatName = currentMat->GetName();
-  l.fPreviousEnergy = energy;
 }
 
 bool GateTLETrackModeAttribute::ComputeTLEConditionForGamma(
-    const G4Step *step) {
+    const G4Step *step) const {
   const auto *pre_step = step->GetPreStepPoint();
   const auto *currentMat = pre_step->GetMaterial();
   const auto energy = pre_step->GetKineticEnergy();
@@ -159,9 +159,33 @@ bool GateTLETrackModeAttribute::ComputeTLEConditionForGamma(
   return true;
 }
 
+int GateTLETrackModeAttribute::ComputeEffectiveModeForStep(
+    const G4Step *step) const {
+  EnsureRuntimeInitialized();
+  const auto *track = step->GetTrack();
+  const auto particle_name = track->GetDefinition()->GetParticleName();
+
+  auto current_mode =
+      GetAuxiliaryTrackInformationStoredValue<GateIntAuxiliaryTrackInformation,
+                                             int>(step, kConventional);
+
+  if (!fVolumeName.empty() && !IsStepInVolume(step, fVolumeName)) {
+    return current_mode;
+  }
+
+  if (particle_name == "gamma") {
+    const auto tle_condition =
+        (fTLEThresholdType <= 2) ? ComputeTLEConditionForGamma(step) : true;
+    return tle_condition ? kTLEGamma : kConventional;
+  }
+
+  return current_mode;
+}
+
 void GateTLETrackModeAttribute::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
   l.fIsFirstStep = true;
+  ResetCurrentStepValueCache();
 
   // If no mode was propagated from a parent track, the default is the
   // conventional scoring path.
@@ -175,25 +199,24 @@ void GateTLETrackModeAttribute::PreUserTrackingAction(const G4Track *track) {
 }
 
 void GateTLETrackModeAttribute::SteppingAction(const G4Step *step) {
-  EnsureRuntimeInitialized();
   auto &l = fThreadLocalData.Get();
   const auto *track = step->GetTrack();
   const auto particle_name = track->GetDefinition()->GetParticleName();
 
-  auto current_mode =
-      GetAuxiliaryTrackInformationStoredValue<GateIntAuxiliaryTrackInformation, int>(
-          step, kConventional);
+  if (!fVolumeName.empty() && !IsStepInVolume(step, fVolumeName)) {
+    ResetCurrentStepValueCache();
+    return;
+  }
+
+  const auto current_mode = GetIValue(step);
 
   if (particle_name == "gamma") {
-    const auto tle_condition =
-        (fTLEThresholdType <= 2) ? ComputeTLEConditionForGamma(step) : true;
-    current_mode = tle_condition ? kTLEGamma : kConventional;
     SetAuxiliaryTrackInformationStoredValue<GateIntAuxiliaryTrackInformation, int>(
         track, current_mode);
     // A gamma in TLE mode suppresses explicit deposition by the secondaries it
     // creates; otherwise secondaries follow the conventional path.
     const int propagated_mode =
-        tle_condition ? kSuppressedSecondary : kConventional;
+        (current_mode == kTLEGamma) ? kSuppressedSecondary : kConventional;
     SetAuxiliaryTrackInformationStoredValueOnSecondariesInCurrentStep<
         GateIntAuxiliaryTrackInformation, int>(step, propagated_mode);
   } else {
@@ -206,9 +229,15 @@ void GateTLETrackModeAttribute::SteppingAction(const G4Step *step) {
   }
 
   l.fIsFirstStep = false;
+  ResetCurrentStepValueCache();
 }
 
 int GateTLETrackModeAttribute::GetIValue(const G4Step *step) const {
-  return GetAuxiliaryTrackInformationStoredValue<GateIntAuxiliaryTrackInformation,
-                                                 int>(step, kConventional);
+  int cached_value = kConventional;
+  if (TryGetCachedCurrentStepIValue(step, cached_value)) {
+    return cached_value;
+  }
+  const auto value = ComputeEffectiveModeForStep(step);
+  CacheCurrentStepIValue(step, value);
+  return value;
 }

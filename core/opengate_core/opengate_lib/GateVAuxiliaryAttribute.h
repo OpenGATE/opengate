@@ -11,6 +11,7 @@
 #include "G4Step.hh"
 #include "G4Track.hh"
 #include "G4VAuxiliaryTrackInformation.hh"
+#include "G4Cache.hh"
 #include "GateHelpers.h"
 #include "GateUniqueVolumeID.h"
 #include <map>
@@ -31,6 +32,8 @@ namespace py = pybind11;
  * - optional Geant4 hooks (stepping/tracking)
  * - optional per-track storage using G4VAuxiliaryTrackInformation
  * - optional DigiAttribute exposure for ROOT-backed actors
+ * - optional current-step memoization for attributes whose current-step value
+ *   may be queried before their explicit Geant4 hook is invoked
  *
  * The registry managed by this class is non-owning. Ownership stays with the
  * simulation-side objects that created the attributes, and resolved pointers
@@ -73,6 +76,29 @@ protected:
   SetAuxiliaryTrackInformation(const G4Track *track,
                                G4VAuxiliaryTrackInformation *track_info) const;
   bool IsStepInVolume(const G4Step *step, const std::string &volume_name) const;
+  // Some attributes are queried from ProcessHits before their explicit
+  // G4UserSteppingAction hook runs. These helpers memoize a current-step value
+  // per worker thread so getters can provide same-step semantics without
+  // turning actor reads into hidden state-transition hooks.
+  void ResetCurrentStepValueCache() const;
+  bool TryGetCachedCurrentStepIValue(const G4Step *step, int &value) const;
+  void CacheCurrentStepIValue(const G4Step *step, int value) const;
+  bool TryGetCachedCurrentStepDValue(const G4Step *step, double &value) const;
+  void CacheCurrentStepDValue(const G4Step *step, double value) const;
+  bool TryGetCachedCurrentStepLValue(const G4Step *step, int64_t &value) const;
+  void CacheCurrentStepLValue(const G4Step *step, int64_t value) const;
+  bool TryGetCachedCurrentStepSValue(const G4Step *step,
+                                     std::string &value) const;
+  void CacheCurrentStepSValue(const G4Step *step,
+                              const std::string &value) const;
+  bool TryGetCachedCurrentStep3Value(const G4Step *step,
+                                     G4ThreeVector &value) const;
+  void CacheCurrentStep3Value(const G4Step *step,
+                              const G4ThreeVector &value) const;
+  bool TryGetCachedCurrentStepUValue(const G4Step *step,
+                                     GateUniqueVolumeID::Pointer &value) const;
+  void CacheCurrentStepUValue(const G4Step *step,
+                              GateUniqueVolumeID::Pointer value) const;
 
   template <typename TrackInformationType>
   TrackInformationType *
@@ -197,6 +223,23 @@ protected:
   static std::map<std::string, GateVAuxiliaryAttribute *>
       fRegisteredAuxiliaryAttributes;
   static int fNextAuxiliaryAttributeID;
+
+  struct CurrentStepValueCache {
+    const G4Step *fStep{nullptr};
+    bool fHasDValue{false};
+    double fDValue{0.0};
+    bool fHasIValue{false};
+    int fIValue{0};
+    bool fHasLValue{false};
+    int64_t fLValue{0};
+    bool fHasSValue{false};
+    std::string fSValue;
+    bool fHas3Value{false};
+    G4ThreeVector f3Value;
+    bool fHasUValue{false};
+    GateUniqueVolumeID::Pointer fUValue{nullptr};
+  };
+  mutable G4Cache<CurrentStepValueCache> fCurrentStepValueCache;
 };
 
 #endif // GateVAuxiliaryAttribute_h

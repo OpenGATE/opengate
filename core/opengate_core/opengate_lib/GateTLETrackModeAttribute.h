@@ -33,6 +33,11 @@
  * This first-pass design intentionally exposes one integer mode rather than
  * multiple lower-level flags so that actors can consume a single runtime
  * attribute while legacy and auxiliary implementations are cross-tested.
+ *
+ * The effective mode for the current step can be queried before the attribute's
+ * explicit SteppingAction runs. The base-class current-step cache keeps that
+ * evaluation consistent so the later SteppingAction can reuse it and perform
+ * only the real side effects: track-state storage and secondary propagation.
  */
 class GateTLETrackModeAttribute : public GateVAuxiliaryAttribute {
 public:
@@ -53,22 +58,25 @@ public:
   double GetTLEThreshold() const { return fTLEThreshold; }
   G4int GetTLEThresholdType() const { return fTLEThresholdType; }
   const std::string &GetDatabase() const { return fDatabase; }
+  const std::string &GetVolumeName() const { return fVolumeName; }
 
 protected:
   // Runtime initialisation is performed lazily because the EM calculator and
   // mu database are not reliably ready before the simulation starts tracking.
-  void EnsureRuntimeInitialized();
-  G4double FindEkinMaxForTLE();
-  void InitializeCSDAForNewGamma(bool isFirstStep, const G4Step *step);
-  bool ComputeTLEConditionForGamma(const G4Step *step);
+  void EnsureRuntimeInitialized() const;
+  G4double FindEkinMaxForTLE() const;
+  void InitializeCSDAForNewGamma(bool isFirstStep, const G4Step *step) const;
+  bool ComputeTLEConditionForGamma(const G4Step *step) const;
+  int ComputeEffectiveModeForStep(const G4Step *step) const;
 
   double fEnergyMin;
   double fTLEThreshold;
   std::string fDatabase;
+  std::string fVolumeName;
   G4String fStrTLEThresholdType;
   G4int fTLEThresholdType;
-  G4EmCalculator *fEmCalc = nullptr;
-  std::shared_ptr<GateMaterialMuHandler> fMaterialMuHandler;
+  mutable G4EmCalculator *fEmCalc = nullptr;
+  mutable std::shared_ptr<GateMaterialMuHandler> fMaterialMuHandler;
 
   struct threadLocalT {
     // Cache used only to avoid repeating expensive CSDA-related work while a
@@ -78,7 +86,7 @@ protected:
     G4String fPreviousMatName;
     G4double fPreviousEnergy = -1.0;
   };
-  G4Cache<threadLocalT> fThreadLocalData;
+  mutable G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateTLETrackModeAttribute_h

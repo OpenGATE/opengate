@@ -162,3 +162,136 @@ bool GateVAuxiliaryAttribute::IsStepInVolume(
   }
   return false;
 }
+
+void GateVAuxiliaryAttribute::ResetCurrentStepValueCache() const {
+  auto &cache = fCurrentStepValueCache.Get();
+  cache.fStep = nullptr;
+  cache.fHasDValue = false;
+  cache.fHasIValue = false;
+  cache.fHasLValue = false;
+  cache.fHasSValue = false;
+  cache.fHas3Value = false;
+  cache.fHasUValue = false;
+  cache.fSValue.clear();
+  cache.fUValue = nullptr;
+}
+
+bool GateVAuxiliaryAttribute::TryGetCachedCurrentStepIValue(const G4Step *step,
+                                                            int &value) const {
+  const auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step || !cache.fHasIValue)
+    return false;
+  value = cache.fIValue;
+  return true;
+}
+
+void GateVAuxiliaryAttribute::CacheCurrentStepIValue(const G4Step *step,
+                                                     int value) const {
+  auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step) {
+    ResetCurrentStepValueCache();
+    cache.fStep = step;
+  }
+  cache.fHasIValue = true;
+  cache.fIValue = value;
+}
+
+bool GateVAuxiliaryAttribute::TryGetCachedCurrentStepDValue(
+    const G4Step *step, double &value) const {
+  const auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step || !cache.fHasDValue)
+    return false;
+  value = cache.fDValue;
+  return true;
+}
+
+void GateVAuxiliaryAttribute::CacheCurrentStepDValue(const G4Step *step,
+                                                     double value) const {
+  auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step) {
+    ResetCurrentStepValueCache();
+    cache.fStep = step;
+  }
+  cache.fHasDValue = true;
+  cache.fDValue = value;
+}
+
+bool GateVAuxiliaryAttribute::TryGetCachedCurrentStepLValue(
+    const G4Step *step, int64_t &value) const {
+  const auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step || !cache.fHasLValue)
+    return false;
+  value = cache.fLValue;
+  return true;
+}
+
+void GateVAuxiliaryAttribute::CacheCurrentStepLValue(const G4Step *step,
+                                                     int64_t value) const {
+  auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step) {
+    ResetCurrentStepValueCache();
+    cache.fStep = step;
+  }
+  cache.fHasLValue = true;
+  cache.fLValue = value;
+}
+
+bool GateVAuxiliaryAttribute::TryGetCachedCurrentStepSValue(
+    const G4Step *step, std::string &value) const {
+  const auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step || !cache.fHasSValue)
+    return false;
+  value = cache.fSValue;
+  return true;
+}
+
+void GateVAuxiliaryAttribute::CacheCurrentStepSValue(
+    const G4Step *step, const std::string &value) const {
+  auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step) {
+    ResetCurrentStepValueCache();
+    cache.fStep = step;
+  }
+  cache.fHasSValue = true;
+  cache.fSValue = value;
+}
+
+bool GateVAuxiliaryAttribute::TryGetCachedCurrentStep3Value(
+    const G4Step *step, G4ThreeVector &value) const {
+  const auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step || !cache.fHas3Value)
+    return false;
+  value = cache.f3Value;
+  return true;
+}
+
+void GateVAuxiliaryAttribute::CacheCurrentStep3Value(
+    const G4Step *step, const G4ThreeVector &value) const {
+  auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step) {
+    ResetCurrentStepValueCache();
+    cache.fStep = step;
+  }
+  cache.fHas3Value = true;
+  cache.f3Value = value;
+}
+
+bool GateVAuxiliaryAttribute::TryGetCachedCurrentStepUValue(
+    const G4Step *step, GateUniqueVolumeID::Pointer &value) const {
+  const auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step || !cache.fHasUValue)
+    return false;
+  value = cache.fUValue;
+  return true;
+}
+
+void GateVAuxiliaryAttribute::CacheCurrentStepUValue(
+    const G4Step *step, GateUniqueVolumeID::Pointer value) const {
+  auto &cache = fCurrentStepValueCache.Get();
+  if (cache.fStep != step) {
+    ResetCurrentStepValueCache();
+    cache.fStep = step;
+  }
+  cache.fHasUValue = true;
+  cache.fUValue = std::move(value);
+}
