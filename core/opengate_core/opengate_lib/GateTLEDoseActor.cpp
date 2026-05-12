@@ -17,6 +17,7 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateMaterialMuHandler.h"
+#include "GateTLETrackModeAttribute.h"
 #include "GateUserTrackInformation.h"
 
 #include <iostream>
@@ -39,6 +40,8 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
   fTLEThreshold = py::cast<double>(user_info["tle_threshold"]);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
   fDatabase = py::cast<std::string>(user_info["database"]);
+  fTLEStateMode = py::cast<std::string>(user_info["tle_state_mode"]);
+  fTLEStateAttributeName = py::cast<std::string>(user_info["tle_state_attribute"]);
   if (fStrTLEThresholdType == "max range") {
     fTLEThresholdType = 0;
   } else if (fStrTLEThresholdType == "average range") {
@@ -52,6 +55,36 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
     ed << "You did not define a correct threshold type" << G4endl;
     G4Exception("GateTLEDoseActor::InitializeUserInfo", "TLE.LV1",
                 FatalException, ed);
+  }
+}
+
+void GateTLEDoseActor::InitializeCpp() {
+  GateDoseActor::InitializeCpp();
+  if (fTLEStateMode == "auxiliary") {
+    fTLEStateAttribute =
+        GateVAuxiliaryAttribute::GetAuxiliaryAttributeByName(
+            fTLEStateAttributeName);
+    if (fTLEStateAttribute == nullptr) {
+      Fatal("Cannot find TLE auxiliary attribute '" + fTLEStateAttributeName +
+            "' for actor '" + GetName() + "'.");
+    }
+    if (fTLEStateAttribute->GetDigiAttributeType() != 'I') {
+      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
+            "' for actor '" + GetName() + "' must provide an int value.");
+    }
+    auto *tle_attribute =
+        dynamic_cast<GateTLETrackModeAttribute *>(fTLEStateAttribute);
+    if (tle_attribute == nullptr) {
+      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
+            "' for actor '" + GetName() +
+            "' must be a GateTLETrackModeAttribute.");
+    }
+    // In auxiliary mode, the attribute owns the TLE policy configuration and
+    // the actor consumes it as read-only scoring policy input.
+    fEnergyMin = tle_attribute->GetEnergyMin();
+    fTLEThreshold = tle_attribute->GetTLEThreshold();
+    fTLEThresholdType = tle_attribute->GetTLEThresholdType();
+    fDatabase = tle_attribute->GetDatabase();
   }
 }
 
@@ -139,7 +172,11 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
   GateDoseActor::BeginOfEventAction(event);
 }
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
-  G4Event *event = G4EventManager::GetEventManager()->GetNonconstCurrentEvent();
+  if (fTLEStateMode == "auxiliary") {
+    return;
+  }
+  // LEGACY: actor-local TLE state initialization retained for regression
+  // testing against the auxiliary-attribute path.
   auto &l = fThreadLocalData.Get();
   l.fIsFirstStep = true;
   // If the particle is a gamma, the TLE is initiated as false. The TLE
@@ -171,6 +208,14 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
 }
 
 void GateTLEDoseActor::SteppingAction(G4Step *step) {
+  if (fTLEStateMode == "auxiliary") {
+    return SteppingActionAuxiliary(step);
+  }
+  return SteppingActionLegacy(step);
+}
+
+void GateTLEDoseActor::SteppingActionLegacy(G4Step *step) {
+  // LEGACY: actor-local TLE state logic using GateUserTrackInformation.
   auto &l = fThreadLocalData.Get();
   const auto pre_step = step->GetPreStepPoint();
 
@@ -244,27 +289,50 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
     }
     return GateDoseActor::SteppingAction(step);
   }
-  // std::cout<<"TLE"<<std::endl;
+  ScoreTLEDepositStep(step);
+}
+
+void GateTLEDoseActor::SteppingActionAuxiliary(G4Step *step) {
+  const auto mode = fTLEStateAttribute->GetIValue(step);
+  const auto particle_name = step->GetTrack()->GetDefinition()->GetParticleName();
+
+  if (particle_name == "gamma") {
+    if (mode == 1) {
+      return ScoreTLEDepositStep(step);
+    }
+    return GateDoseActor::SteppingAction(step);
+  }
+
+  if (mode == 2) {
+    return;
+  }
+
+  return GateDoseActor::SteppingAction(step);
+}
+
+void GateTLEDoseActor::ScoreTLEDepositStep(G4Step *step) {
+  const auto pre_step = step->GetPreStepPoint();
+  auto energy = pre_step->GetKineticEnergy();
   auto weight = step->GetTrack()->GetWeight();
   auto step_length = step->GetStepLength();
   auto density = pre_step->GetMaterial()->GetDensity();
+  G4double mu_en_over_rho;
   if (fTLEThresholdType != 1) {
     mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
         pre_step->GetMaterialCutsCouple(), energy);
+  } else {
+    mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
+        pre_step->GetMaterialCutsCouple(), energy);
   }
-  // (0.1 because length is in mm -> cm)
-
   auto edep = weight * 0.1 * energy * mu_en_over_rho * step_length * density /
               (CLHEP::g / CLHEP::cm3);
 
-  // Kill photon below a given energy
   if (energy <= fEnergyMin) {
     edep = weight * energy;
     step->GetTrack()->SetTrackStatus(fStopAndKill);
   }
   const double dose = edep / density;
 
-  // Get the voxel index and check if the step was within the 3D image
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;

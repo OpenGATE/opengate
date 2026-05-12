@@ -232,11 +232,61 @@ class UnscatteredPrimaryAttribute(
         g4.GateUnscatteredPrimaryAttribute.__init__(self, self.user_info)
 
 
+class TLETrackModeAttribute(AuxiliaryAttributeBase, g4.GateTLETrackModeAttribute):
+    """
+    Expose the current TLE track mode as an integer runtime attribute:
+
+    - 0 = conventional scoring path
+    - 1 = TLE gamma scoring path
+    - 2 = suppressed secondary
+
+    The attribute owns the TLE policy configuration and genealogy propagation
+    logic. TLEDoseActor can then consume the resulting mode through the common
+    auxiliary-attribute getter interface instead of maintaining its own private
+    propagated state.
+    """
+
+    user_info_defaults = {
+        "energy_min": (
+            0.0,
+            {"doc": "Kill the gamma if below this energy."},
+        ),
+        "tle_threshold": (
+            float("inf"),
+            {
+                "doc": "Criterion used to enable TLE depending on tle_threshold_type."
+            },
+        ),
+        "tle_threshold_type": (
+            "None",
+            {
+                "doc": "Threshold type for TLE policy.",
+                "allowed_values": ("None", "energy", "max range", "average range"),
+            },
+        ),
+        "database": (
+            "EPDL",
+            {
+                "doc": "Cross-section database used for TLE policy.",
+                "allowed_values": ("EPDL", "NIST"),
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        AuxiliaryAttributeBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateTLETrackModeAttribute.__init__(self, self.user_info)
+
+
 auxiliary_attribute_types = {
     "InteractionCounterAttribute": InteractionCounterAttribute,
     "LastInteractionPositionInVolumeAttribute": LastInteractionPositionInVolumeAttribute,
     "LastProcessDefinedStepInVolumeAttribute": LastProcessDefinedStepInVolumeAttribute,
     "ProcessDefinedStepInVolumeAttribute": ProcessDefinedStepInVolumeAttribute,
+    "TLETrackModeAttribute": TLETrackModeAttribute,
     "UnscatteredPrimaryAttribute": UnscatteredPrimaryAttribute,
 }
 
@@ -246,4 +296,5 @@ process_cls(InteractionCounterAttribute)
 process_cls(LastInteractionPositionInVolumeAttribute)
 process_cls(LastProcessDefinedStepInVolumeAttribute)
 process_cls(ProcessDefinedStepInVolumeAttribute)
+process_cls(TLETrackModeAttribute)
 process_cls(UnscatteredPrimaryAttribute)
