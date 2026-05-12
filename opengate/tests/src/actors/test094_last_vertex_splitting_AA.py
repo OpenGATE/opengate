@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import uproot
 import numpy as np
+import uproot
 from scipy.spatial.transform import Rotation
+
+import opengate as gate
 from opengate.tests import utility
 
 
@@ -106,12 +107,13 @@ if __name__ == "__main__":
         )
         vertex_splitting_actor.attached_to = W_tubs.name
         vertex_splitting_actor.splitting_factor = nb_split
-        vertex_splitting_actor.acceptance_angle.volumes = [plan.name]
-        vertex_splitting_actor.acceptance_angle.intersection_flag = True
-        vertex_splitting_actor.acceptance_angle.skip_policy = "SkipEvents"
+        vertex_splitting_actor.angular_acceptance.target_volumes = [plan.name]
+        vertex_splitting_actor.angular_acceptance.enable_intersection_check = True
+        vertex_splitting_actor.angular_acceptance.policy = "Rejection"
+        vertex_splitting_actor.angular_acceptance.skip_policy = "SkipEvents"
+        vertex_splitting_actor.angular_acceptance.max_rejection = 100000000
         vertex_splitting_actor.batch_size = 100
         vertex_splitting_actor.nb_of_max_batch_per_event = 500
-        vertex_splitting_actor.acceptance_angle.max_rejection = 100000000
 
     ####### gamma source ###########
     source = sim.add_source("GenericSource", "source1")

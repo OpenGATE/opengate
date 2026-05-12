@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
+import uproot
+from anytree import Node, RenderTree
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
-import numpy as np
-from anytree import Node, RenderTree
-import uproot
 
 
 def test077_test(entry_data, exit_data_1, exit_data_2):
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "photon_source")
     source.particle = "gamma"
     source.position.type = "box"
-    source.mother = world.name
+    source.attached_to = world.name
     source.position.size = [6 * cm, 6 * cm, 6 * cm]
     source.position.translation = [0, 0, 0.3 * m]
     source.direction.type = "momentum"
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     tungsten_leaves.color = [0.9, 0.0, 0.4, 0.8]
 
     kill_int_act = sim.add_actor("KillInteractingParticleActor", "killact")
-    kill_int_act.mother = actor_box.name
+    kill_int_act.attached_to = actor_box.name
 
     entry_phase_space = sim.add_volume("Box", "entry_phase_space")
     entry_phase_space.mother = big_box
@@ -159,7 +160,7 @@ if __name__ == "__main__":
     for name in liste_phase_space_name:
 
         phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace_" + name)
-        phsp.mother = name
+        phsp.attached_to = name
         phsp.attributes = ["EventID", "TrackID", "KineticEnergy"]
         name_phsp = "test077_" + name + ".root"
         phsp.output = output_path / name_phsp

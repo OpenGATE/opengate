@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
+import uproot
+from anytree import Node, RenderTree
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
-import numpy as np
-from anytree import Node, RenderTree
-import uproot
 
 
 def test075(entry_data, exit_data, splitting_factor):
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     source_1 = sim.add_source("GenericSource", "elec_source_1")
     source_1.particle = "e-"
     source_1.position.type = "box"
-    source_1.mother = big_box.name
+    source_1.attached_to = big_box.name
     source_1.position.size = [1 * cm, 1 * cm, 1 * cm]
     source_1.position.translation = [0, 0.35 * m, 0]
     source_1.direction.type = "momentum"
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     source_2 = sim.add_source("GenericSource", "elec_source_2")
     source_2.particle = "e-"
     source_2.position.type = "box"
-    source_2.mother = big_box.name
+    source_2.attached_to = big_box.name
     source_2.position.size = [1 * cm, 1 * cm, 1 * cm]
     source_2.position.translation = [0, 0, -0.39 * m]
     source_2.direction.type = "momentum"
@@ -103,7 +104,7 @@ if __name__ == "__main__":
     source_2.n = 1
 
     geom_splitting = sim.add_actor("SurfaceSplittingActor", "splitting_act")
-    geom_splitting.mother = actor_box.name
+    geom_splitting.attached_to = actor_box.name
     geom_splitting.splitting_factor = 10
     geom_splitting.weight_threshold = 1
     geom_splitting.split_entering_particles = True
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     for name in liste_phase_space_name:
 
         phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace_" + name)
-        phsp.mother = name
+        phsp.attached_to = name
         phsp.attributes = [
             "EventID",
             "TrackID",

@@ -67,7 +67,7 @@ void GateLastVertexInteractionSplittingActor::InitializeUserInfo(
   fAAManager = nullptr;
   fBatchSize = DictGetDouble(user_info, "batch_size");
   fNbOfMaxBatchPerEvent = DictGetInt(user_info, "nb_of_max_batch_per_event");
-  auto dd = DictToMap(user_info["acceptance_angle"]);
+  auto dd = DictToMap(user_info["angular_acceptance"]);
   this->InitializeAAManager(dd);
 }
 

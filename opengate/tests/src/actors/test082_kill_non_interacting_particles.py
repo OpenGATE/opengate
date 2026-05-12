@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
+import uproot
+from anytree import Node, RenderTree
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
-import numpy as np
-from anytree import Node, RenderTree
-import uproot
 
 
 def test082_test(entry_data, exit_data_1, exit_data_2):
@@ -103,9 +104,9 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "photon_source")
     source.particle = "gamma"
     source.position.type = "box"
-    source.mother = world.name
+    source.attached_to = world.name
     source.position.size = [6 * cm, 6 * cm, 4 * cm]
-    source.position.translation = [0, 0, 0.205 * m]
+    source.position.translation = [0, 0, 0.250 * m]
     source.direction.type = "momentum"
     source.direction_relative_to_attached_volume = True
     # source1.direction.focus_point = [0*cm, 0*cm, -5 *cm]
@@ -135,7 +136,7 @@ if __name__ == "__main__":
     entry_phase_space.color = [0.5, 0.9, 0.3, 1]
 
     exit_phase_space_1 = sim.add_volume("Box", "exit_phase_space_1")
-    exit_phase_space_1.mother = actor_box
+    exit_phase_space_1.mother = actor_box.name
     exit_phase_space_1.size = [0.6 * m, 0.6 * m, 1 * nm]
     exit_phase_space_1.material = "G4_Galactic"
     exit_phase_space_1.translation = [0, 0, -0.3 * m + 1 * nm]

@@ -521,7 +521,7 @@ class LastVertexInteractionSplittingActor(
                 "doc": "Defines a maximum number of attempt to enable the particles to exit. Useful to avoid an important loss of time for extremely rare events",
             },
         ),
-        "acceptance_angle": (
+        "angular_acceptance": (
             generic_source_default_aa(),
             {
                 "doc": "See generic source",
@@ -556,6 +556,7 @@ class LastVertexInteractionSplittingActor(
         ActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+        self.simulation.volume_manager.update_volume_tree_if_needed()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
         dico_of_volume_tree = {}
         for pre, _, node in RenderTree(volume_tree):

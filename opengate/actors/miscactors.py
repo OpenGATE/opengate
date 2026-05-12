@@ -491,6 +491,7 @@ class KillNonInteractingParticleActor(
         ActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+        self.simulation.volume_manager.update_volume_tree_if_needed()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
         dico_of_volume_tree = {}
         for pre, _, node in RenderTree(volume_tree):
@@ -641,5 +642,7 @@ process_cls(KillActor)
 process_cls(DepositedChargeActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
+process_cls(KillAccordingParticleNameActor)
+process_cls(ActorOutputKillNonInteractingParticleActor)
 process_cls(KillNonInteractingParticleActor)
 process_cls(AttenuationImageActor)
