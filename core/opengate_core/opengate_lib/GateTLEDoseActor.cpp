@@ -71,9 +71,8 @@ void GateTLEDoseActor::SetTLETrackInformationOnSecondaries(G4Step *step,
       auto *secs = step->GetfSecondary();
       auto *sec = (*secs)[secs->size() - i - 1];
       auto *track_info = GetOrCreateGateUserTrackInformation(sec);
-      auto *track_data =
-          track_info->GetOrCreateTrackData<GateIntTrackData>(
-              fLegacyTLETrackDataSlotID);
+      auto *track_data = track_info->GetOrCreateTrackData<GateIntTrackData>(
+          fLegacyTLETrackDataSlotID);
       track_data->SetValue(static_cast<int>(info));
     }
   }
@@ -167,8 +166,8 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
     if (track->GetUserInformation() != 0) {
       auto *track_info = GetGateUserTrackInformation(track);
       if (track_info != nullptr) {
-        auto *track_data =
-            track_info->GetTrackData<GateIntTrackData>(fLegacyTLETrackDataSlotID);
+        auto *track_data = track_info->GetTrackData<GateIntTrackData>(
+            fLegacyTLETrackDataSlotID);
         if (track_data != nullptr) {
           l.fIsTLESecondary = static_cast<bool>(track_data->GetValue());
         }

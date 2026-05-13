@@ -8,13 +8,13 @@ Copyright (C): OpenGATE Collaboration
 #include "GateScatterSplittingFreeFlightOptrActor.h"
 #include "../GateHelpersDict.h"
 #include "../GateHelpersImage.h"
+#include "../GateTrackDataSlotRegistry.h"
 #include "G4BiasingProcessInterface.hh"
 #include "G4Gamma.hh"
 #include "G4GammaGeneralProcess.hh"
 #include "G4ProcessManager.hh"
 #include "G4RunManager.hh"
 #include "GateScatterSplittingFreeFlightOptn.h"
-#include "../GateTrackDataSlotRegistry.h"
 
 G4Mutex StatMutex = G4MUTEX_INITIALIZER;
 

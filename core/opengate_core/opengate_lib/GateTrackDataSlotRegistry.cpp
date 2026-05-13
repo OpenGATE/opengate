@@ -40,8 +40,7 @@ int GateTrackDataSlotRegistry::RegisterSlot(const std::string &slot_name,
   return it->second.id;
 }
 
-const GateTrackDataSlotInfo *
-GateTrackDataSlotRegistry::GetSlotInfo(int id) {
+const GateTrackDataSlotInfo *GateTrackDataSlotRegistry::GetSlotInfo(int id) {
   const auto it = fRegisteredSlotsByID.find(id);
   if (it == fRegisteredSlotsByID.end())
     return nullptr;

@@ -42,8 +42,8 @@ int GateInteractionCounterAttribute::GetIValue(const G4Step *step) const {
 void GateInteractionCounterAttribute::SteppingAction(const G4Step *step) {
   const auto *process = step->GetPreStepPoint()->GetProcessDefinedStep();
   if (process != nullptr && process->GetProcessName() == fProcessName) {
-    auto *info = GetOrCreateTrackData<GateIntegerCounterTrackData>(
-        step->GetTrack());
+    auto *info =
+        GetOrCreateTrackData<GateIntegerCounterTrackData>(step->GetTrack());
     info->Increment();
   }
   if (fPropagateFromParentTrack) {
