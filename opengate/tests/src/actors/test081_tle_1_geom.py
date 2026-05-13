@@ -65,27 +65,6 @@ def main(argv):
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox.size} mm")
 
-    tle_track_mode = sim.activate_auxiliary_attribute(
-        "TLETrackModeAttribute", "tle_track_mode"
-    )
-    tle_track_mode.tle_threshold_type = tle_dose_actor.tle_threshold_type
-    tle_track_mode.tle_threshold = tle_dose_actor.tle_threshold
-    tle_track_mode.database = tle_dose_actor.database
-    tle_track_mode.energy_min = tle_dose_actor.energy_min
-    tle_track_mode.volume_name = tle_dose_actor.attached_to
-
-    tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
-    tle_dose_actor_aux.output_filename = "test081_tle_aux.mhd"
-    tle_dose_actor_aux.attached_to = waterbox
-    tle_dose_actor_aux.dose_uncertainty.active = True
-    tle_dose_actor_aux.dose.active = True
-    tle_dose_actor_aux.size = [200, 200, 200]
-    tle_dose_actor_aux.spacing = [
-        x / y for x, y in zip(waterbox.size, tle_dose_actor_aux.size)
-    ]
-    tle_dose_actor_aux.tle_state_mode = "auxiliary"
-    tle_dose_actor_aux.tle_state_attribute = tle_track_mode.name
-
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
     dose_actor.output_filename = "test081.mhd"
@@ -116,11 +95,6 @@ def main(argv):
     f1 = dose_actor.dose.get_output_path()
     f2 = tle_dose_actor.dose.get_output_path()
     is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.25) and is_ok
-
-    print()
-    f1 = tle_dose_actor.dose.get_output_path()
-    f2 = tle_dose_actor_aux.dose.get_output_path()
-    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.05) and is_ok
 
     # output
     f = paths.output / f"pdd_geom.png"

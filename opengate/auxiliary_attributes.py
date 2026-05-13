@@ -7,9 +7,10 @@ other C++ runtime components. Their defining feature is the typed getter
 interface exposed by ``GateVAuxiliaryAttribute`` on the C++ side.
 
 Some auxiliary attributes are stateful and use Geant4 hooks plus optional
-``G4VAuxiliaryTrackInformation`` storage to accumulate or propagate values
-along a track. Others are stateless getter-only attributes that compute their
-value directly from the current ``G4Step``.
+track-owned slot data stored through ``GateUserTrackInformation`` to
+accumulate or propagate values along a track. Others are stateless
+getter-only attributes that compute their value directly from the current
+``G4Step``.
 
 These Python classes activate and configure the corresponding C++ attributes
 for a given simulation. Attribute names are user-facing and must be unique
@@ -232,69 +233,11 @@ class UnscatteredPrimaryAttribute(
         g4.GateUnscatteredPrimaryAttribute.__init__(self, self.user_info)
 
 
-class TLETrackModeAttribute(AuxiliaryAttributeBase, g4.GateTLETrackModeAttribute):
-    """
-    Expose the current TLE track mode as an integer runtime attribute:
-
-    - 0 = conventional scoring path
-    - 1 = TLE gamma scoring path
-    - 2 = suppressed secondary
-
-    The attribute owns the TLE policy configuration and genealogy propagation
-    logic. TLEDoseActor can then consume the resulting mode through the common
-    auxiliary-attribute getter interface instead of maintaining its own private
-    propagated state. When used with TLEDoseActor, ``volume_name`` should match
-    the actor's attached volume so the policy is evaluated on the same steps as
-    the legacy actor-local logic.
-    """
-
-    user_info_defaults = {
-        "energy_min": (
-            0.0,
-            {"doc": "Kill the gamma if below this energy."},
-        ),
-        "tle_threshold": (
-            float("inf"),
-            {
-                "doc": "Criterion used to enable TLE depending on tle_threshold_type."
-            },
-        ),
-        "tle_threshold_type": (
-            "None",
-            {
-                "doc": "Threshold type for TLE policy.",
-                "allowed_values": ("None", "energy", "max range", "average range"),
-            },
-        ),
-        "database": (
-            "EPDL",
-            {
-                "doc": "Cross-section database used for TLE policy.",
-                "allowed_values": ("EPDL", "NIST"),
-            },
-        ),
-        "volume_name": (
-            "",
-            {
-                "doc": "Optional volume hierarchy in which to evaluate the TLE policy. For TLEDoseActor auxiliary mode this should match the actor's attached volume.",
-            },
-        ),
-    }
-
-    def __init__(self, *args, **kwargs):
-        AuxiliaryAttributeBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateTLETrackModeAttribute.__init__(self, self.user_info)
-
-
 auxiliary_attribute_types = {
     "InteractionCounterAttribute": InteractionCounterAttribute,
     "LastInteractionPositionInVolumeAttribute": LastInteractionPositionInVolumeAttribute,
     "LastProcessDefinedStepInVolumeAttribute": LastProcessDefinedStepInVolumeAttribute,
     "ProcessDefinedStepInVolumeAttribute": ProcessDefinedStepInVolumeAttribute,
-    "TLETrackModeAttribute": TLETrackModeAttribute,
     "UnscatteredPrimaryAttribute": UnscatteredPrimaryAttribute,
 }
 
@@ -304,5 +247,4 @@ process_cls(InteractionCounterAttribute)
 process_cls(LastInteractionPositionInVolumeAttribute)
 process_cls(LastProcessDefinedStepInVolumeAttribute)
 process_cls(ProcessDefinedStepInVolumeAttribute)
-process_cls(TLETrackModeAttribute)
 process_cls(UnscatteredPrimaryAttribute)

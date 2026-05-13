@@ -17,7 +17,7 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateMaterialMuHandler.h"
-#include "GateTLETrackModeAttribute.h"
+#include "GateTrackDataSlotRegistry.h"
 #include "GateUserTrackInformation.h"
 
 #include <iostream>
@@ -40,8 +40,6 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
   fTLEThreshold = py::cast<double>(user_info["tle_threshold"]);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
   fDatabase = py::cast<std::string>(user_info["database"]);
-  fTLEStateMode = py::cast<std::string>(user_info["tle_state_mode"]);
-  fTLEStateAttributeName = py::cast<std::string>(user_info["tle_state_attribute"]);
   if (fStrTLEThresholdType == "max range") {
     fTLEThresholdType = 0;
   } else if (fStrTLEThresholdType == "average range") {
@@ -60,44 +58,9 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
 
 void GateTLEDoseActor::InitializeCpp() {
   GateDoseActor::InitializeCpp();
-  if (fTLEStateMode == "auxiliary") {
-    fTLEStateAttribute =
-        GateVAuxiliaryAttribute::GetAuxiliaryAttributeByName(
-            fTLEStateAttributeName);
-    if (fTLEStateAttribute == nullptr) {
-      Fatal("Cannot find TLE auxiliary attribute '" + fTLEStateAttributeName +
-            "' for actor '" + GetName() + "'.");
-    }
-    if (fTLEStateAttribute->GetDigiAttributeType() != 'I') {
-      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
-            "' for actor '" + GetName() + "' must provide an int value.");
-    }
-    auto *tle_attribute =
-        dynamic_cast<GateTLETrackModeAttribute *>(fTLEStateAttribute);
-    if (tle_attribute == nullptr) {
-      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
-            "' for actor '" + GetName() +
-            "' must be a GateTLETrackModeAttribute.");
-    }
-    // In auxiliary mode, the attribute owns the TLE policy configuration and
-    // the actor consumes it as read-only scoring policy input.
-    fEnergyMin = tle_attribute->GetEnergyMin();
-    fTLEThreshold = tle_attribute->GetTLEThreshold();
-    fTLEThresholdType = tle_attribute->GetTLEThresholdType();
-    fDatabase = tle_attribute->GetDatabase();
-    if (tle_attribute->GetVolumeName().empty()) {
-      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
-            "' for actor '" + GetName() +
-            "' must define volume_name so its policy matches the actor "
-            "attachment volume.");
-    }
-    if (tle_attribute->GetVolumeName() != fAttachedToVolumeName) {
-      Fatal("TLE auxiliary attribute '" + fTLEStateAttributeName +
-            "' for actor '" + GetName() + "' is configured for volume '" +
-            tle_attribute->GetVolumeName() + "' but the actor is attached to '" +
-            fAttachedToVolumeName + "'.");
-    }
-  }
+  fLegacyTLETrackDataSlotID = GateTrackDataSlotRegistry::RegisterSlot(
+      "actor_" + GetName() + "_tle_secondary_suppressed", "actor", GetName(),
+      "int");
 }
 
 void GateTLEDoseActor::SetTLETrackInformationOnSecondaries(G4Step *step,
@@ -105,17 +68,13 @@ void GateTLEDoseActor::SetTLETrackInformationOnSecondaries(G4Step *step,
                                                            G4int nbSec) {
   if (nbSec > 0) {
     for (auto i = 0; i < nbSec; i++) {
-      GateUserTrackInformation *trackInfo = nullptr;
       auto *secs = step->GetfSecondary();
       auto *sec = (*secs)[secs->size() - i - 1];
-      if (sec->GetUserInformation() == 0) {
-        trackInfo = new GateUserTrackInformation();
-      } else {
-        trackInfo =
-            dynamic_cast<GateUserTrackInformation *>(sec->GetUserInformation());
-      }
-      trackInfo->SetGateTrackInformation(this, info);
-      sec->SetUserInformation(trackInfo);
+      auto *track_info = GetOrCreateGateUserTrackInformation(sec);
+      auto *track_data =
+          track_info->GetOrCreateTrackData<GateIntTrackData>(
+              fLegacyTLETrackDataSlotID);
+      track_data->SetValue(static_cast<int>(info));
     }
   }
 }
@@ -184,11 +143,6 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
   GateDoseActor::BeginOfEventAction(event);
 }
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
-  if (fTLEStateMode == "auxiliary") {
-    return;
-  }
-  // LEGACY: actor-local TLE state initialization retained for regression
-  // testing against the auxiliary-attribute path.
   auto &l = fThreadLocalData.Get();
   l.fIsFirstStep = true;
   // If the particle is a gamma, the TLE is initiated as false. The TLE
@@ -211,23 +165,19 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
 
   else {
     if (track->GetUserInformation() != 0) {
-      auto *info = track->GetUserInformation();
-      GateUserTrackInformation *trackInfo =
-          dynamic_cast<GateUserTrackInformation *>(info);
-      l.fIsTLESecondary = trackInfo->GetGateTrackInformation(this);
+      auto *track_info = GetGateUserTrackInformation(track);
+      if (track_info != nullptr) {
+        auto *track_data =
+            track_info->GetTrackData<GateIntTrackData>(fLegacyTLETrackDataSlotID);
+        if (track_data != nullptr) {
+          l.fIsTLESecondary = static_cast<bool>(track_data->GetValue());
+        }
+      }
     }
   }
 }
 
 void GateTLEDoseActor::SteppingAction(G4Step *step) {
-  if (fTLEStateMode == "auxiliary") {
-    return SteppingActionAuxiliary(step);
-  }
-  return SteppingActionLegacy(step);
-}
-
-void GateTLEDoseActor::SteppingActionLegacy(G4Step *step) {
-  // LEGACY: actor-local TLE state logic using GateUserTrackInformation.
   auto &l = fThreadLocalData.Get();
   const auto pre_step = step->GetPreStepPoint();
 
@@ -302,24 +252,6 @@ void GateTLEDoseActor::SteppingActionLegacy(G4Step *step) {
     return GateDoseActor::SteppingAction(step);
   }
   ScoreTLEDepositStep(step);
-}
-
-void GateTLEDoseActor::SteppingActionAuxiliary(G4Step *step) {
-  const auto mode = fTLEStateAttribute->GetIValue(step);
-  const auto particle_name = step->GetTrack()->GetDefinition()->GetParticleName();
-
-  if (particle_name == "gamma") {
-    if (mode == 1) {
-      return ScoreTLEDepositStep(step);
-    }
-    return GateDoseActor::SteppingAction(step);
-  }
-
-  if (mode == 2) {
-    return;
-  }
-
-  return GateDoseActor::SteppingAction(step);
 }
 
 void GateTLEDoseActor::ScoreTLEDepositStep(G4Step *step) {
