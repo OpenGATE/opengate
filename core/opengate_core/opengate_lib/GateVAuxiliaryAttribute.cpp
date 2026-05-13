@@ -7,19 +7,10 @@
 
 #include "GateVAuxiliaryAttribute.h"
 #include "GateHelpersDict.h"
+#include "GateTrackDataSlotRegistry.h"
 
-class GateAuxiliaryAttributeMapInitializer
-    : public G4VAuxiliaryTrackInformation {
-public:
-  GateAuxiliaryAttributeMapInitializer() = default;
-  ~GateAuxiliaryAttributeMapInitializer() override = default;
-};
-
-std::map<std::string, int>
-    GateVAuxiliaryAttribute::fRegisteredAuxiliaryAttributeIDs;
 std::map<std::string, GateVAuxiliaryAttribute *>
     GateVAuxiliaryAttribute::fRegisteredAuxiliaryAttributes;
-int GateVAuxiliaryAttribute::fNextAuxiliaryAttributeID = -1;
 
 GateVAuxiliaryAttribute::GateVAuxiliaryAttribute(py::dict &user_info) {
   InitializeUserInfo(user_info);
@@ -30,7 +21,8 @@ void GateVAuxiliaryAttribute::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateVAuxiliaryAttribute::InitializeCpp() {
-  fTrackInfoID = RegisterAuxiliaryAttributeName(fName);
+  fTrackDataSlotID = GateTrackDataSlotRegistry::RegisterSlot(
+      "attribute_" + fName, "attribute", fName, GetTrackDataValueTypeName());
   fRegisteredAuxiliaryAttributes[fName] = this;
 }
 
@@ -93,47 +85,6 @@ GateVAuxiliaryAttribute::GetAuxiliaryAttributeByName(const std::string &name) {
   return it->second;
 }
 
-int GateVAuxiliaryAttribute::RegisterAuxiliaryAttributeName(
-    const std::string &name) const {
-  const auto it = fRegisteredAuxiliaryAttributeIDs.find(name);
-  if (it != fRegisteredAuxiliaryAttributeIDs.end())
-    return it->second;
-  const auto id = fNextAuxiliaryAttributeID;
-  fNextAuxiliaryAttributeID--;
-  fRegisteredAuxiliaryAttributeIDs[name] = id;
-  return id;
-}
-
-G4VAuxiliaryTrackInformation *
-GateVAuxiliaryAttribute::GetAuxiliaryTrackInformation(
-    const G4Track *track) const {
-  if (track == nullptr)
-    return nullptr;
-  return track->GetAuxiliaryTrackInformation(fTrackInfoID);
-}
-
-void GateVAuxiliaryAttribute::SetAuxiliaryTrackInformation(
-    const G4Track *track, G4VAuxiliaryTrackInformation *track_info) const {
-  if (track == nullptr)
-    return;
-  auto *info_map = track->GetAuxiliaryTrackInformationMap();
-  if (info_map == nullptr) {
-    /*
-     * Geant4 11.x validates SetAuxiliaryTrackInformation() IDs against the
-     * closed G4PhysicsModelCatalog. We use OpenGATE-owned negative IDs, so we
-     * only use a valid built-in model ID to force Geant4 to allocate the map,
-     * then remove and delete the temporary entry before inserting ours.
-     */
-    constexpr int modelEMID = 10000;
-    auto *initializer = new GateAuxiliaryAttributeMapInitializer();
-    track->SetAuxiliaryTrackInformation(modelEMID, initializer);
-    const_cast<G4Track *>(track)->RemoveAuxiliaryTrackInformation(modelEMID);
-    delete initializer;
-    info_map = track->GetAuxiliaryTrackInformationMap();
-  }
-  (*info_map)[fTrackInfoID] = track_info;
-}
-
 bool GateVAuxiliaryAttribute::IsStepInVolume(
     const G4Step *step, const std::string &volume_name) const {
   /*
@@ -161,6 +112,25 @@ bool GateVAuxiliaryAttribute::IsStepInVolume(
     }
   }
   return false;
+}
+
+std::string GateVAuxiliaryAttribute::GetTrackDataValueTypeName() const {
+  switch (fDigiAttributeType) {
+  case 'D':
+    return "double";
+  case 'I':
+    return "int";
+  case 'L':
+    return "int64";
+  case 'S':
+    return "string";
+  case '3':
+    return "three_vector";
+  case 'U':
+    return "unique_volume_id";
+  default:
+    return "unspecified";
+  }
 }
 
 void GateVAuxiliaryAttribute::ResetCurrentStepValueCache() const {

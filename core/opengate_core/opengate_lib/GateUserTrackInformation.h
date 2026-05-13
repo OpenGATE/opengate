@@ -5,29 +5,62 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateVActor.h"
+#ifndef GateUserTrackInformation_h
+#define GateUserTrackInformation_h
+
+#include "GateTrackData.h"
+#include "GateHelpers.h"
 #include <G4VUserTrackInformation.hh>
+#include <map>
+#include <memory>
+#include <sstream>
+#include <tuple>
 
 class GateUserTrackInformation : public G4VUserTrackInformation {
 public:
   GateUserTrackInformation() = default;
   ~GateUserTrackInformation() override = default;
 
-  void SetGateTrackInformation(GateVActor *myActor, int64_t info) {
-    fMapOfTrackInformation[myActor] = info;
+  GateVTrackData *GetTrackData(int slot_id) const {
+    const auto it = fMapOfTrackInformation.find(slot_id);
+    if (it == fMapOfTrackInformation.end())
+      return nullptr;
+    return it->second.get();
   }
 
-  int64_t GetGateTrackInformation(GateVActor *myActor) const {
-    return fMapOfTrackInformation.at(myActor);
+  bool HasTrackData(int slot_id) const {
+    return fMapOfTrackInformation.find(slot_id) != fMapOfTrackInformation.end();
   }
 
-  int64_t GetFirstValue() const {
-    if (!fMapOfTrackInformation.empty()) {
-      // The first element of a std::map is the one with the "smallest" key.
-      // In this case, it's deterministic based on actor pointer addresses.
-      return fMapOfTrackInformation.begin()->second;
+  void SetTrackData(int slot_id, std::unique_ptr<GateVTrackData> track_data) {
+    fMapOfTrackInformation[slot_id] = std::move(track_data);
+  }
+
+  void RemoveTrackData(int slot_id) { fMapOfTrackInformation.erase(slot_id); }
+
+  template <typename TrackDataType>
+  TrackDataType *GetTrackData(int slot_id) const {
+    auto *track_data = GetTrackData(slot_id);
+    if (track_data == nullptr)
+      return nullptr;
+    auto *typed_track_data = dynamic_cast<TrackDataType *>(track_data);
+    if (typed_track_data == nullptr) {
+      std::ostringstream oss;
+      oss << "Track data slot " << slot_id << " has an unexpected type.";
+      Fatal(oss.str());
     }
-    return -1;
+    return typed_track_data;
+  }
+
+  template <typename TrackDataType>
+  TrackDataType *GetOrCreateTrackData(int slot_id) {
+    auto *track_data = GetTrackData<TrackDataType>(slot_id);
+    if (track_data != nullptr)
+      return track_data;
+    auto owned_track_data = std::make_unique<TrackDataType>();
+    auto *raw_ptr = owned_track_data.get();
+    SetTrackData(slot_id, std::move(owned_track_data));
+    return raw_ptr;
   }
 
   static int64_t CodeShowerID(const int eventID, const int trackID,
@@ -49,5 +82,35 @@ public:
     };
   }
 
-  std::map<GateVActor *, int64_t> fMapOfTrackInformation;
+protected:
+  std::map<int, std::unique_ptr<GateVTrackData>> fMapOfTrackInformation;
 };
+
+inline GateUserTrackInformation *
+GetGateUserTrackInformation(const G4Track *track) {
+  if (track == nullptr)
+    return nullptr;
+  auto *user_info = track->GetUserInformation();
+  if (user_info == nullptr)
+    return nullptr;
+  auto *gate_user_info = dynamic_cast<GateUserTrackInformation *>(user_info);
+  if (gate_user_info == nullptr) {
+    Fatal("Track user information exists but is not a GateUserTrackInformation "
+          "instance.");
+  }
+  return gate_user_info;
+}
+
+inline GateUserTrackInformation *
+GetOrCreateGateUserTrackInformation(const G4Track *track) {
+  if (track == nullptr)
+    return nullptr;
+  auto *gate_user_info = GetGateUserTrackInformation(track);
+  if (gate_user_info != nullptr)
+    return gate_user_info;
+  gate_user_info = new GateUserTrackInformation();
+  const_cast<G4Track *>(track)->SetUserInformation(gate_user_info);
+  return gate_user_info;
+}
+
+#endif // GateUserTrackInformation_h

@@ -14,6 +14,7 @@ Copyright (C): OpenGATE Collaboration
 #include "G4ProcessManager.hh"
 #include "G4RunManager.hh"
 #include "GateScatterSplittingFreeFlightOptn.h"
+#include "../GateTrackDataSlotRegistry.h"
 
 G4Mutex StatMutex = G4MUTEX_INITIALIZER;
 
@@ -67,6 +68,13 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
   }
 }
 
+void GateScatterSplittingFreeFlightOptrActor::InitializeCpp() {
+  GateVBiasOptrActor::InitializeCpp();
+  fFreeFlightTrackDataSlotID = GateTrackDataSlotRegistry::RegisterSlot(
+      "biasing_" + fActorName + "_free_flight_tag", "biasing", fActorName,
+      "int64");
+}
+
 void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
     const G4Run *run) {
   if (run->GetRunID() == 0) {
@@ -92,14 +100,14 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfEventAction(
 }
 
 bool GateScatterSplittingFreeFlightOptrActor::IsFreeFlight(
-    const G4Track *track) {
-  const auto *track_info =
-      static_cast<GateUserTrackInformation *>(track->GetUserInformation());
+    const G4Track *track) const {
+  const auto *track_info = GetGateUserTrackInformation(track);
   if (track_info == nullptr)
     return false;
-  if (track_info->GetFirstValue() == fThisIsAFreeFlightTrack)
-    return true;
-  return false;
+  const auto *track_data =
+      track_info->GetTrackData<GateLongTrackData>(fFreeFlightTrackDataSlotID);
+  return track_data != nullptr &&
+         track_data->GetValue() == fThisIsAFreeFlightTrack;
 }
 
 void GateScatterSplittingFreeFlightOptrActor::ConfigureForWorker() {
@@ -115,6 +123,7 @@ void GateScatterSplittingFreeFlightOptrActor::ConfigureForWorker() {
       &l.fBiasInformationPerThread["nb_compt_tracks"]);
   l.fComptonSplittingOperation->SetSplittingFactor(fComptonSplittingFactor);
   l.fComptonSplittingOperation->fActor = this;
+  l.fComptonSplittingOperation->fTrackDataSlotID = fFreeFlightTrackDataSlotID;
 
   // Create the Rayleigh splitting operation
   l.fRayleighSplittingOperation = new GateScatterSplittingFreeFlightOptn(
@@ -122,6 +131,7 @@ void GateScatterSplittingFreeFlightOptrActor::ConfigureForWorker() {
       &l.fBiasInformationPerThread["nb_rayl_tracks"]);
   l.fRayleighSplittingOperation->SetSplittingFactor(fRayleighSplittingFactor);
   l.fRayleighSplittingOperation->fActor = this;
+  l.fRayleighSplittingOperation->fTrackDataSlotID = fFreeFlightTrackDataSlotID;
 
   // Initialize the AA (Angular Acceptance) for the Compton operation
   l.fComptonSplittingOperation->InitializeAAManager(fAAParameters);

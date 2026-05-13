@@ -25,6 +25,7 @@ void init_G4Transform3D(py::module &);
 void init_G4UnitsTable(py::module &);
 
 void init_G4Threading(py::module &);
+void init_GateTrackDataSlotRegistry(py::module &);
 
 // CLHEP
 void init_Randomize(py::module &);
@@ -502,6 +503,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Transform3D(m);
   init_G4UnitsTable(m);
   init_G4Threading(m);
+  init_GateTrackDataSlotRegistry(m);
 
   init_Randomize(m);
 

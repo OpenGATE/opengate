@@ -8,11 +8,12 @@
 #ifndef GateVAuxiliaryAttribute_h
 #define GateVAuxiliaryAttribute_h
 
+#include "GateTrackData.h"
 #include "G4Step.hh"
 #include "G4Track.hh"
-#include "G4VAuxiliaryTrackInformation.hh"
 #include "G4Cache.hh"
 #include "GateHelpers.h"
+#include "GateUserTrackInformation.h"
 #include "GateUniqueVolumeID.h"
 #include <map>
 #include <pybind11/pybind11.h>
@@ -30,7 +31,7 @@ namespace py = pybind11;
  * provided here:
  * - typed runtime getters, which are the core public interface
  * - optional Geant4 hooks (stepping/tracking)
- * - optional per-track storage using G4VAuxiliaryTrackInformation
+ * - optional per-track storage using GateUserTrackInformation slot data
  * - optional DigiAttribute exposure for ROOT-backed actors
  * - optional current-step memoization for attributes whose current-step value
  *   may be queried before their explicit Geant4 hook is invoked
@@ -51,7 +52,7 @@ public:
   bool HasAction(const std::string &action) const;
 
   std::string GetName() const { return fName; }
-  int GetTrackInfoID() const { return fTrackInfoID; }
+  int GetTrackDataSlotID() const { return fTrackDataSlotID; }
   char GetDigiAttributeType() const { return fDigiAttributeType; }
   virtual double GetDValue(const G4Step *step) const;
   virtual int GetIValue(const G4Step *step) const;
@@ -69,13 +70,8 @@ public:
   GetAuxiliaryAttributeByName(const std::string &name);
 
 protected:
-  int RegisterAuxiliaryAttributeName(const std::string &name) const;
-  G4VAuxiliaryTrackInformation *
-  GetAuxiliaryTrackInformation(const G4Track *track) const;
-  void
-  SetAuxiliaryTrackInformation(const G4Track *track,
-                               G4VAuxiliaryTrackInformation *track_info) const;
   bool IsStepInVolume(const G4Step *step, const std::string &volume_name) const;
+  std::string GetTrackDataValueTypeName() const;
   // Some attributes are queried from ProcessHits before their explicit
   // G4UserSteppingAction hook runs. These helpers memoize a current-step value
   // per worker thread so getters can provide same-step semantics without
@@ -100,81 +96,72 @@ protected:
   void CacheCurrentStepUValue(const G4Step *step,
                               GateUniqueVolumeID::Pointer value) const;
 
-  template <typename TrackInformationType>
-  TrackInformationType *
-  GetAuxiliaryTrackInformation(const G4Track *track) const {
-    auto *info = GetAuxiliaryTrackInformation(track);
-    if (info == nullptr)
+  template <typename TrackDataType>
+  TrackDataType *GetTrackData(const G4Track *track) const {
+    auto *track_state = GetGateUserTrackInformation(track);
+    if (track_state == nullptr)
       return nullptr;
-    auto *typed_info = dynamic_cast<TrackInformationType *>(info);
-    if (typed_info == nullptr) {
+    auto *typed_track_data =
+        track_state->GetTrackData<TrackDataType>(fTrackDataSlotID);
+    if (typed_track_data == nullptr)
+      return nullptr;
+    if (dynamic_cast<GateVTrackData *>(typed_track_data) == nullptr) {
       std::ostringstream oss;
-      oss << "Auxiliary track information for attribute '" << fName
-          << "' has an unexpected type.";
+      oss << "Track data for attribute '" << fName << "' has an unexpected "
+          << "type.";
       Fatal(oss.str());
     }
-    return typed_info;
+    return typed_track_data;
   }
 
-  template <typename TrackInformationType>
-  TrackInformationType *
-  GetOrCreateAuxiliaryTrackInformation(const G4Track *track) const {
-    auto *info = GetAuxiliaryTrackInformation<TrackInformationType>(track);
-    if (info != nullptr)
-      return info;
-    info = new TrackInformationType();
-    SetAuxiliaryTrackInformation(track, info);
-    return info;
+  template <typename TrackDataType>
+  TrackDataType *GetOrCreateTrackData(const G4Track *track) const {
+    auto *track_state = GetOrCreateGateUserTrackInformation(track);
+    return track_state->GetOrCreateTrackData<TrackDataType>(fTrackDataSlotID);
   }
 
-  template <typename TrackInformationType, typename ValueType>
-  ValueType GetAuxiliaryTrackInformationValue(
+  template <typename TrackDataType, typename ValueType>
+  ValueType GetTrackDataValue(
       const G4Track *track, ValueType default_value,
-      ValueType (TrackInformationType::*getter)() const) const {
-    const auto *info =
-        GetAuxiliaryTrackInformation<TrackInformationType>(track);
-    if (info == nullptr)
+      ValueType (TrackDataType::*getter)() const) const {
+    const auto *track_data = GetTrackData<TrackDataType>(track);
+    if (track_data == nullptr)
       return default_value;
-    return (info->*getter)();
+    return (track_data->*getter)();
   }
 
-  template <typename TrackInformationType, typename ValueType>
-  ValueType
-  GetAuxiliaryTrackInformationValue(const G4Step *step, ValueType default_value,
-                                    ValueType (TrackInformationType::*getter)()
-                                        const) const {
+  template <typename TrackDataType, typename ValueType>
+  ValueType GetTrackDataValue(const G4Step *step, ValueType default_value,
+                              ValueType (TrackDataType::*getter)() const) const {
     if (step == nullptr)
       return default_value;
-    return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
-        step->GetTrack(), default_value, getter);
+    return GetTrackDataValue<TrackDataType, ValueType>(step->GetTrack(),
+                                                       default_value, getter);
   }
 
-  template <typename TrackInformationType, typename ValueType>
-  ValueType
-  GetAuxiliaryTrackInformationStoredValue(const G4Track *track,
-                                          ValueType default_value) const {
-    return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
-        track, default_value, &TrackInformationType::GetValue);
+  template <typename TrackDataType, typename ValueType>
+  ValueType GetStoredTrackDataValue(const G4Track *track,
+                                    ValueType default_value) const {
+    return GetTrackDataValue<TrackDataType, ValueType>(track, default_value,
+                                                       &TrackDataType::GetValue);
   }
 
-  template <typename TrackInformationType, typename ValueType>
-  ValueType
-  GetAuxiliaryTrackInformationStoredValue(const G4Step *step,
-                                          ValueType default_value) const {
-    return GetAuxiliaryTrackInformationValue<TrackInformationType, ValueType>(
-        step, default_value, &TrackInformationType::GetValue);
+  template <typename TrackDataType, typename ValueType>
+  ValueType GetStoredTrackDataValue(const G4Step *step,
+                                    ValueType default_value) const {
+    return GetTrackDataValue<TrackDataType, ValueType>(step, default_value,
+                                                       &TrackDataType::GetValue);
   }
 
-  template <typename TrackInformationType, typename ValueType>
-  void SetAuxiliaryTrackInformationStoredValue(const G4Track *track,
-                                               const ValueType &value) const {
-    auto *info =
-        GetOrCreateAuxiliaryTrackInformation<TrackInformationType>(track);
-    info->SetValue(value);
+  template <typename TrackDataType, typename ValueType>
+  void SetStoredTrackDataValue(const G4Track *track,
+                               const ValueType &value) const {
+    auto *track_data = GetOrCreateTrackData<TrackDataType>(track);
+    track_data->SetValue(value);
   }
 
-  template <typename TrackInformationType, typename ValueType>
-  void SetAuxiliaryTrackInformationStoredValueOnSecondariesInCurrentStep(
+  template <typename TrackDataType, typename ValueType>
+  void SetStoredTrackDataValueOnSecondariesInCurrentStep(
       const G4Step *step, const ValueType &value) const {
     if (step == nullptr)
       return;
@@ -182,26 +169,22 @@ protected:
     if (secondaries == nullptr)
       return;
     for (const auto *secondary_track : *secondaries) {
-      SetAuxiliaryTrackInformationStoredValue<TrackInformationType, ValueType>(
-          secondary_track, value);
+      SetStoredTrackDataValue<TrackDataType, ValueType>(secondary_track, value);
     }
   }
 
-  template <typename TrackInformationType>
-  void CopyAuxiliaryTrackInformation(const G4Track *source_track,
-                                     const G4Track *target_track) const {
-    const auto *source_info =
-        GetAuxiliaryTrackInformation<TrackInformationType>(source_track);
-    if (source_info == nullptr)
+  template <typename TrackDataType>
+  void CopyTrackData(const G4Track *source_track,
+                     const G4Track *target_track) const {
+    const auto *source_track_data = GetTrackData<TrackDataType>(source_track);
+    if (source_track_data == nullptr)
       return;
-    auto *target_info =
-        GetOrCreateAuxiliaryTrackInformation<TrackInformationType>(
-            target_track);
-    *target_info = *source_info;
+    auto *target_track_data = GetOrCreateTrackData<TrackDataType>(target_track);
+    *target_track_data = *source_track_data;
   }
 
-  template <typename TrackInformationType>
-  void PropagateAuxiliaryTrackInformationToSecondariesInCurrentStep(
+  template <typename TrackDataType>
+  void PropagateTrackDataToSecondariesInCurrentStep(
       const G4Step *step) const {
     if (step == nullptr)
       return;
@@ -209,20 +192,17 @@ protected:
     if (secondaries == nullptr)
       return;
     for (const auto *secondary_track : *secondaries) {
-      CopyAuxiliaryTrackInformation<TrackInformationType>(step->GetTrack(),
-                                                          secondary_track);
+      CopyTrackData<TrackDataType>(step->GetTrack(), secondary_track);
     }
   }
 
   std::string fName;
-  int fTrackInfoID{-1};
+  int fTrackDataSlotID{-1};
   char fDigiAttributeType{'?'};
   std::set<std::string> fActions;
 
-  static std::map<std::string, int> fRegisteredAuxiliaryAttributeIDs;
   static std::map<std::string, GateVAuxiliaryAttribute *>
       fRegisteredAuxiliaryAttributes;
-  static int fNextAuxiliaryAttributeID;
 
   struct CurrentStepValueCache {
     const G4Step *fStep{nullptr};

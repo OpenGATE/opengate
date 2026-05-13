@@ -9,8 +9,8 @@ is to expose a named, typed getter interface that can be consumed uniformly by
 ROOT-backed actors, filters, and other runtime C++ components.
 
 Some auxiliary attributes compute their value directly from the current step.
-Others maintain state along a track and therefore store auxiliary track
-information across multiple steps.
+Others maintain state along a track and therefore store track-owned data across
+multiple steps.
 
 They are useful whenever a value cannot be obtained conveniently through the
 native conventional DigiAttribute path, for example:
@@ -30,7 +30,7 @@ The C++ class is responsible for:
 
 - exposing the runtime value through typed getters
 - optionally declaring Geant4 hooks such as ``SteppingAction()``
-- optionally storing/retrieving track information
+- optionally storing/retrieving track-owned data
 - optionally registering a DigiAttribute view for ROOT-based output
 
 
@@ -87,7 +87,7 @@ At runtime:
 
    GateTrackingAction / GateSteppingAction
      -> optionally dispatch hook calls to GateVAuxiliaryAttribute instances
-     -> some attributes update per-track auxiliary track information
+     -> some attributes update track-owned slot data through GateUserTrackInformation
 
 Consumers can access auxiliary attributes in two ways:
 
@@ -244,27 +244,37 @@ Storing per-track information
 Persistent per-track state is optional. Use it only when the attribute really
 needs state to survive across steps or to be propagated to secondaries.
 
-When needed, per-track state is stored using
-``G4VAuxiliaryTrackInformation``.
+When needed, per-track state is stored through ``GateUserTrackInformation``.
+Each storage-backed auxiliary attribute registers a dedicated slot in the
+separate track-data slot registry and then reads or writes typed payloads in
+that slot.
 
 OpenGATE currently provides generic typed holders in:
 
-- ``GateAuxiliaryTrackInformation.h``
+- ``GateTrackData.h``
 
 Examples:
 
-- ``GateIntAuxiliaryTrackInformation``
-- ``GateStringAuxiliaryTrackInformation``
-- ``GateThreeVectorAuxiliaryTrackInformation``
-- ``GateIntegerCounterAuxiliaryTrackInformation``
+- ``GateIntTrackData``
+- ``GateStringTrackData``
+- ``GateThreeVectorTrackData``
+- ``GateIntegerCounterTrackData``
 
 Use the helpers from ``GateVAuxiliaryAttribute``:
 
-- ``GetAuxiliaryTrackInformation<T>(track)``
-- ``GetOrCreateAuxiliaryTrackInformation<T>(track)``
-- ``GetAuxiliaryTrackInformationStoredValue<T, V>(step, default)``
-- ``SetAuxiliaryTrackInformationStoredValue<T, V>(track, value)``
-- ``PropagateAuxiliaryTrackInformationToSecondariesInCurrentStep<T>(step)``
+- ``GetTrackData<T>(track)``
+- ``GetOrCreateTrackData<T>(track)``
+- ``GetStoredTrackDataValue<T, V>(step, default)``
+- ``SetStoredTrackDataValue<T, V>(track, value)``
+- ``PropagateTrackDataToSecondariesInCurrentStep<T>(step)``
+
+This backend is intentionally separate from the auxiliary-attribute registry:
+
+- the attribute registry tracks runtime providers by name
+- the slot registry tracks track-owned storage slots by integer ID
+
+Some auxiliary attributes need both. Getter-only attributes need only the
+runtime registry.
 
 
 Example: integer counter
@@ -273,15 +283,15 @@ Example: integer counter
 .. code-block:: cpp
 
    void GateMyCounterAttribute::SteppingAction(const G4Step *step) {
-     auto *info = GetOrCreateAuxiliaryTrackInformation<
-         GateIntegerCounterAuxiliaryTrackInformation>(step->GetTrack());
+     auto *info = GetOrCreateTrackData<
+         GateIntegerCounterTrackData>(step->GetTrack());
      info->Increment();
    }
 
    int GateMyCounterAttribute::GetIValue(const G4Step *step) const {
-     return GetAuxiliaryTrackInformationValue<
-         GateIntegerCounterAuxiliaryTrackInformation, int>(
-         step, 0, &GateIntegerCounterAuxiliaryTrackInformation::GetCount);
+     return GetTrackDataValue<
+         GateIntegerCounterTrackData, int>(
+         step, 0, &GateIntegerCounterTrackData::GetCount);
    }
 
 
@@ -291,14 +301,14 @@ Example: string value
 .. code-block:: cpp
 
    void GateMyStringAttribute::SteppingAction(const G4Step *step) {
-     SetAuxiliaryTrackInformationStoredValue<
-         GateStringAuxiliaryTrackInformation, std::string>(
+     SetStoredTrackDataValue<
+         GateStringTrackData, std::string>(
          step->GetTrack(), "my_value");
    }
 
    std::string GateMyStringAttribute::GetSValue(const G4Step *step) const {
-     return GetAuxiliaryTrackInformationStoredValue<
-         GateStringAuxiliaryTrackInformation, std::string>(
+     return GetStoredTrackDataValue<
+         GateStringTrackData, std::string>(
          step, "default");
    }
 
@@ -344,8 +354,8 @@ the track genealogy, propagate it in ``SteppingAction()`` using:
 .. code-block:: cpp
 
    if (fPropagateFromParentTrack) {
-     PropagateAuxiliaryTrackInformationToSecondariesInCurrentStep<
-         GateIntegerCounterAuxiliaryTrackInformation>(step);
+     PropagateTrackDataToSecondariesInCurrentStep<
+         GateIntegerCounterTrackData>(step);
    }
 
 This copies the current snapshot to secondaries created in the current step.
