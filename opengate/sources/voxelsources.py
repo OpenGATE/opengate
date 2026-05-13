@@ -7,8 +7,9 @@ from ..image import (
     update_image_py_to_cpp,
     compute_image_3D_CDF,
 )
-from ..utility import ensure_filename_is_str
+from ..utility import ensure_filename_is_str, warning
 from ..base import process_cls
+from ..actors.dynamicactors import SourceActivityImageChanger
 
 
 class VoxelSource(GenericSource, g4.GateVoxelSource):
@@ -27,6 +28,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
                 "doc": "Filename of the image of the 3D activity distribution "
                 "(will be automatically normalized to sum=1)",
                 "is_input_file": True,
+                "dynamic": True,
             },
         )
     }
@@ -39,6 +41,25 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
 
     def __initcpp__(self):
         g4.GateVoxelSource.__init__(self)
+
+    def create_changers(self):
+        changers = super().create_changers()
+        for dp in self.dynamic_params.values():
+            if dp["extra_params"]["auto_changer"] is True:
+                if "image" in dp:
+                    new_changer = SourceActivityImageChanger(
+                        name=f"{self.name}_source_activity_changer_{len(changers)}",
+                        activity_images=dp["image"],
+                        attached_to=self,
+                        simulation=self.simulation,
+                    )
+                    changers.append(new_changer)
+            else:
+                self.warning(
+                    f"You need to manually create a changer for dynamic parametrisation {dp} "
+                    f"of source '{self.name}'."
+                )
+        return changers
 
     def set_transform_from_user_info(self):
         # get source image information
@@ -68,7 +89,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
         pg = self.GetSPSVoxelPosDistribution()
         pg.SetCumulativeDistributionFunction(cdf_z, cdf_y, cdf_x)
 
-    def initialize(self, run_timing_intervals):
+    def update_activity_image(self, filename):
         # read source image
         self.itk_image = itk.imread(ensure_filename_is_str(self.image))
 
@@ -77,6 +98,9 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
 
         # create Cumulative Distribution Function
         self.cumulative_distribution_functions()
+
+    def initialize(self, run_timing_intervals):
+        self.update_activity_image(self.image)
 
         # FIXME -> check other option in position not used here
 
