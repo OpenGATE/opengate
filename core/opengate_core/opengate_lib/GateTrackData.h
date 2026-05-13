@@ -26,8 +26,7 @@ public:
   virtual ~GateVTrackData() = default;
 };
 
-template <typename ValueType>
-class GateTTrackData : public GateVTrackData {
+template <typename ValueType> class GateTTrackData : public GateVTrackData {
 public:
   GateTTrackData() = default;
   ~GateTTrackData() override = default;

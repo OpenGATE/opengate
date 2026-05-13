@@ -8,8 +8,8 @@
 #ifndef GateUserTrackInformation_h
 #define GateUserTrackInformation_h
 
-#include "GateTrackData.h"
 #include "GateHelpers.h"
+#include "GateTrackData.h"
 #include <G4VUserTrackInformation.hh>
 #include <map>
 #include <memory>

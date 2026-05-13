@@ -389,7 +389,6 @@ void init_GateVAuxiliaryAttribute(py::module &);
 
 void init_GateInteractionCounterAttribute(py::module &);
 
-
 void init_GateUnscatteredPrimaryAttribute(py::module &);
 
 void init_GateLastInteractionPositionInVolumeAttribute(py::module &);

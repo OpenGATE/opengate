@@ -8,13 +8,13 @@
 #ifndef GateVAuxiliaryAttribute_h
 #define GateVAuxiliaryAttribute_h
 
-#include "GateTrackData.h"
+#include "G4Cache.hh"
 #include "G4Step.hh"
 #include "G4Track.hh"
-#include "G4Cache.hh"
 #include "GateHelpers.h"
-#include "GateUserTrackInformation.h"
+#include "GateTrackData.h"
 #include "GateUniqueVolumeID.h"
+#include "GateUserTrackInformation.h"
 #include <map>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -121,9 +121,9 @@ protected:
   }
 
   template <typename TrackDataType, typename ValueType>
-  ValueType GetTrackDataValue(
-      const G4Track *track, ValueType default_value,
-      ValueType (TrackDataType::*getter)() const) const {
+  ValueType GetTrackDataValue(const G4Track *track, ValueType default_value,
+                              ValueType (TrackDataType::*getter)()
+                                  const) const {
     const auto *track_data = GetTrackData<TrackDataType>(track);
     if (track_data == nullptr)
       return default_value;
@@ -132,7 +132,8 @@ protected:
 
   template <typename TrackDataType, typename ValueType>
   ValueType GetTrackDataValue(const G4Step *step, ValueType default_value,
-                              ValueType (TrackDataType::*getter)() const) const {
+                              ValueType (TrackDataType::*getter)()
+                                  const) const {
     if (step == nullptr)
       return default_value;
     return GetTrackDataValue<TrackDataType, ValueType>(step->GetTrack(),
@@ -142,15 +143,15 @@ protected:
   template <typename TrackDataType, typename ValueType>
   ValueType GetStoredTrackDataValue(const G4Track *track,
                                     ValueType default_value) const {
-    return GetTrackDataValue<TrackDataType, ValueType>(track, default_value,
-                                                       &TrackDataType::GetValue);
+    return GetTrackDataValue<TrackDataType, ValueType>(
+        track, default_value, &TrackDataType::GetValue);
   }
 
   template <typename TrackDataType, typename ValueType>
   ValueType GetStoredTrackDataValue(const G4Step *step,
                                     ValueType default_value) const {
-    return GetTrackDataValue<TrackDataType, ValueType>(step, default_value,
-                                                       &TrackDataType::GetValue);
+    return GetTrackDataValue<TrackDataType, ValueType>(
+        step, default_value, &TrackDataType::GetValue);
   }
 
   template <typename TrackDataType, typename ValueType>
@@ -184,8 +185,7 @@ protected:
   }
 
   template <typename TrackDataType>
-  void PropagateTrackDataToSecondariesInCurrentStep(
-      const G4Step *step) const {
+  void PropagateTrackDataToSecondariesInCurrentStep(const G4Step *step) const {
     if (step == nullptr)
       return;
     const auto *secondaries = step->GetSecondaryInCurrentStep();
