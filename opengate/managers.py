@@ -269,7 +269,13 @@ class FilterManager:
             )
 
     def add_filter(self, filter):
+        existing_filter = self.filters.get(filter.name)
+        if existing_filter is not None:
+            if existing_filter is filter:
+                return filter
+            fatal(f"A filter with the name {filter.name} already exists.")
         self.filters[filter.name] = filter
+        return filter
 
     def add_filter_deprecated(self, filt, name=None):
         if isinstance(filt, str):

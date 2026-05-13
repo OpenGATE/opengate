@@ -545,6 +545,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         if self.verbose_close:
             warning("Closing ActionEngine")
         g4.GateVAuxiliaryAttribute.ClearRegistry()
+        g4.GateTrackDataSlotRegistry.Clear()
         self.release_g4_references()
         super().close()
 

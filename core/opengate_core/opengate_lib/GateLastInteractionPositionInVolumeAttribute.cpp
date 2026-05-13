@@ -39,9 +39,8 @@ void GateLastInteractionPositionInVolumeAttribute::InitializeCpp() {
 
 G4ThreeVector GateLastInteractionPositionInVolumeAttribute::Get3Value(
     const G4Step *step) const {
-  return GetAuxiliaryTrackInformationStoredValue<
-      GateThreeVectorAuxiliaryTrackInformation, G4ThreeVector>(step,
-                                                               G4ThreeVector());
+  return GetStoredTrackDataValue<GateThreeVectorTrackData, G4ThreeVector>(
+      step, G4ThreeVector());
 }
 
 void GateLastInteractionPositionInVolumeAttribute::SteppingAction(
@@ -50,14 +49,13 @@ void GateLastInteractionPositionInVolumeAttribute::SteppingAction(
   if (IsStepInVolume(step, fVolumeName)) {
     const auto *process = pre_step_point->GetProcessDefinedStep();
     if (process != nullptr && process->GetProcessName() != "Transportation") {
-      SetAuxiliaryTrackInformationStoredValue<
-          GateThreeVectorAuxiliaryTrackInformation, G4ThreeVector>(
+      SetStoredTrackDataValue<GateThreeVectorTrackData, G4ThreeVector>(
           step->GetTrack(), pre_step_point->GetPosition());
     }
   }
 
   if (fPropagateFromParentTrack) {
-    PropagateAuxiliaryTrackInformationToSecondariesInCurrentStep<
-        GateThreeVectorAuxiliaryTrackInformation>(step);
+    PropagateTrackDataToSecondariesInCurrentStep<GateThreeVectorTrackData>(
+        step);
   }
 }

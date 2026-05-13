@@ -39,8 +39,8 @@ void GateLastProcessDefinedStepInVolumeAttribute::InitializeCpp() {
 
 std::string GateLastProcessDefinedStepInVolumeAttribute::GetSValue(
     const G4Step *step) const {
-  return GetAuxiliaryTrackInformationStoredValue<
-      GateStringAuxiliaryTrackInformation, std::string>(step, "Transportation");
+  return GetStoredTrackDataValue<GateStringTrackData, std::string>(
+      step, "Transportation");
 }
 
 void GateLastProcessDefinedStepInVolumeAttribute::SteppingAction(
@@ -49,14 +49,12 @@ void GateLastProcessDefinedStepInVolumeAttribute::SteppingAction(
   if (IsStepInVolume(step, fVolumeName)) {
     const auto *process = pre_step_point->GetProcessDefinedStep();
     if (process != nullptr && process->GetProcessName() != "Transportation") {
-      SetAuxiliaryTrackInformationStoredValue<
-          GateStringAuxiliaryTrackInformation, std::string>(
+      SetStoredTrackDataValue<GateStringTrackData, std::string>(
           step->GetTrack(), process->GetProcessName());
     }
   }
 
   if (fPropagateFromParentTrack) {
-    PropagateAuxiliaryTrackInformationToSecondariesInCurrentStep<
-        GateStringAuxiliaryTrackInformation>(step);
+    PropagateTrackDataToSecondariesInCurrentStep<GateStringTrackData>(step);
   }
 }

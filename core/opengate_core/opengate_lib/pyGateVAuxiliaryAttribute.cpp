@@ -20,7 +20,7 @@ void init_GateVAuxiliaryAttribute(py::module &m) {
       .def("AddActions", &GateVAuxiliaryAttribute::AddActions)
       .def("HasAction", &GateVAuxiliaryAttribute::HasAction)
       .def("GetName", &GateVAuxiliaryAttribute::GetName)
-      .def("GetTrackInfoID", &GateVAuxiliaryAttribute::GetTrackInfoID)
+      .def("GetTrackDataSlotID", &GateVAuxiliaryAttribute::GetTrackDataSlotID)
       .def("GetDigiAttributeType",
            &GateVAuxiliaryAttribute::GetDigiAttributeType)
       .def_static("ClearRegistry", &GateVAuxiliaryAttribute::ClearRegistry);

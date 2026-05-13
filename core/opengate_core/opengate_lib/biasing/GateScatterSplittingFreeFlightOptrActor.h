@@ -23,6 +23,7 @@ public:
   ~GateScatterSplittingFreeFlightOptrActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
+  void InitializeCpp() override;
   void ConfigureForWorker() override;
   void StartTracking(const G4Track *) override;
 
@@ -40,7 +41,7 @@ public:
   static int
   IsScatterInteraction(const G4BiasingProcessInterface *callingProcess);
 
-  static bool IsFreeFlight(const G4Track *track);
+  bool IsFreeFlight(const G4Track *track) const;
   static constexpr int fThisIsAFreeFlightTrack = 666;
 
 protected:
@@ -82,6 +83,7 @@ protected:
   int fMaxComptonLevel;
   bool fDebug;
   GateVBiasOptrActor *fActor = nullptr;
+  int fFreeFlightTrackDataSlotID{-1};
 };
 
 #endif

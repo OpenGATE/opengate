@@ -8,7 +8,7 @@
 #ifndef GateInteractionCounterAttribute_h
 #define GateInteractionCounterAttribute_h
 
-#include "GateAuxiliaryTrackInformation.h"
+#include "GateTrackData.h"
 #include "GateVAuxiliaryAttribute.h"
 
 class GateInteractionCounterAttribute : public GateVAuxiliaryAttribute {

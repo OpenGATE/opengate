@@ -35,20 +35,19 @@ void GateInteractionCounterAttribute::InitializeCpp() {
 }
 
 int GateInteractionCounterAttribute::GetIValue(const G4Step *step) const {
-  return GetAuxiliaryTrackInformationValue<
-      GateIntegerCounterAuxiliaryTrackInformation, int>(
-      step, 0, &GateIntegerCounterAuxiliaryTrackInformation::GetCount);
+  return GetTrackDataValue<GateIntegerCounterTrackData, int>(
+      step, 0, &GateIntegerCounterTrackData::GetCount);
 }
 
 void GateInteractionCounterAttribute::SteppingAction(const G4Step *step) {
   const auto *process = step->GetPreStepPoint()->GetProcessDefinedStep();
   if (process != nullptr && process->GetProcessName() == fProcessName) {
-    auto *info = GetOrCreateAuxiliaryTrackInformation<
-        GateIntegerCounterAuxiliaryTrackInformation>(step->GetTrack());
+    auto *info = GetOrCreateTrackData<GateIntegerCounterTrackData>(
+        step->GetTrack());
     info->Increment();
   }
   if (fPropagateFromParentTrack) {
-    PropagateAuxiliaryTrackInformationToSecondariesInCurrentStep<
-        GateIntegerCounterAuxiliaryTrackInformation>(step);
+    PropagateTrackDataToSecondariesInCurrentStep<GateIntegerCounterTrackData>(
+        step);
   }
 }
