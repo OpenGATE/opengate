@@ -34,6 +34,7 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
     : GateVActor(user_info, true) {
 
   fUncertaintyGoal = 0.0;
+  fTopVoxelsCount = 0;
   fThreshEdepPerc = 0.0;
   fOvershoot = 0.0;
   fNbEventsFirstCheck = 0;
@@ -284,20 +285,19 @@ double GateDoseActor::ComputeMeanUncertainty() {
       cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
   double mean_unc = 0.0;
   int n_voxel_unc = 0;
-  double n = 2.0;
-  n = fNbOfEvent;
+  double n = fNbOfEvent;
 
   if (n < 2.0) {
     n = 2.0;
   }
-  double max_edep = GetMaxValueOfImage(cpp_edep_image);
+  double mean_max_edep = GetMeanOfHighestNValues(cpp_edep_image);
 
   for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
        ++edep_iterator3D) {
     Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
     double val = cpp_edep_image->GetPixel(index_f);
 
-    if (val > max_edep * fThreshEdepPerc) {
+    if (val > mean_max_edep * fThreshEdepPerc) {
       val /= n;
       n_voxel_unc++;
       const double val_squared_mean =
@@ -400,26 +400,35 @@ void GateDoseActor::FlushSquaredValues(threadLocalT &data,
 
 int GateDoseActor::EndOfRunActionMasterThread(int run_id) { return 0; }
 
-double GateDoseActor::GetMaxValueOfImage(Image3DType::Pointer imageP) {
+double GateDoseActor::GetMeanOfHighestNValues(Image3DType::Pointer imageP) {
   itk::ImageRegionIterator<Image3DType> iterator3D(
       imageP, imageP->GetLargestPossibleRegion());
-  Image3DType::PixelType max = 0;
-  Image3DType::IndexType index_max;
-  // keep track of the 10 highest values of the image
-  std::priority_queue<double, std::vector<double>, std::greater<double>> pq;
+
+  // Min-heap holding the top N values
+  std::priority_queue<double, std::vector<double>, std::greater<double>>
+      topValues;
+
   for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
-    Image3DType::IndexType index_f = iterator3D.GetIndex();
-    Image3DType::PixelType val = imageP->GetPixel(index_f);
-    if (val > max) {
-      max = val;
-      index_max = index_f;
-      pq.push(max);
-      if (pq.size() > 10) {
-        pq.pop();
-      }
+    const double val = iterator3D.Get();
+
+    if (topValues.size() < fTopVoxelsCount) {
+      topValues.push(val);
+    } else if (val > topValues.top()) {
+      topValues.pop();
+      topValues.push(val);
     }
   }
-  return max;
+
+  // Compute mean of the values in the heap
+  double sum = 0.0;
+  const std::size_t count = topValues.size();
+
+  while (!topValues.empty()) {
+    sum += topValues.top();
+    topValues.pop();
+  }
+
+  return (count > 0) ? (sum / static_cast<double>(count)) : 0.0;
 }
 
 double GateDoseActor::CalculateSPR(G4Step *step) {
