@@ -132,6 +132,14 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 
   auto &l = fThreadLocalData.Get();
 
+  // Check if this SteppingAction was triggered via the sensitive detector
+  // attached to the top volume, i.e. the "attached_to" volume
+  // if it was triggered by a daughter volume, this is not truely a step
+  // at the outer surface, but rather an irrelevant (for the purpose of this
+  // actor) internal surface crossing
+  if (!IsStepInTopAttachedVolume(step))
+    return;
+
   // Particle enters the volume if the pre step is at the volume boundary
   const bool entering =
       step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
