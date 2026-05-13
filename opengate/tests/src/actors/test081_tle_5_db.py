@@ -5,7 +5,6 @@ import opengate as gate
 from opengate.tests import utility
 from opengate.tests.src.actors.test081_tle_helpers import (
     add_source,
-    activate_tle_track_mode_attribute,
     plot_pdd,
     compare_pdd,
 )
@@ -70,26 +69,6 @@ if __name__ == "__main__":
     s = f"/process/eLoss/CSDARange true"
     sim.g4_commands_before_init.append(s)
 
-    tle_track_mode_epdl = activate_tle_track_mode_attribute(
-        sim,
-        "tle_track_mode_epdl",
-        tle_dose_actor.tle_threshold_type,
-        tle_dose_actor.tle_threshold,
-        database=tle_dose_actor.database,
-        energy_min=tle_dose_actor.energy_min,
-        volume_name=tle_dose_actor.attached_to,
-    )
-
-    tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
-    tle_dose_actor_aux.output_filename = "test081_db_nist_aux.mhd"
-    tle_dose_actor_aux.attached_to = waterbox
-    tle_dose_actor_aux.dose_uncertainty.active = True
-    tle_dose_actor_aux.dose.active = True
-    tle_dose_actor_aux.size = tle_dose_actor.size
-    tle_dose_actor_aux.spacing = tle_dose_actor.spacing
-    tle_dose_actor_aux.tle_state_mode = "auxiliary"
-    tle_dose_actor_aux.tle_state_attribute = tle_track_mode_epdl.name
-
     # add conventional dose actor
     dose_actor = sim.add_actor("TLEDoseActor", "dose_actor")
     dose_actor.output_filename = "test081_db_epdl.mhd"
@@ -104,26 +83,6 @@ if __name__ == "__main__":
     print(f"Dose actor pixels : {dose_actor.size}")
     print(f"Dose actor spacing : {dose_actor.spacing} mm")
     print(f"Dose actor size : {waterbox_size} mm")
-
-    tle_track_mode_nist = activate_tle_track_mode_attribute(
-        sim,
-        "tle_track_mode_nist",
-        dose_actor.tle_threshold_type,
-        dose_actor.tle_threshold,
-        database=dose_actor.database,
-        energy_min=dose_actor.energy_min,
-        volume_name=dose_actor.attached_to,
-    )
-
-    dose_actor_aux = sim.add_actor("TLEDoseActor", "dose_actor_aux")
-    dose_actor_aux.output_filename = "test081_db_epdl_aux.mhd"
-    dose_actor_aux.attached_to = waterbox
-    dose_actor_aux.dose_uncertainty.active = True
-    dose_actor_aux.dose.active = True
-    dose_actor_aux.size = dose_actor.size
-    dose_actor_aux.spacing = dose_actor.spacing
-    dose_actor_aux.tle_state_mode = "auxiliary"
-    dose_actor_aux.tle_state_attribute = tle_track_mode_nist.name
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -144,22 +103,6 @@ if __name__ == "__main__":
     print()
     f1 = dose_actor.dose.get_output_path()
     f2 = tle_dose_actor.dose.get_output_path()
-    is_ok = (
-        compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.05, offset=offset)
-        and is_ok
-    )
-
-    print()
-    f1 = tle_dose_actor.dose.get_output_path()
-    f2 = tle_dose_actor_aux.dose.get_output_path()
-    is_ok = (
-        compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.05, offset=offset)
-        and is_ok
-    )
-
-    print()
-    f1 = dose_actor.dose.get_output_path()
-    f2 = dose_actor_aux.dose.get_output_path()
     is_ok = (
         compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.05, offset=offset)
         and is_ok

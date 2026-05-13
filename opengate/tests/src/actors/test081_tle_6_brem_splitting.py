@@ -5,7 +5,6 @@ from opengate.tests import utility
 from opengate.tests.src.actors.test081_tle_helpers import (
     add_simple_waterbox,
     add_source,
-    activate_tle_track_mode_attribute,
 )
 import sys
 import numpy as np
@@ -113,26 +112,6 @@ def main(argv):
     s = f"/process/eLoss/CSDARange true"
     sim.g4_commands_before_init.append(s)
 
-    tle_track_mode = activate_tle_track_mode_attribute(
-        sim,
-        "tle_track_mode",
-        tle_dose_actor.tle_threshold_type,
-        tle_dose_actor.tle_threshold,
-        database=tle_dose_actor.database,
-        energy_min=tle_dose_actor.energy_min,
-        volume_name=tle_dose_actor.attached_to,
-    )
-
-    tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
-    tle_dose_actor_aux.output_filename = "test081_tle_6_brem_split_aux.mhd"
-    tle_dose_actor_aux.attached_to = waterbox
-    tle_dose_actor_aux.dose_uncertainty.active = True
-    tle_dose_actor_aux.dose.active = True
-    tle_dose_actor_aux.size = tle_dose_actor.size
-    tle_dose_actor_aux.spacing = tle_dose_actor.spacing
-    tle_dose_actor_aux.tle_state_mode = "auxiliary"
-    tle_dose_actor_aux.tle_state_attribute = tle_track_mode.name
-
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
     dose_actor.output_filename = "test081_6_brem_split.mhd"
@@ -155,17 +134,13 @@ def main(argv):
     sim.run()
     f1 = dose_actor.dose.get_output_path()
     f2 = tle_dose_actor.dose.get_output_path()
-    f3 = tle_dose_actor_aux.dose.get_output_path()
-
     f1_bis = dose_actor.dose_uncertainty.get_output_path()
     f2_bis = tle_dose_actor.dose_uncertainty.get_output_path()
-    f3_bis = tle_dose_actor_aux.dose_uncertainty.get_output_path()
 
     # print results at the end
     print(stats)
 
     is_ok = test(f1, f2, f1_bis, f2_bis)
-    is_ok = test(f2, f3, f2_bis, f3_bis) and is_ok
     utility.test_ok(is_ok)
 
 

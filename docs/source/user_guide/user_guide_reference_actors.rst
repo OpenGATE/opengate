@@ -436,34 +436,6 @@ mechanism according to user-defined criteria:
 This provides flexibility in simulations, allowing users to tailor the
 behavior of the TLE actor to the energy ranges and materials of interest.
 
-**Track-state mechanism**
-
-The actor currently supports two internal mechanisms to determine whether a
-track follows the conventional path, the TLE gamma path, or a suppressed
-secondary path:
-
-- ``tle_state_mode = "legacy"`` uses the historical actor-local
-  ``GateUserTrackInformation`` implementation
-- ``tle_state_mode = "auxiliary"`` uses a simulation-level
-  :class:`~.opengate.auxiliary_attributes.TLETrackModeAttribute`
-
-The auxiliary mode is the new architectural direction and allows the TLE track
-state to be reused or inspected outside the actor itself. The legacy mode is
-still available for regression testing.
-
-When ``tle_state_mode = "auxiliary"``, the associated
-:class:`~.opengate.auxiliary_attributes.TLETrackModeAttribute` provides the
-following public integer values:
-
-- ``0``: conventional scoring path
-- ``1``: TLE gamma scoring path
-- ``2``: suppressed secondary
-
-Because this is a normal auxiliary attribute, the same TLE track mode can also
-be written by ROOT-backed actors such as the
-:class:`~.opengate.actors.digitizers.PhaseSpaceActor` or used in a generic
-filter.
-
 Here is a classical way to use the TLEDoseActor:
 
 .. code-block:: python
@@ -478,29 +450,6 @@ Here is a classical way to use the TLEDoseActor:
    tle_dose_actor.tle_threshold_type = "max range"
    tle_dose_actor.tle_threshold = 10 * mm
    tle_dose_actor.database = "EPDL"
-
-To use the new auxiliary-attribute-based track-state mechanism, first activate
-the corresponding auxiliary attribute and then point the actor to it:
-
-.. code-block:: python
-
-   tle_mode = sim.activate_auxiliary_attribute(
-       "TLETrackModeAttribute",
-       "tle_track_mode",
-   )
-   tle_mode.tle_threshold_type = "max range"
-   tle_mode.tle_threshold = 10 * mm
-   tle_mode.database = "EPDL"
-
-   tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
-   tle_dose_actor.attached_to = irradiated_volume.name
-   tle_dose_actor.tle_state_mode = "auxiliary"
-   tle_dose_actor.tle_state_attribute = tle_mode.name
-
-   # The same attribute may also be reused elsewhere, e.g. in filters or
-   # ROOT-backed outputs:
-   phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-   phsp.attributes = ["KineticEnergy", tle_mode.name]
 
 Refer to the ``test081_tle_*`` tests in ``opengate/tests/src/actors`` for
 more details.

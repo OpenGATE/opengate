@@ -5,7 +5,6 @@ import opengate as gate
 from opengate.tests import utility
 from opengate.tests.src.actors.test081_tle_helpers import (
     add_source,
-    activate_tle_track_mode_attribute,
 )
 import numpy as np
 
@@ -84,32 +83,6 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
     pps2 = stats.user_output.stats.pps
 
-    tle_track_mode = activate_tle_track_mode_attribute(
-        sim,
-        "tle_track_mode",
-        tle_dose_actor.tle_threshold_type,
-        tle_dose_actor.tle_threshold,
-        database=tle_dose_actor.database,
-        energy_min=tle_dose_actor.energy_min,
-        volume_name=tle_dose_actor.attached_to,
-    )
-
-    tle_dose_actor_aux = sim.add_actor("TLEDoseActor", "tle_dose_actor_aux")
-    tle_dose_actor_aux.output_filename = "test081_vox_speed_tle_aux.mhd"
-    tle_dose_actor_aux.attached_to = waterbox
-    tle_dose_actor_aux.dose_uncertainty.active = True
-    tle_dose_actor_aux.dose.active = True
-    tle_dose_actor_aux.size = tle_dose_actor.size
-    tle_dose_actor_aux.spacing = tle_dose_actor.spacing
-    tle_dose_actor_aux.tle_state_mode = "auxiliary"
-    tle_dose_actor_aux.tle_state_attribute = tle_track_mode.name
-
-    sim.actor_manager.remove_actor("tle_dose_actor")
-
-    # start simulation with auxiliary-mode TLE
-    sim.run(start_new_process=True)
-    pps3 = stats.user_output.stats.pps
-
     print()
     r = np.fabs(pps1 - pps2) / pps2
     tol = 0.4
@@ -117,15 +90,4 @@ if __name__ == "__main__":
     print_test(
         b, f"Speed PPS is {pps1} vs {pps2} = {r*100:.2f}% (tol={tol:.2f}) ==> {b}"
     )
-
-    r = np.fabs(pps2 - pps3) / pps2
-    tol = 0.2
-    b_aux = r < tol
-    print_test(
-        b_aux,
-        f"Legacy vs auxiliary TLE PPS is {pps2} vs {pps3} = {r*100:.2f}% "
-        f"(tol={tol:.2f}) ==> {b_aux}",
-    )
-
-    is_ok = b and b_aux
-    utility.test_ok(is_ok)
+    utility.test_ok(b)
