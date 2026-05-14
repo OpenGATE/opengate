@@ -183,7 +183,8 @@ class LastInteractionPositionInVolumeAttribute(
     configured volume hierarchy. The stored position is taken from the
     pre-step point of the step whose defining process is not Transportation.
     Optionally propagate the current position snapshot to secondaries created
-    along the track.
+    along the track. If no qualifying interaction has been seen yet, the
+    attribute returns ``(NaN, NaN, NaN)``.
     """
 
     user_info_defaults = {

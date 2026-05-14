@@ -8,6 +8,7 @@
 #include "GateLastInteractionPositionInVolumeAttribute.h"
 #include "GateHelpersDict.h"
 #include "digitizer/GateDigiAttributeManager.h"
+#include <limits>
 #include <G4StepPoint.hh>
 #include <G4VPhysicalVolume.hh>
 #include <G4VProcess.hh>
@@ -39,8 +40,11 @@ void GateLastInteractionPositionInVolumeAttribute::InitializeCpp() {
 
 G4ThreeVector GateLastInteractionPositionInVolumeAttribute::Get3Value(
     const G4Step *step) const {
+  // Use NaN as the public "unset" sentinel so analysis code can distinguish
+  // "no qualifying interaction seen yet" from a real interaction at (0, 0, 0).
+  const auto nan = std::numeric_limits<double>::quiet_NaN();
   return GetStoredTrackDataValue<GateThreeVectorTrackData, G4ThreeVector>(
-      step, G4ThreeVector());
+      step, G4ThreeVector(nan, nan, nan));
 }
 
 void GateLastInteractionPositionInVolumeAttribute::SteppingAction(

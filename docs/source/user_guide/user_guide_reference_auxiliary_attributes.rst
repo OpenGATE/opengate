@@ -151,7 +151,9 @@ Description
 
 Stores the last interaction position seen on the current track inside the
 configured volume hierarchy. The stored position is taken from the pre-step
-point of a step whose defining process is not ``Transportation``.
+point of a step whose defining process is not ``Transportation``. If no
+qualifying interaction has been seen yet, the attribute returns
+``(NaN, NaN, NaN)``.
 
 The user must provide:
 
