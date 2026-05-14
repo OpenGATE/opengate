@@ -1905,6 +1905,19 @@ class Simulation(GateObject):
         components. Some attributes are getter-only; others additionally use
         Geant4 hooks and optional per-track storage.
         """
+        if attribute_type in (
+            "ProcessDefinedStepInVolumeAttribute",
+            "LastProcessDefinedStepInVolumeAttribute",
+        ):
+            legacy_name = (
+                "ProcessDefinedStepInVolumeAttributeLegacy"
+                if attribute_type == "ProcessDefinedStepInVolumeAttribute"
+                else "LastProcessDefinedStepInVolumeAttributeLegacy"
+            )
+            warning(
+                f"{legacy_name} has been replaced by the auxiliary attribute "
+                f"{attribute_type} and will be deprecated soon."
+            )
         return self._activate_auxiliary_attribute(attribute_type, name)
 
     def _activate_auxiliary_attribute(self, attribute_type, name):
