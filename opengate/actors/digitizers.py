@@ -1481,7 +1481,13 @@ class DigiAttributeProcessDefinedStepInVolumeActor(
 
 
 class ProcessDefinedStepInVolumeAttributeLegacy:
-    """ """
+    """
+    Legacy wrapper based on an internal hidden actor.
+
+    Replaced by the auxiliary attribute
+    ``ProcessDefinedStepInVolumeAttribute``. This legacy wrapper is kept for
+    compatibility and will be deprecated soon.
+    """
 
     def __init__(self, sim, process_name, volume_name):
         self.name = f"ProcessDefinedStep__{process_name}__{volume_name}"
@@ -1545,7 +1551,13 @@ class DigiAttributeLastProcessDefinedStepInVolumeActor(
 
 
 class LastProcessDefinedStepInVolumeAttributeLegacy:
-    """ """
+    """
+    Legacy wrapper based on an internal hidden actor.
+
+    Replaced by the auxiliary attribute
+    ``LastProcessDefinedStepInVolumeAttribute``. This legacy wrapper is kept
+    for compatibility and will be deprecated soon.
+    """
 
     def __init__(self, sim, volume_name):
         self.name = f"LastOccuringProcess__{volume_name}"
