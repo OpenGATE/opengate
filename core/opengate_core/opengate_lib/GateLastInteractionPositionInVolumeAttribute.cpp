@@ -8,10 +8,10 @@
 #include "GateLastInteractionPositionInVolumeAttribute.h"
 #include "GateHelpersDict.h"
 #include "digitizer/GateDigiAttributeManager.h"
-#include <limits>
 #include <G4StepPoint.hh>
 #include <G4VPhysicalVolume.hh>
 #include <G4VProcess.hh>
+#include <limits>
 
 GateLastInteractionPositionInVolumeAttribute::
     GateLastInteractionPositionInVolumeAttribute(py::dict &user_info)
