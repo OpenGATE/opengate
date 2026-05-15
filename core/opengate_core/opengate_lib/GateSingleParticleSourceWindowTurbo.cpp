@@ -14,9 +14,6 @@ GateSingleParticleSourceWindowTurbo::GateSingleParticleSourceWindowTurbo(
     std::string mother_volume)
     : GateSingleParticleSource(mother_volume) {}
 
-GateSingleParticleSourceWindowTurbo::~GateSingleParticleSourceWindowTurbo() =
-    default;
-
 G4double solid_angle_pyramid(G4double a, G4double b, G4double d) {
   return 4 * atan(a * b / (2 * d * sqrt(a * a + b * b + 4 * d * d)));
 }
@@ -26,21 +23,21 @@ G4double GateSingleParticleSourceWindowTurbo::GetSolidAngle(
 
   // rotate with -plane_phi
   if (pos.x() * pos.x() + pos.y() * pos.y() >=
-      plane_distance * plane_distance) {
+      fPlaneDistance * fPlaneDistance) {
     G4String error_msg = fmt::format(
         "position {} is outside the plane distance {} for source: {}", pos,
-        plane_distance, turbo_source_name);
+        fPlaneDistance, fSourceName);
     G4Exception("GateSingleParticleSourceWindowTurbo::GetSolidAngle",
                 "GetSolidAngleError", FatalException, error_msg);
   }
 
-  G4double x0 = pos.x() * cos_plane_phi + pos.y() * sin_plane_phi;
-  G4double y0 = -pos.x() * sin_plane_phi + pos.y() * cos_plane_phi;
-  G4double a1_rel = a1 - y0;
-  G4double a2_rel = a2 - y0;
-  G4double b1_rel = b1 - pos.z();
-  G4double b2_rel = b2 - pos.z();
-  G4double d_rel = plane_distance - x0;
+  G4double x0 = pos.x() * fCosPlanePhi + pos.y() * fSinPlanePhi;
+  G4double y0 = -pos.x() * fSinPlanePhi + pos.y() * fCosPlanePhi;
+  G4double a1_rel = fA1 - y0;
+  G4double a2_rel = fA2 - y0;
+  G4double b1_rel = fB1 - pos.z();
+  G4double b2_rel = fB2 - pos.z();
+  G4double d_rel = fPlaneDistance - x0;
   G4double sa11 = solid_angle_pyramid(2 * a1_rel, 2 * b1_rel, d_rel);
   G4double sa12 = solid_angle_pyramid(2 * a1_rel, 2 * b2_rel, d_rel);
   G4double sa21 = solid_angle_pyramid(2 * a2_rel, 2 * b1_rel, d_rel);
@@ -49,43 +46,60 @@ G4double GateSingleParticleSourceWindowTurbo::GetSolidAngle(
   return fabs(sa * 0.25);
 }
 
-void GateSingleParticleSourceWindowTurbo::Initialize(py::dict &user_info) {
+void GateSingleParticleSourceWindowTurbo::ThreadFunc(
+    size_t count, G4double *act_ratio_all_thread,
+    G4double *max_solid_angle_thread) {
+
+  G4ThreeVector pos;
+  for (size_t i = 0; i < count; i++) {
+    pos = fPositionGenerator->VGenerateOne();
+    G4double solid_angle = GetSolidAngle(pos);
+    if (solid_angle > *max_solid_angle_thread)
+      *max_solid_angle_thread = solid_angle;
+    *act_ratio_all_thread += solid_angle / 4 / M_PI;
+  }
+}
+
+void GateSingleParticleSourceWindowTurbo::Initialize(py::dict &user_info,
+                                                     std::string source_name) {
   // TODO: make this run in master thread before each run
   // and make the worker thread get info properly before each run
-  a1 = DictGetDouble(user_info, "a1");
-  a2 = DictGetDouble(user_info, "a2");
-  b1 = DictGetDouble(user_info, "b1");
-  b2 = DictGetDouble(user_info, "b2");
-  plane_distance = DictGetDouble(user_info, "plane_distance");
-  plane_phi = DictGetDouble(user_info, "plane_phi");
-  sin_plane_phi = sin(plane_phi);
-  cos_plane_phi = cos(plane_phi);
-  turbo_source_name = DictGetStr(user_info, "name");
+  fSourceName = source_name;
+  fA1 = DictGetDouble(user_info, "a1");
+  fA2 = DictGetDouble(user_info, "a2");
+  fB1 = DictGetDouble(user_info, "b1");
+  fB2 = DictGetDouble(user_info, "b2");
+  fPlaneDistance = DictGetDouble(user_info, "plane_distance");
+  fPlanePhi = DictGetDouble(user_info, "plane_phi");
+  fSinPlanePhi = sin(fPlanePhi);
+  fCosPlanePhi = cos(fPlanePhi);
 
-  act_ratio = DictGetDouble(user_info, "act_ratio");
-  max_solid_angle = DictGetDouble(user_info, "max_solid_angle");
-  if (not isnan(act_ratio) && not isnan(max_solid_angle) and act_ratio >= 0 and
-      act_ratio <= 1 and max_solid_angle >= 0 and max_solid_angle <= 4 * M_PI) {
-    G4cout << "Turbo source " << turbo_source_name
+  fActRatio = DictGetDouble(user_info, "act_ratio");
+  fMaxSolidAngle = DictGetDouble(user_info, "max_solid_angle");
+  if (not isnan(fActRatio) && not isnan(fMaxSolidAngle) and fActRatio >= 0 and
+      fActRatio <= 1 and fMaxSolidAngle >= 0 and fMaxSolidAngle <= 4 * M_PI) {
+    G4cout << "Turbo source " << fSourceName
            << " already has act_ratio and max_solid_angle set." << G4endl;
     return;
+  } else {
+    fMaxSolidAngle = 0;
+    fActRatio = 0;
   }
 
   if (not G4Threading::IsMasterThread()) {
     // TBD: should I check validity of act_ratio and max_solid_angle here or in
     // python side?
-    if (isnan(act_ratio) || isnan(max_solid_angle)) {
+    if (isnan(fActRatio) || isnan(fMaxSolidAngle)) {
       G4String error_msg =
           "activity ratio or max solid angle not set for source: ";
-      G4String source_name = DictGetStr(user_info, "name");
-      error_msg += source_name;
+      error_msg += fSourceName;
       G4Exception("GateSingleParticleSourceWindowTurbo::Initialize",
                   "InitializeError", FatalException, error_msg);
     }
     return;
   }
 
-  G4int samplingCount = DictGetInt(user_info, "sampling_count");
+  size_t samplingCount = DictGetInt(user_info, "init_sampling_count");
 
   // TODO: implement random engine init in python
   // GateRandomEngine *theRandomEngine = GateRandomEngine::GetInstance();
@@ -108,29 +122,39 @@ void GateSingleParticleSourceWindowTurbo::Initialize(py::dict &user_info) {
 
   auto start_time = std::chrono::high_resolution_clock::now();
   G4double act_ratio_all = 0;
-  G4ThreeVector pos;
-  for (G4int i = 0; i < samplingCount; i++) {
-    pos = fPositionGenerator->GenerateOne();
-    G4double solid_angle = GetSolidAngle(pos);
-    if (solid_angle > max_solid_angle)
-      max_solid_angle = solid_angle;
-    act_ratio_all += solid_angle / 4 / M_PI;
+  G4int thread_count = DictGetInt(user_info, "init_number_of_threads");
+  size_t sampling_count_per_thread = samplingCount / thread_count;
+  size_t sampling_count_actual = sampling_count_per_thread * thread_count;
+  std::vector<std::thread> threads(thread_count);
+  std::vector<G4double> act_ratio_all_thread(thread_count, 0);
+  std::vector<G4double> max_solid_angle_thread(thread_count, 0);
+  for (G4int i = 0; i < thread_count; i++) {
+    threads[i] =
+        std::thread(&GateSingleParticleSourceWindowTurbo::ThreadFunc, this,
+                    sampling_count_per_thread, &act_ratio_all_thread[i],
+                    &max_solid_angle_thread[i]);
   }
-  act_ratio = act_ratio_all / samplingCount;
+  for (G4int i = 0; i < thread_count; i++) {
+    threads[i].join();
+    act_ratio_all += act_ratio_all_thread[i];
+    if (max_solid_angle_thread[i] > fMaxSolidAngle)
+      fMaxSolidAngle = max_solid_angle_thread[i];
+  }
+
+  fActRatio = act_ratio_all / samplingCount;
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_time - start_time);
-  G4String source_name = DictGetStr(user_info, "name");
-  G4cout << "Activity Ratio of source " << source_name << " is "
-         << std::scientific << std::setprecision(10) << act_ratio
+  G4cout << "Activity Ratio of source " << fSourceName << " is "
+         << std::scientific << std::setprecision(10) << fActRatio
          << std::defaultfloat << G4endl;
-  G4cout << "Max Solid Angle of source " << source_name << " is "
-         << std::scientific << std::setprecision(10) << max_solid_angle
+  G4cout << "Max Solid Angle of source " << fSourceName << " is "
+         << std::scientific << std::setprecision(10) << fMaxSolidAngle
          << std::defaultfloat << G4endl;
   G4cout << "Time used: " << duration.count() << " microseconds" << G4endl;
   // VerifyPhiTheta(samplingCount, 0.01);
-  user_info["act_ratio"] = act_ratio;
-  user_info["max_solid_angle"] = max_solid_angle;
+  user_info["act_ratio"] = fActRatio;
+  user_info["max_solid_angle"] = fMaxSolidAngle;
 }
 
 void GateSingleParticleSourceWindowTurbo::SetPhiTheta(
@@ -143,13 +167,13 @@ void GateSingleParticleSourceWindowTurbo::SetPhiTheta(
   // py = -sintheta * sinphi;
   // pz = -costheta;
 
-  G4double x0 = pos.x() * cos_plane_phi + pos.y() * sin_plane_phi;
-  G4double y0 = -pos.x() * sin_plane_phi + pos.y() * cos_plane_phi;
-  G4double a1_rel = a1 - y0;
-  G4double a2_rel = a2 - y0;
-  G4double b1_rel = b1 - pos.z();
-  G4double b2_rel = b2 - pos.z();
-  G4double d_rel = plane_distance - x0;
+  G4double x0 = pos.x() * fCosPlanePhi + pos.y() * fSinPlanePhi;
+  G4double y0 = -pos.x() * fSinPlanePhi + pos.y() * fCosPlanePhi;
+  G4double a1_rel = fA1 - y0;
+  G4double a2_rel = fA2 - y0;
+  G4double b1_rel = fB1 - pos.z();
+  G4double b2_rel = fB2 - pos.z();
+  G4double d_rel = fPlaneDistance - x0;
 
   G4double aamax = std::max(a1_rel * a1_rel, a2_rel * a2_rel);
   G4double aamin = std::min(a1_rel * a1_rel, a2_rel * a2_rel);
@@ -170,8 +194,8 @@ void GateSingleParticleSourceWindowTurbo::SetPhiTheta(
 
   fDirectionGenerator->SetMinTheta(thetamin);
   fDirectionGenerator->SetMaxTheta(thetamax);
-  G4double phimin = atan2(a1_rel, d_rel) + plane_phi;
-  G4double phimax = atan2(a2_rel, d_rel) + plane_phi;
+  G4double phimin = atan2(a1_rel, d_rel) + fPlanePhi;
+  G4double phimax = atan2(a2_rel, d_rel) + fPlanePhi;
 
   fDirectionGenerator->SetMinPhi(phimin + M_PI);
   fDirectionGenerator->SetMaxPhi(phimax + M_PI);
@@ -183,54 +207,60 @@ G4bool GateSingleParticleSourceWindowTurbo::CheckPosDirValid(
   //   G4double cot2theta = std::copysign(1.0, dir.z()) * dir.z() * dir.z() /
   //                        (dir.x() * dir.x() + dir.y() * dir.y());
 
-  G4double x0 = pos.x() * cos_plane_phi + pos.y() * sin_plane_phi;
-  G4double y0 = -pos.x() * sin_plane_phi + pos.y() * cos_plane_phi;
-  G4double a1_rel = a1 - y0;
-  G4double a2_rel = a2 - y0;
-  G4double b1_rel = b1 - pos.z();
-  G4double b2_rel = b2 - pos.z();
-  G4double d_rel = plane_distance - x0;
-  G4double dir_x_rotated = dir.x() * cos_plane_phi + dir.y() * sin_plane_phi;
-  G4double dir_y_rotated = -dir.x() * sin_plane_phi + dir.y() * cos_plane_phi;
+  G4double x0 = pos.x() * fCosPlanePhi + pos.y() * fSinPlanePhi;
+  G4double y0 = -pos.x() * fSinPlanePhi + pos.y() * fCosPlanePhi;
+  G4double a1_rel = fA1 - y0;
+  G4double a2_rel = fA2 - y0;
+  G4double b1_rel = fB1 - pos.z();
+  G4double b2_rel = fB2 - pos.z();
+  G4double d_rel = fPlaneDistance - x0;
+  G4double dir_x_rotated = dir.x() * fCosPlanePhi + dir.y() * fSinPlanePhi;
+  G4double dir_y_rotated = -dir.x() * fSinPlanePhi + dir.y() * fCosPlanePhi;
 
   G4double intersect_b = d_rel / dir_x_rotated * dir.z() + pos.z();
   G4double intersect_a = d_rel / dir_x_rotated * dir_y_rotated + y0;
-  return intersect_a <= a2 && intersect_a >= a1 && intersect_b <= b2 &&
-         intersect_b >= b1;
+  return intersect_a <= fA2 && intersect_a >= fA1 && intersect_b <= fB2 &&
+         intersect_b >= fB1;
 }
 
-void GateSingleParticleSourceWindowTurbo::GeneratePrimaryVertex(
-    G4Event *event) {
-
-  G4ThreeVector position = fPositionGenerator->GenerateOne();
+void GateSingleParticleSourceWindowTurbo::GeneratePos() {
+  fCurrentPos = fPositionGenerator->GenerateOne();
 
   // probability of the position is valid should be proportional to the solid
   // angle
   while (true) {
-    G4double solid_angle = GetSolidAngle(position);
-    if (solid_angle > max_solid_angle * 1.1) {
+    G4double solid_angle = GetSolidAngle(fCurrentPos);
+    if (solid_angle > fMaxSolidAngle * 1.1) {
       G4String error_msg =
           "solid angle of position is larger than max solid angle for source: ";
-      error_msg += turbo_source_name;
+      error_msg += fSourceName;
       error_msg += "\nyou may increase max solid angle and try again";
       G4Exception("GateWindowTurboSource::GeneratePrimaryVertex",
                   "GeneratePrimaryVertexError", FatalException, error_msg);
     }
-    if (G4UniformRand() < solid_angle / max_solid_angle / 1.1) {
+    if (G4UniformRand() < solid_angle / fMaxSolidAngle / 1.1) {
+      fCurrentSolidAngle = solid_angle;
       break;
     }
-    position = fPositionGenerator->GenerateOne();
+    fCurrentPos = fPositionGenerator->GenerateOne();
   }
+  fPosGenerated = true;
+}
 
-  SetPhiTheta(position);
+void GateSingleParticleSourceWindowTurbo::GeneratePrimaryVertex(
+    G4Event *event) {
+  if (not fSkip)
+    GeneratePos();
+  fPosGenerated = false;
+  SetPhiTheta(fCurrentPos);
   G4ThreeVector direction;
   while (true) {
     direction = fDirectionGenerator->GenerateOne();
-    if (CheckPosDirValid(position, direction)) {
+    if (CheckPosDirValid(fCurrentPos, direction)) {
       break;
     }
   }
-  G4PrimaryVertex *vertex = new G4PrimaryVertex(position, particle_time);
+  G4PrimaryVertex *vertex = new G4PrimaryVertex(fCurrentPos, particle_time);
 
   // Set placement relative to attached volume
   // DD(particle_momentum_direction);

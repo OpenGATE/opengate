@@ -22,21 +22,30 @@ azimuthal angles of source point seeing pphi1 and pphi2.
 
 class GateWindowTurboSource : public GateGenericSource {
 public:
-  GateWindowTurboSource(G4String name);
-  ~GateWindowTurboSource() = default;
+  GateWindowTurboSource() = default;
+  ~GateWindowTurboSource() override = default;
 
   void GeneratePrimaries(G4Event *event,
                          double current_simulation_time) override;
 
-  virtual double PrepareNextTime(double current_simulation_time,
-                                 double NumberOfGeneratedEvents) override;
+  virtual void PrepareNextRun() override;
 
-  void Initialize(G4int samplingCount);
   void LoadVoxelizedPhantom(G4String filename);
   void SetPhantomPosition(G4ThreeVector pos);
   void GetWindowVertex(G4ThreeVector &pos1, G4ThreeVector &pos2,
                        G4ThreeVector &pos3, G4ThreeVector &pos4) const;
+  void InitializeUserInfo(py::dict &user_info) override;
+  virtual unsigned long
+  GetExpectedNumberOfEvents(const TimeInterval &time_interval) override;
+
+  virtual double CalcNextTime(double current_simulation_time) override;
+
+protected:
+  virtual void CreateSPS() override;
+  virtual void InitializeDirection(py::dict puser_info) override;
 
 private:
-  void CheckMotherVolumeIsNotRotated() const;
+  bool fSkip; // true for act ratio, false for event skipping base on
+              // solid angle
+  //   void CheckMotherVolumeIsNotRotated() const;
 };

@@ -1,52 +1,97 @@
-// TODO: 需要自行清除
-// ang->fGlobalRotation，如果复用GateGenericSource::PrepareNextRun()的话
+// TODO: 需要自行清除 ang->fGlobalRotation，如果
+// 复用GateGenericSource::PrepareNextRun()的话
+// 每个线程各算各的粒子数
 #include "GateWindowTurboSource.h"
-// #include "GateWindowTurboSourceMessenger.hh"
-#include "GateRandomEngine.hh"
-#include "GateVoxelizedPosDistribution.hh"
+#include "GateHelpersDict.h"
+#include "GateSingleParticleSourceWindowTurbo.h"
+#include "GateVSource.h"
 #include <G4Event.hh>
+#include <Randomize.hh>
 
 // G4bool GateWindowTurboSource::random_engine_initialized = false;
 
-G4int GateWindowTurboSource::GeneratePrimaries(G4Event *event) {
-  if (event)
-    GateMessage("Beam", 2,
-                "Generating particle " << event->GetEventID() << G4endl);
-
-  G4int numVertices = 0;
-
-  SetParticleTime(m_time);
-  GeneratePrimaryVertex(event);
-  numVertices++;
-
-  // if (event) {
-  //   for (int i = 0; i < event->GetPrimaryVertex(0)->GetNumberOfParticle();
-  //        i++) {
-  //     G4PrimaryParticle *p = event->GetPrimaryVertex(0)->GetPrimary(i);
-  //     GateMessage("Beam", 3,
-  //                 "(" << event->GetEventID() << ") "
-  //                     << p->GetG4code()->GetParticleName()
-  //                     << " pos=" << event->GetPrimaryVertex(0)->GetPosition()
-  //                     << " weight=" << p->GetWeight()
-  //                     << " energy=" << G4BestUnit(mEnergy, "Energy")
-  //                     << " mom=" << p->GetMomentum()
-  //                     << " ptime=" << G4BestUnit(p->GetProperTime(), "Time")
-  //                     << " atime=" << G4BestUnit(GetTime(), "Time") <<
-  //                     ")\n");
-  //   }
-  // }
-
-  // if (event) {
-  //   printf("time %e ns\n", GetTime());
-  // }
-
-  // G4cout<<"Generate primaries\n";
-  return numVertices;
+void GateWindowTurboSource::CreateSPS() {
+  auto &ll = GetThreadLocalDataGenericSource();
+  ll.fSPS = new GateSingleParticleSourceWindowTurbo(fAttachedToVolumeName);
 }
 
-GateWindowTurboSource::GateWindowTurboSource(G4String name)
-    : GateVSource(name) {
-  m_sourceMessenger = new GateWindowTurboSourceMessenger(this);
+void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
+  GateGenericSource::InitializeUserInfo(user_info);
+  // TBD: should these be addressed in python side?
+  auto &ll = GetThreadLocalDataGenericSource();
+  fSkip = DictGetBool(user_info, "skip_mode");
+  GateSingleParticleSourceWindowTurbo *sps =
+      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(ll.fSPS);
+  sps->SetSkipMode(fSkip);
+  fWeight = -1;
+  fWeightSigma = -1;
+  fDirectionRelativeToAttachedVolume = false;
+}
+
+// TBD: override update TAC?
+
+double GateWindowTurboSource::CalcNextTime(double current_simulation_time) {
+  GateSingleParticleSourceWindowTurbo *sps =
+      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(
+          GetThreadLocalDataGenericSource().fSPS);
+  G4double act_ratio;
+  if (fSkip) {
+    if (not sps->GetPosGenerated()) {
+      sps->GeneratePos();
+    }
+    act_ratio = sps->GetCurrentSolidAngle() / (4 * M_PI);
+  } else
+    act_ratio = sps->GetActRatio();
+
+  double next_time = current_simulation_time;
+  if ((fMaxN <= 0)) {
+    next_time = current_simulation_time -
+                log(G4UniformRand()) * (1.0 / fActivity / act_ratio);
+  }
+  return next_time;
+}
+
+void GateWindowTurboSource::PrepareNextRun() {
+  GateGenericSource::PrepareNextRun();
+  // TBD: voxelized source prepare next run here
+  auto &ll = GetThreadLocalDataGenericSource();
+  auto *ang = ll.fSPS->GetAngDist();
+  ang->fGlobalRotation = G4RotationMatrix();
+  // since the azumuthal and elevation angles are controlled later
+  // TBD: Should the initialization for sps be done again here? most likely yes
+}
+
+void GateWindowTurboSource::GeneratePrimaries(
+    G4Event *event, const double current_simulation_time) {
+  GateGenericSource::GeneratePrimaries(event, current_simulation_time);
+  // auto &ll = GetThreadLocalDataGenericSource();
+  // GateSingleParticleSourceWindowTurbo *sps =
+  //     reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(ll.fSPS);
+  // if (fSkip) {
+  //   G4double current_solid_angle = sps->GetCurrentSolidAngle();
+  //   ll.fCurrentSkippedEvents += 4 * M_PI / current_solid_angle - 1;
+  //   ll.fEffectiveEventTime +=
+  //       G4RandGamma::shoot(ll.fCurrentSkippedEvents, fActivity);
+  // }
+  // TODO:finish this
+}
+
+void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
+  auto &ll = fThreadLocalDataGenericSource.Get();
+  auto *ang = ll.fSPS->GetAngDist();
+  ang->SetAngDistType("iso");
+  auto user_info = py::dict(puser_info["direction"]);
+  GateSingleParticleSourceWindowTurbo *sps =
+      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(ll.fSPS);
+  sps->Initialize(user_info, fName);
+  if (ll.fAAManager == nullptr) {
+    ll.fAAManager = new GateAcceptanceAngleManager;
+    ll.fSPS->SetAAManager(ll.fAAManager);
+  }
+  if (ll.fFDManager == nullptr) {
+    ll.fFDManager = new GateForcedDirectionManager;
+    ll.fSPS->SetFDManager(ll.fFDManager);
+  }
 }
 
 // void verify_one(const G4ThreeVector start, const G4ThreeVector end,
@@ -129,71 +174,24 @@ GateWindowTurboSource::GateWindowTurboSource(G4String name)
 //          << G4endl;
 // }
 
-void GateWindowTurboSource::CheckMotherVolumeIsNotRotated() const {
-  // TODO: reimplement
-  //  GateVVolume *v = mVolume;
-  //  if (v == nullptr) {
-  //    SetRelativePlacementVolume("world");
-  //    v = mVolume;
-  //  }
-  //  while (v->GetObjectName() != "world") {
+// void GateWindowTurboSource::CheckMotherVolumeIsNotRotated() const {
+// TODO: reimplement
+//  GateVVolume *v = mVolume;
+//  if (v == nullptr) {
+//    SetRelativePlacementVolume("world");
+//    v = mVolume;
+//  }
+//  while (v->GetObjectName() != "world") {
 
-  //   if (G4RotationMatrix({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}) !=
-  //       v->GetPhysicalVolume(0)->GetObjectRotationValue()) {
-  //     G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-  //                 FatalException,
-  //                 "Turbo source must not attach to a rotated volume");
-  //   }
-  //   v = v->GetParentVolume();
-  // }
-}
-
-void GateWindowTurboSource::Initialize(G4int samplingCount) {
-
-  // TODO: implement random engine init in python
-  // GateRandomEngine *theRandomEngine = GateRandomEngine::GetInstance();
-  // if (!random_engine_initialized) {
-  //   theRandomEngine->Initialize();
-  //   random_engine_initialized = true;
-  // }
-
-  // TODO: check paramenters in python
-  // if (a1 != a1 || a2 != a2 || b1 != b1 || b2 != b2 ||
-  //     plane_distance != plane_distance || plane_phi != plane_phi) {
-  //   G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-  //               FatalException, "Not all parameters needed points are set");
-  // }
-
-  // if (a1 >= a2 || b1 >= b2) {
-  //   G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-  //               FatalException, "a1 >= a2 or b1 >= b2");
-  // }
-
-  auto start_time = std::chrono::high_resolution_clock::now();
-  G4double act_ratio_all = 0;
-  G4ThreeVector pos;
-  for (G4int i = 0; i < samplingCount; i++) {
-    pos = m_posSPS->GenerateOne();
-    G4double solid_angle = GetSolidAngle(pos);
-    if (solid_angle > max_solid_angle)
-      max_solid_angle = solid_angle;
-    act_ratio_all += solid_angle / 4 / M_PI;
-  }
-  act_ratio = act_ratio_all / samplingCount;
-  act_ratio_set = true;
-  max_solid_angle_set = true;
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-      end_time - start_time);
-  G4cout << "Activity Ratio of source " << m_name << " is " << std::scientific
-         << std::setprecision(10) << act_ratio << std::defaultfloat << G4endl;
-  G4cout << "Max Solid Angle of source " << m_name << " is " << std::scientific
-         << std::setprecision(10) << max_solid_angle << std::defaultfloat
-         << G4endl;
-  if (nVerboseLevel > 0)
-    G4cout << "Time used: " << duration.count() << " microseconds" << G4endl;
-  // VerifyPhiTheta(samplingCount, 0.01);
-}
+//   if (G4RotationMatrix({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}) !=
+//       v->GetPhysicalVolume(0)->GetObjectRotationValue()) {
+//     G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
+//                 FatalException,
+//                 "Turbo source must not attach to a rotated volume");
+//   }
+//   v = v->GetParentVolume();
+// }
+// }
 
 G4double GateWindowTurboSource::GetNextTime(G4double timeStart) {
 
