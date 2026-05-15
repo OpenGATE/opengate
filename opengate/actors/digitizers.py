@@ -1397,8 +1397,9 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
             "entering",
             {
                 "doc": "Define when to store the hits, can be 'entering', 'exiting', 'first' or 'all'. "
-                "Or several values separated by a space. If 'exiting' is used with multiple "
-                "attached_to volumes, those volumes must share a unique common mother volume. ",
+                "Or several values separated by a space. When 'exiting' is used with multiple "
+                "attached_to volumes, exit transitions are resolved independently for each "
+                "attached physical volume. ",
                 # "allowed_values": ["entering", "exiting", "first", "all"], # can be multiple
             },
         ),
@@ -1414,41 +1415,13 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
 
-    def _get_attached_to_mother_for_exiting(self):
-        # Exiting-step detection in C++ compares the post-step volume name
-        # against a single attached_to mother volume name. Multiple attached
-        # volumes are therefore acceptable only if they all share that mother.
-        if isinstance(self.attached_to, str):
-            vol = self.simulation.volume_manager.get_volume(self.attached_to)
-            return vol.mother if vol.mother is not None else "world"
-
-        mothers = set()
-        for volume_name in self.attached_to:
-            vol = self.simulation.volume_manager.get_volume(volume_name)
-            mothers.add(vol.mother if vol.mother is not None else "world")
-
-        if len(mothers) != 1:
-            fatal(
-                f"PhaseSpaceActor '{self.name}' stores exiting steps and therefore "
-                f"requires a single attached_to mother volume. The attached volumes "
-                f"{self.attached_to} have different mothers: {sorted(mothers)}."
-            )
-        return next(iter(mothers))
-
     def initialize(self):
-        attached_to_mother = None
-        if "exiting" in self.steps_to_store:
-            # Only the exiting-step mode needs an unambiguous mother volume.
-            # Other phase-space modes can still work with multiple attached
-            # volumes because they do not call IsStepExitingAttachedVolume().
-            attached_to_mother = self._get_attached_to_mother_for_exiting()
         DigitizerBase.initialize(self)
-        if attached_to_mother is not None:
-            # ActorBase.initialize() stores "None" for list-style attached_to.
-            # Override it here with the validated common mother required by the
-            # PhaseSpaceActor exiting-step logic in C++.
-            self.mother_attached_to = attached_to_mother
-            self.SetMotherAttachedToVolumeName(attached_to_mother)
+        if "exiting" in self.steps_to_store:
+            # Exit transitions are resolved later, once Geant4 has constructed
+            # the physical volumes and we can identify concrete (pre, post)
+            # volume pairs for each attached volume copy.
+            self.ClearAttachedVolumeExitPairs()
         if "entering" in self.steps_to_store:
             self.SetStoreEnteringStepFlag(True)
         if "exiting" in self.steps_to_store:
@@ -1472,6 +1445,48 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
                 f"Empty output, no particles stored in {self.get_output_path()}"
             )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
+
+    def initialize_attached_volume_exit_pairs(self, world_name):
+        if "exiting" not in self.steps_to_store:
+            return
+
+        attached_to = self.attached_to
+        if isinstance(attached_to, str):
+            attached_to = [attached_to]
+
+        for volume_name in attached_to:
+            volume = self.simulation.volume_manager.get_volume(volume_name)
+            if volume.world_volume.name != world_name or volume_name == "world":
+                continue
+
+            valid_instance_ids = {
+                pv.GetInstanceID() for pv in volume.g4_physical_volumes
+            }
+            pairs_added = 0
+
+            # Touchable histories let us recover the concrete mother physical
+            # volume for each attached copy. This avoids relying on auto-
+            # generated physical-volume names for repeated geometries.
+            for touchable in g4.FindAllTouchables(volume_name):
+                attached_pv = touchable.GetVolume(0)
+                if attached_pv.GetInstanceID() not in valid_instance_ids:
+                    continue
+                if touchable.GetHistoryDepth() < 1:
+                    fatal(
+                        f"Could not resolve the mother physical volume for "
+                        f"attached volume '{volume_name}' in PhaseSpaceActor "
+                        f"'{self.name}'."
+                    )
+                mother_pv = touchable.GetVolume(1)
+                self.AddAttachedVolumeExitPair(attached_pv, mother_pv)
+                pairs_added += 1
+
+            if pairs_added == 0:
+                fatal(
+                    f"Could not resolve any exiting-step geometry pairs for "
+                    f"attached volume '{volume_name}' in PhaseSpaceActor "
+                    f"'{self.name}'."
+                )
 
 
 class DigiAttributeProcessDefinedStepInVolumeActor(

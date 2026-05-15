@@ -691,6 +691,8 @@ class ActorEngine(EngineBase):
                         register_sensitive_detector_to_children(
                             actor, volume.g4_logical_volume
                         )
+                if hasattr(actor, "initialize_attached_volume_exit_pairs"):
+                    actor.initialize_attached_volume_exit_pairs(world_name)
 
             # 4. Handle Biasing Operators/Actors (specific)
             # this is needed for MultiThread run

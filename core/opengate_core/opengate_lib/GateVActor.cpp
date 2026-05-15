@@ -42,6 +42,26 @@ void GateVActor::SetMotherAttachedToVolumeName(
   fAttachedToVolumeMotherName = attachedToVolumeName;
 }
 
+void GateVActor::ClearAttachedVolumeExitPairs() {
+  fAttachedToVolumeExitPairs.clear();
+}
+
+void GateVActor::AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
+                                           G4VPhysicalVolume *motherVolume) {
+  if (attachedVolume == nullptr || motherVolume == nullptr) {
+    Fatal("Cannot register an attached volume exit pair with a null physical "
+          "volume.");
+  }
+  const auto pair = std::make_pair<const G4VPhysicalVolume *,
+                                   const G4VPhysicalVolume *>(attachedVolume,
+                                                              motherVolume);
+  for (const auto &existingPair : fAttachedToVolumeExitPairs) {
+    if (existingPair == pair)
+      return;
+  }
+  fAttachedToVolumeExitPairs.push_back(pair);
+}
+
 void GateVActor::InitializeUserInfo(py::dict &user_info) {
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
   fActorName = DictGetStr(user_info, "name");
@@ -176,16 +196,6 @@ bool GateVActor::IsStepEnteringVolume(
 }
 
 bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
-  if (fAttachedToVolumeMotherName == "None") {
-    // This value is set when an actor has no single attached_to mother volume.
-    // For example, Python may receive attached_to as a list whose volumes do
-    // not share a common mother. PhaseSpaceActor guards that configuration in
-    // Python when exiting steps are requested, so this remains a defensive C++
-    // fallback.
-    Fatal("Cannot use IsStepExitingAttachedVolume when "
-          "fAttachedToVolumeMotherName is 'None'");
-  }
-
   // If the post step is world boundary: exiting
   if (step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary)
     return true;
@@ -199,9 +209,25 @@ bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
   // boundaries overlap fAttachedToVolume boundaries, post step gives the
   // daughter.
 
-  // if the post step is at the boundary AND if it is in the mother volume:
-  // exiting
-  const auto *vol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
-  const auto vol_name = vol->GetName();
-  return vol_name == fAttachedToVolumeMotherName;
+  const auto *preVol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
+  const auto *postVol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
+
+  // Runtime-resolved physical-volume pairs are the robust path, notably for
+  // repeated volumes whose physical names are auto-generated.
+  for (const auto &exitPair : fAttachedToVolumeExitPairs) {
+    if (exitPair.first == preVol && exitPair.second == postVol)
+      return true;
+  }
+  if (!fAttachedToVolumeExitPairs.empty())
+    return false;
+
+  if (fAttachedToVolumeMotherName == "None") {
+    // Fallback for actors that still rely on a single attached_to mother volume.
+    Fatal("Cannot use IsStepExitingAttachedVolume when "
+          "fAttachedToVolumeMotherName is 'None'");
+  }
+
+  // Legacy fallback for single-volume actors that still provide only the
+  // attached_to mother volume name.
+  return postVol->GetName() == fAttachedToVolumeMotherName;
 }
