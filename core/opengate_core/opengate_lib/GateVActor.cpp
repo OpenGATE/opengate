@@ -218,16 +218,9 @@ bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
     if (exitPair.first == preVol && exitPair.second == postVol)
       return true;
   }
-  if (!fAttachedToVolumeExitPairs.empty())
-    return false;
-
-  if (fAttachedToVolumeMotherName == "None") {
-    // Fallback for actors that still rely on a single attached_to mother volume.
-    Fatal("Cannot use IsStepExitingAttachedVolume when "
-          "fAttachedToVolumeMotherName is 'None'");
+  if (fAttachedToVolumeExitPairs.empty()) {
+    Fatal("Cannot use IsStepExitingAttachedVolume because no attached volume "
+          "exit pairs were configured.");
   }
-
-  // Legacy fallback for single-volume actors that still provide only the
-  // attached_to mother volume name.
-  return postVol->GetName() == fAttachedToVolumeMotherName;
+  return false;
 }

@@ -691,8 +691,11 @@ class ActorEngine(EngineBase):
                         register_sensitive_detector_to_children(
                             actor, volume.g4_logical_volume
                         )
-                if hasattr(actor, "initialize_attached_volume_exit_pairs"):
-                    actor.initialize_attached_volume_exit_pairs(world_name)
+            # This must happen here, after Geant4 has constructed the physical
+            # volumes for the current world. The ActorBase hook resolves
+            # concrete (attached physical volume -> mother physical volume)
+            # pairs, which cannot be derived earlier from user_info alone.
+            actor.initialize_attached_volume_mother_pairs(world_name)
 
             # 4. Handle Biasing Operators/Actors (specific)
             # this is needed for MultiThread run

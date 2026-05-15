@@ -1446,48 +1446,6 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
             )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
 
-    def initialize_attached_volume_exit_pairs(self, world_name):
-        if "exiting" not in self.steps_to_store:
-            return
-
-        attached_to = self.attached_to
-        if isinstance(attached_to, str):
-            attached_to = [attached_to]
-
-        for volume_name in attached_to:
-            volume = self.simulation.volume_manager.get_volume(volume_name)
-            if volume.world_volume.name != world_name or volume_name == "world":
-                continue
-
-            valid_instance_ids = {
-                pv.GetInstanceID() for pv in volume.g4_physical_volumes
-            }
-            pairs_added = 0
-
-            # Touchable histories let us recover the concrete mother physical
-            # volume for each attached copy. This avoids relying on auto-
-            # generated physical-volume names for repeated geometries.
-            for touchable in g4.FindAllTouchables(volume_name):
-                attached_pv = touchable.GetVolume(0)
-                if attached_pv.GetInstanceID() not in valid_instance_ids:
-                    continue
-                if touchable.GetHistoryDepth() < 1:
-                    fatal(
-                        f"Could not resolve the mother physical volume for "
-                        f"attached volume '{volume_name}' in PhaseSpaceActor "
-                        f"'{self.name}'."
-                    )
-                mother_pv = touchable.GetVolume(1)
-                self.AddAttachedVolumeExitPair(attached_pv, mother_pv)
-                pairs_added += 1
-
-            if pairs_added == 0:
-                fatal(
-                    f"Could not resolve any exiting-step geometry pairs for "
-                    f"attached volume '{volume_name}' in PhaseSpaceActor "
-                    f"'{self.name}'."
-                )
-
 
 class DigiAttributeProcessDefinedStepInVolumeActor(
     ActorBase, g4.GateDigiAttributeProcessDefinedStepInVolumeActor
