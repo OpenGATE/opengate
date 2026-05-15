@@ -474,6 +474,8 @@ By default, the PhaseSpaceActor stores information about particles entering the 
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
    phsp.steps_to_store = "all"   # all steps (including secondary particles)
 
+If ``steps_to_store`` includes ``"exiting"`` and ``attached_to`` contains multiple volumes, those volumes must share the same mother volume. This is required so that the actor can unambiguously detect when a track exits the attached geometry.
+
 The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
 
 The option “entering” stores the particle information whenever it is at the boundary between the surrounding environment (world, another volume) and the volume to which the actor is attached. The variables to be used are the PrePosition, PreDirection, etc.

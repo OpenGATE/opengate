@@ -177,6 +177,11 @@ bool GateVActor::IsStepEnteringVolume(
 
 bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
   if (fAttachedToVolumeMotherName == "None") {
+    // This value is set when an actor has no single attached_to mother volume.
+    // For example, Python may receive attached_to as a list whose volumes do
+    // not share a common mother. PhaseSpaceActor guards that configuration in
+    // Python when exiting steps are requested, so this remains a defensive C++
+    // fallback.
     Fatal("Cannot use IsStepExitingAttachedVolume when "
           "fAttachedToVolumeMotherName is 'None'");
   }

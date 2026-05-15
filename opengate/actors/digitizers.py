@@ -1397,7 +1397,8 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
             "entering",
             {
                 "doc": "Define when to store the hits, can be 'entering', 'exiting', 'first' or 'all'. "
-                "Or several values separated by a space. ",
+                "Or several values separated by a space. If 'exiting' is used with multiple "
+                "attached_to volumes, those volumes must share a unique common mother volume. ",
                 # "allowed_values": ["entering", "exiting", "first", "all"], # can be multiple
             },
         ),
@@ -1413,8 +1414,41 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
 
+    def _get_attached_to_mother_for_exiting(self):
+        # Exiting-step detection in C++ compares the post-step volume name
+        # against a single attached_to mother volume name. Multiple attached
+        # volumes are therefore acceptable only if they all share that mother.
+        if isinstance(self.attached_to, str):
+            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            return vol.mother if vol.mother is not None else "world"
+
+        mothers = set()
+        for volume_name in self.attached_to:
+            vol = self.simulation.volume_manager.get_volume(volume_name)
+            mothers.add(vol.mother if vol.mother is not None else "world")
+
+        if len(mothers) != 1:
+            fatal(
+                f"PhaseSpaceActor '{self.name}' stores exiting steps and therefore "
+                f"requires a single attached_to mother volume. The attached volumes "
+                f"{self.attached_to} have different mothers: {sorted(mothers)}."
+            )
+        return next(iter(mothers))
+
     def initialize(self):
+        attached_to_mother = None
+        if "exiting" in self.steps_to_store:
+            # Only the exiting-step mode needs an unambiguous mother volume.
+            # Other phase-space modes can still work with multiple attached
+            # volumes because they do not call IsStepExitingAttachedVolume().
+            attached_to_mother = self._get_attached_to_mother_for_exiting()
         DigitizerBase.initialize(self)
+        if attached_to_mother is not None:
+            # ActorBase.initialize() stores "None" for list-style attached_to.
+            # Override it here with the validated common mother required by the
+            # PhaseSpaceActor exiting-step logic in C++.
+            self.mother_attached_to = attached_to_mother
+            self.SetMotherAttachedToVolumeName(attached_to_mother)
         if "entering" in self.steps_to_store:
             self.SetStoreEnteringStepFlag(True)
         if "exiting" in self.steps_to_store:
