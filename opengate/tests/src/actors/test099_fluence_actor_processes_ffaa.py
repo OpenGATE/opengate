@@ -244,19 +244,22 @@ if __name__ == "__main__":
                 img_uncertainty_phsp,
             ]
 
+    rtol = 1e-5
+    atol = 1e-8
     l_bool = []
     for key, elem in dict_comp.items():
-        diff = np.divide(
-            elem[0] - elem[1],
-            elem[1],
+        abs_diff = np.abs(elem[0] - elem[1])
+        rel_diff = np.divide(
+            abs_diff,
+            np.abs(elem[1]),
             out=np.zeros_like(elem[0]),
             where=(np.abs(elem[1]) > 1e-10),
         )
-        diff = np.round(diff, decimals=5)
-        is_ok = np.all(diff == 0)
+        is_ok = np.allclose(elem[0], elem[1], rtol=rtol, atol=atol)
         if not is_ok:
             print(key)
-            print(diff)
+            print(f"max abs diff = {np.max(abs_diff)}")
+            print(f"max rel diff = {np.max(rel_diff)}")
         l_bool.append(is_ok)
 
     l_bool = np.array(l_bool, dtype="bool")
