@@ -485,6 +485,8 @@ The option “exiting” stores the particle information whenever, starting from
 
 The option “all” stores the particle information for every step in the volume, including secondary particles generated in the volume. If you want to track all steps for both primary and secondary particles, use this option.
 
+When using local coordinates such as ``PrePositionLocal`` or ``PostPositionLocal`` with multiple ``attached_to`` volumes, each stored position is expressed in the local frame of the volume touched by that step. To interpret these entries afterwards, it is useful to also store a volume-identifying attribute such as ``PreStepUniqueVolumeID`` or ``PostStepUniqueVolumeID``. For simpler cases, ``TrackVolumeName`` together with ``PreStepVolumeCopyNo`` or ``PostStepVolumeCopyNo`` can also help distinguish the contributing volumes. If uniquely meaningful local coordinates are important for the analysis, it is often simpler to attach one ``PhaseSpaceActor`` per volume rather than combining several ``attached_to`` volumes in the same actor.
+
 
 Reference
 ~~~~~~~~~
