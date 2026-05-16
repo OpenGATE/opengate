@@ -52,9 +52,8 @@ void GateVActor::AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
     Fatal("Cannot register an attached volume exit pair with a null physical "
           "volume.");
   }
-  const auto pair =
-      std::make_pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *>(
-          attachedVolume, motherVolume);
+  const std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *> pair(
+      attachedVolume, motherVolume);
   for (const auto &existingPair : fAttachedToVolumeExitPairs) {
     if (existingPair == pair)
       return;
