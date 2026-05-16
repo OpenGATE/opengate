@@ -140,8 +140,7 @@ public:
   std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
 
   struct threadLocalT {
-    std::vector<
-        std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *>>
+    std::vector<std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *>>
         attachedToVolumeExitPairs;
   };
 

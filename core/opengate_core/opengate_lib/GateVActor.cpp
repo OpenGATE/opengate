@@ -211,7 +211,8 @@ bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
 
   const auto *preVol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
   const auto *postVol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
-  const auto &exitPairs = fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
+  const auto &exitPairs =
+      fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
 
   // Runtime-resolved physical-volume pairs are the robust path, notably for
   // repeated volumes whose physical names are auto-generated.

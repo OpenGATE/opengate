@@ -28,8 +28,7 @@
  * @return A vector of pointers to G4VTouchable objects.
  **/
 std::vector<std::unique_ptr<G4VTouchable>>
-FindAllTouchables(const G4String &targetLVName,
-                  const G4String &worldName = "");
+FindAllTouchables(const G4String &targetLVName, const G4String &worldName = "");
 
 void FindAndBuildTouchables(G4VPhysicalVolume *currentVolume,
                             G4NavigationHistory &navHistory,
