@@ -9,6 +9,7 @@
 #define GateVActor_h
 
 #include "filters/GateVFilter.h"
+#include <G4Cache.hh>
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
@@ -138,6 +139,12 @@ public:
 
   std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
 
+  struct threadLocalT {
+    std::vector<
+        std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *>>
+        attachedToVolumeExitPairs;
+  };
+
   void SetSourceManager(GateSourceManager *s);
 
   void SetMotherAttachedToVolumeName(const std::string &attachedToVolumeName);
@@ -152,8 +159,7 @@ public:
   // Name of the mother volume (logical volume)
   std::string fAttachedToVolumeName;
   std::string fAttachedToVolumeMotherName;
-  std::vector<std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *>>
-      fAttachedToVolumeExitPairs;
+  mutable G4Cache<threadLocalT> fThreadLocalExitPairsData;
 
   // Pointer to the filter
   GateVFilter *fFilter;

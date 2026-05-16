@@ -516,10 +516,11 @@ class ActorBase(GateObject):
             }
             pairs_added = 0
 
-            # Touchable histories let us recover the concrete mother physical
-            # volume for each attached copy. This avoids relying on auto-
-            # generated physical-volume names for repeated geometries.
-            for touchable in g4.FindAllTouchables(volume_name):
+            # Restrict the touchable lookup to the world currently being
+            # constructed. A global scan across all active navigators is too
+            # fragile during parallel-world setup because some other worlds may
+            # not have a ready navigator yet.
+            for touchable in g4.FindAllTouchables(volume_name, world_name):
                 attached_pv = touchable.GetVolume(0)
                 if attached_pv.GetInstanceID() not in valid_instance_ids:
                     continue
@@ -533,12 +534,12 @@ class ActorBase(GateObject):
                 self.AddAttachedVolumeExitPair(attached_pv, mother_pv)
                 pairs_added += 1
 
-            if pairs_added == 0:
-                fatal(
-                    f"Could not resolve any attached volume / mother volume "
-                    f"pairs for attached volume '{volume_name}' in actor "
-                    f"'{self.name}'."
-                )
+            # Some actors never use the attached volume / mother volume pairs,
+            # and in parallel-world setup there may be ConstructSDandField
+            # passes where Geant4 does not yield touchables for a given volume
+            # yet. We therefore leave the setup non-fatal here and let actors
+            # that actually need these pairs fail later if they try to use
+            # IsStepExitingAttachedVolume() without any resolved pairs.
 
     def _init_user_output_instance(self):
         for output_name, output_config in self._processed_user_output_config.items():

@@ -43,7 +43,7 @@ void GateVActor::SetMotherAttachedToVolumeName(
 }
 
 void GateVActor::ClearAttachedVolumeExitPairs() {
-  fAttachedToVolumeExitPairs.clear();
+  fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs.clear();
 }
 
 void GateVActor::AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
@@ -54,11 +54,12 @@ void GateVActor::AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
   }
   const std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *> pair(
       attachedVolume, motherVolume);
-  for (const auto &existingPair : fAttachedToVolumeExitPairs) {
+  auto &exitPairs = fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
+  for (const auto &existingPair : exitPairs) {
     if (existingPair == pair)
       return;
   }
-  fAttachedToVolumeExitPairs.push_back(pair);
+  exitPairs.push_back(pair);
 }
 
 void GateVActor::InitializeUserInfo(py::dict &user_info) {
@@ -210,14 +211,15 @@ bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
 
   const auto *preVol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
   const auto *postVol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
+  const auto &exitPairs = fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
 
   // Runtime-resolved physical-volume pairs are the robust path, notably for
   // repeated volumes whose physical names are auto-generated.
-  for (const auto &exitPair : fAttachedToVolumeExitPairs) {
+  for (const auto &exitPair : exitPairs) {
     if (exitPair.first == preVol && exitPair.second == postVol)
       return true;
   }
-  if (fAttachedToVolumeExitPairs.empty()) {
+  if (exitPairs.empty()) {
     Fatal("Cannot use IsStepExitingAttachedVolume because no attached volume "
           "exit pairs were configured.");
   }
