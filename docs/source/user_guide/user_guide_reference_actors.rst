@@ -869,8 +869,6 @@ To obtain the same pile-up behavior as in GATE 9, set the following options:
    position_attribute_policy = "EnergyWinner"
    attribute_policy = "EnergyWinner"
 
-The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` can currently only be used in single-threaded simulations.
-
 .. code-block:: python
 
     pu = sim.add_actor("DigitizerPileupActor", "Singles_with_pileup")

@@ -30,11 +30,11 @@ public:
   GateDigiCollection::Iterator &OutputIterator();
   void MarkOutputAsProcessed();
 
+private:
   bool Ingest();
   void Process();
   void Flush();
 
-private:
   void IdentifyFastestThread();
   void MarkThreadAsFinished(int threadId);
   void Prune();
