@@ -9,7 +9,8 @@ Window Turbo Source
 2. 不支持体素化源
 3. 支持两种不同的skip_mode。
 4. 不支持生成光子数n的定义
-
+a1/a2/b1/b2/plane_distance/plane_phi可以为列表或浮点数。
+如果是列表，长度应当与run time interval相同。如果是浮点数，则在所有run time interval中保持不变。
 Description
 -----------
 
