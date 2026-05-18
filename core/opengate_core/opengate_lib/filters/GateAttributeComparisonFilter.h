@@ -9,9 +9,20 @@
 #define GateAttributeComparisonFilter_h
 
 #include "../GateHelpersDict.h"
+#include "../GateVAuxiliaryAttribute.h"
 #include "../digitizer/GateTDigiAttribute.h"
 #include "GateVFilter.h"
 
+/*
+ * Generic comparison filter for named runtime attributes.
+ *
+ * Resolution order is:
+ * 1. auxiliary-attribute registry
+ * 2. conventional DigiAttribute registry as fallback
+ *
+ * This lets the same user-facing filter syntax work for both simulation-level
+ * auxiliary attributes and the older DigiAttribute-based values.
+ */
 template <typename T> class GateAttributeComparisonFilter : public GateVFilter {
 public:
   GateAttributeComparisonFilter();
@@ -24,6 +35,7 @@ public:
   T fCompareValue;
   std::string fCompareOperation;
   GateTDigiAttribute<T> *fAttribute{nullptr};
+  GateVAuxiliaryAttribute *fAuxiliaryAttribute{nullptr};
 };
 
 // Typedefs for common use cases

@@ -53,6 +53,65 @@ You can attach filters to an actor to select which data should be processed or s
 
 For a complete list of available attributes and logical operators, see :ref:`filters-label`.
 
+
+Auxiliary attributes
+--------------------
+
+Auxiliary attributes are simulation-level attributes that are computed by
+tracking logic extending beyond the information natively available from the
+current Geant4 step alone. They are useful for quantities such as:
+
+- how many times a given process has occurred so far along a track
+- the last process seen in a given volume
+- the last interaction position in a volume
+
+In practice, an auxiliary attribute is first added to the simulation and
+configured, and can then be used by actors in the same way as other
+attributes.
+
+Example: count how often Compton scattering occurred in a given volume and
+store the value in a :class:`~.opengate.actors.digitizers.PhaseSpaceActor`:
+
+.. code-block:: python
+
+  import opengate as gate
+
+  sim = gate.Simulation()
+
+  water_box = sim.add_volume("Box", "water_box")
+  water_box.size = [10 * cm, 10 * cm, 5 * cm]
+  water_box.material = "G4_WATER"
+
+  aux = sim.activate_auxiliary_attribute(
+      "ProcessDefinedStepInVolumeAttribute",
+      "ProcessDefinedStep__compt__water_box",
+  )
+  aux.process_name = "compt"
+  aux.volume_name = water_box.name
+
+  phsp = sim.add_actor("PhaseSpaceActor", "phsp")
+  phsp.attached_to = "some_plane"
+  phsp.attributes = ["KineticEnergy", aux.name]
+
+The same auxiliary attribute can also be used in filters. For example, to keep
+only particles for which the count is strictly positive:
+
+.. code-block:: python
+
+  F = gate.GateFilterBuilder()
+  phsp.filter = F(aux.name) > 0
+
+This is especially useful when a quantity depends on the track history rather
+than only on the current step.
+
+Some auxiliary attributes can also be used by non-ROOT-based actors internally
+through their C++ runtime getter API. From a user point of view, however, the
+main workflow is:
+
+1. add and configure the auxiliary attribute in the simulation
+2. use its name in an actor attribute list and/or a filter
+
+
 Actor output
 ------------
 

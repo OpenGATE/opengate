@@ -21,5 +21,7 @@ void init_GateTrackingAction(py::module &m) {
       .def(py::init())
       .def_readwrite("fUserEventInformationFlag",
                      &GateTrackingAction::fUserEventInformationFlag)
-      .def("RegisterActor", &GateTrackingAction::RegisterActor);
+      .def("RegisterActor", &GateTrackingAction::RegisterActor)
+      .def("RegisterAuxiliaryAttribute",
+           &GateTrackingAction::RegisterAuxiliaryAttribute);
 }

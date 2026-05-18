@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp.attached_to = detector_plan.name
-    att = LastProcessDefinedStepInVolumeAttribute(sim, vacuum_box.name)
+    att = LastProcessDefinedStepInVolumeAttributeLegacy(sim, vacuum_box.name)
 
     l_att = []
     l_att.append(att.name)
@@ -84,8 +84,8 @@ if __name__ == "__main__":
             layer.size = [20 * cm, 20 * cm, 2 * cm]
         layer.translation = [0, 0, -vacuum_box.size[2] / 2 + 4.5 * (i + 1) * cm]
         layer.color = [0.9, 0.7, 0.8, 0.1]
-        att1 = ProcessDefinedStepInVolumeAttribute(sim, "compt", layer.name)
-        att2 = ProcessDefinedStepInVolumeAttribute(sim, "Rayl", layer.name)
+        att1 = ProcessDefinedStepInVolumeAttributeLegacy(sim, "compt", layer.name)
+        att2 = ProcessDefinedStepInVolumeAttributeLegacy(sim, "Rayl", layer.name)
         l_att.append(att1.name)
         l_att.append(att2.name)
 
