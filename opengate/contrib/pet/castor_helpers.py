@@ -29,6 +29,11 @@ def create_castor_config(simulation_engine, param):
     }
 
     volume_name = param["volume_name"]
+    # TODO: In parallel-world setups, consider passing an explicit world to
+    # FindAllTouchables(). This helper currently performs a global scan by
+    # volume name, which may mix instances from multiple worlds with the same
+    # logical-volume name. We keep the behavior unchanged on this branch to
+    # avoid coupling the CASToR helper refactor to the PhaseSpaceActor fix.
     touchables = g4.FindAllTouchables(volume_name)
     m = g4.GateUniqueVolumeIDManager.GetInstance()
 
