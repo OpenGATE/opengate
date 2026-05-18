@@ -183,9 +183,13 @@ def check_gate_pileup(
 
         # Get the expected singles (Python) and actual singles (GateDigitizerPileupActor) for the current volume.
         expected_singles = pd.DataFrame(expected_singles_after_pileup[volume_id])
-        actual_singles = actual_singles_after_pileup[
-            actual_singles_after_pileup["PreStepUniqueVolumeID"] == volume_id
-        ].reset_index(drop=True)
+        actual_singles = (
+            actual_singles_after_pileup[
+                actual_singles_after_pileup["PreStepUniqueVolumeID"] == volume_id
+            ]
+            .sort_values("GlobalTime")
+            .reset_index(drop=True)
+        )
 
         # Compare the number of singles
         if len(expected_singles) != len(actual_singles):
@@ -204,11 +208,23 @@ def check_gate_pileup(
             if np.issubdtype(expected_values.dtype, np.floating):
                 if not np.allclose(expected_values, actual_values, rtol=1e-9):
                     print(f"Volume {volume_id}: Attribute {attr} does not match")
+                    mismatch_indices = np.where(
+                        ~np.isclose(expected_values, actual_values, rtol=1e-9)
+                    )[0]
+                    first_mismatch_idx = mismatch_indices[0]
+                    print(
+                        f"  Single index {first_mismatch_idx}: expected={expected_values[first_mismatch_idx]}, actual={actual_values[first_mismatch_idx]}"
+                    )
                     all_match = False
                     break
             else:
                 if not all(expected_values == actual_values):
                     print(f"Volume {volume_id}: Attribute {attr} does not match")
+                    mismatch_indices = np.where(expected_values != actual_values)[0]
+                    first_mismatch_idx = mismatch_indices[0]
+                    print(
+                        f"  Single index {first_mismatch_idx}: expected={expected_values[first_mismatch_idx]}, actual={actual_values[first_mismatch_idx]}"
+                    )
                     all_match = False
                     break
 
