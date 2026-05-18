@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — Uniform electric field: analytical validation.
+Test 099 - Uniform electric field: analytical validation.
 
 A proton enters a region with uniform E along X.
 Checks:

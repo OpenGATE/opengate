@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Test 099 — Field serialization round-trip.
+Test 099 - Field serialization round-trip.
 
 Tests that non-custom field types survive serialization
 and that custom fields correctly refuse it.
 """
+
+import itertools
+
+import numpy as np
 
 import opengate as gate
 from opengate.geometry import fields
@@ -75,6 +79,24 @@ if __name__ == "__main__":
     )
     is_ok = is_ok and ok
     print(f"Quadrupole round-trip: {'OK' if ok else 'FAIL'}")
+
+    # Sextupole round-trip
+    sim, box = _make_sim_with_box()
+    field = fields.SextupoleMagneticField(name="B_sext")
+    field.gradient = 5 * g4_tesla / g4_m
+    box.add_field(field)
+
+    d = sim.to_dictionary()
+    sim2 = gate.Simulation()
+    sim2.from_dictionary(d)
+    restored = sim2.volume_manager.fields["B_sext"]
+    ok = (
+        isinstance(restored, fields.SextupoleMagneticField)
+        and restored.gradient == 5 * g4_tesla / g4_m
+        and restored.attached_to == ["box"]
+    )
+    is_ok = is_ok and ok
+    print(f"Sextupole round-trip: {'OK' if ok else 'FAIL'}")
 
     # Uniform electric field round-trip
     sim, box = _make_sim_with_box()
@@ -147,5 +169,72 @@ if __name__ == "__main__":
     )
     is_ok = is_ok and ok
     print(f"Multi-volume round-trip: {'OK' if ok else 'FAIL'}")
+
+    # Helper: minimal 2×2×2 grid (required for trilinear interpolation)
+    def _make_grid(half, Fx, Fy, Fz):
+        corners = list(itertools.product([-half, half], repeat=3))
+        return np.array([[x, y, z, Fx, Fy, Fz] for x, y, z in corners])
+
+    box_half = 25 * g4_cm
+
+    # MappedMagneticField round-trip
+    sim, box = _make_sim_with_box()
+    field = fields.MappedMagneticField(name="B_mapped")
+    field.field_matrix = _make_grid(box_half, 0.0, 1.0 * g4_tesla, 0.0)
+    field.interpolation = "nearest"
+    box.add_field(field)
+
+    d = sim.to_dictionary()
+    sim2 = gate.Simulation()
+    sim2.from_dictionary(d)
+    restored = sim2.volume_manager.fields["B_mapped"]
+    ok = (
+        isinstance(restored, fields.MappedMagneticField)
+        and np.array_equal(restored.field_matrix, field.field_matrix)
+        and restored.interpolation == "nearest"
+        and restored.attached_to == ["box"]
+    )
+    is_ok = is_ok and ok
+    print(f"Mapped B round-trip: {'OK' if ok else 'FAIL'}")
+
+    # MappedElectricField round-trip
+    sim, box = _make_sim_with_box()
+    field = fields.MappedElectricField(name="E_mapped")
+    field.field_matrix = _make_grid(box_half, 0.0, 0.0, 1e6 * g4_volt / g4_m)
+    box.add_field(field)
+
+    d = sim.to_dictionary()
+    sim2 = gate.Simulation()
+    sim2.from_dictionary(d)
+    restored = sim2.volume_manager.fields["E_mapped"]
+    ok = (
+        isinstance(restored, fields.MappedElectricField)
+        and np.array_equal(restored.field_matrix, field.field_matrix)
+        and restored.interpolation == "trilinear"
+        and restored.attached_to == ["box"]
+    )
+    is_ok = is_ok and ok
+    print(f"Mapped E round-trip: {'OK' if ok else 'FAIL'}")
+
+    # MappedElectroMagneticField round-trip
+    sim, box = _make_sim_with_box()
+    field = fields.MappedElectroMagneticField(name="EB_mapped")
+    field.field_matrix_B = _make_grid(box_half, 0.0, 2.0 * g4_tesla, 0.0)
+    field.field_matrix_E = _make_grid(box_half, 0.0, 0.0, 5e5 * g4_volt / g4_m)
+    box.add_field(field)
+
+    d = sim.to_dictionary()
+    sim2 = gate.Simulation()
+    sim2.from_dictionary(d)
+    restored = sim2.volume_manager.fields["EB_mapped"]
+    ok = (
+        isinstance(restored, fields.MappedElectroMagneticField)
+        and np.array_equal(restored.field_matrix_B, field.field_matrix_B)
+        and np.array_equal(restored.field_matrix_E, field.field_matrix_E)
+        and restored.interpolation == "trilinear"
+        and restored.attached_to == ["box"]
+    )
+    is_ok = is_ok and ok
+    print(f"Mapped EB round-trip: {'OK' if ok else 'FAIL'}")
 
     utility.test_ok(is_ok)
