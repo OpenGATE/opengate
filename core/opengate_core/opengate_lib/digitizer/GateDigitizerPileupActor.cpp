@@ -80,6 +80,8 @@ void GateDigitizerPileupActor::BeginOfRunActionMasterThread(int run_id) {
   outputIter.TrackAttribute("GlobalTime", &fTimeSorterOutputTime);
   outputIter.TrackAttribute("TotalEnergyDeposit", &fTimeSorterOutputEdep);
   outputIter.TrackAttribute("PreStepUniqueVolumeID", &fTimeSorterOutputVolID);
+
+  fVolumePileupWindows.clear();
 }
 
 void GateDigitizerPileupActor::SetGroupVolumeDepth(const int depth) {
