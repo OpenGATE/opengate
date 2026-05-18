@@ -1,26 +1,26 @@
-import time
+import os
 import random
 import sys
-import os
+import time
 import weakref
-from box import Box
-from anytree import PreOrderIter
 
 import opengate_core as g4
-from .exception import fatal, warning, GateImplementationError
+from anytree import PreOrderIter
+from box import Box
+
+from .base import GateSingletonFatal
 from .decorators import requires_fatal, requires_warning
-from .runtiming import assert_run_timing
-from .uisessions import UIsessionSilent, UIsessionVerbose
-from .exception import ExceptionHandler
+from .exception import ExceptionHandler, GateImplementationError, fatal, warning
+from .logger import logger
 from .physics import (
     UserLimitsPhysics,
-    translate_particle_name_gate_to_geant4,
-    cut_particle_names,
     create_g4_optical_properties_table,
+    cut_particle_names,
     load_optical_properties_from_xml,
+    translate_particle_name_gate_to_geant4,
 )
-from .base import GateSingletonFatal
-from .logger import logger
+from .runtiming import assert_run_timing
+from .uisessions import UIsessionSilent, UIsessionVerbose
 
 
 class EngineBase:
@@ -1480,6 +1480,7 @@ class SimulationEngine(GateSingletonFatal):
         # This pushes user_info to C++ before workers (or master) call ConfigureForWorker()
         logger.info("Simulation: initialize Actors")
         self.actor_engine.initialize()
+        print("image should be loaded just before in initilization of the actor_engine")
         self.filter_engine.initialize()
 
         # Important: The volumes are constructed
@@ -1496,6 +1497,7 @@ class SimulationEngine(GateSingletonFatal):
         else:
             logger.info("Simulation: initialize G4RunManager")
             self.g4_RunManager.Initialize()
+            print("but it seems they are initilized with g4_RunManager")
             # A this point, ConstructSDandField and Configure are called once
 
         logger.info("Simulation: initialize PhysicsEngine")
