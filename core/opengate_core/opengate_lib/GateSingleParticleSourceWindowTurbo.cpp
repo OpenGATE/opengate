@@ -14,6 +14,19 @@ GateSingleParticleSourceWindowTurbo::GateSingleParticleSourceWindowTurbo(
     std::string mother_volume)
     : GateSingleParticleSource(mother_volume) {}
 
+void GateSingleParticleSourceWindowTurbo::SetParameters(
+    G4double a1, G4double a2, G4double b1, G4double b2, G4double plane_distance,
+    G4double plane_phi) {
+  fA1 = a1;
+  fA2 = a2;
+  fB1 = b1;
+  fB2 = b2;
+  fPlaneDistance = plane_distance;
+  fPlanePhi = plane_phi;
+  fSinPlanePhi = sin(plane_phi);
+  fCosPlanePhi = cos(plane_phi);
+}
+
 G4double solid_angle_pyramid(G4double a, G4double b, G4double d) {
   return 4 * atan(a * b / (2 * d * sqrt(a * a + b * b + 4 * d * d)));
 }
@@ -25,8 +38,8 @@ G4double GateSingleParticleSourceWindowTurbo::GetSolidAngle(
   if (pos.x() * pos.x() + pos.y() * pos.y() >=
       fPlaneDistance * fPlaneDistance) {
     G4String error_msg = fmt::format(
-        "position {} is outside the plane distance {} for source: {}", pos,
-        fPlaneDistance, fSourceName);
+        "position ({}, {}, {}) is outside the plane distance {} for source: {}",
+        pos.x(), pos.y(), pos.z(), fPlaneDistance, fSourceName);
     G4Exception("GateSingleParticleSourceWindowTurbo::GetSolidAngle",
                 "GetSolidAngleError", FatalException, error_msg);
   }
@@ -60,52 +73,69 @@ void GateSingleParticleSourceWindowTurbo::ThreadFunc(
   }
 }
 
-void GateSingleParticleSourceWindowTurbo::Initialize(py::dict &user_info,
-                                                     std::string source_name) {
+G4double GateSingleParticleSourceWindowTurbo::InitializeBeforeRun(
+    G4double &act_ratio, G4double &max_solid_angle) {
+  auto start_time = std::chrono::high_resolution_clock::now();
+  G4double act_ratio_all = 0;
+  fMaxSolidAngle = 0;
+  const size_t sampling_count_per_thread =
+      fSamplingCountInit / fThreadCountInit;
+  std::vector<std::thread> threads(fThreadCountInit);
+  std::vector<G4double> act_ratio_all_thread(fThreadCountInit, 0);
+  std::vector<G4double> max_solid_angle_thread(fThreadCountInit, 0);
+  for (G4int i = 0; i < fThreadCountInit; i++) {
+    threads[i] =
+        std::thread(&GateSingleParticleSourceWindowTurbo::ThreadFunc, this,
+                    sampling_count_per_thread, &act_ratio_all_thread[i],
+                    &max_solid_angle_thread[i]);
+  }
+  for (G4int i = 0; i < fThreadCountInit; i++) {
+    threads[i].join();
+    act_ratio_all += act_ratio_all_thread[i];
+    if (max_solid_angle_thread[i] > fMaxSolidAngle)
+      fMaxSolidAngle = max_solid_angle_thread[i];
+  }
+
+  act_ratio = act_ratio_all / sampling_count_per_thread / fThreadCountInit;
+  max_solid_angle = fMaxSolidAngle;
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+      end_time - start_time);
+  return duration.count() / 1e6;
+}
+
+void GateSingleParticleSourceWindowTurbo::InitializeUserInfo(
+    py::dict &user_info) {
   // TODO: make this run in master thread before each run
   // and make the worker thread get info properly before each run
-  fSourceName = source_name;
-  fA1 = DictGetDouble(user_info, "a1");
-  fA2 = DictGetDouble(user_info, "a2");
-  fB1 = DictGetDouble(user_info, "b1");
-  fB2 = DictGetDouble(user_info, "b2");
-  fPlaneDistance = DictGetDouble(user_info, "plane_distance");
-  fPlanePhi = DictGetDouble(user_info, "plane_phi");
-  fSinPlanePhi = sin(fPlanePhi);
-  fCosPlanePhi = cos(fPlanePhi);
+  // fSourceName = source_name;
+  fSamplingCountInit = DictGetInt(user_info, "init_sampling_count");
+  fThreadCountInit = DictGetInt(user_info, "init_number_of_threads");
+  fSkip = DictGetBool(user_info, "skip_mode");
 
-  fActRatio = DictGetDouble(user_info, "act_ratio");
-  fMaxSolidAngle = DictGetDouble(user_info, "max_solid_angle");
-  if (not isnan(fActRatio) && not isnan(fMaxSolidAngle) and fActRatio >= 0 and
-      fActRatio <= 1 and fMaxSolidAngle >= 0 and fMaxSolidAngle <= 4 * M_PI) {
-    G4cout << "Turbo source " << fSourceName
-           << " already has act_ratio and max_solid_angle set." << G4endl;
-    return;
-  } else {
-    fMaxSolidAngle = 0;
-    fActRatio = 0;
-  }
+  // fActRatio = DictGetDouble(user_info, "act_ratio");
+  // fMaxSolidAngle = DictGetDouble(user_info, "max_solid_angle");
+  // if (not isnan(fActRatio) && not isnan(fMaxSolidAngle) and fActRatio >= 0
+  // and
+  //     fActRatio <= 1 and fMaxSolidAngle >= 0 and fMaxSolidAngle <= 4 * M_PI)
+  //     {
+  //   return;
+  // } else {
+  //   fMaxSolidAngle = 0;
+  //   fActRatio = 0;
+  // }
 
-  if (not G4Threading::IsMasterThread()) {
-    // TBD: should I check validity of act_ratio and max_solid_angle here or in
-    // python side?
-    if (isnan(fActRatio) || isnan(fMaxSolidAngle)) {
-      G4String error_msg =
-          "activity ratio or max solid angle not set for source: ";
-      error_msg += fSourceName;
-      G4Exception("GateSingleParticleSourceWindowTurbo::Initialize",
-                  "InitializeError", FatalException, error_msg);
-    }
-    return;
-  }
-
-  size_t samplingCount = DictGetInt(user_info, "init_sampling_count");
-
-  // TODO: implement random engine init in python
-  // GateRandomEngine *theRandomEngine = GateRandomEngine::GetInstance();
-  // if (!random_engine_initialized) {
-  //   theRandomEngine->Initialize();
-  //   random_engine_initialized = true;
+  // if (not G4Threading::IsMasterThread()) {
+  // TBD: should I check validity of act_ratio and max_solid_angle here or in
+  // python side?
+  // if (isnan(fActRatio) || isnan(fMaxSolidAngle)) {
+  // G4String error_msg =
+  //     "activity ratio or max solid angle not set for source: ";
+  // error_msg += fSourceName;
+  // G4Exception("GateSingleParticleSourceWindowTurbo::Initialize",
+  //             "InitializeError", FatalException, error_msg);
+  // }
+  // return;
   // }
 
   // TODO: check paramenters in python
@@ -120,41 +150,7 @@ void GateSingleParticleSourceWindowTurbo::Initialize(py::dict &user_info,
   //               FatalException, "a1 >= a2 or b1 >= b2");
   // }
 
-  auto start_time = std::chrono::high_resolution_clock::now();
-  G4double act_ratio_all = 0;
-  G4int thread_count = DictGetInt(user_info, "init_number_of_threads");
-  size_t sampling_count_per_thread = samplingCount / thread_count;
-  size_t sampling_count_actual = sampling_count_per_thread * thread_count;
-  std::vector<std::thread> threads(thread_count);
-  std::vector<G4double> act_ratio_all_thread(thread_count, 0);
-  std::vector<G4double> max_solid_angle_thread(thread_count, 0);
-  for (G4int i = 0; i < thread_count; i++) {
-    threads[i] =
-        std::thread(&GateSingleParticleSourceWindowTurbo::ThreadFunc, this,
-                    sampling_count_per_thread, &act_ratio_all_thread[i],
-                    &max_solid_angle_thread[i]);
-  }
-  for (G4int i = 0; i < thread_count; i++) {
-    threads[i].join();
-    act_ratio_all += act_ratio_all_thread[i];
-    if (max_solid_angle_thread[i] > fMaxSolidAngle)
-      fMaxSolidAngle = max_solid_angle_thread[i];
-  }
-
-  fActRatio = act_ratio_all / samplingCount;
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-      end_time - start_time);
-  G4cout << "Activity Ratio of source " << fSourceName << " is "
-         << std::scientific << std::setprecision(10) << fActRatio
-         << std::defaultfloat << G4endl;
-  G4cout << "Max Solid Angle of source " << fSourceName << " is "
-         << std::scientific << std::setprecision(10) << fMaxSolidAngle
-         << std::defaultfloat << G4endl;
-  G4cout << "Time used: " << duration.count() << " microseconds" << G4endl;
   // VerifyPhiTheta(samplingCount, 0.01);
-  user_info["act_ratio"] = fActRatio;
-  user_info["max_solid_angle"] = fMaxSolidAngle;
 }
 
 void GateSingleParticleSourceWindowTurbo::SetPhiTheta(
