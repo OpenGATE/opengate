@@ -39,7 +39,11 @@ public:
 
   // void LoadVoxelizedPhantom(G4String filename);
   // void SetPhantomPosition(G4ThreeVector pos);
-  void ViusalizeWindow(G4String colour_str, G4double width, int run_id) const;
+  void VisualizeWindowWithColourName(G4String colour_name, G4double width,
+                                     int run_id) const;
+  void VisualizeWindowWithRGBA(std::vector<G4double> rgba, G4double width,
+                               int run_id) const;
+  void VisualizeWindow(G4Colour colour, G4double width, int run_id) const;
   void InitializeUserInfo(py::dict &user_info) override;
   // virtual unsigned long
   // GetExpectedNumberOfEvents(const TimeInterval &time_interval) override;
@@ -86,6 +90,7 @@ protected:
 
   void CallOnceBeforeRun(G4int run_id,
                          GateSingleParticleSourceWindowTurbo *spswt);
+  py::dict fUserInfo; // to write back act ratio and max solid angle
 
 private:
   std::once_flag &GetInitializeBeforeRunFlag(G4int run_id);

@@ -6,12 +6,15 @@
 #include "GateHelpersDict.h"
 #include "GateSingleParticleSourceWindowTurbo.h"
 #include "GateVSource.h"
+#include <G4Colour.hh>
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4RunManager.hh>
 #include <G4String.hh>
+#include <G4Threading.hh>
 #include <G4Types.hh>
 #include <Randomize.hh>
+#include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
 
 // G4bool GateWindowTurboSource::random_engine_initialized = false;
@@ -27,6 +30,8 @@ void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
   fWeight = -1;
   fWeightSigma = -1;
   fDirectionRelativeToAttachedVolume = false;
+  if (G4Threading::IsMasterThread())
+    fUserInfo = user_info;
 }
 
 // TBD: override update TAC?
@@ -59,10 +64,14 @@ void GateWindowTurboSource::CallOnceBeforeRun(
   G4double max_solid_angle = GetValueThisRun(fMaxSolidAngle, run_id);
   if (max_solid_angle >= 0 and fCurrentActRatio >= 0)
     return;
-
+  if (fSkip)
+    return;
   spswt->InitializeBeforeRun(fCurrentActRatio, max_solid_angle);
   SetValueThisRun(fActRatio, run_id, fCurrentActRatio);
   SetValueThisRun(fMaxSolidAngle, run_id, max_solid_angle);
+  py::gil_scoped_acquire acquire; // write back need to acquire gil
+  fUserInfo["act_ratio"] = fCurrentActRatio;
+  fUserInfo["max_solid_angle"] = fMaxSolidAngle;
 }
 
 void GateWindowTurboSource::PrepareNextRun() {
@@ -202,16 +211,27 @@ void GateWindowTurboSource::GetWindowVertex(G4ThreeVector &pos1,
   pos4 = rot * pos4;
 }
 
-void GateWindowTurboSource::ViusalizeWindow(G4String colour_str, G4double width,
+void GateWindowTurboSource::VisualizeWindowWithColourName(G4String colour_name,
+                                                          G4double width,
+                                                          int run_id) const {
+  G4Colour colour;
+  G4Colour::GetColour(colour_name, colour);
+  VisualizeWindow(colour, width, run_id);
+}
+
+void GateWindowTurboSource::VisualizeWindowWithRGBA(std::vector<G4double> rgba,
+                                                    G4double width,
+                                                    int run_id) const {
+  G4Colour colour(rgba[0], rgba[1], rgba[2], rgba[3]);
+  VisualizeWindow(colour, width, run_id);
+}
+
+void GateWindowTurboSource::VisualizeWindow(G4Colour colour, G4double width,
                                             int run_id) const {
   G4ThreeVector pos1, pos2, pos3, pos4;
   GetWindowVertex(pos1, pos2, pos3, pos4, run_id);
-  G4Colour colour;
-  G4Colour::GetColour(colour_str, colour);
 
   VisWindow *window = new VisWindow(pos1, pos2, pos3, pos4, colour, width);
-  G4cout << "visualize window with colour: " << colour_str
-         << " and width: " << width << " for run " << run_id << G4endl;
   G4VModel *model =
       new G4CallbackModel<GateWindowTurboSource::VisWindow>(window);
   model->SetType("Turbo Window");

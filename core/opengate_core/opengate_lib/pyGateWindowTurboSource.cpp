@@ -17,5 +17,8 @@ void init_GateWindowTurboSource(py::module &m) {
                                                        "GateWindowTurboSource")
       .def(py::init())
       .def("InitializeUserInfo", &GateWindowTurboSource::InitializeUserInfo)
-      .def("ViusalizeWindow", &GateWindowTurboSource::ViusalizeWindow);
+      .def("VisualizeWindow",
+           &GateWindowTurboSource::VisualizeWindowWithColourName)
+      .def("VisualizeWindowWithRGBA",
+           &GateWindowTurboSource::VisualizeWindowWithRGBA);
 }
