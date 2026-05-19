@@ -35,8 +35,7 @@ G4double GateSingleParticleSourceWindowTurbo::GetSolidAngle(
     const G4ThreeVector &pos) const {
 
   // rotate with -plane_phi
-  if (pos.x() * pos.x() + pos.y() * pos.y() >=
-      fPlaneDistance * fPlaneDistance) {
+  if (pos.x() * fCosPlanePhi + pos.y() * fSinPlanePhi >= fPlaneDistance) {
     G4String error_msg = fmt::format(
         "position ({}, {}, {}) is outside the plane distance {} for source: {}",
         pos.x(), pos.y(), pos.z(), fPlaneDistance, fSourceName);

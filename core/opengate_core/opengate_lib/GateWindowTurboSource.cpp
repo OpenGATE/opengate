@@ -66,12 +66,24 @@ void GateWindowTurboSource::CallOnceBeforeRun(
     return;
   if (fSkip)
     return;
+  G4double a1 = GetValueThisRun(fA1);
+  G4double a2 = GetValueThisRun(fA2);
+  G4double b1 = GetValueThisRun(fB1);
+  G4double b2 = GetValueThisRun(fB2);
+  G4double plane_distance = GetValueThisRun(fPlaneDistance);
+  G4double plane_phi = GetValueThisRun(fPlanePhi);
+  spswt->SetParameters(a1, a2, b1, b2, plane_distance, plane_phi);
   spswt->InitializeBeforeRun(fCurrentActRatio, max_solid_angle);
   SetValueThisRun(fActRatio, run_id, fCurrentActRatio);
   SetValueThisRun(fMaxSolidAngle, run_id, max_solid_angle);
+  // G4cout << "CallOnceBeforeRun for run " << run_id
+  //        << ", current act ratio: " << fCurrentActRatio
+  //        << " current max solid angle: " << max_solid_angle << " thread id "
+  //        << G4Threading::G4GetThreadId() << G4endl;
   py::gil_scoped_acquire acquire; // write back need to acquire gil
-  fUserInfo["act_ratio"] = fCurrentActRatio;
-  fUserInfo["max_solid_angle"] = fMaxSolidAngle;
+  auto direction = py::dict(fUserInfo["direction"]);
+  direction["act_ratio"] = fActRatio;
+  direction["max_solid_angle"] = fMaxSolidAngle;
 }
 
 void GateWindowTurboSource::PrepareNextRun() {

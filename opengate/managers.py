@@ -44,6 +44,7 @@ from .sources.voxelsources import VoxelSource, VoxelizedPromptGammaTLESource
 from .sources.gansources import GANSource, GANPairsSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.phidsources import PhotonFromIonDecaySource
+from .sources.windowturbosource import WindowTurboSource
 from .voxelize import voxelize_geometry
 
 source_types = {
@@ -56,6 +57,7 @@ source_types = {
     "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
     "TreatmentPlanPBSource": TreatmentPlanPBSource,
     "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
+    "WindowTurboSource": WindowTurboSource,
 }
 
 from .geometry.volumes import (
