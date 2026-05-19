@@ -62,7 +62,7 @@ class WTSDirectionValidator(UserInfoValidatorBase):
                     )
                     b[attr_name][i] = float(v)
         elif self.is_numeric(attr):
-            logger.info(
+            logger.debug(
                 f"'{self.context_name}.{attr_name}' is converted to a list of length 1."
             )
             b[attr_name] = [float(attr)]
@@ -143,7 +143,7 @@ class WTSDirectionValidator(UserInfoValidatorBase):
 
         if b.init_number_of_threads == 0:
             b.init_number_of_threads = self.simulation.number_of_threads
-            logger.info(
+            logger.debug(
                 f"'init_number_of_threads' is set to the number of CPU cores: {b.init_number_of_threads}."
             )
 
@@ -253,7 +253,7 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
                 )
             if len(color) == 3:
                 color.append(1.0)  # Add alpha value of 1.0 if only RGB is provided
-                logger.info(
+                logger.debug(
                     "Alpha value of 1.0 is added to the color list since only RGB values are provided."
                 )
             for i, c in enumerate(color):
