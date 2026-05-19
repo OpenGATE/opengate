@@ -1,6 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Test 007: Volumes creation, coordinate transformations, and materials
+
+Objective:
+Verify the creation of various basic geometric volumes (Box, Sphere, Trap),
+their hierarchical placement (mother/daughter relationships), overlap checking,
+and the correct loading and querying of material databases (NIST, custom DB).
+It also validates global-to-local coordinate transformations.
+
+Setup:
+- World (G4_AIR): 1.5 x 1.5 x 1.5 m.
+- Waterbox (Box, G4_WATER): Mother volume for subsequent test volumes.
+- Sheet (Box, Lead): Rotated and translated daughter of Waterbox.
+- mysphere (Sphere, Lung): Translated daughter of Waterbox.
+- mytrap (Trap, G4_LUCITE): Translated daughter of Waterbox.
+- Source: 240 MeV protons fired along +Z.
+
+Verification 1: Material Database
+Validates that materials are properly loaded from the custom GateMaterials.db
+and NIST database, and checks the lists of defined vs. available materials.
+
+Verification 2: Coordinate Transformations
+Validates the global-to-local and world-to-local transform retrieval for
+specific nested volumes using a post-run user hook.
+
+Verification 3: Simulation Statistics
+Validates that the fundamental tracking steps, tracks, and events match the
+expected reference statistics within an acceptable tolerance.
+"""
+
 import pathlib
 
 from scipy.spatial.transform import Rotation

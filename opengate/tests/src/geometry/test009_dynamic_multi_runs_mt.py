@@ -1,6 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Test 009: Dynamic Multi-Run SPECT with Multithreading
+
+Objective:
+Verify the integration of dynamic run timing intervals, multithreading (MT),
+phase space actors, and rotating SPECT camera geometry (Siemens Intevo).
+
+Setup:
+- World: Contains a central phantom (Box, G4_AIR) and an orbiting detector.
+- Detector (Siemens Intevo): A simplified rotating detector box orbiting at 150 mm.
+- Source: Lu177 generic gamma source attached to the world, isotropic emission.
+- Actors: PhaseSpaceActors attached to the phantom (exiting) and detector (entering)
+  to capture detailed kinematic and timing state across run boundaries.
+
+Verification 1: Phase Space Validation
+Validates that the phase space hits (RunID, timestamps, energy, etc.)
+recorded at the detector match the reference ROOT phase space file
+(`b.root`) within an acceptable tolerance.
+"""
+
 import opengate as gate
 from opengate.tests import utility
 from opengate.sources.utility import get_spectrum

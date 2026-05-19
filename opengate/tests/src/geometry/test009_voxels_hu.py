@@ -1,6 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Test 009: Voxelized Volumes with Hounsfield Unit (HU) Material Mapping
+
+Objective:
+Verify the automated conversion and assignment of materials to voxelized
+volumes (Image) based on Hounsfield Units (HU) using the Schneider 2000
+calibration method.
+
+Setup:
+- World (G4_AIR): 1 x 1 x 1 m.
+- Fake (Box, G4_AIR): A 40 x 40 x 40 cm rotated mother volume.
+- Patient (Image): Voxelized volume where materials are mapped from HU
+  using the Schneider 2000 densities and materials tables.
+- Source: 130 MeV protons emitted from a spherical source, directed along +Z.
+
+Verification 1: Material Mapping (HU to Material)
+Validates that the materials generated from the HU conversion properly match
+a reference material database (`patient-HUmaterials.db`).
+
+Verification 2: Simulation Statistics
+Validates that the fundamental tracking steps, tracks, and events match the
+expected reference statistics (HU-specific) within an acceptable tolerance.
+
+Verification 3: Dose Deposition
+Validates the 3D dose (energy deposition) distribution scored inside the
+voxelized patient volume by comparing it against an HU-specific reference image.
+"""
+
 import opengate as gate
 from opengate.geometry.materials import MaterialDatabase, assert_same_material
 from opengate.tests import utility

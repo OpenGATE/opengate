@@ -10,8 +10,9 @@
 
 #include "GateTimeSorter.h"
 #include "GateVDigitizerWithOutputActor.h"
-#include <G4Cache.hh>
+#include <G4Threading.hh>
 #include <G4ThreeVector.hh>
+#include <memory>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -26,6 +27,8 @@ public:
   void InitializeUserInfo(py::dict &user_info) override;
 
   void StartSimulationAction() override;
+
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   void EndOfEventAction(const G4Event *event) override;
 
@@ -45,9 +48,11 @@ protected:
     TakeWinnerIfIsGood,
     TakeWinnerIfAllAreGoods
   };
+
   enum class TransaxialPlane { XY, YZ, XZ };
 
   // Coincidence sorter parameters.
+
   double fWindowSize;
   double fWindowOffset;
   MultiplesPolicy fMultiplesPolicy;
@@ -63,7 +68,6 @@ protected:
                      const std::string &name_suffix);
 
     GateDigiCollection *digis;
-    GateDigiCollectionIterator iter;
     double *currentTime;
     GateUniqueVolumeID::Pointer *currentVolID;
     G4ThreeVector *currentPos;
@@ -75,10 +79,12 @@ protected:
     std::optional<double> latestTime;
   };
 
-  GateTimeSorter fTimeSorter;
+  std::unique_ptr<GateTimeSorter> fTimeSorter;
 
   std::unique_ptr<TemporaryStorage> fCurrentStorage;
   std::unique_ptr<TemporaryStorage> fFutureStorage;
+
+  size_t fIterPosition{};
 
   void ProcessTimeSortedSingles();
   void DetectCoincidences(bool lastCall = false);
@@ -90,14 +96,6 @@ protected:
               const std::vector<uint8_t> &goodCoincidence) const;
 
   void ClearProcessedSingles();
-
-  struct threadLocalT {
-    GateUniqueVolumeID::Pointer *volID;
-    double *time;
-    G4ThreeVector *pos;
-  };
-
-  G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateCoincidenceSorterActor_h

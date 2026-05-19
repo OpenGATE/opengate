@@ -78,3 +78,7 @@ data/
 opengate/tests/output_dashboard/
 opengate/tests/log
 .clang-format
+a.txt
+*.so
+
+
