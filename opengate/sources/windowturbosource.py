@@ -279,9 +279,11 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
         self.validate_color(color)
         if isinstance(color, str):
             color = color.lower()
-            self.VisualizeWindowWithColourName(color, width, timing_interval_index)
+            self.PendingVisualizeWindowWithColourName(
+                color, width, timing_interval_index
+            )
         else:
-            self.VisualizeWindowWithRGBA(color, width, timing_interval_index)
+            self.PendingVisualizeWindowWithRGBA(color, width, timing_interval_index)
 
 
 process_cls(WindowTurboSource)

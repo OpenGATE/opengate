@@ -96,10 +96,12 @@ def build_crystal(sim, prj_name):
         "PreStepUniqueVolumeID",
     ]
     hc.attached_to = ["head_crystal"]
+    hc.output_filename = f"{prj_name}_hits.root"
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWeightedCentroidPosition"
     sc.group_volume = "head_crystal"
+    sc.output_filename = f"{prj_name}_Singles.root"
     proj = sim.add_actor("DigitizerProjectionActor", "Projection")
     proj.attached_to = "head_crystal"
     proj.input_digi_collections = ["Singles"]
@@ -179,31 +181,37 @@ def calculate_profile(image_path):
 
 def compare_profiles(ref, test, tolerance=8.0, fig_name=None):
     ref = np.asarray(ref, dtype=float)
-    test = np.asarray(test, dtype=float)
-
-    if ref.shape != test.shape:
-        utility.print_test(False, f"Profile shapes differ: {ref.shape} vs {test.shape}")
-        return False
-
-    sad = np.abs(ref - test).sum() / (ref.sum() + test.sum()) * 100
-    is_ok = sad < tolerance
-    utility.print_test(
-        is_ok, f"Profile relative SAD = {sad:.2f}% (tol {tolerance:.2f}%)"
-    )
-
     if fig_name is not None:
         plt.figure(figsize=(10, 5))
         plt.plot(ref / ref.sum(), label="reference")
-        plt.plot(test / test.sum(), label="test")
+    is_ok = True
+    for i, t in enumerate(test):
+        test_1 = np.asarray(t, dtype=float)
+
+        if ref.shape != test_1.shape:
+            utility.print_test(
+                False, f"Profile shapes differ: {ref.shape} vs {test_1.shape}"
+            )
+            return False
+
+        sad = np.abs(ref - test_1).sum() / (ref.sum() + test_1.sum()) * 100
+        is_ok = is_ok and (sad < tolerance)
+
+        if fig_name is not None:
+            plt.plot(test_1 / test_1.sum(), label=f"test {i}")
+    if fig_name is not None:
         plt.legend()
         plt.xlabel("Pixel")
         plt.ylabel("Normalized counts")
         plt.savefig(fig_name)
 
+    utility.print_test(
+        is_ok, f"Profile relative SAD = {sad:.2f}% (tol {tolerance:.2f}%)"
+    )
     return is_ok
 
 
-def run_window_turbo_source(activity=1000000):
+def run_window_turbo_source(activity=1000000, skip_mode=False):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
     sim = initialize(80)
@@ -211,7 +219,9 @@ def run_window_turbo_source(activity=1000000):
     sim.number_of_threads = 4
     sim.random_seed = 1
     radius_down = 13.6
-    build_geometry(sim, paths.output / "window_turbo", pin_radius_down=radius_down)
+    build_geometry(
+        sim, paths.output / f"window_turbo_{skip_mode}", pin_radius_down=radius_down
+    )
     source_back = sim.add_source("WindowTurboSource", "source_back")
     source_1 = sim.add_source("WindowTurboSource", "source_1")
     source_2 = sim.add_source("WindowTurboSource", "source_2")
@@ -226,11 +236,18 @@ def run_window_turbo_source(activity=1000000):
     source_back.direction.b2 = radius_down * mm
     source_back.direction.plane_distance = 99 * mm
     source_back.direction.plane_phi = np.pi / 2
+    source_back.direction.skip_mode = skip_mode
     source_2.direction = source_back.direction.copy()
     source_3.direction = source_back.direction.copy()
     source_1.direction = source_back.direction.copy()
     change_source_parameters(source_back, source_1, source_2, source_3)
-    sim.run()
+    if skip_mode:
+        source_back.direction.max_solid_angle = [0.07398515966429065]
+        source_1.direction.max_solid_angle = [0.01876774405921553]
+        source_2.direction.max_solid_angle = [0.02172336443308847]
+        source_3.direction.max_solid_angle = [0.020849469313376674]
+    sim.run(start_new_process=True)
+
     stats = sim.get_actor("Stats")
     print(stats)
     print("-" * 80)
@@ -239,8 +256,9 @@ def run_window_turbo_source(activity=1000000):
 def run_generic_source(activity=1000000):
     Bq = gate.g4_units.Bq
 
-    sim = initialize()
-    build_geometry(sim, "generic")
+    sim = initialize(10)
+    sim.number_of_threads = 32
+    build_geometry(sim, paths.output / "generic")
 
     # physic list
     # print('Phys lists :', sim.get_available_physicLists())
@@ -265,14 +283,16 @@ def run_generic_source(activity=1000000):
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     # run_generic_source()
-    run_window_turbo_source()
-    profile_wt = calculate_profile(paths.output / "window_turbo_counts.mhd")
+    run_window_turbo_source(skip_mode=False)
+    run_window_turbo_source(skip_mode=True)
+    profile_wt_true = calculate_profile(paths.output / "window_turbo_True_counts.mhd")
+    profile_wt_false = calculate_profile(paths.output / "window_turbo_False_counts.mhd")
     profile_generic = calculate_profile(paths.output_ref / "generic.mhd")
     compare_result = compare_profiles(
         profile_generic,
-        profile_wt,
+        [profile_wt_true, profile_wt_false],
         tolerance=4.0,
-        fig_name=paths.output / "profile_comparison.png",
+        fig_name=paths.output / "profile_comparison_skip.png",
     )
 
     utility.test_ok(compare_result)

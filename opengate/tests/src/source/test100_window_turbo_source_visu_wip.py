@@ -157,11 +157,11 @@ def initialize(duration=10):
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.global_production_cuts.all = 1 * gate.g4_units.mm
     # main options
-    sim.g4_verbose = False
+    sim.g4_verbose = True
     sim.g4_verbose_level = 1
-    sim.visu = False
+    sim.visu = True
     sim.visu_type = "qt"
-    sim.number_of_threads = 32
+    sim.number_of_threads = 1
     sim.progress_bar = True
     sim.run_timing_intervals = [[0, duration * sec]]
     sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -203,12 +203,12 @@ def compare_profiles(ref, test, tolerance=8.0, fig_name=None):
     return is_ok
 
 
-def run_window_turbo_source(activity=1000000):
+def run_window_turbo_source(activity=1):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
-    sim = initialize(80)
-    sim.g4_verbose = False
-    sim.number_of_threads = 4
+    sim = initialize(0)
+    sim.g4_verbose = True
+    sim.number_of_threads = 2
     sim.random_seed = 1
     radius_down = 13.6
     build_geometry(sim, paths.output / "window_turbo", pin_radius_down=radius_down)
@@ -230,6 +230,7 @@ def run_window_turbo_source(activity=1000000):
     source_3.direction = source_back.direction.copy()
     source_1.direction = source_back.direction.copy()
     change_source_parameters(source_back, source_1, source_2, source_3)
+    source_back.visualize_window("red", 2, 0)
     sim.run()
     stats = sim.get_actor("Stats")
     print(stats)
@@ -266,13 +267,13 @@ if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     # run_generic_source()
     run_window_turbo_source()
-    profile_wt = calculate_profile(paths.output / "window_turbo_counts.mhd")
-    profile_generic = calculate_profile(paths.output_ref / "generic.mhd")
-    compare_result = compare_profiles(
-        profile_generic,
-        profile_wt,
-        tolerance=4.0,
-        fig_name=paths.output / "profile_comparison.png",
-    )
+    # profile_wt = calculate_profile(paths.output / "window_turbo_counts.mhd")
+    # profile_generic = calculate_profile(paths.output_ref / "generic.mhd")
+    # compare_result = compare_profiles(
+    #     profile_generic,
+    #     profile_wt,
+    #     tolerance=4.0,
+    #     fig_name=paths.output / "profile_comparison.png",
+    # )
 
-    utility.test_ok(compare_result)
+    # utility.test_ok(compare_result)

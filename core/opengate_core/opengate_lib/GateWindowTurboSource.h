@@ -6,6 +6,7 @@
 #include <G4Polyline.hh>
 #include <G4String.hh>
 #include <G4ThreeVector.hh>
+#include <G4Types.hh>
 #include <G4Vector3D.hh>
 #include <map>
 #include <mutex>
@@ -39,16 +40,19 @@ public:
 
   // void LoadVoxelizedPhantom(G4String filename);
   // void SetPhantomPosition(G4ThreeVector pos);
-  void VisualizeWindowWithColourName(G4String colour_name, G4double width,
-                                     int run_id) const;
-  void VisualizeWindowWithRGBA(std::vector<G4double> rgba, G4double width,
-                               int run_id) const;
-  void VisualizeWindow(G4Colour colour, G4double width, int run_id) const;
+  void PendingVisualizeWindowWithColourName(G4String colour_name,
+                                            G4double width, int run_id);
+  void PendingVisualizeWindowWithRGBA(std::vector<G4double> rgba,
+                                      G4double width, int run_id);
+  void PendingVisualizeWindow(G4Colour colour, G4double width, int run_id);
+  void VisualizeOneWindow(G4Colour colour, G4double width, int run_id) const;
   void InitializeUserInfo(py::dict &user_info) override;
   // virtual unsigned long
   // GetExpectedNumberOfEvents(const TimeInterval &time_interval) override;
 
   virtual double CalcNextTime(double current_simulation_time) override;
+  // virtual void Visualize() const override;
+  void Visualize() const override;
 
 protected:
   virtual void CreateSPS() override;
@@ -74,6 +78,9 @@ protected:
     else
       vec[run_id] = value;
   }
+  std::vector<G4Colour> visualization_window_color;
+  std::vector<G4double> visualization_window_width;
+  std::vector<G4int> visualization_window_run_id;
 
   struct VisWindow {
     VisWindow(const G4Vector3D &pos1, const G4Vector3D &pos2,
@@ -96,7 +103,7 @@ private:
   std::once_flag &GetInitializeBeforeRunFlag(G4int run_id);
 
   std::mutex fInitializeBeforeRunMutex;
-  std::map<G4int, std::once_flag> fInitializeBeforeRunFlags;
+  std::map<G4int, std::once_flag> fInitializeBeforeRunFlags = {};
   bool fSkip; // true for act ratio, false for event skipping base on
               // solid angle
   //   void CheckMotherVolumeIsNotRotated() const;

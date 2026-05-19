@@ -78,8 +78,9 @@ void GateWindowTurboSource::CallOnceBeforeRun(
   SetValueThisRun(fMaxSolidAngle, run_id, max_solid_angle);
   // G4cout << "CallOnceBeforeRun for run " << run_id
   //        << ", current act ratio: " << fCurrentActRatio
-  //        << " current max solid angle: " << max_solid_angle << " thread id "
-  //        << G4Threading::G4GetThreadId() << G4endl;
+  //        << " current max solid angle: " << max_solid_angle << " source name
+  //        "
+  //        << fName << G4endl;
   py::gil_scoped_acquire acquire; // write back need to acquire gil
   auto direction = py::dict(fUserInfo["direction"]);
   direction["act_ratio"] = fActRatio;
@@ -135,6 +136,16 @@ GateWindowTurboSource::GetInitializeBeforeRunFlag(G4int run_id) {
 // TODO:finish this
 // }
 
+void GateWindowTurboSource::Visualize() const {
+  if (G4Threading::IsMasterThread() and visualization_window_color.size() > 0) {
+    for (size_t i = 0; i < visualization_window_color.size(); i++) {
+      VisualizeOneWindow(visualization_window_color[i],
+                         visualization_window_width[i],
+                         visualization_window_run_id[i]);
+    }
+  }
+}
+
 void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
 
   auto &ll = fThreadLocalDataGenericSource.Get();
@@ -160,10 +171,7 @@ void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
     fActRatio = DictGetVecDouble(user_info, "act_ratio");
     fMaxSolidAngle = DictGetVecDouble(user_info, "max_solid_angle");
   }
-  {
-    std::lock_guard<std::mutex> lock(fInitializeBeforeRunMutex);
-    fInitializeBeforeRunFlags.clear();
-  }
+
   fSkip = DictGetBool(user_info, "skip_mode");
 
   GateSingleParticleSourceWindowTurbo *spswt =
@@ -223,23 +231,31 @@ void GateWindowTurboSource::GetWindowVertex(G4ThreeVector &pos1,
   pos4 = rot * pos4;
 }
 
-void GateWindowTurboSource::VisualizeWindowWithColourName(G4String colour_name,
-                                                          G4double width,
-                                                          int run_id) const {
+void GateWindowTurboSource::PendingVisualizeWindowWithColourName(
+    G4String colour_name, G4double width, int run_id) {
   G4Colour colour;
   G4Colour::GetColour(colour_name, colour);
-  VisualizeWindow(colour, width, run_id);
+  PendingVisualizeWindow(colour, width, run_id);
 }
 
-void GateWindowTurboSource::VisualizeWindowWithRGBA(std::vector<G4double> rgba,
-                                                    G4double width,
-                                                    int run_id) const {
+void GateWindowTurboSource::PendingVisualizeWindowWithRGBA(
+    std::vector<G4double> rgba, G4double width, int run_id) {
   G4Colour colour(rgba[0], rgba[1], rgba[2], rgba[3]);
-  VisualizeWindow(colour, width, run_id);
+  PendingVisualizeWindow(colour, width, run_id);
 }
 
-void GateWindowTurboSource::VisualizeWindow(G4Colour colour, G4double width,
-                                            int run_id) const {
+void GateWindowTurboSource::PendingVisualizeWindow(G4Colour colour,
+                                                   G4double width, int run_id) {
+  visualization_window_color.push_back(colour);
+  visualization_window_width.push_back(width);
+  visualization_window_run_id.push_back(run_id);
+  G4cout << "Scheduled visualization of window for run " << run_id
+         << " with color (" << colour.GetRed() << ", " << colour.GetGreen()
+         << ", " << colour.GetBlue() << ", " << colour.GetAlpha()
+         << ") and width " << width << G4endl;
+}
+void GateWindowTurboSource::VisualizeOneWindow(G4Colour colour, G4double width,
+                                               int run_id) const {
   G4ThreeVector pos1, pos2, pos3, pos4;
   GetWindowVertex(pos1, pos2, pos3, pos4, run_id);
 
@@ -262,6 +278,8 @@ void GateWindowTurboSource::VisualizeWindow(G4Colour colour, G4double width,
                  std::to_string(pos4.y()) + " " + std::to_string(pos4.z()) +
                  ")";
   model->SetGlobalDescription(description);
+  G4cout << "Visualizing window for run " << run_id << ": " << description
+         << G4endl;
 
   G4VisManager *fpVisManager = G4VisManager::GetInstance();
   G4Scene *pScene = fpVisManager->GetCurrentScene();
