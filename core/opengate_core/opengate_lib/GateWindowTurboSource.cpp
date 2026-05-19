@@ -3,6 +3,7 @@
 // 每个线程各算各的粒子数
 #include "GateWindowTurboSource.h"
 #include "G4CallbackModel.hh"
+#include "GateGenericSource.h"
 #include "GateHelpersDict.h"
 #include "GateSingleParticleSourceWindowTurbo.h"
 #include "GateVSource.h"
@@ -137,6 +138,7 @@ GateWindowTurboSource::GetInitializeBeforeRunFlag(G4int run_id) {
 // }
 
 void GateWindowTurboSource::Visualize() const {
+  GateGenericSource::Visualize();
   if (G4Threading::IsMasterThread() and visualization_window_color.size() > 0) {
     for (size_t i = 0; i < visualization_window_color.size(); i++) {
       VisualizeOneWindow(visualization_window_color[i],

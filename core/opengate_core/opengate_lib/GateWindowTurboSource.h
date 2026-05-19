@@ -51,8 +51,7 @@ public:
   // GetExpectedNumberOfEvents(const TimeInterval &time_interval) override;
 
   virtual double CalcNextTime(double current_simulation_time) override;
-  // virtual void Visualize() const override;
-  void Visualize() const override;
+  virtual void Visualize() const override;
 
 protected:
   virtual void CreateSPS() override;
