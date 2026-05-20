@@ -15,7 +15,7 @@ class GateDigiAttributesFiller;
 
 class GateTimeSorter {
 public:
-  GateTimeSorter();
+  GateTimeSorter(const std::string &name);
 
   void Init(GateDigiCollection *input);
 
@@ -93,11 +93,14 @@ private:
 
   // GateTimeSorter internal state
 
+  std::string fName{};
   bool fInitialized{false};
   bool fProcessingStarted{false};
   bool fFlushed{false};
   bool fSortingWindowWarningIssued{false};
   size_t fNumDroppedDigi{};
+  size_t fNumDigi{};
+  double fMaxDropDelta{};
   std::optional<double> fMostRecentTimeArrived;
   std::optional<double> fMostRecentTimeDeparted;
 };

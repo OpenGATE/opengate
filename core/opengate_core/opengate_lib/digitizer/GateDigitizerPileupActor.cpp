@@ -71,7 +71,7 @@ void GateDigitizerPileupActor::InitializeUserInfo(py::dict &user_info) {
 
 void GateDigitizerPileupActor::BeginOfRunActionMasterThread(int run_id) {
 
-  fTimeSorter = std::make_unique<GateTimeSorter>();
+  fTimeSorter = std::make_unique<GateTimeSorter>(fOutputDigiCollectionName);
   fTimeSorter->Init(fInputDigiCollection);
   fTimeSorter->SetSortingWindow(fSortingTime);
   fTimeSorter->SetMaxSize(fClearEveryNEvents);

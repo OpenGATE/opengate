@@ -6,7 +6,7 @@
 #include <memory>
 #include <utility>
 
-GateTimeSorter::GateTimeSorter() {
+GateTimeSorter::GateTimeSorter(const std::string &name) : fName(name) {
   fNumWorkingThreads =
       std::max(1, G4Threading::GetNumberOfRunningWorkerThreads());
   fNumActiveWorkingThreads.store(fNumWorkingThreads);
@@ -326,6 +326,7 @@ void GateTimeSorter::Process() {
   while (!iter.IsAtEnd()) {
     const size_t digiIndex = fSortedCollectionA->GetSize();
     const double digiTime = *t;
+    fNumDigi++;
     // If a digi is older (lower GlobalTime value) than the newest digi that has
     // already been transferred to the output collection, then this digi must be
     // dropped to be able to guarantee time-monotonicity in the output
@@ -337,13 +338,14 @@ void GateTimeSorter::Process() {
     if (fMostRecentTimeDeparted.has_value() &&
         (digiTime < *fMostRecentTimeDeparted)) {
       ++fNumDroppedDigi;
+      fMaxDropDelta =
+          std::max(fMaxDropDelta, *fMostRecentTimeDeparted - digiTime);
       if (!fSortingWindowWarningIssued) {
-        std::cout << "The digis in " << fInputCollection->GetName()
-                  << " have non-monotonicities in the GlobalTime attribute "
-                     "that exceed the sorting time ("
-                  << fMinimumSortingWindow
-                  << " ns). Please increase the sorting window to avoid "
-                     "dropped digis\n";
+        std::cout << "The digis output by actor '"
+                  << fInputCollection->GetName()
+                  << "' have non-monotonicities in the GlobalTime attribute "
+                     "that exceed the sorting time in actor '"
+                  << fName << "' (" << fMinimumSortingWindow << " ns).\n";
         fSortingWindowWarningIssued = true;
       }
     } else {
@@ -414,10 +416,14 @@ void GateTimeSorter::Flush() {
   Prune();
   fFlushed = true;
   if (fNumDroppedDigi > 0) {
-    std::cout << fNumDroppedDigi
-              << " digis have been dropped while time-sorting. Please increase "
-                 "the sorting time to a value higher than "
-              << fMinimumSortingWindow << " ns\n";
+    const auto percentage =
+        static_cast<double>(fNumDroppedDigi) / fNumDigi * 100;
+    std::cout << fNumDroppedDigi << " digis (" << percentage
+              << " %) have been dropped while time-sorting in actor '" << fName
+              << "'. Please increase the sorting time to a value higher than "
+                 "the current "
+              << fMinimumSortingWindow << " ns (suggestion: > " << fMaxDropDelta
+              << "ns)\n";
   }
 }
 
