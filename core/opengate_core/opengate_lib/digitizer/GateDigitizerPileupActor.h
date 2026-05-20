@@ -16,6 +16,7 @@
 #include <map>
 #include <memory>
 #include <pybind11/stl.h>
+#include <queue>
 
 namespace py = pybind11;
 
@@ -63,6 +64,8 @@ protected:
   // Struct for storing digis in one particular volume which belong to the same
   // time window.
   struct PileupWindow {
+    // Hash of the corresponding volume.
+    uint64_t hash{};
     // Time at which the time window opens.
     double startTime{};
     // Higehst energy deposit in the window.
@@ -79,8 +82,15 @@ protected:
     std::unique_ptr<GateDigiAttributesFiller> fillerOut;
   };
 
+  // Struct that represents when a pile-up window expires.
+  struct volumeWindowExpiry {
+    uint64_t volumeHash;
+    double expiryTime;
+  };
+
   std::unique_ptr<GateTimeSorter> fTimeSorter;
   std::map<uint64_t, PileupWindow> fVolumePileupWindows;
+  std::queue<volumeWindowExpiry> fWindowExpiry;
 
   // Tracking pointers used by GateTimeSorter output iterator.
   GateUniqueVolumeID::Pointer *fTimeSorterOutputVolID{};
@@ -97,6 +107,7 @@ protected:
 
   void ProcessTimeSortedDigis();
   void ProcessPileupWindow(PileupWindow &window);
+  void ProcessPileupWindows(double currentTime);
 };
 
 #endif // GateDigitizerPileupActor_h

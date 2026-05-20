@@ -82,6 +82,7 @@ void GateDigitizerPileupActor::BeginOfRunActionMasterThread(int run_id) {
   outputIter.TrackAttribute("PreStepUniqueVolumeID", &fTimeSorterOutputVolID);
 
   fVolumePileupWindows.clear();
+  fWindowExpiry = std::queue<volumeWindowExpiry>();
 }
 
 void GateDigitizerPileupActor::SetGroupVolumeDepth(const int depth) {
@@ -111,8 +112,12 @@ void GateDigitizerPileupActor::EndOfRunAction(const G4Run *) {
       [this]() { fOutputDigiCollection->FillToRootIfNeeded(true); },
       [this]() {
         ProcessTimeSortedDigis();
-        for (auto &[_vol_hash, window] : fVolumePileupWindows) {
+        // Process all pile-up windows which still have an expiry item.
+        while (fWindowExpiry.size() > 0) {
+          auto &window =
+              fVolumePileupWindows.at(fWindowExpiry.front().volumeHash);
           ProcessPileupWindow(window);
+          fWindowExpiry.pop();
         }
       });
 }
@@ -134,6 +139,7 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
   } else {
     // A PileupWindow object does not yet exist for this volume: create one.
     PileupWindow window;
+    window.hash = vol_hash;
     const auto vol_id = volume->get()->GetIdUpToDepth(fGroupVolumeDepth);
     // Create a GateDigiCollection for this volume, as a temporary storage for
     // digis that belong to the same time window (the name must be unique).
@@ -179,31 +185,40 @@ void GateDigitizerPileupActor::ProcessTimeSortedDigis() {
 
     const auto current_time = *fTimeSorterOutputTime;
     const auto current_edep = *fTimeSorterOutputEdep;
-    if (window.digis->GetSize() == 0) {
-      // The window has no digis yet: make the window start at the time of the
-      // current digi and remember the current edep as highest.
-      window.startTime = current_time;
-      window.highestEdep = current_edep;
-    } else if (current_time - window.startTime > fTimeWindow) {
-      // The current digi is beyond the time window: process the digis that are
-      // currently in the window, then make the window start at the time of the
-      // current digi and remember the current edep as highest.
-      ProcessPileupWindow(window);
-      window.startTime = current_time;
-      window.highestEdep = current_edep;
-    }
 
-    if (fTimeWindowPolicy == TimeWindowPolicy::Paralyzable) {
-      // In Paralyzable mode, extend the time window to start at the time of
-      // the current digi.
+    // The GlobalTime of digis provided by the time sorter are guaranteed to be
+    // monotonically increasing. As a consequence, all pile-up windows that have
+    // expired by the time of the most recently arrived digi can be handled.
+    ProcessPileupWindows(current_time);
+
+    if (window.digis->GetSize() == 0) {
+      // The window was empty: the newly arrived digi will open it.
       window.startTime = current_time;
-    } else if (fTimeWindowPolicy == TimeWindowPolicy::EnergyWinnerParalyzable) {
-      // In EnergyWinnerParalyzable mode, extend the time window only if
-      // the current digi has higher energy than the highest-energy
-      // digi so far.
-      if (current_edep > window.highestEdep) {
+      fWindowExpiry.push({window.hash, window.startTime + fTimeWindow});
+      window.highestEdep = current_edep;
+    } else {
+      // The window was already opened: update the window depending on the
+      // policy.
+      switch (fTimeWindowPolicy) {
+      case TimeWindowPolicy::NonParalyzable:
+        // window start time remains the same.
+        break;
+      case TimeWindowPolicy::Paralyzable:
+        // The current digi moves the start time forward.
         window.startTime = current_time;
-        window.highestEdep = current_edep;
+        fWindowExpiry.push({window.hash, window.startTime + fTimeWindow});
+        break;
+      case TimeWindowPolicy::EnergyWinnerParalyzable:
+        // The current digi moves the start time forward if its energy is higher
+        // than previous energies.
+        if (current_edep > window.highestEdep) {
+          window.startTime = current_time;
+          fWindowExpiry.push({window.hash, window.startTime + fTimeWindow});
+          window.highestEdep = current_edep;
+        }
+        break;
+      default:
+        Fatal("Unknown time window policy");
       }
     }
 
@@ -225,6 +240,10 @@ void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
   size_t last_index = 0;
   G4ThreeVector weighted_position;
   G4ThreeVector highest_edep_position;
+
+  if (window.digis->GetSize() == 0) {
+    return;
+  }
 
   // Iterate over all digis in the window from the beginning.
   auto &iter = window.digiIter;
@@ -285,4 +304,19 @@ void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
   }
   // Remove all processed digis from the window.
   window.digis->Clear();
+}
+
+void GateDigitizerPileupActor::ProcessPileupWindows(double currentTime) {
+
+  // Process the expiry items for which the expiry time is before currentTime.
+  while (fWindowExpiry.size() > 0 &&
+         currentTime > fWindowExpiry.front().expiryTime) {
+    auto &window = fVolumePileupWindows.at(fWindowExpiry.front().volumeHash);
+    // Check again whether the window is actually expired, because its expiry
+    // time may have been updated in a later expiry item.
+    if (currentTime > window.startTime + fTimeWindow) {
+      ProcessPileupWindow(window);
+    }
+    fWindowExpiry.pop();
+  }
 }
