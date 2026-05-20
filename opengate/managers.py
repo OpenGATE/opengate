@@ -96,7 +96,7 @@ from .actors.pgactors import (
     VoxelizedPromptGammaAnalogActor,
 )
 
-from .actors.dynamicactors import DynamicGeometryActor
+from .actors.dynamicactors import DynamicGeometryActor, DynamicSourceActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
@@ -155,6 +155,7 @@ actor_types = {
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
+    "DynamicSourceActor": DynamicSourceActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     # digit

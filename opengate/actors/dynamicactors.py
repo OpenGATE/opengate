@@ -42,7 +42,7 @@ class DynamicGeometryActor(DynamicActorBase, g4.GateVActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        for c in self.geometry_changers:
+        for c in self.changers:
             if c.volume_manager is None:
                 c.volume_manager = self.simulation.volume_manager
             c.initialize()
@@ -54,7 +54,7 @@ class DynamicGeometryActor(DynamicActorBase, g4.GateVActor):
             gm.RequestParallelOptimisation(False, False)
             # OpenGeometry (G4VPhysicalVolume *vol=0)
             gm.OpenGeometry(None)
-        for c in self.geometry_changers:
+        for c in self.changers:
             c.apply_change(run_id)
         if self.simulation.dyn_geom_open_close:
             # CloseGeometry: pOptimise=true, verbose=false, G4VPhysicalVolume *vol=0
@@ -65,14 +65,14 @@ class DynamicSourceActor(DynamicActorBase, g4.GateVActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        for c in self.source_changers:
+        for c in self.changers:
             if c.source_manager is None:
                 c.source_manager = self.simulation.source_manager
             c.initialize()
 
     def BeginOfRunActionMasterThread(self, run_id):
         # FIXME: check if source engine needs to be informed
-        for c in self.source_changers:
+        for c in self.changers:
             c.apply_change(run_id)
 
 

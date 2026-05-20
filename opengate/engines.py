@@ -128,7 +128,7 @@ class SourceEngine(EngineBase):
             )
             dynamic_source_actor.priority = 1
             for s in self.source_manager.dynamic_sources:
-                dynamic_source_actor.source_changers.extend(s.create_changers())
+                dynamic_source_actor.changers.extend(s.create_changers())
 
     def create_master_source_manager(self):
         # create the master source for the masterThread
@@ -878,7 +878,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             )
             dynamic_geometry_actor.priority = 0
             for vol in self.volume_manager.dynamic_volumes:
-                dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
+                dynamic_geometry_actor.changers.extend(vol.create_changers())
 
     def Construct(self):
         """

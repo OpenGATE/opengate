@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import itk
+import matplotlib.pyplot as plt
 import numpy as np
 
 import opengate as gate
@@ -9,10 +10,14 @@ from opengate.actors.dynamicactors import SourceActivityImageChanger
 from opengate.tests import utility
 
 
+def xyz_to_zyx(index_xyz):
+    return tuple(reversed(index_xyz))
+
+
 def create_activity_image(reference_image, peak_weights, output_path):
     array = np.zeros_like(itk.array_view_from_image(reference_image), dtype=np.float32)
-    for peak_index, weight in peak_weights.items():
-        array[peak_index] = weight
+    for peak_index_xyz, weight in peak_weights.items():
+        array[xyz_to_zyx(peak_index_xyz)] = weight
     image = itk.image_from_array(array)
     image.CopyInformation(reference_image)
     itk.imwrite(image, str(output_path))
@@ -26,6 +31,28 @@ def create_reference_image(output_path):
     image.SetOrigin([0.0, 0.0, 0.0])
     itk.imwrite(image, str(output_path))
     return image
+
+
+def plot_run_dose_planes(run_0_image, run_1_image, output_path):
+    run_0_array = itk.array_view_from_image(run_0_image)
+    run_1_array = itk.array_view_from_image(run_1_image)
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4), constrained_layout=True)
+    plane_index = 5
+    images = [
+        axes[0].imshow(run_0_array[plane_index, :, :], origin="lower"),
+        axes[1].imshow(run_1_array[plane_index, :, :], origin="lower"),
+    ]
+    titles = ["Run 0 dose, z=5", "Run 1 dose, z=5"]
+
+    for ax, image, title in zip(axes, images, titles):
+        ax.set_title(title)
+        ax.set_xlabel("x index")
+        ax.set_ylabel("y index")
+        fig.colorbar(image, ax=ax)
+
+    fig.savefig(output_path)
+    plt.close(fig)
 
 
 if __name__ == "__main__":
@@ -53,30 +80,29 @@ if __name__ == "__main__":
     ct.image = str(ct_image_path)
     ct.material = "G4_AIR"
     ct.voxel_materials = [[0, 10, "G4_WATER"]]
-
     ct_info = gate.image.read_image_info(ct.image)
 
     source_image_1_path = paths.output / "dynamic_source_1.mhd"
     source_image_2_path = paths.output / "dynamic_source_2.mhd"
-    run_0_primary_peak = (5, 5, 2)
-    run_0_secondary_peak = (5, 2, 2)
-    run_1_primary_peak = (5, 5, 7)
-    run_1_secondary_peak = (5, 2, 7)
+    run_0_primary_peak_xyz = (2, 5, 5)
+    run_0_secondary_peak_xyz = (2, 2, 5)
+    run_1_primary_peak_xyz = (7, 5, 5)
+    run_1_secondary_peak_xyz = (7, 2, 5)
     run_0_expected_ratio = 3.0
     run_1_expected_ratio = 4.0
     create_activity_image(
         ct_itk,
         {
-            run_0_primary_peak: run_0_expected_ratio,
-            run_0_secondary_peak: 1.0,
+            run_0_primary_peak_xyz: run_0_expected_ratio,
+            run_0_secondary_peak_xyz: 1.0,
         },
         source_image_1_path,
     )
     create_activity_image(
         ct_itk,
         {
-            run_1_primary_peak: run_1_expected_ratio,
-            run_1_secondary_peak: 1.0,
+            run_1_primary_peak_xyz: run_1_expected_ratio,
+            run_1_secondary_peak_xyz: 1.0,
         },
         source_image_2_path,
     )
@@ -118,14 +144,15 @@ if __name__ == "__main__":
 
     sim.run()
 
-    run_0 = itk.array_view_from_image(dose.edep.get_data(which=0))
-    run_1 = itk.array_view_from_image(dose.edep.get_data(which=1))
-    run_0_peak = np.unravel_index(np.argmax(run_0), run_0.shape)
-    run_1_peak = np.unravel_index(np.argmax(run_1), run_1.shape)
-    run_0_primary_dose = run_0[run_0_primary_peak]
-    run_0_secondary_dose = run_0[run_0_secondary_peak]
-    run_1_primary_dose = run_1[run_1_primary_peak]
-    run_1_secondary_dose = run_1[run_1_secondary_peak]
+    run_0_image = dose.edep.get_data(which=0)
+    run_1_image = dose.edep.get_data(which=1)
+    plot_run_dose_planes(run_0_image, run_1_image, paths.output / "test097_dose_planes.png")
+    run_0_primary_dose = run_0_image.GetPixel(run_0_primary_peak_xyz)
+    run_0_secondary_dose = run_0_image.GetPixel(run_0_secondary_peak_xyz)
+    run_1_primary_dose = run_1_image.GetPixel(run_1_primary_peak_xyz)
+    run_1_secondary_dose = run_1_image.GetPixel(run_1_secondary_peak_xyz)
+    run_0_other_primary_dose = run_0_image.GetPixel(run_1_primary_peak_xyz)
+    run_1_other_primary_dose = run_1_image.GetPixel(run_0_primary_peak_xyz)
     run_0_ratio = run_0_primary_dose / run_0_secondary_dose
     run_1_ratio = run_1_primary_dose / run_1_secondary_dose
     ratio_tolerance = 0.6
@@ -138,26 +165,26 @@ if __name__ == "__main__":
     is_ok = changer.attached_to == source.name and is_ok
 
     utility.print_test(
-        run_0_peak == run_0_primary_peak,
-        f"Run 0 peak at {run_0_peak}, expected {run_0_primary_peak}",
+        run_0_primary_dose > 5.0 * run_0_other_primary_dose,
+        f"Run 0 primary voxel dose {run_0_primary_dose:.2f} dominates inactive run 1 voxel {run_0_other_primary_dose:.2f}",
     )
-    is_ok = run_0_peak == run_0_primary_peak and is_ok
+    is_ok = run_0_primary_dose > 5.0 * run_0_other_primary_dose and is_ok
 
     utility.print_test(
-        run_1_peak == run_1_primary_peak,
-        f"Run 1 peak at {run_1_peak}, expected {run_1_primary_peak}",
+        run_1_primary_dose > 5.0 * run_1_other_primary_dose,
+        f"Run 1 primary voxel dose {run_1_primary_dose:.2f} dominates inactive run 0 voxel {run_1_other_primary_dose:.2f}",
     )
-    is_ok = run_1_peak == run_1_primary_peak and is_ok
+    is_ok = run_1_primary_dose > 5.0 * run_1_other_primary_dose and is_ok
 
     utility.print_test(
         abs(run_0_ratio - run_0_expected_ratio) < ratio_tolerance,
-        f"Run 0 dose ratio {run_0_ratio:.2f}, expected {run_0_expected_ratio:.2f}",
+        f"Run 0 dose ratio at xyz {run_0_primary_peak_xyz}/{run_0_secondary_peak_xyz}: {run_0_ratio:.2f}, expected {run_0_expected_ratio:.2f}",
     )
     is_ok = abs(run_0_ratio - run_0_expected_ratio) < ratio_tolerance and is_ok
 
     utility.print_test(
         abs(run_1_ratio - run_1_expected_ratio) < ratio_tolerance,
-        f"Run 1 dose ratio {run_1_ratio:.2f}, expected {run_1_expected_ratio:.2f}",
+        f"Run 1 dose ratio at xyz {run_1_primary_peak_xyz}/{run_1_secondary_peak_xyz}: {run_1_ratio:.2f}, expected {run_1_expected_ratio:.2f}",
     )
     is_ok = abs(run_1_ratio - run_1_expected_ratio) < ratio_tolerance and is_ok
 
