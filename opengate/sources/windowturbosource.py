@@ -228,44 +228,6 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
         # Actually, can, but initialization is needed. However act ratio is dependent on mother volume movement, therefore cannot be predicted before the simulation starts.
         return False
 
-    def validate_color(self, color):
-        valid_color_str = [
-            "white",
-            "grey",
-            "gray",
-            "black",
-            "brown",
-            "red",
-            "green",
-            "blue",
-            "cyan",
-            "magenta",
-            "yellow",
-        ]
-        if isinstance(color, str) and not color in valid_color_str:
-            fatal(
-                f"Invalid color name '{color}' for visualizing the window. Valid color name options are: {valid_color_str}."
-            )
-        if isinstance(color, list):
-            if len(color) > 4 or len(color) < 3:
-                fatal(
-                    f"Color list must have 3 (RGB) or 4 (RGBA) elements. Got {len(color)}."
-                )
-            if len(color) == 3:
-                color.append(1.0)  # Add alpha value of 1.0 if only RGB is provided
-                logger.debug(
-                    "Alpha value of 1.0 is added to the color list since only RGB values are provided."
-                )
-            for i, c in enumerate(color):
-                if not isinstance(c, (int, float, np.number)):
-                    fatal(
-                        f"All elements of color list must be numbers. Element {i} is not."
-                    )
-                if c < 0 or c > 1:
-                    fatal(
-                        f"All elements of color list must be in the range [0, 1]. Element {i} is {c}."
-                    )
-
     def visualize_window(
         self, color, width: float = 2.0, timing_interval_index: int = 0
     ):
