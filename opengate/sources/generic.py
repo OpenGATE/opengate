@@ -15,8 +15,9 @@ from opengate.actors.biasingactors import (
     AngularAcceptanceValidator,
 )
 from ..base import UserInfoValidatorBase
-from ..exception import fatal
+from ..exception import fatal, warning
 import numpy as np
+from ..logger import logger
 
 
 def _position_parameters():
@@ -468,6 +469,66 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 return True
             return False
         return True
+
+    def validate_color(self, color):
+        valid_color_str = [
+            "white",
+            "grey",
+            "gray",
+            "black",
+            "brown",
+            "red",
+            "green",
+            "blue",
+            "cyan",
+            "magenta",
+            "yellow",
+        ]
+        if isinstance(color, str) and not color in valid_color_str:
+            fatal(
+                f"Invalid color name '{color}' for visualizing the window. Valid color name options are: {valid_color_str}."
+            )
+        if isinstance(color, list):
+            if len(color) > 4 or len(color) < 3:
+                fatal(
+                    f"Color list must have 3 (RGB) or 4 (RGBA) elements. Got {len(color)}."
+                )
+            if len(color) == 3:
+                color.append(1.0)  # Add alpha value of 1.0 if only RGB is provided
+                logger.debug(
+                    "Alpha value of 1.0 is added to the color list since only RGB values are provided."
+                )
+            for i, c in enumerate(color):
+                if not isinstance(c, (int, float, np.number)):
+                    fatal(
+                        f"All elements of color list must be numbers. Element {i} is not."
+                    )
+                if c < 0 or c > 1:
+                    fatal(
+                        f"All elements of color list must be in the range [0, 1]. Element {i} is {c}."
+                    )
+
+    def visualize(self, count: int, color, size: float):
+        print(
+            f"Requesting visualization of {count} particles for source {self.name} with color {color} and size {size}"
+        )
+        if count <= 0:
+            warning(
+                f"source visualization count must be > 0. Got {count}. No visualization will be performed."
+            )
+            return
+        if count > 10000:
+            warning(
+                f"source visualization count is too high ({count}), using 2000 instead."
+            )
+            count = 2000
+        if size <= 0 or size >= 20:
+            warning(
+                f"source visualization size must be in the range (0, 20). Got {size}. Using 3 instead."
+            )
+            size = 3
+        self.validate_color(color)
+        self.RequestVisualization(count, color, size)
 
 
 process_cls(GenericSource)
