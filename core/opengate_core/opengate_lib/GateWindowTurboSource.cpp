@@ -6,6 +6,7 @@
 #include "GateVSource.h"
 #include <G4Colour.hh>
 #include <G4Event.hh>
+#include <G4ExceptionSeverity.hh>
 #include <G4Run.hh>
 #include <G4RunManager.hh>
 #include <G4String.hh>
@@ -115,6 +116,12 @@ GateWindowTurboSource::GetInitializeBeforeRunFlag(G4int run_id) {
 }
 
 void GateWindowTurboSource::Visualize() const {
+  if (G4Threading::GetNumberOfRunningWorkerThreads() > 0) {
+    G4Exception(
+        "GateWindowTurboSource::Visualize", "VisualizeWTSourceInMTMode",
+        FatalException,
+        "Visualize for GateWindowTurboSource is not supported in MT mode");
+  }
   GateGenericSource::Visualize();
   if (visualization_window_color.size() > 0) {
     for (size_t i = 0; i < visualization_window_color.size(); i++) {
