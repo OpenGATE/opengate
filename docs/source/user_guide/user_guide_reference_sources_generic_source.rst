@@ -149,6 +149,13 @@ The same method is also available for source classes that inherit from
 <https://github.com/OpenGATE/opengate/tree/master/opengate/sources>`_ for
 source inheritance details.
 
+The following figure is generated from test file ``test010_generic_source_visu.py``.
+It shows the position distribution of 5 different sources with different color:
+
+.. image:: ../figures/source_visualization.png
+   :align: center
+   :width: 70%
+
 Enable simulation visualization and call ``visualize`` on the source
 before ``sim.run()``:
 
