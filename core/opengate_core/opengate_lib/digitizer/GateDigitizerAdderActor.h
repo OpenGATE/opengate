@@ -16,6 +16,7 @@
 #include "GateTDigiAttribute.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <cstdint> // Required for uint64_t
+#include <memory>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -102,7 +103,8 @@ protected:
 
   // During computation (thread local)
   struct threadLocalT {
-    std::map<DigiKey, GateDigiAdderInVolume *> fMapOfDigiInVolume;
+    std::map<DigiKey, std::unique_ptr<GateDigiAdderInVolume>>
+        fMapOfDigiInVolume;
 
     double *edep;
     G4ThreeVector *pos;
@@ -110,6 +112,8 @@ protected:
     double *time;
     double *weight;
     int64_t *track_info_id;
+
+    ~threadLocalT();
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

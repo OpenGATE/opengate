@@ -24,7 +24,7 @@ void GateTDigiAttribute<T>::InitDefaultProcessHitsFunction() {
 }
 
 template <class T> int GateTDigiAttribute<T>::GetSize() const {
-  return threadLocalData.Get().fValues.size();
+  return Values().size();
 }
 
 template <class T> void GateTDigiAttribute<T>::FillDValue(double) {
@@ -97,13 +97,11 @@ std::vector<GateUniqueVolumeID::Pointer> &GateTDigiAttribute<T>::GetUValues() {
   return *(new std::vector<GateUniqueVolumeID::Pointer>); // to avoid warning
 }
 
-template <class T> void GateTDigiAttribute<T>::Clear() {
-  threadLocalData.Get().fValues.clear();
-}
+template <class T> void GateTDigiAttribute<T>::Clear() { Values().clear(); }
 
 template <class T>
 const std::vector<T> &GateTDigiAttribute<T>::GetValues() const {
-  return threadLocalData.Get().fValues;
+  return Values();
 }
 
 template <class T> T GateTDigiAttribute<T>::GetSingleValue() const {
@@ -114,7 +112,7 @@ template <class T>
 void GateTDigiAttribute<T>::Fill(GateVDigiAttribute *input, size_t index) {
   // we assume that the given GateVDigiAttribute has the same type
   auto tinput = static_cast<GateTDigiAttribute<T> *>(input);
-  threadLocalData.Get().fValues.push_back(tinput->GetValues()[index]);
+  Values().push_back(tinput->GetValues()[index]);
 }
 
 template <class T> void GateTDigiAttribute<T>::FillDigiWithEmptyValue() {
@@ -134,7 +132,7 @@ void GateTDigiAttribute<T>::FillToRoot(size_t /*index*/) const {
 
 template <class T> std::string GateTDigiAttribute<T>::Dump(int i) const {
   std::ostringstream oss;
-  oss << threadLocalData.Get().fValues[i];
+  oss << Values()[i];
   return oss.str();
 }
 
@@ -176,118 +174,112 @@ GateTDigiAttribute<GateUniqueVolumeID::Pointer>::GateTDigiAttribute(
 }
 
 template <> void GateTDigiAttribute<double>::FillDigiWithEmptyValue() {
-  threadLocalData.Get().fValues.push_back(0.0);
+  Values().push_back(0.0);
 }
 
 template <> void GateTDigiAttribute<int>::FillDigiWithEmptyValue() {
-  threadLocalData.Get().fValues.push_back(0);
+  Values().push_back(0);
 }
 
 template <> void GateTDigiAttribute<int64_t>::FillDigiWithEmptyValue() {
-  threadLocalData.Get().fValues.push_back(0);
+  Values().push_back(0);
 }
 
 template <> void GateTDigiAttribute<std::string>::FillDigiWithEmptyValue() {
-  threadLocalData.Get().fValues.push_back("");
+  Values().push_back("");
 }
 
 template <> void GateTDigiAttribute<G4ThreeVector>::FillDigiWithEmptyValue() {
-  threadLocalData.Get().fValues.push_back(G4ThreeVector());
+  Values().push_back(G4ThreeVector());
 }
 
 template <>
 void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillDigiWithEmptyValue() {
   auto t = GateUniqueVolumeID::New();
-  threadLocalData.Get().fValues.push_back(t);
+  Values().push_back(t);
 }
 
 template <> void GateTDigiAttribute<double>::FillDValue(double value) {
-  // threadLocalData.Get().fValues.push_back(value);
   if (fSingleValueMode) {
     threadLocalData.Get().fSingleValue = value;
   } else {
-    threadLocalData.Get().fValues.push_back(value);
+    Values().push_back(value);
   }
 }
 
 template <>
 void GateTDigiAttribute<std::string>::FillSValue(std::string value) {
-  // threadLocalData.Get().fValues.push_back(value);
   if (fSingleValueMode) {
     threadLocalData.Get().fSingleValue = value;
   } else {
-    threadLocalData.Get().fValues.push_back(value);
+    Values().push_back(value);
   }
 }
 
 template <> void GateTDigiAttribute<int>::FillIValue(int value) {
-  // threadLocalData.Get().fValues.push_back(value);
   if (fSingleValueMode) {
     threadLocalData.Get().fSingleValue = value;
   } else {
-    threadLocalData.Get().fValues.push_back(value);
+    Values().push_back(value);
   }
 }
 
 template <> void GateTDigiAttribute<int64_t>::FillLValue(int64_t value) {
-  // threadLocalData.Get().fValues.push_back(value);
   if (fSingleValueMode) {
     threadLocalData.Get().fSingleValue = value;
   } else {
-    threadLocalData.Get().fValues.push_back(value);
+    Values().push_back(value);
   }
 }
 
 template <>
 void GateTDigiAttribute<G4ThreeVector>::Fill3Value(G4ThreeVector value) {
-  // threadLocalData.Get().fValues.push_back(value);
   if (fSingleValueMode) {
     threadLocalData.Get().fSingleValue = value;
   } else {
-    threadLocalData.Get().fValues.push_back(value);
+    Values().push_back(value);
   }
 }
 
 template <>
 void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillUValue(
     GateUniqueVolumeID::Pointer value) {
-  // threadLocalData.Get().fValues.push_back(value);
   if (fSingleValueMode) {
     threadLocalData.Get().fSingleValue = value;
   } else {
-    threadLocalData.Get().fValues.push_back(value);
+    Values().push_back(value);
   }
 }
 
 template <> void GateTDigiAttribute<double>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  const auto v = threadLocalData.Get().fValues[index];
+  const auto v = Values()[index];
   ram->FillNtupleDColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <> void GateTDigiAttribute<int>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  const auto v = threadLocalData.Get().fValues[index];
+  const auto v = Values()[index];
   ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <> void GateTDigiAttribute<int64_t>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  const auto v = threadLocalData.Get().fValues[index];
+  const auto v = Values()[index];
   ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <>
 void GateTDigiAttribute<std::string>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  const auto v = threadLocalData.Get().fValues[index];
+  const auto v = Values()[index];
   ram->FillNtupleSColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <>
 void GateTDigiAttribute<G4ThreeVector>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  auto v = threadLocalData.Get().fValues[index];
+  auto v = Values()[index];
   ram->FillNtupleDColumn(fTupleId, fDigiAttributeId, v[0]);
   ram->FillNtupleDColumn(fTupleId, fDigiAttributeId + 1, v[1]);
   ram->FillNtupleDColumn(fTupleId, fDigiAttributeId + 2, v[2]);
@@ -297,36 +289,36 @@ template <>
 void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillToRoot(
     size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  const auto v = threadLocalData.Get().fValues[index]->fID;
+  const auto v = Values()[index]->fID;
   ram->FillNtupleSColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <> std::vector<double> &GateTDigiAttribute<double>::GetDValues() {
-  return threadLocalData.Get().fValues;
+  return Values();
 }
 
 template <> std::vector<int> &GateTDigiAttribute<int>::GetIValues() {
-  return threadLocalData.Get().fValues;
+  return Values();
 }
 
 template <> std::vector<int64_t> &GateTDigiAttribute<int64_t>::GetLValues() {
-  return threadLocalData.Get().fValues;
+  return Values();
 }
 
 template <>
 std::vector<std::string> &GateTDigiAttribute<std::string>::GetSValues() {
-  return threadLocalData.Get().fValues;
+  return Values();
 }
 
 template <>
 std::vector<G4ThreeVector> &GateTDigiAttribute<G4ThreeVector>::Get3Values() {
-  return threadLocalData.Get().fValues;
+  return Values();
 }
 
 template <>
 std::vector<GateUniqueVolumeID::Pointer> &
 GateTDigiAttribute<GateUniqueVolumeID::Pointer>::GetUValues() {
-  return threadLocalData.Get().fValues;
+  return Values();
 }
 
 template class GateTDigiAttribute<double>;

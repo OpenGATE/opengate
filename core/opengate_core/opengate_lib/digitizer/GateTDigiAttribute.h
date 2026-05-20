@@ -58,6 +58,8 @@ public:
 
   void SetSingleValueMode(bool b) { fSingleValueMode = b; }
 
+  void SetSharedStorage(bool b) override { fSharedMode = b; }
+
 protected:
   struct threadLocal_t {
     std::vector<T> fValues;
@@ -65,6 +67,19 @@ protected:
   };
   G4Cache<threadLocal_t> threadLocalData;
   bool fSingleValueMode = false; // Default to false (Digi mode)
+
+  // Shared (non-thread-local) storage, used when fSharedMode is true.
+  // The caller is responsible for external synchronisation.
+  bool fSharedMode = false;
+  std::vector<T> fSharedValues;
+
+  // Returns the active value vector depending on the storage mode.
+  std::vector<T> &Values() {
+    return fSharedMode ? fSharedValues : threadLocalData.Get().fValues;
+  }
+  const std::vector<T> &Values() const {
+    return fSharedMode ? fSharedValues : threadLocalData.Get().fValues;
+  }
 
   void InitDefaultProcessHitsFunction();
 };
