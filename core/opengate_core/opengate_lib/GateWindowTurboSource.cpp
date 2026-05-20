@@ -1,6 +1,3 @@
-// TODO: 需要自行清除 ang->fGlobalRotation，如果
-// 复用GateGenericSource::PrepareNextRun()的话
-// 每个线程各算各的粒子数
 #include "GateWindowTurboSource.h"
 #include "G4CallbackModel.hh"
 #include "GateGenericSource.h"
@@ -34,8 +31,6 @@ void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
   if (G4Threading::IsMasterThread())
     fUserInfo = user_info;
 }
-
-// TBD: override update TAC?
 
 double GateWindowTurboSource::CalcNextTime(double current_simulation_time) {
   GateSingleParticleSourceWindowTurbo *spswt =
@@ -122,24 +117,9 @@ GateWindowTurboSource::GetInitializeBeforeRunFlag(G4int run_id) {
   return it->second;
 }
 
-// void GateWindowTurboSource::GeneratePrimaries(
-//     G4Event *event, const double current_simulation_time) {
-//   GateGenericSource::GeneratePrimaries(event, current_simulation_time);
-// auto &ll = GetThreadLocalDataGenericSource();
-// GateSingleParticleSourceWindowTurbo *sps =
-//     reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(ll.fSPS);
-// if (fSkip) {
-//   G4double current_solid_angle = sps->GetCurrentSolidAngle();
-//   ll.fCurrentSkippedEvents += 4 * M_PI / current_solid_angle - 1;
-//   ll.fEffectiveEventTime +=
-//       G4RandGamma::shoot(ll.fCurrentSkippedEvents, fActivity);
-// }
-// TODO:finish this
-// }
-
 void GateWindowTurboSource::Visualize() const {
   GateGenericSource::Visualize();
-  if (G4Threading::IsMasterThread() and visualization_window_color.size() > 0) {
+  if (visualization_window_color.size() > 0) {
     for (size_t i = 0; i < visualization_window_color.size(); i++) {
       VisualizeOneWindow(visualization_window_color[i],
                          visualization_window_width[i],
@@ -251,10 +231,6 @@ void GateWindowTurboSource::PendingVisualizeWindow(G4Colour colour,
   visualization_window_color.push_back(colour);
   visualization_window_width.push_back(width);
   visualization_window_run_id.push_back(run_id);
-  G4cout << "Scheduled visualization of window for run " << run_id
-         << " with color (" << colour.GetRed() << ", " << colour.GetGreen()
-         << ", " << colour.GetBlue() << ", " << colour.GetAlpha()
-         << ") and width " << width << G4endl;
 }
 void GateWindowTurboSource::VisualizeOneWindow(G4Colour colour, G4double width,
                                                int run_id) const {
