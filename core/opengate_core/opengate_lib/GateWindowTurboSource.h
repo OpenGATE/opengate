@@ -56,6 +56,8 @@ public:
 protected:
   virtual void CreateSPS() override;
   virtual void InitializeDirection(py::dict puser_info) override;
+
+private:
   std::vector<G4double> fA1, fA2, fB1, fB2, fPlaneDistance, fPlanePhi,
       fActRatio, fMaxSolidAngle;
   G4int fCurrentRunId;
@@ -98,7 +100,6 @@ protected:
                          GateSingleParticleSourceWindowTurbo *spswt);
   py::dict fUserInfo; // to write back act ratio and max solid angle
 
-private:
   std::once_flag &GetInitializeBeforeRunFlag(G4int run_id);
 
   std::mutex fInitializeBeforeRunMutex;

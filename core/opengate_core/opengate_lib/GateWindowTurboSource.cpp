@@ -15,8 +15,6 @@
 #include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
 
-// G4bool GateWindowTurboSource::random_engine_initialized = false;
-
 void GateWindowTurboSource::CreateSPS() {
   auto &ll = GetThreadLocalDataGenericSource();
   ll.fSPS = new GateSingleParticleSourceWindowTurbo(fAttachedToVolumeName);
@@ -24,7 +22,6 @@ void GateWindowTurboSource::CreateSPS() {
 
 void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
   GateGenericSource::InitializeUserInfo(user_info);
-  // TBD: should these be addressed in python side?
   fWeight = -1;
   fWeightSigma = -1;
   fDirectionRelativeToAttachedVolume = false;
@@ -168,26 +165,6 @@ void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
     ll.fSPS->SetFDManager(ll.fFDManager);
   }
 }
-
-// void GateWindowTurboSource::LoadVoxelizedPhantom(G4String filename) {
-//   if (m_posSPS)
-//     delete m_posSPS;
-//   m_posSPS = new GateVoxelizedPosDistribution(filename);
-//   m_angSPS->SetPosDistribution(m_posSPS);
-// }
-
-// void GateWindowTurboSource::SetPhantomPosition(G4ThreeVector pos) {
-//   GateVoxelizedPosDistribution *posDist =
-//       dynamic_cast<GateVoxelizedPosDistribution *>(m_posSPS);
-//   if (posDist)
-//     posDist->SetPosition(pos);
-//   else
-//     G4cout << "Can't use this command unless a voxelized phantom has already
-//     "
-//               "been loaded."
-//            << G4endl;
-// }
-
 void GateWindowTurboSource::GetWindowVertex(G4ThreeVector &pos1,
                                             G4ThreeVector &pos2,
                                             G4ThreeVector &pos3,
