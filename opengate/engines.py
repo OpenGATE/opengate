@@ -108,6 +108,7 @@ class SourceEngine(EngineBase):
         #        "No source: no particle will be generated"
         #    )
         self.progress_bar = progress_bar
+        self.initialize_dynamic_parametrisations()
 
     def initialize_actors(self):
         """

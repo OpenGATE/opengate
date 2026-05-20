@@ -172,9 +172,9 @@ class SourceChanger(ChangerBase):
             return None
 
     @property
-    @requires_fatal("volume_manager")
+    @requires_fatal("source_manager")
     def attached_to_source(self):
-        return self.source_manager[self.attached_to]
+        return self.source_manager.get_source(self.attached_to)
 
 
 class VolumeImageChanger(GeometryChanger):
@@ -326,8 +326,13 @@ class SourceActivityImageChanger(SourceChanger):
         self.attached_to_source.update_activity_image(self.activity_images[run_id])
 
 
+process_cls(DynamicActorBase)
 process_cls(DynamicGeometryActor)
+process_cls(DynamicSourceActor)
+process_cls(ChangerBase)
 process_cls(GeometryChanger)
+process_cls(SourceChanger)
 process_cls(VolumeImageChanger)
 process_cls(VolumeTranslationChanger)
 process_cls(VolumeRotationChanger)
+process_cls(SourceActivityImageChanger)

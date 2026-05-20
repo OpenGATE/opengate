@@ -337,6 +337,10 @@ class SourceManager(GateObject):
             )
             return None  # to avoid warning
 
+    @property
+    def dynamic_sources(self):
+        return [source for source in self.sources.values() if source.is_dynamic]
+
     def add_source(self, source, name):
         new_source = None
         if isinstance(source, str):

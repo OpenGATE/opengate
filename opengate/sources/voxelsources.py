@@ -3,7 +3,7 @@ import itk
 import opengate_core as g4
 from .generic import GenericSource
 from ..image import (
-    read_image_info,
+    get_info_from_image,
     update_image_py_to_cpp,
     compute_image_3D_CDF,
 )
@@ -37,7 +37,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
         self.__initcpp__()
         super().__init__(self, *args, **kwargs)
         # the loaded image
-        self.itk_image = None
+        self._current_itk_image = None
 
     def __initcpp__(self):
         g4.GateVoxelSource.__init__(self)
@@ -62,12 +62,11 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
         return changers
 
     def set_transform_from_user_info(self):
-        # get source image information
-        src_info = read_image_info(str(self.image))
+        src_info = get_info_from_image(self._current_itk_image)
         # get the pointer to SPSVoxelPosDistribution
         pg = self.GetSPSVoxelPosDistribution()
         # update cpp image info (no need to allocate)
-        update_image_py_to_cpp(self.itk_image, pg.cpp_edep_image, False)
+        update_image_py_to_cpp(self._current_itk_image, pg.cpp_edep_image, False)
         # set spacing
         pg.cpp_edep_image.set_spacing(src_info.spacing)
         # set origin (half size + translation and half-pixel shift)
@@ -83,7 +82,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
         Compute the Cumulative Distribution Function of the image
         Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
         """
-        cdf_x, cdf_y, cdf_z = compute_image_3D_CDF(self.itk_image)
+        cdf_x, cdf_y, cdf_z = compute_image_3D_CDF(self._current_itk_image)
 
         # set CDF to the position generator
         pg = self.GetSPSVoxelPosDistribution()
@@ -91,7 +90,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
 
     def update_activity_image(self, filename):
         # read source image
-        self.itk_image = itk.imread(ensure_filename_is_str(self.image))
+        self._current_itk_image = itk.imread(ensure_filename_is_str(filename))
 
         # compute position
         self.set_transform_from_user_info()
