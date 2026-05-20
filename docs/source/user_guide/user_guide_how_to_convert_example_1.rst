@@ -188,6 +188,7 @@ GATE 9
       /gate/source/mybeam/gps/ang/rot1       0 1 0
       /gate/source/mybeam/gps/ang/rot2       0 0 1
       /gate/source/mybeam/gps/ang/focuspoint 1000 0 0 mm
+      /gate/source/mybeam/visualize 2000 red 5
 
 
 GATE 10
@@ -205,6 +206,7 @@ GATE 10
     source.direction.type = "focused"
     source.direction.focus_point = [1000 * mm, 0 * mm, 0 * mm]
     source.n = 720000 / sim.number_of_threads
+    source.visualize(2000, "red", 5)
 
 
 Physics list
