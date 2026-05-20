@@ -9,16 +9,12 @@ from test098_coincidence_simulation import create_simulation
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, gate_folder="", output_folder="test098_coincidence_actor"
+        __file__, gate_folder="", output_folder="test098_coincidence_actor_mt"
     )
 
     sec = gate.g4_units.s
-    mm = gate.g4_units.mm
 
-    sim, cc, root_filename = create_simulation(paths, num_threads=1)
-
-    cc.min_transaxial_distance = 260 * mm
-    cc.max_axial_distance = 100 * mm
+    sim, cc, root_filename = create_simulation(paths, num_threads=2)
 
     for policy in [
         "RemoveMultiples",
@@ -34,8 +30,6 @@ if __name__ == "__main__":
         # Calculate the coincidences using the Python implementation.
         sorter = CoincidenceSorter()
         sorter.window = 1e-9 * sec
-        sorter.min_transaxial_distance = 260 * mm
-        sorter.max_axial_distance = 100 * mm
         sorter.multiples_policy = policy
 
         coincidences_python = sorter.run(root_filename, "singles")

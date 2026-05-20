@@ -474,6 +474,8 @@ By default, the PhaseSpaceActor stores information about particles entering the 
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
    phsp.steps_to_store = "all"   # all steps (including secondary particles)
 
+If ``steps_to_store`` includes ``"exiting"`` and ``attached_to`` contains multiple volumes, the actor resolves the exit condition independently for each attached physical volume. This allows repeated volumes and attached volumes with different mothers to be handled consistently.
+
 The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
 
 The option “entering” stores the particle information whenever it is at the boundary between the surrounding environment (world, another volume) and the volume to which the actor is attached. The variables to be used are the PrePosition, PreDirection, etc.
@@ -482,6 +484,8 @@ For example: if a particle enters the volume only once, its information is store
 The option “exiting” stores the particle information whenever, starting from within the volume, it is at the boundary between the volume to which the actor is attached and the surrounding environment (world, another volume). The variables to be used are the PostPosition, PostDirection, etc.
 
 The option “all” stores the particle information for every step in the volume, including secondary particles generated in the volume. If you want to track all steps for both primary and secondary particles, use this option.
+
+When using local coordinates such as ``PrePositionLocal`` or ``PostPositionLocal`` with multiple ``attached_to`` volumes, each stored position is expressed in the local frame of the volume touched by that step. To interpret these entries afterwards, it is useful to also store a volume-identifying attribute such as ``PreStepUniqueVolumeID`` or ``PostStepUniqueVolumeID``. For simpler cases, ``TrackVolumeName`` together with ``PreStepVolumeCopyNo`` or ``PostStepVolumeCopyNo`` can also help distinguish the contributing volumes. If uniquely meaningful local coordinates are important for the analysis, it is often simpler to attach one ``PhaseSpaceActor`` per volume rather than combining several ``attached_to`` volumes in the same actor.
 
 
 Reference
@@ -929,8 +933,6 @@ The following policies are supported to deal with multiple coincidences in the s
 
 On-line coincidence sorting does not require saving singles to a file,
 which is more economical in terms of disk space if the singles are not needed after the simulation.
-The current limitation, however, is that :class:`~.opengate.actors.digitizers.CoincidenceSorterActor` can only be used
-in single-threaded simulations.
 
 With off-line coincidence sorting, coincidences are returned from the `CoincidenceSorter.run()`` method as a pandas DataFrame.
 Alternatively, `output_file_path` can be specified for saving the coincidences to a file. In this case, the run() method returns `None`.
@@ -1094,14 +1096,13 @@ Reference
 
 .. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
-Free Flight Actors
-------------------
+Free Flight Actors and Directional Biasing
+------------------------------------------
 
 Description
 ~~~~~~~~~~~
 
-Free Flight is a variance reduction technique designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations[cite: 248]. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See paper [Sarrut et al, PMB, 2026, to appear].
-
+Free Flight is a variance reduction technique (VRT) designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See `[Sarrut et al, PMB, 2026] <https://doi.org/10.1088/1361-6560/ae622a>`_.
 
 OpenGATE provides two main actors for this purpose:
 
@@ -1122,6 +1123,22 @@ This actor is typically attached to the world or a specific phantom volume. It e
    # Optionally exclude specific volumes like the detector crystal
    # to let standard Geant4 tracking take over once the particle reaches the detector.
    ff.exclude_volumes = ["spect_1_crystal"]
+
+
+Angular Acceptance and Forced Direction Policies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When configuring directional biasing, the choice of policy is important.
+
+.. warning::
+   The **Rejection** policy should only be used when the acceptance probability is spatially uniform (e.g., for point sources or far-field approximations). When the acceptance probability varies spatially, as is common with volumetric sources near a detector, this policy introduces a systematic spatial bias by "warping" the simulated activity distribution.
+
+For quantitative SPECT simulations, use one of the following:
+
+* **ForceDirection (Recommended)**: This forces particles into the acceptance cone and adjusts their statistical weight (w = w_initial * P_acc). This preserves the correct spatial activity distribution.
+* **ZeroEnergy (or Kill)**: This maintains correct timing and event counts by simply terminating particles that fall outside the acceptance criteria, though it is less computationally efficient than weighting.
+
+**Multi-Target Strategy**: For systems with multiple detector heads, use the "Copy Source" method. Create N copies of the source, each targeting a different detector. If the angular acceptance cones of the targets **do not overlap**, maintain the full activity A for each copy to ensure correct absolute counts in each detector head. If the cones **do overlap**, another strategy is needed to avoid double counting, such as splitting the activity A across the N copies (A/N) or using a single source with an acceptance cone that encompasses all targets. This is not currently implemented in OpenGATE but is planned for future releases.
 
 
 

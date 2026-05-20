@@ -42,6 +42,26 @@ void GateVActor::SetMotherAttachedToVolumeName(
   fAttachedToVolumeMotherName = attachedToVolumeName;
 }
 
+void GateVActor::ClearAttachedVolumeExitPairs() {
+  fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs.clear();
+}
+
+void GateVActor::AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
+                                           G4VPhysicalVolume *motherVolume) {
+  if (attachedVolume == nullptr || motherVolume == nullptr) {
+    Fatal("Cannot register an attached volume exit pair with a null physical "
+          "volume.");
+  }
+  const std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *> pair(
+      attachedVolume, motherVolume);
+  auto &exitPairs = fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
+  for (const auto &existingPair : exitPairs) {
+    if (existingPair == pair)
+      return;
+  }
+  exitPairs.push_back(pair);
+}
+
 void GateVActor::InitializeUserInfo(py::dict &user_info) {
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
   fActorName = DictGetStr(user_info, "name");
@@ -176,11 +196,6 @@ bool GateVActor::IsStepEnteringVolume(
 }
 
 bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
-  if (fAttachedToVolumeMotherName == "None") {
-    Fatal("Cannot use IsStepExitingAttachedVolume when "
-          "fAttachedToVolumeMotherName is 'None'");
-  }
-
   // If the post step is world boundary: exiting
   if (step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary)
     return true;
@@ -194,9 +209,20 @@ bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
   // boundaries overlap fAttachedToVolume boundaries, post step gives the
   // daughter.
 
-  // if the post step is at the boundary AND if it is in the mother volume:
-  // exiting
-  const auto *vol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
-  const auto vol_name = vol->GetName();
-  return vol_name == fAttachedToVolumeMotherName;
+  const auto *preVol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
+  const auto *postVol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
+  const auto &exitPairs =
+      fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
+
+  // Runtime-resolved physical-volume pairs are the robust path, notably for
+  // repeated volumes whose physical names are auto-generated.
+  for (const auto &exitPair : exitPairs) {
+    if (exitPair.first == preVol && exitPair.second == postVol)
+      return true;
+  }
+  if (exitPairs.empty()) {
+    Fatal("Cannot use IsStepExitingAttachedVolume because no attached volume "
+          "exit pairs were configured.");
+  }
+  return false;
 }

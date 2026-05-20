@@ -21,3 +21,4 @@ Developer guide
 
    developer_guide_notes
    developer_guide_remaining_stuff
+   developer_guide_coincidence_sorter_mt
