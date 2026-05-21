@@ -123,7 +123,10 @@ To ensure simulation efficiency, we may wish to stop early when a target uncerta
    # Target statistical uncertainty (e.g., 5%)
    unc_goal = 0.05
 
-   # Define how "high-dose" voxels are selected: here, > 70% of max edep value
+   # Define how "high-dose" voxels are selected:
+   # first compute the mean edep of the N highest voxels,
+   # then keep voxels above 70% of that reference value
+   n_top_voxels = 20
    thresh_voxel_edep_for_unc_calc = 0.7
 
    # Planned number of primary particles or events (e.g., 100 MBq)
@@ -135,22 +138,25 @@ These parameters are then passed to the dose actor:
 
    dose.uncertainty_goal = unc_goal # 0.05
    dose.uncertainty_first_check_after_n_events = 0.01 * n_planned # check statistical uncertainty every 1 MBq particles
+   dose.uncertainty_top_voxels_count = n_top_voxels # 20
    dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc # 0.7
 
 Uncertainty is computed only in high-deposition voxels to focus on the clinically relevant region:
 
 .. code-block:: python
 
-   def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
+   def calculate_mean_unc(edep_arr, unc_arr, n_top_voxels=20, edep_thresh_rel=0.7):
        # Average the uncertainty values ​​over the high energy deposition areas
-       edep_max = np.amax(edep_arr)
-       mask = edep_arr > edep_max * edep_thresh_rel
+       flat = edep_arr.ravel()
+       top_n = np.partition(flat, -n_top_voxels)[-n_top_voxels:]
+       edep_mean_max = float(top_n.mean())
+       mask = edep_arr > edep_mean_max * edep_thresh_rel
        unc_used = unc_arr[mask]
        unc_mean = np.mean(unc_used)
 
        return unc_mean
 
-Note: This method uses a relative threshold based on the maximum deposited energy, which may be sensitive to outliers. Consider using a percentile-based threshold for robustness if needed.
+The parameter ``uncertainty_top_voxels_count`` must be greater than 0 and no larger than the number of voxels in the scoring image.
 
 At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
 
