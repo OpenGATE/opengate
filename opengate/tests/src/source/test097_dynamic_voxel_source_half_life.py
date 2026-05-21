@@ -243,21 +243,24 @@ if __name__ == "__main__":
     run_1_ratio = run_1_primary_counts / run_1_secondary_counts
     ratio_tolerance = 0.7
 
-    fitted_half_life_run_0_sec, fit_x_0, fit_y_0_density = utility.fit_exponential_decay(
-        run_0_event_times_sec, 0.0, 2.5
+    fitted_half_life_run_0_sec, fit_x_0, fit_y_0_density = (
+        utility.fit_exponential_decay(run_0_event_times_sec, 0.0, 2.5)
     )
-    fitted_half_life_run_1_sec, fit_x_1, fit_y_1_density = utility.fit_exponential_decay(
-        run_1_event_times_sec, 3.0, 5.5
+    fitted_half_life_run_1_sec, fit_x_1, fit_y_1_density = (
+        utility.fit_exponential_decay(run_1_event_times_sec, 3.0, 5.5)
     )
     expected_half_life_sec = source.half_life / sec
     half_life_run_0_relative_error = (
-        abs(fitted_half_life_run_0_sec - expected_half_life_sec) / expected_half_life_sec
+        abs(fitted_half_life_run_0_sec - expected_half_life_sec)
+        / expected_half_life_sec
     )
     half_life_run_1_relative_error = (
-        abs(fitted_half_life_run_1_sec - expected_half_life_sec) / expected_half_life_sec
+        abs(fitted_half_life_run_1_sec - expected_half_life_sec)
+        / expected_half_life_sec
     )
     half_life_difference_relative_error = (
-        abs(fitted_half_life_run_0_sec - fitted_half_life_run_1_sec) / expected_half_life_sec
+        abs(fitted_half_life_run_0_sec - fitted_half_life_run_1_sec)
+        / expected_half_life_sec
     )
     half_life_tolerance = 0.10
 
@@ -269,7 +272,10 @@ if __name__ == "__main__":
     nominal_x = np.linspace(0.0, 5.5, 300)
     nominal_decay_constant = np.log(2.0) / expected_half_life_sec
     nominal_y = (
-        source.activity / Bq * np.exp(-nominal_decay_constant * nominal_x) * combined_bin_width
+        source.activity
+        / Bq
+        * np.exp(-nominal_decay_constant * nominal_x)
+        * combined_bin_width
     )
 
     plot_event_positions_and_decay(

@@ -122,10 +122,9 @@ def mixed_tac_activity(
     slow_starting_activity,
     slow_decay_constant,
 ):
-    return (
-        fast_starting_activity * np.exp(-fast_decay_constant * t_sec)
-        + slow_starting_activity * np.exp(-slow_decay_constant * t_sec)
-    )
+    return fast_starting_activity * np.exp(
+        -fast_decay_constant * t_sec
+    ) + slow_starting_activity * np.exp(-slow_decay_constant * t_sec)
 
 
 if __name__ == "__main__":
@@ -280,11 +279,15 @@ if __name__ == "__main__":
     run_1_ratio = run_1_primary_counts / run_1_secondary_counts
     ratio_tolerance = 0.7
 
-    fitted_half_life_run_0_sec, fit_x_0, fit_y_0_density = utility.fit_exponential_decay(
-        run_0_event_times_sec, run_0_start_sec, run_0_end_sec
+    fitted_half_life_run_0_sec, fit_x_0, fit_y_0_density = (
+        utility.fit_exponential_decay(
+            run_0_event_times_sec, run_0_start_sec, run_0_end_sec
+        )
     )
-    fitted_half_life_run_1_sec, fit_x_1, fit_y_1_density = utility.fit_exponential_decay(
-        run_1_event_times_sec, run_1_start_sec, run_1_end_sec
+    fitted_half_life_run_1_sec, fit_x_1, fit_y_1_density = (
+        utility.fit_exponential_decay(
+            run_1_event_times_sec, run_1_start_sec, run_1_end_sec
+        )
     )
     run_0_expected_half_life_sec = fast_nominal_half_life / sec
     run_1_expected_half_life_sec = slow_nominal_half_life / sec
