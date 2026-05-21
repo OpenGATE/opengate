@@ -15,6 +15,10 @@ Run and timing
 
 The simulation can be split into several runs, each of them with a given time duration. This is used for example for simulations with a dynamic geometry, e.g. a rotating gantry or a breathing patient. Gaps between the intervals are allowed. By default, the simulation has only one run with a duration of 1 second.
 
+See also :doc:`user_guide_dynamic_parametrisations` for the user-facing dynamic
+parametrisation interface used by moving geometries, dynamic image volumes, and
+dynamic voxel sources.
+
 Splitting a simulation into multiple runs is faster than executing a simulation multiple times because Geant4 is initialized only once at the beginning.
 
 In the following example, we define 3 runs, the first has a duration of half a second and starts at 0, the 2nd run goes from 0.5 to 1 second. The 3rd run starts later at 1.5 seconds and lasts 1 second.

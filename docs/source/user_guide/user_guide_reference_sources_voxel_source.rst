@@ -27,6 +27,10 @@ voxel is chosen from this distribution, the location of the particle
 inside the voxel is performed uniformly. In the given example, 4 kBq of
 electrons of 140 keV will be generated.
 
+The activity image can also be made dynamic from one run to the next with
+``source.add_dynamic_parametrisation(image=[...])``. See
+:doc:`user_guide_dynamic_parametrisations`.
+
 Like all objects, by default, the source is located according to the
 coordinate system of its attached_to volume. For example, if the attached_to
 volume is a box, it will be the center of the box. If it is a voxelized
