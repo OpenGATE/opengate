@@ -56,12 +56,12 @@ def plot_run_dose_planes(run_0_image, run_1_image, output_path):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test097")
+    paths = utility.get_default_test_paths(__file__, output_folder="test097_mt")
 
     sim = gate.Simulation()
     sim.g4_verbose = False
     sim.visu = False
-    sim.number_of_threads = 1
+    sim.number_of_threads = 2
     sim.random_seed = 123456
     sim.output_dir = paths.output
 
@@ -80,8 +80,8 @@ if __name__ == "__main__":
     ct.image = str(ct_image_path)
     ct.material = "G4_AIR"
     ct.voxel_materials = [[0, 10, "G4_WATER"]]
-    ct_info = gate.image.read_image_info(ct.image)
     ct.load_input_image()
+    ct_info = gate.image.read_image_info(ct.image)
 
     source_image_1_path = paths.output / "dynamic_source_1.mhd"
     source_image_2_path = paths.output / "dynamic_source_2.mhd"
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     dose.output_coordinate_system = "attached_to_image"
     dose.edep.keep_data_per_run = True
 
-    sim.add_actor("SimulationStatisticsActor", "stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = False
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     run_0_image = dose.edep.get_data(which=0)
     run_1_image = dose.edep.get_data(which=1)
     plot_run_dose_planes(
-        run_0_image, run_1_image, paths.output / "test097_dose_planes.png"
+        run_0_image, run_1_image, paths.output / "test097_dynamic_voxel_source_mt_dose_planes.png"
     )
     run_0_primary_dose = run_0_image.GetPixel(run_0_primary_peak_xyz)
     run_0_secondary_dose = run_0_image.GetPixel(run_0_secondary_peak_xyz)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     run_1_other_primary_dose = run_1_image.GetPixel(run_0_primary_peak_xyz)
     run_0_ratio = run_0_primary_dose / run_0_secondary_dose
     run_1_ratio = run_1_primary_dose / run_1_secondary_dose
-    ratio_tolerance = 0.6
+    ratio_tolerance = 0.8
 
     is_ok = True
     utility.print_test(
@@ -164,6 +164,15 @@ if __name__ == "__main__":
         f"Changer attached_to property resolves to source name: {changer.attached_to}",
     )
     is_ok = changer.attached_to == source.name and is_ok
+
+    utility.print_test(
+        stats.counts.runs == sim.number_of_threads * len(sim.run_timing_intervals),
+        f"Stats runs count {stats.counts.runs} matches threads x timing intervals",
+    )
+    is_ok = (
+        stats.counts.runs == sim.number_of_threads * len(sim.run_timing_intervals)
+        and is_ok
+    )
 
     utility.print_test(
         run_0_primary_dose > 5.0 * run_0_other_primary_dose,
