@@ -120,6 +120,9 @@ if __name__ == "__main__":
     source.energy.mono = 1 * MeV
     source.add_dynamic_parametrisation(image=[source_image_1_path, source_image_2_path])
 
+    # Explicit manual changer creation is only used here to test the changer API.
+    # Normal user scripts should rely on add_dynamic_parametrisation(...), which
+    # auto-creates the SourceActivityImageChanger.
     changer = SourceActivityImageChanger(
         name="source_activity_image_changer",
         activity_images=[source_image_1_path, source_image_2_path],
