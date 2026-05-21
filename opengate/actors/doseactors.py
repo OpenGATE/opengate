@@ -610,11 +610,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.SetUncertaintyGoal(self.uncertainty_goal)
             n_voxels = self.size[0] * self.size[1] * self.size[2]
             if (
-                self.uncertainty_top_voxels_count < 0
+                self.uncertainty_top_voxels_count <= 0
                 or self.uncertainty_top_voxels_count > n_voxels
             ):
                 fatal(
-                    "uncertainty_top_voxels_count cannot be negative or bigger than the number of voxels in the image. "
+                    "uncertainty_top_voxels_count must be greater than 0 and cannot be bigger than the number of voxels in the image. "
                 )
             self.SetTopVoxelsCount(self.uncertainty_top_voxels_count)
             self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
