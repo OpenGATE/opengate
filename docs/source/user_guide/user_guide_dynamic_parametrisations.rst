@@ -155,6 +155,12 @@ Dynamic voxel source
 This means that the source distribution can change from one run to the next
 while keeping the same source object.
 
+The image is used as a relative spatial activity distribution for position
+sampling. Scaling all voxel values by the same constant does not change the
+total emitted activity; it leaves the same normalized spatial distribution.
+The total source strength is controlled separately by ``activity``,
+``half_life``, TAC parameters, or ``n``.
+
 Example:
 
 .. code-block:: python
