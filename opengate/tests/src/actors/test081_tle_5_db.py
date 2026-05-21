@@ -46,7 +46,7 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.global_production_cuts.all = 1 * mm
     sim.physics_manager.set_max_step_size("waterbox", 1 * mm)
-    sim.physics_manager.set_user_limits_particles("gamma")
+    sim.physics_manager.user_limits_particles = "gamma"
 
     # default source for tests
     source = add_source(sim, n=1e4, energy=0.3 * MeV, sigma=0.2 * MeV, radius=20 * mm)
