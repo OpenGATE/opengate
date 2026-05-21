@@ -14,6 +14,7 @@ Developer guide
 
    developer_guide_code_structure
    developer_guide_how_to_implement
+   developer_guide_dynamic_parametrisations
 
 .. toctree::
    :caption: Good to know
