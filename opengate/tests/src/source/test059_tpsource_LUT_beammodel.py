@@ -84,7 +84,7 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "QGSP_BIC_HP_EMZ"
 
     sim.physics_manager.set_max_step_size(x_0.name, 1.0)
-    sim.physics_manager.set_user_limits_particles("proton")
+    sim.physics_manager.user_limits_particles = "proton"
     # sim.physics_manager.user_limits_particles = ['proton','GenericIon']
 
     sim.physics_manager.set_production_cut("world", "gamma", 100 * m)

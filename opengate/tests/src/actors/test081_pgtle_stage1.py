@@ -230,7 +230,7 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.proton = 0.1 * mm
 
     sim.physics_manager.set_max_step_size("ct", 0.1 * mm)
-    sim.physics_manager.set_user_limits_particles(["proton"])
+    sim.physics_manager.user_limits_particles = ["proton"]
 
     # source of proton
     # FIXME to replace by a more realistic proton beam, see tests 044
