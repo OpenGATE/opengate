@@ -62,6 +62,7 @@ fi
 cd $GITHUB_WORKSPACE
 source $HOME/software/geant4/bin/geant4make.sh
 export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
+cp VERSION core/VERSION
 cd core
 
 mkdir opengate_core/plugins

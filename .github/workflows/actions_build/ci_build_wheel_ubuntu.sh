@@ -48,6 +48,7 @@ LD_LIBRARY_PATH=/software/geant4/lib:/software/itk/lib
 '
 
 # Run the build in custom docker
+cp VERSION core/VERSION
 cd core
 python -m cibuildwheel --output-dir dist
 mkdir -p $GITHUB_WORKSPACE/dist

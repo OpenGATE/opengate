@@ -27,8 +27,14 @@ def get_base_dir() -> Path:
     return Path(__file__).parent.parent.resolve()
 
 
-with open("VERSION", "r") as fh:
-    version = fh.read()[:-1]
+try:
+    # For CI builds
+    with open("VERSION", "r") as fh:
+        version = fh.read()[:-1]
+except IOError:
+    # For local builds
+    with open("../VERSION", "r") as fh:
+        version = fh.read()[:-1]
 
 from distutils.version import LooseVersion
 
