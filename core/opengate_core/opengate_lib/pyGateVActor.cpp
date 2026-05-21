@@ -86,6 +86,9 @@ void init_GateVActor(py::module &m) {
       .def("HasAction", &GateVActor::HasAction)
       .def("SetMotherAttachedToVolumeName",
            &GateVActor::SetMotherAttachedToVolumeName)
+      .def("ClearAttachedVolumeExitPairs",
+           &GateVActor::ClearAttachedVolumeExitPairs)
+      .def("AddAttachedVolumeExitPair", &GateVActor::AddAttachedVolumeExitPair)
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)
       .def("BeginOfRunAction", &GateVActor::BeginOfRunAction)

@@ -474,6 +474,8 @@ By default, the PhaseSpaceActor stores information about particles entering the 
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
    phsp.steps_to_store = "all"   # all steps (including secondary particles)
 
+If ``steps_to_store`` includes ``"exiting"`` and ``attached_to`` contains multiple volumes, the actor resolves the exit condition independently for each attached physical volume. This allows repeated volumes and attached volumes with different mothers to be handled consistently.
+
 The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
 
 The option “entering” stores the particle information whenever it is at the boundary between the surrounding environment (world, another volume) and the volume to which the actor is attached. The variables to be used are the PrePosition, PreDirection, etc.
@@ -482,6 +484,8 @@ For example: if a particle enters the volume only once, its information is store
 The option “exiting” stores the particle information whenever, starting from within the volume, it is at the boundary between the volume to which the actor is attached and the surrounding environment (world, another volume). The variables to be used are the PostPosition, PostDirection, etc.
 
 The option “all” stores the particle information for every step in the volume, including secondary particles generated in the volume. If you want to track all steps for both primary and secondary particles, use this option.
+
+When using local coordinates such as ``PrePositionLocal`` or ``PostPositionLocal`` with multiple ``attached_to`` volumes, each stored position is expressed in the local frame of the volume touched by that step. To interpret these entries afterwards, it is useful to also store a volume-identifying attribute such as ``PreStepUniqueVolumeID`` or ``PostStepUniqueVolumeID``. For simpler cases, ``TrackVolumeName`` together with ``PreStepVolumeCopyNo`` or ``PostStepVolumeCopyNo`` can also help distinguish the contributing volumes. If uniquely meaningful local coordinates are important for the analysis, it is often simpler to attach one ``PhaseSpaceActor`` per volume rather than combining several ``attached_to`` volumes in the same actor.
 
 
 Reference

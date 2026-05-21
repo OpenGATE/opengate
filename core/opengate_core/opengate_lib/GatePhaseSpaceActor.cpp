@@ -132,13 +132,18 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 
   auto &l = fThreadLocalData.Get();
 
-  // Particle enters the volume if the pre step is at the volume boundary
-  const bool entering =
-      step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
+  bool entering = false;
+  if (fStoreEnteringStep) {
+    // Particle enters the volume if the pre step is at the volume boundary
+    entering = step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
+  }
 
-  // Particle exits the volume if the post step is at the volume boundary or at
-  // the world boundary if the phsp is attached to the world
-  const bool exiting = IsStepExitingAttachedVolume(step);
+  bool exiting = false;
+  if (fStoreExitingStep) {
+    // Particle exits the volume if the post step is at the volume boundary or
+    // at the world boundary if the phsp is attached to the world
+    exiting = IsStepExitingAttachedVolume(step);
+  }
 
   // When this is the first time we've seen this particle, fFirstStepInVolume is
   // true We then set it to false
@@ -170,12 +175,18 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
     const auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
     const auto vol_name = vol->GetName();
     std::string pname = "noproc";
+    std::string entering_s = "not_requested";
+    std::string exiting_s = "not_requested";
     if (p != nullptr)
       pname = p->GetProcessName();
+    if (fStoreEnteringStep)
+      entering_s = entering ? "true" : "false";
+    if (fStoreExitingStep)
+      exiting_s = exiting ? "true" : "false";
     std::cout << GetName() << " "
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
-              << /*" hits=" << fHits->GetSize() <<*/ " [" << entering << " "
-              << exiting << " " << first_step_in_volume << "]"
+              << /*" hits=" << fHits->GetSize() <<*/ " [" << entering_s << " "
+              << exiting_s << " " << first_step_in_volume << "]"
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name
               << " mat=" << vol->GetLogicalVolume()->GetMaterial()->GetName()

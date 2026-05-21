@@ -1397,7 +1397,9 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
             "entering",
             {
                 "doc": "Define when to store the hits, can be 'entering', 'exiting', 'first' or 'all'. "
-                "Or several values separated by a space. ",
+                "Or several values separated by a space. When 'exiting' is used with multiple "
+                "attached_to volumes, exit transitions are resolved independently for each "
+                "attached physical volume. ",
                 # "allowed_values": ["entering", "exiting", "first", "all"], # can be multiple
             },
         ),
@@ -1415,6 +1417,11 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
 
     def initialize(self):
         DigitizerBase.initialize(self)
+        if "exiting" in self.steps_to_store:
+            # Exit transitions are resolved later, once Geant4 has constructed
+            # the physical volumes and we can identify concrete (pre, post)
+            # volume pairs for each attached volume copy.
+            self.ClearAttachedVolumeExitPairs()
         if "entering" in self.steps_to_store:
             self.SetStoreEnteringStepFlag(True)
         if "exiting" in self.steps_to_store:

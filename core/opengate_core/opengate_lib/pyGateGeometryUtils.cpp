@@ -13,5 +13,6 @@ namespace py = pybind11;
 #include "GateGeometryUtils.h"
 
 void init_GateGeometryUtils(py::module &m) {
-  m.def("FindAllTouchables", FindAllTouchables);
+  m.def("FindAllTouchables", FindAllTouchables, py::arg("target_lv_name"),
+        py::arg("world_name") = "");
 }
