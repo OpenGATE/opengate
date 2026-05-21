@@ -10,6 +10,7 @@ from ..image import (
     divide_itk_images,
     multiply_itk_images,
     scale_itk_image,
+    copy_itk_image,
     create_3d_image,
     write_itk_image,
     get_info_from_image,
@@ -241,8 +242,10 @@ class ItkImageDataItem(DataItem):
         return itk.array_view_from_image(self.image)
 
     def inplace_merge_with(self, other):
+        if other.data is None:
+            return self
         if self.data is None:
-            self.set_data(other.data)
+            self.set_data(copy_itk_image(other.data))
             self.number_of_samples = other.number_of_samples
         else:
             self.__iadd__(other)
@@ -767,10 +770,8 @@ class QuotientMeanItkImage(QuotientItkImage):
 
 
 def merge_data(list_of_data):
-    merged_data = type(list_of_data[0])(
-        list_of_data[0].belongs_to, data=list_of_data[0].data
-    )
-    for d in list_of_data[1:]:
+    merged_data = type(list_of_data[0])(list_of_data[0].belongs_to)
+    for d in list_of_data:
         merged_data.inplace_merge_with(d)
     return merged_data
 
