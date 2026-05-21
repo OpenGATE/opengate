@@ -146,7 +146,9 @@ if __name__ == "__main__":
     run_0_image = dose.edep.get_data(which=0)
     run_1_image = dose.edep.get_data(which=1)
     plot_run_dose_planes(
-        run_0_image, run_1_image, paths.output / "test097_dynamic_voxel_source_mt_dose_planes.png"
+        run_0_image,
+        run_1_image,
+        paths.output / "test097_dynamic_voxel_source_mt_dose_planes.png",
     )
     run_0_primary_dose = run_0_image.GetPixel(run_0_primary_peak_xyz)
     run_0_secondary_dose = run_0_image.GetPixel(run_0_secondary_peak_xyz)
