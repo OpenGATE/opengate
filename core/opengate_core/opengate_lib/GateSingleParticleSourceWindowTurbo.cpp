@@ -9,6 +9,7 @@
 #include "G4Threading.hh"
 #include "GateHelpersDict.h"
 #include "Randomize.hh"
+#include <string>
 
 GateSingleParticleSourceWindowTurbo::GateSingleParticleSourceWindowTurbo(
     std::string mother_volume)
@@ -219,15 +220,19 @@ G4bool GateSingleParticleSourceWindowTurbo::CheckPosDirValid(
 }
 
 void GateSingleParticleSourceWindowTurbo::GeneratePos() {
-  fCurrentPos = fPositionGenerator->GenerateOne();
+  fCurrentPos = fPositionGenerator->VGenerateOne();
 
   // probability of the position is valid should be proportional to the solid
   // angle
   while (true) {
     G4double solid_angle = GetSolidAngle(fCurrentPos);
     if (solid_angle > fMaxSolidAngle * 1.1) {
-      G4String error_msg =
-          "solid angle of position is larger than max solid angle for source: ";
+      G4String error_msg = "solid angle of position";
+      error_msg += fmt::format(" ({}, {}, {}): {}", fCurrentPos.x(),
+                               fCurrentPos.y(), fCurrentPos.z(), solid_angle);
+      error_msg += " is larger than max solid angle ";
+      error_msg += std::to_string(fMaxSolidAngle);
+      error_msg += " for source: ";
       error_msg += fSourceName;
       error_msg += "\nyou may increase max solid angle and try again";
       G4Exception("GateWindowTurboSource::GeneratePrimaryVertex",
@@ -237,7 +242,7 @@ void GateSingleParticleSourceWindowTurbo::GeneratePos() {
       fCurrentSolidAngle = solid_angle;
       break;
     }
-    fCurrentPos = fPositionGenerator->GenerateOne();
+    fCurrentPos = fPositionGenerator->VGenerateOne();
   }
   fPosGenerated = true;
 }
@@ -250,7 +255,7 @@ void GateSingleParticleSourceWindowTurbo::GeneratePrimaryVertex(
   SetPhiTheta(fCurrentPos);
   G4ThreeVector direction;
   while (true) {
-    direction = fDirectionGenerator->GenerateOne();
+    direction = fDirectionGenerator->VGenerateOne();
     if (CheckPosDirValid(fCurrentPos, direction)) {
       break;
     }
@@ -260,7 +265,7 @@ void GateSingleParticleSourceWindowTurbo::GeneratePrimaryVertex(
   // Set placement relative to attached volume
   // DD(particle_momentum_direction);
 
-  G4double energy = fEnergyGenerator->GenerateOne(fParticleDefinition);
+  G4double energy = fEnergyGenerator->VGenerateOne(fParticleDefinition);
 
   // one single particle
   auto *particle = new G4PrimaryParticle(fParticleDefinition);

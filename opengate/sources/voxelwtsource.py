@@ -17,7 +17,10 @@ class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
     user_info_defaults = VoxelSource.user_info_defaults
 
     def __init__(self, *args, **kwargs):
-        VoxelSource.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        super().__init__(self, *args, **kwargs)
+        # the loaded image
+        self.itk_image = None
 
     def __initcpp__(self):
         g4.GateVoxelWTSource.__init__(self)
@@ -38,7 +41,7 @@ class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
         # create Cumulative Distribution Function
         self.cumulative_distribution_functions()
 
-        self.super().initialize(run_timing_intervals)
+        super().initialize(run_timing_intervals)
 
 
 process_cls(VoxelWTSource)

@@ -8,11 +8,11 @@ public:
   ~GateVoxelWTSource() = default;
   void PrepareNextRun() override;
   GateSPSVoxelsPosDistribution *GetSPSVoxelPosDistribution() {
-    return fVoxelPositionGenerator.Get();
+    return fVoxelPositionGenerator;
   }
 
 protected:
   void InitializePosition(py::dict user_info) override;
-
-  G4Cache<GateSPSVoxelsPosDistribution *> fVoxelPositionGenerator;
+  // FIXME: use G4Cache to contains fVoxelPositionGenerator
+  GateSPSVoxelsPosDistribution *fVoxelPositionGenerator;
 };

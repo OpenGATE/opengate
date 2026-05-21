@@ -116,11 +116,11 @@ GateWindowTurboSource::GetInitializeBeforeRunFlag(G4int run_id) {
 }
 
 void GateWindowTurboSource::Visualize() const {
-  if (G4Threading::GetNumberOfRunningWorkerThreads() > 0) {
-    G4Exception(
-        "GateWindowTurboSource::Visualize", "VisualizeWTSourceInMTMode",
-        FatalException,
-        "Visualize for GateWindowTurboSource is not supported in MT mode");
+  if (G4Threading::GetNumberOfRunningWorkerThreads() > 0 and fVisCount > 0) {
+    G4Exception("GateWindowTurboSource::Visualize", "VisualizeWTSourceInMTMode",
+                JustWarning,
+                "Visualize for GateWindowTurboSource is not supported in MT "
+                "mode. The origin of the source will be wrong.");
   }
   GateGenericSource::Visualize();
   if (visualization_window_color.size() > 0) {
