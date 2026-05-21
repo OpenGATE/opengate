@@ -86,7 +86,6 @@ jobs:
         path: dist/
 
   build_opengate_core_wheel_ci_or_tag:
-    if: (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')) || (github.event_name == 'schedule')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -119,7 +118,6 @@ jobs:
         path: dist/
 
   build_opengate_core_novis_wheel:
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
