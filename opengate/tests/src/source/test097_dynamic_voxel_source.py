@@ -117,9 +117,7 @@ if __name__ == "__main__":
         ct.image, source_image_1_path
     )
     source.energy.mono = 1 * MeV
-    source.add_dynamic_parametrisation(
-        image=[source_image_1_path, source_image_2_path]
-    )
+    source.add_dynamic_parametrisation(image=[source_image_1_path, source_image_2_path])
 
     changer = SourceActivityImageChanger(
         name="source_activity_image_changer",
@@ -146,7 +144,9 @@ if __name__ == "__main__":
 
     run_0_image = dose.edep.get_data(which=0)
     run_1_image = dose.edep.get_data(which=1)
-    plot_run_dose_planes(run_0_image, run_1_image, paths.output / "test097_dose_planes.png")
+    plot_run_dose_planes(
+        run_0_image, run_1_image, paths.output / "test097_dose_planes.png"
+    )
     run_0_primary_dose = run_0_image.GetPixel(run_0_primary_peak_xyz)
     run_0_secondary_dose = run_0_image.GetPixel(run_0_secondary_peak_xyz)
     run_1_primary_dose = run_1_image.GetPixel(run_1_primary_peak_xyz)
