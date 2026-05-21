@@ -509,9 +509,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                     )
 
     def visualize(self, count: int, color, size: float):
-        print(
-            f"Requesting visualization of {count} particles for source {self.name} with color {color} and size {size}"
-        )
         if count <= 0:
             warning(
                 f"source visualization count must be > 0. Got {count}. No visualization will be performed."
