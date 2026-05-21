@@ -16,6 +16,12 @@ Developer guide
    developer_guide_how_to_implement
 
 .. toctree::
+   :caption: Physics
+   :maxdepth: 2
+
+   developer_guide_physics
+
+.. toctree::
    :caption: Good to know
    :maxdepth: 2
 
