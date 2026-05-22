@@ -59,7 +59,7 @@ protected:
 
 private:
   std::vector<G4double> fA1, fA2, fB1, fB2, fPlaneDistance, fPlanePhi,
-      fActRatio, fMaxSolidAngle;
+      fActRatio, fMaxSolidAngle, fInitDuration;
   G4int fCurrentRunId;
   G4double fCurrentActRatio;
   G4double GetValueThisRun(const std::vector<G4double> &vec) const {

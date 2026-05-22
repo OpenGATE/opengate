@@ -67,7 +67,9 @@ void GateWindowTurboSource::CallOnceBeforeRun(
   G4double plane_distance = GetValueThisRun(fPlaneDistance);
   G4double plane_phi = GetValueThisRun(fPlanePhi);
   spswt->SetParameters(a1, a2, b1, b2, plane_distance, plane_phi);
-  spswt->InitializeBeforeRun(fCurrentActRatio, max_solid_angle);
+  G4double duration_sec =
+      spswt->InitializeBeforeRun(fCurrentActRatio, max_solid_angle);
+  fInitDuration.push_back(duration_sec);
   SetValueThisRun(fActRatio, run_id, fCurrentActRatio);
   SetValueThisRun(fMaxSolidAngle, run_id, max_solid_angle);
   // G4cout << "CallOnceBeforeRun for run " << run_id
@@ -79,6 +81,7 @@ void GateWindowTurboSource::CallOnceBeforeRun(
   auto direction = py::dict(fUserInfo["direction"]);
   direction["act_ratio"] = fActRatio;
   direction["max_solid_angle"] = fMaxSolidAngle;
+  direction["init_duration"] = fInitDuration;
 }
 
 void GateWindowTurboSource::PrepareNextRun() {

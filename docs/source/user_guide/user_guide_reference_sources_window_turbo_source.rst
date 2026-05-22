@@ -1,86 +1,220 @@
 .. _source-window-turbo-source:
 
 Window Turbo Source
-=====================
+===================
 
 Description
 -----------
 
-Window Turbo Source 的作用是让源只对一个矩形窗口发射光子，从而达到节约仿真时间的目的。
-在不同场景中，加速比可以达到几十至几百倍，取决于窗口的大小和到源的距离。
-这种源是主要为了多针孔准直器SPECT的仿真而设计的，但在其他场景中也能发挥作用。
+``WindowTurboSource`` is used to make a source emit photons only toward a rectangular window,
+thereby reducing the generation of useless particles and the tracking time.
+In scenarios such as multi-pinhole collimator SPECT, where only a small number of directions can reach the detector,
+it can significantly shorten the simulation time;
+the actual speedup depends on the window size, the distance from the source to the window, the source position distribution,
+and the downstream geometry.
 
-本源的位置采样、事件时间间隔都经过了特别的处理，使得结果计数的空间与时间统计特性都与使用 GenericSource 进行iso发射相同。具体对比见测试100。
-对于每个源来说，都只能定义一个窗口，窗口必须位于平行于z轴的参考平面上，并且窗口的四个边分别与z轴以及xoy平面平行。
+The purpose of this source is to replace ``GenericSource`` emission with ``direction.type = "iso"``
+while preserving the spatial and temporal statistical properties of the resulting counts.
+See ``test100`` for related comparisons. Each ``WindowTurboSource`` can define only one rectangular window.
+The window must lie on a reference plane parallel to the z axis, and its two pairs of edges must be parallel to the z axis
+and to the x-y plane, respectively.
 
 .. image:: ../figures/window_turbo_source.png
 
-Window Turbo Source 的所有额外属性都位于direction属性中，如下表所示：
+``WindowTurboSource`` inherits the particle, energy, and position settings from ``GenericSource``,
+but ``direction`` is replaced by the window parameters.
+Usually, ``activity`` should be used to control the emission rate; the ``n`` parameter is not compatible with
+``WindowTurboSource``.
+This source is mainly intended for ``gamma`` particles, and the ``back_to_back`` particle type is not available.
 
+Basic usage
+-----------
+
+The following example creates a cylindrical volume source and makes the photons emit only toward a rectangular window
+in the y direction.
+The window size is given by ``a1``, ``a2``, ``b1``, and ``b2``; the plane on which the window lies is given by
+``plane_distance`` and ``plane_phi``.
+
+.. code:: python
+
+   import numpy as np
+   import opengate as gate
+
+   Bq = gate.g4_units.Bq
+   keV = gate.g4_units.keV
+   mm = gate.g4_units.mm
+
+   source = sim.add_source("WindowTurboSource", "wts")
+   source.particle = "gamma"
+   source.activity = 1e6 * Bq
+   source.energy.mono = 141 * keV
+
+   source.position.type = "cylinder"
+   source.position.translation = [0, -100 * mm, 0]
+   source.position.radius = 100 * mm
+   source.position.dz = 100 * mm
+
+   radius = 13.6 * mm
+   source.direction.a1 = -radius
+   source.direction.a2 = radius
+   source.direction.b1 = -radius
+   source.direction.b2 = radius
+   source.direction.plane_distance = 86 * mm
+   source.direction.plane_phi = np.pi / 2
+
+.. note::
+
+   Although ``WindowTurboSource`` inherits from ``GenericSource``, the ``direction`` parameters of ``GenericSource``
+   (for example, ``type``, ``theta``, ``phi``, ``momentum``, ``focus_point``, and so on) are not used.
+
+Window parameters
+-----------------
+
+The additional parameters of ``WindowTurboSource`` are all located in ``source.direction``:
 
 .. list-table::
-    :header-rows: 1
+   :header-rows: 1
 
-    * - **参数**
-      - **描述**
-    * - ``a1``
-      - 窗口左边界，相对于参考平面的中心点
-    * - ``a2``
-      - 窗口右边界，相对于参考平面的中心点
-    * - ``b1``
-      - 窗口下边界，相对于参考平面的中心点
-    * - ``b2``
-      - 窗口上边界，相对于参考平面的中心点
-    * - ``plane_distance``
-      - 窗口平面距离系统中心的距离
-    * - ``plane_phi``
-      - 窗口法向量与x轴正向的夹角
-    * - ``init_sampling_count``
-      - 初始化阶段的采样数量，默认为100万
-    * - ``init_number_of_threads``
-      - 初始化阶段的线程数量，默认与仿真线程数量相同
-    * - ``act_ratio``
-      - 活度比例，由初始化得到。默认为nan。
-    * - ``max_solid_angle``
-      - 最大立体角，由初始化得到。默认为nan。
-    * - ``skip_mode``
-      - 是否采用跳过模式。采用跳过模式，则事件间隔依靠前一个事件的立体角来修正；否则则会计算一个总体的活度比例来修正事件间隔。默认为False。
+   * - **Parameter**
+     - **Description**
+   * - ``a1``
+     - Left boundary of the window, relative to the center point of the reference plane; must be smaller than ``a2``.
+   * - ``a2``
+     - Right boundary of the window, relative to the center point of the reference plane.
+   * - ``b1``
+     - Lower boundary of the window, relative to the center point of the reference plane; must be smaller than ``b2``.
+   * - ``b2``
+     - Upper boundary of the window, relative to the center point of the reference plane.
+   * - ``plane_distance``
+     - Distance from the reference plane to the system center; must be positive.
+   * - ``plane_phi``
+     - Angle between the reference plane normal vector and the positive x axis, in radians, in the range ``[0, 2*pi)``.
+   * - ``init_sampling_count``
+     - Number of samples used during initialization to estimate the window acceptance ratio. The default value is ``1000000``.
+   * - ``init_number_of_threads``
+     - Number of threads used during initialization. The default value ``0`` means that the number of simulation threads is used.
+   * - ``act_ratio``
+     - Window acceptance ratio. Usually left empty at its default value, so it is estimated automatically during initialization.
+   * - ``max_solid_angle``
+     - Maximum solid angle of the window over the source position distribution. Usually left empty at its default value, so it is estimated automatically during initialization.
+   * - ``skip_mode``
+     - Advanced option, with a default value of ``False``. Its usage is not described in this document.
 
-
-.. note:: 尽管WindowTurboSource继承自GenericSource，但GenericSource的direction属性中的所有参数都会失效。
-
-表中a1、a2、b1、b2、plane_distance和plane_phi是窗口参数，它们共同定义了窗口的大小和位置。
-其中a1、a2、b1、b2分别是窗口左、右、下、上的边界位置，相对的都是参考平面的中心点。
-参考平面自身由plane_distance和plane_phi决定，前者是参考平面距离系统中心的距离，后者是参考平面法向量与x轴正向的夹角。
-这六个量的定义方式如下图示：
+``a1``, ``a2``, ``b1``, ``b2``, ``plane_distance``, and ``plane_phi`` jointly define the position and size of the window.
+``a1`` and ``a2`` define the window extent within the reference plane in the direction perpendicular to the z axis;
+``b1`` and ``b2`` define the window extent in the z direction.
+``plane_distance`` defines the distance from the reference plane to the system center, and ``plane_phi`` defines the
+orientation of this plane around the z axis.
 
 .. image:: ../figures/window_turbo_source_definition.png
 
-如果一次仿真中有多个时间间隔，则可以针对每个时间间隔定义不同的窗口参数，也可以让某几个窗口参数在所有时间间隔中保持不变。
-对于每个窗口参数而言，可以是一个浮点数，也可以是一个列表。如果是一个浮点数，则在所有时间间隔中保持不变；如果是一个列表，则长度应当与仿真时间间隔的数量相同。
+If a simulation contains multiple timing intervals, different window parameters can be used for each time interval.
+The window parameters listed above, as well as ``act_ratio`` and ``max_solid_angle``, can be written as a single value
+or as a list.
+The list length can be ``1``, which means that the same value is used for all time intervals, or it can be equal to the
+number of ``sim.run_timing_intervals``, which means that values are set time interval by time interval.
 
-初始化
---------
+.. code:: python
 
-Window Turbo Source 的位置/时间采样需要两个信息：源的所有位置中的最大立体角 max_solid_angle，以及平均而言，
-有多少比例的事件可以穿过窗口 act_ratio（不考虑粒子到达窗口前发生的变化）。这两个信息也是每个仿真时间间隔都需要一组。
-如果开始时提供了大于零的数值，仿真就会使用这些数值。否则的话，本源就会在每次仿真间隔前进行一次初始化，来估计这两个数值。
-仿真结束之后，这两个数值也会回填到direction属性中。
+   sec = gate.g4_units.second
+   sim.run_timing_intervals = [[0, 1 * sec], [1 * sec, 2 * sec]]
 
-.. note:: 如果使用``start_new_process=True``来运行仿真，那么回填的数值将会消失。
+   source.direction.a1 = [-10 * mm, -15 * mm]
+   source.direction.a2 = [10 * mm, 15 * mm]
+   source.direction.b1 = -10 * mm
+   source.direction.b2 = 10 * mm
+   source.direction.plane_distance = [80 * mm, 90 * mm]
+   source.direction.plane_phi = np.pi / 2
 
-初始化的过程是通过源的位置采样进行的。采样的数目可以由init_sampling_count参数来定义，默认是100万。
-采样的过程是并行的，线程数由init_number_of_threads参数来定义，默认与仿真线程数相同。
-FIXME: skip_mode参数的作用
+Initialization
+--------------
 
-实现细节
----------
-FIXME
+``WindowTurboSource`` needs to estimate two quantities:
 
+* ``act_ratio``: on average, the fraction of ``GenericSource`` isotropic events that would pass through the window.
+* ``max_solid_angle``: the maximum solid angle subtended by the window over the source position distribution.
 
-TODO
-------
+If the user does not provide these two parameters, the simulation estimates them automatically before the start of each
+timing interval.
+The estimation process samples from the source position distribution; the number of samples is controlled by
+``init_sampling_count`` and the number of initialization threads is controlled by ``init_number_of_threads``.
+After the simulation ends, the estimated values are written back into ``source.direction.act_ratio`` and
+``source.direction.max_solid_angle``.
+For repeated simulations with the same configuration, these written-back values can be saved and set directly in the
+next run to reduce initialization time.
 
-体素化
-window visualization
+.. note::
 
+   If the simulation is run with ``sim.run(start_new_process=True)``, the values written back in the child process are
+   not retained in the source object of the current Python process.
+
+Voxelization
+------------
+
+``VoxelWTSource`` is the voxelized version of ``WindowTurboSource``.
+Like ``VoxelSource``, it samples the initial position from a 3D activity image, while the emission direction is
+controlled by the window parameters of ``WindowTurboSource``.
+Therefore, when using ``VoxelWTSource``, the ``image``, particle, and energy parameters must be set, as well as the same
+set of ``direction`` window parameters.
+
+.. code:: python
+
+   source = sim.add_source("VoxelWTSource", "voxel_wts")
+   source.image = "activity.mhd"
+   source.particle = "gamma"
+   source.activity = 1e6 * Bq
+   source.energy.mono = 141 * keV
+
+   source.direction.a1 = -13.6 * mm
+   source.direction.a2 = 13.6 * mm
+   source.direction.b1 = -13.6 * mm
+   source.direction.b2 = 13.6 * mm
+   source.direction.plane_distance = 86 * mm
+   source.direction.plane_phi = np.pi / 2
+
+Except for ``direction``, the meaning, normalization, and position settings of the voxel source image are the same as
+for ``VoxelSource``.
+If the activity image needs to be aligned with a CT image or another voxelized volume, see :ref:`source-voxel-source`.
+
+Visualization
+-------------
+
+Both ``WindowTurboSource`` and ``VoxelWTSource`` can use ``visualize()`` to display position sampling points, like
+``GenericSource``.
+In addition, they provide ``visualize_window()`` to display the window position and size.
+
+.. code:: python
+
+   sim.visu = True
+   sim.visu_type = "qt"
+
+   source.visualize(count=1000, color="red", size=2)
+   source.visualize_window(color="red", width=2, timing_interval_index=0)
+
+The following visualization result is generated by ``test100_window_turbo_source_visu_wip.py``.
+
+.. image:: ../figures/visualize_window_turbo_source.png
+
+The parameters of ``visualize_window()`` are:
+
+.. list-table::
+   :header-rows: 1
+
+   * - **Parameter**
+     - **Description**
+   * - ``color``
+     - Window line color. It can be a color name such as ``"red"``, ``"green"``, or ``"blue"``, or an RGB or RGBA value list.
+   * - ``width``
+     - Window line width. The default value is ``2.0``.
+   * - ``timing_interval_index``
+     - Index of the timing interval to display, starting from ``0``. By default, the first time interval is displayed.
+
+.. note::
+
+   Visualization of ``WindowTurboSource`` and ``VoxelWTSource`` currently does not support multithreaded mode.
+   If ``visualize()`` is called in multithreaded mode, the displayed source positions may be incorrect.
+
+Implementation details
+----------------------
+
+FIXME (details to be added)
