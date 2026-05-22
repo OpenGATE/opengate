@@ -7,9 +7,12 @@ import pathlib
 import numpy as np
 from box import Box
 import matplotlib.pyplot as plt
-from opengate.tests import utility
 import SimpleITK as sitk
-from test100_window_turbo_source_base import build_geometry
+from test100_window_turbo_source_base import (
+    build_geometry,
+    compare_profiles,
+    calculate_profile,
+)
 
 paths = utility.get_default_test_paths(__file__, output_folder="test100")
 
@@ -53,48 +56,16 @@ def initialize(duration=10):
     return sim
 
 
-def calculate_profile(image_path):
-    import SimpleITK as sitk
-
-    image = sitk.ReadImage(image_path)
-    array = sitk.GetArrayFromImage(image)
-    profile = np.sum(array, axis=(0, 1))
-    return profile
-
-
-def compare_profiles(ref, test, tolerance=8.0, fig_name=None):
-    ref = np.asarray(ref, dtype=float)
-    test = np.asarray(test, dtype=float)
-
-    if ref.shape != test.shape:
-        utility.print_test(False, f"Profile shapes differ: {ref.shape} vs {test.shape}")
-        return False
-
-    sad = np.abs(ref - test).sum() / (ref.sum() + test.sum()) * 100
-    is_ok = sad < tolerance
-    utility.print_test(
-        is_ok, f"Profile relative SAD = {sad:.2f}% (tol {tolerance:.2f}%)"
-    )
-
-    if fig_name is not None:
-        plt.figure(figsize=(10, 5))
-        plt.plot(ref / ref.sum(), label="reference")
-        plt.plot(test / test.sum(), label="test")
-        plt.legend()
-        plt.xlabel("Pixel")
-        plt.ylabel("Normalized counts")
-        plt.savefig(fig_name)
-
-    return is_ok
-
-
 def run_window_turbo_source(activity=1000000):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
-    sim = initialize(80)
+    NoT = 4
+    sim = initialize(1920 // NoT)
     sim.g4_verbose = False
-    sim.number_of_threads = 4
-    sim.random_seed = 1
+
+    sim.progress_bar = False
+    sim.number_of_threads = NoT
+    # sim.random_seed = 1
     radius_down = 13.6
     head_y_pos = 100
     build_geometry(
@@ -123,10 +94,12 @@ def run_window_turbo_source(activity=1000000):
 
 def run_generic_source(activity=1000000):
     Bq = gate.g4_units.Bq
-
-    sim = initialize(10)
-    sim.number_of_threads = 32
-    build_geometry(sim, "voxel")
+    total_num = 1920
+    thread_count = 10
+    duration = 1920 // thread_count
+    sim = initialize(duration)
+    sim.number_of_threads = thread_count
+    build_geometry(sim, paths.output / f"voxel")
 
     # physic list
     # print('Phys lists :', sim.get_available_physicLists())
@@ -147,15 +120,15 @@ def run_generic_source(activity=1000000):
 if __name__ == "__main__":
     pathFile = pathlib.Path(__file__).parent.resolve()
     make_itk_source()
-    # run_generic_source(100)
+    # run_generic_source(1000000)
     run_window_turbo_source()
-    # profile_wt = calculate_profile(paths.output / "window_turbo_counts.mhd")
-    # profile_generic = calculate_profile(paths.output_ref / "generic.mhd")
-    # compare_result = compare_profiles(
-    #     profile_generic,
-    #     profile_wt,
-    #     tolerance=4.0,
-    #     fig_name=paths.output / "profile_comparison.png",
-    # )
+    profile_voxel_wt = calculate_profile(paths.output / "voxel_wt_counts.mhd")
+    profile_voxel = calculate_profile(paths.output_ref / "voxel.mhd")
+    compare_result = compare_profiles(
+        profile_voxel,
+        profile_voxel_wt,
+        tolerance=4.0,
+        fig_name=paths.output / "profile_comparison_voxel.png",
+    )
 
-    # utility.test_ok(compare_result)
+    utility.test_ok(compare_result)

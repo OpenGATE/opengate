@@ -8,117 +8,9 @@ import numpy as np
 from box import Box
 import matplotlib.pyplot as plt
 from opengate.tests import utility
+from test100_window_turbo_source_base import build_geometry
 
 paths = utility.get_default_test_paths(__file__, output_folder="test100")
-
-
-def build_collimator(sim, pin_radius_up=3.6, pin_radius_down=13.6):
-    world = sim.world
-    gcm3 = gate.g4_units.g_cm3
-    mm = gate.g4_units.mm
-    sim.volume_manager.material_database.add_material_weights(
-        "Tungsten",
-        ["W"],
-        [1],
-        19.3 * gcm3,
-    )
-
-    pinboard_inner = sim.add_volume("Box", "pinboard_inner")
-    pinboard_inner.material = "Tungsten"
-    pinboard_inner.translation = [0, 100 * mm, 0]
-    pinboard_inner.size = [500 * mm, 2 * mm, 500 * mm]
-    pinboard_inner.color = [0.5, 0.5, 0.5, 0.5]
-
-    # kill_actor_inner = sim.add_actor("KillActor", "kill_inner")
-    # kill_actor_inner.attached_to = "pinboard_inner"
-
-    pinboard_cylinder = sim.add_volume("Tubs", "pin_cylinder")
-    pinboard_cylinder.mother = pinboard_inner
-    pinboard_cylinder.rmin = 0
-    pinboard_cylinder.rmax = pin_radius_up * mm
-    pinboard_cylinder.dz = 1 * mm
-    pinboard_cylinder.material = "G4_AIR"
-    pinboard_cylinder.rotation = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
-    pinboard_cylinder.color = [1, 1, 1, 1]
-
-    pinboard_outer = sim.add_volume("Box", "pinboard_outer")
-    pinboard_outer.mother = world
-    pinboard_outer.material = "Tungsten"
-    pinboard_outer.translation = [0, 92.49999 * mm, 0]
-    pinboard_outer.size = [500 * mm, 13 * mm, 500 * mm]
-    pinboard_outer.color = [0.5, 0.5, 0.5, 0.5]
-
-    pin_cone = sim.add_volume("Cons", "pin_cone")
-    pin_cone.mother = pinboard_outer
-    pin_cone.rmax1 = pin_radius_up * mm
-    pin_cone.rmax2 = pin_radius_down * mm
-    pin_cone.rmin1 = 0
-    pin_cone.rmin2 = 0
-    pin_cone.dz = 6.5 * mm
-    pin_cone.material = "G4_AIR"
-    pin_cone.rotation = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
-    pin_cone.color = [1, 1, 1, 1]
-    pin_cone.dphi = 2 * np.pi
-
-    # kill_actor_outer = sim.add_actor("KillActor", "kill_outer")
-    # kill_actor_outer.attached_to = "pinboard_outer"
-
-
-def build_crystal(sim, prj_name):
-    world = sim.world
-    gcm3 = gate.g4_units.g_cm3
-    sim.volume_manager.material_database.add_material_weights(
-        "CsI",
-        ["Cs", "I"],
-        [1, 1],
-        4.51 * gcm3,
-    )
-
-    mm = gate.g4_units.mm
-
-    head_crystal = sim.add_volume("Box", "head_crystal")
-    head_crystal.mother = world
-    head_crystal.size = [160 * mm, 8 * mm, 160 * mm]
-    head_crystal.material = "CsI"
-    head_crystal.translation = [0, 229.4 * mm, 0]
-    head_crystal.color = [0, 0, 1, 1]
-    hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.attributes = [
-        "TotalEnergyDeposit",
-        "KineticEnergy",
-        "PostPosition",
-        "TrackCreatorProcess",
-        "GlobalTime",
-        "TrackVolumeName",
-        "RunID",
-        "ThreadID",
-        "TrackID",
-        "PreStepUniqueVolumeID",
-    ]
-    hc.attached_to = ["head_crystal"]
-    hc.output_filename = f"{prj_name}_hits.root"
-    sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.input_digi_collection = "Hits"
-    sc.policy = "EnergyWeightedCentroidPosition"
-    sc.group_volume = "head_crystal"
-    sc.output_filename = f"{prj_name}_Singles.root"
-    proj = sim.add_actor("DigitizerProjectionActor", "Projection")
-    proj.attached_to = "head_crystal"
-    proj.input_digi_collections = ["Singles"]
-    proj.spacing = [1.5 * mm, 1.5 * mm]
-    proj.size = [100, 100]
-    proj.origin_as_image_center = False
-    proj.output_filename = f"{prj_name}.mhd"
-    proj.detector_orientation_matrix = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
-
-
-def build_geometry(sim, prj_name, pin_radius_up=3.6, pin_radius_down=13.6):
-    mm = gate.g4_units.mm
-    world = sim.world
-    world.size = [500 * mm, 500 * mm, 500 * mm]
-    world.color = [1, 1, 1, 0.05]
-    build_collimator(sim, pin_radius_up, pin_radius_down)
-    build_crystal(sim, prj_name)
 
 
 def change_source_parameters(source_back, source_1, source_2, source_3):
@@ -214,9 +106,12 @@ def compare_profiles(ref, test, tolerance=8.0, fig_name=None):
 def run_window_turbo_source(activity=1000000, skip_mode=False):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
-    sim = initialize(80)
+    NoT = 4
+    duration = 320 / NoT
+    sim = initialize(duration)
     sim.g4_verbose = False
-    sim.number_of_threads = 4
+    sim.number_of_threads = NoT
+    sim.progress_bar = False
     sim.random_seed = 1
     radius_down = 13.6
     build_geometry(
@@ -234,7 +129,7 @@ def run_window_turbo_source(activity=1000000, skip_mode=False):
     source_back.direction.a2 = radius_down * mm
     source_back.direction.b1 = -radius_down * mm
     source_back.direction.b2 = radius_down * mm
-    source_back.direction.plane_distance = 99 * mm
+    source_back.direction.plane_distance = 86 * mm
     source_back.direction.plane_phi = np.pi / 2
     source_back.direction.skip_mode = skip_mode
     source_2.direction = source_back.direction.copy()
@@ -242,10 +137,10 @@ def run_window_turbo_source(activity=1000000, skip_mode=False):
     source_1.direction = source_back.direction.copy()
     change_source_parameters(source_back, source_1, source_2, source_3)
     if skip_mode:
-        source_back.direction.max_solid_angle = [0.07398515966429065]
-        source_1.direction.max_solid_angle = [0.01876774405921553]
-        source_2.direction.max_solid_angle = [0.02172336443308847]
-        source_3.direction.max_solid_angle = [0.020849469313376674]
+        source_back.direction.max_solid_angle = [0.09743848102142992]
+        source_1.direction.max_solid_angle = [0.021343358734360683]
+        source_2.direction.max_solid_angle = [0.025128504107295623]
+        source_3.direction.max_solid_angle = [0.023893613241897496]
     sim.run(start_new_process=True)
 
     stats = sim.get_actor("Stats")

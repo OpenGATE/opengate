@@ -1,5 +1,7 @@
 import opengate as gate
 import numpy as np
+from opengate.tests import utility
+import matplotlib.pyplot as plt
 
 
 def build_collimator(sim, head, pin_radius_up=3.6, pin_radius_down=13.6):
@@ -119,3 +121,38 @@ def build_geometry(
 
     build_collimator(sim, head, pin_radius_up, pin_radius_down)
     build_crystal(sim, head, prj_name)
+
+
+def calculate_profile(image_path):
+    import SimpleITK as sitk
+
+    image = sitk.ReadImage(image_path)
+    array = sitk.GetArrayFromImage(image)
+    profile = np.sum(array, axis=(0, 1))
+    return profile
+
+
+def compare_profiles(ref, test, tolerance=8.0, fig_name=None):
+    ref = np.asarray(ref, dtype=float)
+    test = np.asarray(test, dtype=float)
+
+    if ref.shape != test.shape:
+        utility.print_test(False, f"Profile shapes differ: {ref.shape} vs {test.shape}")
+        return False
+
+    sad = np.abs(ref - test).sum() / (ref.sum() + test.sum()) * 100
+    is_ok = sad < tolerance
+    utility.print_test(
+        is_ok, f"Profile relative SAD = {sad:.2f}% (tol {tolerance:.2f}%)"
+    )
+
+    if fig_name is not None:
+        plt.figure(figsize=(10, 5))
+        plt.plot(ref / ref.sum(), label="reference")
+        plt.plot(test / test.sum(), label="test")
+        plt.legend()
+        plt.xlabel("Pixel")
+        plt.ylabel("Normalized counts")
+        plt.savefig(fig_name)
+
+    return is_ok
