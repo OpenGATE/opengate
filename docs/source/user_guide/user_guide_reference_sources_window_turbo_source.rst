@@ -140,8 +140,10 @@ The estimation process samples from the source position distribution; the number
 ``init_sampling_count`` and the number of initialization threads is controlled by ``init_number_of_threads``.
 After the simulation ends, the estimated values are written back into ``source.direction.act_ratio`` and
 ``source.direction.max_solid_angle``.
-For repeated simulations with the same configuration, these written-back values can be saved and set directly in the
-next run to reduce initialization time.
+The initialization duration is also written back into ``source.direction.init_duration``, in seconds. This is an output
+value for diagnostics, not an input parameter to configure the source.
+For repeated simulations with the same configuration, the written-back ``act_ratio`` and ``max_solid_angle`` values can
+be saved and set directly in the next run to reduce initialization time.
 
 .. note::
 
