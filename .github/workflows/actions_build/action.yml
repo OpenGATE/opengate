@@ -56,7 +56,7 @@ runs:
           miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
-          python-version: '3.14'
+          python-version: '3.13'
     - name: Set up Homebrew
       if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
       id: set-up-homebrew
