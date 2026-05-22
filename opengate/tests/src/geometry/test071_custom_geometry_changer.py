@@ -62,8 +62,8 @@ if __name__ == "__main__":
     # create a DynamicGeometryActor and add the changers to it
     # you only need one of them and
     dyngeoactor = sim.add_actor("DynamicGeometryActor", name="dyngeoactor")
-    dyngeoactor.geometry_changers.append(my_changer_for_sphere)
-    dyngeoactor.geometry_changers.append(my_changer_for_box)
+    dyngeoactor.changers.append(my_changer_for_sphere)
+    dyngeoactor.changers.append(my_changer_for_box)
 
     source = sim.add_source("GenericSource", "proton_source")
     source.energy.mono = 100 * MeV

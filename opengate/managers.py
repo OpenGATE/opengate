@@ -100,7 +100,7 @@ from .actors.pgactors import (
     VoxelizedPromptGammaAnalogActor,
 )
 
-from .actors.dynamicactors import DynamicGeometryActor
+from .actors.dynamicactors import DynamicGeometryActor, DynamicSourceActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
@@ -159,6 +159,7 @@ actor_types = {
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
+    "DynamicSourceActor": DynamicSourceActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     # digit
@@ -340,6 +341,10 @@ class SourceManager(GateObject):
                 f"Sources included in this simulation are: {list(self.sources.keys())}"
             )
             return None  # to avoid warning
+
+    @property
+    def dynamic_sources(self):
+        return [source for source in self.sources.values() if source.is_dynamic]
 
     def add_source(self, source, name):
         new_source = None
