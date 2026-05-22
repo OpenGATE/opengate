@@ -20,10 +20,13 @@ class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
         self.__initcpp__()
         super().__init__(self, *args, **kwargs)
         # the loaded image
-        self.itk_image = None
+        self._current_itk_image = None
 
     def __initcpp__(self):
         g4.GateVoxelWTSource.__init__(self)
+
+    def create_changers(self):
+        VoxelSource.create_changers(self)
 
     def set_transform_from_user_info(self):
         VoxelSource.set_transform_from_user_info(self)
@@ -31,15 +34,18 @@ class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
     def cumulative_distribution_functions(self):
         VoxelSource.cumulative_distribution_functions(self)
 
-    def initialize(self, run_timing_intervals):
+    def update_activity_image(self, filename):
 
-        self.itk_image = itk.imread(ensure_filename_is_str(self.image))
+        self._current_itk_image = itk.imread(ensure_filename_is_str(filename))
 
         # compute position
         self.set_transform_from_user_info()
 
         # create Cumulative Distribution Function
         self.cumulative_distribution_functions()
+
+    def initialize(self, run_timing_intervals):
+        self.update_activity_image(self.image)
 
         super().initialize(run_timing_intervals)
 
