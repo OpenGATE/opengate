@@ -198,8 +198,21 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
             fatal(
                 "The 'back_to_back' particle type is not compatible with WindowTurboSource."
             )
-        if self.n > 0:
-            fatal("The 'n' parameter is not compatible with WindowTurboSource.")
+        if isinstance(self.n, list):
+            if any(n_i != 0 for n_i in self.n):
+                fatal(
+                    "The 'n' parameter must be 0 for all timing intervals in WindowTurboSource."
+                )
+        elif isinstance(self.n, (int, float)):
+            if self.n != 0:
+                fatal("The 'n' parameter is not compatible with WindowTurboSource.")
+        elif isinstance(self.n, np.ndarray):
+            if np.any(self.n != 0):
+                fatal(
+                    "The 'n' parameter must be 0 for all timing intervals in WindowTurboSource."
+                )
+        else:
+            fatal("Invalid type for 'n' parameter in WindowTurboSource.")
 
         if self.particle != "gamma":
             warning(
