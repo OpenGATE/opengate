@@ -17,10 +17,11 @@ paths = utility.get_default_test_paths(__file__, output_folder="test100")
 
 def make_itk_source(output_path, zero_first_voxel=False):
     data = np.ones((13, 2))
-    data[:, 1] = 0
-    data = data.flatten()[:-1].reshape((5, 1, 5))
     if zero_first_voxel:
-        data.flat[0] = 0
+        data[:, 0] = 0
+    else:
+        data[:, 1] = 0
+    data = data.flatten()[:-1].reshape((5, 1, 5))
     itk_image = sitk.GetImageFromArray(data)
     itk_image.SetSpacing([50, 50, 50])
     itk_image.SetOrigin([-125 + 25, -125 + 25, -125 + 25])

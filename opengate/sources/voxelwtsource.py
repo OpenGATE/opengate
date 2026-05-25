@@ -27,9 +27,6 @@ class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
         g4.GateVoxelWTSource.__init__(self)
 
     def create_changers(self):
-        return VoxelSource.create_changers(self)
-
-    def create_changers_bak(self):
         changers = super().create_changers()
         for dp in self.dynamic_params.values():
             if dp["extra_params"]["auto_changer"] is True:
