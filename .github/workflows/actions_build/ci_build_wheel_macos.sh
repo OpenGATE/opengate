@@ -16,7 +16,7 @@ export LDFLAGS="-L/usr/local/opt/llvm/lib"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
 conda list
-export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
+export PATH="/Users/runner/miniconda3/envs/opengate_core/bin/:$PATH"
 
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
