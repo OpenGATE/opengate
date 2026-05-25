@@ -34,6 +34,9 @@ Common parameters are:
    ``scipy.spatial.transform.Rotation`` to manage the rotation matrix.
 -  ``color``: a list of 4 values (Red, Green, Blue, Opacity) between 0
    and 1, e.g. ``[1, 0, 0, 0.5]``. Only used when visualization is on.
+- ``vis_type``: visualization type for this volume. Can be ``'solid'``,
+   or ``'wireframe'``. Otherwise or not set, the volume will be displayed
+   according to global visualization settings.
 
 Image volume
 ------------
