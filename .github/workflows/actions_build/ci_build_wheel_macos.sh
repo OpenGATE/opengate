@@ -20,11 +20,12 @@ export PATH="/Users/runner/miniconda3/envs/opengate_core/bin/:$PATH"
 
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
+    export QT_PLUGIN_DIR="/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins"
 else
     brew install qt
+    export QT_PLUGIN_DIR=$(qtpaths6 --plugin-dir)
 fi
 
-export QT_PLUGIN_DIR=$(qtpaths6 --plugin-dir)
 echo "QT_PLUGIN_DIR is $QT_PLUGIN_DIR"
 pip install wget colored setuptools
 # install cibuildwheel

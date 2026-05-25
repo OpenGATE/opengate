@@ -59,10 +59,10 @@ runs:
           activate-environment: opengate_core
           python-version: '3.14'
     - name: Miniconda setup Macos intel and windows arm
-      if: (inputs.os == 'macos-15-intel') || (inputs.os == 'windows-11-arm')
+      if: (inputs.os == 'macos-15-intel')
       uses: conda-incubator/setup-miniconda@v4
       with:
-          # miniconda-version: "latest"
+          miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
           python-version: '3.13'
