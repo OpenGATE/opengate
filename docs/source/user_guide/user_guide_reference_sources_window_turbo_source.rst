@@ -178,6 +178,26 @@ Except for ``direction``, the meaning, normalization, and position settings of t
 for ``VoxelSource``.
 If the activity image needs to be aligned with a CT image or another voxelized volume, see :ref:`source-voxel-source`.
 
+Dynamic activity image
+~~~~~~~~~~~~~~~~~~~~~~
+
+``VoxelWTSource`` can use a dynamic activity image in the same way as ``VoxelSource``.
+After configuring the source as above, set ``sim.run_timing_intervals`` and provide one image per timing interval with
+``add_dynamic_parametrisation(image=[...])``.
+
+.. code:: python
+
+   source.add_dynamic_parametrisation(
+       image=[
+           "activity_0.mhd",
+           "activity_1.mhd",
+       ]
+   )
+
+The number of images must match the number of ``sim.run_timing_intervals``.
+See :ref:`source-voxel-source` and :doc:`user_guide_dynamic_parametrisations` for the corresponding ``VoxelSource``
+usage.
+
 Visualization
 -------------
 
