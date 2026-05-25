@@ -50,26 +50,27 @@ runs:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
         restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
-    - uses: conda-incubator/setup-miniconda@v3
-      if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel') || (inputs.os == 'windows-2025') || (inputs.os == 'windows-11-arm')
+    - name: Miniconda setup Macos and windows
+      if: (inputs.os == 'macos-15') || (inputs.os == 'windows-2025')
+      uses: conda-incubator/setup-miniconda@v3
       with:
           miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
-          python-version: '3.13'
+          python-version: '3.14'
+    - name: Miniconda setup Macos intel and windows arm
+      if: (inputs.os == 'macos-15-intel') || (inputs.os == 'windows-11-arm')
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          activate-environment: opengate_core
+          python-version: '3.12'
     - name: Set up Homebrew
       if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
       id: set-up-homebrew
       uses: Homebrew/actions/setup-homebrew@main
-    # - name: Cache Homebrew prefix
-    #   if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
-    #   id: cache-homebrew
-    #   uses: Homebrew/actions/cache-homebrew-prefix@main
-    #   with:
-    #     install: wget ccache fftw libomp qt xerces-c cmake
-    #     uninstall: true
-    #     workflow-key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_homebrew
-    - name: Create opengate_core Wheel Linux
+   - name: Create opengate_core Wheel Linux
       if: (inputs.os == 'ubuntu-24.04') || (inputs.os == 'ubuntu-24.04-arm')
       env:
         MATRIX_OS: ${{ inputs.os }}
@@ -84,7 +85,6 @@ runs:
         MATRIX_OS: ${{ inputs.os }}
         MATRIX_PYTHON_VERSION: ${{ inputs.python-version }}
         MATRIX_CACHE: ${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}
-        # BREW_CACHE: ${{ steps.cache_homebrew.outputs.cache-hit }}
       shell: bash -l {0}
       run: |
           export > $GITHUB_WORKSPACE/env_dump.txt
