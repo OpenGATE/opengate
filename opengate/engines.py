@@ -84,6 +84,10 @@ class SourceEngine(EngineBase):
         # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
         self.source_manager_options = Box()
 
+    @property
+    def source_manager(self):
+        return self.simulation_engine.simulation.source_manager
+
     def close(self):
         if self.verbose_close:
             warning("Closing SourceEngine")
@@ -104,6 +108,7 @@ class SourceEngine(EngineBase):
         #        "No source: no particle will be generated"
         #    )
         self.progress_bar = progress_bar
+        self.initialize_dynamic_parametrisations()
 
     def initialize_actors(self):
         """
@@ -112,6 +117,18 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager.SetActors(
             self.simulation_engine.simulation.actor_manager.sorted_actors
         )
+
+    def initialize_dynamic_parametrisations(self):
+        dynamic_sources = self.source_manager.dynamic_sources
+        for s in self.source_manager.dynamic_sources:
+            s.check_if_dynamic_params_match_run_timing_intervals()
+        if len(dynamic_sources) > 0:
+            dynamic_source_actor = self.simulation_engine.simulation.add_actor(
+                "DynamicSourceActor", "dynamic_source_actor"
+            )
+            dynamic_source_actor.priority = 1
+            for s in self.source_manager.dynamic_sources:
+                dynamic_source_actor.changers.extend(s.create_changers())
 
     def create_master_source_manager(self):
         # create the master source for the masterThread
@@ -645,6 +662,11 @@ class ActorEngine(EngineBase):
         super().close()
 
     def initialize(self):
+        # TODO: Split actor initialization into before/after G4RunManager initialization phases.
+        # Some early checks currently run before geometry construction and can touch
+        # image-dependent properties too soon. For example, DoseActor.check_user_input()
+        # may access attached_to_volume.native_translation/native_rotation while the
+        # attached ImageVolume has not loaded its input image yet.
         for actor in self.actor_manager.sorted_actors:
             logger.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
             # self.simulation_engine.action_engine.register_all_actions(actor)
@@ -861,7 +883,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             )
             dynamic_geometry_actor.priority = 0
             for vol in self.volume_manager.dynamic_volumes:
-                dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
+                dynamic_geometry_actor.changers.extend(vol.create_changers())
 
     def Construct(self):
         """

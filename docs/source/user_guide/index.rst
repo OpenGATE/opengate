@@ -18,6 +18,7 @@ User Guide
    user_guide_volumes
    user_guide_physics
    user_guide_sources
+   user_guide_dynamic_parametrisations
    user_guide_actors
    user_guide_fields
 

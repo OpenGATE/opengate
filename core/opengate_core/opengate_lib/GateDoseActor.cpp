@@ -463,7 +463,11 @@ double GateDoseActor::CalculateSPR(G4Step *step) {
       G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
   if (p == G4Gamma::Gamma())
     p = G4Electron::Electron();
-  auto &emc = fThreadLocalDataEdep.Get().emcalc;
+  auto &local = fThreadLocalDataEdep.Get();
+  if (!local.emcalc) {
+    local.emcalc = std::make_unique<G4EmCalculator>();
+  }
+  auto &emc = *local.emcalc;
   dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
   dedx_material = emc.ComputeTotalDEDX(energy, p, material, dedx_cut);
   if (dedx_currstep != 0 || dedx_material != 0) {
