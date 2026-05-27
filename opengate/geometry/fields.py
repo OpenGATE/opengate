@@ -28,6 +28,7 @@ class FieldBase(GateObject):
     """Base class for electric and magnetic fields."""
 
     # hints for IDE
+    stepper: str
     step_minimum: float
     delta_chord: float
     delta_one_step: float
@@ -36,6 +37,18 @@ class FieldBase(GateObject):
     max_epsilon_step: float
 
     user_info_defaults = {
+        "stepper": (
+            "DormandPrince745",
+            {
+                "doc": (
+                    "Integration stepper type. "
+                    "General-purpose (any field): 'DormandPrince745' (default), 'CashKarpRKF45', "
+                    "'BogackiShampine45', 'BogackiShampine23', 'DormandPrinceRK56', "
+                    "'DormandPrinceRK78', 'ClassicalRK4'. "
+                    "Magnetic-only: 'NystromRK4', 'ExactHelixStepper'."
+                ),
+            },
+        ),
         "step_minimum": (
             1e-2 * g4_units.mm,
             {
@@ -143,29 +156,28 @@ class FieldBase(GateObject):
             [rot_np_as_g4(r) for r in rotations_np],
         )
 
-    @staticmethod
-    def _validate_field_function(func, class_name, n_components):
-        """Validate that func is callable and returns exactly n_components values."""
-        if func is None:
-            raise ValueError(f"field_function must be provided for {class_name}")
-        if not callable(func):
-            raise TypeError("field_function must be a callable function")
-        result = list(func(0, 0, 0, 0))
-        if len(result) != n_components:
+    def _validate_stepper(self) -> None:
+        """Raise ValueError if the current stepper is incompatible with this field type."""
+        if self.stepper not in _stepper_map:
             raise ValueError(
-                f"{class_name}: field_function must return {n_components} components, "
-                f"got {len(result)}"
+                f"Unknown stepper '{self.stepper}'. "
+                f"Choose from {list(_stepper_map.keys())}."
+            )
+        if self.stepper in _magnetic_only_steppers and self.field_changes_energy:
+            raise ValueError(
+                f"Stepper '{self.stepper}' only supports pure magnetic fields. "
+                "Choose a general-purpose stepper for electric or EM fields."
             )
 
     def _build_field_manager(
         self, inner_field, gate_field, equation_cls, n_vars, volume_obj
     ):
         """Build equation/stepper/driver/chord_finder/fm, record runtime objects, return fm."""
+        self._validate_stepper()
         self.g4_field = gate_field
         self.g4_equation_of_motion = equation_cls(gate_field)
-        self.g4_integrator_stepper = g4.G4ClassicalRK4(
-            self.g4_equation_of_motion, n_vars
-        )
+        stepper_factory = _stepper_map[self.stepper]
+        self.g4_integrator_stepper = stepper_factory(self.g4_equation_of_motion, n_vars)
         self.g4_integration_driver = g4.G4MagInt_Driver(
             self.step_minimum, self.g4_integrator_stepper, n_vars, 0
         )
@@ -328,7 +340,7 @@ class CustomMagneticField(MagneticField):
         the attached volume and must return [Bx, By, Bz] in that same local
         frame.  The base class rotates the result to world coordinates.
         """
-        self._validate_field_function(self.field_function, "CustomMagneticField", 3)
+        _validate_field_function(self.field_function, "CustomMagneticField", 3)
 
         class _PyMagneticField(g4.G4MagneticField):
             def __init__(inner_self, callback):
@@ -422,7 +434,7 @@ class CustomElectricField(ElectricField):
     }
 
     def _create_inner_field(self):
-        self._validate_field_function(self.field_function, "CustomElectricField", 3)
+        _validate_field_function(self.field_function, "CustomElectricField", 3)
 
         class _PyElectricField(g4.G4ElectricField):
             def __init__(inner_self, callback):
@@ -488,9 +500,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
     }
 
     def _create_inner_field(self):
-        self._validate_field_function(
-            self.field_function, "CustomElectroMagneticField", 6
-        )
+        _validate_field_function(self.field_function, "CustomElectroMagneticField", 6)
 
         class _PyElectroMagneticField(g4.G4ElectroMagneticField):
             def __init__(inner_self, callback):
@@ -511,6 +521,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
         )
 
 
+# Helper function to parse field_matrix for mapped fields and extract grid parameters and field value arrays
 def _parse_field_matrix(mat, class_name):
     """Parse a field matrix into grid parameters and sorted field value arrays.
 
@@ -565,6 +576,41 @@ def _parse_field_matrix(mat, class_name):
     field_cols = [field_values[:, i] for i in range(3)]
     return nx, ny, nz, x0, y0, z0, dx, dy, dz, field_cols
 
+
+# Helper function to validate user-provided field_function for custom fields
+def _validate_field_function(
+    func: Any,
+    class_name: str,
+    n_components: int,
+) -> None:
+    """Validate that field_function is a callable that returns the expected number of components."""
+    if func is None:
+        raise ValueError(f"field_function must be provided for {class_name}")
+    if not callable(func):
+        raise TypeError("field_function must be a callable function")
+    result = list(func(0, 0, 0, 0))
+    if len(result) != n_components:
+        raise ValueError(
+            f"{class_name}: field_function must return {n_components} components, "
+            f"got {len(result)}"
+        )
+
+
+# Steppers that only work with pure magnetic fields
+_magnetic_only_steppers = {"NystromRK4", "ExactHelixStepper"}
+
+# Stepper factory
+_stepper_map = {
+    "DormandPrince745": lambda eq, n: g4.G4DormandPrince745(eq, n),
+    "CashKarpRKF45": lambda eq, n: g4.G4CashKarpRKF45(eq, n),
+    "BogackiShampine45": lambda eq, n: g4.G4BogackiShampine45(eq, n),
+    "BogackiShampine23": lambda eq, n: g4.G4BogackiShampine23(eq, n),
+    "DormandPrinceRK56": lambda eq, n: g4.G4DormandPrinceRK56(eq, n),
+    "DormandPrinceRK78": lambda eq, n: g4.G4DormandPrinceRK78(eq, n),
+    "ClassicalRK4": lambda eq, n: g4.G4ClassicalRK4(eq, n),
+    "NystromRK4": lambda eq, n: g4.G4NystromRK4(eq),
+    "ExactHelixStepper": lambda eq, n: g4.G4ExactHelixStepper(eq),
+}
 
 _interp_map = {
     "trilinear": g4.GateGridInterpolationMethod.Trilinear,
