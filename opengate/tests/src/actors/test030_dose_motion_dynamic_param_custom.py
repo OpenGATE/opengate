@@ -170,8 +170,8 @@ if __name__ == "__main__":
     # add a DynamicGeometryActor to the simulation
     dyn_geo_actor = sim.add_actor("DynamicGeometryActor", name="dyn_geo_actor")
     # ... and add the changers to the actor
-    dyn_geo_actor.geometry_changers.append(translation_changer)
-    dyn_geo_actor.geometry_changers.append(rotation_changer)
+    dyn_geo_actor.changers.append(translation_changer)
+    dyn_geo_actor.changers.append(rotation_changer)
 
     # start simulation
     sim.run()

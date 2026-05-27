@@ -135,7 +135,7 @@ class BaseUserInterfaceToActorOutput:
         e.g. which=2 for run index 2 (run indices start at 0).
         """
         kwargs.update(self._kwargs_for_interface_calls)
-        return self._user_output.get_data(**kwargs)
+        return self._user_output.get_data(which=which, **kwargs)
 
     @property
     def write_to_disk(self):

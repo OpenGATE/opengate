@@ -16,9 +16,11 @@ import itk
 import numpy as np
 
 
-def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
-    edep_max = np.amax(edep_arr)
-    mask = edep_arr > edep_max * edep_thresh_rel
+def calculate_mean_unc(edep_arr, unc_arr, n_top_voxels=20, edep_thresh_rel=0.7):
+    flat = edep_arr.ravel()
+    top_n = np.partition(flat, -n_top_voxels)[-n_top_voxels:]
+    edep_mean_max = float(top_n.mean())
+    mask = edep_arr > edep_mean_max * edep_thresh_rel
     unc_used = unc_arr[mask]
     unc_mean = np.mean(unc_used)
 
@@ -40,8 +42,9 @@ if __name__ == "__main__":
     unc_expected = unc_goal_run / np.sqrt(
         n_runs
     )  # uncertainty expected at the end of the simulation
+    n_top_voxels = 20  # n voxels used to calculate mean max edep
     thresh_voxel_edep_for_unc_calc = (
-        0.7  # calculated over the voxels whose value is > 0.7 * max edep value
+        0.7  # calculated over the voxels whose value is > 0.7 * mean max edep value
     )
 
     # create the simulation
@@ -109,6 +112,7 @@ if __name__ == "__main__":
     dose.edep.keep_data_per_run = True
     dose.uncertainty_goal = unc_goal_run
     dose.uncertainty_first_check_after_n_events = 100
+    dose.uncertainty_top_voxels_count = n_top_voxels
     dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc
     dose.write_to_disk = False  # we don't need to save the images for this test
 
@@ -132,7 +136,10 @@ if __name__ == "__main__":
         edep_arr = np.asarray(dose.edep.get_data(which=i))
         unc_arr = np.asarray(dose.edep_uncertainty.get_data(which=i))
         unc_mean = calculate_mean_unc(
-            edep_arr, unc_arr, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
+            edep_arr,
+            unc_arr,
+            n_top_voxels=n_top_voxels,
+            edep_thresh_rel=thresh_voxel_edep_for_unc_calc,
         )
         b = unc_mean < unc_goal_run
         print(

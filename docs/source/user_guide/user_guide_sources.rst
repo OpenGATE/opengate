@@ -65,3 +65,7 @@ Geant4 creates primary particles *ex nihilo*, i.e. out of nothing anywhere in th
     source2.attached_to = my_gantry
 
 Whenver the volume ``my_gantry`` moves, the source will move with it.
+
+If you want the source itself to change from run to run, for example by using a
+different activity image in a ``VoxelSource``, see
+:doc:`user_guide_dynamic_parametrisations`.

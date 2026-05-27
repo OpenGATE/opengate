@@ -368,6 +368,10 @@ def scale_itk_image(img, scale):
     return img2
 
 
+def copy_itk_image(img):
+    return itk.image_duplicator(img)
+
+
 def divide_itk_images(
     img1_numerator, img2_denominator, filterVal=0, replaceFilteredVal=0
 ):
