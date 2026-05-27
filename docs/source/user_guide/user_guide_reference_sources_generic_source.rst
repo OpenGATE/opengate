@@ -156,7 +156,7 @@ It shows the position distribution of 5 different sources with different color:
    :align: center
    :width: 70%
 
-Enable simulation visualization and call ``visualize`` on the source
+Enable simulation visualization and set the source visualization parameters
 before ``sim.run()``:
 
 .. code:: python
@@ -167,7 +167,9 @@ before ``sim.run()``:
     source = sim.add_source("GenericSource", "mysource")
     source.position.type = "sphere"
     source.position.radius = 5 * cm
-    source.visualize(count=2000, color="red", size=3)
+    source.visualization.count = 2000
+    source.visualization.color = "red"
+    source.visualization.size = 3
 
 Use a visualization type that displays a Geant4 scene, such as ``"qt"``
 or ``"vrml"``. GDML visualization only exports the geometry.
@@ -184,7 +186,7 @@ components between 0 and 1:
 
 .. code:: python
 
-    source.visualize(count=1000, color=[0.0, 0.5, 1.0, 0.7], size=2)
+    source.visualization.color = [0.0, 0.5, 1.0, 0.7]
 
 This point cloud only represents the source initial position distribution
 at initialization time. If the source is attached to a volume that moves

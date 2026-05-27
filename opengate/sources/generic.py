@@ -1,23 +1,23 @@
+import numpy as np
+import opengate_core as g4
 from box import Box
 from scipy.spatial.transform import Rotation
-import opengate_core as g4
+
+from opengate.actors.biasingactors import (
+    AngularAcceptanceValidator,
+    generic_source_default_aa,
+)
+
+from ..base import UserInfoValidatorBase, process_cls
+from ..exception import fatal, warning
+from ..logger import logger
+from ..utility import g4_units
 from .base import SourceBase
 from .utility import (
-    get_spectrum,
-    compute_cdf_and_total_yield,
     all_beta_plus_radionuclides,
+    compute_cdf_and_total_yield,
+    get_spectrum,
 )
-from ..base import process_cls
-from ..utility import g4_units
-from ..exception import warning
-from opengate.actors.biasingactors import (
-    generic_source_default_aa,
-    AngularAcceptanceValidator,
-)
-from ..base import UserInfoValidatorBase
-from ..exception import fatal, warning
-import numpy as np
-from ..logger import logger
 
 
 def _position_parameters():
@@ -282,6 +282,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
     position: Box
     direction: Box
     energy: Box
+    visualization: Box
 
     user_info_defaults = {
         "particle": (
@@ -345,6 +346,12 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         "polarization": (
             [],
             {"doc": "Polarization of the particle (3 Stokes parameters)."},
+        ),
+        "visualization": (
+            Box({"count": 2000, "color": "red", "size": 3}),
+            {
+                "doc": "count is the number of particles to visualize, color is the color of the visualized particles and size is their size (in mm).",
+            },
         ),
     }
 
@@ -432,6 +439,13 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                     f"In source {self.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
+
+        # visualization of the source
+        self.visualize(
+            self.user_info.visualization["count"],
+            self.user_info.visualization["color"],
+            self.user_info.visualization["size"],
+        )
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method
