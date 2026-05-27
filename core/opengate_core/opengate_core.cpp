@@ -206,6 +206,22 @@ void init_G4MagErrorStepper(py::module &);
 
 void init_G4ClassicalRK4(py::module &);
 
+void init_G4DormandPrince745(py::module &);
+
+void init_G4DormandPrinceRK56(py::module &);
+
+void init_G4DormandPrinceRK78(py::module &);
+
+void init_G4BogackiShampine23(py::module &);
+
+void init_G4BogackiShampine45(py::module &);
+
+void init_G4CashKarpRKF45(py::module &);
+
+void init_G4NystromRK4(py::module &);
+
+void init_G4ExactHelixStepper(py::module &);
+
 void init_G4VIntegrationDriver(py::module &);
 
 void init_G4MagInt_Driver(py::module &);
@@ -592,6 +608,14 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4MagIntegratorStepper(m);
   init_G4MagErrorStepper(m);
   init_G4ClassicalRK4(m);
+  init_G4DormandPrince745(m);
+  init_G4DormandPrinceRK56(m);
+  init_G4DormandPrinceRK78(m);
+  init_G4BogackiShampine23(m);
+  init_G4BogackiShampine45(m);
+  init_G4CashKarpRKF45(m);
+  init_G4NystromRK4(m);
+  init_G4ExactHelixStepper(m);
   init_G4VIntegrationDriver(m);
   init_G4MagInt_Driver(m);
   init_G4ChordFinder(m);
