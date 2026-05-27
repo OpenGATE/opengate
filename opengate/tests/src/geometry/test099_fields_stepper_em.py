@@ -35,7 +35,7 @@ GENERAL_PURPOSE = [
 MAGNETIC_ONLY = sorted(fields._magnetic_only_steppers)
 REF_STEPPER = "DormandPrince745"
 
-VISU = True
+VISU = False
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
