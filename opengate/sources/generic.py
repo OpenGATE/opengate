@@ -1,22 +1,22 @@
+import numpy as np
+import opengate_core as g4
 from box import Box
 from scipy.spatial.transform import Rotation
-import opengate_core as g4
+
+from opengate.actors.biasingactors import (
+    AngularAcceptanceValidator,
+    generic_source_default_aa,
+)
+
+from ..base import UserInfoValidatorBase, process_cls
+from ..exception import fatal, warning
+from ..utility import g4_units
 from .base import SourceBase
 from .utility import (
-    get_spectrum,
-    compute_cdf_and_total_yield,
     all_beta_plus_radionuclides,
+    compute_cdf_and_total_yield,
+    get_spectrum,
 )
-from ..base import process_cls
-from ..utility import g4_units
-from ..exception import warning
-from opengate.actors.biasingactors import (
-    generic_source_default_aa,
-    AngularAcceptanceValidator,
-)
-from ..base import UserInfoValidatorBase
-from ..exception import fatal
-import numpy as np
 
 
 def _position_parameters():

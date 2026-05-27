@@ -119,6 +119,21 @@ GateSourceManager::FindSourceByName(const std::string &name) const {
   return nullptr;
 }
 
+G4String GateSourceManager::GetActiveSourceName() {
+  auto &l = fThreadLocalData.Get();
+  if (l.fNextActiveSource != 0) {
+    G4String name = l.fNextActiveSource->fName;
+    return name;
+  }
+  return "None";
+}
+
+void GateSourceManager::SetActiveSourcebyName(G4String sourceName) {
+  auto &l = fThreadLocalData.Get();
+  auto *source = FindSourceByName(sourceName);
+  l.fNextActiveSource = source;
+}
+
 void GateSourceManager::StartMasterThread() {
   // Create the main macro command
   // (only performed in the master thread)
@@ -254,8 +269,8 @@ void GateSourceManager::PrepareNextSource() const {
       l.fNextSimulationTime = t;
     }
   }
-  // If no next time in the current interval,
-  // the next active source is nullptr
+
+  // If no next time in the current interval, active source is NULL
 }
 
 void GateSourceManager::CheckForNextRun() const {
