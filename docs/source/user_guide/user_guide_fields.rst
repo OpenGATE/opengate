@@ -181,7 +181,7 @@ Combined magnetic and electric fields.
    box.add_field(field)
 
 
-Integration accuracy parameters
+Integration and accuracy parameters
 --------------------------------
 
 All field types inherit the following parameters that control the numerical integration of the equation of motion. The defaults are suitable for most cases, but they can be tuned for better accuracy or performance.
@@ -193,6 +193,9 @@ All field types inherit the following parameters that control the numerical inte
    * - Parameter
      - Default
      - Description
+   * - ``stepper``
+     - ``DormandPrince745``
+     - Stepping algorithm used for integrating the equation of motion. See :ref:`steppers` for available options.
    * - ``step_minimum``
      - 0.01 mm
      - Minimum step size for the chord finder.
@@ -218,9 +221,34 @@ Example:
 
    field = fields.UniformMagneticField(name="B")
    field.field_vector = [0, 0, 1 * tesla]
+   field.stepper = "DormandPrince745"
    field.delta_chord = 0.01 * mm
    field.step_minimum = 0.1 * mm
    box.add_field(field)
+
+
+.. _steppers:
+
+Steppers
+~~~~~~~~
+
+For general fields (electric and/or magnetic components):
+
+- ``DormandPrince745`` (default)
+- ``ClassicalRK4``
+- ``CashKarpRKF45``
+- ``BogackiShampine45``
+- ``BogackiShampine23``
+- ``DormandPrinceRK56``
+- ``DormandPrinceRK78``
+
+For purely magnetic fields, the following additional steppers are available:
+
+- ``NystromRK4``
+- ``ExactHelicalStepper``
+
+Please refer to the `Geant4 documentation <https://geant4.web.cern.ch/documentation/pipelines/master/bfad_html/ForApplicationDevelopers/Detector/electroMagneticField.html>`__ for details on the characteristics and recommended use cases for each stepper type.
+
 
 
 Attaching fields to volumes
@@ -331,6 +359,8 @@ The field implementation is covered by the ``test099_fields_*`` tests in ``openg
 - ``test099_fields_mapped_rotated_volume`` -- Same as above with a MappedMagneticField.
 - ``test099_fields_serialization`` -- Round-trip serialization for all non-custom types.
 - ``test099_fields_api`` -- API guards.
+- ``test099_fields_stepper_em`` -- Comparison of different steppers for a uniform E field.
+- ``test099_fields_stepper`` -- Comparison of different steppers for a uniform B field.
 
 
 Class reference
