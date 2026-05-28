@@ -44,8 +44,8 @@ def _make_unique_key(preferred_key, existing_keys, fallback_suffix):
 def _format_reaction_label(reaction):
     reactant_1 = reaction.GetReactant1()
     reactant_2 = reaction.GetReactant2()
-    product_names = [product.GetName() for product in reaction.GetProducts()]
-    left = f"{reactant_1.GetName()}_{reactant_2.GetName()}"
+    product_names = [str(product.GetName()) for product in reaction.GetProducts()]
+    left = f"{str(reactant_1.GetName())}_{str(reactant_2.GetName())}"
     if len(product_names) > 0:
         right = "_".join(product_names)
     else:
