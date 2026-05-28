@@ -81,9 +81,7 @@ class ChemistryActorBase(ActorBase):
             new_counter = counter_class(name=name, simulation=self.simulation, **kwargs)
         elif isinstance(counter, type):
             if not issubclass(counter, CounterBase):
-                fatal(
-                    f"Counter class '{counter}' does not inherit from CounterBase."
-                )
+                fatal(f"Counter class '{counter}' does not inherit from CounterBase.")
             if name is None:
                 fatal("You must provide a name for the counter.")
             new_counter = counter(name=name, simulation=self.simulation, **kwargs)
@@ -184,7 +182,9 @@ class ChemistryActorBase(ActorBase):
 
     def from_dictionary(self, d):
         super().from_dictionary(d)
-        self.counters = self._reconstruct_counters_from_dictionary(d.get("counters", {}))
+        self.counters = self._reconstruct_counters_from_dictionary(
+            d.get("counters", {})
+        )
 
     def _store_counter_results(self, which="merged"):
         for counter in self.counters.values():
@@ -430,7 +430,8 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         molecule_counters = [
             counter
             for counter in self.counters.values()
-            if isinstance(counter, MoleculeCounterBase) and counter.g4_counter_id is not None
+            if isinstance(counter, MoleculeCounterBase)
+            and counter.g4_counter_id is not None
         ]
         if len(molecule_counters) > 1:
             fatal(

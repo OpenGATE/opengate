@@ -6,7 +6,6 @@ import opengate_core as g4
 from ..base import GateObject, process_cls
 from ..exception import fatal
 
-
 TIME_COUNT_DTYPE = np.dtype([("time", np.float64), ("count", np.int64)])
 
 
@@ -86,9 +85,7 @@ class CounterBase(GateObject):
         super().close()
 
     def initialize(self):
-        fatal(
-            f"Counter class {type(self).__name__} does not implement initialize()."
-        )
+        fatal(f"Counter class {type(self).__name__} does not implement initialize().")
 
     def _collect_results(self):
         fatal(
@@ -103,9 +100,7 @@ class CounterBase(GateObject):
                 "cannot be resolved."
             )
         if self.output_name is None:
-            fatal(
-                f"Counter '{self.name}' is not associated with any actor output."
-            )
+            fatal(f"Counter '{self.name}' is not associated with any actor output.")
         try:
             return self.actor.user_output[self.output_name].get_active(item="any")
         except KeyError:
@@ -122,9 +117,7 @@ class CounterBase(GateObject):
                 "cannot be changed."
             )
         if self.output_name is None:
-            fatal(
-                f"Counter '{self.name}' is not associated with any actor output."
-            )
+            fatal(f"Counter '{self.name}' is not associated with any actor output.")
         try:
             self.actor.user_output[self.output_name].set_active(value, item="all")
         except KeyError:
@@ -300,7 +293,9 @@ class BuiltinMoleculeCounter(MoleculeCounterBase, g4.G4MoleculeCounter):
                     f"consider_molecules: {sorted(unknown_molecules)}. "
                     f"Known molecule names are: {sorted(available_molecules)}"
                 )
-            ignored_molecules.update(available_molecules.difference(considered_molecules))
+            ignored_molecules.update(
+                available_molecules.difference(considered_molecules)
+            )
 
         for molecule_name in ignored_molecules:
             self.IgnoreMolecule(molecule_name)

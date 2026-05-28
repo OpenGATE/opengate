@@ -25,7 +25,8 @@ void init_G4MoleculeReactionCounter(py::module &m) {
       .def("SetActiveUpperBound",
            &G4MoleculeReactionCounter::SetActiveUpperBound, py::arg("time"),
            py::arg("inclusive") = true)
-      .def("GetRecordedReactions", &G4MoleculeReactionCounter::GetRecordedReactions)
+      .def("GetRecordedReactions",
+           &G4MoleculeReactionCounter::GetRecordedReactions)
       .def("GetRecordedTimes", &G4MoleculeReactionCounter::GetRecordedTimes)
       .def(
           "GetNbReactionsAtTime",
