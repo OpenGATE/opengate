@@ -524,13 +524,13 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
     def visualize(self, count: int, color, size: float):
         if count <= 0:
-            warning(
-                f"source visualization count must be > 0. Got {count}. No visualization will be performed."
+            logger.debug(
+                f"source visualization count of source {self.name} is set to {count}. No visualization will be performed."
             )
             return
         if count > 10000:
             warning(
-                f"source visualization count is too high ({count}), using 2000 instead."
+                f"source visualization count of source {self.name} is too high ({count}), using 2000 instead."
             )
             count = 2000
         if size <= 0 or size >= 20:
