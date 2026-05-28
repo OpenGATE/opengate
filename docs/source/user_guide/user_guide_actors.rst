@@ -77,10 +77,10 @@ The :class:`~.opengate.actors.digitizers.PhaseSpaceActor` has only a single outp
   sim.output_dir = "/my/preferred/location/"
   phsp_actor1 = sim.add_actor("PhaseSpaceActor", name="phsp_actor1")
   phsp_actor1.output_filename = 'phsp1.root'
-  phsp_actor2 = sim.add_actor("PhaseSpaceActor", name="phsp_actor1")
+  phsp_actor2 = sim.add_actor("PhaseSpaceActor", name="phsp_actor2")
   phsp_actor2.output_filename = 'phsp2.root'
 
-In the example above, we set the global output directory of the simulation to our preferred location via :attr:`~.opengate.managers.Simulation.output_dir` and define the filename for each actor via :attr:`~.opengate.acrtors.digitizers.PhaseSpaceActor.output_filename`. GATE will automatically combine the filenames with the output path. You can also use relative paths including subfolders, like:
+In the example above, we set the global output directory of the simulation to our preferred location via :attr:`~.opengate.managers.Simulation.output_dir` and define the filename for each actor via :attr:`~.opengate.actors.digitizers.PhaseSpaceActor.output_filename`. GATE will automatically combine the filenames with the output path. You can also use relative paths including subfolders, like:
 
 .. code-block:: python
 
@@ -93,7 +93,7 @@ This will create a subfolder ''phsp'' in your preferred output folder defined vi
 
 .. note:: We highly recommend the pathlib library to work with paths. It makes things very easier and platform independent.
 
-You can also decide not to write data to disk, if you wish so. In the above example, set :attr:`~.opengate.acrtors.digitizers.PhaseSpaceActor.write_to_disk` to ``False``:
+You can also decide not to write data to disk, if you wish so. In the above example, set :attr:`~.opengate.actors.digitizers.PhaseSpaceActor.write_to_disk` to ``False``:
 
 .. code-block:: python
 
