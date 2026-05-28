@@ -123,7 +123,10 @@ To ensure simulation efficiency, we may wish to stop early when a target uncerta
    # Target statistical uncertainty (e.g., 5%)
    unc_goal = 0.05
 
-   # Define how "high-dose" voxels are selected: here, > 70% of max edep value
+   # Define how "high-dose" voxels are selected:
+   # first compute the mean edep of the N highest voxels,
+   # then keep voxels above 70% of that reference value
+   n_top_voxels = 20
    thresh_voxel_edep_for_unc_calc = 0.7
 
    # Planned number of primary particles or events (e.g., 100 MBq)
@@ -135,22 +138,25 @@ These parameters are then passed to the dose actor:
 
    dose.uncertainty_goal = unc_goal # 0.05
    dose.uncertainty_first_check_after_n_events = 0.01 * n_planned # check statistical uncertainty every 1 MBq particles
+   dose.uncertainty_top_voxels_count = n_top_voxels # 20
    dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc # 0.7
 
 Uncertainty is computed only in high-deposition voxels to focus on the clinically relevant region:
 
 .. code-block:: python
 
-   def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
+   def calculate_mean_unc(edep_arr, unc_arr, n_top_voxels=20, edep_thresh_rel=0.7):
        # Average the uncertainty values ​​over the high energy deposition areas
-       edep_max = np.amax(edep_arr)
-       mask = edep_arr > edep_max * edep_thresh_rel
+       flat = edep_arr.ravel()
+       top_n = np.partition(flat, -n_top_voxels)[-n_top_voxels:]
+       edep_mean_max = float(top_n.mean())
+       mask = edep_arr > edep_mean_max * edep_thresh_rel
        unc_used = unc_arr[mask]
        unc_mean = np.mean(unc_used)
 
        return unc_mean
 
-Note: This method uses a relative threshold based on the maximum deposited energy, which may be sensitive to outliers. Consider using a percentile-based threshold for robustness if needed.
+The parameter ``uncertainty_top_voxels_count`` must be greater than 0 and no larger than the number of voxels in the scoring image.
 
 At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
 
@@ -474,6 +480,8 @@ By default, the PhaseSpaceActor stores information about particles entering the 
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
    phsp.steps_to_store = "all"   # all steps (including secondary particles)
 
+If ``steps_to_store`` includes ``"exiting"`` and ``attached_to`` contains multiple volumes, the actor resolves the exit condition independently for each attached physical volume. This allows repeated volumes and attached volumes with different mothers to be handled consistently.
+
 The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
 
 The option “entering” stores the particle information whenever it is at the boundary between the surrounding environment (world, another volume) and the volume to which the actor is attached. The variables to be used are the PrePosition, PreDirection, etc.
@@ -482,6 +490,8 @@ For example: if a particle enters the volume only once, its information is store
 The option “exiting” stores the particle information whenever, starting from within the volume, it is at the boundary between the volume to which the actor is attached and the surrounding environment (world, another volume). The variables to be used are the PostPosition, PostDirection, etc.
 
 The option “all” stores the particle information for every step in the volume, including secondary particles generated in the volume. If you want to track all steps for both primary and secondary particles, use this option.
+
+When using local coordinates such as ``PrePositionLocal`` or ``PostPositionLocal`` with multiple ``attached_to`` volumes, each stored position is expressed in the local frame of the volume touched by that step. To interpret these entries afterwards, it is useful to also store a volume-identifying attribute such as ``PreStepUniqueVolumeID`` or ``PostStepUniqueVolumeID``. For simpler cases, ``TrackVolumeName`` together with ``PreStepVolumeCopyNo`` or ``PostStepVolumeCopyNo`` can also help distinguish the contributing volumes. If uniquely meaningful local coordinates are important for the analysis, it is often simpler to attach one ``PhaseSpaceActor`` per volume rather than combining several ``attached_to`` volumes in the same actor.
 
 
 Reference

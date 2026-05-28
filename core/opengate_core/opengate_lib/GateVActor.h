@@ -9,14 +9,17 @@
 #define GateVActor_h
 
 #include "filters/GateVFilter.h"
+#include <G4Cache.hh>
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
 #include <pybind11/stl.h>
+#include <vector>
 
 namespace py = pybind11;
 
 class GateSourceManager;
+class G4VPhysicalVolume;
 
 class GateVActor : public G4VPrimitiveScorer {
 
@@ -136,9 +139,17 @@ public:
 
   std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
 
+  struct threadLocalT {
+    std::vector<std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *>>
+        attachedToVolumeExitPairs;
+  };
+
   void SetSourceManager(GateSourceManager *s);
 
   void SetMotherAttachedToVolumeName(const std::string &attachedToVolumeName);
+  void ClearAttachedVolumeExitPairs();
+  void AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
+                                 G4VPhysicalVolume *motherVolume);
 
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
@@ -147,6 +158,7 @@ public:
   // Name of the mother volume (logical volume)
   std::string fAttachedToVolumeName;
   std::string fAttachedToVolumeMotherName;
+  mutable G4Cache<threadLocalT> fThreadLocalExitPairsData;
 
   // Pointer to the filter
   GateVFilter *fFilter;

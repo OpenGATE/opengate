@@ -9,7 +9,6 @@
 #define GateFluenceActor_h
 
 #include "G4Cache.hh"
-#include "G4EmCalculator.hh"
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "digitizer/GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
@@ -74,7 +73,6 @@ public:
   Image3DType::SizeType size_region{};
 
   struct threadLocalT {
-    G4EmCalculator emcalc;
     std::vector<double> squared_worker_flatimg;
     std::vector<int> lastid_worker_flatimg;
   };

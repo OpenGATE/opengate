@@ -39,7 +39,7 @@ def add_empty_linac_box(sim, linac_name, sad=1000):
     linac.material = "G4_AIR"
     linac.size = [1 * m, 1 * m, 0.6 * m]
     translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2 + 3.5 * mm])
-    # Isocenter begin at the end of the target, That's why 3.5 mm is added.
+    # Isocenter start from the end of the target, That's why 3.5 mm is added.
     linac.translation = translation_linac_box
     linac.color = [1, 1, 1, 0]
     return linac
@@ -441,8 +441,16 @@ def add_mirror(sim, linac_name):
 def enable_brem_splitting(sim, linac_name, splitting_factor):
     # create a region
     linac_target = sim.volume_manager.get_volume(f"{linac_name}_target")
+    linac_target_support_top = sim.volume_manager.get_volume(
+        f"{linac_name}_target_support_top"
+    )
+    linac_target_support_bottom = sim.volume_manager.get_volume(
+        f"{linac_name}_target_support_bottom"
+    )
     region_linac = sim.physics_manager.add_region(name=f"{linac_target.name}_region")
     region_linac.associate_volume(linac_target)
+    region_linac.associate_volume(linac_target_support_top)
+    region_linac.associate_volume(linac_target_support_bottom)
     # set the brem splitting
     s = f"/process/em/setSecBiasing eBrem {region_linac.name} {splitting_factor} 50 MeV"
     sim.g4_commands_after_init.append(s)
@@ -1601,6 +1609,33 @@ def define_pos_mlc_jaws_rectangular_field(
     )
 
     return pos_x_leaves, pos_y_jaws
+
+
+def add_mlc_leaves_shift(pos_x_leaves, sad, shift, gap=0):
+    mm = g4_units.mm
+    center_mlc = 349.3 * mm
+    center_jaws = 470.5 * mm
+    jaws_height = 77 * mm
+    center_curve_mlc = center_mlc - 7.5 * mm
+    mlc_position, mlc_offset = retrieve_offset_data_to_apply("from thales", "mlc")
+    f_interp_offset_mlc = scipy.interpolate.interp1d(
+        mlc_position, mlc_offset, kind="cubic"
+    )
+
+    ##FIXME :  the aperture related to a constant MLC shift seems to have around a 1% of error, I empirically corrected it
+    ## but potentially still to be improved
+
+    aperture_left = 0.99 * shift + gap / 2
+    aperture_right = 0.99 * shift - gap / 2
+    x_aperture_1 = (center_curve_mlc / sad) * (
+        aperture_left - f_interp_offset_mlc(aperture_left)
+    )
+    x_aperture_2 = (center_curve_mlc / sad) * (
+        aperture_right - f_interp_offset_mlc(-aperture_right)
+    )
+    pos_x_leaves[0:80] += x_aperture_2
+    pos_x_leaves[80:160] += x_aperture_1
+    return pos_x_leaves
 
 
 def add_linac_side_shielding(
