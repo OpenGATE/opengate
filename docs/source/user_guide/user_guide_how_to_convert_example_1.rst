@@ -101,7 +101,7 @@ GATE 9
     /gate/Spiral/setMaterial                Water
     /gate/Spiral/vis/setColor               yellow
     /gate/Spiral/vis/setVisible             1
-    /gate/Spiral/vis/forceWireframe
+    /gate/Spiral/vis/forceSolid
 
     # Insert at radius 0.00 mm and angle 0.00 degree
     /gate/Spiral/daughters/name             SpiralInsert01
@@ -113,7 +113,7 @@ GATE 9
     /gate/SpiralInsert01/placement/setTranslation 0.0000 0.0000 0 mm
     /gate/SpiralInsert01/vis/setColor             yellow
     /gate/SpiralInsert01/vis/setVisible           1
-    /gate/Spiral/vis/forceWireframe
+    /gate/Spiral/vis/forceSolid
 
     # ...
     # 24 additional inserts, omitted for brevity
@@ -138,7 +138,7 @@ GATE 10
       spiral_insert.material = material
       spiral_insert.translation = translation
       spiral_insert.color = color
-      spiral_insert.vis_type = "wireframe"
+      spiral_insert.style = "solid"
 
     def add_spiral(sim):
       # Mother of all
@@ -148,7 +148,7 @@ GATE 10
       spiral.dz = 20 * cm
       spiral.material = "Water"
       spiral.color = yellow
-      spiral.vis_type = "wireframe"
+      spiral.style = "solid"
 
       # Spiral inserts
       sradius = 4

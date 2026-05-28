@@ -34,9 +34,12 @@ Common parameters are:
    ``scipy.spatial.transform.Rotation`` to manage the rotation matrix.
 -  ``color``: a list of 4 values (Red, Green, Blue, Opacity) between 0
    and 1, e.g. ``[1, 0, 0, 0.5]``. Only used when visualization is on.
-- ``vis_type``: visualization type for this volume. Can be ``'solid'``,
+- ``style``: forced visualization style for this volume. Can be ``'solid'``,
    or ``'wireframe'``. Otherwise or not set, the volume will be displayed
-   according to global visualization settings.
+   according to global visualization style. Noticing in vrml visualization,
+   if the global visualization style is set to ``wireframe``, this value will be ignored
+   and all the volumes will be displayed in transparent way
+   (the way wireframe is displayed in vrml visualization).
 
 Image volume
 ------------

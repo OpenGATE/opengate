@@ -167,10 +167,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 )
             },
         ),
-        "vis_type": (
+        "style": (
             "default",
             {
-                "doc": "Visualization type for this volume. "
+                "doc": "Visualization style for this volume. "
                 "Can be 'default', 'solid' or 'wireframe'"
             },
         ),
@@ -460,9 +460,9 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
         # color
         self.g4_vis_attributes = g4.G4VisAttributes()
-        if self.vis_type == "wireframe":
+        if self.style == "wireframe":
             self.g4_vis_attributes.SetForceWireframe(True)
-        elif self.vis_type == "solid":
+        elif self.style == "solid":
             self.g4_vis_attributes.SetForceSolid(True)
         self.g4_vis_attributes.SetColor(*self.color)
         self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
