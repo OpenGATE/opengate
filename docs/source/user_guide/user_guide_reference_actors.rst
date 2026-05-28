@@ -1132,7 +1132,7 @@ This actor is typically attached to the world or a specific phantom volume. It e
 
 
 Angular Acceptance and Forced Direction Policies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When configuring directional biasing, the choice of policy is important.
 
