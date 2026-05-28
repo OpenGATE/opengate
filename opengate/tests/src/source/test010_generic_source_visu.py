@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -53,7 +54,9 @@ if __name__ == "__main__":
     source.direction.momentum = [0, -1, 0]
     source.energy.type = "mono"
     source.energy.mono = 1 * MeV
-    source.visualize(2000, "magenta", 2)
+    source.visualization.count = 2000
+    source.visualization.color = "magenta"
+    source.visualization.size = 2
 
     source = sim.add_source("GenericSource", "source2")
     source.particle = "proton"
@@ -68,7 +71,9 @@ if __name__ == "__main__":
     source.energy.type = "gauss"
     source.energy.mono = 140 * MeV
     source.energy.sigma_gauss = 10 * MeV
-    source.visualize(2000, "yellow", 2)
+    source.visualization.count = 2000
+    source.visualization.color = "yellow"
+    source.visualization.size = 2
 
     source = sim.add_source("GenericSource", "s3")
     source.particle = "proton"
@@ -81,7 +86,9 @@ if __name__ == "__main__":
     source.energy.type = "gauss"
     source.energy.mono = 140 * MeV
     source.energy.sigma_gauss = 10 * MeV
-    source.visualize(2000, "green", 2)
+    source.visualization.count = 2000
+    source.visualization.color = "green"
+    source.visualization.size = 2
 
     source = sim.add_source("GenericSource", "s4")
     source.particle = "proton"
@@ -95,7 +102,9 @@ if __name__ == "__main__":
     source.energy.type = "gauss"
     source.energy.mono = 80 * MeV
     source.energy.sigma_gauss = 1 * MeV
-    source.visualize(2000, "cyan", 2)
+    source.visualization.count = 2000
+    source.visualization.color = "cyan"
+    source.visualization.size = 2
 
     # actors
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
