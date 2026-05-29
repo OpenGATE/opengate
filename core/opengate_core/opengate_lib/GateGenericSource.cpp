@@ -90,6 +90,7 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   InitializeDirection(user_info);
   InitializeEnergy(user_info);
   InitializePolarization(user_info);
+  InitializeVisualization(user_info);
 
   // init number of events
   fDirectionRelativeToAttachedVolume =
@@ -684,8 +685,11 @@ unsigned long GateGenericSource::GetTotalZeroEvents() const {
   return fTotalZeroEvents;
 }
 
-void GateGenericSource::RequestVisualization(G4int count, py::object color,
-                                             G4double size) {
+void GateGenericSource::InitializeVisualization(py::dict puser_info) {
+  if (G4Threading::IsWorkerThread())
+    return;
+  auto user_info = py::dict(puser_info["visualization"]);
+  py::object color = user_info["color"];
   if (py::isinstance<py::str>(color)) {
     std::string color_str = color.cast<std::string>();
     G4Colour::GetColour(color_str, fVisColour);
@@ -694,8 +698,8 @@ void GateGenericSource::RequestVisualization(G4int count, py::object color,
     fVisColour = G4Colour(rgba[0], rgba[1], rgba[2], rgba[3]);
   }
 
-  fVisSize = size;
-  fVisCount = count;
+  fVisSize = DictGetDouble(user_info, "size");
+  fVisCount = DictGetInt(user_info, "count");
 }
 
 GateGenericSource::PosPointCloud::PosPointCloud(const G4Colour &colour,
