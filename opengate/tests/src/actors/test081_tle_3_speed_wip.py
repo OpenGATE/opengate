@@ -3,7 +3,9 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.tests.src.actors.test081_tle_helpers import add_source
+from opengate.tests.src.actors.test081_tle_helpers import (
+    add_source,
+)
 import numpy as np
 
 from opengate.tests.utility import print_test
@@ -78,7 +80,7 @@ if __name__ == "__main__":
     sim.actor_manager.remove_actor("dose_actor")
 
     # start simulation
-    sim.run()
+    sim.run(start_new_process=True)
     pps2 = stats.user_output.stats.pps
 
     print()
@@ -88,6 +90,4 @@ if __name__ == "__main__":
     print_test(
         b, f"Speed PPS is {pps1} vs {pps2} = {r*100:.2f}% (tol={tol:.2f}) ==> {b}"
     )
-
-    is_ok = b
-    utility.test_ok(is_ok)
+    utility.test_ok(b)

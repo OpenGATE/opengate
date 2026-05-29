@@ -5,13 +5,10 @@ import opengate as gate
 from opengate import g4_units
 from opengate.tests import utility
 from opengate.tests.src.actors.test081_tle_helpers import (
-    add_waterbox,
-    voxelize_waterbox,
     add_source,
     plot_pdd,
     compare_pdd,
 )
-from opengate.tests.utility import get_image_1d_profile
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test081_tle")
@@ -111,5 +108,4 @@ if __name__ == "__main__":
         tle_dose_actor.density.get_output_path(),
         tolerance=0.001,
     )
-
     utility.test_ok(is_ok)
