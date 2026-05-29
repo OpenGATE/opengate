@@ -356,7 +356,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             {"doc": "Polarization of the particle (3 Stokes parameters)."},
         ),
         "visualization": (
-            Box({"count": 2000, "color": "red", "size": 3}),
+            Box({"count": 2000, "color": "yellow", "size": 2}),
             {
                 "doc": "count is the number of particles to visualize, color is the color of the visualized particles and size is their size (in mm).",
             },
