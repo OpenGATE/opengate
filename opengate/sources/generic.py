@@ -126,6 +126,14 @@ class PositionValidator(UserInfoValidatorBase):
                 f"In {context_name}: 'rotation' must be convertible to a 3x3 matrix/array, "
                 f"but got: {b.rotation}"
             )
+
+        # check confine
+        if b.confine:
+            if b.type == "point":
+                warning(
+                    f"In {context_name}, "
+                    f"confine is used, while position.type is point ... really ?"
+                )
         return context_name
 
 
@@ -405,14 +413,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                     f'"histogram_energy" and "histogram_weight" must have the same length'
                 )
 
-        # check direction type
-        l = ["iso", "histogram", "momentum", "focused", "beam2d"]
-        if self.direction.type not in l:
-            fatal(
-                f"Cannot find the direction type {self.direction.type} for the source {self.name}.\n"
-                f"Available types are {l}"
-            )
-
         # logic for half life and user_particle_life_time
         if self.half_life > 0:
             # if the user set the half life and not the user_particle_life_time
@@ -423,14 +423,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
         # warning for non-used ?
-
-        # check confine
-        if self.position.confine:
-            if self.position.type == "point":
-                warning(
-                    f"In source {self.name}, "
-                    f"confine is used, while position.type is point ... really ?"
-                )
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method
