@@ -14,14 +14,14 @@
 
 #include "GatePositroniumDecayModel.h"
 
-int GatePositroniumDecayModel::getPositroniumDecayIndex(const std::vector<double>& fractions) {
-  auto r = G4UniformRand();
+int GatePositroniumDecayModel::getPositroniumDecayIndex(const std::vector<float>& fractions) {
+  auto r = G4UniformRand(); 
   float curr_frac_cumulative = 0.0;
   for (int i = 0; i < fractions.size(); ++i) {
     curr_frac_cumulative = curr_frac_cumulative + fractions[i];
-    if(r<= curr_frac_cumulative) return i;
+    if(r<= curr_frac_cumulative) return i;   
  }
-  return -1;
+  return static_cast<int>(fractions.size()) - 1;
 }
 
 GatePositroniumDecayModel::GatePositroniumDecayModel(const PositroniumDecayModelParams& modelParams):fModelParams(modelParams)

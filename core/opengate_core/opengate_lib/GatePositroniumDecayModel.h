@@ -20,7 +20,8 @@
 class GatePositroniumDecayModel:public GateGammaEmissionModel
 {
   public:
-  static int getPositroniumDecayIndex(const std::vector<double>& fractions);
+  static int getPositroniumDecayIndex(const std::vector<float>& fractions);
+  static G4ThreeVector AddPositronRangeShift(const G4ThreeVector& original_position,  G4double mean_positron_range);
 
   explicit GatePositroniumDecayModel(const PositroniumDecayModelParams& modelParams);
 
