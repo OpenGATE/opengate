@@ -1,3 +1,24 @@
+"""
+Filter construction and sugar syntax for actor-side selection logic.
+
+This module exposes both explicit filter classes and the ``GateFilterBuilder``
+helper used to construct filters through a concise Python syntax such as
+``F.GlobalTime > 10 * sec`` or boolean combinations of comparisons.
+
+Attribute-based filters can resolve values through two runtime paths:
+
+- conventional DigiAttribute-backed values
+- auxiliary attributes registered at simulation level
+
+This means the same user-facing filter syntax can be used for native
+step-derived attributes and for custom runtime attributes activated through
+``Simulation.activate_auxiliary_attribute()``.
+
+One legacy exception still exists: ``UnscatteredPrimaryFlag`` is exposed
+through a dedicated filter class for backward compatibility and cross-testing.
+The long-term direction is to prefer the generic attribute-comparison path.
+"""
+
 import sys
 import uuid
 from typing import Optional
@@ -109,13 +130,20 @@ class FilterBase(GateObject):
 
 
 class GateFilterBuilder:
-    """Entry point for the sugar syntax: F = GateFilterBuilder()"""
+    """
+    Entry point for the sugar syntax: ``F = GateFilterBuilder()``.
+
+    Most attribute names are mapped to ``AttributeProxy`` and therefore go
+    through the generic comparison-filter machinery. Dedicated filter classes
+    should remain exceptions rather than the default pattern.
+    """
 
     def __call__(self, attribute_name):
         return AttributeProxy(attribute_name)
 
     def __getattr__(self, name):
-        # 1. Special case: If the user asks for the Unscattered flag
+        # Legacy special case kept for compatibility and cross-testing while
+        # the generic runtime-attribute path becomes the preferred model.
         if name == "UnscatteredPrimaryFlag":
             return UnscatteredPrimaryFilter()
 

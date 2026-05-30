@@ -134,7 +134,6 @@ def main(argv):
     sim.run()
     f1 = dose_actor.dose.get_output_path()
     f2 = tle_dose_actor.dose.get_output_path()
-
     f1_bis = dose_actor.dose_uncertainty.get_output_path()
     f2_bis = tle_dose_actor.dose_uncertainty.get_output_path()
 

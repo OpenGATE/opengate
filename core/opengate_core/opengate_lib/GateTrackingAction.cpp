@@ -22,6 +22,16 @@ void GateTrackingAction::RegisterActor(GateVActor *actor) {
   }
 }
 
+void GateTrackingAction::RegisterAuxiliaryAttribute(
+    GateVAuxiliaryAttribute *attribute) {
+  if (attribute->HasAction("PreUserTrackingAction")) {
+    fPreUserTrackingActionAttributes.push_back(attribute);
+  }
+  if (attribute->HasAction("PostUserTrackingAction")) {
+    fPostUserTrackingActionAttributes.push_back(attribute);
+  }
+}
+
 void GateTrackingAction::PreUserTrackingAction(const G4Track *track) {
   if (fUserEventInformationFlag) {
     const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
@@ -29,12 +39,18 @@ void GateTrackingAction::PreUserTrackingAction(const G4Track *track) {
         dynamic_cast<GateUserEventInformation *>(event->GetUserInformation());
     info->PreUserTrackingAction(track);
   }
+  for (auto attribute : fPreUserTrackingActionAttributes) {
+    attribute->PreUserTrackingAction(track);
+  }
   for (auto actor : fPreUserTrackingActionActors) {
     actor->PreUserTrackingAction(track);
   }
 }
 
 void GateTrackingAction::PostUserTrackingAction(const G4Track *track) {
+  for (auto attribute : fPostUserTrackingActionAttributes) {
+    attribute->PostUserTrackingAction(track);
+  }
   for (auto actor : fPostUserTrackingActionActors) {
     actor->PostUserTrackingAction(track);
   }

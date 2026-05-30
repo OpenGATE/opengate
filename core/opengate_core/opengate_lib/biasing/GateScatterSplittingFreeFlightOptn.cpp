@@ -132,11 +132,11 @@ GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing_V1_PostStepDoIt(
       gammaTrack->SetKineticEnergy(energy);
 
       // indicate the track is an FF scatter split
-      auto *track_info = new GateUserTrackInformation();
-      track_info->SetGateTrackInformation(
-          fActor,
+      auto *track_info = GetOrCreateGateUserTrackInformation(gammaTrack);
+      auto *track_data =
+          track_info->GetOrCreateTrackData<GateLongTrackData>(fTrackDataSlotID);
+      track_data->SetValue(
           GateScatterSplittingFreeFlightOptrActor::fThisIsAFreeFlightTrack);
-      gammaTrack->SetUserInformation(track_info);
 
       // Add the track in the stack
       fParticleChange.AddSecondary(gammaTrack);
@@ -273,11 +273,11 @@ GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing_V2_SampleSecondaries(
       gammaTrack->SetKineticEnergy(newEnergy);
 
       // Attach User Info
-      auto *track_info = new GateUserTrackInformation();
-      track_info->SetGateTrackInformation(
-          fActor,
+      auto *track_info = GetOrCreateGateUserTrackInformation(gammaTrack);
+      auto *track_data =
+          track_info->GetOrCreateTrackData<GateLongTrackData>(fTrackDataSlotID);
+      track_data->SetValue(
           GateScatterSplittingFreeFlightOptrActor::fThisIsAFreeFlightTrack);
-      gammaTrack->SetUserInformation(track_info);
 
       fParticleChange.AddSecondary(gammaTrack);
     }
@@ -507,11 +507,11 @@ GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing_V3_SampleScatter(
       gammaTrack->SetMomentumDirection(newMom);
       gammaTrack->SetKineticEnergy(newEnergy);
 
-      auto *track_info = new GateUserTrackInformation();
-      track_info->SetGateTrackInformation(
-          fActor,
+      auto *track_info = GetOrCreateGateUserTrackInformation(gammaTrack);
+      auto *track_data =
+          track_info->GetOrCreateTrackData<GateLongTrackData>(fTrackDataSlotID);
+      track_data->SetValue(
           GateScatterSplittingFreeFlightOptrActor::fThisIsAFreeFlightTrack);
-      gammaTrack->SetUserInformation(track_info);
 
       fParticleChange.AddSecondary(gammaTrack);
     }
@@ -609,11 +609,11 @@ GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing_V4_SampleComptonOnly(
       gammaTrack->SetMomentumDirection(newMom);
       gammaTrack->SetKineticEnergy(newEnergy);
 
-      auto *track_info = new GateUserTrackInformation();
-      track_info->SetGateTrackInformation(
-          fActor,
+      auto *track_info = GetOrCreateGateUserTrackInformation(gammaTrack);
+      auto *track_data =
+          track_info->GetOrCreateTrackData<GateLongTrackData>(fTrackDataSlotID);
+      track_data->SetValue(
           GateScatterSplittingFreeFlightOptrActor::fThisIsAFreeFlightTrack);
-      gammaTrack->SetUserInformation(track_info);
 
       fParticleChange.AddSecondary(gammaTrack);
     }

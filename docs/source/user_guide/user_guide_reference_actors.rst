@@ -399,18 +399,44 @@ TLEDoseActor
 Description
 ~~~~~~~~~~~
 
-This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor` which scores dose due to low energy gammas in another way, namely via the track length in the given voxel. Most options as well as the output are identical to the :class:`~.opengate.actors.doseactors.DoseActor`.
-It is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_. It is designed to model a photon population instead of treating each photon as a single particle. This approach enables efficient and accurate dose calculation by enabling a multiple energy deposition by a single photon.
+This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor`
+which scores dose due to low-energy gammas through a Track Length Estimator
+(TLE) formulation. Most options and outputs are identical to those of the
+:class:`~.opengate.actors.doseactors.DoseActor`.
+
+It is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_.
+It is designed to model a photon population instead of treating each photon as
+an isolated stochastic energy-deposition event. This enables efficient and
+accurate dose calculation by allowing a single photon track to contribute dose
+continuously along its path.
 
 **How It Works**
-During a step, where a typical photon would interact and deposit its energy stochastically, a TLE photon deposits dose based on the material's mass energy-absorption coefficient (`μ_en`) and the step length. This method implies a local dose deposition at the voxel scale, even though secondary electrons are emitted. This actor indeed do not interfer with the GEANT4 tracking.
+During a step, where a typical photon would interact and deposit its energy
+stochastically, a TLE photon deposits dose based on the material's mass
+energy-absorption coefficient (``mu_en``) and the step length. This implies a
+local dose deposition at the voxel scale, even though secondary electrons are
+emitted. The actor does not replace Geant4 tracking; it changes how dose is
+scored for tracks that enter the TLE mode.
 
-Since the database does not take into account the radiative part during the TLE energy deposition calculation, this method is applied to all photons, whether originating from the primary source or from secondary radiative processes. This approach offers a computationally efficient alternative to traditional dose calculation methods.
+Since the database does not take into account the radiative part during the TLE
+energy-deposition calculation, this method is applied to all photons, whether
+originating from the primary source or from secondary radiative processes. This
+approach offers a computationally efficient alternative to traditional dose
+calculation methods.
 
 **Energy Threshold Option**
-A novel feature of the TLE actor is the ability to activate or deactivate the TLE mechanism based on a user-defined energy threshold. This provides flexibility in simulations, allowing users to tailor the behavior of the TLE actor according to the energy ranges of interest.
+A key feature of the TLE actor is the ability to activate or deactivate the TLE
+mechanism according to user-defined criteria:
 
-Here is the a classical way to use the TLEDoseActor :
+- no threshold
+- photon energy threshold
+- maximum-range threshold
+- average-range threshold
+
+This provides flexibility in simulations, allowing users to tailor the
+behavior of the TLE actor to the energy ranges and materials of interest.
+
+Here is a classical way to use the TLEDoseActor:
 
 .. code-block:: python
 
@@ -421,8 +447,12 @@ Here is the a classical way to use the TLEDoseActor :
    tle_dose_actor.dose_uncertainty.active = True
    tle_dose_actor.size = [200, 200, 200]
    tle_dose_actor.spacing = [x / y for x, y in zip(irradiated_volume.size, tle_dose_actor.size)]
+   tle_dose_actor.tle_threshold_type = "max range"
+   tle_dose_actor.tle_threshold = 10 * mm
+   tle_dose_actor.database = "EPDL"
 
-Refer to test081 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/>`_ for more details.
+Refer to the ``test081_tle_*`` tests in ``opengate/tests/src/actors`` for
+more details.
 
 Reference
 ~~~~~~~~~

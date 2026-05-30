@@ -22,6 +22,18 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
   fCompareValue = DictGetStr(user_info, "compare_value");
   fCompareOperation = DictGetStr(user_info, "compare_operation");
 
+  fAuxiliaryAttribute =
+      GateVAuxiliaryAttribute::GetAuxiliaryAttributeByName(fAttributeName);
+  if (fAuxiliaryAttribute != nullptr) {
+    if (fAuxiliaryAttribute->GetDigiAttributeType() != 'S') {
+      std::ostringstream oss;
+      oss << "Error: Auxiliary attribute '" << fAttributeName
+          << "' type mismatch in filter.";
+      Fatal(oss.str());
+    }
+    return;
+  }
+
   auto *dgm = GateDigiAttributeManager::GetInstance();
   auto *att = dgm->GetDigiAttribute(fAttributeName);
   fAttribute = dynamic_cast<GateTDigiAttribute<std::string> *>(
@@ -38,8 +50,13 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
 // Specialised implementation for std::string (Equality instead of Range)
 template <>
 bool GateAttributeComparisonFilter<std::string>::Evaluate(G4Step *step) const {
-  fAttribute->ProcessHits(step);
-  const auto val = fAttribute->GetSingleValue();
+  std::string val;
+  if (fAuxiliaryAttribute != nullptr) {
+    val = fAuxiliaryAttribute->GetSValue(step);
+  } else {
+    fAttribute->ProcessHits(step);
+    val = fAttribute->GetSingleValue();
+  }
 
   if (fCompareOperation == "eq") {
     return val == fCompareValue;

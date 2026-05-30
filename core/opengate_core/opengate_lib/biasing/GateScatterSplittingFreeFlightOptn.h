@@ -67,6 +67,7 @@ public:
   double *fNbTracks;
   GateUserTrackInformation *fUserTrackInformation;
   GateVBiasOptrActor *fActor = nullptr;
+  int fTrackDataSlotID{-1};
 };
 
 #endif
