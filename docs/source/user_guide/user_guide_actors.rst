@@ -244,3 +244,13 @@ Actor output
 .. autoproperty:: opengate.actors.actoroutput.BaseUserInterfaceToActorOutput.keep_data_per_run
 
 .. autoproperty:: opengate.actors.actoroutput.BaseUserInterfaceToActorOutput.active
+
+.. autoproperty:: opengate.actors.digitizers.PhaseSpaceActor.root_output
+
+.. autoproperty:: opengate.managers.Simulation.output_dir
+
+.. autoproperty:: opengate.actors.digitizers.PhaseSpaceActor.output_filename
+
+.. autoproperty:: opengate.actors.digitizers.PhaseSpaceActor.write_to_disk
+
+.. autoproperty:: opengate.actors.actoroutput.UserInterfaceToActorOutputImage.image
