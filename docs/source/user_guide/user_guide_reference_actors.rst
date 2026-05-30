@@ -672,7 +672,7 @@ Once defined, this custom attribute behaves like any other standard attribute (e
     Reference
     ~~~~~~~~~
 
-.. 
+..
     .. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttributeLegacy
 
 DigitizerAdderActor
