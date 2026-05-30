@@ -679,7 +679,7 @@ DigitizerReadoutActor
 Description
 ~~~~~~~~~~~
 
-This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerAdderActor.discretize_volume` indicates the volume name where the discrete position will be taken.
+This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume` indicates the volume name where the discrete position will be taken.
 
 .. code-block:: python
 
@@ -1283,3 +1283,7 @@ Reference
 
 .. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaAnalogActor
 .. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaTLEActor
+.. autoproperty:: opengate.actors.digitizers.DigitizerBase.authorize_repeated_volumes
+.. autoproperty:: opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume
+.. autoproperty:: opengate.sources.base.SourceBase.half_life
+.. automethod:: opengate.managers.VolumeManager.dump_volume_tree
