@@ -524,3 +524,8 @@ To make a parameter dynamic:
 
 This architecture keeps the user-facing API simple while keeping the runtime
 logic generic and reusable.
+
+References
+----------
+
+.. autoclass:: opengate.base.DynamicGateObject
