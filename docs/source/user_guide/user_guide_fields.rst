@@ -271,3 +271,5 @@ Class reference
 
 .. autoclass:: opengate.geometry.fields.CustomElectroMagneticField
    :members:
+
+.. automethod:: opengate.geometry.volumes.VolumeBase.add_field
