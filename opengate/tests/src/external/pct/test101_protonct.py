@@ -18,13 +18,9 @@ if __name__ == "__main__":
     # INITIALISATION
     # =====================================================
 
-    paths = utility.get_default_test_paths(__file__,
-                                           output_folder="test101_protonct")
+    paths = utility.get_default_test_paths(__file__, output_folder="test101_protonct")
 
-    protonct(paths.output,
-             projections=10,
-             protons_per_projection=100,
-             seed=1234)
+    protonct(paths.output, projections=10, protons_per_projection=100, seed=1234)
 
     # =====================================================
     # Perform test
@@ -36,12 +32,13 @@ if __name__ == "__main__":
     path_reference_phasespace_in = paths.output_ref / "PhaseSpaceIn.root"
     path_reference_phasespace_out = paths.output_ref / "PhaseSpaceOut.root"
 
-    compare_root_files(path_reference_phasespace_in, path_phasespace_in,
-                       "PhaseSpaceIn")
+    compare_root_files(path_reference_phasespace_in, path_phasespace_in, "PhaseSpaceIn")
 
-    is_ok = compare_root_files(path_reference_phasespace_in,
-                               path_phasespace_in, "PhaseSpaceIn")
-    is_ok = is_ok and compare_root_files(path_reference_phasespace_out,
-                                         path_phasespace_out, "PhaseSpaceOut")
+    is_ok = compare_root_files(
+        path_reference_phasespace_in, path_phasespace_in, "PhaseSpaceIn"
+    )
+    is_ok = is_ok and compare_root_files(
+        path_reference_phasespace_out, path_phasespace_out, "PhaseSpaceOut"
+    )
 
     utility.test_ok(is_ok)
