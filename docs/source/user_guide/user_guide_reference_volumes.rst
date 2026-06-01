@@ -36,10 +36,7 @@ Common parameters are:
    and 1, e.g. ``[1, 0, 0, 0.5]``. Only used when visualization is on.
 - ``style``: forced visualization style for this volume. Can be ``'solid'``,
    or ``'wireframe'``. Otherwise or not set, the volume will be displayed
-   according to global visualization style. Noticing in vrml visualization,
-   if the global visualization style is set to ``wireframe``, this value will be ignored
-   and all the volumes will be displayed in transparent way
-   (the way wireframe is displayed in vrml visualization).
+   according to global visualization style. Only available with qt.
 
 Image volume
 ------------
