@@ -171,8 +171,7 @@ before ``sim.run()``:
     source.visualization.color = "red"
     source.visualization.size = 3
 
-Use a visualization type that displays a Geant4 scene, such as ``"qt"``
-or ``"vrml"``. GDML visualization only exports the geometry.
+The visualization of the source is only available with ``"qt"``.
 
 The ``count`` parameter controls the number of sampled positions. Values
 larger than 10000 are reduced to 2000. The ``size`` parameter controls the
