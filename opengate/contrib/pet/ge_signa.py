@@ -81,9 +81,20 @@ def add_pet(sim, name="pet"):
     crystal.mother = optical.name
     crystal.size = [3.95 * mm, module.size[1], 5.3 * mm]
     crystal.material = "LYSO"
-    crystal.translation = get_grid_repetition([1, 1, 1], [3.9833 * mm ,0 * mm, 5.3 * mm])
+    #crystal.translation = get_grid_repetition([1, 1, 1], [0 * mm ,0 * mm, 0 * mm])
     crystal.color = green
 
+    n_crystal = len(crystal.translation)
+    n_optical= len(optical.translation)
+    n_block = len(block.translation)
+    n_unit = len(unit.translation) 
+    n_module = len(module.translation)
+    
+    print(f"Number of crystals : {n_crystal}")
+    print(f"Number of opticals     : {n_optical}")
+    print(f"Number of blocks   : {n_block}")
+    print(f"Number of units   : {n_unit}")
+    print(f"Number of modules  : {n_module}")
     return pet
 
 
@@ -109,6 +120,8 @@ def add_digitizer(
     #hc.output_filename = output_filename
     hc.attributes = [
         "EventID",
+        "PreStepUniqueVolumeIDAsInt",
+        "PostPositionLocal",
         "PostPosition",
         "TotalEnergyDeposit",
         "PreStepUniqueVolumeID",
