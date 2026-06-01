@@ -22,5 +22,6 @@ Developer guide
    :maxdepth: 2
 
    developer_guide_notes
-   developer_guide_remaining_stuff
+   developer_guide_init_actors
    developer_guide_coincidence_sorter_mt
+   developer_guide_remaining_stuff

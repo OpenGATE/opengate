@@ -1366,6 +1366,9 @@ class VolumeManager(GateObject):
         print(self.dump_volumes())
 
     def dump_volume_tree(self):
+        """
+        Updates volume tree (if needed) and returns a string representation of the volume tree.
+        """
         self.update_volume_tree_if_needed()
         s = ""
         for pre, _, node in RenderTree(self.volume_tree_root):

@@ -71,9 +71,12 @@ Reference
 
 .. autoclass:: opengate.auxiliary_attributes.InteractionCounterAttribute
 
+.. note::
+    The ``ProcessDefinedStepInVolumeAttribute`` "hidden actor" was recently (May 2026) replaced by the ``auxiliary`` actor.
+    These docs will get corresponding updates soon.
 
-ProcessDefinedStepInVolumeAttribute
------------------------------------
+ProcessDefinedStepInVolumeAttributeLegacy
+-----------------------------------------
 
 Description
 ~~~~~~~~~~~
@@ -104,10 +107,12 @@ Example:
    aux.process_name = "compt"
    aux.volume_name = "water_box"
 
-Reference
-~~~~~~~~~
+..
+    Reference
+    ~~~~~~~~~
 
-.. autoclass:: opengate.auxiliary_attributes.ProcessDefinedStepInVolumeAttribute
+..
+    .. autoclass:: opengate.auxiliary_attributes.ProcessDefinedStepInVolumeAttributeLegacy
 
 
 LastProcessDefinedStepInVolumeAttribute

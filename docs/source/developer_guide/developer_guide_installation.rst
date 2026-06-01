@@ -179,11 +179,12 @@ pytorch and gaga-phsp first with:
 Documentation for the documentation
 -----------------------------------
 
-The document is created with `readthedoc <https://docs.readthedocs.io/en/stable/index.html>`_. To build the html pages locally, use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/config.py` file. The current theme is `sphinx_pdj_theme <https://github.com/jucacrispim/sphinx_pdj_theme>`_.
+The document is created with `readthedoc <https://docs.readthedocs.io/en/stable/index.html>`_. To build the html pages locally, use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/conf.py` file. The current theme is `sphinx_pdj_theme <https://github.com/jucacrispim/sphinx_pdj_theme>`_.
 
-You also need to install some packages : `pip install sphinx sphinx_copybutton pydata_sphinx_theme`
+You also need to install some packages : ``pip install sphinx sphinx-copybutton pydata-sphinx-theme``
 
 Help with reStructuredText syntax:
 
 - `quickref <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_
 - `directives <https://docutils.sourceforge.io/docs/ref/rst/directives.html>`_
+- `sphinx for python <https://www.sphinx-doc.org/en/master/usage/domains/python.html>`_
