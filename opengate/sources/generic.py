@@ -10,6 +10,7 @@ from opengate.actors.biasingactors import (
 
 from ..base import UserInfoValidatorBase, process_cls
 from ..exception import fatal, warning
+from ..logger import logger
 from ..utility import g4_units
 from .base import SourceBase
 from .utility import (
@@ -17,7 +18,6 @@ from .utility import (
     compute_cdf_and_total_yield,
     get_spectrum,
 )
-from ..logger import logger
 
 
 def _position_parameters():
@@ -508,13 +508,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
         # warning for non-used ?
-
-        # visualization of the source
-        # self.visualize(
-        #     self.user_info.visualization["count"],
-        #     self.user_info.visualization["color"],
-        #     self.user_info.visualization["size"],
-        # )
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method

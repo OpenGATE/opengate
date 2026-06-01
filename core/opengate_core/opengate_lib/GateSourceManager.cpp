@@ -442,8 +442,10 @@ void GateSourceManager::StartVisualization() const {
   }
 #endif
 
-  for (auto &source : fSources) {
-    source->Visualize();
+  if (fVisualizationFlag) {
+    for (auto &source : fSources) {
+      source->Visualize();
+    }
   }
 
   if (fVisualizationFlag && fVisualizationType == "qt") {
