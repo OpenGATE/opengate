@@ -605,8 +605,12 @@ Reference
 
 .. autoclass:: opengate.actors.digitizers.DigitizerHitsCollectionActor
 
-ProcessDefinedStepInVolumeAttribute
------------------------------------
+.. note::
+    The ``ProcessDefinedStepInVolumeAttribute`` "hidden actor" was recently (May 2026) replaced by the ``auxiliary`` actor.
+    These docs will get corresponding updates soon.
+
+ProcessDefinedStepInVolumeAttributeLegacy
+-----------------------------------------
 
 Description
 ~~~~~~~~~~~
@@ -626,14 +630,14 @@ To use it, you must instantiate the class with the simulation object, the proces
 
 .. code-block:: python
 
-   from opengate.actors.digitizers import ProcessDefinedStepInVolumeAttribute
+   from opengate.actors.digitizers import ProcessDefinedStepInVolumeAttributeLegacy
 
    # 1. Define the custom attributes
    # Count "compt" (Compton scattering) interactions in volume "Waterbox1"
-   att_compt = ProcessDefinedStepInVolumeAttribute(sim, "compt", "Waterbox1")
+   att_compt = ProcessDefinedStepInVolumeAttributeLegacy(sim, "compt", "Waterbox1")
 
    # Count "Rayl" (Rayleigh scattering) interactions in volume "world"
-   att_rayl = ProcessDefinedStepInVolumeAttribute(sim, "Rayl", "world")
+   att_rayl = ProcessDefinedStepInVolumeAttributeLegacy(sim, "Rayl", "world")
 
    # 2. Create the actor (e.g. PhaseSpace)
    phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
@@ -664,10 +668,12 @@ Once defined, this custom attribute behaves like any other standard attribute (e
    * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
    * **Volume Name:** Must be the name of a volume existing in the simulation.
 
-Reference
-~~~~~~~~~
+..
+    Reference
+    ~~~~~~~~~
 
-.. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttribute
+..
+    .. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttributeLegacy
 
 DigitizerAdderActor
 -----------------------
@@ -709,7 +715,7 @@ DigitizerReadoutActor
 Description
 ~~~~~~~~~~~
 
-This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerAdderActor.discretize_volume` indicates the volume name where the discrete position will be taken.
+This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume` indicates the volume name where the discrete position will be taken.
 
 .. code-block:: python
 
@@ -1162,7 +1168,7 @@ This actor is typically attached to the world or a specific phantom volume. It e
 
 
 Angular Acceptance and Forced Direction Policies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When configuring directional biasing, the choice of policy is important.
 
@@ -1313,3 +1319,7 @@ Reference
 
 .. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaAnalogActor
 .. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaTLEActor
+.. autoproperty:: opengate.actors.digitizers.DigitizerBase.authorize_repeated_volumes
+.. autoproperty:: opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume
+.. autoproperty:: opengate.sources.base.SourceBase.half_life
+.. automethod:: opengate.managers.VolumeManager.dump_volume_tree

@@ -248,10 +248,11 @@ The field implementation is covered by the ``test099_fields_*`` tests in ``openg
 
 
 Class reference
-----------------
+---------------
 
 .. autoclass:: opengate.geometry.fields.FieldBase
    :members:
+   :noindex:
 
 .. autoclass:: opengate.geometry.fields.UniformMagneticField
    :members:
@@ -270,3 +271,5 @@ Class reference
 
 .. autoclass:: opengate.geometry.fields.CustomElectroMagneticField
    :members:
+
+.. automethod:: opengate.geometry.volumes.VolumeBase.add_field
