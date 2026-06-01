@@ -1,6 +1,7 @@
 import pathlib
 from opengate.utility import g4_units
 from opengate.geometry.utility import get_grid_repetition, get_circular_repetition
+from opengate.actors.coincidences import *
 
 # colors
 red = [1, 0, 0, 1]
@@ -90,6 +91,7 @@ def add_digitizer(
         sim, pet_name, output_filename, hits_name="Hits", singles_name="Singles"
 ):
 
+    print( output_filename)
     # unit
     mm = g4_units.mm
     keV = g4_units.keV
@@ -104,8 +106,9 @@ def add_digitizer(
     hc = sim.add_actor("DigitizerHitsCollectionActor", hits_name)
     hc.attached_to = crystal.name
     hc.authorize_repeated_volumes = True
-    hc.output_filename = output_filename
+    #hc.output_filename = output_filename
     hc.attributes = [
+        "EventID",
         "PostPosition",
         "TotalEnergyDeposit",
         "PreStepUniqueVolumeID",
@@ -184,3 +187,34 @@ def add_digitizer(
     return sc_energy_window
 
 ## Sorter: 4.57 takeAllGoods minsecDiff 3
+
+def add_coincidences_sorter(
+        singles_tree
+):
+
+    mm = g4_units.mm
+    ns = g4_units.ns
+    
+    time_window = 4.57 * ns
+    policy = "takeAllGoods"
+    min_trans_dist = 26 * mm
+    transaxial_plane = "xy"
+    max_axial_dist =  300 * mm
+    
+    
+    # apply coincidences sorter
+    # (chunk size can be much larger, keep a low value to check it is ok)
+    coincidences = coincidences_sorter(
+        singles_tree,
+        time_window,
+        policy,
+        min_trans_dist,
+        transaxial_plane,
+        max_axial_dist,
+        chunk_size=1000000,
+    )
+
+
+
+
+    return coincidences
