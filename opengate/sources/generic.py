@@ -10,6 +10,7 @@ from opengate.actors.biasingactors import (
 
 from ..base import UserInfoValidatorBase, process_cls
 from ..exception import fatal, warning
+from ..logger import logger
 from ..utility import g4_units
 from .base import SourceBase
 from .utility import (
@@ -17,7 +18,6 @@ from .utility import (
     compute_cdf_and_total_yield,
     get_spectrum,
 )
-from ..logger import logger
 
 
 def _position_parameters():
@@ -76,6 +76,16 @@ def energy_parameters():
     )
 
 
+def visualization_parameters():
+    return Box(
+        {
+            "count": 2000,
+            "color": "yellow",
+            "size": 2,
+        }
+    )
+
+
 def _setter_hook_generic_source_particle(self, particle):
     # The particle parameter must be a str
     if not isinstance(particle, str):
@@ -127,6 +137,14 @@ class PositionValidator(UserInfoValidatorBase):
                 f"In {context_name}: 'rotation' must be convertible to a 3x3 matrix/array, "
                 f"but got: {b.rotation}"
             )
+
+        # check confine
+        if b.confine:
+            if b.type == "point":
+                warning(
+                    f"In {context_name}, "
+                    f"confine is used, while position.type is point ... really ?"
+                )
         return context_name
 
 
@@ -264,6 +282,71 @@ class EnergyValidator(UserInfoValidatorBase):
         return context_name
 
 
+class VisualizationValidator(UserInfoValidatorBase):
+    """Validates the 'visualization' Box."""
+
+    __schema__ = set(visualization_parameters().keys())
+
+    def validate_color(self, color, prefix=""):
+        valid_color_str = [
+            "white",
+            "grey",
+            "gray",
+            "black",
+            "brown",
+            "red",
+            "green",
+            "blue",
+            "cyan",
+            "magenta",
+            "yellow",
+        ]
+
+        if isinstance(color, str) and not color in valid_color_str:
+            fatal(
+                f"{prefix}Invalid color name '{color}'. Valid color name options are: {valid_color_str}."
+            )
+        if isinstance(color, list):
+            if len(color) > 4 or len(color) < 3:
+                fatal(
+                    f"{prefix}Color list must have 3 (RGB) or 4 (RGBA) elements. Got {len(color)}."
+                )
+            if len(color) == 3:
+                color.append(1.0)  # Add alpha value of 1.0 if only RGB is provided
+                logger.debug(
+                    f"{prefix}Alpha value of 1.0 is added to the color list since only RGB values are provided."
+                )
+            for i, c in enumerate(color):
+                if not isinstance(c, (int, float, np.number)):
+                    fatal(
+                        f"{prefix}All elements of color list must be numbers. Element {i} is not."
+                    )
+                if c < 0 or c > 1:
+                    fatal(
+                        f"{prefix}All elements of color list must be in the range [0, 1]. Element {i} is {c}."
+                    )
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+        b = getattr(parent_obj, attr_name)
+        if b.count <= 0:
+            logger.info(
+                f"For source {parent_obj.name}, visualization count is set to {b.count}. No visualization will be performed."
+            )
+        elif b.count > 10000:
+            warning(
+                f"For source {parent_obj.name}, visualization count is too high ({b.count}), using 2000 instead."
+            )
+            b.count = 2000
+        if b.size <= 0 or b.size >= 20:
+            warning(
+                f"For source {parent_obj.name}, visualization size must be in the range (0, 20). Got {b.size}. Using 3 instead."
+            )
+            b.size = 3
+        self.validate_color(b.color, f"For visualization of source {parent_obj.name}: ")
+        return context_name
+
+
 class GenericSource(SourceBase, g4.GateGenericSource):
     """
     GenericSource close to the G4 SPS, but a bit simpler.
@@ -348,7 +431,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             {"doc": "Polarization of the particle (3 Stokes parameters)."},
         ),
         "visualization": (
-            Box({"count": 2000, "color": "red", "size": 3}),
+            visualization_parameters(),
             {
                 "doc": "count is the number of particles to visualize, color is the color of the visualized particles and size is their size (in mm).",
             },
@@ -362,6 +445,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         self._pos_validator = PositionValidator()
         self._dir_validator = DirectionValidator()
         self._ene_validator = EnergyValidator()
+        self._visu_validator = VisualizationValidator()
         self.total_zero_events = 0
         self.total_skipped_events = 0
         if not self.user_info.particle.startswith("ion"):
@@ -382,6 +466,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         self._pos_validator.validate(self, "position")
         self._ene_validator.validate(self, "energy")
         self._dir_validator.validate(self, "direction")
+        self._visu_validator.validate(self, "visualization")
 
         if self.particle == "back_to_back":
             # force the energy to 511 keV
@@ -413,14 +498,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                     f'"histogram_energy" and "histogram_weight" must have the same length'
                 )
 
-        # check direction type
-        l = ["iso", "histogram", "momentum", "focused", "beam2d"]
-        if self.direction.type not in l:
-            fatal(
-                f"Cannot find the direction type {self.direction.type} for the source {self.name}.\n"
-                f"Available types are {l}"
-            )
-
         # logic for half life and user_particle_life_time
         if self.half_life > 0:
             # if the user set the half life and not the user_particle_life_time
@@ -431,21 +508,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
         # warning for non-used ?
-
-        # check confine
-        if self.position.confine:
-            if self.position.type == "point":
-                warning(
-                    f"In source {self.name}, "
-                    f"confine is used, while position.type is point ... really ?"
-                )
-
-        # visualization of the source
-        self.visualize(
-            self.user_info.visualization["count"],
-            self.user_info.visualization["color"],
-            self.user_info.visualization["size"],
-        )
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method
@@ -483,63 +545,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 return True
             return False
         return True
-
-    def validate_color(self, color):
-        valid_color_str = [
-            "white",
-            "grey",
-            "gray",
-            "black",
-            "brown",
-            "red",
-            "green",
-            "blue",
-            "cyan",
-            "magenta",
-            "yellow",
-        ]
-        if isinstance(color, str) and not color in valid_color_str:
-            fatal(
-                f"Invalid color name '{color}' for visualizing the window. Valid color name options are: {valid_color_str}."
-            )
-        if isinstance(color, list):
-            if len(color) > 4 or len(color) < 3:
-                fatal(
-                    f"Color list must have 3 (RGB) or 4 (RGBA) elements. Got {len(color)}."
-                )
-            if len(color) == 3:
-                color.append(1.0)  # Add alpha value of 1.0 if only RGB is provided
-                logger.debug(
-                    "Alpha value of 1.0 is added to the color list since only RGB values are provided."
-                )
-            for i, c in enumerate(color):
-                if not isinstance(c, (int, float, np.number)):
-                    fatal(
-                        f"All elements of color list must be numbers. Element {i} is not."
-                    )
-                if c < 0 or c > 1:
-                    fatal(
-                        f"All elements of color list must be in the range [0, 1]. Element {i} is {c}."
-                    )
-
-    def visualize(self, count: int, color, size: float):
-        if count <= 0:
-            warning(
-                f"source visualization count must be > 0. Got {count}. No visualization will be performed."
-            )
-            return
-        if count > 10000:
-            warning(
-                f"source visualization count is too high ({count}), using 2000 instead."
-            )
-            count = 2000
-        if size <= 0 or size >= 20:
-            warning(
-                f"source visualization size must be in the range (0, 20). Got {size}. Using 3 instead."
-            )
-            size = 3
-        self.validate_color(color)
-        self.RequestVisualization(count, color, size)
 
 
 process_cls(GenericSource)

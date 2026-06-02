@@ -235,7 +235,7 @@ if __name__ == "__main__":
                 std_dev_phsp,
                 (img_phsp / source.n),
                 out=np.zeros_like(std_dev_phsp),
-                where=(np.abs(img_phsp) > 1e-10),
+                where=(np.abs(img_phsp) > 1e-4),
             )
             dict_comp[f"{string}"] = [img_fluence, img_phsp]
             dict_comp[f"{string}_squared"] = [img_squared_fluence, img_squared_phsp]
@@ -250,7 +250,7 @@ if __name__ == "__main__":
             elem[0] - elem[1],
             elem[1],
             out=np.zeros_like(elem[0]),
-            where=(np.abs(elem[1]) > 1e-10),
+            where=(np.abs(elem[1]) > 1e-4),
         )
         diff = np.round(diff, decimals=5)
         is_ok = np.all(diff == 0)

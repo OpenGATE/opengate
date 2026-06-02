@@ -51,9 +51,6 @@ public:
   unsigned long GetTotalSkippedEvents() const;
   unsigned long GetTotalZeroEvents() const;
   virtual void Visualize() const override;
-  virtual void RequestVisualization(
-      G4int count, py::object color,
-      G4double size); // color can be a string or a list of 4 doubles (RGBA)
 
 protected:
   //  We cannot use a std::unique_ptr
@@ -139,6 +136,8 @@ protected:
   virtual void InitializePolarization(py::dict user_info);
 
   virtual void InitializeEnergy(py::dict user_info);
+
+  virtual void InitializeVisualization(py::dict user_info);
 
   void UpdateActivity(double time) override;
 
