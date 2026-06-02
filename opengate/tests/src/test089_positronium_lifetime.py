@@ -6,6 +6,7 @@ from opengate.tests import utility
 
 import numpy as np
 import uproot
+import matplotlib.pyplot as plt
 
 # Units
 MeV = gate.g4_units.MeV
@@ -133,9 +134,14 @@ if __name__ == "__main__":
     df = phsp_output["PhaseSpace"].arrays(library="pd")
 
     lifetimes = df.groupby('EventID').apply(calculate_lifetimes).reset_index(
-        name='lifetime')
+        name='lifetime')["lifetime"]
 
-    mean_lifetime = lifetimes["lifetime"].mean()
+    mean_lifetime = lifetimes.mean()
+
+    plt.figure()
+    plt.hist(lifetimes, bins=100)
+    plt.yscale("log")
+    plt.savefig(paths.output / "lifetime.pdf")
 
     print("Mean lifetime: " + str(mean_lifetime))
 
