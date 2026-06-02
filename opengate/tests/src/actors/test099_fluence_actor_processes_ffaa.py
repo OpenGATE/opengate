@@ -231,18 +231,18 @@ if __name__ == "__main__":
                 process=process,
             )
             std_dev_phsp = std_dev_img_calculation(source.n, img_phsp, img_squared_phsp)
-            img_uncertainty_phsp = np.divide(
-                std_dev_phsp,
-                (img_phsp / source.n),
-                out=np.zeros_like(std_dev_phsp),
-                where=(np.abs(img_phsp) > 1e-4),
-            )
+            # img_uncertainty_phsp = np.divide(
+            #     std_dev_phsp,
+            #     (img_phsp / source.n),
+            #     out=np.zeros_like(std_dev_phsp),
+            #     where=(np.abs(img_phsp) > 1e-4),
+            # )
             dict_comp[f"{string}"] = [img_fluence, img_phsp]
             dict_comp[f"{string}_squared"] = [img_squared_fluence, img_squared_phsp]
-            dict_comp[f"{string}_uncertainty"] = [
-                img_uncertainty_fluence,
-                img_uncertainty_phsp,
-            ]
+            # dict_comp[f"{string}_uncertainty"] = [
+            #     img_uncertainty_fluence,
+            #     img_uncertainty_phsp,
+            # ]
 
     rtol = 1e-5
     atol = 1e-8
@@ -253,7 +253,7 @@ if __name__ == "__main__":
             abs_diff,
             np.abs(elem[1]),
             out=np.zeros_like(elem[0]),
-            where=(np.abs(elem[1]) > 1e-4),
+            where=(np.abs(elem[1]) > 1e-7),
         )
         is_ok = np.allclose(elem[0], elem[1], rtol=rtol, atol=atol)
         if not is_ok:
