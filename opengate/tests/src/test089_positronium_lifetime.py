@@ -144,4 +144,5 @@ if __name__ == "__main__":
 
     print("Mean lifetime: " + str(mean_lifetime))
 
-    assert np.isclose(mean_lifetime, MEAN_LIFETIME_NS, atol=0., rtol=.1)
+    is_ok = np.isclose(mean_lifetime, MEAN_LIFETIME_NS, atol=0., rtol=.1)
+    utility.test_ok(is_ok)
