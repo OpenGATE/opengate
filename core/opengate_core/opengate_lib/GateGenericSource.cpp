@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateGenericSource.h"
+#include "G4CallbackModel.hh"
 #include "G4IonTable.hh"
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
@@ -17,6 +18,7 @@
 #include <iterator>
 #include <locale>
 #include <numeric>
+#include <pybind11/pytypes.h>
 
 GateGenericSource::GateGenericSource() : GateVSource() {
   fA = 0;
@@ -88,6 +90,7 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   InitializeDirection(user_info);
   InitializeEnergy(user_info);
   InitializePolarization(user_info);
+  InitializeVisualization(user_info);
 
   // init number of events
   fDirectionRelativeToAttachedVolume =
@@ -680,4 +683,72 @@ unsigned long GateGenericSource::GetTotalSkippedEvents() const {
 
 unsigned long GateGenericSource::GetTotalZeroEvents() const {
   return fTotalZeroEvents;
+}
+
+void GateGenericSource::InitializeVisualization(py::dict puser_info) {
+  if (G4Threading::IsWorkerThread())
+    return;
+  auto user_info = py::dict(puser_info["visualization"]);
+  py::object color = user_info["color"];
+  if (py::isinstance<py::str>(color)) {
+    std::string color_str = color.cast<std::string>();
+    G4Colour::GetColour(color_str, fVisColour);
+  } else {
+    std::vector<G4double> rgba = color.cast<std::vector<G4double>>();
+    fVisColour = G4Colour(rgba[0], rgba[1], rgba[2], rgba[3]);
+  }
+
+  fVisSize = DictGetDouble(user_info, "size");
+  fVisCount = DictGetInt(user_info, "count");
+}
+
+GateGenericSource::PosPointCloud::PosPointCloud(const G4Colour &colour,
+                                                G4double size) {
+  fPolymarker.SetMarkerType(G4Polymarker::circles);
+  fPolymarker.SetSize(G4VMarker::screen, size);
+  fPolymarker.SetFillStyle(G4VMarker::filled);
+  fPolymarker.SetVisAttributes(G4VisAttributes(colour));
+}
+
+void GateGenericSource::PosPointCloud::operator()(
+    G4VGraphicsScene &sceneHandler, const G4ModelingParameters *) {
+  sceneHandler.BeginPrimitives();
+  sceneHandler.AddPrimitive(fPolymarker);
+  sceneHandler.EndPrimitives();
+}
+
+void GateGenericSource::Visualize() const {
+  if (fVisCount <= 0)
+    return;
+
+  G4VisManager *vis_manager = G4VisManager::GetInstance();
+  auto *scene = vis_manager->GetCurrentScene();
+
+  auto &ll = GetThreadLocalDataGenericSource();
+  auto *pos = ll.fSPS->GetPosDist();
+
+  auto *point_cloud = new PosPointCloud(fVisColour, fVisSize);
+  for (int k = 0; k < fVisCount; ++k) {
+    G4ThreeVector position = pos->VGenerateOne();
+    point_cloud->fPolymarker.push_back(position);
+  }
+
+  auto *model = new G4CallbackModel<PosPointCloud>(point_cloud);
+  model->SetType("Generic source point cloud");
+  model->SetGlobalTag("Generic source point cloud");
+  std::ostringstream description;
+  description << "Generic source point cloud: " << fName << " (" << fVisCount
+              << " points) " << point_cloud;
+  model->SetGlobalDescription(description.str());
+
+  const auto successful = scene->AddRunDurationModel(model, true);
+  if (!successful) {
+    G4Exception("GateGenericSource::Visualize", "VisualizationError",
+                JustWarning,
+                "Failed to add the visualization model to the scene.");
+  }
+
+  auto *ui = G4UImanager::GetUIpointer();
+  ui->ApplyCommand("/vis/scene/notifyHandlers");
+  ui->ApplyCommand("/vis/viewer/update");
 }

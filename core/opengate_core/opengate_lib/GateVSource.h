@@ -72,6 +72,7 @@ public:
 
   G4ThreeVector fGlobalTranslation;
   G4RotationMatrix fGlobalRotation;
+  virtual void Visualize() const {}
 
 protected:
   std::vector<int> fVectorOfMaxN;

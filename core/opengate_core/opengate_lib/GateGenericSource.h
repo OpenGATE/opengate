@@ -12,9 +12,13 @@
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include "biasing/GateForcedDirectionManager.h"
+#include <G4Polymarker.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
+
+class G4ModelingParameters;
+class G4VGraphicsScene;
 
 class GateGenericSource : public GateVSource {
 
@@ -46,6 +50,7 @@ public:
 
   unsigned long GetTotalSkippedEvents() const;
   unsigned long GetTotalZeroEvents() const;
+  virtual void Visualize() const override;
 
 protected:
   //  We cannot use a std::unique_ptr
@@ -56,6 +61,17 @@ protected:
   G4ThreeVector fInitTranslation;
   G4String fangType;
   double fUserParticleLifeTime;
+  struct PosPointCloud {
+    PosPointCloud(const G4Colour &colour, G4double size);
+
+    void operator()(G4VGraphicsScene &sceneHandler,
+                    const G4ModelingParameters *modelingParameters);
+
+    G4Polymarker fPolymarker;
+  };
+  G4Colour fVisColour;
+  G4double fVisSize;
+  G4int fVisCount = 0;
 
   // Time Curve Activity
   std::vector<double> fTAC_Times;
@@ -120,6 +136,8 @@ protected:
   virtual void InitializePolarization(py::dict user_info);
 
   virtual void InitializeEnergy(py::dict user_info);
+
+  virtual void InitializeVisualization(py::dict user_info);
 
   void UpdateActivity(double time) override;
 
