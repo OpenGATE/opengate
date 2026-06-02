@@ -73,10 +73,9 @@ def calculate_lifetimes(group):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__,
-        "gate_test089_positronium_statistics",
-        output_folder="test089")
+    paths = utility.get_default_test_paths(__file__,
+                                           "gate_test089_positronium_lifetime",
+                                           output_folder="test089")
     print("Starting")
 
     # create the simulation
