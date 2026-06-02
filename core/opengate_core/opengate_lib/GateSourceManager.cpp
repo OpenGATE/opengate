@@ -442,6 +442,12 @@ void GateSourceManager::StartVisualization() const {
   }
 #endif
 
+  if (fVisualizationFlag) {
+    for (auto &source : fSources) {
+      source->Visualize();
+    }
+  }
+
   if (fVisualizationFlag && fVisualizationType == "qt") {
     fUIEx->SessionStart();
     delete fUIEx;
