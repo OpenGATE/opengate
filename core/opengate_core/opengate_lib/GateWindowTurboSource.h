@@ -12,7 +12,7 @@
 #include <mutex>
 
 /*
-author: LiKun (likun@dotuai.com)
+author: LiKun (likun@dotuai.com/tontyoutoure@gmail.com)
 source only generated particles that fulfill the following conditions:
 
 Given four points in space, pth1, pth2, pphi1, pphi2
@@ -20,9 +20,6 @@ then elevation angle of the particle, theta from the source point, should
 between the elevation angles of source point seeing of pth1 and pth2. Also the
 azimuthal angle of the particle, phi from the source point, should between the
 azimuthal angles of source point seeing pphi1 and pphi2.
-
-
-
 
 */
 
@@ -33,29 +30,17 @@ public:
   GateWindowTurboSource() = default;
   ~GateWindowTurboSource() override = default;
 
-  // void GeneratePrimaries(G4Event *event,
-  //                        double current_simulation_time) override;
-
   virtual void PrepareNextRun() override;
 
-  // void LoadVoxelizedPhantom(G4String filename);
-  // void SetPhantomPosition(G4ThreeVector pos);
-  void PendingVisualizeWindowWithColourName(G4String colour_name,
-                                            G4double width, int run_id);
-  void PendingVisualizeWindowWithRGBA(std::vector<G4double> rgba,
-                                      G4double width, int run_id);
-  void PendingVisualizeWindow(G4Colour colour, G4double width, int run_id);
   void VisualizeOneWindow(G4Colour colour, G4double width, int run_id) const;
   void InitializeUserInfo(py::dict &user_info) override;
-  // virtual unsigned long
-  // GetExpectedNumberOfEvents(const TimeInterval &time_interval) override;
-
   virtual double CalcNextTime(double current_simulation_time) override;
   virtual void Visualize() const override;
 
 protected:
   virtual void CreateSPS() override;
   virtual void InitializeDirection(py::dict puser_info) override;
+  virtual void InitializeVisualization(py::dict user_info) override;
 
 private:
   std::vector<G4double> fA1, fA2, fB1, fB2, fPlaneDistance, fPlanePhi,
@@ -106,5 +91,4 @@ private:
   std::map<G4int, std::once_flag> fInitializeBeforeRunFlags = {};
   bool fSkip; // true for act ratio, false for event skipping base on
               // solid angle
-  //   void CheckMotherVolumeIsNotRotated() const;
 };

@@ -200,25 +200,14 @@ void GateWindowTurboSource::GetWindowVertex(G4ThreeVector &pos1,
   pos4 = rot * pos4;
 }
 
-void GateWindowTurboSource::PendingVisualizeWindowWithColourName(
-    G4String colour_name, G4double width, int run_id) {
-  G4Colour colour;
-  G4Colour::GetColour(colour_name, colour);
-  PendingVisualizeWindow(colour, width, run_id);
+void GateWindowTurboSource::InitializeVisualization(py::dict user_info) {
+  visualization_window_run_id =
+      DictGetVecInt(user_info, "visualization_window_run_id");
+  visualization_window_width =
+      DictGetVecDouble(user_info, "visualization_window_width");
+  // TODO: color
 }
 
-void GateWindowTurboSource::PendingVisualizeWindowWithRGBA(
-    std::vector<G4double> rgba, G4double width, int run_id) {
-  G4Colour colour(rgba[0], rgba[1], rgba[2], rgba[3]);
-  PendingVisualizeWindow(colour, width, run_id);
-}
-
-void GateWindowTurboSource::PendingVisualizeWindow(G4Colour colour,
-                                                   G4double width, int run_id) {
-  visualization_window_color.push_back(colour);
-  visualization_window_width.push_back(width);
-  visualization_window_run_id.push_back(run_id);
-}
 void GateWindowTurboSource::VisualizeOneWindow(G4Colour colour, G4double width,
                                                int run_id) const {
   G4ThreeVector pos1, pos2, pos3, pos4;

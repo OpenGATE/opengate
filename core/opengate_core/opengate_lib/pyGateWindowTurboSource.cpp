@@ -16,9 +16,5 @@ void init_GateWindowTurboSource(py::module &m) {
   py::class_<GateWindowTurboSource, GateGenericSource>(m,
                                                        "GateWindowTurboSource")
       .def(py::init())
-      .def("InitializeUserInfo", &GateWindowTurboSource::InitializeUserInfo)
-      .def("PendingVisualizeWindowWithColourName",
-           &GateWindowTurboSource::PendingVisualizeWindowWithColourName)
-      .def("PendingVisualizeWindowWithRGBA",
-           &GateWindowTurboSource::PendingVisualizeWindowWithRGBA);
+      .def("InitializeUserInfo", &GateWindowTurboSource::InitializeUserInfo);
 }

@@ -1,6 +1,6 @@
 from .base import SourceBase
 import opengate_core as g4
-from .generic import GenericSource
+from .generic import GenericSource, VisualizationValidator
 from box import Box
 from ..base import UserInfoValidatorBase
 from ..base import process_cls
@@ -29,7 +29,16 @@ def _wts_direction_parameters():
 
 
 def _wts_visualization_parameters():
-    return Box({"window_color": [], "window_width": [], "window_run_id": []})
+    return Box(
+        {
+            "window_color": ["red"],
+            "window_width": [2],
+            "window_run_id": [0],
+            "count": 2000,
+            "color": "yellow",
+            "size": 2,
+        }
+    )
 
 
 class WTSDirectionValidator(UserInfoValidatorBase):
@@ -160,14 +169,68 @@ class WTSDirectionValidator(UserInfoValidatorBase):
             fatal(f"'skip_mode' must be a boolean in '{self.context_name}'.")
 
 
-class WTSVisualizationValidator(UserInfoValidatorBase):
+class WTSVisualizationValidator(VisualizationValidator):
     """Validates the visualization parameters for WindowTurboSource."""
 
     __schema__ = set(_wts_visualization_parameters().keys())
 
+    def set_simulation(self, simulation):
+        self.simulation = simulation
+
+    def validate_width(self, width, context):
+        if not isinstance(width, (int, float)):
+            fatal(f"'window_width' must be a number in '{context}'.")
+        if width <= 0 or width > 10:
+            fatal(f"'window_width' must be in the range (0, 10] in '{context}'.")
+
+    def validate_run_id(self, run_id, context):
+        if not isinstance(run_id, int):
+            fatal(f"'window_run_id' must be an integer in '{context}'.")
+
+        if run_id < 0 or run_id >= len(self.simulation.run_timing_intervals):
+            fatal(
+                f"'window_run_id' must be between 0 and {len(self.simulation.run_timing_intervals) - 1} in '{context}'."
+            )
+
+    def validate_list_length(self, lst, context):
+        if len(lst) == 1:
+            lst = lst * self.max_list_length
+        elif len(lst) != self.max_list_length:
+            fatal(f"Length of list must be 1 or {self.max_list_length} in '{context}'.")
+
     def validate(self, parent_obj, attr_name: str, parent_context: str = None):
         self.context_name = super().validate(parent_obj, attr_name, parent_context)
         b = getattr(parent_obj, attr_name)
+        self.max_list_length = (
+            1 if not isinstance(b.window_run_id, list) else len(b.window_run_id)
+        )
+
+        if isinstance(b.window_run_id, list):
+            for run_id in b.window_run_id:
+                self.validate_run_id(run_id, f"{self.context_name}.window_run_id")
+        else:
+            self.validate_run_id(b.window_run_id, f"{self.context_name}.window_run_id")
+            b.window_run_id = [b.window_run_id]
+
+        if not isinstance(b.window_color, list):
+            self.validate_color(b.window_color, f"{self.context_name}.window_color[0]")
+            b.window_color = [b.window_color] * self.max_list_length
+        else:
+            for i, color in enumerate(b.window_color):
+                self.validate_color(color, f"{self.context_name}.window_color[{i}]")
+            self.validate_list_length(
+                b.window_color, f"{self.context_name}.window_color"
+            )
+
+        if not isinstance(b.window_width, list):
+            self.validate_width(b.window_width, f"{self.context_name}")
+            b.window_width = [b.window_width] * self.max_list_length
+        else:
+            for i, width in enumerate(b.window_width):
+                self.validate_width(width, f"{self.context_name}")
+            self.validate_list_length(
+                b.window_width, f"{self.context_name}.window_width"
+            )
 
 
 class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
@@ -185,14 +248,13 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
         self.__initcpp__()
         self._dir_validator = WTSDirectionValidator()
         self._dir_validator.set_simulation(self.simulation)
+        self._visu_validator = WTSVisualizationValidator()
+        self._visu_validator.set_simulation(self.simulation)
 
     def __initcpp__(self):
         g4.GateWindowTurboSource.__init__(self)
 
     def initialize(self, run_timing_intervals):
-        self._pos_validator.validate(self, "position")
-        self._ene_validator.validate(self, "energy")
-        self._dir_validator.validate(self, "direction")
 
         if self.particle == "back_to_back":
             fatal(
@@ -219,23 +281,7 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
                 f"Particle type '{self.particle}' is not 'gamma'. WindowTurboSource is designed for gamma primary purpose only. Proceed ONLY if you know what you are doing."
             )
 
-        self.update_tac_activity()
-
-        ene = self.energy
-        if ene.type == "histogram":
-            if len(ene.histogram_weight) != len(ene.histogram_energy):
-                fatal(
-                    f'For the source {self.name}, the parameters "energy", '
-                    f'"histogram_energy" and "histogram_weight" must have the same length'
-                )
-        if self.half_life > 0:
-            # if the user set the half life and not the user_particle_life_time
-            # we force the latter to zero
-            if self.user_particle_life_time < 0:
-                self.user_particle_life_time = 0
-
-        # initialize
-        SourceBase.initialize(self, run_timing_intervals)
+        self.super().initialize(run_timing_intervals)
 
     def can_predict_number_of_events(self):
         # Actually, can, but initialization is needed. However act ratio is dependent on mother volume movement, therefore cannot be predicted before the simulation starts.
