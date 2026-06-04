@@ -22,6 +22,8 @@ struct PositroniumDecayModelParams
   std::vector<double> fPromptGammaEnergy;
   std::vector<PositroniumDecayKind> fDecayKind;
   std::vector<PositronElectronInteraction> fPositronInteractions;
+  std::vector<double> fMeanPositronRange;
+  std::vector<double> fElectronCaptureProbabilities;
 };
 
 #endif
