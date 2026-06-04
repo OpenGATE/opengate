@@ -14,7 +14,7 @@ from test097_pileup_simulation import create_simulation
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test097", "test097")
 
-    sim, pu, root_filename = create_simulation(paths, num_threads=1)
+    sim, pu, root_filename = create_simulation(paths, num_threads=2)
 
     test_all_parameter_combinations = False
 
