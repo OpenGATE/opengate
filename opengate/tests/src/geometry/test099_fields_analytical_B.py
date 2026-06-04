@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — Uniform magnetic field: analytical validation.
+Test 099 - Uniform magnetic field: analytical validation.
 
 A proton enters a region with uniform B along Y.
 Checks:

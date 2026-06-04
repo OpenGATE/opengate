@@ -188,6 +188,8 @@ void init_G4UniformMagField(py::module &);
 
 void init_G4QuadrupoleMagField(py::module &);
 
+void init_G4SextupoleMagField(py::module &);
+
 void init_G4UniformElectricField(py::module &);
 
 void init_G4EquationOfMotion(py::module &);
@@ -204,11 +206,35 @@ void init_G4MagErrorStepper(py::module &);
 
 void init_G4ClassicalRK4(py::module &);
 
+void init_G4DormandPrince745(py::module &);
+
+void init_G4DormandPrinceRK56(py::module &);
+
+void init_G4DormandPrinceRK78(py::module &);
+
+void init_G4BogackiShampine23(py::module &);
+
+void init_G4BogackiShampine45(py::module &);
+
+void init_G4CashKarpRKF45(py::module &);
+
+void init_G4NystromRK4(py::module &);
+
+void init_G4ExactHelixStepper(py::module &);
+
 void init_G4VIntegrationDriver(py::module &);
 
 void init_G4MagInt_Driver(py::module &);
 
 void init_G4ChordFinder(py::module &);
+
+void init_GateMagneticField(py::module &);
+void init_GateElectroMagneticField(py::module &);
+void init_GateUniformElectroMagneticField(py::module &);
+void init_GateGridInterpolator(py::module &);
+void init_GateMappedMagneticField(py::module &);
+void init_GateMappedElectricField(py::module &);
+void init_GateMappedElectroMagneticField(py::module &);
 
 // geometry/solids
 void init_G4Box(py::module &);
@@ -573,6 +599,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4ElectricField(m);
   init_G4UniformMagField(m);
   init_G4QuadrupoleMagField(m);
+  init_G4SextupoleMagField(m);
   init_G4UniformElectricField(m);
   init_G4EquationOfMotion(m);
   init_G4Mag_EqRhs(m);
@@ -581,9 +608,24 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4MagIntegratorStepper(m);
   init_G4MagErrorStepper(m);
   init_G4ClassicalRK4(m);
+  init_G4DormandPrince745(m);
+  init_G4DormandPrinceRK56(m);
+  init_G4DormandPrinceRK78(m);
+  init_G4BogackiShampine23(m);
+  init_G4BogackiShampine45(m);
+  init_G4CashKarpRKF45(m);
+  init_G4NystromRK4(m);
+  init_G4ExactHelixStepper(m);
   init_G4VIntegrationDriver(m);
   init_G4MagInt_Driver(m);
   init_G4ChordFinder(m);
+  init_GateMagneticField(m);
+  init_GateElectroMagneticField(m);
+  init_GateUniformElectroMagneticField(m);
+  init_GateGridInterpolator(m);
+  init_GateMappedMagneticField(m);
+  init_GateMappedElectricField(m);
+  init_GateMappedElectroMagneticField(m);
 
   init_G4Box(m);
   init_G4Ellipsoid(m);

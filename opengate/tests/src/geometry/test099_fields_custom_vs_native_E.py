@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test 099 — Custom trampoline E field vs native G4 uniform E field.
+Test 099 - Custom trampoline E field vs native G4 uniform E field.
 
 Places two boxes side-by-side in one simulation: one with the native
 G4UniformElectricField, the other with a CustomElectricField returning the
@@ -140,16 +140,16 @@ if __name__ == "__main__":
     is_ok_z = np.all(dz < r_TOL)
     is_ok_e = np.all(dKE < e_TOL)
 
-    print(f"dx max: {dx.max():.6f} mm  — OK: {is_ok_x}")
-    print(f"dy max: {dy.max():.6f} mm  — OK: {is_ok_y}")
-    print(f"dz max: {dz.max():.6f} mm  — OK: {is_ok_z}")
-    print(f"dKE max: {dKE.max():.6f} MeV — OK: {is_ok_e}")
+    print(f"dx max: {dx.max():.6f} mm  - OK: {is_ok_x}")
+    print(f"dy max: {dy.max():.6f} mm  - OK: {is_ok_y}")
+    print(f"dz max: {dz.max():.6f} mm  - OK: {is_ok_z}")
+    print(f"dKE max: {dKE.max():.6f} MeV - OK: {is_ok_e}")
 
     # Compare custom to analytical
     x_from_energy = (custom_KE - T) / (q * Ex)
     is_ok_analytical = np.all(np.abs(custom_x - x_from_energy) < r_TOL)
     print(
-        f"Custom vs analytical x residual: {custom_x - x_from_energy}  — OK: {is_ok_analytical}"
+        f"Custom vs analytical x residual: {custom_x - x_from_energy}  - OK: {is_ok_analytical}"
     )
 
     is_ok = is_ok_x and is_ok_y and is_ok_z and is_ok_e and is_ok_analytical
