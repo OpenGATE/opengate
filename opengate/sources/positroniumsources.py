@@ -27,6 +27,14 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
         }),
         "prompt_photon_energies": ([], {
             "doc": "Photon energy of each decay channel"
+        }),
+        "mean_positron_range": ([], {
+            "doc":
+            "Mean positron range of each decay channel"
+        }),
+        "electron_capture_probabilities": ([], {
+            "doc":
+            "Electron capture probability of each decay channel"
         })
     }
 
@@ -42,7 +50,8 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
         parameters = [
             self.positronium_fractions, self.positronium_lifetimes,
             self.decay_kinds, self.prompt_photon_probabilities,
-            self.prompt_photon_energies
+            self.prompt_photon_energies, self.mean_positron_range,
+            self.electron_capture_probabilities
         ]
 
         if any(len(p) == 0 for p in parameters):
