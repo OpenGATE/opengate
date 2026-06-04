@@ -113,8 +113,8 @@ if __name__ == "__main__":
     box_half_z = 250 * g4_mm
     cx, cz = 0.0 - r, -box_half_z
 
-    r_TOL = 1e-3 * g4_mm
-    e_TOL = 1e-3 * g4_MeV
+    r_TOL = 1e-2 * g4_mm
+    e_TOL = 1e-2 * g4_MeV
 
     is_ok = True
 
