@@ -878,6 +878,49 @@ Reference
 .. autoclass:: opengate.actors.digitizers.DigitizerEfficiencyActor
 
 
+DigitizerDeadTimeActor
+----------------------
+
+Description
+~~~~~~~~~~~
+
+Dead time is the period following the detection of a single during which a detector cannot register a new event.
+The :class:`~.opengate.actors.digitizers.DigitizerDeadTimeActor` simulates this effect by dropping singles that arrive within the dead time interval
+after a previously accepted single, on a per-volume basis (set by `group_volume`).
+
+Two policies are available, controlled by the `policy` parameter:
+
+* **NonParalyzable** (default): the dead time interval is fixed in duration, starting from each accepted single.
+Singles arriving during that interval are discarded, but do not extend it. This models, for example,
+a detector that keeps accepting events after the dead time has elapsed regardless of what happened during the interval.
+* **Paralyzable**: every single that arrives during the current dead time interval extends it by `dead_time` from the time of that single.
+If the rate is very high, the detector can become fully paralyzed because each new single keeps resetting the interval.
+
+The actor internally time-sorts its input digis using a buffer window controlled by `sorting_time` before applying the dead time logic.
+This is necessary to correctly handle events from different threads or runs that may arrive out of order.
+
+.. code-block:: python
+
+    ns = gate.g4_units.ns
+
+    dt = sim.add_actor("DigitizerDeadTimeActor", "Singles_after_deadtime")
+    dt.attached_to = crystal.name
+    dt.authorize_repeated_volumes = True
+    dt.input_digi_collection = "Singles"
+    dt.group_volume = crystal.name
+    dt.dead_time = 1.0 * ns
+    dt.policy = "NonParalyzable"  # or "Paralyzable"
+    dt.output_filename = "singles.root"
+
+Refer to `test100 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test100_deadtime_actor.py>`_ for an example.
+The multi-threaded variant is in `test100_deadtime_actor_mt <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test100_deadtime_actor_mt.py>`_.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerDeadTimeActor
+
+
 DigitizerPileupActor
 --------------------
 
