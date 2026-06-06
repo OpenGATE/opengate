@@ -8,13 +8,7 @@
 #ifndef GateDebugActor_h
 #define GateDebugActor_h
 
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4VPrimitiveScorer.hh"
-#include "GateSPRCache.h"
 #include "GateVActor.h"
-#include "itkImage.h"
-#include <memory>
 
 namespace py = pybind11;
 

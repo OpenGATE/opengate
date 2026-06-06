@@ -5,24 +5,9 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "G4Electron.hh"
-#include "G4Gamma.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
-
 #include "GateDebugActor.h"
-#include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
-
-#include <cmath>
-#include <iostream>
-#include <itkAddImageFilter.h>
-#include <itkImageRegionIterator.h>
-#include <queue>
-#include <vector>
+#include "G4RunManager.hh"
+#include "GateHelpers.h"
 
 GateDebugActor::GateDebugActor(py::dict &user_info)
     : GateVActor(user_info, true) {
