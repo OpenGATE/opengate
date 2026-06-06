@@ -103,6 +103,7 @@ from .actors.miscactors import (
     KillActor,
     KillNonInteractingParticleActor,
     SimulationStatisticsActor,
+    DebugActor,
 )
 from .actors.pgactors import (
     VoxelizedPromptGammaAnalogActor,
@@ -161,6 +162,7 @@ actor_types = {
     "DynamicSourceActor": DynamicSourceActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    "DebugActor": DebugActor,
     # digit
     "PhaseSpaceActor": PhaseSpaceActor,
     "DigitizerAdderActor": DigitizerAdderActor,
