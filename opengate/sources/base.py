@@ -1,4 +1,6 @@
+import os
 import numpy as np
+import opengate_core as g4
 
 from ..actors.base import _setter_hook_attached_to
 from ..base import GateObject, DynamicGateObject, process_cls
@@ -145,4 +147,41 @@ class SourceBase(DynamicGateObject):
             ui.activity = 0
 
 
+class DebugSource(SourceBase, g4.GateDebugSource):
+
+    user_info_defaults = {"debug_flag": (False, {"doc": "Fake parameter."})}
+
+    def __init__(self, *args, **kwargs):
+        pid = os.getpid()
+        print(f"(python) DebugSource::__init__ {pid}")
+        super().__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        pid = os.getpid()
+        print(f"(python) DebugSource::__initcpp__ {self.name} {pid}")
+        g4.GateDebugSource.__init__(self)
+
+    def initialize(self, run_timing_intervals):
+        pid = os.getpid()
+        print(f"(python) DebugSource::initialize {self.name} {pid}")
+        SourceBase.initialize(self, run_timing_intervals)
+
+    def initialize_start_end_time(self, run_timing_intervals):
+        pid = os.getpid()
+        print(f"(python) DebugSource::initialize_start_end_time {self.name} {pid}")
+        SourceBase.initialize_start_end_time(self, run_timing_intervals)
+
+    def __getstate__(self):
+        pid = os.getpid()
+        print(f"(python) DebugSource::__getstate__ {pid}")
+        return SourceBase.__getstate__(self)
+
+    def __setstate__(self, state):
+        pid = os.getpid()
+        print(f"(python) DebugSource::__setstate__ {pid}")
+        SourceBase.__setstate__(self, state)
+
+
 process_cls(SourceBase)
+process_cls(DebugSource)

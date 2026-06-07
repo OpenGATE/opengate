@@ -492,6 +492,8 @@ void init_GateSourceManager(py::module &);
 
 void init_GateGenericSource(py::module &);
 
+void init_GateDebugSource(py::module &);
+
 void init_GateTreatmentPlanPBSource(py::module &);
 
 void init_GateTemplateSource(py::module &);
@@ -724,6 +726,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateLastVertexSource(m);
   init_GateSourceManager(m);
   init_GateGenericSource(m);
+  init_GateDebugSource(m);
   init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);

@@ -1,3 +1,4 @@
+from PIL import DcxImagePlugin
 import copy
 import io
 import shutil
@@ -29,6 +30,7 @@ from .physics import (
 )
 from .processing import dispatch_to_subprocess
 from .serialization import dump_json, dumps_json, load_json, loads_json
+from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.gansources import GANPairsSource, GANSource
 from .sources.generic import GenericSource, SourceBase
@@ -47,6 +49,7 @@ from .voxelize import voxelize_geometry
 
 source_types = {
     "GenericSource": GenericSource,
+    "DebugSource": DebugSource,
     "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
