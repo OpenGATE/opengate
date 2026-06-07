@@ -9,7 +9,6 @@ Copyright (C): OpenGATE Collaboration
 #define GateOptnComptonScatteringSplitting_h 1
 
 #include "../GateAcceptanceAngleManager.h"
-#include "../GateHelpers.h"
 #include "../GateUserTrackInformation.h"
 #include "G4ParticleChange.hh"
 #include "G4VBiasingOperation.hh"

@@ -6,11 +6,9 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-namespace py = pybind11;
 #include "../GateVActor.h"
 #include "G4VBiasingOperator.hh"
 #include "GateBremsstrahlungSplittingOptrActor.h"
-#include "GateVBiasOptrActor.h"
 
 void init_GateBOptrBremSplittingActor(py::module &m) {
   py::class_<GateBremsstrahlungSplittingOptrActor, G4VBiasingOperator,

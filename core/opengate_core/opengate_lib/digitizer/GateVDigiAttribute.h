@@ -8,7 +8,6 @@
 #ifndef GateVDigiAttribute_h
 #define GateVDigiAttribute_h
 
-#include "../GateHelpers.h"
 #include "../GateUniqueVolumeID.h"
 
 class GateVDigiAttribute {

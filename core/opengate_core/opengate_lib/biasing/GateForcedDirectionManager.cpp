@@ -9,7 +9,6 @@
 #include "../GateHelpersDict.h"
 #include "../GateHelpersGeometry.h"
 #include "G4LogicalVolumeStore.hh"
-#include "G4PhysicalVolumeStore.hh"
 #include "G4RunManager.hh"
 
 GateForcedDirectionManager::GateForcedDirectionManager() {
