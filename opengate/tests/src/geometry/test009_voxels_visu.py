@@ -51,7 +51,7 @@ if __name__ == "__main__":
     patient.image = paths.data / "patient-4mm.mhd"
     patient.mother = "fake"
     patient.material = "G4_AIR"  # material used by default
-    patient.color = [1, 0, 1, 1]
+    patient.color = "magenta"
     patient.voxel_materials = [
         [-2000, -900, "G4_AIR"],
         [-900, -100, "Lung"],

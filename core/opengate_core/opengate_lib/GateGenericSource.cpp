@@ -689,15 +689,7 @@ void GateGenericSource::InitializeVisualization(py::dict puser_info) {
   if (G4Threading::IsWorkerThread())
     return;
   auto user_info = py::dict(puser_info["visualization"]);
-  py::object color = user_info["color"];
-  if (py::isinstance<py::str>(color)) {
-    std::string color_str = color.cast<std::string>();
-    G4Colour::GetColour(color_str, fVisColour);
-  } else {
-    std::vector<G4double> rgba = color.cast<std::vector<G4double>>();
-    fVisColour = G4Colour(rgba[0], rgba[1], rgba[2], rgba[3]);
-  }
-
+  fVisColour = DictGetColour(user_info, "color");
   fVisSize = DictGetDouble(user_info, "size");
   fVisCount = DictGetInt(user_info, "count");
 }
