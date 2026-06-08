@@ -608,3 +608,43 @@ def get_basename_and_extension(filename):
         extensions.append(ext)
     extensions.reverse()
     return os.path.basename(base), "".join(extensions)
+
+
+def validate_color(color, error_prefix=""):
+    valid_color_dict = {
+        "white": [1, 1, 1, 1],
+        "grey": [0.5, 0.5, 0.5, 1],
+        "gray": [0.5, 0.5, 0.5, 1],
+        "black": [0, 0, 0, 1],
+        "brown": [0.45, 0.25, 0, 1],
+        "red": [1, 0, 0, 1],
+        "green": [0, 1, 0, 1],
+        "blue": [0, 0, 1, 1],
+        "cyan": [0, 1, 1, 1],
+        "magenta": [1, 0, 1, 1],
+        "yellow": [1, 1, 0, 1],
+    }
+    if isinstance(color, str) and not color in valid_color_dict.keys():
+        fatal(
+            f"{error_prefix}Invalid color name '{color}'. Valid color name options are: {valid_color_dict.keys()}."
+        )
+    if isinstance(color, str):
+        color = valid_color_dict[color]
+        return color
+    if isinstance(color, list):
+        if len(color) > 4 or len(color) < 3:
+            fatal(
+                f"{error_prefix}Color list must have 3 (RGB) or 4 (RGBA) elements. Got {len(color)}."
+            )
+        for i, c in enumerate(color):
+            if not isinstance(c, (int, float, np.number)):
+                fatal(
+                    f"{error_prefix}All elements of color list must be numbers. Element {i} is not."
+                )
+            if c < 0 or c > 1:
+                fatal(
+                    f"{error_prefix}All elements of color list must be in the range [0, 1]. Element {i} is {c}."
+                )
+        if len(color) == 3:
+            color.append(1)
+    return color
