@@ -154,7 +154,7 @@ class DebugSource(SourceBase, g4.GateDebugSource):
     def __init__(self, *args, **kwargs):
         pid = os.getpid()
         print(f"(python) DebugSource::__init__ {pid}")
-        super().__init__(self, *args, **kwargs)
+        SourceBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):

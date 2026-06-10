@@ -439,7 +439,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        SourceBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
         # to validate the parameters
         self._pos_validator = PositionValidator()

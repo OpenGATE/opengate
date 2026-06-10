@@ -35,7 +35,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
 
     def __init__(self, *args, **kwargs):
         self.__initcpp__()
-        super().__init__(self, *args, **kwargs)
+        GenericSource.__init__(self, *args, **kwargs)
         # the loaded image
         self._current_itk_image = None
 

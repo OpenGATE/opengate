@@ -50,7 +50,7 @@ class PhotonFromIonDecaySource(GenericSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        GenericSource.__init__(self, *args, **kwargs)
         # list of all sub_sources
         self.sub_sources = []
         # False if this is the main first source

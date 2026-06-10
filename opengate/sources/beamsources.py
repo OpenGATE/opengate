@@ -110,7 +110,7 @@ class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        GenericSource.__init__(self, *args, **kwargs)
         self.__initcpp__()
         self.position.type = "disc"
         self._dir_validator = PBSDirectionValidator()
@@ -234,7 +234,7 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        SourceBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
         # initialize internal members
         self.spots = None
