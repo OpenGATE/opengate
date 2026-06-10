@@ -29,6 +29,7 @@ User Guide
    user_guide_reference_simulation
    user_guide_reference_volumes
    user_guide_reference_actors
+   user_guide_reference_auxiliary_attributes
    user_guide_reference_sources
    user_guide_reference_fields
    user_guide_reference_filters

@@ -1,13 +1,14 @@
 /* --------------------------------------------------
    Copyright (C): OpenGATE Collaboration
    This software is distributed under the terms
-   of the GNU Lesser General  Public Licence (LGPL)
+   of the GNU Lesser General Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
 
 #ifndef GateDigitizerPileupActor_h
 #define GateDigitizerPileupActor_h
 
+#include "GateDigiCollection.h"
 #include "GateTimeSorter.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>
@@ -15,6 +16,7 @@
 #include <map>
 #include <memory>
 #include <pybind11/stl.h>
+#include <queue>
 
 namespace py = pybind11;
 
@@ -31,10 +33,10 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  // Called every time an Event ends (all threads)
+  void BeginOfRunActionMasterThread(int run_id) override;
+
   void EndOfEventAction(const G4Event *event) override;
 
-  // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
 
   void SetGroupVolumeDepth(int depth);
@@ -59,14 +61,11 @@ protected:
   double fSortingTime;
   int fGroupVolumeDepth;
 
-  // Output attribute pointer
-  GateVDigiAttribute *fOutputTimeAttribute{};
-  GateVDigiAttribute *fOutputEdepAttribute{};
-  GateVDigiAttribute *fOutputPosAttribute{};
-
   // Struct for storing digis in one particular volume which belong to the same
   // time window.
   struct PileupWindow {
+    // Hash of the corresponding volume.
+    uint64_t hash{};
     // Time at which the time window opens.
     double startTime{};
     // Higehst energy deposit in the window.
@@ -83,23 +82,32 @@ protected:
     std::unique_ptr<GateDigiAttributesFiller> fillerOut;
   };
 
+  // Struct that represents when a pile-up window expires.
+  struct volumeWindowExpiry {
+    uint64_t volumeHash;
+    double expiryTime;
+  };
+
+  std::unique_ptr<GateTimeSorter> fTimeSorter;
+  std::map<uint64_t, PileupWindow> fVolumePileupWindows;
+  std::queue<volumeWindowExpiry> fWindowExpiry;
+
+  // Tracking pointers used by GateTimeSorter output iterator.
+  GateUniqueVolumeID::Pointer *fTimeSorterOutputVolID{};
+  double *fTimeSorterOutputTime{};
+  double *fTimeSorterOutputEdep{};
+
+  // Tracking pointers used by PileupWindow digi iterator.
+  double *fPileupWindowEdep{};
+  G4ThreeVector *fPileupWindowPos{};
+
   PileupWindow &
   GetPileupWindowForCurrentVolume(GateUniqueVolumeID::Pointer *volume,
                                   std::map<uint64_t, PileupWindow> &windows);
 
   void ProcessTimeSortedDigis();
   void ProcessPileupWindow(PileupWindow &window);
-
-  struct threadLocalT {
-    GateUniqueVolumeID::Pointer *volID;
-    double *time;
-    double *edep;
-    G4ThreeVector *pos;
-
-    GateTimeSorter fTimeSorter;
-    std::map<uint64_t, PileupWindow> fVolumePileupWindows;
-  };
-  G4Cache<threadLocalT> fThreadLocalData;
+  void ProcessPileupWindows(double currentTime);
 };
 
 #endif // GateDigitizerPileupActor_h

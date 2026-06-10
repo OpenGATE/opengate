@@ -176,7 +176,7 @@ void GateCoincidenceSorterActor::BeginOfRunActionMasterThread(int run_id) {
   // digis from all threads, so that the coincidence actor can identify
   // coincidences between singles, irrespective of the thread in which they were
   // simulated (prompt as well as random coincidences).
-  fTimeSorter = std::make_unique<GateTimeSorter>();
+  fTimeSorter = std::make_unique<GateTimeSorter>(fOutputDigiCollectionName);
   fTimeSorter->Init(fInputDigiCollection);
   fTimeSorter->SetSortingWindow(fSortingTime);
   fTimeSorter->SetMaxSize(fClearEveryNEvents);

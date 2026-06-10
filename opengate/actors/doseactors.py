@@ -387,7 +387,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "transition_energy_SPR": (
             10,
             {
-                "doc": "When fast_SPR_calculation = True, the fast calculation will be performed only for particles with energy < transition_energy_SPR",
+                "doc": "When fast_SPR_calculation = True, the fast calculation will be performed only for particles with energy > transition_energy_SPR.",
             },
         ),
         "ste_of_mean": (
@@ -716,7 +716,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
 
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
-    """TLE = Track Length Estimator"""
+    """
+    TLE = Track Length Estimator.
+    """
 
     energy_min: float
     range_type: str

@@ -23,17 +23,18 @@ General architecture
 
 The dynamic system has four main building blocks:
 
-1. a dynamic object,
-2. one or more changers,
-3. a hidden dynamic actor,
-4. engine-side wiring which creates and registers that actor.
+1. a :ref:`dynamic object <section-dynamic-objects>`,
+2. one or more :ref:`changers <section-changers>`,
+3. a hidden :ref:`dynamic actor <section-dynamic-actors>`,
+4. :ref:`engine-side wiring <section-engine-side-wiring>` which creates and registers that actor.
 
+.. _section-dynamic-objects:
 
 Dynamic objects
 ~~~~~~~~~~~~~~~
 
 Objects which support dynamic parametrisations inherit from
-``DynamicGateObject`` in ``opengate/base.py``.
+:class:`opengate.base.DynamicGateObject` in ``opengate/base.py``.
 
 This base class provides:
 
@@ -143,6 +144,7 @@ The more elaborate example
 ``opengate/tests/src/actors/test030_dose_motion_dynamic_param_custom.py`` uses
 the same idea for custom translation and rotation changers.
 
+.. _section-changers:
 
 Changers
 ~~~~~~~~
@@ -171,6 +173,7 @@ The ``attached_to`` user parameter of changers is handled like other GateObject
 parameters and becomes a generated property when ``process_cls()`` is called on
 the changer class.
 
+.. _section-dynamic-actors:
 
 Dynamic actors
 ~~~~~~~~~~~~~~
@@ -191,6 +194,7 @@ For geometry, ``DynamicGeometryActor`` may temporarily open and close the
 geometry around the update. For sources, ``DynamicSourceActor`` simply forwards
 the run id to its changers.
 
+.. _section-engine-side-wiring:
 
 Engine-side wiring
 ~~~~~~~~~~~~~~~~~~
@@ -520,3 +524,8 @@ To make a parameter dynamic:
 
 This architecture keeps the user-facing API simple while keeping the runtime
 logic generic and reusable.
+
+References
+----------
+
+.. autoclass:: opengate.base.DynamicGateObject
