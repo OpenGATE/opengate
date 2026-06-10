@@ -31,9 +31,9 @@ def _wts_direction_parameters():
 def _wts_visualization_parameters():
     return Box(
         {
-            "window_color": ["red"],
-            "window_width": [0],
-            "window_run_id": [0],
+            "window_color": [],
+            "window_width": [],
+            "window_run_id": [],
             "count": 2000,
             "color": "yellow",
             "size": 2,
@@ -240,6 +240,13 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
         "direction": (
             _wts_direction_parameters(),
             {"doc": "Define the direction of the primary particles.", "override": True},
+        ),
+        "visualization": (
+            _wts_visualization_parameters(),
+            {
+                "doc": "Define the visualization parameters for the source.",
+                "override": True,
+            },
         ),
     }
 
