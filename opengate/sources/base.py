@@ -119,6 +119,14 @@ class SourceBase(DynamicGateObject):
     def add_to_source_manager(self, source_manager):
         source_manager.AddSource(self)
 
+    def close(self):
+        # remove the g4 objects
+        for v in list(self.__dict__.keys()):
+            if "g4_" in v:
+                self.__dict__[v] = None
+        # close the base GateObject
+        GateObject.close(self)
+
     def prepare_output(self):
         pass
 

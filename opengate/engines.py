@@ -91,6 +91,8 @@ class SourceEngine(EngineBase):
     def close(self):
         if self.verbose_close:
             warning("Closing SourceEngine")
+        for source in self.source_manager.sources.values():
+            source.close()
         self.release_g4_references()
         super().close()
 
