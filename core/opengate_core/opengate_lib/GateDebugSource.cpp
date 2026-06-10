@@ -7,6 +7,7 @@
 
 #include "GateDebugSource.h"
 #include "GateHelpers.h"
+#include "GateHelpersDict.h"
 #include "fmt/core.h"
 #include <G4Threading.hh>
 #include <G4UnitsTable.hh>
@@ -25,9 +26,8 @@ void GateDebugSource::CleanWorkerThread() {
 void GateDebugSource::InitializeUserInfo(py::dict &user_info) {
   DDD("GateDebugSource::InitializeUserInfo");
   GateVSource::InitializeUserInfo(user_info);
-  DDD(fMaxN);
   auto &ld = fThreadLocalDataDebugSource.Get();
-  ld.debug_value = 0.0;
+  ld.debug_value = DictGetDouble(user_info, "debug_value");
 }
 
 void GateDebugSource::UpdateActivity(const double time) {
@@ -56,5 +56,6 @@ void GateDebugSource::GeneratePrimaries(G4Event *event,
   auto &l = GetThreadLocalData();
   l.fNumberOfGeneratedEvents++;
   auto &ld = fThreadLocalDataDebugSource.Get();
-  ld.debug_value = 100 * G4Threading::G4GetThreadId() + event->GetEventID();
+  ld.debug_value = 666 * G4Threading::G4GetThreadId() + event->GetEventID();
+  DDD(ld.debug_value);
 }

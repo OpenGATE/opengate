@@ -35,19 +35,10 @@ if __name__ == "__main__":
     fake.material = "G4_AIR"
     fake.color = [1, 0, 1, 1]
 
-    # source
-    source = sim.add_source("GenericSource", "mysource")
-    source.energy.mono = 1 * MeV
-    source.particle = "gamma"
-    source.position.type = "sphere"
-    source.position.radius = 10 * mm
-    source.direction.type = "iso"
-    source.n = 2
-
-    # add debug actor
-    debug = sim.add_actor("DebugActor", "debug")
-    debug.attached_to = "fake"
-    debug.debug_flag = True
+    # debug source
+    debug_source = sim.add_source("DebugSource", "debug_source")
+    debug_source.n = 3
+    debug_source.debug_flag = True
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -58,13 +49,19 @@ if __name__ == "__main__":
 
     # print results at the end
     print(stat)
-    print(debug)
+    print(debug_source)
 
     print(f"Simulation json saved in {sim.output_dir / sim.json_archive_filename}")
 
     # assertions to verify MT execution and output recovery
-    assert stat.counts.events == 2 * sim.number_of_threads
+    assert stat.counts.events == 3 * sim.number_of_threads
     assert stat.counts.runs == sim.number_of_threads
+
+    assert hasattr(debug_source, "debug_flag")
+    assert debug_source.debug_flag == True
+
+    assert hasattr(debug_source, "debug_value")
+    assert debug_source.debug_value == 666
 
     is_ok = True
     utility.test_ok(is_ok)

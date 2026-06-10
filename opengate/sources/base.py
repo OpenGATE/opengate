@@ -157,7 +157,10 @@ class SourceBase(DynamicGateObject):
 
 class DebugSource(SourceBase, g4.GateDebugSource):
 
-    user_info_defaults = {"debug_flag": (False, {"doc": "Fake parameter."})}
+    user_info_defaults = {
+        "debug_flag": (False, {"doc": "Fake parameter."}),
+        "debug_value": (0.0, {"doc": "Fake parameter."}),
+    }
 
     def __init__(self, *args, **kwargs):
         pid = os.getpid()
