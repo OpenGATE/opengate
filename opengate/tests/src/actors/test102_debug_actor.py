@@ -64,5 +64,7 @@ if __name__ == "__main__":
     print(stat)
     print(debug)
 
+    print(f"Simulation json saved in {sim.output_dir / sim.json_archive_filename}")
+
     is_ok = False
     utility.test_ok(is_ok)

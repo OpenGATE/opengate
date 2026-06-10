@@ -99,18 +99,31 @@ if __name__ == "__main__":
     # run
     sim.run()
 
-    # test the file content -> NO, there are some abs filenames ...
+    # test the file content
     fn1 = paths.output / "test069" / sim.json_archive_filename
     print(fn1)
-    """fn2 = paths.output_ref / "test069" / sim.json_archive_filename
-    f1 = open(fn1)
-    j1 = json.load(f1)
-    f2 = open(fn2)
-    j2 = json.load(f2)
-    is_ok = j1 == j2
-    print(fn1)
-    print(fn2)
-    utility.print_test(is_ok, f"Compare json gate output with reference")"""
-    is_ok = fn1.exists()
 
+    from opengate.serialization import load_json
+
+    with open(fn1) as f:
+        dct = load_json(f)
+
+    is_ok = "source_manager" in dct
+    if is_ok:
+        sources_dct = dct["source_manager"]["sources"]
+        is_ok = is_ok and ("mysource" in sources_dct)
+        if "mysource" in sources_dct:
+            mysource_dct = sources_dct["mysource"]
+            is_ok = is_ok and (mysource_dct["user_info"]["particle"] == "proton")
+            is_ok = is_ok and (mysource_dct["user_info"]["energy"]["mono"] == 230 * MeV)
+
+    # Test reading back
+    sim2 = gate.Simulation()
+    sim2.from_dictionary(dct)
+    is_ok = is_ok and (sim2.source_manager.get_source("mysource").particle == "proton")
+    is_ok = is_ok and (
+        sim2.source_manager.get_source("mysource").energy.mono == 230 * MeV
+    )
+
+    is_ok = is_ok and fn1.exists()
     utility.test_ok(is_ok)

@@ -1797,6 +1797,7 @@ class Simulation(GateObject):
         d["volume_manager"] = self.volume_manager.to_dictionary()
         d["physics_manager"] = self.physics_manager.to_dictionary()
         d["actor_manager"] = self.actor_manager.to_dictionary()
+        d["source_manager"] = self.source_manager.to_dictionary()
         d["auxiliary_attributes"] = dict(
             [(k, v.to_dictionary()) for k, v in self.auxiliary_attributes.items()]
         )
@@ -1807,6 +1808,8 @@ class Simulation(GateObject):
         self.volume_manager.from_dictionary(d["volume_manager"])
         self.physics_manager.from_dictionary(d["physics_manager"])
         self.actor_manager.from_dictionary(d["actor_manager"])
+        if "source_manager" in d:
+            self.source_manager.from_dictionary(d["source_manager"])
         self.auxiliary_attributes = {}
         for _, v in d.get("auxiliary_attributes", {}).items():
             a = self.activate_auxiliary_attribute(
@@ -1815,11 +1818,9 @@ class Simulation(GateObject):
             a.from_dictionary(v)
 
     def to_json_string(self):
-        warning("Only parts of the simulation can currently be dumped as JSON")
         return dumps_json(self.to_dictionary())
 
     def to_json_file(self, directory=None, filename=None):
-        warning("Only parts of the simulation can currently be dumped as JSON.")
         d = self.to_dictionary()
         if filename is None:
             filename = self.json_archive_filename
@@ -1831,11 +1832,9 @@ class Simulation(GateObject):
             self.copy_input_files(directory, dct=d)
 
     def from_json_string(self, json_string):
-        warning("Only parts of the simulation can currently be reloaded from JSON.")
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
-        warning("Only parts of the simulation can currently be reloaded from JSON.")
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 
