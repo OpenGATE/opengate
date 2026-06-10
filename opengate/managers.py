@@ -422,6 +422,18 @@ class SourceManager(GateObject):
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
 
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["sources"] = dict([(k, v.to_dictionary()) for k, v in self.sources.items()])
+        return d
+
+    def from_dictionary(self, d):
+        self.sources = {}
+        super().from_dictionary(d)
+        for k, v in d["sources"].items():
+            s = self.add_source(v["object_type"], name=v["user_info"]["name"])
+            s.from_dictionary(v)
+
 
 class ActorManager(GateObject):
     """
