@@ -1,7 +1,7 @@
 #pragma once
 #include "GateGenericSource.h"
 #include "GateSingleParticleSource.h"
-#include <G4Colour.hh>
+#include <G4Color.hh>
 #include <G4Point3D.hh>
 #include <G4Polyline.hh>
 #include <G4String.hh>
@@ -32,7 +32,7 @@ public:
 
   virtual void PrepareNextRun() override;
 
-  void VisualizeOneWindow(G4Colour colour, G4double width, int run_id) const;
+  void VisualizeOneWindow(G4Color color, G4double width, int run_id) const;
   void InitializeUserInfo(py::dict &user_info) override;
   virtual double CalcNextTime(double current_simulation_time) override;
   virtual void Visualize() const override;
@@ -64,17 +64,17 @@ private:
     else
       vec[run_id] = value;
   }
-  std::vector<G4Colour> visualization_window_color;
+  std::vector<G4Color> visualization_window_color;
   std::vector<G4double> visualization_window_width;
   std::vector<G4int> visualization_window_run_id;
 
   struct VisWindow {
     VisWindow(const G4Vector3D &pos1, const G4Vector3D &pos2,
-              const G4Vector3D &pos3, const G4Vector3D &pos4, G4Colour colour,
+              const G4Vector3D &pos3, const G4Vector3D &pos4, G4Color color,
               G4double width);
     void operator()(G4VGraphicsScene &, const G4ModelingParameters *);
     G4Polyline fPolyline;
-    G4Colour fColour;
+    G4Color fColor;
     G4double fWidth;
   };
   void GetWindowVertex(G4ThreeVector &pos1, G4ThreeVector &pos2,

@@ -32,7 +32,7 @@ def _wts_visualization_parameters():
     return Box(
         {
             "window_color": ["red"],
-            "window_width": [2],
+            "window_width": [0],
             "window_run_id": [0],
             "count": 2000,
             "color": "yellow",
@@ -281,13 +281,13 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
                 f"Particle type '{self.particle}' is not 'gamma'. WindowTurboSource is designed for gamma primary purpose only. Proceed ONLY if you know what you are doing."
             )
 
-        self.super().initialize(run_timing_intervals)
+        GenericSource.initialize(self, run_timing_intervals)
 
     def can_predict_number_of_events(self):
         # Actually, can, but initialization is needed. However act ratio is dependent on mother volume movement, therefore cannot be predicted before the simulation starts.
         return False
 
-    def visualize_window(
+    def _visualize_window(
         self, color, width: float = 2.0, timing_interval_index: int = 0
     ):
         if (

@@ -124,11 +124,13 @@ def run_window_turbo_source(activity=1):
     source_3.direction = source_back.direction.copy()
     source_1.direction = source_back.direction.copy()
     change_source_parameters(source_back, source_1, source_2, source_3)
-    source_back.visualize_window("red", 2, 0)
-    source_back.visualize(1000, "red", 2)
-    source_1.visualize(1000, "green", 2)
-    source_2.visualize(1000, "blue", 2)
-    source_3.visualize(1000, "cyan", 2)
+    source_back.visualization.window_run_id = 0
+    source_back.visualization.window_width = 2.0
+    source_back.visualization.window_color = "red"
+    source_back.visualization.color = "red"
+    source_1.visualization.color = "green"
+    source_2.visualization.color = "blue"
+    source_3.visualization.color = "cyan"
     sim.run()
     stats = sim.get_actor("Stats")
     print(stats)
