@@ -2068,7 +2068,6 @@ class Simulation(GateObject):
 
             # FIXME: temporary workaround to copy from output the additional
             # information of the source (such as fTotalSkippedEvents)
-            s = {}
             for source in self.source_manager.sources.values():
                 # WARNING: when multithread, the sources are stored in
                 # simulation_output.sources_by_thread
@@ -2078,12 +2077,7 @@ class Simulation(GateObject):
                     s = output.get_source(source.name)
                 except:
                     continue
-                if "total_zero_events" in s.__dict__:
-                    source.total_zero_events = s.__dict__["total_zero_events"]
-                    source.total_skipped_events = s.__dict__["total_skipped_events"]
-                if "particle_generators" in s.__dict__:
-                    source.particle_generators = s.__dict__["particle_generators"]
-                    source.num_entries = s.__dict__["num_entries"]
+                source.recover_user_output(s)
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process

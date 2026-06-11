@@ -73,6 +73,8 @@ class SourceBase(DynamicGateObject):
         GateObject.__init__(self, *args, **kwargs)
         # all times intervals
         self.run_timing_intervals = None
+        self.g4_thread_sources = []
+        self.g4_thread_sources_index = 0
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -133,6 +135,43 @@ class SourceBase(DynamicGateObject):
     def prepare_output(self):
         pass
 
+    def pre_create_g4_sources(self, num_instances):
+        self.g4_thread_sources = []
+        self.g4_thread_sources_index = 0
+        for _ in range(num_instances):
+            g4_src = self.create_g4_source()
+            if g4_src is not None:
+                self.g4_thread_sources.append(g4_src)
+
+    def get_next_g4_source(self):
+        if self.g4_thread_sources:
+            g4_src = self.g4_thread_sources[self.g4_thread_sources_index]
+            self.g4_thread_sources_index += 1
+            return g4_src
+        return None
+
+    def create_g4_source(self):
+        return None
+
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
+        pass
+
+    def gather_outputs(self, thread_sources):
+        pass
+
+    def recover_user_output(self, s):
+        pid = os.getpid()
+        print(f"(python) recover_user_output {self.name} pid={pid}")
+        for k, v in s.user_info.items():
+            self.user_info[k] = v
+
+        """if "total_zero_events" in s.__dict__:
+            self.total_zero_events = s.__dict__["total_zero_events"]
+            self.total_skipped_events = s.__dict__["total_skipped_events"]
+        if "particle_generators" in s.__dict__:
+            self.particle_generators = s.__dict__["particle_generators"]
+            self.num_entries = s.__dict__["num_entries"]"""  # Specifi => to put elsewhere
+
     def can_predict_number_of_events(self):
         return True
 
@@ -169,45 +208,30 @@ class DebugSource(SourceBase):
         pid = os.getpid()
         print(f"(python) DebugSource::__init__ pid={pid}")
         SourceBase.__init__(self, *args, **kwargs)
-        self.g4_source = None
-        self.__initcpp__()
 
-    def __initcpp__(self):
-        pid = os.getpid()
-        print(f"(python) DebugSource::__initcpp__ {self.name} pid={pid}")
-        self.g4_source = g4.GateDebugSource()
+    def create_g4_source(self):
+        return g4.GateDebugSource()
 
-    def initialize(self, run_timing_intervals):
-        pid = os.getpid()
-        print(f"(python) DebugSource::initialize {self.name} pid={pid}")
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
         self.check_ui_activity(self.user_info)
-        self.g4_source.InitializeUserInfo(self.user_info)
+        g4_source.InitializeUserInfo(self.user_info)
 
     def initialize_start_end_time(self, run_timing_intervals):
         pid = os.getpid()
         print(f"(python) DebugSource::initialize_start_end_time {self.name} pid={pid}")
         SourceBase.initialize_start_end_time(self, run_timing_intervals)
 
-    def prepare_output(self):
-        pid = os.getpid()
-        print(f"(python) DebugSource::prepare_output pid={pid}")
-        SourceBase.prepare_output(self)
-        # FIXME -> merge output for several sources when MT
-        if self.g4_source is not None:
-            self.debug_value = self.g4_source.GetDebugValue()
-            print(f"(python) DebugSource::prepare_output value = {self.debug_value}")
-
-    def __getstate__(self):
-        pid = os.getpid()
-        print(f"(python) DebugSource::__getstate__ pid={pid}")
-        self.g4_source = None
-        return SourceBase.__getstate__(self)
-
-    def __setstate__(self, state):
-        pid = os.getpid()
-        print(f"(python) DebugSource::__setstate__ pid={pid}")
-        SourceBase.__setstate__(self, state)
+    def gather_outputs(self, thread_sources):
+        values = [
+            g4_src.GetDebugValue() for g4_src in thread_sources if g4_src is not None
+        ]
+        print(f"(python) DebugSource::gather_outputs values = {values}")
+        if values:
+            self.debug_value = np.sum(np.array(values))
+            print(
+                f"(python) DebugSource::gather_outputs selected max value = {self.debug_value}"
+            )
 
 
 process_cls(SourceBase)

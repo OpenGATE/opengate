@@ -69,7 +69,7 @@ class SourceEngine(EngineBase):
         self.progress_bar = False
         self.expected_number_of_events = "unknown"
 
-        # List of sources (GateSource), for all threads
+        # List of sources (GateSource)
         self.sources = []
 
         # The source manager will be constructed at build (during ActionManager)
@@ -112,6 +112,14 @@ class SourceEngine(EngineBase):
         self.progress_bar = progress_bar
         self.initialize_dynamic_parametrisations()
 
+        # Pre-create C++ sources for all threads (1 master + N workers) on the main thread
+        num_instances = 1 + self.simulation_engine.simulation.number_of_threads
+        print(
+            f"(python) SourceEngine::initialize num_threads={self.simulation_engine.simulation.number_of_threads} num_instances={num_instances}"
+        )
+        for source in self.source_manager.sources.values():
+            source.pre_create_g4_sources(num_instances)
+
     def initialize_actors(self):
         """
         Set all actors to the master source manager
@@ -150,8 +158,13 @@ class SourceEngine(EngineBase):
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
         for source in source_manager.sources.values():
-            source.initialize(self.run_timing_intervals)
-            source.add_to_source_manager(ms)
+            g4_source = source.get_next_g4_source()
+            if g4_source is not None:
+                source.initialize_g4_source(g4_source, self.run_timing_intervals)
+                ms.AddSource(g4_source)
+            else:
+                source.initialize(self.run_timing_intervals)
+                source.add_to_source_manager(ms)
             # store all the sources (will be used later by SimulationOutput)
             self.sources.append(source)
 
@@ -201,6 +214,11 @@ class SourceEngine(EngineBase):
         # once terminated, packup the sources (if needed)
         for source in self.sources:
             source.prepare_output()
+            if source.g4_thread_sources:
+                source.gather_outputs(source.g4_thread_sources)
+            # Clear C++ sources now on the main thread while G4Cache is active
+            source.g4_thread_sources = []
+            source.g4_thread_sources_index = 0
 
     def can_predict_expected_number_of_event(self):
         # can_predict = True

@@ -13,7 +13,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = "auto"
     sim.output_dir = paths.output
-    sim.number_of_threads = 1
+    sim.number_of_threads = 3
     sim.store_json_archive = True
     print(paths)
 
@@ -46,7 +46,6 @@ if __name__ == "__main__":
 
     # start simulation in another process
     sim.run(start_new_process=True)
-    # sim.run()
 
     # print results at the end
     print(stat)
@@ -55,14 +54,14 @@ if __name__ == "__main__":
     print(f"Simulation json saved in {sim.output_dir / sim.json_archive_filename}")
 
     # assertions to verify MT execution and output recovery
-    assert stat.counts.events == 3 * sim.number_of_threads
+    assert stat.counts.events == debug_source.n * sim.number_of_threads
     assert stat.counts.runs == sim.number_of_threads
 
     assert hasattr(debug_source, "debug_flag")
     assert debug_source.debug_flag == True
 
     assert hasattr(debug_source, "debug_value")
-    assert debug_source.debug_value == 3
+    assert debug_source.debug_value == debug_source.n * sim.number_of_threads
 
     is_ok = True
     utility.test_ok(is_ok)
