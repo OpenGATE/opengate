@@ -35,11 +35,15 @@ if __name__ == "__main__":
     path_reference_phasespace_in = paths.output_ref / "PhaseSpaceIn.root"
     path_reference_phasespace_out = paths.output_ref / "PhaseSpaceOut.root"
 
-    compare_root_files(path_reference_phasespace_in, path_phasespace_in, "PhaseSpaceIn")
+    print(path_reference_phasespace_in)
+    print(path_reference_phasespace_out)
+    print(path_phasespace_in)
+    print(path_phasespace_out)
 
     is_ok = compare_root_files(
         path_reference_phasespace_in, path_phasespace_in, "PhaseSpaceIn"
     )
+    print(is_ok)
     is_ok = is_ok and compare_root_files(
         path_reference_phasespace_out, path_phasespace_out, "PhaseSpaceOut"
     )
