@@ -61,36 +61,36 @@ class PhotonFromIonDecaySource(GenericSource):
         # used during sub_sources creation
         self.daughters = None
 
+        # metadata for daughter/mother ions
+        self.ion_gamma_mother = None
+        self.ion_gamma_daughter = None
+
         # debug
         self.log = ""
         self.debug_first_daughter_only = False
 
-    def __initcpp__(self):
-        g4.GateGenericSource.__init__(self)
+    def pre_create_g4_sources(self, num_instances):
+        if not self.is_a_sub_source:
+            phid_build_all_sub_sources(self)
+            for sub_source in self.sub_sources:
+                sub_source.pre_create_g4_sources(num_instances)
+        else:
+            GenericSource.pre_create_g4_sources(self, num_instances)
 
     def initialize(self, run_timing_intervals):
-        if not self.is_a_sub_source:
-            # this is called only one single time to build the list of sub_sources
-            if (g4.IsMultithreadedApplication() and g4.G4GetThreadId() == -1) or (
-                not g4.IsMultithreadedApplication()
-            ):
-                phid_build_all_sub_sources(self)
+        if not self.is_a_sub_source and not self.sub_sources:
+            phid_build_all_sub_sources(self)
 
-        # super class conventional initialization
-
-        GenericSource.initialize(self, run_timing_intervals)
         self.initialize_start_end_time(run_timing_intervals)
-        for sub_source in self.sub_sources:
 
+    def add_to_source_manager(self, source_manager):
+        for sub_source in self.sub_sources:
             sub_source.start_time = self.start_time
             sub_source.end_time = self.end_time
 
-        # this will initialize and set user_info to the cpp side
-        # for all sub_sources
-        for sub_source in self.sub_sources:
             # get tac from decay
             p = Box(sub_source.tac_from_decay_parameters)
-            sub_source.tac_times, sub_source.tac_activities = get_tac_from_decay(
+            tac_times, tac_activities = get_tac_from_decay(
                 p.ion_name,
                 p.daughter,
                 sub_source.activity,
@@ -98,32 +98,52 @@ class PhotonFromIonDecaySource(GenericSource):
                 sub_source.end_time,
                 p.bins,
             )
-            # update the tac
-            update_sub_source_tac_activity(sub_source)
+            # Get the thread-local C++ source instance for the sub_source
+            g4_src = sub_source.get_next_g4_source()
+
+            # update the tac on the C++ source
+            update_sub_source_tac_activity(
+                sub_source, g4_src, tac_times, tac_activities
+            )
 
             # check
             self.check_ui_activity(sub_source)
             self.check_confine(sub_source)
 
-            # final initialize to cpp side
-            # sub_source.n = np.array([sub_source.n],dtype = int)
-            sub_source.InitializeUserInfo(sub_source.user_info)
+            # Initialize the thread-local C++ source instance
+            if g4_src is not None:
+                sub_source.initialize_g4_source(g4_src, self.run_timing_intervals)
+                source_manager.AddSource(g4_src)
 
         # dump log
         if self.user_info.dump_log is not None:
             with open(self.user_info.dump_log, "w") as outfile:
                 outfile.write(self.log)
 
-    def add_to_source_manager(self, source_manager):
-        for g4_source in self.sub_sources:
-            source_manager.AddSource(g4_source)
+    def prepare_output(self):
+        for sub_source in self.sub_sources:
+            sub_source.prepare_output()
+            if sub_source.g4_thread_sources:
+                sub_source.gather_outputs(sub_source.g4_thread_sources)
+            sub_source.g4_thread_sources = []
+            sub_source.g4_thread_sources_index = 0
+        self.total_zero_events = sum(
+            s.total_zero_events
+            for s in self.sub_sources
+            if hasattr(s, "total_zero_events")
+        )
+        self.total_skipped_events = sum(
+            s.total_skipped_events
+            for s in self.sub_sources
+            if hasattr(s, "total_skipped_events")
+        )
 
 
-def update_sub_source_tac_activity(sub_source):
-    if sub_source.tac_times is None and sub_source.tac_activities is None:
+def update_sub_source_tac_activity(sub_source, g4_source, tac_times, tac_activities):
+    if tac_times is None and tac_activities is None:
         return
-    n = len(sub_source.tac_times)
-    if n != len(sub_source.tac_activities):
+    n = len(tac_times)
+    if n != len(tac_activities):
         fatal(
             f"option tac_activities must have the same size than tac_times in source '{sub_source.name}'"
         )
@@ -136,26 +156,25 @@ def update_sub_source_tac_activity(sub_source):
     # it is important to set the starting time for this source as the tac
     # may start later than the simulation timing
     i = 0
-    while i < len(sub_source.tac_activities) and sub_source.tac_activities[i] <= 0:
+    while i < len(tac_activities) and tac_activities[i] <= 0:
         i += 1
-    if i >= len(sub_source.tac_activities):
+    if i >= len(tac_activities):
         # gate.warning(f"Source '{sub_source.name}' TAC with zero activity.")
         sub_source.start_time = sub_source.end_time + 1 * sec
     else:
-        sub_source.start_time = sub_source.tac_times[i]
+        sub_source.start_time = tac_times[i]
         # IMPORTANT : activities must be x by total here
         # (not before, because it can be called several times in MT mode)
-        sub_source.SetTAC(
-            sub_source.tac_times, np.array(sub_source.tac_activities) * total
-        )
+        if g4_source is not None:
+            g4_source.SetTAC(tac_times, np.array(tac_activities) * total)
 
     if sub_source.verbose:
         print(
             f"GammaFromIon source {sub_source.name}    total = {total * 100:8.2f}%   "
             f" gammas lines = {len(sub_source.energy.spectrum_weights)}   "
-            f" total activity = {sum(sub_source.tac_activities) / Bq:10.3f}"
-            f" first activity = {sub_source.tac_activities[0] / Bq:5.2f}"
-            f" last activity = {sub_source.tac_activities[-1] / Bq:5.2f}"
+            f" total activity = {sum(tac_activities) / Bq:10.3f}"
+            f" first activity = {tac_activities[0] / Bq:5.2f}"
+            f" last activity = {tac_activities[-1] / Bq:5.2f}"
         )
 
 
@@ -747,8 +766,8 @@ def phid_build_one_sub_source(stype, source, daughter, ene, w, first_nuclide):
     s.verbose = source.verbose
     s.particle = "gamma"
     s.energy.type = "spectrum_discrete"
-    s.energy.ion_gamma_mother = Box({"z": first_nuclide.Z, "a": first_nuclide.A})
-    s.energy.ion_gamma_daughter = ion_gamma_daughter
+    s.ion_gamma_mother = Box({"z": first_nuclide.Z, "a": first_nuclide.A})
+    s.ion_gamma_daughter = ion_gamma_daughter
     s.energy.spectrum_weights = w
     s.energy.spectrum_energies = ene
     s.activity = source.activity

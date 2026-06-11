@@ -145,9 +145,10 @@ class SourceBase(DynamicGateObject):
 
     def get_next_g4_source(self):
         if self.g4_thread_sources:
-            g4_src = self.g4_thread_sources[self.g4_thread_sources_index]
-            self.g4_thread_sources_index += 1
-            return g4_src
+            tid = g4.G4GetThreadId()
+            idx = tid + 1 if tid >= 0 else 0
+            if idx < len(self.g4_thread_sources):
+                return self.g4_thread_sources[idx]
         return None
 
     def create_g4_source(self):
