@@ -117,7 +117,10 @@ class SourceBase(DynamicGateObject):
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):
-        source_manager.AddSource(self)
+        if hasattr(self, "g4_source") and self.g4_source is not None:
+            source_manager.AddSource(self.g4_source)
+        else:
+            source_manager.AddSource(self)
 
     def close(self):
         # remove the g4 objects
@@ -155,7 +158,7 @@ class SourceBase(DynamicGateObject):
             ui.activity = 0
 
 
-class DebugSource(SourceBase, g4.GateDebugSource):
+class DebugSource(SourceBase):
 
     user_info_defaults = {
         "debug_flag": (False, {"doc": "Fake parameter."}),
@@ -164,33 +167,46 @@ class DebugSource(SourceBase, g4.GateDebugSource):
 
     def __init__(self, *args, **kwargs):
         pid = os.getpid()
-        print(f"(python) DebugSource::__init__ {pid}")
+        print(f"(python) DebugSource::__init__ pid={pid}")
         SourceBase.__init__(self, *args, **kwargs)
+        self.g4_source = None
         self.__initcpp__()
 
     def __initcpp__(self):
         pid = os.getpid()
-        print(f"(python) DebugSource::__initcpp__ {self.name} {pid}")
-        g4.GateDebugSource.__init__(self)
+        print(f"(python) DebugSource::__initcpp__ {self.name} pid={pid}")
+        self.g4_source = g4.GateDebugSource()
 
     def initialize(self, run_timing_intervals):
         pid = os.getpid()
-        print(f"(python) DebugSource::initialize {self.name} {pid}")
-        SourceBase.initialize(self, run_timing_intervals)
+        print(f"(python) DebugSource::initialize {self.name} pid={pid}")
+        self.initialize_start_end_time(run_timing_intervals)
+        self.check_ui_activity(self.user_info)
+        self.g4_source.InitializeUserInfo(self.user_info)
 
     def initialize_start_end_time(self, run_timing_intervals):
         pid = os.getpid()
-        print(f"(python) DebugSource::initialize_start_end_time {self.name} {pid}")
+        print(f"(python) DebugSource::initialize_start_end_time {self.name} pid={pid}")
         SourceBase.initialize_start_end_time(self, run_timing_intervals)
+
+    def prepare_output(self):
+        pid = os.getpid()
+        print(f"(python) DebugSource::prepare_output pid={pid}")
+        SourceBase.prepare_output(self)
+        # FIXME -> merge output for several sources when MT
+        if self.g4_source is not None:
+            self.debug_value = self.g4_source.GetDebugValue()
+            print(f"(python) DebugSource::prepare_output value = {self.debug_value}")
 
     def __getstate__(self):
         pid = os.getpid()
-        print(f"(python) DebugSource::__getstate__ {pid}")
+        print(f"(python) DebugSource::__getstate__ pid={pid}")
+        self.g4_source = None
         return SourceBase.__getstate__(self)
 
     def __setstate__(self, state):
         pid = os.getpid()
-        print(f"(python) DebugSource::__setstate__ {pid}")
+        print(f"(python) DebugSource::__setstate__ pid={pid}")
         SourceBase.__setstate__(self, state)
 
 

@@ -34,6 +34,8 @@ public:
   void GeneratePrimaries(G4Event *event,
                          double current_simulation_time) override;
 
+  double GetDebugValue();
+
   // thread local structure
   struct threadLocalDebugSource {
     double debug_value = 0.0;

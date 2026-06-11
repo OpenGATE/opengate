@@ -13,7 +13,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = "auto"
     sim.output_dir = paths.output
-    sim.number_of_threads = 2
+    sim.number_of_threads = 1
     sim.store_json_archive = True
     print(paths)
 
@@ -46,6 +46,7 @@ if __name__ == "__main__":
 
     # start simulation in another process
     sim.run(start_new_process=True)
+    # sim.run()
 
     # print results at the end
     print(stat)
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     assert debug_source.debug_flag == True
 
     assert hasattr(debug_source, "debug_value")
-    assert debug_source.debug_value == 666
+    assert debug_source.debug_value == 3
 
     is_ok = True
     utility.test_ok(is_ok)

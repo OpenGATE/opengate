@@ -280,7 +280,6 @@ void GateSourceManager::CheckForNextRun() const {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
     l.fNextRunId++;
-    /*
     if (l.fNextRunId >= fSimulationTimes.size()) {
       // Sometimes, the source must clean some data in its own thread, not by
       // the master thread (for example, with a G4SingleParticleSource object)
@@ -289,7 +288,6 @@ void GateSourceManager::CheckForNextRun() const {
         source->CleanWorkerThread();
       }
     }
-    */
   }
 }
 

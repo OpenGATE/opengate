@@ -20,7 +20,7 @@ GateDebugSource::GateDebugSource() : GateVSource() {
 GateDebugSource::~GateDebugSource() { DDD("GateDebugSource destructor"); }
 
 void GateDebugSource::CleanWorkerThread() {
-  // Not used yet. Maybe later to clean local data in a thread.
+  DDD("GateDebugSource::CleanWorkerThread");
 }
 
 void GateDebugSource::InitializeUserInfo(py::dict &user_info) {
@@ -56,6 +56,12 @@ void GateDebugSource::GeneratePrimaries(G4Event *event,
   auto &l = GetThreadLocalData();
   l.fNumberOfGeneratedEvents++;
   auto &ld = fThreadLocalDataDebugSource.Get();
-  ld.debug_value = 666 * G4Threading::G4GetThreadId() + event->GetEventID();
-  DDD(ld.debug_value);
+  ld.debug_value += 1;
+  DDD("debug value = ", ld.debug_value);
+}
+
+double GateDebugSource::GetDebugValue() {
+  auto &ld = fThreadLocalDataDebugSource.Get();
+  DDD("GateDebugSource::GetDebugValue ", ld.debug_value)
+  return ld.debug_value;
 }
