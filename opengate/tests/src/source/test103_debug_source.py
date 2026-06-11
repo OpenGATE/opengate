@@ -6,7 +6,7 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "", "test102_debug_actor")
+    paths = utility.get_default_test_paths(__file__, "", "test103_debug_source")
 
     # create the simulation
     sim = gate.Simulation()
@@ -62,6 +62,22 @@ if __name__ == "__main__":
 
     assert hasattr(debug_source, "debug_value")
     assert debug_source.debug_value == debug_source.n * sim.number_of_threads
+
+    # check simulation json source_manager entry
+    json_path = sim.output_dir / sim.json_archive_filename
+    assert json_path.exists()
+
+    from opengate.serialization import load_json
+
+    with open(json_path) as f:
+        dct = load_json(f)
+
+    assert "source_manager" in dct
+    sources_dct = dct["source_manager"]["sources"]
+    assert "debug_source" in sources_dct
+    debug_src_dct = sources_dct["debug_source"]
+    assert debug_src_dct["user_info"]["n"] == [debug_source.n]
+    assert debug_src_dct["user_info"]["debug_flag"] == True
 
     is_ok = True
     utility.test_ok(is_ok)
