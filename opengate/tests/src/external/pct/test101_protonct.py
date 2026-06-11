@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import uproot
 from opengate.tests import utility
 from opengate.contrib.protonct.protonct import protonct
