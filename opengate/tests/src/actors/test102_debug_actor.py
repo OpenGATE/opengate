@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
@@ -14,6 +15,8 @@ if __name__ == "__main__":
     sim.random_seed = "auto"
     sim.output_dir = paths.output
     sim.number_of_threads = 2
+    if os.name == "nt":
+        sim.number_of_threads = 1
     sim.store_json_archive = True
     print(paths)
 
