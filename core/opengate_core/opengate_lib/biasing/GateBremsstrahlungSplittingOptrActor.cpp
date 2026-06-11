@@ -7,8 +7,8 @@ Copyright (C): OpenGATE Collaboration
 
 #include "GateBremsstrahlungSplittingOptrActor.h"
 #include "../GateHelpersDict.h"
-#include "../GateHelpersImage.h"
 #include "GateBremsstrahlungSplittingOptn.h"
+#include <G4LogicalVolumeStore.hh>
 
 GateBremsstrahlungSplittingOptrActor::GateBremsstrahlungSplittingOptrActor(
     py::dict &user_info)

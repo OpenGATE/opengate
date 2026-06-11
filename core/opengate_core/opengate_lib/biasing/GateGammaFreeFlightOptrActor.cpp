@@ -7,7 +7,6 @@ Copyright (C): OpenGATE Collaboration
 
 #include "GateGammaFreeFlightOptrActor.h"
 #include "../GateHelpers.h"
-#include "../GateHelpersDict.h"
 #include "G4BiasingProcessInterface.hh"
 #include "G4EmParameters.hh"
 

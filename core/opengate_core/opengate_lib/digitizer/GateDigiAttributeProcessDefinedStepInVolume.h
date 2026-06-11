@@ -8,7 +8,6 @@
 #ifndef GateDigiAttributeProcessDefinedStepInVolume_h
 #define GateDigiAttributeProcessDefinedStepInVolume_h
 
-#include "../GateHelpers.h"
 #include "GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
