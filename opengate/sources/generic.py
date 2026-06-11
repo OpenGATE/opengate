@@ -347,7 +347,7 @@ class VisualizationValidator(UserInfoValidatorBase):
         return context_name
 
 
-class GenericSource(SourceBase, g4.GateGenericSource):
+class GenericSource(SourceBase):
     """
     GenericSource close to the G4 SPS, but a bit simpler.
     The G4 source created by this class is GateGenericSource.
@@ -440,7 +440,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
     def __init__(self, *args, **kwargs):
         SourceBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
         # to validate the parameters
         self._pos_validator = PositionValidator()
         self._dir_validator = DirectionValidator()
@@ -458,10 +457,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         if len(words) > 3:
             self.user_info.ion.E = words[3]
 
-    def __initcpp__(self):
-        g4.GateGenericSource.__init__(self)
+    def create_g4_source(self):
+        return g4.GateGenericSource()
 
-    def initialize(self, run_timing_intervals):
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
         # Check the sub-parameters
         self._pos_validator.validate(self, "position")
         self._ene_validator.validate(self, "energy")
@@ -484,10 +483,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
                 self.energy.is_cdf = True
-                self.SetEnergyCDF(ene)
-                self.SetProbabilityCDF(cdf)
+                g4_source.SetEnergyCDF(ene)
+                g4_source.SetProbabilityCDF(cdf)
 
-        self.update_tac_activity()
+        self.update_tac_activity(g4_source)
 
         # histogram parameters: histogram_weight, histogram_energy"
         ene = self.energy
@@ -505,8 +504,9 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             if self.user_particle_life_time < 0:
                 self.user_particle_life_time = 0
 
-        # initialize
-        SourceBase.initialize(self, run_timing_intervals)
+        self.initialize_start_end_time(run_timing_intervals)
+        self.check_ui_activity(self.user_info)
+        g4_source.InitializeUserInfo(self.user_info)
         # warning for non-used ?
 
     def check_confine(self, ui):
@@ -525,7 +525,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         self.total_zero_events = self.GetTotalZeroEvents()
         self.total_skipped_events = self.GetTotalSkippedEvents()
 
-    def update_tac_activity(self):
+    def update_tac_activity(self, g4_source):
         if self.tac_times is None and self.tac_activities is None:
             return
         if len(self.tac_times) != len(self.tac_activities):
@@ -536,7 +536,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # may start later than the simulation timing
         self.start_time = self.tac_times[0]
         self.activity = self.tac_activities[0]
-        self.SetTAC(self.tac_times, self.tac_activities)
+        g4_source.SetTAC(self.tac_times, self.tac_activities)
 
     def can_predict_number_of_events(self):
         aa = self.direction.angular_acceptance
