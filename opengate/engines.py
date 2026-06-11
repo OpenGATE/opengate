@@ -145,6 +145,12 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager = self.create_g4_thread_source_manager(
             append=False
         )
+        # Initialize all worker thread-local C++ sources on the main thread to size G4Cache properly.
+        # This is safe because physics and geometry are fully initialized now.
+        for source in self.source_manager.sources.values():
+            if source.g4_thread_sources:
+                for g4_src in source.g4_thread_sources[1:]:
+                    source.initialize_g4_source(g4_src, self.run_timing_intervals)
         return self.g4_master_source_manager
 
     def create_g4_thread_source_manager(self, append=True):
@@ -1282,6 +1288,9 @@ class SimulationEngine(GateSingletonFatal):
                 self.g4_RunManager.SetVerboseLevel(0)
             self._is_closed = True
         self.g4_RunManager = None
+        if self.run_manager_finalizer:
+            self.run_manager_finalizer.detach()
+            self.run_manager_finalizer = None
 
     def __enter__(self):
         return self
