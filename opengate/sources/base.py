@@ -165,13 +165,6 @@ class SourceBase(DynamicGateObject):
         for k, v in s.user_info.items():
             self.user_info[k] = v
 
-        """if "total_zero_events" in s.__dict__:
-            self.total_zero_events = s.__dict__["total_zero_events"]
-            self.total_skipped_events = s.__dict__["total_skipped_events"]
-        if "particle_generators" in s.__dict__:
-            self.particle_generators = s.__dict__["particle_generators"]
-            self.num_entries = s.__dict__["num_entries"]"""  # Specifi => to put elsewhere
-
     def can_predict_number_of_events(self):
         return True
 
@@ -210,9 +203,13 @@ class DebugSource(SourceBase):
         SourceBase.__init__(self, *args, **kwargs)
 
     def create_g4_source(self):
+        pid = os.getpid()
+        print(f"(python) DebugSource::create_g4_source pid={pid}")
         return g4.GateDebugSource()
 
     def initialize_g4_source(self, g4_source, run_timing_intervals):
+        pid = os.getpid()
+        print(f"(python) DebugSource::initialize_g4_source pid={pid}")
         self.initialize_start_end_time(run_timing_intervals)
         self.check_ui_activity(self.user_info)
         g4_source.InitializeUserInfo(self.user_info)
