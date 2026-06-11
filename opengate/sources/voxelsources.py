@@ -37,6 +37,10 @@ class VoxelSource(GenericSource):
         GenericSource.__init__(self, *args, **kwargs)
         # the loaded image
         self._current_itk_image = None
+        # cached CDFs
+        self._cdf_x = None
+        self._cdf_y = None
+        self._cdf_z = None
 
     def create_changers(self):
         changers = super().create_changers()
@@ -78,15 +82,23 @@ class VoxelSource(GenericSource):
         Compute the Cumulative Distribution Function of the image
         Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
         """
-        cdf_x, cdf_y, cdf_z = compute_image_3D_CDF(self._current_itk_image)
+        if self._cdf_x is None or self._cdf_y is None or self._cdf_z is None:
+            self._cdf_x, self._cdf_y, self._cdf_z = compute_image_3D_CDF(
+                self._current_itk_image
+            )
 
         # set CDF to the position generator
         pg = g4_source.GetSPSVoxelPosDistribution()
-        pg.SetCumulativeDistributionFunction(cdf_z, cdf_y, cdf_x)
+        pg.SetCumulativeDistributionFunction(self._cdf_z, self._cdf_y, self._cdf_x)
 
     def update_activity_image(self, filename):
         # read source image
         self._current_itk_image = itk.imread(ensure_filename_is_str(filename))
+
+        # Reset CDF cache
+        self._cdf_x = None
+        self._cdf_y = None
+        self._cdf_z = None
 
         # update all thread-local sources
         for g4_source in self.g4_thread_sources:
