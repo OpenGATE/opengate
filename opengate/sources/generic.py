@@ -519,11 +519,17 @@ class GenericSource(SourceBase):
                     f"confine is used, while position.type is point ... really ?"
                 )
 
-    def prepare_output(self):
-        SourceBase.prepare_output(self)
-        # store the output from G4 objects
-        self.total_zero_events = self.GetTotalZeroEvents()
-        self.total_skipped_events = self.GetTotalSkippedEvents()
+    def gather_outputs(self, thread_sources):
+        self.total_zero_events = sum(
+            g4_src.GetTotalZeroEvents()
+            for g4_src in thread_sources
+            if g4_src is not None
+        )
+        self.total_skipped_events = sum(
+            g4_src.GetTotalSkippedEvents()
+            for g4_src in thread_sources
+            if g4_src is not None
+        )
 
     def update_tac_activity(self, g4_source):
         if self.tac_times is None and self.tac_activities is None:
