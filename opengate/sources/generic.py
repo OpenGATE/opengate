@@ -17,6 +17,7 @@ from .utility import (
     all_beta_plus_radionuclides,
     compute_cdf_and_total_yield,
     get_spectrum,
+    _setter_hook_generic_source_particle,
 )
 
 
@@ -84,24 +85,6 @@ def visualization_parameters():
             "size": 2,
         }
     )
-
-
-def _setter_hook_generic_source_particle(self, particle):
-    # The particle parameter must be a str
-    if not isinstance(particle, str):
-        fatal(f"the .particle user info must be a str, while it is {type(str)}")
-    # if it does not start with ion, we consider this is a simple particle (gamma, e+, etc.)
-    if not particle.startswith("ion"):
-        return particle
-    # if start with ion, it is like 'ion 9 18' with Z A E
-    words = particle.split(" ")
-    if len(words) > 1:
-        self.ion.Z = int(words[1])
-    if len(words) > 2:
-        self.ion.A = int(words[2])
-    if len(words) > 3:
-        self.ion.E = int(words[3])
-    return particle
 
 
 class PositionValidator(UserInfoValidatorBase):
