@@ -535,12 +535,14 @@ class PhaseSpaceSource(SourceBase):
     @property
     def cycle_count(self):
         if not g4.IsMultithreadedApplication():
-            tid = g4.G4GetThreadId()
-            return self.particle_generators[tid].cycle_count
+            if not self.particle_generators:
+                return 0
+            key = list(self.particle_generators.keys())[0]
+            return self.particle_generators[key].cycle_count
         else:
             s = " ".join(
                 str(self.particle_generators[tid].cycle_count)
-                for tid in self.particle_generators.keys()
+                for tid in sorted(self.particle_generators.keys())
             )
             return s
 
