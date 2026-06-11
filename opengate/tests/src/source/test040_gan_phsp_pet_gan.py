@@ -207,7 +207,7 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
         s = sim.source_manager.get_source("gaga")
     else:
         s = sim.source_manager.get_source_mt("gaga", 0)
-    print(f"Source, nb of skipped particles : {s.GetTotalSkippedEvents()}")
+    print(f"Source, nb of skipped particles : {s.total_skipped_events()}")
     b = gsource.total_skipped_events
     print(f"Source, nb of skipped particles (check) : {b}")
 

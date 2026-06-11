@@ -109,7 +109,7 @@ if __name__ == "__main__":
     sim.run()
 
     s = sim.source_manager.get_source("gaga")
-    print(f"Source, nb of E<=0: {s.GetTotalSkippedEvents()}")
+    print(f"Source, nb of E<=0: {s.total_skipped_events}")
 
     # print results
     gate.exception.warning(f"Check stats")
