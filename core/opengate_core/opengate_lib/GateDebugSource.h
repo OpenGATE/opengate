@@ -36,11 +36,7 @@ public:
 
   double GetDebugValue();
 
-  // thread local structure
-  struct threadLocalDebugSource {
-    double debug_value = 0.0;
-  };
-  G4Cache<threadLocalDebugSource> fThreadLocalDataDebugSource;
+  double fDebugValue = 0.0;
 };
 
 #endif // GateDebugSource_h

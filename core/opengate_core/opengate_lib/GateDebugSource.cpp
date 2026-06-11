@@ -15,6 +15,7 @@
 
 GateDebugSource::GateDebugSource() : GateVSource() {
   DDD("GateDebugSource constructor");
+  fDebugValue = 0.0;
 }
 
 GateDebugSource::~GateDebugSource() { DDD("GateDebugSource destructor"); }
@@ -26,8 +27,7 @@ void GateDebugSource::CleanWorkerThread() {
 void GateDebugSource::InitializeUserInfo(py::dict &user_info) {
   DDD("GateDebugSource::InitializeUserInfo");
   GateVSource::InitializeUserInfo(user_info);
-  auto &ld = fThreadLocalDataDebugSource.Get();
-  ld.debug_value = DictGetDouble(user_info, "debug_value");
+  fDebugValue = DictGetDouble(user_info, "debug_value");
 }
 
 void GateDebugSource::UpdateActivity(const double time) {
@@ -55,13 +55,11 @@ void GateDebugSource::GeneratePrimaries(G4Event *event,
       fMaxN);
   auto &l = GetThreadLocalData();
   l.fNumberOfGeneratedEvents++;
-  auto &ld = fThreadLocalDataDebugSource.Get();
-  ld.debug_value += 1;
-  DDD("debug value = ", ld.debug_value);
+  fDebugValue += 1;
+  DDD("debug value = ", fDebugValue);
 }
 
 double GateDebugSource::GetDebugValue() {
-  auto &ld = fThreadLocalDataDebugSource.Get();
-  DDD("GateDebugSource::GetDebugValue ", ld.debug_value)
-  return ld.debug_value;
+  DDD("GateDebugSource::GetDebugValue ", fDebugValue)
+  return fDebugValue;
 }
