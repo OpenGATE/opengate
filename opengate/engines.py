@@ -114,9 +114,6 @@ class SourceEngine(EngineBase):
 
         # Pre-create C++ sources for all threads (1 master + N workers) on the main thread
         num_instances = 1 + self.simulation_engine.simulation.number_of_threads
-        print(
-            f"(python) SourceEngine::initialize num_threads={self.simulation_engine.simulation.number_of_threads} num_instances={num_instances}"
-        )
         for source in self.source_manager.sources.values():
             source.pre_create_g4_sources(num_instances)
 
