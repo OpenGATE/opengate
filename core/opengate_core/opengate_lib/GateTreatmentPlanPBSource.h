@@ -36,18 +36,12 @@ public:
   py::list GetGeneratedPrimaries();
 
 protected:
-  // thread local structure
-  struct threadLocalTPSource {
-    GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
-    std::vector<int> fNbIonsToGenerate;
-    std::vector<int> fNbGeneratedSpots;
-    int fCurrentSpot = 0;
-    int fPreviousSpot = -1;
-    bool fInitGenericIon = false;
-  };
-  G4Cache<threadLocalTPSource> fThreadLocalDataTPSource;
-
-  threadLocalTPSource &GetThreadLocalDataTPSource();
+  GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
+  std::vector<int> fNbIonsToGenerate;
+  std::vector<int> fNbGeneratedSpots;
+  int fCurrentSpot = 0;
+  int fPreviousSpot = -1;
+  bool fInitGenericIon = false;
 
   // variables common to all spots
   CLHEP::HepRandomEngine *fEngine;

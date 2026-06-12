@@ -41,7 +41,7 @@ public:
                            const G4ThreeVector &momentum_direction,
                            double energy, double time, double w);
 
-  void SetGeneratorFunction(ParticleGeneratorType &f) const;
+  void SetGeneratorFunction(ParticleGeneratorType &f);
 
   bool ParticleIsPrimary() const;
 
@@ -57,52 +57,47 @@ public:
   bool fVerbose;
   G4bool fIsotropicMomentum;
 
-  void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
+  void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode);
 
-  void SetEnergyBatch(const py::array_t<std::float_t> &fEnergy) const;
+  void SetEnergyBatch(const py::array_t<std::float_t> &fEnergy);
 
-  void SetWeightBatch(const py::array_t<std::float_t> &fWeight) const;
+  void SetWeightBatch(const py::array_t<std::float_t> &fWeight);
 
-  void SetPositionXBatch(const py::array_t<std::float_t> &fPositionX) const;
+  void SetPositionXBatch(const py::array_t<std::float_t> &fPositionX);
 
-  void SetPositionYBatch(const py::array_t<std::float_t> &fPositionY) const;
+  void SetPositionYBatch(const py::array_t<std::float_t> &fPositionY);
 
-  void SetPositionZBatch(const py::array_t<std::float_t> &fPositionZ) const;
+  void SetPositionZBatch(const py::array_t<std::float_t> &fPositionZ);
 
-  void SetDirectionXBatch(const py::array_t<std::float_t> &fDirectionX) const;
+  void SetDirectionXBatch(const py::array_t<std::float_t> &fDirectionX);
 
-  void SetDirectionYBatch(const py::array_t<std::float_t> &fDirectionY) const;
+  void SetDirectionYBatch(const py::array_t<std::float_t> &fDirectionY);
 
-  void SetDirectionZBatch(const py::array_t<std::float_t> &fDirectionZ) const;
+  void SetDirectionZBatch(const py::array_t<std::float_t> &fDirectionZ);
 
-  // For MT, all threads local variables are gathered here
-  struct threadLocalTPhsp {
-    G4ParticleDefinition *fParticleDefinition;
+protected:
+  G4ParticleDefinition *fParticleDefinition = nullptr;
 
-    bool fGenerateUntilNextPrimary;
-    std::int32_t fPrimaryPDGCode;
-    std::float_t fPrimaryLowerEnergyThreshold;
+  bool fGenerateUntilNextPrimary = false;
+  std::int32_t fPrimaryPDGCode = 0;
+  std::float_t fPrimaryLowerEnergyThreshold = 0.0;
 
-    ParticleGeneratorType fGenerator;
-    unsigned long fNumberOfGeneratedEvents;
-    size_t fCurrentIndex;
-    size_t fCurrentBatchSize;
+  ParticleGeneratorType fGenerator;
+  size_t fCurrentIndex = 0;
+  size_t fCurrentBatchSize = 0;
 
-    std::int32_t *fPDGCode;
+  std::int32_t *fPDGCode = nullptr;
 
-    std::float_t *fPositionX;
-    std::float_t *fPositionY;
-    std::float_t *fPositionZ;
+  std::float_t *fPositionX = nullptr;
+  std::float_t *fPositionY = nullptr;
+  std::float_t *fPositionZ = nullptr;
 
-    std::float_t *fDirectionX;
-    std::float_t *fDirectionY;
-    std::float_t *fDirectionZ;
+  std::float_t *fDirectionX = nullptr;
+  std::float_t *fDirectionY = nullptr;
+  std::float_t *fDirectionZ = nullptr;
 
-    std::float_t *fEnergy;
-    std::float_t *fWeight;
-    // double * fTime; // FIXME todo
-  };
-  G4Cache<threadLocalTPhsp> fThreadLocalDataPhsp;
+  std::float_t *fEnergy = nullptr;
+  std::float_t *fWeight = nullptr;
 };
 
 #endif // GatePhaseSpaceSource_h

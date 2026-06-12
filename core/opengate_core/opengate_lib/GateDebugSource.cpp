@@ -53,8 +53,7 @@ void GateDebugSource::GeneratePrimaries(G4Event *event,
                                         const double current_simulation_time) {
   DDD("GateDebugSource::GeneratePrimaries", " ", event->GetEventID(), " ",
       fMaxN);
-  auto &l = GetThreadLocalData();
-  l.fNumberOfGeneratedEvents++;
+  fNumberOfGeneratedEvents++;
   fDebugValue += 1;
   DDD("debug value = ", fDebugValue);
 }
