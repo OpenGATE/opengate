@@ -8,9 +8,9 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptrFreeFlightActor_h
 #define GateOptrFreeFlightActor_h
 
-#include "G4VBiasingOperator.hh"
 #include "GateGammaFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
+#include <G4VBiasingOperator.hh>
 
 namespace py = pybind11;
 

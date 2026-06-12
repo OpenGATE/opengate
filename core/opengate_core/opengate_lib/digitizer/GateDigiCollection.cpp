@@ -7,10 +7,10 @@
 
 #include "GateDigiCollection.h"
 #include "../GateHelpers.h"
-#include "G4Step.hh"
 #include "GateDigiAttributeManager.h"
 #include "GateDigiCollectionIterator.h"
 #include "GateDigiCollectionsRootManager.h"
+#include <G4Step.hh>
 
 GateDigiCollection::GateDigiCollection(const std::string &collName)
     : G4VHitsCollection("", collName), fDigiCollectionName(collName) {

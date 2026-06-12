@@ -8,9 +8,8 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateBOptrBremSplittingActor_h
 #define GateBOptrBremSplittingActor_h 1
 
-#include "../GateVActor.h"
-#include "G4VBiasingOperator.hh"
 #include "GateVBiasOptrActor.h"
+#include <G4VBiasingOperator.hh>
 
 namespace py = pybind11;
 

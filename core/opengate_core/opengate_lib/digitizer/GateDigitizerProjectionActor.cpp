@@ -8,9 +8,9 @@
 #include "GateDigitizerProjectionActor.h"
 #include "../GateHelpersDict.h"
 #include "../GateHelpersImage.h"
-#include "G4RunManager.hh"
 #include "GateDigiCollectionManager.h"
 #include "GateHelpersDigitizer.h"
+#include <G4RunManager.hh>
 #include <itkImageRegionIterator.h>
 
 G4Mutex DigitizerProjectionActorMutex = G4MUTEX_INITIALIZER;

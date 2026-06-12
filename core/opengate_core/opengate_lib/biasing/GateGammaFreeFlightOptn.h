@@ -8,9 +8,9 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateGammaFreeFlightOptn_h
 #define GateGammaFreeFlightOptn_h
 
-#include "G4ILawForceFreeFlight.hh"
-#include "G4ParticleChange.hh"
-#include "G4VBiasingOperation.hh"
+#include <G4ILawForceFreeFlight.hh>
+#include <G4ParticleChange.hh>
+#include <G4VBiasingOperation.hh>
 #include <pybind11/stl.h>
 
 /*

@@ -9,9 +9,9 @@
 #define OPENGATE_CORE_OPENGATEDIGITIZERPROJECTIONACTOR_H
 
 #include "../GateVActor.h"
-#include "G4Cache.hh"
 #include "GateDigiCollection.h"
 #include "itkImage.h"
+#include <G4Cache.hh>
 
 /*
  * Actor that creates some projections (2D images) from several Digi Collections

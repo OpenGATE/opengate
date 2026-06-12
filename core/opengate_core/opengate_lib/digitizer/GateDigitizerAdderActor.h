@@ -8,8 +8,8 @@
 #ifndef GateDigitizerAdderActor_h
 #define GateDigitizerAdderActor_h
 
-#include "G4Cache.hh"
 #include "GateVDigitizerWithOutputActor.h"
+#include <G4Cache.hh>
 #include <cstdint> // Required for uint64_t
 #include <memory>
 #include <pybind11/stl.h>

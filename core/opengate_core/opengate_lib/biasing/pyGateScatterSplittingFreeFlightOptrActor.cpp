@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 
 #include "../GateVActor.h"
-#include "G4VBiasingOperator.hh"
 #include "GateScatterSplittingFreeFlightOptrActor.h"
+#include <G4VBiasingOperator.hh>
 #include <pybind11/pybind11.h>
 
 void init_GateScatterSplittingFreeFlightOptrActor(py::module &m) {

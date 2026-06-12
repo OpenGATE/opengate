@@ -10,9 +10,9 @@ Copyright (C): OpenGATE Collaboration
 
 #include "../GateAcceptanceAngleManager.h"
 #include "../GateUserTrackInformation.h"
-#include "G4ParticleChange.hh"
-#include "G4VBiasingOperation.hh"
 #include "GateVBiasOptrActor.h"
+#include <G4ParticleChange.hh>
+#include <G4VBiasingOperation.hh>
 
 class GateScatterSplittingFreeFlightOptn : public G4VBiasingOperation {
 public:

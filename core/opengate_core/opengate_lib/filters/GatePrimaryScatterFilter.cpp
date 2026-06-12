@@ -7,7 +7,7 @@
 
 #include "GatePrimaryScatterFilter.h"
 #include "../GateHelpers.h"
-#include "G4Step.hh"
+#include <G4Step.hh>
 
 int IsUnscatteredPrimary(const G4Step *step) {
   /*

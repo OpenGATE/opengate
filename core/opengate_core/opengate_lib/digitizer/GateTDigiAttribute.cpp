@@ -7,7 +7,7 @@
 
 #include "GateTDigiAttribute.h"
 #include "../GateHelpers.h"
-#include "G4RootAnalysisManager.hh"
+#include <G4RootAnalysisManager.hh>
 
 template <class T>
 GateTDigiAttribute<T>::GateTDigiAttribute(std::string vname)

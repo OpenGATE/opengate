@@ -9,10 +9,10 @@
 #define GateVDigitizerWithOutputActor_h
 
 #include "../GateVActor.h"
-#include "G4Cache.hh"
 #include "GateDigiCollection.h"
 #include "GateDigiCollectionIterator.h"
 #include "GateHelpersDigitizer.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
