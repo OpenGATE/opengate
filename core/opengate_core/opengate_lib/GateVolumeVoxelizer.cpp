@@ -6,10 +6,10 @@
    -------------------------------------------------- */
 
 #include "GateVolumeVoxelizer.h"
-#include "G4Navigator.hh"
-#include "G4PhysicalVolumeStore.hh"
 #include "indicators.hpp"
-#include "itkImageRegionIteratorWithIndex.h"
+#include <G4Navigator.hh>
+#include <G4PhysicalVolumeStore.hh>
+#include <itkImageRegionIteratorWithIndex.h>
 
 GateVolumeVoxelizer::GateVolumeVoxelizer() { fImage = ImageType::New(); }
 

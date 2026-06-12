@@ -8,9 +8,9 @@
 #ifndef GATE_MATERIAL_MU_HANDLER_HH
 #define GATE_MATERIAL_MU_HANDLER_HH
 
-#include "G4LossTableManager.hh"
-#include "G4MaterialCutsCouple.hh"
 #include "GateMuTables.h"
+#include <G4LossTableManager.hh>
+#include <G4MaterialCutsCouple.hh>
 #include <map>
 #include <memory>
 #include <tuple>

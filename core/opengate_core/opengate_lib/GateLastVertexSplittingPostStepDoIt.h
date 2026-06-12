@@ -27,13 +27,13 @@
 #ifndef GateLastVertexSplittingPostStepDoIt_h
 #define GateLastVertexSplittingPostStepDoIt_h
 
-#include "G4EmBiasingManager.hh"
-#include "G4EmParameters.hh"
-#include "G4MaterialCutsCouple.hh"
-#include "G4VEmProcess.hh"
-#include "G4VEnergyLossProcess.hh"
-#include "G4VParticleChange.hh"
-#include "G4eplusAnnihilation.hh"
+#include <G4EmBiasingManager.hh>
+#include <G4EmParameters.hh>
+#include <G4MaterialCutsCouple.hh>
+#include <G4VEmProcess.hh>
+#include <G4VEnergyLossProcess.hh>
+#include <G4VParticleChange.hh>
+#include <G4eplusAnnihilation.hh>
 
 class GateBremPostStepDoIt : public G4VEnergyLossProcess {
 public:

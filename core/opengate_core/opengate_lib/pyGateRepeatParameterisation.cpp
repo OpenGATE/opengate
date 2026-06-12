@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4VPVParameterisation.hh"
 #include "GateRepeatParameterisation.h"
+#include <G4VPVParameterisation.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

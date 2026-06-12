@@ -27,12 +27,12 @@
 #ifndef LastVertexDataContainer_h
 #define LastVertexDataContainer_h
 
-#include "G4EmBiasingManager.hh"
-#include "G4Track.hh"
-#include "G4VEmProcess.hh"
-#include "G4VEnergyLossProcess.hh"
-#include "G4eplusAnnihilation.hh"
 #include "GateLastVertexSplittingSimpleContainer.h"
+#include <G4EmBiasingManager.hh>
+#include <G4Track.hh>
+#include <G4VEmProcess.hh>
+#include <G4VEnergyLossProcess.hh>
+#include <G4eplusAnnihilation.hh>
 #include <iostream>
 
 class LastVertexDataContainer {

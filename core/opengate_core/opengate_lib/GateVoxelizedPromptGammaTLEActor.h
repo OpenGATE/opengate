@@ -9,9 +9,9 @@
 #define GateVoxelizedPromptGammaTLEActor_h
 
 #include "GateVActor.h"
-#include "itkImage.h"
 #include <G4VPrimitiveScorer.hh>
 #include <G4VProcess.hh>
+#include <itkImage.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 

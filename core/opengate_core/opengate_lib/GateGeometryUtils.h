@@ -8,8 +8,8 @@
 #ifndef GEOMETRY_UTILS_HH
 #define GEOMETRY_UTILS_HH
 
-#include "G4String.hh"
-#include "G4VTouchable.hh"
+#include <G4String.hh>
+#include <G4VTouchable.hh>
 #include <vector>
 
 /**

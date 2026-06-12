@@ -8,8 +8,8 @@
 #ifndef GateLETActor_h
 #define GateLETActor_h
 
-#include "G4VPrimitiveScorer.hh"
 #include "GateWeightedEdepActor.h"
+#include <G4VPrimitiveScorer.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

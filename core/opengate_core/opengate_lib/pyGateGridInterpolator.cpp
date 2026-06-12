@@ -5,9 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
 #include "GateGridInterpolator.h"
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 

@@ -8,10 +8,10 @@
 #ifndef GateFieldBase_h
 #define GateFieldBase_h
 
-#include "G4AffineTransform.hh"
-#include "G4RotationMatrix.hh"
-#include "G4ThreeVector.hh"
-#include "G4Types.hh"
+#include <G4AffineTransform.hh>
+#include <G4RotationMatrix.hh>
+#include <G4ThreeVector.hh>
+#include <G4Types.hh>
 #include <vector>
 
 class G4VSolid;

@@ -5,27 +5,25 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4RunManager.hh"
-#include "G4Track.hh"
-
-#include "G4HadronInelasticProcess.hh"
+#include "GateVoxelizedPromptGammaAnalogActor.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-#include "GateVoxelizedPromptGammaAnalogActor.h"
-
+#include <G4CrossSectionDataStore.hh>
+#include <G4EmCalculator.hh>
+#include <G4Gamma.hh>
+#include <G4HadronInelasticProcess.hh>
+#include <G4HadronicProcessStore.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4Proton.hh>
+#include <G4RunManager.hh>
+#include <G4Track.hh>
+#include <G4VProcess.hh>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkCastImageFilter.h>
 #include <itkImageRegionIterator.h>
 
-#include <G4Proton.hh>
-#include <G4VProcess.hh>
 // #include <G4ProtonInelasticProcess.hh>
-#include <G4CrossSectionDataStore.hh>
-#include <G4HadronicProcessStore.hh>
 
 GateVoxelizedPromptGammaAnalogActor::GateVoxelizedPromptGammaAnalogActor(
     py::dict &user_info)

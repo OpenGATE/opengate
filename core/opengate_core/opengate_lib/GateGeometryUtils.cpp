@@ -6,13 +6,13 @@
    -------------------------------------------------- */
 
 #include "GateGeometryUtils.h"
-#include "G4LogicalVolume.hh"
-#include "G4Navigator.hh"
-#include "G4RunManager.hh"
-#include "G4TouchableHistory.hh"
-#include "G4TransportationManager.hh"
-#include "G4VPhysicalVolume.hh"
 #include "GateHelpers.h"
+#include <G4LogicalVolume.hh>
+#include <G4Navigator.hh>
+#include <G4RunManager.hh>
+#include <G4TouchableHistory.hh>
+#include <G4TransportationManager.hh>
+#include <G4VPhysicalVolume.hh>
 
 /**
  * @brief Recursively builds the path to each volume using a

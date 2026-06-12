@@ -6,8 +6,8 @@
    ------------------------------------ -------------- */
 
 #include "GateKillNonInteractingParticleActor.h"
-#include "G4LogicalVolumeStore.hh"
-#include "G4TransportationManager.hh"
+#include <G4LogicalVolumeStore.hh>
+#include <G4TransportationManager.hh>
 
 GateKillNonInteractingParticleActor::GateKillNonInteractingParticleActor(
     py::dict &user_info)

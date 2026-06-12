@@ -29,16 +29,16 @@
 #ifndef GateLastVertexInteractionSplittingActor_h
 #define GateLastVertexInteractionSplittingActor_h 1
 
-#include "CLHEP/Vector/ThreeVector.h"
-#include "G4ParticleChangeForGamma.hh"
-#include "G4StackManager.hh"
-#include "G4VEnergyLossProcess.hh"
 #include "GateAcceptanceAngleManager.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingDataContainer.h"
 #include "GateVActor.h"
-#include "tree/tree.hh"
+#include <CLHEP/Vector/ThreeVector.h>
+#include <G4ParticleChangeForGamma.hh>
+#include <G4StackManager.hh>
+#include <G4VEnergyLossProcess.hh>
 #include <pybind11/stl.h>
+#include <tree/tree.hh>
 
 using CLHEP::Hep3Vector;
 

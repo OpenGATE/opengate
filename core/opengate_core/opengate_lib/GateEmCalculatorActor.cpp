@@ -6,13 +6,13 @@
    -------------------------------------------------- */
 
 #include "GateEmCalculatorActor.h"
-#include "G4IonTable.hh"
-#include "G4MaterialTable.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
-#include "G4SystemOfUnits.hh"
 #include "GateHelpersDict.h"
+#include <G4IonTable.hh>
+#include <G4MaterialTable.hh>
+#include <G4NistManager.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4ParticleTable.hh>
+#include <G4SystemOfUnits.hh>
 
 /// Destructor
 GateEmCalculatorActor::~GateEmCalculatorActor() {}

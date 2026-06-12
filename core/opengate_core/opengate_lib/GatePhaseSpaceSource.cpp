@@ -6,12 +6,12 @@
    -------------------------------------------------- */
 
 #include "GatePhaseSpaceSource.h"
-#include "G4IonTable.hh"
-#include "G4ParticleTable.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersPyBind.h"
-#include "Randomize.hh"
+#include <G4IonTable.hh>
+#include <G4ParticleTable.hh>
+#include <Randomize.hh>
 
 GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCharge = 0;

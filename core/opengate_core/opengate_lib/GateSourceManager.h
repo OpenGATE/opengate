@@ -8,6 +8,11 @@
 #ifndef GateSourceManager_h
 #define GateSourceManager_h
 
+#include "GateImageBox.h"
+#include "GateUserEventInformation.h"
+#include "GateVActor.h"
+#include "GateVSource.h"
+#include "indicators.hpp"
 #include <G4Cache.hh>
 #include <G4ParticleGun.hh>
 #include <G4Threading.hh>
@@ -15,12 +20,6 @@
 #include <G4UIsession.hh>
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
-
-#include "GateImageBox.h"
-#include "GateUserEventInformation.h"
-#include "GateVActor.h"
-#include "GateVSource.h"
-#include "indicators.hpp"
 
 using namespace indicators;
 

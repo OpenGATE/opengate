@@ -8,10 +8,9 @@
 #ifndef GatePencilBeamSingleParticleSource_h
 #define GatePencilBeamSingleParticleSource_h
 
+#include "GateRandomMultiGauss.h"
 #include "GateSingleParticleSource.h"
 #include <pybind11/stl.h>
-
-#include "GateRandomMultiGauss.h"
 
 /*
     Single Particle Source generator specific for PencilBeam source

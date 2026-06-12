@@ -6,11 +6,11 @@
    -------------------------------------------------- */
 
 #include "GatePhaseSpaceActor.h"
-#include "G4RunManager.hh"
-#include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
 #include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateHelpersDigitizer.h"
+#include <G4RunManager.hh>
+#include <G4UnitsTable.hh>
 
 G4Mutex TotalEntriesMutex = G4MUTEX_INITIALIZER;
 

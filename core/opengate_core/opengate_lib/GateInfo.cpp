@@ -7,11 +7,14 @@
 
 #include "GateInfo.h"
 #include "GateHelpers.h"
+#include <G4LinInterpolator.hh>
+#include <G4PixeCrossSectionHandler.hh>
+#include <G4PixeShellDataSet.hh>
 #include <G4Version.hh>
+#include <QtGlobal>
 #include <itkVersion.h>
 
 #ifdef G4VIS_USE_OPENGLQT
-#include <QtGlobal>
 #endif
 
 bool GateInfo::get_G4MULTITHREADED() {
@@ -53,10 +56,6 @@ bool GateInfo::get_G4GDML() {
   return false;
 #endif
 }
-
-#include "G4LinInterpolator.hh"
-#include "G4PixeCrossSectionHandler.hh"
-#include "G4PixeShellDataSet.hh"
 
 void GateInfo::test() {
   DDD("test");

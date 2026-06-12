@@ -6,8 +6,8 @@
 
 #ifndef GateEmCalculatorActor_h
 #define GateEmCalculatorActor_h
-#include "G4EmCalculator.hh"
 #include "GateVActor.h"
+#include <G4EmCalculator.hh>
 #include <pybind11/stl.h>
 
 //-----------------------------------------------------------------------------

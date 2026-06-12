@@ -27,7 +27,7 @@
 #ifndef SimpleContainer_h
 #define SimpleContainer_h
 
-#include "G4TouchableHandle.hh"
+#include <G4TouchableHandle.hh>
 
 class SimpleContainer {
 

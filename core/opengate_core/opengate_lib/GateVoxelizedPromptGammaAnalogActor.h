@@ -9,8 +9,8 @@
 #define GateVoxelizedPromptGammaAnalogActor_h
 
 #include "GateVActor.h"
-#include "itkImage.h"
 #include <G4VPrimitiveScorer.hh>
+#include <itkImage.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

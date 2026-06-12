@@ -6,11 +6,11 @@
    ------------------------------------ -------------- */
 
 #include "GateFluenceActor.h"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
 #include "GateActorManager.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
+#include <G4RunManager.hh>
+#include <G4Threading.hh>
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
 

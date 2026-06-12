@@ -5,14 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateGridInterpolator.h"
+#include "GateMappedElectricField.h"
+#include <G4ElectroMagneticField.hh>
+#include <G4VSolid.hh>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-#include "G4ElectroMagneticField.hh"
-#include "G4VSolid.hh"
-#include "GateGridInterpolator.h"
-#include "GateMappedElectricField.h"
 
 namespace py = pybind11;
 

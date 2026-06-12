@@ -6,12 +6,12 @@
    -------------------------------------------------- */
 
 #include "GateAcceptanceAngleSingleVolume.h"
-#include "G4LogicalVolumeStore.hh"
-#include "G4Navigator.hh"
-#include "G4PhysicalVolumeStore.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
+#include <G4LogicalVolumeStore.hh>
+#include <G4Navigator.hh>
+#include <G4PhysicalVolumeStore.hh>
 
 GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
     const std::string &volume,

@@ -6,15 +6,15 @@
    ------------------------------------ -------------- */
 
 #include "GateDoseActor.h"
-#include "G4Electron.hh"
-#include "G4Gamma.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateSourceManager.h"
+#include <G4Electron.hh>
+#include <G4Gamma.hh>
+#include <G4NistManager.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4RunManager.hh>
+#include <G4Threading.hh>
 #include <cmath>
 #include <iostream>
 #include <itkAddImageFilter.h>

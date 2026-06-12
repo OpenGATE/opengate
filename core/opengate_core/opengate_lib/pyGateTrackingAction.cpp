@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4UserTrackingAction.hh"
 #include "GateTrackingAction.h"
+#include <G4UserTrackingAction.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

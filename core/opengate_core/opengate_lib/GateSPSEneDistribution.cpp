@@ -6,9 +6,9 @@
    -------------------------------------------------- */
 
 #include "GateSPSEneDistribution.h"
-#include "fmt/core.h"
 #include <Randomize.hh>
 #include <cstdlib>
+#include <fmt/core.h>
 #include <limits>
 
 // Parts copied from GateSPSEneDistribution.cc

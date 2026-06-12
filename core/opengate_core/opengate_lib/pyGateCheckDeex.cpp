@@ -5,14 +5,14 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4LossTableManager.hh"
-#include "G4MaterialCutsCouple.hh"
-#include "G4ProductionCuts.hh"
-#include "G4ProductionCutsTable.hh"
-#include "G4Region.hh"
-#include "G4RegionStore.hh"
-#include "G4Types.hh"
-#include "G4VAtomDeexcitation.hh"
+#include <G4LossTableManager.hh>
+#include <G4MaterialCutsCouple.hh>
+#include <G4ProductionCuts.hh>
+#include <G4ProductionCutsTable.hh>
+#include <G4Region.hh>
+#include <G4RegionStore.hh>
+#include <G4Types.hh>
+#include <G4VAtomDeexcitation.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

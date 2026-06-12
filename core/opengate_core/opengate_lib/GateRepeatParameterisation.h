@@ -8,8 +8,8 @@
 #ifndef GateRepeatParameterisation_h
 #define GateRepeatParameterisation_h
 
-#include "G4VPVParameterisation.hh"
-#include "G4VPhysicalVolume.hh"
+#include <G4VPVParameterisation.hh>
+#include <G4VPhysicalVolume.hh>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;

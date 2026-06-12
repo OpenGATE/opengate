@@ -5,19 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <iostream>
-#include <pybind11/numpy.h>
-
-#ifdef USE_GDML
-
-#include <G4GDMLParser.hh>
-
-#endif
-
+#include "GateSourceManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateSignalHandler.h"
-#include "GateSourceManager.h"
 #include "indicators.hpp"
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
@@ -26,6 +17,12 @@
 #include <G4UImanager.hh>
 #include <G4UnitsTable.hh>
 #include <cmath>
+#include <iostream>
+#include <pybind11/numpy.h>
+
+#ifdef USE_GDML
+#include <G4GDMLParser.hh>
+#endif
 
 /* There will be one SourceManager per thread */
 

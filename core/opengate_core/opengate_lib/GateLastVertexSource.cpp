@@ -6,7 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateLastVertexSource.h"
-#include "G4ParticleTable.hh"
+#include <G4ParticleTable.hh>
 #include <G4UnitsTable.hh>
 
 GateLastVertexSource::GateLastVertexSource() : GateVSource() {}

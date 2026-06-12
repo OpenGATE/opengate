@@ -8,11 +8,11 @@
 #ifndef GateFluenceActor_h
 #define GateFluenceActor_h
 
-#include "G4Cache.hh"
-#include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "digitizer/GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
-#include "itkImage.h"
+#include <G4Cache.hh>
+#include <G4VPrimitiveScorer.hh>
+#include <itkImage.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

@@ -6,11 +6,11 @@
    ------------------------------------ -------------- */
 
 #include "GateKillAccordingProcessesActor.h"
-#include "G4LogicalVolumeStore.hh"
-#include "G4ParticleTable.hh"
-#include "G4ProcessManager.hh"
-#include "G4VProcess.hh"
 #include "GateHelpersDict.h"
+#include <G4LogicalVolumeStore.hh>
+#include <G4ParticleTable.hh>
+#include <G4ProcessManager.hh>
+#include <G4VProcess.hh>
 
 G4Mutex SetNbKillAccordingProcessesMutex = G4MUTEX_INITIALIZER;
 

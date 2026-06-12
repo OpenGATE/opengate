@@ -8,8 +8,8 @@
 #ifndef GateUniqueVolumeID_h
 #define GateUniqueVolumeID_h
 
-#include "G4VPhysicalVolume.hh"
-#include "G4VTouchable.hh"
+#include <G4VPhysicalVolume.hh>
+#include <G4VTouchable.hh>
 #include <array>
 #include <map>
 #include <memory>

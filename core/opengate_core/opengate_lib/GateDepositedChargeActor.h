@@ -8,8 +8,8 @@
 #ifndef GateDepositedChargeActor_h
 #define GateDepositedChargeActor_h
 
-#include "G4Cache.hh"
 #include "GateVActor.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

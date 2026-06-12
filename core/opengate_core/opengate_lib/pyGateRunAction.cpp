@@ -5,9 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4UserRunAction.hh"
 #include "GateRunAction.h"
 #include "GateSourceManager.h"
+#include <G4UserRunAction.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

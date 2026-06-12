@@ -6,15 +6,14 @@
    ------------------------------------ -------------- */
 
 #include "GateWeightedEdepActor.h"
-#include "G4RunManager.hh"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
+#include <G4Electron.hh>
+#include <G4EmCalculator.hh>
+#include <G4Gamma.hh>
+#include <G4NistManager.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4RunManager.hh>
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetWeightedPixelMutex = G4MUTEX_INITIALIZER;

@@ -28,19 +28,19 @@
 /// \brief Implementation of the GateLastVertexInteractionSplittingActor class
 
 #include "GateLastVertexInteractionSplittingActor.h"
-#include "G4LogicalVolumeStore.hh"
-#include "G4ParticleTable.hh"
-#include "G4ProcessManager.hh"
-#include "G4ProcessVector.hh"
-#include "G4RunManager.hh"
-#include "G4TrackStatus.hh"
-#include "G4VParticleChange.hh"
-#include "G4eplusAnnihilation.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingPostStepDoIt.h"
 #include "GateSourceManager.h"
+#include <G4LogicalVolumeStore.hh>
+#include <G4ParticleTable.hh>
+#include <G4ProcessManager.hh>
+#include <G4ProcessVector.hh>
+#include <G4RunManager.hh>
+#include <G4TrackStatus.hh>
+#include <G4VParticleChange.hh>
+#include <G4eplusAnnihilation.hh>
 #include <cmath>
 
 G4Mutex SetEventCorrectionForLastVertex = G4MUTEX_INITIALIZER;

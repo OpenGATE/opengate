@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateImageBox.h"
-#include "G4VGraphicsScene.hh"
 #include "GateHelpersDict.h"
+#include <G4VGraphicsScene.hh>
 #include <typeinfo>
 
 //-----------------------------------------------------------------------------

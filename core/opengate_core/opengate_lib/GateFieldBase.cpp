@@ -6,7 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateFieldBase.h"
-#include "G4VSolid.hh"
+#include <G4VSolid.hh>
 #include <cmath>
 #include <limits>
 #include <sstream>

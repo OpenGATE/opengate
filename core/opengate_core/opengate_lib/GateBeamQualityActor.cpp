@@ -6,13 +6,13 @@
    ------------------------------------ -------------- */
 
 #include "GateBeamQualityActor.h"
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4LinInterpolation.hh"
-#include "G4MaterialTable.hh"
-#include "G4ParticleDefinition.hh"
 #include "GateHelpersDict.h"
+#include <G4Electron.hh>
+#include <G4EmCalculator.hh>
+#include <G4Gamma.hh>
+#include <G4LinInterpolation.hh>
+#include <G4MaterialTable.hh>
+#include <G4ParticleDefinition.hh>
 #include <cmath>
 #include <itkImageRegionIterator.h>
 

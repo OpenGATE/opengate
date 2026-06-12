@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateGridInterpolator.h"
-
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>

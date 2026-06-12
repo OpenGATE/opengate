@@ -9,7 +9,7 @@
 #define GateSPSVoxelsPosDistribution_h
 
 #include "GateSPSPosDistribution.h"
-#include "itkImage.h"
+#include <itkImage.h>
 
 class GateSPSVoxelsPosDistribution : public GateSPSPosDistribution {
 

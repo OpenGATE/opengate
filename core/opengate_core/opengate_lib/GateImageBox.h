@@ -8,27 +8,26 @@
 #ifndef GateImageBox_h
 #define GateImageBox_h
 
-#include "G4Box.hh"
+#include <G4Box.hh>
+#include <G4Version.hh>
+#include <OpenGL/gl.h>
+#include <private/G4OpenGLSceneHandler.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 // Convert the macro value to a string for displaying
 #if USE_VISU > 0
-#include "G4Version.hh"
 /**
  * Only Geant4 >= 9.6.0 had the G4OpenGLSceneHandler::GetObjectTransformation()
  * method
  */
 #if G4VERSION_NUMBER >= 960
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
 #else
-#include <GL/gl.h>
 #endif /* __APPLE__ */
 
 #define G4VIS_BUILD_OPENGL_DRIVER
-#include "private/G4OpenGLSceneHandler.hh"
 
 #define GATEIMAGEBOX_USE_OPENGL 1
 #endif /* G4VERSION_NUMBER */

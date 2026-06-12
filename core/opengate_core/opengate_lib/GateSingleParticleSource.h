@@ -8,13 +8,13 @@
 #ifndef GateSingleParticleSource_h
 #define GateSingleParticleSource_h
 
-#include "G4ParticleDefinition.hh"
-#include "G4VPrimaryGenerator.hh"
 #include "GateAcceptanceAngleManager.h"
 #include "GateSPSAngDistribution.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
 #include "biasing/GateForcedDirectionManager.h"
+#include <G4ParticleDefinition.hh>
+#include <G4VPrimaryGenerator.hh>
 
 /*
     Single Particle Source generator.

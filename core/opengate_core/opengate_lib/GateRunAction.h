@@ -8,9 +8,9 @@
 #ifndef GateRunAction_h
 #define GateRunAction_h
 
-#include "G4UserRunAction.hh"
 #include "GateSourceManager.h"
 #include "GateVActor.h"
+#include <G4UserRunAction.hh>
 
 class GateRunAction : public G4UserRunAction {
 

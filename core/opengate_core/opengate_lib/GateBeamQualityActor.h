@@ -8,10 +8,10 @@
 #ifndef GateBeamQualityActor_h
 #define GateBeamQualityActor_h
 
-#include "G4DataVector.hh"
-#include "G4VPrimitiveScorer.hh"
 #include "GateWeightedEdepActor.h"
-#include "itkImage.h"
+#include <G4DataVector.hh>
+#include <G4VPrimitiveScorer.hh>
+#include <itkImage.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
