@@ -8,9 +8,12 @@
 #ifndef GateImageBox_h
 #define GateImageBox_h
 
+#ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION 1
+#endif
+
 #include <G4Box.hh>
 #include <G4Version.hh>
-#include <OpenGL/gl.h>
 #include <private/G4OpenGLSceneHandler.hh>
 #include <pybind11/stl.h>
 
