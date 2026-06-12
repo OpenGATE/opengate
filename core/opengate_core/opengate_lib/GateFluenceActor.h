@@ -13,7 +13,6 @@
 #include "GateVActor.h"
 #include "digitizer/GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 #include "itkImage.h"
-#include <iostream>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

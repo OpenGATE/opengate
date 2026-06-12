@@ -1,18 +1,18 @@
-#include "GateEmCalculatorActor.h"
-#include "GateHelpersDict.h"
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
 
-#include "G4Event.hh"
+#include "GateEmCalculatorActor.h"
 #include "G4IonTable.hh"
 #include "G4MaterialTable.hh"
 #include "G4NistManager.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4ParticleTable.hh"
-#include "G4ProcessManager.hh"
-
-#include "G4PhysicalConstants.hh"
-#include "G4ProductionCutsTable.hh"
 #include "G4SystemOfUnits.hh"
-#include "G4UnitsTable.hh"
+#include "GateHelpersDict.h"
 
 /// Destructor
 GateEmCalculatorActor::~GateEmCalculatorActor() {}

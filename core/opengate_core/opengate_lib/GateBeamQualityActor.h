@@ -8,16 +8,11 @@
 #ifndef GateBeamQualityActor_h
 #define GateBeamQualityActor_h
 
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
+#include "G4DataVector.hh"
 #include "G4VPrimitiveScorer.hh"
-#include "GateHelpersImage.h"
 #include "GateWeightedEdepActor.h"
 #include "itkImage.h"
 #include <pybind11/stl.h>
-
-#include "G4DataVector.hh"
 
 namespace py = pybind11;
 

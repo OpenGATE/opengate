@@ -6,8 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateDepositedChargeActor.h"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
 
 // Mutex to protect merging of thread-local charges into the total.
 G4Mutex GateDepositedChargeActorMutex = G4MUTEX_INITIALIZER;

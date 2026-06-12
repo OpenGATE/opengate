@@ -9,8 +9,9 @@
 #include "G4LogicalVolumeStore.hh"
 #include "G4Navigator.hh"
 #include "G4PhysicalVolumeStore.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
+#include "GateHelpersGeometry.h"
 
 GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
     const std::string &volume,

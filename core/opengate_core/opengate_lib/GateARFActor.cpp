@@ -8,7 +8,6 @@
 #include "GateARFActor.h"
 #include "G4Gamma.hh"
 #include "G4RunManager.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, true) {

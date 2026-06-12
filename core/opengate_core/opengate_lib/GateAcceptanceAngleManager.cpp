@@ -8,6 +8,7 @@
 #include "GateAcceptanceAngleManager.h"
 #include "G4RunManager.hh"
 #include "GateAcceptanceAngleSingleVolume.h"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 GateAcceptanceAngleManager::GateAcceptanceAngleManager() {

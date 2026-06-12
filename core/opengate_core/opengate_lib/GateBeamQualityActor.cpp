@@ -6,27 +6,15 @@
    ------------------------------------ -------------- */
 
 #include "GateBeamQualityActor.h"
-#include "G4LinInterpolation.hh"
-#include "G4Navigator.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
-#include <itkImageRegionIterator.h>
-
-#include "G4Deuteron.hh"
 #include "G4Electron.hh"
 #include "G4EmCalculator.hh"
 #include "G4Gamma.hh"
+#include "G4LinInterpolation.hh"
 #include "G4MaterialTable.hh"
-#include "G4NistManager.hh"
 #include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
-#include "G4Positron.hh"
-#include "G4Proton.hh"
-
+#include "GateHelpersDict.h"
 #include <cmath>
+#include <itkImageRegionIterator.h>
 
 GateBeamQualityActor::~GateBeamQualityActor() {
   for (auto *vec : *table) {
