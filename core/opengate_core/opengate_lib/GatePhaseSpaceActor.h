@@ -9,8 +9,6 @@
 #define GatePhaseSpaceActor_h
 
 #include "G4Cache.hh"
-#include "G4GenericAnalysisManager.hh"
-#include "GateHelpers.h"
 #include "GateVActor.h"
 #include "digitizer/GateDigiCollection.h"
 #include <pybind11/stl.h>

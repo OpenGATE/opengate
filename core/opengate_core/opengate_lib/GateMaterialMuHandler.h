@@ -10,9 +10,6 @@
 
 #include "G4LossTableManager.hh"
 #include "G4MaterialCutsCouple.hh"
-#include "G4ParticleTable.hh"
-#include "G4UnitsTable.hh"
-
 #include "GateMuTables.h"
 #include <map>
 #include <memory>

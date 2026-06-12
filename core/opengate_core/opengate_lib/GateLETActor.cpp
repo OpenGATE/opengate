@@ -6,23 +6,7 @@
    ------------------------------------ -------------- */
 
 #include "GateLETActor.h"
-#include "G4Navigator.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
-
-#include "G4Deuteron.hh"
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4MaterialTable.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
-#include "G4Positron.hh"
-#include "G4Proton.hh"
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetLETPixelMutex = G4MUTEX_INITIALIZER;

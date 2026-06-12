@@ -34,16 +34,12 @@
 #include "G4StackManager.hh"
 #include "G4VEnergyLossProcess.hh"
 #include "GateAcceptanceAngleManager.h"
-#include "GateAcceptanceAngleSingleVolume.h"
-#include "GateDoseActor.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingDataContainer.h"
-#include "GateSimulationStatisticsActor.h"
 #include "GateVActor.h"
 #include "tree/tree.hh"
-#include "tree/tree_util.hh"
-#include <iostream>
 #include <pybind11/stl.h>
+
 using CLHEP::Hep3Vector;
 
 namespace py = pybind11;

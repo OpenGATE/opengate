@@ -10,7 +10,6 @@
 
 #include "G4Material.hh"
 #include "G4MaterialCutsCouple.hh"
-#include "G4UnitsTable.hh"
 
 class GateMuTable {
 

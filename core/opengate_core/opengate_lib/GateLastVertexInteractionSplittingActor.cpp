@@ -36,6 +36,7 @@
 #include "G4TrackStatus.hh"
 #include "G4VParticleChange.hh"
 #include "G4eplusAnnihilation.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingPostStepDoIt.h"

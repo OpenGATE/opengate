@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GatePencilBeamSource.h"
-#include "G4IonTable.hh"
 #include "GateHelpersDict.h"
 #include <G4UnitsTable.hh>
 

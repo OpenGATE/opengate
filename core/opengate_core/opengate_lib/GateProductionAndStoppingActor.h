@@ -8,9 +8,6 @@
 #ifndef GateProductionAndStoppingActor_h
 #define GateProductionAndStoppingActor_h
 
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
