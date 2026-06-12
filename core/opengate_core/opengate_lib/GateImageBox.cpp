@@ -6,13 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateImageBox.h"
-
-#include "G4Polyhedron.hh"
 #include "G4VGraphicsScene.hh"
-#include "G4VisManager.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
-
 #include <typeinfo>
 
 //-----------------------------------------------------------------------------

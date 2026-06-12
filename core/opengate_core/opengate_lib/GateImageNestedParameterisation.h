@@ -8,11 +8,9 @@
 #ifndef GateImageNestedParameterisation_h
 #define GateImageNestedParameterisation_h
 
-#include "G4NistManager.hh"
 #include "G4VNestedParameterisation.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VTouchable.hh"
-#include "GateHelpers.h"
 #include "itkImage.h"
 
 class GateImageNestedParameterisation : public G4VNestedParameterisation {

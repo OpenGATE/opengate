@@ -6,6 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateImageNestedParameterisation.h"
+#include <G4Material.hh>
+#include <G4NistManager.hh>
 
 GateImageNestedParameterisation::GateImageNestedParameterisation()
     : G4VNestedParameterisation() {
