@@ -237,7 +237,7 @@ std::set<std::string> GateDigiCollection::GetDigiAttributeNames() const {
 }
 
 GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
-  return {this, 0};
+  return GateDigiCollectionIterator(this, 0);
 }
 
 std::string GateDigiCollection::DumpLastDigi() const {

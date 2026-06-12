@@ -5,7 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#pragma once
+#include "../GateHelpersDict.h"
 #include "../digitizer/GateDigiAttributeManager.h"
+#include "GateAttributeComparisonFilter.h"
 #include <G4Step.hh>
 #include <pybind11/stl.h>
 

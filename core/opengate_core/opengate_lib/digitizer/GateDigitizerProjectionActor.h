@@ -11,7 +11,6 @@
 #include "../GateVActor.h"
 #include "G4Cache.hh"
 #include "GateDigiCollection.h"
-#include "GateHelpersDigitizer.h"
 #include "itkImage.h"
 
 /*

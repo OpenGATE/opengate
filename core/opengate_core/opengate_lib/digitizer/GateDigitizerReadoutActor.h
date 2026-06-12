@@ -8,15 +8,9 @@
 #ifndef GateDigitizerDiscretizerActor_h
 #define GateDigitizerDiscretizerActor_h
 
-#include "../GateVActor.h"
 #include "G4Cache.hh"
 #include "G4Navigator.hh"
-#include "GateDigiAdderInVolume.h"
-#include "GateDigiCollection.h"
-#include "GateDigiCollectionIterator.h"
 #include "GateDigitizerAdderActor.h"
-#include "GateHelpersDigitizer.h"
-#include "GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

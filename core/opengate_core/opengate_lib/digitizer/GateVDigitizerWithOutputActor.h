@@ -13,7 +13,6 @@
 #include "GateDigiCollection.h"
 #include "GateDigiCollectionIterator.h"
 #include "GateHelpersDigitizer.h"
-#include "GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -70,7 +69,7 @@ protected:
   // During computation (thread local)
   struct threadLocalVDigitizerT {
     GateDigiAttributesFiller *fDigiAttributeFiller{};
-    GateDigiCollection::Iterator fInputIter;
+    GateDigiCollectionIterator fInputIter;
   };
   G4Cache<threadLocalVDigitizerT> fThreadLocalVDigitizerData;
 };

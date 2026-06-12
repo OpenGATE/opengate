@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateAttributeComparisonFilter.h"
+#include "../GateHelpersDict.h"
 #include "../digitizer/GateDigiAttributeManager.h"
 #include <sstream>
 

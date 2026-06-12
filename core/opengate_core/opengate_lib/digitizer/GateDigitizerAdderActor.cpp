@@ -7,10 +7,8 @@
 
 #include "GateDigitizerAdderActor.h"
 #include "../GateHelpersDict.h"
-#include "../GateUserTrackInformation.h"
 #include "GateDigiAdderInVolume.h"
-#include "GateDigiCollectionManager.h"
-#include <functional>
+#include "GateTDigiAttribute.h"
 #include <sstream>
 
 GateDigitizerAdderActor::threadLocalT::~threadLocalT() = default;

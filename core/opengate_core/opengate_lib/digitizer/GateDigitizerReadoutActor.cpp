@@ -7,12 +7,9 @@
 
 #include "GateDigitizerReadoutActor.h"
 #include "../GateHelpers.h"
-#include "../GateHelpersDict.h"
 #include "G4Navigator.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "GateDigiAdderInVolume.h"
-#include "GateDigiCollectionManager.h"
-#include <iostream>
 
 G4Mutex SetIgnoredHitsMutex = G4MUTEX_INITIALIZER;
 

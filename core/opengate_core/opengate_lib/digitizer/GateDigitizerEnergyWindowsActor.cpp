@@ -8,7 +8,6 @@
 #include "GateDigitizerEnergyWindowsActor.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiCollectionManager.h"
-#include <iostream>
 
 GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
     py::dict &user_info)

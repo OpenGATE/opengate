@@ -8,7 +8,6 @@
 #include "GateVDigitizerWithOutputActor.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiCollectionManager.h"
-#include <iostream>
 
 GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
     py::dict &user_info, bool MT_ready)
