@@ -7,6 +7,7 @@
 
 #include "GateTemplateSource.h"
 #include "G4ParticleTable.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include <G4UnitsTable.hh>
 

@@ -8,7 +8,6 @@
 #ifndef GateRunAction_h
 #define GateRunAction_h
 
-#include "G4Event.hh"
 #include "G4UserRunAction.hh"
 #include "GateSourceManager.h"
 #include "GateVActor.h"

@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateGANPairSource.h"
+#include "GateHelpers.h"
 
 GateGANPairSource::GateGANPairSource() : GateGANSource() {}
 

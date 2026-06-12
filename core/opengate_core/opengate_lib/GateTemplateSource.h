@@ -8,8 +8,6 @@
 #ifndef GateTemplateSource_h
 #define GateTemplateSource_h
 
-#include "GateAcceptanceAngleManager.h"
-#include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
 

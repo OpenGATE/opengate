@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateRunAction.h"
-#include "GateHelpers.h"
 #include "GateUniqueVolumeIDManager.h"
 
 GateRunAction::GateRunAction(GateSourceManager *sm) : G4UserRunAction() {

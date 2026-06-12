@@ -6,9 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateSPSEneDistribution.h"
-#include "G4UnitsTable.hh"
-#include "GateHelpers.h"
-#include "fmt/color.h"
 #include "fmt/core.h"
 #include <Randomize.hh>
 #include <cstdlib>

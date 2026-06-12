@@ -6,10 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateSimulationStatisticsActor.h"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include <chrono>
-#include <iostream>
 #include <sstream>
 
 G4Mutex GateSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;

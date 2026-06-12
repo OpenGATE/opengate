@@ -3,7 +3,7 @@
 -------------------------------------*/
 
 #include "GateRandomMultiGauss.h"
-#include "G4RandomTools.hh"
+#include <G4RandomTools.hh>
 #include <math.h>
 #include <vector>
 

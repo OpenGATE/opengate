@@ -11,7 +11,6 @@
 #include "G4ParticleDefinition.hh"
 #include "G4VPrimaryGenerator.hh"
 #include "GateAcceptanceAngleManager.h"
-#include "GateHelpers.h"
 #include "GateSPSAngDistribution.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
