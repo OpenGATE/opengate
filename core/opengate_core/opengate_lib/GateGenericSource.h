@@ -102,8 +102,6 @@ protected:
   double fEffectiveEventTime = -1;
   unsigned long fCurrentSkippedEvents = 0;
   unsigned long fCurrentZeroEvents = 0;
-
-  // sum of all threads
   unsigned long fTotalSkippedEvents = 0;
   unsigned long fTotalZeroEvents = 0;
 

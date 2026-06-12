@@ -145,7 +145,7 @@ double GateGenericSource::PrepareNextTime(const double current_simulation_time,
   if (fEffectiveEventTime < current_simulation_time) {
     fEffectiveEventTime = current_simulation_time;
   }
-  fTotalSkippedEvents += fCurrentSkippedEvents; // FIXME lock ?
+  fTotalSkippedEvents += fCurrentSkippedEvents;
   fTotalZeroEvents += fCurrentZeroEvents;
   fCurrentZeroEvents = 0;
   const auto cse = fCurrentSkippedEvents;
