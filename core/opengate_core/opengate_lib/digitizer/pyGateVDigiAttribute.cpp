@@ -10,6 +10,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+namespace py = pybind11;
+
 void init_GateVDigiAttribute(py::module &m) {
   py::class_<GateVDigiAttribute,
              std::unique_ptr<GateVDigiAttribute, py::nodelete>>(

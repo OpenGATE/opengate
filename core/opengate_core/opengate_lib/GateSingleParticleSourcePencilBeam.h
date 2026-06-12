@@ -19,8 +19,6 @@
 
 class GateGenericSource;
 
-namespace py = pybind11;
-
 class GateSingleParticleSourcePencilBeam : public GateSingleParticleSource {
 
 public:

@@ -10,6 +10,7 @@
 
 #include "G4VTouchable.hh"
 #include "GateUniqueVolumeID.h"
+#include <G4Cache.hh>
 #include <map>
 #include <string>
 #include <utility>

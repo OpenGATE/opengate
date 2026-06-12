@@ -10,6 +10,7 @@
 
 #include "../GateUniqueVolumeID.h"
 #include "GateVDigiAttribute.h"
+#include <G4Cache.hh>
 
 template <class T> class GateTDigiAttribute : public GateVDigiAttribute {
 public:

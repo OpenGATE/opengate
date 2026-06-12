@@ -5,17 +5,14 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateGeometryUtils.h"
 #include "G4LogicalVolume.hh"
 #include "G4Navigator.hh"
-#include "G4PhysicalVolumeStore.hh"
 #include "G4RunManager.hh"
 #include "G4TouchableHistory.hh"
 #include "G4TransportationManager.hh"
 #include "G4VPhysicalVolume.hh"
-
-#include "GateGeometryUtils.h"
 #include "GateHelpers.h"
-#include "GateUniqueVolumeIDManager.h"
 
 /**
  * @brief Recursively builds the path to each volume using a
