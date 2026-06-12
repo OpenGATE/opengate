@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigitizerAdderActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiAdderInVolume.h"
 #include "GateTDigiAttribute.h"

@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateTDigiAttribute.h"
+#include "../GateHelpers.h"
 #include "G4RootAnalysisManager.hh"
 
 template <class T>

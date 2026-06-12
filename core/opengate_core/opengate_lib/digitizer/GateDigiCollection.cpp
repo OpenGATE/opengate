@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigiCollection.h"
+#include "../GateHelpers.h"
 #include "G4Step.hh"
 #include "GateDigiAttributeManager.h"
 #include "GateDigiCollectionIterator.h"

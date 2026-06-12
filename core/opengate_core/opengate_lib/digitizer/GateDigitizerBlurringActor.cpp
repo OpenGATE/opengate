@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigitizerBlurringActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include <Randomize.hh>
 

@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigiCollectionsRootManager.h"
+#include "../GateHelpers.h"
 #include "G4RootAnalysisManager.hh"
 #include "G4Run.hh"
 #include "G4RunManager.hh"

@@ -6,21 +6,15 @@
    ------------------------------------ -------------- */
 
 #include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
 #include "G4ParticleDefinition.hh"
-#include "G4RandomTools.hh"
 #include "G4RunManager.hh"
-#include "G4Threading.hh"
 #include "G4Track.hh"
 
 #include "G4HadronInelasticProcess.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-#include "GateMaterialMuHandler.h"
 #include "GateVoxelizedPromptGammaTLEActor.h"
 
-#include "CLHEP/Random/Randomize.h"
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkCastImageFilter.h>

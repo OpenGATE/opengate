@@ -10,7 +10,6 @@
 
 #include "G4VPhysicalVolume.hh"
 #include "G4VTouchable.hh"
-#include "GateHelpers.h"
 #include <array>
 #include <map>
 #include <memory>

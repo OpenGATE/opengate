@@ -6,15 +6,12 @@
 #ifndef DECLARE_ITK_IMAGE_PY_H
 #define DECLARE_ITK_IMAGE_PY_H
 
-#include "pybind11/numpy.h"
+#include <itkImportImageFilter.h>
 #include <pybind11/functional.h>
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-
-#include "itkImage.h"
-#include "itkImportImageFilter.h"
-#include "itkSmartPointer.h"
 
 /** For now make copies of data to numpy arrays.
  * Some examples (pybind11 source code docs are non-existant)

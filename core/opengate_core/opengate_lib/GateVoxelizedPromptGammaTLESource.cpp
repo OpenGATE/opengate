@@ -6,9 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateVoxelizedPromptGammaTLESource.h"
-#include "G4ParticleTable.hh"
-#include "GateHelpersDict.h"
-#include "GateHelpersGeometry.h"
 
 GateVoxelizedPromptGammaTLESource::GateVoxelizedPromptGammaTLESource()
     : GateGenericSource() {

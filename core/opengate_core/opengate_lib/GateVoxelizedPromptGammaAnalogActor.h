@@ -8,13 +8,9 @@
 #ifndef GateVoxelizedPromptGammaAnalogActor_h
 #define GateVoxelizedPromptGammaAnalogActor_h
 
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
-#include "G4VPrimitiveScorer.hh"
-#include "GateDoseActor.h"
-#include "GateMaterialMuHandler.h"
-
+#include "GateVActor.h"
+#include "itkImage.h"
+#include <G4VPrimitiveScorer.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

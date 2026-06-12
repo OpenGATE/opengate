@@ -9,7 +9,6 @@
 #include "G4NavigationHistory.hh"
 #include "G4VPhysicalVolume.hh"
 #include "GateHelpers.h"
-#include "GateUniqueVolumeIDManager.h"
 #include <sstream>
 
 GateUniqueVolumeID::GateUniqueVolumeID() {

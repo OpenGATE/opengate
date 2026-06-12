@@ -13,7 +13,6 @@
 #include "G4RegionStore.hh"
 #include "G4Types.hh"
 #include "G4VAtomDeexcitation.hh"
-#include <ostream>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

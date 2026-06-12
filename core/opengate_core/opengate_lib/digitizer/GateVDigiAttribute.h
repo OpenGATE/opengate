@@ -9,6 +9,7 @@
 #define GateVDigiAttribute_h
 
 #include "../GateUniqueVolumeID.h"
+#include <G4Step.hh>
 
 class GateVDigiAttribute {
 public:
