@@ -5,13 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
-namespace py = pybind11;
-
 #include "G4VPVParameterisation.hh"
 #include "GateRepeatParameterisation.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 void init_GateRepeatParameterisation(py::module &m) {
 

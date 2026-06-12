@@ -5,11 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateKillAccordingParticleNameActor.h"
+#include <pybind11/pybind11.h>
 
 void init_GateKillAccordingParticleNameActor(py::module &m) {
   py::class_<GateKillAccordingParticleNameActor,

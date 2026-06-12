@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateVAuxiliaryAttribute.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateVAuxiliaryAttribute.h"
 
 void init_GateVAuxiliaryAttribute(py::module &m) {
   py::class_<GateVAuxiliaryAttribute>(m, "GateVAuxiliaryAttribute")

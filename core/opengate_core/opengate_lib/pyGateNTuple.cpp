@@ -5,12 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "tools/wroot/ntuple"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "G4RootAnalysisManager.hh"
 
 void init_GateNTuple(py::module &m) {
   py::class_<tools::wroot::ntuple>(m, "GateNTuple")

@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "G4UserSteppingAction.hh"
 #include "GateSteppingAction.h"
+#include <pybind11/pybind11.h>
 
 void init_GateSteppingAction(py::module &m) {
   py::class_<GateSteppingAction, G4UserSteppingAction,

@@ -5,13 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
-namespace py = pybind11;
-
 #include "GateDoseActor.h"
 #include "GateTLEDoseActor.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 class PyGateTLEDoseActor : public GateTLEDoseActor {
 public:

@@ -5,14 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
-namespace py = pybind11;
-
 #include "G4UserRunAction.hh"
 #include "GateRunAction.h"
 #include "GateSourceManager.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 void init_GateRunAction(py::module &m) {
 

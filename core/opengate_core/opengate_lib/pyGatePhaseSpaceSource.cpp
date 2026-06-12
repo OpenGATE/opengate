@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GatePhaseSpaceSource.h"
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
-#include "GatePhaseSpaceSource.h"
 
 void init_GatePhaseSpaceSource(py::module &m) {
 
