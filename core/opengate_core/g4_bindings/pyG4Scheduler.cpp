@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4ITTrackingInteractivity.hh"
 #include "G4DNAScavengerMaterial.hh"
+#include "G4ITTrackingInteractivity.hh"
 #include "G4Scheduler.hh"
 #include "G4UserTimeStepAction.hh"
 

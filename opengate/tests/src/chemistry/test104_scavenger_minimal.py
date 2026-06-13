@@ -22,11 +22,16 @@ def dump_scavenger_processes(simulation_engine):
     tracked_names = []
     if chemistry_world is not None:
         tracked_names = sorted(
-            {reaction.tracked_molecule for reaction in chemistry_world.scavenger_reactions}
+            {
+                reaction.tracked_molecule
+                for reaction in chemistry_world.scavenger_reactions
+            }
         )
 
     process_dump = {}
-    molecule_table = simulation_engine.chemistry_engine.chemistry_manager.chemistry_list.g4_molecule_table
+    molecule_table = (
+        simulation_engine.chemistry_engine.chemistry_manager.chemistry_list.g4_molecule_table
+    )
     for tracked_name in tracked_names:
         tracked_conf = molecule_table.GetConfiguration(tracked_name, False)
         definition_name = None
@@ -48,12 +53,14 @@ def dump_scavenger_processes(simulation_engine):
     simulation_engine.user_hook_log = Box(
         {
             "tracked_processes": process_dump,
-            "scavenger_material": None
-            if scavenger_material is None
-            else {
-                "species": list(scavenger_material.GetScavengerNames()),
-                "initial_O2_count": scavenger_material.GetSpeciesCount("O2"),
-            },
+            "scavenger_material": (
+                None
+                if scavenger_material is None
+                else {
+                    "species": list(scavenger_material.GetScavengerNames()),
+                    "initial_O2_count": scavenger_material.GetSpeciesCount("O2"),
+                }
+            ),
         }
     )
 
@@ -61,7 +68,10 @@ def dump_scavenger_processes(simulation_engine):
 def collect_scavenger_material_after_run(simulation_engine):
     scheduler = g4.G4Scheduler.Instance()
     scavenger_material = scheduler.GetScavengerMaterial()
-    if not hasattr(simulation_engine, "user_hook_log") or simulation_engine.user_hook_log is None:
+    if (
+        not hasattr(simulation_engine, "user_hook_log")
+        or simulation_engine.user_hook_log is None
+    ):
         simulation_engine.user_hook_log = Box()
     if scavenger_material is None:
         simulation_engine.user_hook_log["scavenger_material_after_run"] = None
@@ -124,9 +134,10 @@ def create_simulation(enable_scavenger):
     # runtime molecule names carrying the charge state. In this setup, the
     # scavenger signature can show up either as the transient superoxide
     # species or as the follow-up hydroperoxyl radical.
-    chem_actor.counters.molecule_counter.consider_molecules = (
-        [E_AQ_CONFIG_NAME, *SCAVENGER_SIGNATURE_CONFIG_NAMES]
-    )
+    chem_actor.counters.molecule_counter.consider_molecules = [
+        E_AQ_CONFIG_NAME,
+        *SCAVENGER_SIGNATURE_CONFIG_NAMES,
+    ]
 
     if enable_scavenger:
         chemistry_world = sim.chemistry_manager.create_chemistry_world(volume=target)

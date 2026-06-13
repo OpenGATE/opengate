@@ -350,7 +350,9 @@ class PhysicsListBuilder(GateObject):
         "G4OpticalPhysics",
     ]
 
-    available_g4_reference_physics_lists = _build_available_reference_physics_list_names()
+    available_g4_reference_physics_lists = (
+        _build_available_reference_physics_list_names()
+    )
 
     special_physics_constructor_classes = {
         "G4DecayPhysics": g4.G4DecayPhysics,

@@ -297,9 +297,7 @@ class ChemistryWorld(GateObject):
                 f"Invalid chemistry-world concentration for species '{molecule_name}': {concentration}."
             )
         if molecule_name in self.components_by_name:
-            fatal(
-                f"Chemistry-world component '{molecule_name}' is already defined."
-            )
+            fatal(f"Chemistry-world component '{molecule_name}' is already defined.")
         self.components.append(
             ChemistryWorldComponent(
                 name=f"chemistry_world_component_{molecule_name}",
@@ -367,9 +365,7 @@ class ChemistryWorld(GateObject):
 
     def _make_scavenger_reaction_name(self, tracked_molecule, scavenger, products):
         product_label = "_".join(products) if products else "none"
-        return (
-            f"scavenger_reaction_{tracked_molecule}_{scavenger}_{product_label}"
-        )
+        return f"scavenger_reaction_{tracked_molecule}_{scavenger}_{product_label}"
 
     def validate_scavenger_configuration(self):
         component_names = [component.species for component in self.components]

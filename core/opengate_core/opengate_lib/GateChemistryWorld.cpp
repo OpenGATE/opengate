@@ -12,12 +12,10 @@
 #include "G4MoleculeTable.hh"
 
 void GateChemistryWorld::ConstructChemistryBoundary() {
-  fpChemistryBoundary = std::make_unique<G4DNABoundingBox>(
-      G4DNABoundingBox{
-          fTranslation.x() + fHalfSize.x(), fTranslation.x() - fHalfSize.x(),
-          fTranslation.y() + fHalfSize.y(), fTranslation.y() - fHalfSize.y(),
-          fTranslation.z() + fHalfSize.z(),
-          fTranslation.z() - fHalfSize.z()});
+  fpChemistryBoundary = std::make_unique<G4DNABoundingBox>(G4DNABoundingBox{
+      fTranslation.x() + fHalfSize.x(), fTranslation.x() - fHalfSize.x(),
+      fTranslation.y() + fHalfSize.y(), fTranslation.y() - fHalfSize.y(),
+      fTranslation.z() + fHalfSize.z(), fTranslation.z() - fHalfSize.z()});
 }
 
 void GateChemistryWorld::ConstructChemistryComponents() {

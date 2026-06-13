@@ -5,10 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateChemistryWorld.h"
 #include "G4DNAScavengerMaterial.hh"
 #include "G4MolecularConfiguration.hh"
 #include "G4MoleculeTable.hh"
+#include "GateChemistryWorld.h"
 #include "pybind11/pybind11.h"
 
 namespace py = pybind11;
@@ -29,34 +29,37 @@ void init_G4DNAScavengerMaterial(py::module &m) {
            &G4DNAScavengerMaterial::SetCounterAgainstTime)
       .def("SetpH", &G4DNAScavengerMaterial::SetpH, py::arg("pH"))
       .def("GetpH", &G4DNAScavengerMaterial::GetpH)
-      .def("GetScavengerNames", [](G4DNAScavengerMaterial &self) {
-        py::list names;
-        for (const auto *conf : self.GetScavengerList()) {
-          names.append(conf->GetName());
-        }
-        return names;
-      })
-      .def("GetSpeciesCount",
-           [](G4DNAScavengerMaterial &self, const G4String &species_name) {
-             auto *conf =
-                 G4MoleculeTable::Instance()->GetConfiguration(species_name, false);
-             if (conf == nullptr) {
-               throw std::runtime_error("Unknown scavenger-material species: " +
-                                        std::string(species_name));
+      .def("GetScavengerNames",
+           [](G4DNAScavengerMaterial &self) {
+             py::list names;
+             for (const auto *conf : self.GetScavengerList()) {
+               names.append(conf->GetName());
              }
-             return self.GetNumberMoleculePerVolumeUnitForMaterialConf(conf);
-           },
-           py::arg("species_name"))
-      .def("GetSpeciesCountAtTime",
-           [](G4DNAScavengerMaterial &self, const G4String &species_name,
-              G4double time) {
-             auto *conf =
-                 G4MoleculeTable::Instance()->GetConfiguration(species_name, false);
-             if (conf == nullptr) {
-               throw std::runtime_error("Unknown scavenger-material species: " +
-                                        std::string(species_name));
-             }
-             return self.GetNMoleculesAtTime(conf, time);
-           },
-           py::arg("species_name"), py::arg("time"));
+             return names;
+           })
+      .def(
+          "GetSpeciesCount",
+          [](G4DNAScavengerMaterial &self, const G4String &species_name) {
+            auto *conf = G4MoleculeTable::Instance()->GetConfiguration(
+                species_name, false);
+            if (conf == nullptr) {
+              throw std::runtime_error("Unknown scavenger-material species: " +
+                                       std::string(species_name));
+            }
+            return self.GetNumberMoleculePerVolumeUnitForMaterialConf(conf);
+          },
+          py::arg("species_name"))
+      .def(
+          "GetSpeciesCountAtTime",
+          [](G4DNAScavengerMaterial &self, const G4String &species_name,
+             G4double time) {
+            auto *conf = G4MoleculeTable::Instance()->GetConfiguration(
+                species_name, false);
+            if (conf == nullptr) {
+              throw std::runtime_error("Unknown scavenger-material species: " +
+                                       std::string(species_name));
+            }
+            return self.GetNMoleculesAtTime(conf, time);
+          },
+          py::arg("species_name"), py::arg("time"));
 }
