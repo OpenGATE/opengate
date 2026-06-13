@@ -77,6 +77,7 @@ void init_G4ParallelWorldPhysics(py::module &);
 void init_G4VModularPhysicsList(py::module &);
 
 void init_G4VPhysicsConstructor(py::module &);
+void init_G4PhysicsListHelper(py::module &);
 
 void init_G4PhysicsFreeVector(py::module &);
 
@@ -121,6 +122,8 @@ void init_G4MoleculeReactionCounter(py::module &);
 void init_G4MoleculeCounterManager(py::module &);
 
 void init_G4DNAChemistryManager(py::module &);
+void init_G4DNAScavengerMaterial(py::module &);
+void init_G4DNAScavengerProcess(py::module &);
 
 void init_G4Scheduler(py::module &);
 
@@ -379,6 +382,7 @@ void init_GateInfo(py::module &);
 void init_GateVActor(py::module &);
 
 void init_GateVChemistryActor(py::module &);
+void init_GateChemistryWorld(py::module &);
 
 void init_GateWeightedEdepActor(py::module &);
 
@@ -589,6 +593,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4VPhysicsConstructor(m);
   init_G4VModularPhysicsList(m);
   init_G4PhysListFactory(m);
+  init_G4PhysicsListHelper(m);
   init_G4PhysicsFreeVector(m);
 
   init_G4VUserParallelWorld(m);
@@ -604,6 +609,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4UserEventAction(m);
   init_G4UserTrackingAction(m);
   init_G4UserStackingAction(m);
+  init_G4VProcess(m);
   init_G4StepPoint(m);
   init_G4Track(m);
   init_G4Step(m);
@@ -623,6 +629,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4MoleculeReactionCounter(m);
   init_G4MoleculeCounterManager(m);
   init_G4DNAChemistryManager(m);
+  init_G4DNAScavengerMaterial(m);
+  init_G4DNAScavengerProcess(m);
   init_G4Scheduler(m);
   init_G4UserTimeStepAction(m);
   init_G4ITTrackingInteractivity(m);
@@ -711,7 +719,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4LinInterpolator(m);
   init_G4DataVector(m);
 
-  init_G4VProcess(m);
   init_G4VBiasingOperator(m);
   init_G4ProcessManager(m);
   init_G4ProcessTable(m);
@@ -757,6 +764,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateInfo(m);
   init_GateVActor(m);
   init_GateVChemistryActor(m);
+  init_GateChemistryWorld(m);
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);

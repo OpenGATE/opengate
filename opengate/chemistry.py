@@ -1,11 +1,13 @@
 from .base import GateObject, process_cls, create_gate_object_from_dict
 from .utility import g4_units, fatal
 from .decorators import requires_fatal
+from .definitions import __world_name__
 
 import opengate_core as g4
 from opengate_core import G4MoleculeTable, G4VUserChemistryList
 
 from box import Box
+import numpy as np
 import re
 
 g = g4_units.g
@@ -80,6 +82,343 @@ default_chemical_species = {
         "diffusion_coefficient": None,
     },
 }
+
+
+class ChemistryWorldComponent(GateObject):
+    user_info_defaults = {
+        "species": (
+            None,
+            {
+                "doc": "Name of the chemistry-world component species.",
+                "type": "str",
+            },
+        ),
+        "concentration": (
+            None,
+            {
+                "doc": "Initial concentration of the species in the chemistry world.",
+            },
+        ),
+    }
+
+
+class ScavengerReaction(GateObject):
+    user_info_defaults = {
+        "tracked_molecule": (
+            None,
+            {
+                "doc": "Name of the mobile species to which the scavenger process is attached.",
+                "type": "str",
+            },
+        ),
+        "scavenger": (
+            None,
+            {
+                "doc": "Name of the background scavenger species defined in the chemistry world.",
+                "type": "str",
+            },
+        ),
+        "products": (
+            [],
+            {
+                "doc": "Product species created by the scavenger reaction.",
+                "type": "list_of_str",
+            },
+        ),
+        "rate_constant": (
+            None,
+            {
+                "doc": "Observed reaction rate constant for the scavenger reaction.",
+            },
+        ),
+        "reaction_type": (
+            0,
+            {
+                "doc": "Geant4-DNA reaction type identifier.",
+                "type": "int",
+            },
+        ),
+    }
+
+    @property
+    def key(self):
+        return (
+            self.tracked_molecule,
+            self.scavenger,
+            tuple(self.products),
+            self.reaction_type,
+        )
+
+
+class ChemistryWorld(GateObject):
+    user_info_defaults = {
+        "translation": (
+            [0.0, 0.0, 0.0],
+            {
+                "doc": "Center of the chemistry world box in the global frame.",
+            },
+        ),
+        "half_size": (
+            [1.0 * nm, 1.0 * nm, 1.0 * nm],
+            {
+                "doc": "Half-side lengths of the chemistry world box.",
+            },
+        ),
+        "source_volume_name": (
+            None,
+            {
+                "doc": "Name of the source volume from which the chemistry world box was derived.",
+                "type": "str",
+            },
+        ),
+        "pH": (
+            None,
+            {
+                "doc": "Optional pH value associated with the chemistry world.",
+            },
+        ),
+        "components": (
+            [],
+            {
+                "doc": "List of ChemistryWorldComponent objects defining the chemistry-world composition.",
+            },
+        ),
+        "scavenger_reactions": (
+            [],
+            {
+                "doc": "List of ScavengerReaction objects defining scavenger processes.",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.g4_chemistry_world = None
+        self.g4_scavenger_material = None
+
+    def __getstate__(self):
+        state_dict = super().__getstate__()
+        state_dict["g4_chemistry_world"] = None
+        state_dict["g4_scavenger_material"] = None
+        return state_dict
+
+    def close(self):
+        self.g4_chemistry_world = None
+        self.g4_scavenger_material = None
+        super().close()
+
+    def to_dictionary(self):
+        return super().to_dictionary()
+
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        user_info = d.get("user_info", {})
+        self.components = self._reconstruct_nested_gate_objects(
+            user_info.get("components", []),
+            ChemistryWorldComponent,
+        )
+        self.scavenger_reactions = self._reconstruct_nested_gate_objects(
+            user_info.get("scavenger_reactions", []),
+            ScavengerReaction,
+        )
+        self.g4_chemistry_world = None
+        self.g4_scavenger_material = None
+
+    def _reconstruct_nested_gate_objects(self, object_dicts, object_class):
+        objects = []
+        for object_dict in object_dicts:
+            obj = create_gate_object_from_dict(object_dict)
+            if not isinstance(obj, object_class):
+                fatal(
+                    f"Expected a serialized {object_class.__name__}, but reconstructed {type(obj).__name__}."
+                )
+            obj.simulation = self.simulation
+            obj.from_dictionary(object_dict)
+            objects.append(obj)
+        return objects
+
+    def set_box(self, translation, half_size):
+        if translation is None or half_size is None:
+            fatal(
+                "ChemistryWorld.set_box() requires both 'translation' and 'half_size'."
+            )
+        if len(translation) != 3 or len(half_size) != 3:
+            fatal(
+                "ChemistryWorld.set_box() expects 3-vectors for both "
+                f"'translation' and 'half_size'. Received {translation} and {half_size}."
+            )
+        self.translation = [float(v) for v in translation]
+        self.half_size = [float(v) for v in half_size]
+        self.source_volume_name = None
+
+    def set_volume(self, volume):
+        from .geometry.volumes import BoxVolume, VolumeBase
+
+        if isinstance(volume, str):
+            if self.simulation is None:
+                fatal(
+                    "Cannot resolve a chemistry-world source volume by name because "
+                    "the ChemistryWorld is not attached to a simulation."
+                )
+            volume = self.simulation.volume_manager.get_volume(volume)
+        elif not isinstance(volume, VolumeBase):
+            fatal(
+                "ChemistryWorld.set_volume() expects either a volume object or a volume name."
+            )
+
+        if not isinstance(volume, BoxVolume):
+            fatal(
+                f"Chemistry world creation from volume currently only supports BoxVolume. "
+                f"Volume '{volume.name}' is a {type(volume).__name__}."
+            )
+        if volume.number_of_repetitions != 1:
+            fatal(
+                f"Chemistry world creation from volume currently does not support repeated volumes. "
+                f"Volume '{volume.name}' has {volume.number_of_repetitions} placements."
+            )
+        if volume.mother != __world_name__:
+            fatal(
+                f"Chemistry world creation from volume currently requires a volume attached directly "
+                f"to the world. Volume '{volume.name}' has mother '{volume.mother}'."
+            )
+        if not np.allclose(volume.rotation_list[0], np.identity(3)):
+            fatal(
+                f"Chemistry world creation from volume currently requires an axis-aligned box. "
+                f"Volume '{volume.name}' has a non-identity rotation."
+            )
+
+        self.translation = [float(v) for v in volume.translation_list[0]]
+        self.half_size = [float(v) / 2.0 for v in volume.size]
+        self.source_volume_name = volume.name
+
+    def add_component(self, molecule_name, concentration):
+        if concentration is None or concentration < 0:
+            fatal(
+                f"Invalid chemistry-world concentration for species '{molecule_name}': {concentration}."
+            )
+        if molecule_name in self.components_by_name:
+            fatal(
+                f"Chemistry-world component '{molecule_name}' is already defined."
+            )
+        self.components.append(
+            ChemistryWorldComponent(
+                name=f"chemistry_world_component_{molecule_name}",
+                simulation=self.simulation,
+                species=molecule_name,
+                concentration=concentration,
+            )
+        )
+
+    def remove_component(self, molecule_name):
+        for i, component in enumerate(self.components):
+            if component.species == molecule_name:
+                del self.components[i]
+                return
+        fatal(
+            f"Cannot remove chemistry-world component '{molecule_name}' because it is not defined."
+        )
+
+    def add_scavenger_reaction(
+        self,
+        tracked_molecule,
+        scavenger,
+        products,
+        rate_constant,
+        reaction_type=0,
+    ):
+        reaction = ScavengerReaction(
+            name=self._make_scavenger_reaction_name(
+                tracked_molecule, scavenger, products
+            ),
+            simulation=self.simulation,
+            tracked_molecule=tracked_molecule,
+            scavenger=scavenger,
+            products=list(products),
+            rate_constant=rate_constant,
+            reaction_type=reaction_type,
+        )
+        if reaction.rate_constant is None or reaction.rate_constant < 0:
+            fatal(
+                f"Invalid scavenger reaction rate constant for '{reaction.name}': {reaction.rate_constant}."
+            )
+        if reaction.key in self.scavenger_reactions_by_key:
+            fatal(
+                f"Scavenger reaction '{reaction.name}' is already defined in the chemistry world."
+            )
+        self.scavenger_reactions.append(reaction)
+
+    def clear_scavenger_reactions(self):
+        self.scavenger_reactions = []
+
+    def clear_components(self):
+        self.components = []
+
+    @property
+    def components_by_name(self):
+        return {component.species: component for component in self.components}
+
+    @property
+    def scavenger_reactions_by_key(self):
+        return {reaction.key: reaction for reaction in self.scavenger_reactions}
+
+    @property
+    def has_scavengers(self):
+        return len(self.scavenger_reactions) > 0
+
+    def _make_scavenger_reaction_name(self, tracked_molecule, scavenger, products):
+        product_label = "_".join(products) if products else "none"
+        return (
+            f"scavenger_reaction_{tracked_molecule}_{scavenger}_{product_label}"
+        )
+
+    def validate_scavenger_configuration(self):
+        component_names = [component.species for component in self.components]
+        if len(set(component_names)) != len(component_names):
+            fatal(
+                f"Duplicate chemistry-world component species detected: {component_names}."
+            )
+        component_names = set(self.components_by_name.keys())
+        for reaction in self.scavenger_reactions:
+            if reaction.scavenger not in component_names:
+                fatal(
+                    f"Scavenger reaction '{reaction.name}' references scavenger species "
+                    f"'{reaction.scavenger}', but this species is not defined as a chemistry-world component. "
+                    f"Known component species are: {sorted(component_names)}."
+                )
+        reaction_keys = [reaction.key for reaction in self.scavenger_reactions]
+        if len(set(reaction_keys)) != len(reaction_keys):
+            fatal("Duplicate scavenger reactions detected in the chemistry world.")
+
+    def create_g4_chemistry_world(self):
+        if self.has_scavengers:
+            self.validate_scavenger_configuration()
+        g4_chemistry_world = g4.GateChemistryWorld()
+        g4_chemistry_world.SetChemistryBoundary(self.translation, self.half_size)
+        if self.pH is not None:
+            g4_chemistry_world.SetPH(self.pH)
+        g4_chemistry_world.ClearChemicalComponents()
+        for component in self.components:
+            g4_chemistry_world.AddChemicalComponent(
+                component.species, component.concentration
+            )
+        g4_chemistry_world.ConstructChemistryBoundary()
+        self.g4_chemistry_world = g4_chemistry_world
+        self.g4_scavenger_material = None
+        return g4_chemistry_world
+
+    def create_g4_scavenger_material(self):
+        if self.g4_chemistry_world is None:
+            fatal(
+                "Cannot create a G4DNAScavengerMaterial because the runtime chemistry world does not exist yet."
+            )
+        scavenger_material = g4.G4DNAScavengerMaterial(self.g4_chemistry_world)
+        if self.pH is not None:
+            if not float(self.pH).is_integer():
+                fatal(
+                    f"Geant4's stock scavenger material expects an integer pH value. Received: {self.pH}."
+                )
+            scavenger_material.SetpH(int(self.pH))
+        return scavenger_material
 
 
 class ChemicalSpecies(GateObject):
@@ -301,10 +640,10 @@ class ChemicalDissociation(GateObject):
 class ChemistryList(GateObject, G4VUserChemistryList):
     user_info_defaults = {
         "list_name": (
-            "G4EmDNAChemistry",
+            None,
             {
-                "doc": "Base Geant4 chemistry list to use and extend.",
-                "allowed_values": known_g4_chemistry_list_names,
+                "doc": "Base Geant4 chemistry list to use and extend. If left unset, chemistry stays disabled unless a manager or actor explicitly requests a list.",
+                "allowed_values": known_g4_chemistry_list_names + (None,),
             },
         ),
         "chemical_species": (
@@ -335,6 +674,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
         self._custom_dissociations_constructed = False
 
         self.g4_builtin_chemistry_list = None
+        self.g4_scavenger_processes = []
 
     def __initcpp__(self):
         G4VUserChemistryList.__init__(self)
@@ -342,6 +682,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
     def __getstate__(self):
         state_dict = super().__getstate__()
         state_dict["g4_builtin_chemistry_list"] = None
+        state_dict["g4_scavenger_processes"] = []
         return state_dict
 
     def __setstate__(self, state):
@@ -351,6 +692,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
         self._custom_species_constructed = False
         self._custom_reactions_constructed = False
         self._custom_dissociations_constructed = False
+        self.g4_scavenger_processes = []
 
     def to_dictionary(self):
         return super().to_dictionary()
@@ -389,6 +731,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
         self._custom_species_constructed = False
         self._custom_reactions_constructed = False
         self._custom_dissociations_constructed = False
+        self.g4_scavenger_processes = []
 
     def close(self):
         # The user-facing ChemistryList can be registered into the
@@ -401,6 +744,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
         self._custom_species_constructed = False
         self._custom_reactions_constructed = False
         self._custom_dissociations_constructed = False
+        self.g4_scavenger_processes = []
         super().close()
 
     @property
@@ -685,6 +1029,7 @@ class ChemistryList(GateObject, G4VUserChemistryList):
     @requires_fatal("g4_builtin_chemistry_list")
     def ConstructProcess(self):
         self.g4_builtin_chemistry_list.ConstructProcess()
+        self._construct_scavenger_processes()
 
     @requires_fatal("g4_builtin_chemistry_list")
     def ConstructMolecule(self):
@@ -704,6 +1049,85 @@ class ChemistryList(GateObject, G4VUserChemistryList):
     @requires_fatal("g4_builtin_chemistry_list")
     def ConstructTimeStepModel(self, reaction_table):
         self.g4_builtin_chemistry_list.ConstructTimeStepModel(reaction_table)
+
+    def _construct_scavenger_processes(self):
+        if self.simulation is None:
+            return
+        chemistry_world = self.simulation.chemistry_manager.chemistry_world
+        if chemistry_world is None or chemistry_world.has_scavengers is False:
+            return
+        if chemistry_world.g4_chemistry_world is None:
+            fatal(
+                "Cannot construct scavenger processes because the runtime chemistry world is not available."
+            )
+
+        chemistry_world.validate_scavenger_configuration()
+        # G4DNAScavengerProcess caches the scavenger material in
+        # BuildPhysicsTable(), so the chemistry-world components and the
+        # scheduler-owned scavenger material must already exist before Geant4
+        # builds the chemistry physics tables.
+        chemistry_world.g4_chemistry_world.ConstructChemistryComponents()
+        if chemistry_world.g4_scavenger_material is None:
+            chemistry_world.g4_scavenger_material = (
+                chemistry_world.create_g4_scavenger_material()
+            )
+        g4.G4Scheduler.Instance().SetScavengerMaterial(
+            chemistry_world.g4_scavenger_material
+        )
+        physics_list_helper = g4.G4PhysicsListHelper.GetPhysicsListHelper()
+        scavenger_processes = {}
+
+        for scavenger_reaction in chemistry_world.scavenger_reactions:
+            tracked_conf = self.g4_molecule_table.GetConfiguration(
+                scavenger_reaction.tracked_molecule, False
+            )
+            if tracked_conf is None:
+                fatal(
+                    f"Scavenger reaction '{scavenger_reaction.name}' references tracked molecule "
+                    f"'{scavenger_reaction.tracked_molecule}', but this molecular configuration is unknown."
+                )
+            scavenger_conf = self.g4_molecule_table.GetConfiguration(
+                scavenger_reaction.scavenger, False
+            )
+            if scavenger_conf is None:
+                fatal(
+                    f"Scavenger reaction '{scavenger_reaction.name}' references scavenger species "
+                    f"'{scavenger_reaction.scavenger}', but this molecular configuration is unknown."
+                )
+
+            process = scavenger_processes.get(scavenger_reaction.tracked_molecule)
+            if process is None:
+                process = g4.G4DNAScavengerProcess(
+                    f"G4DNAScavengerProcess_{scavenger_reaction.tracked_molecule}",
+                    chemistry_world.g4_chemistry_world,
+                )
+                scavenger_processes[scavenger_reaction.tracked_molecule] = process
+
+            reaction_data = g4.G4DNAMolecularReactionData(
+                scavenger_reaction.rate_constant,
+                tracked_conf,
+                scavenger_conf,
+            )
+            reaction_data.SetReactionType(scavenger_reaction.reaction_type)
+            for product_name in scavenger_reaction.products:
+                product_conf = self.g4_molecule_table.GetConfiguration(
+                    product_name, False
+                )
+                if product_conf is None:
+                    fatal(
+                        f"Scavenger reaction '{scavenger_reaction.name}' references product "
+                        f"'{product_name}', but this molecular configuration is unknown."
+                    )
+                reaction_data.AddProduct(product_conf)
+            process.SetReaction(tracked_conf, reaction_data)
+
+        for tracked_molecule, process in scavenger_processes.items():
+            tracked_definition = self.g4_molecule_table.GetConfiguration(
+                tracked_molecule, True
+            ).GetDefinition()
+            physics_list_helper.RegisterProcess(process, tracked_definition)
+
+        self.g4_scavenger_processes = list(scavenger_processes.values())
 
 
 class ChemistryCustomList(GateObject, G4VUserChemistryList):
@@ -806,5 +1230,8 @@ class ChemistryCustomList(GateObject, G4VUserChemistryList):
         pass
 
 
+process_cls(ChemistryWorldComponent)
+process_cls(ScavengerReaction)
+process_cls(ChemistryWorld)
 process_cls(ChemistryList)
 process_cls(ChemistryCustomList)

@@ -605,6 +605,8 @@ class ChemistryEngine(EngineBase):
         self.chemistry_manager = self.simulation_engine.simulation.chemistry_manager
 
         # g4 references
+        self.g4_chemistry_world = None
+        self.g4_scavenger_material = None
         self.g4_time_step_action = None
         self.g4_it_tracking_interactivity = None
 
@@ -619,7 +621,9 @@ class ChemistryEngine(EngineBase):
         # chemistry-list reference. The engine only releases its own Geant4
         # manager/action references here.
         if (
-            self.g4_time_step_action is not None
+            self.g4_scavenger_material is not None
+            or self.g4_chemistry_world is not None
+            or self.g4_time_step_action is not None
             or self.g4_it_tracking_interactivity is not None
         ):
             # G4Scheduler only stores raw pointers to these helper objects.
@@ -627,6 +631,9 @@ class ChemistryEngine(EngineBase):
             scheduler = g4.G4Scheduler.Instance()
             scheduler.SetUserAction(None)
             scheduler.SetInteractivity(None)
+            scheduler.SetScavengerMaterial(None)
+        self.g4_chemistry_world = None
+        self.g4_scavenger_material = None
         self.g4_time_step_action = None
         self.g4_it_tracking_interactivity = None
 
@@ -668,10 +675,6 @@ class ChemistryEngine(EngineBase):
                 getattr(g4_molecule_counter_manager, setter_name)(value)
 
     def initialize_before_runmanager(self):
-        need_chemistry = self.chemistry_manager.prepare_chemistry_list_if_needed()
-        if need_chemistry is False:
-            return
-
         self.chemistry_manager.chemistry_list.initialize_before_runmanager()
         # The augmented physics list forwards ConstructParticle/ConstructProcess
         # to the chemistry list during Geant4 initialization, so inject the ref
@@ -685,6 +688,13 @@ class ChemistryEngine(EngineBase):
                 self.chemistry_manager.time_step_model,
             )
         )
+        if self.chemistry_manager.chemistry_world is not None:
+            # Build the runtime chemistry-world container before Geant4
+            # initialization, but delay molecule-name resolution until the
+            # chemistry list has populated the molecule table.
+            self.g4_chemistry_world = (
+                self.chemistry_manager.chemistry_world.create_g4_chemistry_world()
+            )
         self._apply_required_molecule_counter_manager_policy()
 
     def initialize_after_runmanager(self):
@@ -692,7 +702,15 @@ class ChemistryEngine(EngineBase):
         if chemistry_list.g4_builtin_chemistry_list is None:
             return
 
+        chemistry_world = self.chemistry_manager.chemistry_world
+        if self.g4_chemistry_world is not None and (
+            chemistry_world is None or chemistry_world.has_scavengers is False
+        ):
+            self.g4_chemistry_world.ConstructChemistryComponents()
+
         scheduler = g4.G4Scheduler.Instance()
+        if chemistry_world is not None:
+            self.g4_scavenger_material = chemistry_world.g4_scavenger_material
         self.g4_time_step_action = g4.GateTimeStepAction()
         self.g4_it_tracking_interactivity = g4.GateITTrackingInteractivity()
         for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
@@ -1710,9 +1728,13 @@ class SimulationEngine(GateSingletonFatal):
         logger.info("Simulation: initialize Auxiliary attributes")
         self.simulation.initialize_auxiliary_attributes()
 
-        logger.info("Simulation: prepare Chemistry")
-        self.chemistry_engine.initialize_before_runmanager()
-        logger.info("Simulation: prepare Chemistry ... done")
+        need_chemistry = (
+            self.simulation.chemistry_manager.prepare_chemistry_list_if_needed()
+        )
+        if need_chemistry:
+            logger.info("Simulation: prepare Chemistry")
+            self.chemistry_engine.initialize_before_runmanager()
+            logger.info("Simulation: prepare Chemistry ... done")
         # Visu
         if self.simulation.visu:
             logger.info("Simulation: initialize Visualization")

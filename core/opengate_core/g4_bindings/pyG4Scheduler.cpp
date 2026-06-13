@@ -9,6 +9,7 @@
 namespace py = pybind11;
 
 #include "G4ITTrackingInteractivity.hh"
+#include "G4DNAScavengerMaterial.hh"
 #include "G4Scheduler.hh"
 #include "G4UserTimeStepAction.hh"
 
@@ -40,6 +41,25 @@ void init_G4Scheduler(py::module &m) {
             }
           },
           py::arg("interactivity"))
+      .def(
+          "SetScavengerMaterial",
+          [](G4Scheduler &self, py::object scavenger_material) {
+            if (scavenger_material.is_none()) {
+              self.SetScavengerMaterial(
+                  std::unique_ptr<G4VScavengerMaterial>(nullptr));
+            } else {
+              self.SetScavengerMaterial(std::unique_ptr<G4VScavengerMaterial>(
+                  scavenger_material.cast<G4DNAScavengerMaterial *>()));
+            }
+          },
+          py::arg("scavenger_material"))
+      .def(
+          "GetScavengerMaterial",
+          [](G4Scheduler &self) -> G4DNAScavengerMaterial * {
+            return dynamic_cast<G4DNAScavengerMaterial *>(
+                self.GetScavengerMaterial());
+          },
+          py::return_value_policy::reference)
       .def("GetUserTimeStepAction", &G4Scheduler::GetUserTimeStepAction,
            py::return_value_policy::reference)
       .def("Initialize", &G4Scheduler::Initialize)

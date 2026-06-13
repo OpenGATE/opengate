@@ -12,6 +12,7 @@ from box import Box
 
 from .base import (
     GateObject,
+    create_gate_object_from_dict,
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
     process_cls,
@@ -63,7 +64,7 @@ source_types = {
 }
 
 from .actors.chemistryactors import ChemistryActorBase, ChemicalStageActor
-from .chemistry import ChemistryList
+from .chemistry import ChemistryList, ChemistryWorld
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.base import ActorBase
 from .actors.biasingactors import (
@@ -1013,7 +1014,9 @@ class PhysicsManager(GateObject):
 
 
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
-    if chemistry_list_name in ("default"):
+    if chemistry_list_name is None:
+        return None
+    if chemistry_list_name == "default":
         return self.inherited_user_info_defaults["chemistry_list_name"][0]
     return chemistry_list_name
 
@@ -1025,9 +1028,9 @@ class ChemistryManager(GateObject):
 
     user_info_defaults = {
         "chemistry_list_name": (
-            "G4EmDNAChemistry",
+            None,
             {
-                "doc": "Name of the Geant4 chemistry list. ",
+                "doc": "Name of the Geant4 chemistry list. If left unset, chemistry is disabled unless requested explicitly by a chemistry actor.",
                 "setter_hook": _setter_hook_chemistry_list_name,
             },
         ),
@@ -1048,13 +1051,62 @@ class ChemistryManager(GateObject):
             name="chemistry_list",
             simulation=simulation,
         )
+        self._chemistry_world = None
 
     def reset(self):
         self.__init__(self.simulation)
 
+    @property
+    def chemistry_world(self):
+        return self._chemistry_world
+
+    @chemistry_world.setter
+    def chemistry_world(self, chemistry_world):
+        if chemistry_world is None:
+            self._chemistry_world = None
+            return
+        if not isinstance(chemistry_world, ChemistryWorld):
+            fatal(
+                "chemistry_manager.chemistry_world must be either None or a ChemistryWorld instance."
+            )
+        chemistry_world.simulation = self.simulation
+        self._chemistry_world = chemistry_world
+
+    def create_chemistry_world(
+        self, volume=None, translation=None, half_size=None, name="chemistry_world"
+    ):
+        if self.chemistry_world is not None:
+            fatal(
+                "A chemistry world is already defined for this simulation. "
+                "Set chemistry_manager.chemistry_world = None first if you want to replace it."
+            )
+        if volume is not None and (translation is not None or half_size is not None):
+            fatal(
+                "create_chemistry_world() expects either 'volume' or the pair "
+                "'translation'/'half_size', but not both."
+            )
+        if volume is None and (translation is None or half_size is None):
+            fatal(
+                "create_chemistry_world() expects either 'volume' or both "
+                "'translation' and 'half_size'."
+            )
+
+        chemistry_world = ChemistryWorld(name=name, simulation=self.simulation)
+        if volume is not None:
+            chemistry_world.set_volume(volume)
+        else:
+            chemistry_world.set_box(translation, half_size)
+        self.chemistry_world = chemistry_world
+        return chemistry_world
+
     def to_dictionary(self):
         d = super().to_dictionary()
         d["chemistry_list"] = self.chemistry_list.to_dictionary()
+        d["chemistry_world"] = (
+            None
+            if self.chemistry_world is None
+            else self.chemistry_world.to_dictionary()
+        )
         return d
 
     def from_dictionary(self, d):
@@ -1062,6 +1114,16 @@ class ChemistryManager(GateObject):
         super().from_dictionary(d)
         if "chemistry_list" in d:
             self.chemistry_list.from_dictionary(d["chemistry_list"])
+        chemistry_world_dict = d.get("chemistry_world", None)
+        if chemistry_world_dict is not None:
+            chemistry_world = create_gate_object_from_dict(chemistry_world_dict)
+            if not isinstance(chemistry_world, ChemistryWorld):
+                fatal(
+                    f"Expected a serialized ChemistryWorld, but reconstructed {type(chemistry_world).__name__}."
+                )
+            chemistry_world.simulation = self.simulation
+            chemistry_world.from_dictionary(chemistry_world_dict)
+            self.chemistry_world = chemistry_world
 
     def __str__(self):
         s = ""
@@ -1081,6 +1143,8 @@ class ChemistryManager(GateObject):
 
         """
         self.chemistry_list.close()
+        if self.chemistry_world is not None:
+            self.chemistry_world.close()
 
     def check_chemistry_list_requests(self):
         requested_chemistry_lists = set()
@@ -1828,6 +1892,7 @@ class Simulation(GateObject):
         d = super().to_dictionary()
         d["volume_manager"] = self.volume_manager.to_dictionary()
         d["physics_manager"] = self.physics_manager.to_dictionary()
+        d["chemistry_manager"] = self.chemistry_manager.to_dictionary()
         d["actor_manager"] = self.actor_manager.to_dictionary()
         d["auxiliary_attributes"] = dict(
             [(k, v.to_dictionary()) for k, v in self.auxiliary_attributes.items()]
@@ -1838,6 +1903,8 @@ class Simulation(GateObject):
         super().from_dictionary(d)
         self.volume_manager.from_dictionary(d["volume_manager"])
         self.physics_manager.from_dictionary(d["physics_manager"])
+        if "chemistry_manager" in d:
+            self.chemistry_manager.from_dictionary(d["chemistry_manager"])
         self.actor_manager.from_dictionary(d["actor_manager"])
         self.auxiliary_attributes = {}
         for _, v in d.get("auxiliary_attributes", {}).items():
