@@ -234,9 +234,13 @@ reference_physics_list_em_extensions = {
     "_EMZ": "G4EmStandardPhysics_option4",
     "_LIV": "G4EmLivermorePhysics",
     "_PEN": "G4EmPenelopePhysics",
-    "_GS": "G4EmStandardPhysicsGS",
     "__GS": "G4EmStandardPhysicsGS",
-    "_LE": "G4EmLowEPPhysics",
+    "__LE": "G4EmLowEPPhysics",
+}
+
+reference_physics_list_em_extension_aliases = {
+    "_GS": "__GS",
+    "_LE": "__LE",
 }
 
 reference_physics_list_special_builders = {
@@ -264,12 +268,30 @@ reference_physics_list_special_builders = {
 }
 
 
+def _build_available_reference_physics_list_names():
+    available_names = []
+    em_suffixes = tuple(reference_physics_list_em_extensions.keys())
+
+    for base_name in reference_physics_list_base_class_names:
+        available_names.append(base_name)
+        for suffix in em_suffixes:
+            if suffix is not None:
+                available_names.append(f"{base_name}{suffix}")
+
+    available_names.extend(reference_physics_list_special_builders.keys())
+    return available_names
+
+
 def _split_reference_physics_list_name(physics_list_name):
-    for suffix in sorted(
-        reference_physics_list_em_extensions.keys(), key=len, reverse=True
-    ):
+    known_suffixes = tuple(reference_physics_list_em_extensions.keys()) + tuple(
+        reference_physics_list_em_extension_aliases.keys()
+    )
+    for suffix in sorted(known_suffixes, key=len, reverse=True):
         if suffix and physics_list_name.endswith(suffix):
-            return physics_list_name[: -len(suffix)], suffix
+            canonical_suffix = reference_physics_list_em_extension_aliases.get(
+                suffix, suffix
+            )
+            return physics_list_name[: -len(suffix)], canonical_suffix
     return physics_list_name, None
 
 
@@ -328,52 +350,7 @@ class PhysicsListBuilder(GateObject):
         "G4OpticalPhysics",
     ]
 
-    available_g4_reference_physics_lists = [
-        "FTFP_BERT",
-        "FTFP_BERT_EMV",
-        "FTFP_BERT_EMX",
-        "FTFP_BERT_EMY",
-        "FTFP_BERT_EMZ",
-        "FTFP_BERT_HP",
-        "FTFP_BERT_TRV",
-        "FTFP_BERT_ATL",
-        "FTFQGSP_BERT",
-        "FTFP_INCLXX",
-        "FTFP_INCLXX_HP",
-        "FTFP_BERT_HPT",
-        "FTFP_INCLXX_HPT",
-        "FTF_BIC",
-        "LBE",
-        "NuBeam",
-        "QBBC",
-        "QGSP_BERT",
-        "QGSP_BERT_EMV",
-        "QGSP_BERT_EMX",
-        "QGSP_BERT_EMY",
-        "QGSP_BERT_EMZ",
-        "QGSP_BERT_HP",
-        "QGSP_BERT_HPT",
-        "QGSP_BIC",
-        "QGSP_BIC_HP",
-        "QGSP_BIC_AllHP",
-        "QGSP_BIC_HPT",
-        "QGSP_BIC_AllHPT",
-        "QGSP_FTFP_BERT",
-        "QGSP_INCLXX",
-        "QGSP_INCLXX_HP",
-        "QGSP_INCLXX_HPT",
-        "QGS_BIC",
-        "Shielding",
-        "ShieldingLEND",
-        "Shielding_HP",
-        "Shielding_HPT",
-        "ShieldingM",
-        "ShieldingM_HP",
-        "ShieldingM_HPT",
-        "ShieldingLIQMD",
-        "ShieldingLIQMD_HP",
-        "ShieldingLIQMD_HPT",
-    ]
+    available_g4_reference_physics_lists = _build_available_reference_physics_list_names()
 
     special_physics_constructor_classes = {
         "G4DecayPhysics": g4.G4DecayPhysics,
