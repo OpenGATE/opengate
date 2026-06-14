@@ -82,6 +82,7 @@ class CMakeBuild(build_ext):
         # cfg = "Debug" if self.debug else 'Release'
         cfg = "Release"
         build_args = ["--config", cfg]
+        env = os.environ.copy()
 
         # Pile all .so in one place and use $ORIGIN as RPATH
         cmake_args += ["-DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE"]
@@ -103,8 +104,6 @@ class CMakeBuild(build_ext):
             cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
             build_args += ["--", "-j4"]
-
-        env = os.environ.copy()
 
         env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
             env.get("CXXFLAGS", ""), self.distribution.get_version()
