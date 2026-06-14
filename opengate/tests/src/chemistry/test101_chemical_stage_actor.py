@@ -80,6 +80,7 @@ def create_simulation(use_actor_requested_dna_em):
     target = sim.add_volume("Box", "chem_box")
     target.size = [10 * um, 10 * um, 10 * um]
     target.material = "G4_WATER"
+    sim.chemistry_manager.confine_chemistry_to_volume = target
 
     if not use_actor_requested_dna_em:
         # Explicit region-based DNA EM configured on the target volume.

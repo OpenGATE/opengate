@@ -28,12 +28,6 @@ class ChemistryActorBase(ActorBase):
     user_output_config = {}
 
     user_info_defaults = {
-        "confine_chemistry_to_volume": (
-            True,
-            {
-                "doc": "If True, chemistry tracks starting outside the attached volume subtree are killed before chemistry processing.",
-            },
-        ),
         "chemistry_list_name": (
             None,
             {

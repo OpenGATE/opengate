@@ -27,6 +27,7 @@ if __name__ == "__main__":
         products=["O2m"],
         rate_constant=1.74e10,
     )
+    sim.chemistry_manager.confine_chemistry_to_volume = chem_box
 
     assert chemistry_world.source_volume_name == "chem_box"
     assert chemistry_world.translation == [1.0, 2.0, 3.0]
@@ -36,6 +37,7 @@ if __name__ == "__main__":
     assert chemistry_world.has_scavengers is True
     assert len(chemistry_world.scavenger_reactions) == 1
     assert chemistry_world.scavenger_reactions[0].tracked_molecule == "e_aq"
+    assert sim.chemistry_manager.confine_chemistry_to_volume == "chem_box"
 
     d = sim.to_dictionary()
 
@@ -53,6 +55,7 @@ if __name__ == "__main__":
     assert chemistry_world_2.has_scavengers is True
     assert len(chemistry_world_2.scavenger_reactions) == 1
     assert chemistry_world_2.scavenger_reactions[0].scavenger == "O2"
+    assert sim2.chemistry_manager.confine_chemistry_to_volume == "chem_box"
 
     sim3 = _make_sim()
     chemistry_world_3 = sim3.chemistry_manager.create_chemistry_world(

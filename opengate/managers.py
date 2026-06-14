@@ -1021,6 +1021,20 @@ def _setter_hook_chemistry_list_name(self, chemistry_list_name):
     return chemistry_list_name
 
 
+def _setter_hook_confine_chemistry_to_volume(self, volume):
+    if volume is None:
+        return None
+    if isinstance(volume, str):
+        return volume
+    try:
+        return volume.name
+    except AttributeError:
+        fatal(
+            "chemistry_manager.confine_chemistry_to_volume must be either None, "
+            "a volume name, or a volume object."
+        )
+
+
 class ChemistryManager(GateObject):
     """
     Everything related to chemistry (Geant4-DNA) should be here.
@@ -1039,6 +1053,13 @@ class ChemistryManager(GateObject):
             {
                 "doc": "The Geant4 chemistry time-step model to use. ",
                 "allowed_values": ("SBS", "IRT", "IRT_syn"),
+            },
+        ),
+        "confine_chemistry_to_volume": (
+            None,
+            {
+                "doc": "If set, chemistry tracks starting outside this volume subtree are killed by a single global chemistry controller.",
+                "setter_hook": _setter_hook_confine_chemistry_to_volume,
             },
         ),
     }

@@ -382,6 +382,7 @@ void init_GateInfo(py::module &);
 void init_GateVActor(py::module &);
 
 void init_GateVChemistryActor(py::module &);
+void init_GateChemistryController(py::module &);
 void init_GateChemistryWorld(py::module &);
 
 void init_GateWeightedEdepActor(py::module &);
@@ -764,6 +765,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateInfo(m);
   init_GateVActor(m);
   init_GateVChemistryActor(m);
+  init_GateChemistryController(m);
   init_GateChemistryWorld(m);
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);

@@ -53,6 +53,7 @@ def create_simulation(use_actor_requested_dna_em, seed):
     target = sim.add_volume("Box", "chem_box")
     target.size = [10 * um, 10 * um, 10 * um]
     target.material = "G4_WATER"
+    sim.chemistry_manager.confine_chemistry_to_volume = target
 
     if not use_actor_requested_dna_em:
         target.set_track_structure_em_physics("G4EmDNAPhysics_option2")

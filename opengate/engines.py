@@ -609,6 +609,7 @@ class ChemistryEngine(EngineBase):
         self.g4_scavenger_material = None
         self.g4_time_step_action = None
         self.g4_it_tracking_interactivity = None
+        self.g4_chemistry_controller = None
 
     def close(self):
         if self.verbose_close:
@@ -625,6 +626,7 @@ class ChemistryEngine(EngineBase):
             or self.g4_chemistry_world is not None
             or self.g4_time_step_action is not None
             or self.g4_it_tracking_interactivity is not None
+            or self.g4_chemistry_controller is not None
         ):
             # G4Scheduler only stores raw pointers to these helper objects.
             # Detach them explicitly before dropping the Python-side refs.
@@ -636,6 +638,21 @@ class ChemistryEngine(EngineBase):
         self.g4_scavenger_material = None
         self.g4_time_step_action = None
         self.g4_it_tracking_interactivity = None
+        self.g4_chemistry_controller = None
+
+    def _create_g4_chemistry_controller(self):
+        confined_volume = self.chemistry_manager.confine_chemistry_to_volume
+        if confined_volume is None:
+            return None
+        user_info = {
+            "name": "chemistry_controller",
+            "attached_to": confined_volume,
+            "confine_chemistry_to_volume": True,
+        }
+        controller = g4.GateChemistryController(user_info)
+        controller.InitializeUserInfo(user_info)
+        controller.AddActions({"StartChemistryTracking"})
+        return controller
 
     def _resolve_required_molecule_counter_manager_policy(self):
         resolved_policy = {
@@ -713,6 +730,11 @@ class ChemistryEngine(EngineBase):
             self.g4_scavenger_material = chemistry_world.g4_scavenger_material
         self.g4_time_step_action = g4.GateTimeStepAction()
         self.g4_it_tracking_interactivity = g4.GateITTrackingInteractivity()
+        self.g4_chemistry_controller = self._create_g4_chemistry_controller()
+        if self.g4_chemistry_controller is not None:
+            self.g4_it_tracking_interactivity.RegisterActor(
+                self.g4_chemistry_controller
+            )
         for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
             if actor.is_chemistry_actor:
                 self.g4_time_step_action.RegisterActor(actor)

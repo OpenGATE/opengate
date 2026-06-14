@@ -66,8 +66,6 @@ public:
 
 protected:
   bool IsChemistryTrackInsideAttachedVolume(const G4Track *track) const;
-
-  bool fConfineChemistryToVolume{false};
 };
 
 #endif // GateVChemistryActor_h
