@@ -66,7 +66,9 @@ def create_simulation(number_of_events, time_step_model, confine_to_half_box):
 
 
 def run_case(number_of_events, time_step_model, confine_to_half_box):
-    confinement_label = "half-box confinement" if confine_to_half_box else "no confinement"
+    confinement_label = (
+        "half-box confinement" if confine_to_half_box else "no confinement"
+    )
     print(
         f"Run case: model={time_step_model}, source.n={number_of_events}, "
         f"{confinement_label}"

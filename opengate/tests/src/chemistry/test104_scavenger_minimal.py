@@ -200,7 +200,9 @@ if __name__ == "__main__":
     ref_eaq_final = get_final_count(ref_counter, [E_AQ_RUNTIME_NAME])
     scav_eaq_final = get_final_count(scav_counter, [E_AQ_RUNTIME_NAME])
     initial_o2_count = sim_scav.user_hook_log.scavenger_material["initial_O2_count"]
-    final_o2_count = sim_scav.user_hook_log.scavenger_material_after_run["final_O2_count"]
+    final_o2_count = sim_scav.user_hook_log.scavenger_material_after_run[
+        "final_O2_count"
+    ]
 
     print("Baseline run without scavenger")
     print(f"  events: {stats_ref.counts.events}")
