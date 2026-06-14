@@ -95,7 +95,8 @@ class CMakeBuild(build_ext):
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
             ]
             # cmake_args += ['-G "CodeBlocks - NMake Makefiles"']
-            if sys.maxsize > 2**32:
+            cmake_generator = env.get("CMAKE_GENERATOR", "")
+            if sys.maxsize > 2**32 and "Visual Studio" in cmake_generator:
                 cmake_args += ["-A", "x64"]
             build_args += ["--", "/m"]
         else:
