@@ -54,6 +54,7 @@ The main components are:
 The design principle is:
 
 - physics and chemistry setup stay in managers and engines;
+- simulation-wide chemistry control stays in managers and engines;
 - chemistry scoring logic lives in actors;
 - detailed chemistry callback forwarding lives in dedicated C++ bridge classes;
 - chemistry counters are actor-owned, but their results are exposed through the
@@ -207,9 +208,12 @@ bridges used by chemistry-aware actors:
 
 - ``GateTimeStepAction``
 - ``GateITTrackingInteractivity``
+- optionally one global ``GateChemistryController``
 
-These are attached to ``G4Scheduler`` and receive all chemistry-aware actors.
-If no built-in chemistry list was prepared, this stage is skipped.
+These are attached to ``G4Scheduler``. Chemistry-aware actors are registered as
+scorers/observers, while ``GateChemistryController`` is registered only when
+``ChemistryManager`` requests simulation-wide chemistry confinement. If no
+built-in chemistry list was prepared, this stage is skipped.
 
 
 Chemistry Callback Bridge
@@ -269,17 +273,34 @@ In GATE, these map to actor hooks such as:
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 All chemistry-aware C++ actors derive from ``GateVChemistryActor``. This class
-extends ``GateVActor`` with chemistry-specific virtual hooks and a small amount
-of common behavior.
+extends ``GateVActor`` with chemistry-specific virtual hooks.
 
-One important shared behavior is chemistry-track confinement:
+``GateVChemistryActor`` is now intentionally passive by default. It provides
+the callback interface used by:
 
-- if ``confine_chemistry_to_volume`` is true;
-- and a chemistry track starts outside the attached logical-volume subtree;
-- the track is killed before chemistry processing continues.
+- chemistry scoring actors such as ``GateChemicalStageActor``;
+- dedicated chemistry-control classes such as ``GateChemistryController``.
 
-This is implemented once in ``GateVChemistryActor::StartChemistryTracking()``
-and reused by all chemistry actors.
+This design keeps chemistry actors focused on probing and scoring unless they
+are explicitly implemented for control purposes.
+
+
+``GateChemistryController``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``GateChemistryController`` is a dedicated C++ chemistry-control class derived
+from ``GateVChemistryActor``.
+
+Its current responsibility is simulation-wide chemistry confinement:
+
+- if ``ChemistryManager.confine_chemistry_to_volume`` is set;
+- a single ``GateChemistryController`` is created by ``ChemistryEngine``;
+- it is registered into ``GateITTrackingInteractivity``;
+- chemistry tracks starting outside the configured logical-volume subtree are
+  killed before chemistry processing continues.
+
+This moved chemistry confinement out of ordinary chemistry actors and avoids
+interference between multiple scoring actors attached to different volumes.
 
 
 Chemistry Actors In Python
@@ -472,8 +493,6 @@ Typical tasks on the C++ side are:
 - parse actor-specific user info in ``InitializeUserInfo()``
 - implement only the chemistry hooks you actually need
 - keep chemistry scoring logic local to the actor
-- use the base-class confinement behavior unless you have a strong reason to
-  replace it
 
 If the actor needs a built-in molecule counter or reaction counter, let the
 python side own and register the counter. The C++ actor should only receive the
@@ -537,6 +556,8 @@ Practical Advice For Further Development
 When you extend the chemistry stack, try to keep the current split intact:
 
 - put simulation-wide decisions in managers and engines;
+- put chemistry-control behavior that alters track fate in dedicated global
+  controller objects;
 - keep chemistry-list composition in ``ChemistryList``;
 - keep chemistry callback forwarding in the dedicated C++ bridge classes;
 - keep actor-specific chemistry scoring logic in actors;

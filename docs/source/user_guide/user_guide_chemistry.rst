@@ -253,7 +253,6 @@ The actor also supports:
 - ``let_cutoff``
 - ``times_to_record``
 - ``number_of_time_bins``
-- ``confine_chemistry_to_volume``
 
 Example:
 
@@ -262,7 +261,26 @@ Example:
     chem_actor.track_only_primary = True
     chem_actor.primary_pdg_code = 11
     chem_actor.number_of_time_bins = 50
-    chem_actor.confine_chemistry_to_volume = True
+
+
+Chemistry confinement
+---------------------
+
+Chemistry confinement is configured globally through ``ChemistryManager``, not
+per actor.
+
+If you want chemistry tracks starting outside a given volume subtree to be
+killed before chemistry processing continues, configure:
+
+.. code-block:: python
+
+    sim.chemistry_manager.confine_chemistry_to_volume = target
+
+where ``target`` can be either a volume object or a volume name.
+
+This is a simulation-wide chemistry-control policy. It is intentionally kept
+outside chemistry actors so that chemistry actors can remain focused on
+probing and scoring.
 
 
 Chemistry actor outputs
@@ -347,6 +365,7 @@ The same can also be controlled through the actor-owned counter objects:
 .. code-block:: python
 
     chem_actor.counters.molecule_counter.active = False
+    chem_actor.counters.reaction_counter.active = False
 
 For most user scripts, using the actor output interface directly is the
 clearest choice.
@@ -376,6 +395,7 @@ This combines the main pieces in one small script:
     target.material = "G4_WATER"
     target.size = [10 * um, 10 * um, 10 * um]
     target.set_track_structure_em_physics("G4EmDNAPhysics_option2")
+    sim.chemistry_manager.confine_chemistry_to_volume = target
 
     source = sim.add_source("GenericSource", "source")
     source.particle = "e-"
@@ -408,6 +428,8 @@ The chemistry support on this branch is already usable, but a few constraints
 are worth keeping in mind:
 
 - one simulation currently needs one coherent chemistry list;
+- one simulation currently has at most one global GATE-side chemistry
+  confinement policy;
 - chemistry counter writing to disk is not implemented yet on the python side;
 - chemistry counter merged data currently uses a simple successive-run merge;
 - ``ChemicalStageActor`` currently assumes at most one molecule counter for its
@@ -426,6 +448,8 @@ Practical tips
   expensive than standard condensed-history EM.
 - Keep the chemistry list request consistent across the simulation and all
   chemistry actors.
+- Use ``sim.chemistry_manager.confine_chemistry_to_volume`` if you want to
+  restrict chemistry spatially at the GATE level.
 - If you only need summary chemistry information, ``chem_actor.results`` is the
   easiest entry point.
 - If you need time-resolved species or reaction histories, use the dedicated
