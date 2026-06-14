@@ -95,11 +95,15 @@ class CMakeBuild(build_ext):
             cmake_args += [
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
             ]
-            # cmake_args += ['-G "CodeBlocks - NMake Makefiles"']
             cmake_generator = env.get("CMAKE_GENERATOR", "")
+            # Multi-config Visual Studio generators need an explicit platform and
+            # use MSBuild-style parallelism. Single-config generators such as
+            # Ninja should not receive Visual Studio-specific flags.
             if sys.maxsize > 2**32 and "Visual Studio" in cmake_generator:
                 cmake_args += ["-A", "x64"]
-            build_args += ["--", "/m"]
+                build_args += ["--", "/m"]
+            else:
+                build_args += ["--parallel", "4"]
         else:
             cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
