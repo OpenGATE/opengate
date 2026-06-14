@@ -10,6 +10,11 @@ SCAVENGER_SIGNATURE_CONFIG_NAMES = ["O_2", "HO_2°"]
 SCAVENGER_SIGNATURE_RUNTIME_NAMES = ["O_2^-1", "HO_2°^0"]
 E_AQ_CONFIG_NAME = "e_aq"
 E_AQ_RUNTIME_NAME = "e_aq^-1"
+REALISTIC_O2_EAQ_RATE_CONSTANT_DM3_PER_MOLE_S = 1.74e10
+# Boost the rate in this test so the scavenger effect is easier to observe in a
+# compact setup. Keep the realistic value above as documentation because users
+# often refer to tests as examples.
+TEST_O2_EAQ_RATE_CONSTANT_DM3_PER_MOLE_S = 1.74e13
 
 
 def dump_scavenger_processes(simulation_engine):
@@ -107,18 +112,20 @@ def create_simulation(enable_scavenger):
     sim.chemistry_manager.time_step_model = "SBS"
 
     target = sim.add_volume("Box", "chem_box")
-    target.size = [100 * um, 100 * um, 100 * um]
+    # Keep the oxygen reservoir as small as possible while still containing the
+    # full electron track. A 1 keV electron started at the center of this water
+    # box should stay well within the 10 um half-side in this test geometry.
+    target.size = [20 * um, 20 * um, 20 * um]
     target.material = "G4_WATER"
     target.set_track_structure_em_physics("G4EmDNAPhysics_option2")
 
     source = sim.add_source("GenericSource", "source")
     source.particle = "e-"
-    source.energy.mono = 2 * keV
+    source.energy.mono = 1 * keV
     source.position.type = "point"
     source.position.translation = [0, 0, 0]
-    source.direction.type = "momentum"
-    source.direction.momentum = [0, 0, 1]
-    source.n = 50
+    source.direction.type = "iso"
+    source.n = 200
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
@@ -148,7 +155,7 @@ def create_simulation(enable_scavenger):
             tracked_molecule="e_aq",
             scavenger="O2",
             products=["O2m"],
-            rate_constant=1.74e10 * dm3_per_mole_s,
+            rate_constant=TEST_O2_EAQ_RATE_CONSTANT_DM3_PER_MOLE_S * dm3_per_mole_s,
         )
         sim.user_hook_after_init = dump_scavenger_processes
         sim.user_hook_after_run = collect_scavenger_material_after_run
@@ -192,6 +199,8 @@ if __name__ == "__main__":
     scav_eaq_peak = get_peak_count(scav_counter, [E_AQ_RUNTIME_NAME])
     ref_eaq_final = get_final_count(ref_counter, [E_AQ_RUNTIME_NAME])
     scav_eaq_final = get_final_count(scav_counter, [E_AQ_RUNTIME_NAME])
+    initial_o2_count = sim_scav.user_hook_log.scavenger_material["initial_O2_count"]
+    final_o2_count = sim_scav.user_hook_log.scavenger_material_after_run["final_O2_count"]
 
     print("Baseline run without scavenger")
     print(f"  events: {stats_ref.counts.events}")
@@ -206,6 +215,8 @@ if __name__ == "__main__":
     print(f"  peak e_aq population: {scav_eaq_peak}")
     print(f"  final e_aq population: {scav_eaq_final}")
     print(f"  peak oxygen-scavenger signature population: {scav_o2m_peak}")
+    print(f"  initial O2 reservoir population: {initial_o2_count}")
+    print(f"  final O2 reservoir population: {final_o2_count}")
 
     is_ok = True
     is_ok = is_ok and ref_results.chemistry_starts > 0
@@ -213,5 +224,6 @@ if __name__ == "__main__":
     is_ok = is_ok and sim_scav.user_hook_log.scavenger_material is not None
     is_ok = is_ok and "O_2^0" in sim_scav.user_hook_log.scavenger_material["species"]
     is_ok = is_ok and scav_eaq_final < ref_eaq_final
+    is_ok = is_ok and final_o2_count < initial_o2_count
 
     utility.test_ok(is_ok)
