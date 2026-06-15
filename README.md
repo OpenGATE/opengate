@@ -70,3 +70,12 @@ See the [developer guide](https://opengate-python.readthedocs.io/en/master/devel
 - https://github.com/pybind/pybind11
 - https://github.com/fmtlib/fmt
 - https://github.com/p-ranav/indicators
+
+## References collaboration papers:
+
+- 2026 PMB focus collection : https://iopscience.iop.org/collections/pmb-250417-827
+- 2026 https://pubmed.ncbi.nlm.nih.gov/41285107 and https://pubmed.ncbi.nlm.nih.gov/41285109 
+- 2021 http://www.ncbi.nlm.nih.gov/pubmed/33770774
+- 2014 http://www.ncbi.nlm.nih.gov/pubmed/24877844
+- 2011 http://www.ncbi.nlm.nih.gov/pubmed/21248393
+- 2004 http://www.ncbi.nlm.nih.gov/pubmed/15552416
