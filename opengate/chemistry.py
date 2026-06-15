@@ -424,13 +424,6 @@ class ChemicalSpecies(GateObject):
     """
 
     user_info_defaults = {
-        "name": (
-            None,
-            {
-                "doc": "Molecule name (must match the name used in G4MoleculeTable)",
-                "type": "str",
-            },
-        ),
         "definition_name": (
             None,
             {
