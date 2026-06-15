@@ -570,12 +570,6 @@ class ChemicalDissociation(GateObject):
     """
 
     user_info_defaults = {
-        "name": (
-            None,
-            {
-                "doc": "Optional channel name. If None, a name is synthesized from the parent and products.",
-            },
-        ),
         "parent": (
             None,
             {
@@ -615,7 +609,26 @@ class ChemicalDissociation(GateObject):
         ),
     }
 
+    @staticmethod
+    def make_default_name(parent, products):
+        raw = "_".join(
+            str(part) for part in (parent, "_".join(str(p) for p in products)) if part
+        )
+        safe = re.sub(r"[^A-Za-z0-9_]+", "_", raw).strip("_")
+        if safe == "":
+            safe = "dissociation"
+        return f"dissociation_{safe}"
+
     def __init__(self, *args, **kwargs) -> None:
+        if kwargs.get("name") in (None, ""):
+            parent = kwargs.get("parent")
+            products = kwargs.get("products", [])
+            if parent in (None, "") and len(products) == 0:
+                fatal(
+                    "ChemicalDissociation requires either an explicit name or enough "
+                    "information to synthesize one from parent/products."
+                )
+            kwargs["name"] = self.make_default_name(parent, products)
         # references to upper hierarchy level
         super().__init__(*args, **kwargs)
 
@@ -857,10 +870,8 @@ class ChemistryList(GateObject, G4VUserChemistryList):
                 "ChemistryList.add_chemical_dissociation() requires the parent species name."
             )
         if "name" not in kwargs or kwargs["name"] in (None, ""):
-            kwargs["name"] = self._make_helper_name(
-                "dissociation",
-                kwargs["parent"],
-                "_".join(str(product) for product in kwargs.get("products", [])),
+            kwargs["name"] = ChemicalDissociation.make_default_name(
+                kwargs["parent"], kwargs.get("products", [])
             )
         return ChemicalDissociation(**kwargs)
 
