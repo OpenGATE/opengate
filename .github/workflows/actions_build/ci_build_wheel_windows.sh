@@ -4,7 +4,7 @@ set -e
 source $GITHUB_WORKSPACE/env_dump.txt
 source $CONDA/Scripts/activate opengate_core
 conda info
-conda install cmake==3.31.2
+conda install cmake==4.2.3
 cmake --version
 conda list
 which python
@@ -25,6 +25,7 @@ export SSL_CERT_FILE="C:\certifi-ca.pem"
 export REQUESTS_CA_BUNDLE="C:\certifi-ca.pem"
 
 which pip
+which cmake
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
     cd $HOME/software

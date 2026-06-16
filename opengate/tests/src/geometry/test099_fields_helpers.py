@@ -30,6 +30,20 @@ def cyclotron_radius(T, B, m, q):
     return p / (q * B * 0.299792458) / g4_m
 
 
+def magnetic_deflection(T, B, m, q, L):
+    """
+    Expected transverse displacement (chord sagitta) after a particle with
+    kinetic energy T traverses a uniform magnetic field B over axial depth L.
+
+    Assumes the particle enters parallel to the beam axis and exits through
+    the back face (i.e. L < cyclotron_radius).
+
+        sagitta = r - sqrt(r^2 - L^2)
+    """
+    r = cyclotron_radius(T, B, m, q)
+    return r - np.sqrt(r**2 - L**2)
+
+
 def build_field_simulation(
     field_obj,
     kinetic_energy=10 * gate.g4_units.MeV,

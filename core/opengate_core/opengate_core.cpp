@@ -25,6 +25,7 @@ void init_G4Transform3D(py::module &);
 void init_G4UnitsTable(py::module &);
 
 void init_G4Threading(py::module &);
+void init_GateTrackDataSlotRegistry(py::module &);
 
 // CLHEP
 void init_Randomize(py::module &);
@@ -187,6 +188,8 @@ void init_G4UniformMagField(py::module &);
 
 void init_G4QuadrupoleMagField(py::module &);
 
+void init_G4SextupoleMagField(py::module &);
+
 void init_G4UniformElectricField(py::module &);
 
 void init_G4EquationOfMotion(py::module &);
@@ -203,11 +206,35 @@ void init_G4MagErrorStepper(py::module &);
 
 void init_G4ClassicalRK4(py::module &);
 
+void init_G4DormandPrince745(py::module &);
+
+void init_G4DormandPrinceRK56(py::module &);
+
+void init_G4DormandPrinceRK78(py::module &);
+
+void init_G4BogackiShampine23(py::module &);
+
+void init_G4BogackiShampine45(py::module &);
+
+void init_G4CashKarpRKF45(py::module &);
+
+void init_G4NystromRK4(py::module &);
+
+void init_G4ExactHelixStepper(py::module &);
+
 void init_G4VIntegrationDriver(py::module &);
 
 void init_G4MagInt_Driver(py::module &);
 
 void init_G4ChordFinder(py::module &);
+
+void init_GateMagneticField(py::module &);
+void init_GateElectroMagneticField(py::module &);
+void init_GateUniformElectroMagneticField(py::module &);
+void init_GateGridInterpolator(py::module &);
+void init_GateMappedMagneticField(py::module &);
+void init_GateMappedElectricField(py::module &);
+void init_GateMappedElectroMagneticField(py::module &);
 
 // geometry/solids
 void init_G4Box(py::module &);
@@ -366,6 +393,10 @@ void init_GateKillActor(py::module &);
 
 void init_GateKillAccordingProcessesActor(py::module &);
 
+void init_GateKillNonInteractingParticleActor(py::module &);
+
+void init_GateKillAccordingParticleNameActor(py::module &);
+
 void init_GateDepositedChargeActor(py::module &);
 
 void init_GateAttenuationImageActor(py::module &);
@@ -382,6 +413,20 @@ void init_GateEventAction(py::module &);
 
 void init_GateTrackingAction(py::module &);
 
+void init_GateSteppingAction(py::module &);
+
+void init_GateVAuxiliaryAttribute(py::module &);
+
+void init_GateInteractionCounterAttribute(py::module &);
+
+void init_GateUnscatteredPrimaryAttribute(py::module &);
+
+void init_GateLastInteractionPositionInVolumeAttribute(py::module &);
+
+void init_GateLastProcessDefinedStepInVolumeAttribute(py::module &);
+
+void init_GateProcessDefinedStepInVolumeAttribute(py::module &);
+
 void init_GateSimulationStatisticsActor(py::module &);
 
 void init_GatePhaseSpaceActor(py::module &);
@@ -396,6 +441,8 @@ void init_GateScatterSplittingFreeFlightOptrActor(py::module &m);
 void init_G4VBiasingOperator(py::module &m);
 
 void init_GateTLEDoseActor(py::module &m);
+
+void init_GateLastVertexInteractionSplittingActor(py::module &m);
 
 // Gate digit
 void init_GateVDigitizerWithOutputActor(py::module &);
@@ -436,6 +483,8 @@ void init_GateGeometryUtils(py::module &);
 
 // Gate source
 void init_GateVSource(py::module &);
+
+void init_GateLastVertexSource(py::module &);
 
 void init_GateSourceManager(py::module &);
 
@@ -478,6 +527,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Transform3D(m);
   init_G4UnitsTable(m);
   init_G4Threading(m);
+  init_GateTrackDataSlotRegistry(m);
 
   init_Randomize(m);
 
@@ -549,6 +599,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4ElectricField(m);
   init_G4UniformMagField(m);
   init_G4QuadrupoleMagField(m);
+  init_G4SextupoleMagField(m);
   init_G4UniformElectricField(m);
   init_G4EquationOfMotion(m);
   init_G4Mag_EqRhs(m);
@@ -557,9 +608,24 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4MagIntegratorStepper(m);
   init_G4MagErrorStepper(m);
   init_G4ClassicalRK4(m);
+  init_G4DormandPrince745(m);
+  init_G4DormandPrinceRK56(m);
+  init_G4DormandPrinceRK78(m);
+  init_G4BogackiShampine23(m);
+  init_G4BogackiShampine45(m);
+  init_G4CashKarpRKF45(m);
+  init_G4NystromRK4(m);
+  init_G4ExactHelixStepper(m);
   init_G4VIntegrationDriver(m);
   init_G4MagInt_Driver(m);
   init_G4ChordFinder(m);
+  init_GateMagneticField(m);
+  init_GateElectroMagneticField(m);
+  init_GateUniformElectroMagneticField(m);
+  init_GateGridInterpolator(m);
+  init_GateMappedMagneticField(m);
+  init_GateMappedElectricField(m);
+  init_GateMappedElectroMagneticField(m);
 
   init_G4Box(m);
   init_G4Ellipsoid(m);
@@ -653,6 +719,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateImageNestedParameterisation(m);
   init_GateRepeatParameterisation(m);
   init_GateVSource(m);
+  init_GateLastVertexSource(m);
   init_GateSourceManager(m);
   init_GateGenericSource(m);
   init_GateTreatmentPlanPBSource(m);
@@ -668,6 +735,13 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateRunAction(m);
   init_GateEventAction(m);
   init_GateTrackingAction(m);
+  init_GateSteppingAction(m);
+  init_GateVAuxiliaryAttribute(m);
+  init_GateInteractionCounterAttribute(m);
+  init_GateUnscatteredPrimaryAttribute(m);
+  init_GateLastInteractionPositionInVolumeAttribute(m);
+  init_GateLastProcessDefinedStepInVolumeAttribute(m);
+  init_GateProcessDefinedStepInVolumeAttribute(m);
 
   init_GateDoseActor(m);
   init_GateTLEDoseActor(m);
@@ -681,6 +755,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateSimulationStatisticsActor(m);
 
   init_GateBOptrBremSplittingActor(m);
+  init_GateLastVertexInteractionSplittingActor(m);
   init_GateGammaFreeFlightOptrActor(m);
   init_GateScatterSplittingFreeFlightOptrActor(m);
 
@@ -705,6 +780,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
   init_GateKillAccordingProcessesActor(m);
+  init_GateKillNonInteractingParticleActor(m);
+  init_GateKillAccordingParticleNameActor(m);
   init_GateDepositedChargeActor(m);
   init_GateAttenuationImageActor(m);
   init_GateExceptionHandler(m);

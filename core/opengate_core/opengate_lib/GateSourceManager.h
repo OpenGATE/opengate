@@ -66,7 +66,13 @@ public:
   // Return a source
   GateVSource *FindSourceByName(const std::string &name) const;
 
-  // [available on py side] start the simulation master thread only
+  // Return the name of the active source
+  G4String GetActiveSourceName();
+
+  // Set the active source by name
+  void SetActiveSourcebyName(G4String sourceName);
+
+  // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 
   // Initialise a new Run

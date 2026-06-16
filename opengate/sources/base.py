@@ -1,13 +1,13 @@
 import numpy as np
 
 from ..actors.base import _setter_hook_attached_to
-from ..base import GateObject, process_cls
+from ..base import GateObject, DynamicGateObject, process_cls
 from ..utility import g4_units
 from ..definitions import __world_name__
 from ..exception import fatal, warning
 
 
-class SourceBase(GateObject):
+class SourceBase(DynamicGateObject):
     """
     Base class for all source types.
     """

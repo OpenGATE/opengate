@@ -387,7 +387,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "transition_energy_SPR": (
             10,
             {
-                "doc": "When fast_SPR_calculation = True, the fast calculation will be performed only for particles with energy < transition_energy_SPR",
+                "doc": "When fast_SPR_calculation = True, the fast calculation will be performed only for particles with energy > transition_energy_SPR.",
             },
         ),
         "ste_of_mean": (
@@ -420,10 +420,17 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "After the first evaluation, the value is updated with an estimation of the N events needed to achieve the uncertainty goal, Therefore it is recommended to select a sufficiently large number so the uncertainty of the uncertainty is not too large.",
             },
         ),
+        "uncertainty_top_voxels_count": (
+            10,
+            {
+                "doc": "Only applies if uncertainty_goal is set True: the N voxels with the highest edep will be used to calculate a 'mean maximum' of the edep in the image.",
+            },
+        ),
         "uncertainty_voxel_edep_threshold": (
             0.7,
             {
-                "doc": "Only applies if uncertainty_goal is set True: The calculation of the mean uncertainty of the edep image, only voxels that are above this relative threshold are considered. The threshold must range between [0, 1] and gives the fraction relative to max edep value in the image.",
+                "doc": "Only applies if uncertainty_goal is set True: The threshold must range between [0, 1] and represents the fraction relative to the 'mean maximum' edep value in the image. "
+                "Only voxels with value above this threshold are used for the uncertainty calculation.",
             },
         ),
         "uncertainty_overshoot_factor_N_events": (
@@ -601,9 +608,18 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.SetUncertaintyGoal(0)
         else:
             self.SetUncertaintyGoal(self.uncertainty_goal)
-        self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
-        self.SetOvershoot(self.uncertainty_overshoot_factor_N_events)
-        self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
+            n_voxels = self.size[0] * self.size[1] * self.size[2]
+            if (
+                self.uncertainty_top_voxels_count <= 0
+                or self.uncertainty_top_voxels_count > n_voxels
+            ):
+                fatal(
+                    "uncertainty_top_voxels_count must be greater than 0 and cannot be bigger than the number of voxels in the image. "
+                )
+            self.SetTopVoxelsCount(self.uncertainty_top_voxels_count)
+            self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
+            self.SetOvershoot(self.uncertainty_overshoot_factor_N_events)
+            self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
         # self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -700,7 +716,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
 
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
-    """TLE = Track Length Estimator"""
+    """
+    TLE = Track Length Estimator.
+    """
 
     energy_min: float
     range_type: str

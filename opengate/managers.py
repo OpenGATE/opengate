@@ -1,53 +1,53 @@
 import copy
-from typing import Optional, List, Union
-from box import Box
-from anytree import RenderTree, LoopError
+import io
 import shutil
 import weakref
 from pathlib import Path
-import io
+from typing import List, Optional, Union
 
 import opengate_core as g4
+from anytree import LoopError, RenderTree
+from box import Box
+
 from .base import (
     GateObject,
-    process_cls,
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
+    process_cls,
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
-from .exception import fatal, warning, GateDeprecationError, GateImplementationError
-from .geometry.materials import MaterialDatabase
+from .exception import GateDeprecationError, GateImplementationError, fatal, warning
 from .geometry.fields import FieldBase, field_types
-
-from .utility import (
-    g4_units,
-    indent,
-    read_mac_file_to_commands,
-    ensure_directory_exists,
-    insert_suffix_before_extension,
-)
+from .geometry.materials import MaterialDatabase
 from .logger import *
-
 from .physics import (
-    Region,
     OpticalSurface,
+    Region,
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
 )
-from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
-
-from .sources.generic import SourceBase, GenericSource
-from .sources.phspsources import PhaseSpaceSource
-from .sources.voxelsources import VoxelSource, VoxelizedPromptGammaTLESource
-from .sources.gansources import GANSource, GANPairsSource
+from .serialization import dump_json, dumps_json, load_json, loads_json
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
+from .sources.gansources import GANPairsSource, GANSource
+from .sources.generic import GenericSource, SourceBase
+from .sources.lastvertexsources import LastVertexSource
 from .sources.phidsources import PhotonFromIonDecaySource
+from .sources.phspsources import PhaseSpaceSource
+from .sources.voxelsources import VoxelizedPromptGammaTLESource, VoxelSource
+from .utility import (
+    ensure_directory_exists,
+    g4_units,
+    indent,
+    insert_suffix_before_extension,
+    read_mac_file_to_commands,
+)
 from .voxelize import voxelize_geometry
 
 source_types = {
     "GenericSource": GenericSource,
+    "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
     "GANSource": GANSource,
@@ -58,74 +58,75 @@ source_types = {
     "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
 }
 
-from .geometry.volumes import (
-    VolumeBase,
-    BoxVolume,
-    SphereVolume,
-    EllipsoidVolume,
-    TrapVolume,
-    ImageVolume,
-    TubsVolume,
-    PolyhedraVolume,
-    HexagonVolume,
-    TesselatedVolume,
-    ConsVolume,
-    TrdVolume,
-    BooleanVolume,
-    RepeatParametrisedVolume,
-    ParallelWorldVolume,
-    VolumeTreeRoot,
-)
-from .actors.filters import get_filter_class, FilterBase, filter_classes
-from .actors.base import ActorBase
-
-from .actors.doseactors import (
-    DoseActor,
-    TLEDoseActor,
-    LETActor,
-    FluenceActor,
-    ProductionAndStoppingActor,
-    RBEActor,
-    REActor,
-    BeamQualityActor,
-    EmCalculatorActor,
-)
-
-from .actors.pgactors import (
-    VoxelizedPromptGammaTLEActor,
-    VoxelizedPromptGammaAnalogActor,
-)
-
-from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
-from .actors.miscactors import (
-    SimulationStatisticsActor,
-    KillActor,
-    KillAccordingProcessesActor,
-    DepositedChargeActor,
-    AttenuationImageActor,
-)
+from .actors.base import ActorBase
 from .actors.biasingactors import (
-    GenericBiasingActorBase,
     BremsstrahlungSplittingActor,
     GammaFreeFlightActor,
+    GenericBiasingActorBase,
+    LastVertexInteractionSplittingActor,
     ScatterSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
+    CoincidenceSorterActor,
+    DigiAttributeLastProcessDefinedStepInVolumeActor,
+    DigiAttributeProcessDefinedStepInVolumeActor,
     DigitizerAdderActor,
     DigitizerBlurringActor,
-    DigitizerSpatialBlurringActor,
-    DigitizerReadoutActor,
     DigitizerEfficiencyActor,
-    DigitizerProjectionActor,
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
     DigitizerPileupActor,
-    CoincidenceSorterActor,
+    DigitizerProjectionActor,
+    DigitizerReadoutActor,
+    DigitizerSpatialBlurringActor,
     PhaseSpaceActor,
-    DigiAttributeProcessDefinedStepInVolumeActor,
-    DigiAttributeLastProcessDefinedStepInVolumeActor,
 )
+from .actors.doseactors import (
+    BeamQualityActor,
+    DoseActor,
+    EmCalculatorActor,
+    FluenceActor,
+    LETActor,
+    ProductionAndStoppingActor,
+    RBEActor,
+    REActor,
+    TLEDoseActor,
+)
+from .actors.dynamicactors import DynamicGeometryActor, DynamicSourceActor
+from .actors.filters import FilterBase, filter_classes, get_filter_class
+from .actors.miscactors import (
+    AttenuationImageActor,
+    DepositedChargeActor,
+    KillAccordingParticleNameActor,
+    KillAccordingProcessesActor,
+    KillActor,
+    KillNonInteractingParticleActor,
+    SimulationStatisticsActor,
+)
+from .actors.pgactors import (
+    VoxelizedPromptGammaAnalogActor,
+    VoxelizedPromptGammaTLEActor,
+)
+from .geometry.volumes import (
+    BooleanVolume,
+    BoxVolume,
+    ConsVolume,
+    EllipsoidVolume,
+    HexagonVolume,
+    ImageVolume,
+    ParallelWorldVolume,
+    PolyhedraVolume,
+    RepeatParametrisedVolume,
+    SphereVolume,
+    TesselatedVolume,
+    TrapVolume,
+    TrdVolume,
+    TubsVolume,
+    VolumeBase,
+    VolumeTreeRoot,
+)
+from .auxiliary_attributes import AuxiliaryAttributeBase, auxiliary_attribute_types
 
 particle_names_Gate_to_G4 = {
     "gamma": "gamma",
@@ -153,8 +154,11 @@ actor_types = {
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
+    "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
+    "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
     "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
+    "DynamicSourceActor": DynamicSourceActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     # digit
@@ -175,6 +179,7 @@ actor_types = {
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,
     "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
+    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
 }
 
 
@@ -268,7 +273,13 @@ class FilterManager:
             )
 
     def add_filter(self, filter):
+        existing_filter = self.filters.get(filter.name)
+        if existing_filter is not None:
+            if existing_filter is filter:
+                return filter
+            fatal(f"A filter with the name {filter.name} already exists.")
         self.filters[filter.name] = filter
+        return filter
 
     def add_filter_deprecated(self, filt, name=None):
         if isinstance(filt, str):
@@ -336,6 +347,10 @@ class SourceManager(GateObject):
                 f"Sources included in this simulation are: {list(self.sources.keys())}"
             )
             return None  # to avoid warning
+
+    @property
+    def dynamic_sources(self):
+        return [source for source in self.sources.values() if source.is_dynamic]
 
     def add_source(self, source, name):
         new_source = None
@@ -1351,6 +1366,9 @@ class VolumeManager(GateObject):
         print(self.dump_volumes())
 
     def dump_volume_tree(self):
+        """
+        Updates volume tree (if needed) and returns a string representation of the volume tree.
+        """
         self.update_volume_tree_if_needed()
         s = ""
         for pre, _, node in RenderTree(self.volume_tree_root):
@@ -1693,6 +1711,7 @@ class Simulation(GateObject):
         self.volume_manager = VolumeManager(self)
         self.source_manager = SourceManager(self)
         self.actor_manager = ActorManager(self)
+        self.auxiliary_attributes = {}
         self.physics_manager = PhysicsManager(self)
         self.filter_manager = FilterManager(self)
 
@@ -1706,6 +1725,12 @@ class Simulation(GateObject):
         self._current_random_seed = None
 
         self.expected_number_of_events = None
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        if hasattr(self, "auxiliary_attributes"):
+            for auxiliary_attribute in self.auxiliary_attributes.values():
+                auxiliary_attribute.simulation = self
 
     def __str__(self):
         s = (
@@ -1755,6 +1780,9 @@ class Simulation(GateObject):
         d["volume_manager"] = self.volume_manager.to_dictionary()
         d["physics_manager"] = self.physics_manager.to_dictionary()
         d["actor_manager"] = self.actor_manager.to_dictionary()
+        d["auxiliary_attributes"] = dict(
+            [(k, v.to_dictionary()) for k, v in self.auxiliary_attributes.items()]
+        )
         return d
 
     def from_dictionary(self, d):
@@ -1762,6 +1790,12 @@ class Simulation(GateObject):
         self.volume_manager.from_dictionary(d["volume_manager"])
         self.physics_manager.from_dictionary(d["physics_manager"])
         self.actor_manager.from_dictionary(d["actor_manager"])
+        self.auxiliary_attributes = {}
+        for _, v in d.get("auxiliary_attributes", {}).items():
+            a = self.activate_auxiliary_attribute(
+                v["object_type"], name=v["user_info"]["name"]
+            )
+            a.from_dictionary(v)
 
     def to_json_string(self):
         warning("Only parts of the simulation can currently be dumped as JSON")
@@ -1872,6 +1906,86 @@ class Simulation(GateObject):
 
     def add_actor(self, actor_type, name):
         return self.actor_manager.add_actor(actor_type, name)
+
+    def activate_auxiliary_attribute(self, attribute_type, name):
+        """
+        Activate a simulation-level runtime attribute.
+
+        Auxiliary attributes are named runtime attributes that may be consumed
+        from ROOT-backed actors, generic filters, or other C++ runtime
+        components. Some attributes are getter-only; others additionally use
+        Geant4 hooks and optional per-track storage.
+        """
+        if attribute_type in (
+            "ProcessDefinedStepInVolumeAttribute",
+            "LastProcessDefinedStepInVolumeAttribute",
+        ):
+            legacy_name = (
+                "ProcessDefinedStepInVolumeAttributeLegacy"
+                if attribute_type == "ProcessDefinedStepInVolumeAttribute"
+                else "LastProcessDefinedStepInVolumeAttributeLegacy"
+            )
+            warning(
+                f"{legacy_name} has been replaced by the auxiliary attribute "
+                f"{attribute_type} and will be deprecated soon."
+            )
+        return self._activate_auxiliary_attribute(attribute_type, name)
+
+    def _activate_auxiliary_attribute(self, attribute_type, name):
+        if name is None:
+            fatal("You must provide a name for the auxiliary attribute.")
+
+        if isinstance(attribute_type, str):
+            try:
+                cls = auxiliary_attribute_types[attribute_type]
+            except KeyError:
+                fatal(
+                    f"Unknown auxiliary attribute type {attribute_type}. "
+                    f"Known types are: {list(auxiliary_attribute_types.keys())}."
+                )
+            new_attribute = cls(name=name, simulation=self)
+        elif isinstance(attribute_type, AuxiliaryAttributeBase):
+            new_attribute = attribute_type
+        else:
+            fatal(
+                "You need to either provide an auxiliary attribute type and name, "
+                "or an auxiliary attribute object."
+            )
+
+        if new_attribute.name in self.auxiliary_attributes:
+            fatal(
+                f"The auxiliary attribute named {new_attribute.name} already exists. "
+                f"Existing auxiliary attribute names are: "
+                f"{self.auxiliary_attributes.keys()}"
+            )
+
+        digi_attribute_names = (
+            g4.GateDigiAttributeManager.GetInstance().GetAvailableDigiAttributeNames()
+        )
+        if new_attribute.name in digi_attribute_names:
+            fatal(
+                f"The auxiliary attribute name '{new_attribute.name}' collides "
+                "with an existing DigiAttribute name. Auxiliary attribute names "
+                "are also output/DigiAttribute names and must be unique."
+            )
+
+        self.auxiliary_attributes[new_attribute.name] = new_attribute
+        new_attribute.simulation = self
+        if new_attribute is not attribute_type:
+            return new_attribute
+
+    def initialize_auxiliary_attributes(self):
+        """
+        Initialize all activated auxiliary attributes before engine runtime.
+
+        This is the moment when Python-side configuration is pushed to the C++
+        objects, optional DigiAttribute exposure is declared, and the
+        auxiliary-attribute registry becomes ready for lookup by filters or
+        other consumers.
+        """
+        for attribute in self.auxiliary_attributes.values():
+            attribute.simulation = self
+            attribute.initialize()
 
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)

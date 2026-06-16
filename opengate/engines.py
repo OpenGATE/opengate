@@ -84,6 +84,10 @@ class SourceEngine(EngineBase):
         # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
         self.source_manager_options = Box()
 
+    @property
+    def source_manager(self):
+        return self.simulation_engine.simulation.source_manager
+
     def close(self):
         if self.verbose_close:
             warning("Closing SourceEngine")
@@ -104,6 +108,7 @@ class SourceEngine(EngineBase):
         #        "No source: no particle will be generated"
         #    )
         self.progress_bar = progress_bar
+        self.initialize_dynamic_parametrisations()
 
     def initialize_actors(self):
         """
@@ -112,6 +117,18 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager.SetActors(
             self.simulation_engine.simulation.actor_manager.sorted_actors
         )
+
+    def initialize_dynamic_parametrisations(self):
+        dynamic_sources = self.source_manager.dynamic_sources
+        for s in self.source_manager.dynamic_sources:
+            s.check_if_dynamic_params_match_run_timing_intervals()
+        if len(dynamic_sources) > 0:
+            dynamic_source_actor = self.simulation_engine.simulation.add_actor(
+                "DynamicSourceActor", "dynamic_source_actor"
+            )
+            dynamic_source_actor.priority = 1
+            for s in self.source_manager.dynamic_sources:
+                dynamic_source_actor.changers.extend(s.create_changers())
 
     def create_master_source_manager(self):
         # create the master source for the masterThread
@@ -539,10 +556,13 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_SteppingAction = []
 
     def close(self):
         if self.verbose_close:
             warning("Closing ActionEngine")
+        g4.GateVAuxiliaryAttribute.ClearRegistry()
+        g4.GateTrackDataSlotRegistry.Clear()
         self.release_g4_references()
         super().close()
 
@@ -552,6 +572,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_SteppingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
@@ -569,6 +590,16 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def register_auxiliary_attribute_actions(self, attribute):
+        # Auxiliary attributes are simulation-level runtime attributes, but the
+        # Geant4 user action objects are worker-local. Registration therefore
+        # pushes each activated attribute into the appropriate per-worker
+        # tracking/stepping aggregators based on the hooks it implements.
+        for ta in self.g4_TrackingAction:
+            ta.RegisterAuxiliaryAttribute(attribute)
+        for sa in self.g4_SteppingAction:
+            sa.RegisterAuxiliaryAttribute(attribute)
 
     def BuildForMaster(self):
         # This function is called only in MT mode, for the master thread
@@ -611,6 +642,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
 
+        # set the global stepping action for auxiliary attributes
+        sa = g4.GateSteppingAction()
+        self.SetUserAction(sa)
+        self.g4_SteppingAction.append(sa)
+
 
 def register_sensitive_detector_to_children(actor, lv):
     logger.debug(
@@ -645,6 +681,11 @@ class ActorEngine(EngineBase):
         super().close()
 
     def initialize(self):
+        # TODO: Split actor initialization into before/after G4RunManager initialization phases.
+        # Some early checks currently run before geometry construction and can touch
+        # image-dependent properties too soon. For example, DoseActor.check_user_input()
+        # may access attached_to_volume.native_translation/native_rotation while the
+        # attached ImageVolume has not loaded its input image yet.
         for actor in self.actor_manager.sorted_actors:
             logger.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
             # self.simulation_engine.action_engine.register_all_actions(actor)
@@ -861,7 +902,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             )
             dynamic_geometry_actor.priority = 0
             for vol in self.volume_manager.dynamic_volumes:
-                dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
+                dynamic_geometry_actor.changers.extend(vol.create_changers())
 
     def Construct(self):
         """
@@ -912,7 +953,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         for field in self.simulation_engine.simulation.volume_manager.fields.values():
             for volume_name in field.attached_to:
                 volume_obj = self.volume_manager.get_volume(volume_name)
-                volume_obj.g4_field_manager = field.create_field_manager()
+                volume_obj.g4_field_manager = field.create_field_manager(volume_obj)
                 volume_obj.g4_logical_volume.SetFieldManager(
                     volume_obj.g4_field_manager, True
                 )
@@ -1184,6 +1225,8 @@ class SimulationEngine(GateSingletonFatal):
             self.action_engine.close()
         if self.actor_engine:
             self.actor_engine.close()
+        if self.filter_engine:
+            self.filter_engine.close()
         if self.visu_engine:
             self.visu_engine.close()
 
@@ -1193,6 +1236,7 @@ class SimulationEngine(GateSingletonFatal):
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.filter_engine = None
         self.visu_engine = None
 
     def release_g4_references(self):
@@ -1464,6 +1508,11 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
+        # Auxiliary attributes must register their runtime IDs and DigiAttribute
+        # views before worker tracking starts.
+        logger.info("Simulation: initialize Auxiliary attributes")
+        self.simulation.initialize_auxiliary_attributes()
+
         # Visu
         if self.simulation.visu:
             logger.info("Simulation: initialize Visualization")
@@ -1516,6 +1565,9 @@ class SimulationEngine(GateSingletonFatal):
         self.source_engine.initialize_actors()
         logger.info("Simulation: register Actions of actors")
         self.actor_engine.register_actions()
+        logger.info("Simulation: register Actions of auxiliary attributes")
+        for attribute in self.simulation.auxiliary_attributes.values():
+            self.action_engine.register_auxiliary_attribute_actions(attribute)
 
         self.is_initialized = True
 

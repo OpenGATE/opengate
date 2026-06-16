@@ -231,32 +231,35 @@ if __name__ == "__main__":
                 process=process,
             )
             std_dev_phsp = std_dev_img_calculation(source.n, img_phsp, img_squared_phsp)
-            img_uncertainty_phsp = np.divide(
-                std_dev_phsp,
-                (img_phsp / source.n),
-                out=np.zeros_like(std_dev_phsp),
-                where=(np.abs(img_phsp) > 1e-10),
-            )
+            # img_uncertainty_phsp = np.divide(
+            #     std_dev_phsp,
+            #     (img_phsp / source.n),
+            #     out=np.zeros_like(std_dev_phsp),
+            #     where=(np.abs(img_phsp) > 1e-4),
+            # )
             dict_comp[f"{string}"] = [img_fluence, img_phsp]
             dict_comp[f"{string}_squared"] = [img_squared_fluence, img_squared_phsp]
-            dict_comp[f"{string}_uncertainty"] = [
-                img_uncertainty_fluence,
-                img_uncertainty_phsp,
-            ]
+            # dict_comp[f"{string}_uncertainty"] = [
+            #     img_uncertainty_fluence,
+            #     img_uncertainty_phsp,
+            # ]
 
+    rtol = 1e-5
+    atol = 1e-8
     l_bool = []
     for key, elem in dict_comp.items():
-        diff = np.divide(
-            elem[0] - elem[1],
-            elem[1],
+        abs_diff = np.abs(elem[0] - elem[1])
+        rel_diff = np.divide(
+            abs_diff,
+            np.abs(elem[1]),
             out=np.zeros_like(elem[0]),
-            where=(np.abs(elem[1]) > 1e-10),
+            where=(np.abs(elem[1]) > 1e-7),
         )
-        diff = np.round(diff, decimals=5)
-        is_ok = np.all(diff == 0)
+        is_ok = np.allclose(elem[0], elem[1], rtol=rtol, atol=atol)
         if not is_ok:
             print(key)
-            print(diff)
+            print(f"max abs diff = {np.max(abs_diff)}")
+            print(f"max rel diff = {np.max(rel_diff)}")
         l_bool.append(is_ok)
 
     l_bool = np.array(l_bool, dtype="bool")

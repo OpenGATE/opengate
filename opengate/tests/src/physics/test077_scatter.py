@@ -83,9 +83,14 @@ if __name__ == "__main__":
         "PostDirection",
         "UnscatteredPrimaryFlag",
     ]
+
+    unscattered_primary_aux = sim.activate_auxiliary_attribute(
+        "UnscatteredPrimaryAttribute",
+        "UnscatteredPrimaryAuxFlag",
+    )
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attached_to = det.name
-    phsp.attributes = att_list
+    phsp.attributes = att_list + [unscattered_primary_aux.name]
     # phsp.debug = True
     phsp.output_filename = "test077_scatter.root"
     F = GateFilterBuilder()
@@ -94,15 +99,23 @@ if __name__ == "__main__":
     # phsp
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_scatter")
     phsp2.attached_to = det.name
-    phsp2.attributes = att_list
+    phsp2.attributes = att_list + [unscattered_primary_aux.name]
     phsp2.output_filename = phsp.output_filename
     # phsp2.debug = True
     phsp2.filter = (F.ParticleName == "gamma") & (F.UnscatteredPrimaryFlag == True)
 
+    phsp2_aux = sim.add_actor("PhaseSpaceActor", "phsp_scatter_aux")
+    phsp2_aux.attached_to = det.name
+    phsp2_aux.attributes = att_list + [unscattered_primary_aux.name]
+    phsp2_aux.output_filename = phsp.output_filename
+    phsp2_aux.filter = (F.ParticleName == "gamma") & (
+        F(unscattered_primary_aux.name) == 1
+    )
+
     # phsp
     phsp3 = sim.add_actor("PhaseSpaceActor", "phsp_no_scatter")
     phsp3.attached_to = det.name
-    phsp3.attributes = att_list
+    phsp3.attributes = att_list + [unscattered_primary_aux.name]
     phsp3.output_filename = phsp.output_filename
     phsp3.filter = (F.ParticleName == "gamma") & (F.UnscatteredPrimaryFlag == False)
 

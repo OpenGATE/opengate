@@ -10,6 +10,7 @@ def check_scatter(root_filename):
     root_file = uproot.open(root_filename)
     phsp1 = root_file["phsp"]
     phsp_scatter = root_file["phsp_scatter"]
+    phsp_scatter_aux = root_file["phsp_scatter_aux"]
     phsp_no_scatter = root_file["phsp_no_scatter"]
 
     print(f"Number of entries in phsp = {phsp1.num_entries}")
@@ -17,9 +18,14 @@ def check_scatter(root_filename):
     print(
         f"Number of entries in no_scatter filtered phsp = {phsp_no_scatter.num_entries}"
     )
+    print(
+        "Number of entries in aux-attribute filtered phsp = "
+        f"{phsp_scatter_aux.num_entries}"
+    )
 
     scatter_flag = phsp1["UnscatteredPrimaryFlag"].array()
     scatter_flag2 = phsp_scatter["UnscatteredPrimaryFlag"].array()
+    scatter_flag_aux = phsp_scatter_aux["UnscatteredPrimaryAuxFlag"].array()
     scatter_flag3 = phsp_no_scatter["UnscatteredPrimaryFlag"].array()
 
     # Count the entries where UnscatteredPrimaryFlag is 1 or -1
@@ -39,6 +45,11 @@ def check_scatter(root_filename):
     print(f"phsp_ns, nb flag == 0  -> {np.sum(scatter_flag3 == 0)}")
     print(f"phsp_ns, nb flag == 1  -> {np.sum(scatter_flag3 == 1)}")
     print(f"phsp_ns, nb flag == -1 -> {np.sum(scatter_flag3 == -1)}")
+    print()
+
+    print(f"phsp_aux, nb aux flag == 0 -> {np.sum(scatter_flag_aux == 0)}")
+    print(f"phsp_aux, nb aux flag == 1 -> {np.sum(scatter_flag_aux == 1)}")
+    print(f"phsp_aux, nb aux flag == -1 -> {np.sum(scatter_flag_aux == -1)}")
     print()
 
     # check
@@ -68,6 +79,18 @@ def check_scatter(root_filename):
     utility.print_test(
         b4,
         f"Check nb filter {phsp_no_scatter.num_entries} vs {np.sum(scatter_flag3 != 1)}",
+    )
+
+    b5 = phsp_scatter_aux.num_entries == phsp_scatter.num_entries
+    utility.print_test(
+        b5,
+        "Auxiliary-attribute filter selects the same number of entries as the legacy filter",
+    )
+
+    b6 = phsp_scatter_aux.num_entries == np.sum(scatter_flag_aux == 1)
+    utility.print_test(
+        b6,
+        f"Check aux filter {phsp_scatter_aux.num_entries} vs {np.sum(scatter_flag_aux == 1)}",
     )
 
     ####
@@ -112,4 +135,4 @@ def check_scatter(root_filename):
         i += 1
     print(i)
 
-    return b1 and b2 and b3 and b4
+    return b1 and b2 and b3 and b4 and b5 and b6
