@@ -8,12 +8,12 @@
 #include "GateHelpers.h"
 #include <G4GammaGeneralProcess.hh>
 #include <G4VProcess.hh>
-#include <QApplication>
-#include <QWidget>
 #include <pybind11/pybind11.h>
 #include <stdexcept>
 
 #if USE_VISU == 1
+#include <QApplication>
+#include <QWidget>
 #endif
 
 namespace py = pybind11;

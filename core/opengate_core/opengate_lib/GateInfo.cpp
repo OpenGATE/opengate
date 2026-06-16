@@ -11,10 +11,16 @@
 #include <G4PixeCrossSectionHandler.hh>
 #include <G4PixeShellDataSet.hh>
 #include <G4Version.hh>
-#include <QtGlobal>
 #include <itkVersion.h>
 
 #ifdef G4VIS_USE_OPENGLQT
+#include <QtGlobal>
+#endif
+
+#ifdef G4MULTITHREADED
+#include <G4MTRunManager.hh>
+#else
+#include <G4RunManager.hh>
 #endif
 
 bool GateInfo::get_G4MULTITHREADED() {
