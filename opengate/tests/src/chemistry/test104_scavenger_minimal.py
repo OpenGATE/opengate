@@ -131,7 +131,7 @@ def create_simulation(enable_scavenger):
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
-    chem_actor = sim.add_actor("ChemicalStageActor", "chem_actor")
+    chem_actor = sim.add_actor("ChemicalCountingActor", "chem_actor")
     chem_actor.attached_to = target
     chem_actor.number_of_time_bins = 50
     # This test targets the scavenger-driven molecule production path. The

@@ -60,7 +60,7 @@ def create_simulation(confine_to_half_box, time_step_model):
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
-    chem_actor = sim.add_actor("ChemicalStageActor", "chem_actor")
+    chem_actor = sim.add_actor("ChemicalCountingActor", "chem_actor")
     chem_actor.attached_to = chem_box
     chem_actor.number_of_time_bins = 25
     # This test targets the global confinement controller. Use the actor-side

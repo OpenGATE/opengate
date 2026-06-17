@@ -56,7 +56,7 @@ def create_simulation(number_of_events, time_step_model, confine_to_half_box):
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
-    chem_actor = sim.add_actor("ChemicalStageActor", "chem_actor")
+    chem_actor = sim.add_actor("ChemicalCountingActor", "chem_actor")
     chem_actor.attached_to = target
     chem_actor.number_of_time_bins = 10
     chem_actor.counters.molecule_counter.active = False

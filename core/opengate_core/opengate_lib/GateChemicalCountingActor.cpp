@@ -5,7 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateChemicalStageActor.h"
+#include "GateChemicalCountingActor.h"
 #include "GateHelpersDict.h"
 
 #include "G4AutoLock.hh"
@@ -25,13 +25,13 @@
 #include <cmath>
 
 namespace {
-G4Mutex GateChemicalStageActorMutex = G4MUTEX_INITIALIZER;
+G4Mutex GateChemicalCountingActorMutex = G4MUTEX_INITIALIZER;
 }
 
-GateChemicalStageActor::GateChemicalStageActor(py::dict &user_info)
+GateChemicalCountingActor::GateChemicalCountingActor(py::dict &user_info)
     : GateVChemistryActor(user_info, true) {}
 
-void GateChemicalStageActor::InitializeUserInfo(py::dict &user_info) {
+void GateChemicalCountingActor::InitializeUserInfo(py::dict &user_info) {
   GateVChemistryActor::InitializeUserInfo(user_info);
   fTrackOnlyPrimary = DictGetBool(user_info, "track_only_primary");
   fPrimaryPDGCode = DictGetInt(user_info, "primary_pdg_code");
@@ -47,8 +47,8 @@ void GateChemicalStageActor::InitializeUserInfo(py::dict &user_info) {
       fTimesToRecord.end());
 }
 
-void GateChemicalStageActor::StartSimulationAction() {
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+void GateChemicalCountingActor::StartSimulationAction() {
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fAccumulatedELoss = 0.0;
   fAccumulatedEdep = 0.0;
   fAccumulatedLET = 0.0;
@@ -74,7 +74,7 @@ void GateChemicalStageActor::StartSimulationAction() {
   }
 }
 
-void GateChemicalStageActor::BeginOfEventAction(const G4Event * /*event*/) {
+void GateChemicalCountingActor::BeginOfEventAction(const G4Event * /*event*/) {
   fEventELoss = 0.0;
   fEventEdep = 0.0;
   fEventStepLength = 0.0;
@@ -82,7 +82,7 @@ void GateChemicalStageActor::BeginOfEventAction(const G4Event * /*event*/) {
   fLETTrackID = 1;
 }
 
-void GateChemicalStageActor::EndOfEventAction(const G4Event *event) {
+void GateChemicalCountingActor::EndOfEventAction(const G4Event *event) {
   if (event->IsAborted()) {
     fLETTrackID = 1;
     fEventRestrictedLET = 0.0;
@@ -93,7 +93,7 @@ void GateChemicalStageActor::EndOfEventAction(const G4Event *event) {
 
   if (fEventStepLength > 0.0) {
     fEventRestrictedLET = fEventEdep / fEventStepLength;
-    G4AutoLock lock(&GateChemicalStageActorMutex);
+    G4AutoLock lock(&GateChemicalCountingActorMutex);
     fAccumulatedLET += fEventRestrictedLET;
     fAccumulatedLET2 += fEventRestrictedLET * fEventRestrictedLET;
   }
@@ -101,7 +101,7 @@ void GateChemicalStageActor::EndOfEventAction(const G4Event *event) {
   fLETTrackID = 1;
 }
 
-bool GateChemicalStageActor::ShouldApplyPrimaryLogic(
+bool GateChemicalCountingActor::ShouldApplyPrimaryLogic(
     const G4Track *track) const {
   if (!fTrackOnlyPrimary) {
     return true;
@@ -112,7 +112,7 @@ bool GateChemicalStageActor::ShouldApplyPrimaryLogic(
   return track->GetParticleDefinition()->GetPDGEncoding() == fPrimaryPDGCode;
 }
 
-void GateChemicalStageActor::SteppingAction(G4Step *step) {
+void GateChemicalCountingActor::SteppingAction(G4Step *step) {
   auto *track = step->GetTrack();
   const auto *preStepPoint = step->GetPreStepPoint();
   const auto *postStepPoint = step->GetPostStepPoint();
@@ -164,13 +164,13 @@ void GateChemicalStageActor::SteppingAction(G4Step *step) {
 
   fEventELoss += eLoss;
   {
-    G4AutoLock lock(&GateChemicalStageActorMutex);
+    G4AutoLock lock(&GateChemicalCountingActorMutex);
     fAccumulatedELoss += eLoss;
   }
 
   if (fELossMax >= 0.0 && fEventELoss > fELossMax) {
     G4RunManager::GetRunManager()->AbortEvent();
-    G4AutoLock lock(&GateChemicalStageActorMutex);
+    G4AutoLock lock(&GateChemicalCountingActorMutex);
     fNbAbortedEvents++;
     return;
   }
@@ -178,24 +178,24 @@ void GateChemicalStageActor::SteppingAction(G4Step *step) {
   if ((fELossMin >= 0.0 && fEventELoss >= fELossMin) ||
       kineticE <= fKineticEMin) {
     track->SetTrackStatus(fStopAndKill);
-    G4AutoLock lock(&GateChemicalStageActorMutex);
+    G4AutoLock lock(&GateChemicalCountingActorMutex);
     fNbKilledParticles++;
   }
 }
 
-void GateChemicalStageActor::NewStage() {
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+void GateChemicalCountingActor::NewStage() {
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fNbChemistryStages++;
 }
 
-void GateChemicalStageActor::StartChemistryTracking(G4Track *track) {
+void GateChemicalCountingActor::StartChemistryTracking(G4Track *track) {
   if (track == nullptr) {
     return;
   }
   const auto runtimeName = ResolveRuntimeMoleculeName(*track);
   const auto runtimeBaseName = StripChargeSuffix(runtimeName);
   const auto trackTime = track->GetGlobalTime();
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   for (auto &[counterName, trackedSpecies] : fConfiguredSpeciesCounters) {
     for (auto &trackedSpeciesRecord : trackedSpecies) {
       if (trackedSpeciesRecord.runtimeName != runtimeName &&
@@ -219,23 +219,23 @@ void GateChemicalStageActor::StartChemistryTracking(G4Track *track) {
   }
 }
 
-void GateChemicalStageActor::StartChemistryProcessing() {
+void GateChemicalCountingActor::StartChemistryProcessing() {
   ConfigureTimesToRecordIfNeeded();
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fNbChemistryStarts++;
 }
 
-void GateChemicalStageActor::PreChemistryTimeStepAction() {
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+void GateChemicalCountingActor::PreChemistryTimeStepAction() {
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fNbPreTimeStepCalls++;
 }
 
-void GateChemicalStageActor::PostChemistryTimeStepAction() {
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+void GateChemicalCountingActor::PostChemistryTimeStepAction() {
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fNbPostTimeStepCalls++;
 }
 
-void GateChemicalStageActor::ChemistryReactionAction(
+void GateChemicalCountingActor::ChemistryReactionAction(
     const G4Track &trackA, const G4Track &trackB,
     const std::vector<G4Track *> *products) {
   const auto reactants = CanonicalizeReactants(ResolveRuntimeMoleculeName(trackA),
@@ -252,7 +252,7 @@ void GateChemicalStageActor::ChemistryReactionAction(
   const auto canonicalProducts = CanonicalizeProducts(productNames);
   const auto reactionTime = std::min(trackA.GetGlobalTime(), trackB.GetGlobalTime());
 
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fNbReactions++;
   for (auto &[counterName, trackedReactions] : fConfiguredReactionCounters) {
     for (auto &trackedReaction : trackedReactions) {
@@ -277,18 +277,18 @@ void GateChemicalStageActor::ChemistryReactionAction(
   }
 }
 
-void GateChemicalStageActor::EndChemistryProcessing() {
+void GateChemicalCountingActor::EndChemistryProcessing() {
   RecordSpeciesAtEndOfChemicalStage();
 }
 
-double GateChemicalStageActor::GetMeanRestrictedLET() const {
+double GateChemicalCountingActor::GetMeanRestrictedLET() const {
   if (fNbRecordedEvents == 0) {
     return 0.0;
   }
   return fAccumulatedLET / static_cast<double>(fNbRecordedEvents);
 }
 
-double GateChemicalStageActor::GetStdRestrictedLET() const {
+double GateChemicalCountingActor::GetStdRestrictedLET() const {
   if (fNbRecordedEvents == 0) {
     return 0.0;
   }
@@ -298,7 +298,7 @@ double GateChemicalStageActor::GetStdRestrictedLET() const {
   return variance > 0.0 ? std::sqrt(variance) : 0.0;
 }
 
-py::dict GateChemicalStageActor::GetSpeciesInfo() const {
+py::dict GateChemicalCountingActor::GetSpeciesInfo() const {
   py::dict speciesInfo;
   for (const auto &[time, speciesMap] : fSpeciesInfoPerTime) {
     py::dict speciesAtTime;
@@ -314,7 +314,7 @@ py::dict GateChemicalStageActor::GetSpeciesInfo() const {
   return speciesInfo;
 }
 
-py::list GateChemicalStageActor::GetRecordedTimes() const {
+py::list GateChemicalCountingActor::GetRecordedTimes() const {
   py::list recordedTimes;
   for (const auto time : fTimesToRecord) {
     recordedTimes.append(time);
@@ -322,7 +322,7 @@ py::list GateChemicalStageActor::GetRecordedTimes() const {
   return recordedTimes;
 }
 
-void GateChemicalStageActor::RegisterConfiguredReactionCounter(
+void GateChemicalCountingActor::RegisterConfiguredReactionCounter(
     const std::string &counterName, const py::list &trackedReactions,
     bool recordTimeSeries) {
   std::vector<TrackedReactionRecord> records;
@@ -340,11 +340,11 @@ void GateChemicalStageActor::RegisterConfiguredReactionCounter(
     record.Reset();
     records.push_back(std::move(record));
   }
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fConfiguredReactionCounters[counterName] = std::move(records);
 }
 
-py::dict GateChemicalStageActor::GetConfiguredReactionCounterResults(
+py::dict GateChemicalCountingActor::GetConfiguredReactionCounterResults(
     const std::string &counterName) const {
   py::dict results;
   auto it = fConfiguredReactionCounters.find(counterName);
@@ -368,7 +368,7 @@ py::dict GateChemicalStageActor::GetConfiguredReactionCounterResults(
   return results;
 }
 
-void GateChemicalStageActor::RegisterConfiguredSpeciesCounter(
+void GateChemicalCountingActor::RegisterConfiguredSpeciesCounter(
     const std::string &counterName, const py::list &trackedSpecies,
     bool recordTimeSeries) {
   std::vector<TrackedSpeciesRecord> records;
@@ -382,11 +382,11 @@ void GateChemicalStageActor::RegisterConfiguredSpeciesCounter(
     record.Reset();
     records.push_back(std::move(record));
   }
-  G4AutoLock lock(&GateChemicalStageActorMutex);
+  G4AutoLock lock(&GateChemicalCountingActorMutex);
   fConfiguredSpeciesCounters[counterName] = std::move(records);
 }
 
-py::dict GateChemicalStageActor::GetConfiguredSpeciesCounterResults(
+py::dict GateChemicalCountingActor::GetConfiguredSpeciesCounterResults(
     const std::string &counterName) const {
   py::dict results;
   auto it = fConfiguredSpeciesCounters.find(counterName);
@@ -410,7 +410,7 @@ py::dict GateChemicalStageActor::GetConfiguredSpeciesCounterResults(
   return results;
 }
 
-void GateChemicalStageActor::ConfigureTimesToRecordIfNeeded() {
+void GateChemicalCountingActor::ConfigureTimesToRecordIfNeeded() {
   if (!fTimesToRecord.empty() || fNumberOfTimeBins <= 0) {
     return;
   }
@@ -437,7 +437,7 @@ void GateChemicalStageActor::ConfigureTimesToRecordIfNeeded() {
   }
 }
 
-void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
+void GateChemicalCountingActor::RecordSpeciesAtEndOfChemicalStage() {
   const auto *currentEvent =
       G4EventManager::GetEventManager()->GetConstCurrentEvent();
   if (currentEvent == nullptr || currentEvent->IsAborted()) {
@@ -456,7 +456,7 @@ void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
   const auto indices = counter->GetMapIndices();
 
   {
-    G4AutoLock lock(&GateChemicalStageActorMutex);
+    G4AutoLock lock(&GateChemicalCountingActorMutex);
     fNbRecordedEvents++;
     fAccumulatedEdep += fEventEdep;
   }
@@ -473,7 +473,7 @@ void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
     const auto speciesName = molecule->GetName();
     for (const auto time : fTimesToRecord) {
       const auto nMolecules = counter->GetNbMoleculesAtTime(idx, time);
-      G4AutoLock lock(&GateChemicalStageActorMutex);
+      G4AutoLock lock(&GateChemicalCountingActorMutex);
       auto &entry = fSpeciesInfoPerTime[time][speciesName];
       entry.number += nMolecules;
       if (fEventEdep > 0.0) {
@@ -485,21 +485,21 @@ void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
   }
 }
 
-std::array<std::string, 2> GateChemicalStageActor::CanonicalizeReactants(
+std::array<std::string, 2> GateChemicalCountingActor::CanonicalizeReactants(
     const std::string &reactantA, const std::string &reactantB) {
   std::array<std::string, 2> reactants{reactantA, reactantB};
   std::sort(reactants.begin(), reactants.end());
   return reactants;
 }
 
-std::vector<std::string> GateChemicalStageActor::CanonicalizeProducts(
+std::vector<std::string> GateChemicalCountingActor::CanonicalizeProducts(
     const std::vector<std::string> &products) {
   auto sortedProducts = products;
   std::sort(sortedProducts.begin(), sortedProducts.end());
   return sortedProducts;
 }
 
-std::string GateChemicalStageActor::ResolveRuntimeMoleculeName(
+std::string GateChemicalCountingActor::ResolveRuntimeMoleculeName(
     const G4Track &track) {
   const auto *molecule = G4Molecule::GetMolecule(&track);
   if (molecule != nullptr) {
@@ -515,7 +515,7 @@ std::string GateChemicalStageActor::ResolveRuntimeMoleculeName(
 }
 
 std::string
-GateChemicalStageActor::StripChargeSuffix(const std::string &moleculeName) {
+GateChemicalCountingActor::StripChargeSuffix(const std::string &moleculeName) {
   const auto caretPos = moleculeName.rfind('^');
   if (caretPos == std::string::npos || caretPos == moleculeName.size() - 1) {
     return moleculeName;

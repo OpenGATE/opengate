@@ -195,7 +195,7 @@ def _setter_hook_chem_actor_output_filename(self, output_filename):
     return output_filename
 
 
-class ActorOutputChemicalStageActor(ActorOutputBase):
+class ActorOutputChemicalCountingActor(ActorOutputBase):
     user_info_defaults = {
         "encoder": (
             "json",
@@ -207,14 +207,14 @@ class ActorOutputChemicalStageActor(ActorOutputBase):
         "output_filename": (
             "auto",
             {
-                "doc": "Filename for the chemistry-stage output.",
+                "doc": "Filename for the chemistry-counting output.",
                 "setter_hook": _setter_hook_chem_actor_output_filename,
             },
         ),
         "write_to_disk": (
             False,
             {
-                "doc": "Should the chemistry-stage output be written to disk?",
+                "doc": "Should the chemistry-counting output be written to disk?",
             },
         ),
         "active": (
@@ -252,7 +252,7 @@ class ActorOutputChemicalStageActor(ActorOutputBase):
     def get_data(self, **kwargs):
         if "which" in kwargs and kwargs["which"] != "merged":
             warning(
-                "The chemistry-stage actor output only stores merged data currently. "
+                "The chemistry-counting actor output only stores merged data currently. "
                 f"The which={kwargs['which']} you provided will be ignored."
             )
         return self.merged_data
@@ -294,7 +294,7 @@ class ActorOutputChemicalCounter(ActorOutputUsingDataItemContainer):
             self.write_data(**kwargs)
 
 
-class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
+class ChemicalCountingActor(ChemistryActorBase, g4.GateChemicalCountingActor):
     """
     Minimal chemistry-aware actor inspired by chem6.
 
@@ -388,7 +388,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
 
     user_output_config = {
         "results": {
-            "actor_output_class": ActorOutputChemicalStageActor,
+            "actor_output_class": ActorOutputChemicalCountingActor,
         },
     }
 
@@ -407,7 +407,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateChemicalStageActor.__init__(self, self.user_info)
+        g4.GateChemicalCountingActor.__init__(self, self.user_info)
         self.AddActions(
             {
                 "StartSimulationAction",
@@ -440,7 +440,7 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
         ]
         if len(molecule_counters) > 1:
             fatal(
-                f"ChemicalStageActor '{self.name}' currently supports at most one molecule counter "
+                f"ChemicalCountingActor '{self.name}' currently supports at most one molecule counter "
                 "for its built-in C++ species sampling path."
             )
         if len(molecule_counters) == 1:
@@ -469,6 +469,6 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
 
 
 process_cls(ChemistryActorBase)
-process_cls(ActorOutputChemicalStageActor)
+process_cls(ActorOutputChemicalCountingActor)
 process_cls(ActorOutputChemicalCounter)
-process_cls(ChemicalStageActor)
+process_cls(ChemicalCountingActor)

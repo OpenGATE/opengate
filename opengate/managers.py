@@ -63,7 +63,7 @@ source_types = {
     "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
 }
 
-from .actors.chemistryactors import ChemistryActorBase, ChemicalStageActor
+from .actors.chemistryactors import ChemistryActorBase, ChemicalCountingActor
 from .chemistry import ChemistryList, ChemistryWorld
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.base import ActorBase
@@ -166,7 +166,7 @@ actor_types = {
     "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "DynamicSourceActor": DynamicSourceActor,
-    "ChemicalStageActor": ChemicalStageActor,
+    "ChemicalCountingActor": ChemicalCountingActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     # digit

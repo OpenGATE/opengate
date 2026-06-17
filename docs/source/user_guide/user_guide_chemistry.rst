@@ -213,7 +213,7 @@ chemistry list is still selected.
 Adding a chemistry actor
 ------------------------
 
-The current reference chemistry actor is ``ChemicalStageActor``.
+The current reference chemistry actor is ``ChemicalCountingActor``.
 
 It provides:
 
@@ -226,7 +226,7 @@ A typical setup looks like this:
 
 .. code-block:: python
 
-    chem_actor = sim.add_actor("ChemicalStageActor", "chem_actor")
+    chem_actor = sim.add_actor("ChemicalCountingActor", "chem_actor")
     chem_actor.attached_to = target
     chem_actor.number_of_time_bins = 50
 
@@ -286,7 +286,7 @@ probing and scoring.
 Chemistry actor outputs
 -----------------------
 
-``ChemicalStageActor`` currently exposes three outputs:
+``ChemicalCountingActor`` currently exposes three outputs:
 
 - ``results``
 - ``molecule_counter``
@@ -406,7 +406,7 @@ This combines the main pieces in one small script:
     source.direction.momentum = [0, 0, 1]
     source.n = 1
 
-    chem_actor = sim.add_actor("ChemicalStageActor", "chem_actor")
+    chem_actor = sim.add_actor("ChemicalCountingActor", "chem_actor")
     chem_actor.attached_to = target
     chem_actor.number_of_time_bins = 50
 
@@ -432,7 +432,7 @@ are worth keeping in mind:
   confinement policy;
 - chemistry counter writing to disk is not implemented yet on the python side;
 - chemistry counter merged data currently uses a simple successive-run merge;
-- ``ChemicalStageActor`` currently assumes at most one molecule counter for its
+- ``ChemicalCountingActor`` currently assumes at most one molecule counter for its
   built-in species-sampling path.
 
 These are implementation limits, not usage mistakes.

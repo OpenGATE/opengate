@@ -69,7 +69,7 @@ def create_simulation(use_actor_requested_dna_em, seed):
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
-    chem_actor = sim.add_actor("ChemicalStageActor", "chem_actor")
+    chem_actor = sim.add_actor("ChemicalCountingActor", "chem_actor")
     chem_actor.attached_to = target
     chem_actor.number_of_time_bins = 50
     if use_actor_requested_dna_em:

@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateChemicalStageActor_h
-#define GateChemicalStageActor_h
+#ifndef GateChemicalCountingActor_h
+#define GateChemicalCountingActor_h
 
 #include "GateVChemistryActor.h"
 #include <array>
@@ -18,7 +18,7 @@
 
 namespace py = pybind11;
 
-class GateChemicalStageActor : public GateVChemistryActor {
+class GateChemicalCountingActor : public GateVChemistryActor {
 
 public:
   struct SpeciesEntry {
@@ -59,7 +59,7 @@ public:
   };
 
 public:
-  explicit GateChemicalStageActor(py::dict &user_info);
+  explicit GateChemicalCountingActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -148,4 +148,4 @@ protected:
       fConfiguredSpeciesCounters;
 };
 
-#endif // GateChemicalStageActor_h
+#endif // GateChemicalCountingActor_h

@@ -278,7 +278,7 @@ extends ``GateVActor`` with chemistry-specific virtual hooks.
 ``GateVChemistryActor`` is now intentionally passive by default. It provides
 the callback interface used by:
 
-- chemistry scoring actors such as ``GateChemicalStageActor``;
+- chemistry scoring actors such as ``GateChemicalCountingActor``;
 - dedicated chemistry-control classes such as ``GateChemistryController``.
 
 This design keeps chemistry actors focused on probing and scoring unless they
@@ -389,7 +389,7 @@ One chemistry counter corresponds to one actor output.
 How To Implement A Chemistry Actor
 ----------------------------------
 
-The current reference implementation is ``ChemicalStageActor``. A new chemistry
+The current reference implementation is ``ChemicalCountingActor``. A new chemistry
 actor should follow the same split between python and C++.
 
 Step 1: Define the python actor
@@ -498,7 +498,7 @@ If the actor needs a built-in molecule counter or reaction counter, let the
 python side own and register the counter. The C++ actor should only receive the
 minimal runtime information it needs, for example a counter ID.
 
-The current ``ChemicalStageActor`` follows exactly this pattern for the
+The current ``ChemicalCountingActor`` follows exactly this pattern for the
 molecule counter used by its built-in species sampling path.
 
 Step 7: Store results through actor outputs
@@ -515,13 +515,13 @@ This keeps chemistry counters as internal scoring backends and preserves the
 normal GATE actor-output architecture.
 
 
-``ChemicalStageActor`` As Reference Implementation
+``ChemicalCountingActor`` As Reference Implementation
 --------------------------------------------------
 
-``ChemicalStageActor`` illustrates the current intended architecture:
+``ChemicalCountingActor`` illustrates the current intended architecture:
 
 - it is a chemistry-aware actor built from ``ChemistryActorBase`` and
-  ``GateChemicalStageActor``;
+  ``GateChemicalCountingActor``;
 - it declares one built-in molecule counter and one built-in reaction counter;
 - it keeps a regular summary output called ``results``;
 - detailed molecule and reaction histories are exposed on dedicated outputs:
@@ -543,7 +543,7 @@ The current implementation has a few intentional limits:
 - chemistry counter writing is not implemented yet on the python side;
 - chemistry counter merging is currently a simple successive-run merge that
   preserves cumulative counts but does not yet reorder seam-time overlaps;
-- ``ChemicalStageActor`` currently assumes at most one molecule counter for its
+- ``ChemicalCountingActor`` currently assumes at most one molecule counter for its
   built-in C++ species-sampling path.
 
 These are not accidental limitations. They reflect the current stage of the

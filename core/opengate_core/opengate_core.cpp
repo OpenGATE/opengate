@@ -453,7 +453,7 @@ void init_GateTimeStepAction(py::module &);
 
 void init_GateITTrackingInteractivity(py::module &);
 
-void init_GateChemicalStageActor(py::module &);
+void init_GateChemicalCountingActor(py::module &);
 
 void init_GateVAuxiliaryAttribute(py::module &);
 
@@ -798,7 +798,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateStackingAction(m);
   init_GateTimeStepAction(m);
   init_GateITTrackingInteractivity(m);
-  init_GateChemicalStageActor(m);
+  init_GateChemicalCountingActor(m);
   init_GateVAuxiliaryAttribute(m);
   init_GateInteractionCounterAttribute(m);
   init_GateUnscatteredPrimaryAttribute(m);

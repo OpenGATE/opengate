@@ -351,7 +351,7 @@ class BuiltinReactionCounter(ReactionCounterBase, g4.G4MoleculeReactionCounter):
 
 class ConfiguredReactionCounter(CounterBase):
     # Temporary implementation note:
-    # This counter currently relies on ChemicalStageActor-owned reaction
+    # This counter currently relies on ChemicalCountingActor-owned reaction
     # callback accumulation in C++ rather than being backed by its own proper
     # concrete reaction-counter class. That keeps the implementation simple and
     # robust enough for testing, but it should eventually be refactored into a
