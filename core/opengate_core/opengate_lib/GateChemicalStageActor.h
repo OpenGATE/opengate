@@ -112,6 +112,7 @@ protected:
   static std::vector<std::string>
   CanonicalizeProducts(const std::vector<std::string> &products);
   static std::string ResolveRuntimeMoleculeName(const G4Track &track);
+  static std::string StripChargeSuffix(const std::string &moleculeName);
 
   bool fTrackOnlyPrimary{true};
   int fPrimaryPDGCode{11};

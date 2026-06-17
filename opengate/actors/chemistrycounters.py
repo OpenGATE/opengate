@@ -480,10 +480,11 @@ class ConfiguredSpeciesCounter(CounterBase):
             )
 
         molecule_table = g4.G4MoleculeTable.Instance()
+        available_molecules = set(molecule_table.GetAllMoleculeNames())
         normalized_species = []
         for species_name in self.tracked_species:
             conf = molecule_table.GetConfiguration(species_name, False)
-            if conf is None:
+            if conf is None and species_name not in available_molecules:
                 fatal(
                     f"Configured species counter '{self.name}' references unknown species "
                     f"'{species_name}'."
@@ -491,7 +492,9 @@ class ConfiguredSpeciesCounter(CounterBase):
             normalized_species.append(
                 {
                     "name": str(species_name),
-                    "runtime_name": str(conf.GetName()),
+                    "runtime_name": (
+                        str(conf.GetName()) if conf is not None else str(species_name)
+                    ),
                 }
             )
 

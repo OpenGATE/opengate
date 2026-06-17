@@ -21,6 +21,7 @@
 #include "G4Track.hh"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 
 namespace {
@@ -192,11 +193,13 @@ void GateChemicalStageActor::StartChemistryTracking(G4Track *track) {
     return;
   }
   const auto runtimeName = ResolveRuntimeMoleculeName(*track);
+  const auto runtimeBaseName = StripChargeSuffix(runtimeName);
   const auto trackTime = track->GetGlobalTime();
   G4AutoLock lock(&GateChemicalStageActorMutex);
   for (auto &[counterName, trackedSpecies] : fConfiguredSpeciesCounters) {
     for (auto &trackedSpeciesRecord : trackedSpecies) {
-      if (trackedSpeciesRecord.runtimeName != runtimeName) {
+      if (trackedSpeciesRecord.runtimeName != runtimeName &&
+          trackedSpeciesRecord.runtimeName != runtimeBaseName) {
         continue;
       }
       trackedSpeciesRecord.totalCount++;
@@ -509,4 +512,30 @@ std::string GateChemicalStageActor::ResolveRuntimeMoleculeName(
     return track.GetParticleDefinition()->GetParticleName();
   }
   return "";
+}
+
+std::string
+GateChemicalStageActor::StripChargeSuffix(const std::string &moleculeName) {
+  const auto caretPos = moleculeName.rfind('^');
+  if (caretPos == std::string::npos || caretPos == moleculeName.size() - 1) {
+    return moleculeName;
+  }
+
+  const auto suffix = moleculeName.substr(caretPos + 1);
+  if (suffix == "0") {
+    return moleculeName.substr(0, caretPos);
+  }
+
+  if (suffix[0] != '+' && suffix[0] != '-') {
+    return moleculeName;
+  }
+  if (suffix.size() == 1) {
+    return moleculeName;
+  }
+  for (size_t i = 1; i < suffix.size(); ++i) {
+    if (!std::isdigit(static_cast<unsigned char>(suffix[i]))) {
+      return moleculeName;
+    }
+  }
+  return moleculeName.substr(0, caretPos);
 }
