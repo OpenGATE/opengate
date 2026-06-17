@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-
 import numpy as np
 import pandas as pd
 import uproot
@@ -89,11 +88,14 @@ def load_digitizer_singles(
     )
 
 
-def prepare_layered_singles(scatter_df: pd.DataFrame, absorber_df: pd.DataFrame) -> pd.DataFrame:
+def prepare_layered_singles(
+    scatter_df: pd.DataFrame, absorber_df: pd.DataFrame
+) -> pd.DataFrame:
     def _tag_layer(df: pd.DataFrame, label: str) -> pd.DataFrame:
         tagged = df.copy()
         tagged["PreStepUniqueVolumeID"] = label
         return tagged
+
     combined = pd.concat(
         [_tag_layer(scatter_df, "scatterer"), _tag_layer(absorber_df, "absorber")],
         ignore_index=True,
@@ -103,8 +105,13 @@ def prepare_layered_singles(scatter_df: pd.DataFrame, absorber_df: pd.DataFrame)
 
 def build_singles_dataframe(layered: pd.DataFrame) -> pd.DataFrame:
     required = [
-        "EventID", "GlobalTime", "PreStepUniqueVolumeID",
-        "TotalEnergyDeposit", "PostPosition_X", "PostPosition_Y", "PostPosition_Z",
+        "EventID",
+        "GlobalTime",
+        "PreStepUniqueVolumeID",
+        "TotalEnergyDeposit",
+        "PostPosition_X",
+        "PostPosition_Y",
+        "PostPosition_Z",
     ]
     missing = [col for col in required if col not in layered.columns]
     if missing:
@@ -130,16 +137,36 @@ def extract_sorted_coincidences(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     labels1 = coincidences["PreStepUniqueVolumeID1"].astype(str).str.lower()
     is_scatt1 = labels1.str.contains("scatt")
-    scatt_pos = np.column_stack([
-        np.where(is_scatt1, coincidences[f"PostPosition_{ax}1"], coincidences[f"PostPosition_{ax}2"])
-        for ax in "XYZ"
-    ]).astype(float)
-    abs_pos = np.column_stack([
-        np.where(is_scatt1, coincidences[f"PostPosition_{ax}2"], coincidences[f"PostPosition_{ax}1"])
-        for ax in "XYZ"
-    ]).astype(float)
-    e_scatt = np.where(is_scatt1, coincidences["TotalEnergyDeposit1"], coincidences["TotalEnergyDeposit2"]).astype(float)
-    e_abs = np.where(is_scatt1, coincidences["TotalEnergyDeposit2"], coincidences["TotalEnergyDeposit1"]).astype(float)
+    scatt_pos = np.column_stack(
+        [
+            np.where(
+                is_scatt1,
+                coincidences[f"PostPosition_{ax}1"],
+                coincidences[f"PostPosition_{ax}2"],
+            )
+            for ax in "XYZ"
+        ]
+    ).astype(float)
+    abs_pos = np.column_stack(
+        [
+            np.where(
+                is_scatt1,
+                coincidences[f"PostPosition_{ax}2"],
+                coincidences[f"PostPosition_{ax}1"],
+            )
+            for ax in "XYZ"
+        ]
+    ).astype(float)
+    e_scatt = np.where(
+        is_scatt1,
+        coincidences["TotalEnergyDeposit1"],
+        coincidences["TotalEnergyDeposit2"],
+    ).astype(float)
+    e_abs = np.where(
+        is_scatt1,
+        coincidences["TotalEnergyDeposit2"],
+        coincidences["TotalEnergyDeposit1"],
+    ).astype(float)
     return scatt_pos, abs_pos, e_scatt, e_abs, is_scatt1.to_numpy(dtype=bool)
 
 
@@ -151,14 +178,16 @@ def pairs_from_coincident_singles(df: pd.DataFrame) -> pd.DataFrame:
         if len(group) < 2:
             continue
         s1, s2 = group.iloc[0], group.iloc[1]
-        rows.append({
-            "PreStepUniqueVolumeID1": s1["PreStepUniqueVolumeID"],
-            "PreStepUniqueVolumeID2": s2["PreStepUniqueVolumeID"],
-            **{f"PostPosition_{ax}1": s1[f"PostPosition_{ax}"] for ax in "XYZ"},
-            **{f"PostPosition_{ax}2": s2[f"PostPosition_{ax}"] for ax in "XYZ"},
-            "TotalEnergyDeposit1": s1["TotalEnergyDeposit"],
-            "TotalEnergyDeposit2": s2["TotalEnergyDeposit"],
-        })
+        rows.append(
+            {
+                "PreStepUniqueVolumeID1": s1["PreStepUniqueVolumeID"],
+                "PreStepUniqueVolumeID2": s2["PreStepUniqueVolumeID"],
+                **{f"PostPosition_{ax}1": s1[f"PostPosition_{ax}"] for ax in "XYZ"},
+                **{f"PostPosition_{ax}2": s2[f"PostPosition_{ax}"] for ax in "XYZ"},
+                "TotalEnergyDeposit1": s1["TotalEnergyDeposit"],
+                "TotalEnergyDeposit2": s2["TotalEnergyDeposit"],
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -166,7 +195,9 @@ def compute_theta_c(e_scatt: np.ndarray, e0: np.ndarray) -> np.ndarray:
     e_scattered = e0 - e_scatt
     valid = (e0 > 0.0) & (e_scattered > 0.0)
     cos_theta = np.full_like(e0, np.nan, dtype=float)
-    cos_theta[valid] = 1.0 - (ME_C2_KEV * e_scatt[valid] / (e_scattered[valid] * e0[valid]))
+    cos_theta[valid] = 1.0 - (
+        ME_C2_KEV * e_scatt[valid] / (e_scattered[valid] * e0[valid])
+    )
     in_range = (cos_theta >= -1.0) & (cos_theta <= 1.0)
     cos_theta = np.where(in_range, cos_theta, np.nan)
     return np.arccos(cos_theta)
@@ -210,18 +241,22 @@ def normalize_hist_counts(counts: np.ndarray, edges: np.ndarray) -> np.ndarray:
     return counts.astype(float) / (total * bin_width)
 
 
-def rebin_hist(counts: np.ndarray, edges: np.ndarray, factor: int) -> tuple[np.ndarray, np.ndarray]:
+def rebin_hist(
+    counts: np.ndarray, edges: np.ndarray, factor: int
+) -> tuple[np.ndarray, np.ndarray]:
     if factor <= 1:
         return counts, edges
     n = (len(counts) // factor) * factor
     if n == 0:
         return counts, edges
-    return counts[:n].reshape(-1, factor).sum(axis=1), edges[:n + 1:factor]
+    return counts[:n].reshape(-1, factor).sum(axis=1), edges[: n + 1 : factor]
 
 
-def lorentzian(x: np.ndarray, amp: float, x0: float, gamma: float, offset: float) -> np.ndarray:
+def lorentzian(
+    x: np.ndarray, amp: float, x0: float, gamma: float, offset: float
+) -> np.ndarray:
     half_gamma = 0.5 * gamma
-    return amp * half_gamma**2 / ((x - x0)**2 + half_gamma**2) + offset
+    return amp * half_gamma**2 / ((x - x0) ** 2 + half_gamma**2) + offset
 
 
 def fit_lorentzian(
@@ -232,7 +267,11 @@ def fit_lorentzian(
     amp0 = float(np.max(y))
     x0 = float(x[np.argmax(y)])
     above_half = x[y >= amp0 / 2.0]
-    gamma0 = float(above_half[-1] - above_half[0]) if len(above_half) >= 2 else float((x[-1] - x[0]) / 10.0)
+    gamma0 = (
+        float(above_half[-1] - above_half[0])
+        if len(above_half) >= 2
+        else float((x[-1] - x[0]) / 10.0)
+    )
     gamma0 = max(gamma0, float(np.diff(x).mean()))
     offset0 = float(np.min(y))
     p0 = [amp0, x0, gamma0, offset0]
@@ -240,8 +279,14 @@ def fit_lorentzian(
     amp_max = float(np.max(y))
     try:
         popt, pcov = curve_fit(
-            lorentzian, x, y, p0=p0,
-            bounds=([0, x.min(), bin_w, -np.inf], [amp_max, x.max(), np.ptp(x), np.inf]),
+            lorentzian,
+            x,
+            y,
+            p0=p0,
+            bounds=(
+                [0, x.min(), bin_w, -np.inf],
+                [amp_max, x.max(), np.ptp(x), np.inf],
+            ),
             maxfev=10000,
         )
     except RuntimeError:
@@ -249,7 +294,9 @@ def fit_lorentzian(
     return popt, pcov
 
 
-def load_experimental_arm_histograms(path: Path) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+def load_experimental_arm_histograms(
+    path: Path,
+) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Experimental ROOT file not found: {path}")
@@ -265,7 +312,10 @@ def load_experimental_arm_histograms(path: Path) -> dict[str, tuple[np.ndarray, 
                 continue
             counts, edges = f[name].to_numpy()
             centers = 0.5 * (edges[:-1] + edges[1:])
-            histograms[key] = (np.asarray(centers, dtype=float), np.asarray(counts, dtype=float))
+            histograms[key] = (
+                np.asarray(centers, dtype=float),
+                np.asarray(counts, dtype=float),
+            )
     if not histograms:
         raise ValueError(f"No AngularUncertainty* histograms found in {path}")
     return histograms
@@ -284,7 +334,9 @@ def plot_arm_overlay(
         print(f"Skipping {label} ARM (empty exp histogram).")
         return None
     bin_width = float(np.median(np.diff(exp_centers)))
-    edges = np.concatenate([exp_centers - bin_width / 2.0, [exp_centers[-1] + bin_width / 2.0]])
+    edges = np.concatenate(
+        [exp_centers - bin_width / 2.0, [exp_centers[-1] + bin_width / 2.0]]
+    )
     exp_counts_rb, edges_rb = rebin_hist(exp_counts, edges, ARM_REBIN_FACTOR)
     exp_hist = normalize_hist_counts(exp_counts_rb, edges_rb)
     sim_edges = edges_rb[::sim_bin_factor]
@@ -300,26 +352,52 @@ def plot_arm_overlay(
     exp_fit, _ = fit_lorentzian(exp_centers_rb[fit_mask_exp], exp_hist[fit_mask_exp])
     sim_fit, _ = fit_lorentzian(sim_centers[fit_mask_sim], sim_hist[fit_mask_sim])
 
-    exp_mu   = float(exp_fit[1])      if exp_fit is not None else None
+    exp_mu = float(exp_fit[1]) if exp_fit is not None else None
     exp_fwhm = float(abs(exp_fit[2])) if exp_fit is not None else None
-    sim_mu   = float(sim_fit[1])      if sim_fit is not None else None
+    sim_mu = float(sim_fit[1]) if sim_fit is not None else None
     sim_fwhm = float(abs(sim_fit[2])) if sim_fit is not None else None
 
-    exp_label = f"Experimental (μ={exp_mu:.3f}, FWHM={exp_fwhm:.3f} {ARM_UNITS})" if exp_fit is not None else "Experimental"
-    sim_label = f"Simulated (μ={sim_mu:.3f}, FWHM={sim_fwhm:.3f} {ARM_UNITS})"    if sim_fit is not None else "Simulated"
+    exp_label = (
+        f"Experimental (μ={exp_mu:.3f}, FWHM={exp_fwhm:.3f} {ARM_UNITS})"
+        if exp_fit is not None
+        else "Experimental"
+    )
+    sim_label = (
+        f"Simulated (μ={sim_mu:.3f}, FWHM={sim_fwhm:.3f} {ARM_UNITS})"
+        if sim_fit is not None
+        else "Simulated"
+    )
 
     matplotlib.use("Agg")
     fig, ax = plt.subplots(figsize=(7.0, 5.5))
     ax.plot(exp_centers_rb, exp_hist, color="tab:red", linewidth=1.2, label=exp_label)
-    ax.fill_between(exp_centers_rb, exp_hist, 0.0, color="tab:red", alpha=0.25, linewidth=0)
-    ax.plot(sim_centers, sim_hist, color="black", linestyle="--", linewidth=1.1, label=sim_label)
+    ax.fill_between(
+        exp_centers_rb, exp_hist, 0.0, color="tab:red", alpha=0.25, linewidth=0
+    )
+    ax.plot(
+        sim_centers,
+        sim_hist,
+        color="black",
+        linestyle="--",
+        linewidth=1.1,
+        label=sim_label,
+    )
     ax.fill_between(sim_centers, sim_hist, 0.0, color="0.6", alpha=0.2, linewidth=0)
     if exp_fit is not None:
         xfit = np.linspace(exp_centers_rb.min(), exp_centers_rb.max(), 600)
-        ax.plot(xfit, lorentzian(xfit, *exp_fit), color="tab:red", linewidth=1.4, alpha=0.9)
+        ax.plot(
+            xfit, lorentzian(xfit, *exp_fit), color="tab:red", linewidth=1.4, alpha=0.9
+        )
     if sim_fit is not None:
         xfit = np.linspace(sim_centers.min(), sim_centers.max(), 600)
-        ax.plot(xfit, lorentzian(xfit, *sim_fit), color="black", linewidth=1.2, alpha=0.9, linestyle=":")
+        ax.plot(
+            xfit,
+            lorentzian(xfit, *sim_fit),
+            color="black",
+            linewidth=1.2,
+            alpha=0.9,
+            linestyle=":",
+        )
     ax.set_xlabel(r"$\theta_G - \theta_C$ ({})".format(ARM_UNITS))
     ax.set_ylabel("Normalised counts")
     ax.set_title(f"ARM overlay ({label})")
@@ -435,7 +513,9 @@ def main():
     is_ok = True
     print()
     b = compare_peak_gaussian(
-        E_abs, exp_abs_counts, exp_abs_edges,
+        E_abs,
+        exp_abs_counts,
+        exp_abs_edges,
         expected_energy=1274.5,
         label="Absorber 1274.5 keV",
         output_plot_path=output_folder / "test099_abs_peak_1274.5keV.png",
@@ -443,7 +523,9 @@ def main():
     is_ok = is_ok and b
     print()
     b = compare_peak_gaussian(
-        E_scatt, exp_scatt_counts, exp_scatt_edges,
+        E_scatt,
+        exp_scatt_counts,
+        exp_scatt_edges,
         expected_energy=1274.5,
         label="Scatterer 1274.5 keV",
         output_plot_path=output_folder / "test099_scatt_peak_1274.5keV.png",
@@ -451,7 +533,9 @@ def main():
     is_ok = is_ok and b
     print()
     compare_peak_gaussian(
-        E_abs, exp_abs_counts, exp_abs_edges,
+        E_abs,
+        exp_abs_counts,
+        exp_abs_edges,
         expected_energy=511.0,
         label="Absorber 511 keV",
         output_plot_path=output_folder / "test099_abs_peak_511keV.png",
@@ -459,7 +543,9 @@ def main():
     is_ok = is_ok and b
     print()
     compare_peak_gaussian(
-        E_scatt, exp_scatt_counts, exp_scatt_edges,
+        E_scatt,
+        exp_scatt_counts,
+        exp_scatt_edges,
         expected_energy=511.0,
         label="Scatterer 511 keV",
         output_plot_path=output_folder / "test099_scatt_peak_511keV.png",
@@ -468,6 +554,8 @@ def main():
     print("✓ MACACO1 singles energy test completed")
 
     print(f"FIXME the absolute counts is not correct ? normalization issue ? ")
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -635,7 +723,9 @@ def main():
         merged_tree_name="Singles",
     )
     print()
-    print(f"Coincidences file: {coinc_file} : FIXME to be compared with experimental data")
+    print(
+        f"Coincidences file: {coinc_file} : FIXME to be compared with experimental data"
+    )
 
     # ======================================================
     # 8b) VALIDATION : COINCIDENCES ARM
@@ -644,13 +734,16 @@ def main():
     exp_coinc_root = output_ref / "new_coinc_exp_data.root"
 
     if not exp_coinc_root.exists():
-        print(f"Experimental coincidence ROOT not found: {exp_coinc_root}, skipping ARM validation.")
+        print(
+            f"Experimental coincidence ROOT not found: {exp_coinc_root}, skipping ARM validation."
+        )
     else:
-        scatt_df, abs_df = load_digitizer_singles(scatt_file, abs_file, out_dir=output_folder)
+        scatt_df, abs_df = load_digitizer_singles(
+            scatt_file, abs_file, out_dir=output_folder
+        )
         layered = prepare_layered_singles(scatt_df, abs_df)
         singles_path = write_singles_root(
-            output_folder / "singles_sim.root",
-            build_singles_dataframe(layered)
+            output_folder / "singles_sim.root", build_singles_dataframe(layered)
         )
 
         time_window = COINC_TIME_WINDOW_NS * ns
@@ -665,7 +758,7 @@ def main():
             coinc_singles, group_col="CoincID", volume_col="PreStepUniqueVolumeID"
         )
         coinc_pairs = pairs_from_coincident_singles(coinc_singles)
-        
+
         scatt_pos, abs_pos, e_scatt, e_abs, _ = extract_sorted_coincidences(coinc_pairs)
         e_scatt /= keV
         e_abs /= keV
@@ -673,8 +766,10 @@ def main():
 
         exp_arm_hists = load_experimental_arm_histograms(exp_coinc_root)
         sim_arm = compute_arm(
-            scatt_pos[mask_1275], abs_pos[mask_1275],
-            e_scatt[mask_1275], e_abs[mask_1275],
+            scatt_pos[mask_1275],
+            abs_pos[mask_1275],
+            e_scatt[mask_1275],
+            e_abs[mask_1275],
             SOURCE_POS_MM,
         )
         centers, counts = exp_arm_hists["1275"]
@@ -696,7 +791,9 @@ def main():
                     f"(threshold={FWHM_PASS_THRESHOLD_PCT:.1f}%)"
                 )
                 b = diff_pct < FWHM_PASS_THRESHOLD_PCT
-                print(f"{'✓' if b else '✗'} 1275 FWHM {'within' if b else 'exceeds'} tolerance")
+                print(
+                    f"{'✓' if b else '✗'} 1275 FWHM {'within' if b else 'exceeds'} tolerance"
+                )
                 is_ok = is_ok and b
             else:
                 print("ARM FWHM fit unavailable — FAIL")
