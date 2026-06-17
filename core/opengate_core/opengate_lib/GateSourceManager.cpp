@@ -319,7 +319,8 @@ void GateSourceManager::PrepareNextSource() const {
 
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    unsigned long numberOfSimulatedEvents = source->GetNumberOfSimulatedEvents();
+    unsigned long numberOfSimulatedEvents =
+        source->GetNumberOfSimulatedEvents();
     auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
                                      numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
@@ -387,8 +388,9 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
         std::string s = l.fNextActiveSource->fName;
         Log(LogLevel_EVENT, fVerboseLevel,
             "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
-            event->GetEventID(), t, prim->GetParticleDefinition()->GetParticleName(),
-            e, event->GetPrimaryVertex(0)->GetPosition()[0],
+            event->GetEventID(), t,
+            prim->GetParticleDefinition()->GetParticleName(), e,
+            event->GetPrimaryVertex(0)->GetPosition()[0],
             event->GetPrimaryVertex(0)->GetPosition()[1],
             event->GetPrimaryVertex(0)->GetPosition()[2], s);
       }
