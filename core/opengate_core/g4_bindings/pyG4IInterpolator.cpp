@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4IInterpolator.hh"
+#include <G4IInterpolator.hh>
 
 void init_G4IInterpolator(py::module &m) {
   py::class_<G4IInterpolator>(m, "G4IInterpolator");

@@ -8,15 +8,15 @@
 
 namespace py = pybind11;
 
-#include "G4Event.hh"
-#include "G4SteppingVerbose.hh"
-#include "G4UserEventAction.hh"
-#include "G4UserRunAction.hh"
-#include "G4UserStackingAction.hh"
-#include "G4UserSteppingAction.hh"
-#include "G4UserTrackingAction.hh"
-#include "G4VUserActionInitialization.hh"
-#include "G4VUserPrimaryGeneratorAction.hh"
+#include <G4Event.hh>
+#include <G4SteppingVerbose.hh>
+#include <G4UserEventAction.hh>
+#include <G4UserRunAction.hh>
+#include <G4UserStackingAction.hh>
+#include <G4UserSteppingAction.hh>
+#include <G4UserTrackingAction.hh>
+#include <G4VUserActionInitialization.hh>
+#include <G4VUserPrimaryGeneratorAction.hh>
 
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
 // Needed helper class because of the pure virtual method

@@ -8,10 +8,10 @@
 #ifndef GateChemistryWorld_h
 #define GateChemistryWorld_h
 
-#include "G4DNABoundingBox.hh"
-#include "G4ThreeVector.hh"
-#include "G4VChemistryWorld.hh"
 #include "globals.hh"
+#include <G4DNABoundingBox.hh>
+#include <G4ThreeVector.hh>
+#include <G4VChemistryWorld.hh>
 
 #include <map>
 

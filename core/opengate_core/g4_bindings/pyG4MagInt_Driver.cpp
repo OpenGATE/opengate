@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4MagIntegratorDriver.hh"
-#include "G4MagIntegratorStepper.hh"
-#include "G4VIntegrationDriver.hh"
+#include <G4MagIntegratorDriver.hh>
+#include <G4MagIntegratorStepper.hh>
+#include <G4VIntegrationDriver.hh>
 
 void init_G4MagInt_Driver(py::module &m) {
 

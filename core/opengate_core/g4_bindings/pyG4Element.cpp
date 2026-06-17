@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4Element.hh"
+#include <G4Element.hh>
 
 void init_G4Element(py::module &m) {
   py::class_<G4Element>(m, "G4Element")

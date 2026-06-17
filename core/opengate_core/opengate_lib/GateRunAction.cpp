@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateRunAction.h"
-#include "GateHelpers.h"
 #include "GateUniqueVolumeIDManager.h"
 #include <G4MoleculeCounterManager.hh>
 

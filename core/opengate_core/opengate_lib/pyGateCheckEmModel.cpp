@@ -5,14 +5,14 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4LogicalVolume.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
-#include "G4ProcessTable.hh"
-#include "G4VEmModel.hh"
-#include "G4VEmProcess.hh"
-#include "G4VEnergyLossProcess.hh"
-#include "G4VProcess.hh"
+#include <G4LogicalVolume.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4ParticleTable.hh>
+#include <G4ProcessTable.hh>
+#include <G4VEmModel.hh>
+#include <G4VEmProcess.hh>
+#include <G4VEnergyLossProcess.hh>
+#include <G4VProcess.hh>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;

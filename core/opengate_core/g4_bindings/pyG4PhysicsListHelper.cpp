@@ -5,10 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4ParticleDefinition.hh"
-#include "G4PhysicsListHelper.hh"
-#include "G4VProcess.hh"
 #include "pybind11/pybind11.h"
+#include <G4ParticleDefinition.hh>
+#include <G4PhysicsListHelper.hh>
+#include <G4VProcess.hh>
 
 namespace py = pybind11;
 

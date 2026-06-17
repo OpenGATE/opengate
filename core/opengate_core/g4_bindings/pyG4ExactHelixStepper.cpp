@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4ExactHelixStepper.hh"
-#include "G4MagIntegratorStepper.hh"
-#include "G4Mag_EqRhs.hh"
+#include <G4ExactHelixStepper.hh>
+#include <G4MagIntegratorStepper.hh>
+#include <G4Mag_EqRhs.hh>
 
 void init_G4ExactHelixStepper(py::module &m) {
   // G4ExactHelixStepper <- G4MagHelicalStepper <- G4MagIntegratorStepper.

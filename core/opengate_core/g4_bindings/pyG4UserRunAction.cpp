@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4Run.hh"
-#include "G4UserRunAction.hh"
+#include <G4Run.hh>
+#include <G4UserRunAction.hh>
 
 class PyG4UserRunAction : public G4UserRunAction {
 public:

@@ -7,9 +7,9 @@
 
 #include "GateChemistryWorld.h"
 
-#include "G4DNABoundingBox.hh"
-#include "G4MolecularConfiguration.hh"
-#include "G4MoleculeTable.hh"
+#include <G4DNABoundingBox.hh>
+#include <G4MolecularConfiguration.hh>
+#include <G4MoleculeTable.hh>
 
 void GateChemistryWorld::ConstructChemistryBoundary() {
   fpChemistryBoundary = std::make_unique<G4DNABoundingBox>(G4DNABoundingBox{

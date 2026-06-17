@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4ElectricField.hh"
-#include "G4UniformElectricField.hh"
+#include <G4ElectricField.hh>
+#include <G4UniformElectricField.hh>
 
 void init_G4UniformElectricField(py::module &m) {
 

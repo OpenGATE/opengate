@@ -8,8 +8,8 @@
 #ifndef GateStackingAction_h
 #define GateStackingAction_h
 
-#include "G4UserStackingAction.hh"
 #include "GateVActor.h"
+#include <G4UserStackingAction.hh>
 
 class GateStackingAction : public G4UserStackingAction {
 

@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4VSolid.hh"
+#include <G4VSolid.hh>
 #include <streambuf>
 
 void init_G4VSolid(py::module &m) {

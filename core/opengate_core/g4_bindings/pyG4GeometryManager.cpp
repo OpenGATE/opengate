@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4GeometryManager.hh"
-#include "G4VPhysicalVolume.hh"
+#include <G4GeometryManager.hh>
+#include <G4VPhysicalVolume.hh>
 
 void init_G4GeometryManager(py::module &m) {
 

@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4Track.hh"
-#include "G4UserTimeStepAction.hh"
+#include <G4Track.hh>
+#include <G4UserTimeStepAction.hh>
 
 class PyG4UserTimeStepAction : public G4UserTimeStepAction {
 public:

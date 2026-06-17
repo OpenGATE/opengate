@@ -10,9 +10,9 @@
 
 namespace py = pybind11;
 
-#include "G4Element.hh"
-#include "G4Material.hh"
-#include "G4UnitsTable.hh"
+#include <G4Element.hh>
+#include <G4Material.hh>
+#include <G4UnitsTable.hh>
 
 void init_G4Material(py::module &m) {
 

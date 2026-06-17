@@ -1,8 +1,8 @@
 #include "pybind11/pybind11.h"
 
-#include "G4MoleculeCounter.hh"
-#include "G4MoleculeCounterManager.hh"
-#include "G4MoleculeReactionCounter.hh"
+#include <G4MoleculeCounter.hh>
+#include <G4MoleculeCounterManager.hh>
+#include <G4MoleculeReactionCounter.hh>
 
 namespace py = pybind11;
 

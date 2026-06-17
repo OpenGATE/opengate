@@ -8,17 +8,17 @@
 #include "GateChemicalCountingActor.h"
 #include "GateHelpersDict.h"
 
-#include "G4AutoLock.hh"
-#include "G4Event.hh"
-#include "G4EventManager.hh"
-#include "G4Molecule.hh"
-#include "G4MoleculeCounter.hh"
-#include "G4MoleculeCounterManager.hh"
-#include "G4RunManager.hh"
-#include "G4Scheduler.hh"
-#include "G4Step.hh"
-#include "G4SystemOfUnits.hh"
-#include "G4Track.hh"
+#include <G4AutoLock.hh>
+#include <G4Event.hh>
+#include <G4EventManager.hh>
+#include <G4Molecule.hh>
+#include <G4MoleculeCounter.hh>
+#include <G4MoleculeCounterManager.hh>
+#include <G4RunManager.hh>
+#include <G4Scheduler.hh>
+#include <G4Step.hh>
+#include <G4SystemOfUnits.hh>
+#include <G4Track.hh>
 
 #include <algorithm>
 #include <cctype>

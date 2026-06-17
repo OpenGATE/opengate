@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4IonisParamMat.hh"
+#include <G4IonisParamMat.hh>
 
 void init_G4IonisParamMat(py::module &m) {
   py::class_<G4IonisParamMat>(m, "G4IonisParamMat")
