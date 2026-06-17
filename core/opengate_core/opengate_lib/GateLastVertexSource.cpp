@@ -20,7 +20,7 @@ void GateLastVertexSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 double GateLastVertexSource::PrepareNextTime(double current_simulation_time,
-                                             double NumberOfGeneratedEvents) {
+                                             unsigned long NumberOfGeneratedEvents) {
 
   /*
   // If all N events have been generated, we stop (negative time)

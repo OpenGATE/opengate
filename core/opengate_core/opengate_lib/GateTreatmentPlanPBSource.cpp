@@ -94,7 +94,7 @@ double GateTreatmentPlanPBSource::CalcNextTime(double current_simulation_time) {
 
 double
 GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time,
-                                           double NumberOfGeneratedEvents) {
+                                           unsigned long NumberOfGeneratedEvents) {
 
   if (current_simulation_time < fStartTime) {
     return fStartTime;

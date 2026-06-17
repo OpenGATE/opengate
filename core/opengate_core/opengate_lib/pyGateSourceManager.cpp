@@ -20,6 +20,8 @@ void init_GateSourceManager(py::module &m) {
       .def("SetActors", &GateSourceManager::SetActors)
       .def("GetExpectedNumberOfEvents",
            &GateSourceManager::GetExpectedNumberOfEvents)
+      .def_static("GetPlatformMaxPrimariesPerRun",
+                  &GateSourceManager::GetPlatformMaxPrimariesPerRun)
       .def_readwrite("fUserEventInformationFlag",
                      &GateSourceManager::fUserEventInformationFlag)
       .def("StartMasterThread", &GateSourceManager::StartMasterThread,

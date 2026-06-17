@@ -27,6 +27,8 @@
 #include <G4UIsession.hh>
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
+#include <atomic>
+#include <cstdint>
 
 using namespace indicators;
 
@@ -108,9 +110,17 @@ public:
   void ComputeExpectedNumberOfEvents();
 
   static void SetRunTerminationFlag(bool flag);
+  static void ResetPrimaryCounterForRun();
+  static bool TryReservePrimarySlot();
+  static void WarnPrimaryLimitReached();
+  static void SetMaxPrimariesPerRun(std::uint64_t value);
+  static std::uint64_t GetPlatformMaxPrimariesPerRun();
 
   // fRunTerminationFlag should not be thread local
   static bool fRunTerminationFlag;
+  static std::atomic<std::uint64_t> fGeneratedPrimariesThisRun;
+  static std::atomic<bool> fPrimaryLimitWarningIssued;
+  static std::uint64_t fMaxPrimariesPerRun;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;

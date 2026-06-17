@@ -68,9 +68,8 @@ class SourceEngine(EngineBase):
     Source Engine manages the G4 objects of sources at runtime
     """
 
-    # G4RunManager::BeamOn takes an int as input. The max cpp int value is currently 2147483647
-    # Python manages int differently (no limit), so we need to set the max value here.
-    max_int = 2147483647
+    # One Geant4 BeamOn() call is limited by the compiled G4int width.
+    max_int = g4.GateSourceManager.GetPlatformMaxPrimariesPerRun()
 
     def __init__(self, simulation_engine):
         super().__init__(simulation_engine)
@@ -184,6 +183,9 @@ class SourceEngine(EngineBase):
         # progress bar
         self.source_manager_options["progress_bar"] = (
             self.simulation_engine.simulation.progress_bar
+        )
+        self.source_manager_options["max_primaries_per_run"] = (
+            self.simulation_engine.simulation.max_primaries_per_run
         )
 
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)

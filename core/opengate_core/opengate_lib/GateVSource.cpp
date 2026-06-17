@@ -74,7 +74,7 @@ void GateVSource::PrepareNextRun() {
 }
 
 double GateVSource::PrepareNextTime(double current_simulation_time,
-                                    double numberOfGeneratedEvents) {
+                                    unsigned long numberOfGeneratedEvents) {
   UpdateActivity(current_simulation_time);
   if ((fMaxN <= 0) || ((fMaxN > numberOfGeneratedEvents) && (fMaxN > 0))) {
     if (current_simulation_time < fStartTime)

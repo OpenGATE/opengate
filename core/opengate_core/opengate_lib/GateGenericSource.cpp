@@ -139,7 +139,7 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
 }
 
 double GateGenericSource::PrepareNextTime(const double current_simulation_time,
-                                          double NumberOfGeneratedEvents) {
+                                          unsigned long NumberOfGeneratedEvents) {
   auto &ll = GetThreadLocalDataGenericSource();
   // initialization of the effective event time (it can be in the
   // future according to the current_simulation_time)
