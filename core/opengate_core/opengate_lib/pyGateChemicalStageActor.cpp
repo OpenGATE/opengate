@@ -42,5 +42,13 @@ void init_GateChemicalStageActor(py::module &m) {
            &GateChemicalStageActor::GetMeanRestrictedLET)
       .def("GetStdRestrictedLET", &GateChemicalStageActor::GetStdRestrictedLET)
       .def("GetSpeciesInfo", &GateChemicalStageActor::GetSpeciesInfo)
-      .def("GetRecordedTimes", &GateChemicalStageActor::GetRecordedTimes);
+      .def("GetRecordedTimes", &GateChemicalStageActor::GetRecordedTimes)
+      .def("RegisterConfiguredReactionCounter",
+           &GateChemicalStageActor::RegisterConfiguredReactionCounter)
+      .def("GetConfiguredReactionCounterResults",
+           &GateChemicalStageActor::GetConfiguredReactionCounterResults)
+      .def("RegisterConfiguredSpeciesCounter",
+           &GateChemicalStageActor::RegisterConfiguredSpeciesCounter)
+      .def("GetConfiguredSpeciesCounterResults",
+           &GateChemicalStageActor::GetConfiguredSpeciesCounterResults);
 }

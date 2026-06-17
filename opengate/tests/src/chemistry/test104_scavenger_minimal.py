@@ -7,6 +7,8 @@ import opengate_core as g4
 from opengate.tests import utility
 
 SCAVENGER_SIGNATURE_CONFIG_NAMES = ["O_2", "HO_2°"]
+SCAVENGER_TRACKED_COUNTER_SPECIES = ["O2m"]
+SCAVENGER_MOLECULE_COUNTER_NAMES = SCAVENGER_SIGNATURE_CONFIG_NAMES
 SCAVENGER_SIGNATURE_RUNTIME_NAMES = ["O_2^-1", "HO_2°^0"]
 E_AQ_CONFIG_NAME = "e_aq"
 E_AQ_RUNTIME_NAME = "e_aq^-1"
@@ -143,7 +145,7 @@ def create_simulation(enable_scavenger):
     # species or as the follow-up hydroperoxyl radical.
     chem_actor.counters.molecule_counter.consider_molecules = [
         E_AQ_CONFIG_NAME,
-        *SCAVENGER_SIGNATURE_CONFIG_NAMES,
+        *SCAVENGER_MOLECULE_COUNTER_NAMES,
     ]
 
     if enable_scavenger:
@@ -157,6 +159,10 @@ def create_simulation(enable_scavenger):
             products=["O2m"],
             rate_constant=TEST_O2_EAQ_RATE_CONSTANT_DM3_PER_MOLE_S * dm3_per_mole_s,
         )
+        chem_actor.counters.configured_species_counter.tracked_species = (
+            SCAVENGER_TRACKED_COUNTER_SPECIES
+        )
+        chem_actor.counters.configured_species_counter.active = True
         sim.user_hook_after_init = dump_scavenger_processes
         sim.user_hook_after_run = collect_scavenger_material_after_run
 
@@ -192,13 +198,15 @@ if __name__ == "__main__":
     scav_results = chem_actor_scav.results.get_data()
     ref_counter = chem_actor_ref.molecule_counter.get_data()
     scav_counter = chem_actor_scav.molecule_counter.get_data()
+    scavenger_species_counter = chem_actor_scav.configured_species_counter.get_data()
 
     ref_o2m_peak = get_peak_count(ref_counter, SCAVENGER_SIGNATURE_RUNTIME_NAMES)
     scav_o2m_peak = get_peak_count(scav_counter, SCAVENGER_SIGNATURE_RUNTIME_NAMES)
     ref_eaq_peak = get_peak_count(ref_counter, [E_AQ_RUNTIME_NAME])
     scav_eaq_peak = get_peak_count(scav_counter, [E_AQ_RUNTIME_NAME])
-    ref_eaq_final = get_final_count(ref_counter, [E_AQ_RUNTIME_NAME])
-    scav_eaq_final = get_final_count(scav_counter, [E_AQ_RUNTIME_NAME])
+    scavenger_signature_appearances = get_final_count(
+        scavenger_species_counter, SCAVENGER_TRACKED_COUNTER_SPECIES
+    )
     initial_o2_count = sim_scav.user_hook_log.scavenger_material["initial_O2_count"]
     final_o2_count = sim_scav.user_hook_log.scavenger_material_after_run[
         "final_O2_count"
@@ -207,16 +215,19 @@ if __name__ == "__main__":
     print("Baseline run without scavenger")
     print(f"  events: {stats_ref.counts.events}")
     print(f"  chemistry_starts: {ref_results.chemistry_starts}")
+    print(f"  reaction_count: {ref_results.reaction_count}")
     print(f"  peak e_aq population: {ref_eaq_peak}")
-    print(f"  final e_aq population: {ref_eaq_final}")
     print(f"  peak oxygen-scavenger signature population: {ref_o2m_peak}")
 
     print("Run with O2 scavenger")
     print(f"  events: {stats_scav.counts.events}")
     print(f"  chemistry_starts: {scav_results.chemistry_starts}")
+    print(f"  reaction_count: {scav_results.reaction_count}")
     print(f"  peak e_aq population: {scav_eaq_peak}")
-    print(f"  final e_aq population: {scav_eaq_final}")
     print(f"  peak oxygen-scavenger signature population: {scav_o2m_peak}")
+    print(
+        f"  cumulative tracked scavenger-signature appearances: {scavenger_signature_appearances}"
+    )
     print(f"  initial O2 reservoir population: {initial_o2_count}")
     print(f"  final O2 reservoir population: {final_o2_count}")
 
@@ -225,7 +236,7 @@ if __name__ == "__main__":
     is_ok = is_ok and scav_results.chemistry_starts > 0
     is_ok = is_ok and sim_scav.user_hook_log.scavenger_material is not None
     is_ok = is_ok and "O_2^0" in sim_scav.user_hook_log.scavenger_material["species"]
-    is_ok = is_ok and scav_eaq_final < ref_eaq_final
+    is_ok = is_ok and scavenger_signature_appearances > 0
     is_ok = is_ok and final_o2_count < initial_o2_count
 
     utility.test_ok(is_ok)

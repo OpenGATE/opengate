@@ -61,6 +61,16 @@ void GateChemicalStageActor::StartSimulationAction() {
   fNbReactions = 0;
   fNbRecordedEvents = 0;
   fSpeciesInfoPerTime.clear();
+  for (auto &[counterName, trackedReactions] : fConfiguredReactionCounters) {
+    for (auto &trackedReaction : trackedReactions) {
+      trackedReaction.Reset();
+    }
+  }
+  for (auto &[counterName, trackedSpecies] : fConfiguredSpeciesCounters) {
+    for (auto &trackedSpeciesRecord : trackedSpecies) {
+      trackedSpeciesRecord.Reset();
+    }
+  }
 }
 
 void GateChemicalStageActor::BeginOfEventAction(const G4Event * /*event*/) {
@@ -177,6 +187,35 @@ void GateChemicalStageActor::NewStage() {
   fNbChemistryStages++;
 }
 
+void GateChemicalStageActor::StartChemistryTracking(G4Track *track) {
+  if (track == nullptr) {
+    return;
+  }
+  const auto runtimeName = ResolveRuntimeMoleculeName(*track);
+  const auto trackTime = track->GetGlobalTime();
+  G4AutoLock lock(&GateChemicalStageActorMutex);
+  for (auto &[counterName, trackedSpecies] : fConfiguredSpeciesCounters) {
+    for (auto &trackedSpeciesRecord : trackedSpecies) {
+      if (trackedSpeciesRecord.runtimeName != runtimeName) {
+        continue;
+      }
+      trackedSpeciesRecord.totalCount++;
+      if (trackedSpeciesRecord.recordTimeSeries) {
+        if (!trackedSpeciesRecord.times.empty() &&
+            trackedSpeciesRecord.times.back() == trackTime) {
+          trackedSpeciesRecord.counts.back() = trackedSpeciesRecord.totalCount;
+        } else {
+          trackedSpeciesRecord.times.push_back(trackTime);
+          trackedSpeciesRecord.counts.push_back(trackedSpeciesRecord.totalCount);
+        }
+      } else {
+        trackedSpeciesRecord.times.back() = trackTime;
+        trackedSpeciesRecord.counts.back() = trackedSpeciesRecord.totalCount;
+      }
+    }
+  }
+}
+
 void GateChemicalStageActor::StartChemistryProcessing() {
   ConfigureTimesToRecordIfNeeded();
   G4AutoLock lock(&GateChemicalStageActorMutex);
@@ -194,10 +233,45 @@ void GateChemicalStageActor::PostChemistryTimeStepAction() {
 }
 
 void GateChemicalStageActor::ChemistryReactionAction(
-    const G4Track & /*trackA*/, const G4Track & /*trackB*/,
-    const std::vector<G4Track *> * /*products*/) {
+    const G4Track &trackA, const G4Track &trackB,
+    const std::vector<G4Track *> *products) {
+  const auto reactants = CanonicalizeReactants(ResolveRuntimeMoleculeName(trackA),
+                                               ResolveRuntimeMoleculeName(trackB));
+  std::vector<std::string> productNames;
+  if (products != nullptr) {
+    productNames.reserve(products->size());
+    for (const auto *product : *products) {
+      if (product != nullptr) {
+        productNames.push_back(ResolveRuntimeMoleculeName(*product));
+      }
+    }
+  }
+  const auto canonicalProducts = CanonicalizeProducts(productNames);
+  const auto reactionTime = std::min(trackA.GetGlobalTime(), trackB.GetGlobalTime());
+
   G4AutoLock lock(&GateChemicalStageActorMutex);
   fNbReactions++;
+  for (auto &[counterName, trackedReactions] : fConfiguredReactionCounters) {
+    for (auto &trackedReaction : trackedReactions) {
+      if (trackedReaction.reactants != reactants ||
+          trackedReaction.products != canonicalProducts) {
+        continue;
+      }
+      trackedReaction.totalCount++;
+      if (trackedReaction.recordTimeSeries) {
+        if (!trackedReaction.times.empty() &&
+            trackedReaction.times.back() == reactionTime) {
+          trackedReaction.counts.back() = trackedReaction.totalCount;
+        } else {
+          trackedReaction.times.push_back(reactionTime);
+          trackedReaction.counts.push_back(trackedReaction.totalCount);
+        }
+      } else {
+        trackedReaction.times.back() = reactionTime;
+        trackedReaction.counts.back() = trackedReaction.totalCount;
+      }
+    }
+  }
 }
 
 void GateChemicalStageActor::EndChemistryProcessing() {
@@ -243,6 +317,94 @@ py::list GateChemicalStageActor::GetRecordedTimes() const {
     recordedTimes.append(time);
   }
   return recordedTimes;
+}
+
+void GateChemicalStageActor::RegisterConfiguredReactionCounter(
+    const std::string &counterName, const py::list &trackedReactions,
+    bool recordTimeSeries) {
+  std::vector<TrackedReactionRecord> records;
+  records.reserve(trackedReactions.size());
+  for (const auto &item : trackedReactions) {
+    const auto reactionDict = py::cast<py::dict>(item);
+    TrackedReactionRecord record;
+    record.name = py::cast<std::string>(reactionDict["name"]);
+    record.reactants = CanonicalizeReactants(
+        py::cast<std::string>(reactionDict["reactant_a"]),
+        py::cast<std::string>(reactionDict["reactant_b"]));
+    record.products = CanonicalizeProducts(
+        py::cast<std::vector<std::string>>(reactionDict["products"]));
+    record.recordTimeSeries = recordTimeSeries;
+    record.Reset();
+    records.push_back(std::move(record));
+  }
+  G4AutoLock lock(&GateChemicalStageActorMutex);
+  fConfiguredReactionCounters[counterName] = std::move(records);
+}
+
+py::dict GateChemicalStageActor::GetConfiguredReactionCounterResults(
+    const std::string &counterName) const {
+  py::dict results;
+  auto it = fConfiguredReactionCounters.find(counterName);
+  if (it == fConfiguredReactionCounters.end()) {
+    return results;
+  }
+  for (const auto &trackedReaction : it->second) {
+    py::dict entry;
+    py::list times;
+    py::list counts;
+    for (const auto time : trackedReaction.times) {
+      times.append(time);
+    }
+    for (const auto count : trackedReaction.counts) {
+      counts.append(count);
+    }
+    entry["times"] = times;
+    entry["counts"] = counts;
+    results[py::str(trackedReaction.name)] = entry;
+  }
+  return results;
+}
+
+void GateChemicalStageActor::RegisterConfiguredSpeciesCounter(
+    const std::string &counterName, const py::list &trackedSpecies,
+    bool recordTimeSeries) {
+  std::vector<TrackedSpeciesRecord> records;
+  records.reserve(trackedSpecies.size());
+  for (const auto &item : trackedSpecies) {
+    const auto speciesDict = py::cast<py::dict>(item);
+    TrackedSpeciesRecord record;
+    record.name = py::cast<std::string>(speciesDict["name"]);
+    record.runtimeName = py::cast<std::string>(speciesDict["runtime_name"]);
+    record.recordTimeSeries = recordTimeSeries;
+    record.Reset();
+    records.push_back(std::move(record));
+  }
+  G4AutoLock lock(&GateChemicalStageActorMutex);
+  fConfiguredSpeciesCounters[counterName] = std::move(records);
+}
+
+py::dict GateChemicalStageActor::GetConfiguredSpeciesCounterResults(
+    const std::string &counterName) const {
+  py::dict results;
+  auto it = fConfiguredSpeciesCounters.find(counterName);
+  if (it == fConfiguredSpeciesCounters.end()) {
+    return results;
+  }
+  for (const auto &trackedSpecies : it->second) {
+    py::dict entry;
+    py::list times;
+    py::list counts;
+    for (const auto time : trackedSpecies.times) {
+      times.append(time);
+    }
+    for (const auto count : trackedSpecies.counts) {
+      counts.append(count);
+    }
+    entry["times"] = times;
+    entry["counts"] = counts;
+    results[py::str(trackedSpecies.name)] = entry;
+  }
+  return results;
 }
 
 void GateChemicalStageActor::ConfigureTimesToRecordIfNeeded() {
@@ -318,4 +480,33 @@ void GateChemicalStageActor::RecordSpeciesAtEndOfChemicalStage() {
       }
     }
   }
+}
+
+std::array<std::string, 2> GateChemicalStageActor::CanonicalizeReactants(
+    const std::string &reactantA, const std::string &reactantB) {
+  std::array<std::string, 2> reactants{reactantA, reactantB};
+  std::sort(reactants.begin(), reactants.end());
+  return reactants;
+}
+
+std::vector<std::string> GateChemicalStageActor::CanonicalizeProducts(
+    const std::vector<std::string> &products) {
+  auto sortedProducts = products;
+  std::sort(sortedProducts.begin(), sortedProducts.end());
+  return sortedProducts;
+}
+
+std::string GateChemicalStageActor::ResolveRuntimeMoleculeName(
+    const G4Track &track) {
+  const auto *molecule = G4Molecule::GetMolecule(&track);
+  if (molecule != nullptr) {
+    const auto *configuration = molecule->GetMolecularConfiguration();
+    if (configuration != nullptr) {
+      return configuration->GetName();
+    }
+  }
+  if (track.GetParticleDefinition() != nullptr) {
+    return track.GetParticleDefinition()->GetParticleName();
+  }
+  return "";
 }

@@ -548,6 +548,76 @@ class ChemicalReaction(GateObject):
         )
 
 
+class TrackedChemicalReaction(GateObject):
+    """
+    Parameter container describing a chemistry reaction signature to track at
+    runtime. The tracked signature is matched against reactant and product
+    molecule names observed in chemistry callbacks.
+    """
+
+    user_info_defaults = {
+        "reactant_a": (
+            None,
+            {
+                "doc": "Name of the first reactant to match.",
+                "type": "str",
+            },
+        ),
+        "reactant_b": (
+            None,
+            {
+                "doc": "Name of the second reactant to match.",
+                "type": "str",
+            },
+        ),
+        "products": (
+            [],
+            {
+                "doc": "List of product species names to match.",
+                "type": "list_of_str",
+            },
+        ),
+    }
+
+    @staticmethod
+    def make_default_name(reactant_a, reactant_b, products):
+        reactants = sorted(
+            [str(reactant) for reactant in (reactant_a, reactant_b) if reactant]
+        )
+        raw = "_".join(
+            reactants + ["to"] + [str(product) for product in products if product]
+        )
+        safe = re.sub(r"[^A-Za-z0-9_]+", "_", raw).strip("_")
+        if safe == "":
+            safe = "reaction"
+        return f"tracked_reaction_{safe}"
+
+    @property
+    def sorted_reactants(self):
+        return tuple(sorted((self.reactant_a, self.reactant_b)))
+
+    @property
+    def sorted_products(self):
+        return tuple(sorted(self.products))
+
+    def __init__(self, *args, **kwargs):
+        if kwargs.get("name") in (None, ""):
+            kwargs["name"] = self.make_default_name(
+                kwargs.get("reactant_a"),
+                kwargs.get("reactant_b"),
+                kwargs.get("products", []),
+            )
+        super().__init__(*args, **kwargs)
+
+    def __eq__(self, other):
+        if not isinstance(other, TrackedChemicalReaction):
+            return NotImplemented
+        return (
+            self.sorted_reactants == other.sorted_reactants
+            and self.sorted_products == other.sorted_products
+        )
+
+
 class ChemicalDissociation(GateObject):
     """
     Parameter container for defining a unimolecular dissociation reaction
@@ -1237,4 +1307,5 @@ process_cls(ChemistryList)
 process_cls(ChemistryCustomList)
 process_cls(ChemicalDissociation)
 process_cls(ChemicalReaction)
+process_cls(TrackedChemicalReaction)
 process_cls(ChemicalSpecies)

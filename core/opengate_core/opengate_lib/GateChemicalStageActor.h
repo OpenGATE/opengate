@@ -9,9 +9,11 @@
 #define GateChemicalStageActor_h
 
 #include "GateVChemistryActor.h"
+#include <array>
 #include <cfloat>
 #include <map>
 #include <pybind11/stl.h>
+#include <string>
 #include <vector>
 
 namespace py = pybind11;
@@ -25,6 +27,37 @@ public:
     double sumG2{0.0};
   };
 
+  struct TrackedReactionRecord {
+    std::string name;
+    std::array<std::string, 2> reactants;
+    std::vector<std::string> products;
+    bool recordTimeSeries{true};
+    long totalCount{0};
+    std::vector<double> times{0.0};
+    std::vector<long> counts{0};
+
+    void Reset() {
+      totalCount = 0;
+      times = {0.0};
+      counts = {0};
+    }
+  };
+
+  struct TrackedSpeciesRecord {
+    std::string name;
+    std::string runtimeName;
+    bool recordTimeSeries{true};
+    long totalCount{0};
+    std::vector<double> times{0.0};
+    std::vector<long> counts{0};
+
+    void Reset() {
+      totalCount = 0;
+      times = {0.0};
+      counts = {0};
+    }
+  };
+
 public:
   explicit GateChemicalStageActor(py::dict &user_info);
 
@@ -35,6 +68,7 @@ public:
   void EndOfEventAction(const G4Event *event) override;
   void SteppingAction(G4Step *step) override;
   void NewStage() override;
+  void StartChemistryTracking(G4Track *track) override;
   void StartChemistryProcessing() override;
   void PreChemistryTimeStepAction() override;
   void PostChemistryTimeStepAction() override;
@@ -57,11 +91,27 @@ public:
   py::dict GetSpeciesInfo() const;
   py::list GetRecordedTimes() const;
   void SetMoleculeCounterId(G4int id) { fMoleculeCounterId = id; }
+  void RegisterConfiguredReactionCounter(const std::string &counterName,
+                                         const py::list &trackedReactions,
+                                         bool recordTimeSeries);
+  py::dict GetConfiguredReactionCounterResults(
+      const std::string &counterName) const;
+  void RegisterConfiguredSpeciesCounter(const std::string &counterName,
+                                        const py::list &trackedSpecies,
+                                        bool recordTimeSeries);
+  py::dict GetConfiguredSpeciesCounterResults(
+      const std::string &counterName) const;
 
 protected:
   bool ShouldApplyPrimaryLogic(const G4Track *track) const;
   void ConfigureTimesToRecordIfNeeded();
   void RecordSpeciesAtEndOfChemicalStage();
+  static std::array<std::string, 2>
+  CanonicalizeReactants(const std::string &reactantA,
+                        const std::string &reactantB);
+  static std::vector<std::string>
+  CanonicalizeProducts(const std::vector<std::string> &products);
+  static std::string ResolveRuntimeMoleculeName(const G4Track &track);
 
   bool fTrackOnlyPrimary{true};
   int fPrimaryPDGCode{11};
@@ -91,6 +141,10 @@ protected:
   long fNbReactions{0};
   long fNbRecordedEvents{0};
   std::map<double, std::map<std::string, SpeciesEntry>> fSpeciesInfoPerTime;
+  std::map<std::string, std::vector<TrackedReactionRecord>>
+      fConfiguredReactionCounters;
+  std::map<std::string, std::vector<TrackedSpeciesRecord>>
+      fConfiguredSpeciesCounters;
 };
 
 #endif // GateChemicalStageActor_h

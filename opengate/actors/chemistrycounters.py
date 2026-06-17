@@ -4,6 +4,7 @@ import numpy as np
 import opengate_core as g4
 
 from ..base import GateObject, process_cls
+from ..chemistry import TrackedChemicalReaction
 from ..exception import fatal
 
 TIME_COUNT_DTYPE = np.dtype([("time", np.float64), ("count", np.int64)])
@@ -67,21 +68,25 @@ class CounterBase(GateObject):
         super().__init__(*args, **kwargs)
         self.actor = None
         self.g4_counter_id = None
+        self.initialized = False
 
     def __getstate__(self):
         state_dict = super().__getstate__()
         state_dict["actor"] = None
         state_dict["g4_counter_id"] = None
+        state_dict["initialized"] = False
         return state_dict
 
     def __setstate__(self, state):
         super().__setstate__(state)
         self.actor = None
         self.g4_counter_id = None
+        self.initialized = False
 
     def close(self):
         self.g4_counter_id = None
         self.actor = None
+        self.initialized = False
         super().close()
 
     def initialize(self):
@@ -344,9 +349,175 @@ class BuiltinReactionCounter(ReactionCounterBase, g4.G4MoleculeReactionCounter):
         return results
 
 
+class ConfiguredReactionCounter(CounterBase):
+    # Temporary implementation note:
+    # This counter currently relies on ChemicalStageActor-owned reaction
+    # callback accumulation in C++ rather than being backed by its own proper
+    # concrete reaction-counter class. That keeps the implementation simple and
+    # robust enough for testing, but it should eventually be refactored into a
+    # first-class counter implementation parallel to BuiltinReactionCounter.
+    user_info_defaults = {
+        "tracked_reactions": (
+            [],
+            {
+                "doc": "List of tracked chemistry reaction signatures.",
+            },
+        ),
+        "record_time_series": (
+            True,
+            {
+                "doc": "If True, store cumulative counts versus chemistry time. If False, keep only the total count in a single-point series.",
+            },
+        ),
+    }
+
+    def _coerce_tracked_reaction(self, reaction):
+        if isinstance(reaction, TrackedChemicalReaction):
+            return reaction
+        if isinstance(reaction, dict):
+            return TrackedChemicalReaction(**reaction)
+        fatal(
+            f"ConfiguredReactionCounter '{self.name}' expects tracked_reactions "
+            f"to contain TrackedChemicalReaction objects or dictionaries, got {type(reaction).__name__}."
+        )
+
+    def initialize(self):
+        if self.actor is None:
+            fatal(
+                f"Configured reaction counter '{self.name}' is not attached to an actor."
+            )
+        if not hasattr(self.actor, "RegisterConfiguredReactionCounter"):
+            fatal(
+                f"Configured reaction counter '{self.name}' requires an actor exposing "
+                "RegisterConfiguredReactionCounter(), but the attached actor does not."
+            )
+        if len(self.tracked_reactions) == 0:
+            fatal(
+                f"Configured reaction counter '{self.name}' requires at least one tracked reaction."
+            )
+
+        molecule_table = g4.G4MoleculeTable.Instance()
+        normalized_reactions = []
+        for tracked_reaction in self.tracked_reactions:
+            tracked_reaction = self._coerce_tracked_reaction(tracked_reaction)
+            runtime_reactants = []
+            for reactant_name in (
+                tracked_reaction.reactant_a,
+                tracked_reaction.reactant_b,
+            ):
+                conf = molecule_table.GetConfiguration(reactant_name, False)
+                if conf is None:
+                    fatal(
+                        f"Configured reaction counter '{self.name}' references unknown reactant "
+                        f"'{reactant_name}' in tracked reaction '{tracked_reaction.name}'."
+                    )
+                runtime_reactants.append(str(conf.GetName()))
+            runtime_products = []
+            for product_name in tracked_reaction.products:
+                conf = molecule_table.GetConfiguration(product_name, False)
+                if conf is None:
+                    fatal(
+                        f"Configured reaction counter '{self.name}' references unknown product "
+                        f"'{product_name}' in tracked reaction '{tracked_reaction.name}'."
+                    )
+                runtime_products.append(str(conf.GetName()))
+            normalized_reactions.append(
+                {
+                    "name": tracked_reaction.name,
+                    "reactant_a": runtime_reactants[0],
+                    "reactant_b": runtime_reactants[1],
+                    "products": runtime_products,
+                }
+            )
+
+        self.actor.RegisterConfiguredReactionCounter(
+            self.name, normalized_reactions, self.record_time_series
+        )
+
+    def _collect_results(self):
+        if self.actor is None:
+            fatal(
+                f"Configured reaction counter '{self.name}' is not attached to an actor."
+            )
+        raw_results = self.actor.GetConfiguredReactionCounterResults(self.name)
+        results = {}
+        for reaction_name, entry in raw_results.items():
+            times = list(entry["times"])
+            counts = list(entry["counts"])
+            results[str(reaction_name)] = _make_time_count_series(times, counts)
+        return results
+
+
+class ConfiguredSpeciesCounter(CounterBase):
+    user_info_defaults = {
+        "tracked_species": (
+            [],
+            {
+                "doc": "List of chemistry species names whose appearance should be counted.",
+            },
+        ),
+        "record_time_series": (
+            True,
+            {
+                "doc": "If True, store cumulative appearance counts versus chemistry time. If False, keep only the total count in a single-point series.",
+            },
+        ),
+    }
+
+    def initialize(self):
+        if self.actor is None:
+            fatal(
+                f"Configured species counter '{self.name}' is not attached to an actor."
+            )
+        if not hasattr(self.actor, "RegisterConfiguredSpeciesCounter"):
+            fatal(
+                f"Configured species counter '{self.name}' requires an actor exposing "
+                "RegisterConfiguredSpeciesCounter(), but the attached actor does not."
+            )
+        if len(self.tracked_species) == 0:
+            fatal(
+                f"Configured species counter '{self.name}' requires at least one tracked species."
+            )
+
+        molecule_table = g4.G4MoleculeTable.Instance()
+        normalized_species = []
+        for species_name in self.tracked_species:
+            conf = molecule_table.GetConfiguration(species_name, False)
+            if conf is None:
+                fatal(
+                    f"Configured species counter '{self.name}' references unknown species "
+                    f"'{species_name}'."
+                )
+            normalized_species.append(
+                {
+                    "name": str(species_name),
+                    "runtime_name": str(conf.GetName()),
+                }
+            )
+
+        self.actor.RegisterConfiguredSpeciesCounter(
+            self.name, normalized_species, self.record_time_series
+        )
+
+    def _collect_results(self):
+        if self.actor is None:
+            fatal(
+                f"Configured species counter '{self.name}' is not attached to an actor."
+            )
+        raw_results = self.actor.GetConfiguredSpeciesCounterResults(self.name)
+        results = {}
+        for species_name, entry in raw_results.items():
+            times = list(entry["times"])
+            counts = list(entry["counts"])
+            results[str(species_name)] = _make_time_count_series(times, counts)
+        return results
+
+
 chemistry_counter_types = {
     "BuiltinMoleculeCounter": BuiltinMoleculeCounter,
     "BuiltinReactionCounter": BuiltinReactionCounter,
+    "ConfiguredReactionCounter": ConfiguredReactionCounter,
+    "ConfiguredSpeciesCounter": ConfiguredSpeciesCounter,
 }
 
 
@@ -355,3 +526,5 @@ process_cls(MoleculeCounterBase)
 process_cls(ReactionCounterBase)
 process_cls(BuiltinMoleculeCounter)
 process_cls(BuiltinReactionCounter)
+process_cls(ConfiguredReactionCounter)
+process_cls(ConfiguredSpeciesCounter)

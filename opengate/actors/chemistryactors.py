@@ -59,6 +59,7 @@ class ChemistryActorBase(ActorBase):
             counter.actor = self
             if counter.active:
                 counter.initialize()
+                counter.initialized = True
 
     def _create_counter(self, counter, name=None, **kwargs):
         new_counter = None
@@ -182,7 +183,7 @@ class ChemistryActorBase(ActorBase):
 
     def _store_counter_results(self, which="merged"):
         for counter in self.counters.values():
-            if counter.g4_counter_id is not None and counter.output_name is not None:
+            if counter.initialized and counter.output_name is not None:
                 self.user_output[counter.output_name].store_data(
                     which, counter._collect_results()
                 )
@@ -326,6 +327,14 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                 },
             },
         },
+        "configured_reaction_counter": {
+            "counter_class": "ConfiguredReactionCounter",
+            "output_name": "configured_reaction_counter",
+        },
+        "configured_species_counter": {
+            "counter_class": "ConfiguredSpeciesCounter",
+            "output_name": "configured_species_counter",
+        },
     }
 
     user_info_defaults = {
@@ -393,6 +402,8 @@ class ChemicalStageActor(ChemistryActorBase, g4.GateChemicalStageActor):
                 "accumulate_counter_into_master": False,
             }
         )
+        self.counters.configured_reaction_counter.active = False
+        self.counters.configured_species_counter.active = False
         self.__initcpp__()
 
     def __initcpp__(self):
