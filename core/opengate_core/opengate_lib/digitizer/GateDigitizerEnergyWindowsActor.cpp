@@ -125,7 +125,7 @@ void GateDigitizerEnergyWindowsActor::ApplyThreshold(const size_t i,
     auto e = edep[n];
     if (e >= min && e < max) { // FIXME put in doc. strictly or not ?
       l.fFillers[i]->Fill(n);
-      l.fLastEnergyWindowId = i;
+      l.fLastEnergyWindowId = static_cast<int>(i);
     }
   }
 }

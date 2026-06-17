@@ -6,7 +6,14 @@
    -------------------------------------------------- */
 
 #include "GateVolumeVoxelizer.h"
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#endif
 #include "indicators.hpp"
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #include <G4Navigator.hh>
 #include <G4PhysicalVolumeStore.hh>
 #include <itkImageRegionIteratorWithIndex.h>

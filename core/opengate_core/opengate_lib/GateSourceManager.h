@@ -12,7 +12,14 @@
 #include "GateUserEventInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#endif
 #include "indicators.hpp"
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #include <G4Cache.hh>
 #include <G4ParticleGun.hh>
 #include <G4Threading.hh>

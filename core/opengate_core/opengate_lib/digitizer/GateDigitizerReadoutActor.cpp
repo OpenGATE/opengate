@@ -86,7 +86,7 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
       // coordinate system
       G4ThreeVector c;
       c = fTouchableHistory.GetHistory()
-              ->GetTransform(fDiscretizeVolumeDepth)
+              ->GetTransform(static_cast<G4int>(fDiscretizeVolumeDepth))
               .InverseTransformPoint(c);
       digi->fFinalPosition.set(c.getX(), c.getY(), c.getZ());
 

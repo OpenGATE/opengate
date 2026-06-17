@@ -58,7 +58,7 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   fSpotPosition = DictGetVecG4ThreeVector(user_info, "positions");
   fSpotRotation = DictGetVecG4RotationMatrix(user_info, "rotations");
 
-  fTotalNumberOfSpots = fSpotWeight.size();
+  fTotalNumberOfSpots = static_cast<int>(fSpotWeight.size());
   ll.fNbGeneratedSpots.resize(fTotalNumberOfSpots,
                               0); // keep track for debug
 
@@ -74,8 +74,8 @@ void GateTreatmentPlanPBSource::InitNbPrimariesVec() {
   auto &ll = GetThreadLocalDataTPSource();
   // Initialize all spots to zero particles
   ll.fNbIonsToGenerate.resize(fTotalNumberOfSpots, 0);
-  for (long int i = 0; i < fMaxN; i++) {
-    int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
+  for (unsigned long i = 0; i < fMaxN; i++) {
+    int bin = static_cast<int>(fTotalNumberOfSpots * fDistriGeneral->fire());
     ++ll.fNbIonsToGenerate[bin];
   }
 }
@@ -163,7 +163,7 @@ void GateTreatmentPlanPBSource::FindNextSpot() {
 
   } else {
     // select random spot according to PDF
-    int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
+    int bin = static_cast<int>(fTotalNumberOfSpots * fDistriGeneral->fire());
     ll.fCurrentSpot = bin;
   }
 }

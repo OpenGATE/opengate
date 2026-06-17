@@ -245,7 +245,7 @@ std::string GateDigiCollection::DumpLastDigi() const {
   if (GetSize() == 0)
     return "";
   auto n = GetSize() - 1;
-  return DumpDigi(n);
+  return DumpDigi(static_cast<int>(n));
 }
 
 std::string GateDigiCollection::DumpDigi(int i) const {

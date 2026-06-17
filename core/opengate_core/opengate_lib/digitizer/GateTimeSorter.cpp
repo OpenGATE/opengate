@@ -444,7 +444,8 @@ void GateTimeSorter::IdentifyFastestThread() {
       [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
         return a.value.load() < b.value.load();
       });
-  fFastestThread.store(std::distance(fMaxGlobalTimePerThread.get(), maxIt));
+  fFastestThread.store(
+      static_cast<int>(std::distance(fMaxGlobalTimePerThread.get(), maxIt)));
 }
 
 void GateTimeSorter::MarkThreadAsFinished(int threadId) {

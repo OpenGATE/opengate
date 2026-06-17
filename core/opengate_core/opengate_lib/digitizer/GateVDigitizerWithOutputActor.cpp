@@ -25,7 +25,7 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   fOutputDigiCollection = nullptr;
   fInputDigiCollection = nullptr;
   fInitializeRootTupleForMasterFlag = true;
-  fClearEveryNEvents = 1e5;
+  fClearEveryNEvents = 100000;
 }
 
 GateVDigitizerWithOutputActor::~GateVDigitizerWithOutputActor() = default;

@@ -58,8 +58,8 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
     if (ll.fParticleDefinition == nullptr) {
       Fatal("GatePhaseSpaceSource: PDGCode not found. Aborting.");
     }
-    fCharge = ll.fParticleDefinition->GetPDGCharge();
-    fMass = ll.fParticleDefinition->GetPDGMass();
+    fCharge = static_cast<std::float_t>(ll.fParticleDefinition->GetPDGCharge());
+    fMass = static_cast<std::float_t>(ll.fParticleDefinition->GetPDGMass());
   }
 
   // Init
@@ -69,8 +69,8 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
 
   ll.fGenerateUntilNextPrimary =
       DictGetBool(user_info, "generate_until_next_primary");
-  ll.fPrimaryLowerEnergyThreshold =
-      DictGetDouble(user_info, "primary_lower_energy_threshold");
+  ll.fPrimaryLowerEnergyThreshold = static_cast<std::float_t>(
+      DictGetDouble(user_info, "primary_lower_energy_threshold"));
   ll.fPrimaryPDGCode = DictGetInt(user_info, "primary_PDGCode");
 }
 

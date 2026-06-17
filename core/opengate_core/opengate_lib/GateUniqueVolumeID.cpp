@@ -65,7 +65,7 @@ int GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
   const std::string &s = GetIdUpToDepth(depth);
 
   // Compute the hash.
-  const int h = std::hash<std::string>{}(s);
+  const int h = static_cast<int>(std::hash<std::string>{}(s));
 
   // Store the newly computed hash in our cache and return it.
   fCachedIdDepthHash[depth] = h;
@@ -147,7 +147,7 @@ std::string GateUniqueVolumeID::ArrayIDToStr(const IDArrayType &id) {
 }
 
 G4VPhysicalVolume *GateUniqueVolumeID::GetTopPhysicalVolume() const {
-  return fTouchable.GetVolume(GetDepth());
+  return fTouchable.GetVolume(static_cast<G4int>(GetDepth()));
 }
 
 std::string GateUniqueVolumeID::ComputeStringID(const G4VTouchable *touchable) {

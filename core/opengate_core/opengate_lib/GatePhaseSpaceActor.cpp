@@ -242,7 +242,7 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 void GatePhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
   {
     G4AutoLock mutex(&TotalEntriesMutex);
-    fTotalNumberOfEntries += fHits->GetSize();
+    fTotalNumberOfEntries += static_cast<int>(fHits->GetSize());
   }
   fHits->FillToRootIfNeeded(true);
 }
