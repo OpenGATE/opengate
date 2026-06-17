@@ -94,13 +94,13 @@ public:
   void RegisterConfiguredReactionCounter(const std::string &counterName,
                                          const py::list &trackedReactions,
                                          bool recordTimeSeries);
-  py::dict GetConfiguredReactionCounterResults(
-      const std::string &counterName) const;
+  py::dict
+  GetConfiguredReactionCounterResults(const std::string &counterName) const;
   void RegisterConfiguredSpeciesCounter(const std::string &counterName,
                                         const py::list &trackedSpecies,
                                         bool recordTimeSeries);
-  py::dict GetConfiguredSpeciesCounterResults(
-      const std::string &counterName) const;
+  py::dict
+  GetConfiguredSpeciesCounterResults(const std::string &counterName) const;
 
 protected:
   bool ShouldApplyPrimaryLogic(const G4Track *track) const;

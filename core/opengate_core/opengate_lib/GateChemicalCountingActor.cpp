@@ -209,7 +209,8 @@ void GateChemicalCountingActor::StartChemistryTracking(G4Track *track) {
           trackedSpeciesRecord.counts.back() = trackedSpeciesRecord.totalCount;
         } else {
           trackedSpeciesRecord.times.push_back(trackTime);
-          trackedSpeciesRecord.counts.push_back(trackedSpeciesRecord.totalCount);
+          trackedSpeciesRecord.counts.push_back(
+              trackedSpeciesRecord.totalCount);
         }
       } else {
         trackedSpeciesRecord.times.back() = trackTime;
@@ -238,8 +239,8 @@ void GateChemicalCountingActor::PostChemistryTimeStepAction() {
 void GateChemicalCountingActor::ChemistryReactionAction(
     const G4Track &trackA, const G4Track &trackB,
     const std::vector<G4Track *> *products) {
-  const auto reactants = CanonicalizeReactants(ResolveRuntimeMoleculeName(trackA),
-                                               ResolveRuntimeMoleculeName(trackB));
+  const auto reactants = CanonicalizeReactants(
+      ResolveRuntimeMoleculeName(trackA), ResolveRuntimeMoleculeName(trackB));
   std::vector<std::string> productNames;
   if (products != nullptr) {
     productNames.reserve(products->size());
@@ -250,7 +251,8 @@ void GateChemicalCountingActor::ChemistryReactionAction(
     }
   }
   const auto canonicalProducts = CanonicalizeProducts(productNames);
-  const auto reactionTime = std::min(trackA.GetGlobalTime(), trackB.GetGlobalTime());
+  const auto reactionTime =
+      std::min(trackA.GetGlobalTime(), trackB.GetGlobalTime());
 
   G4AutoLock lock(&GateChemicalCountingActorMutex);
   fNbReactions++;
@@ -485,8 +487,9 @@ void GateChemicalCountingActor::RecordSpeciesAtEndOfChemicalStage() {
   }
 }
 
-std::array<std::string, 2> GateChemicalCountingActor::CanonicalizeReactants(
-    const std::string &reactantA, const std::string &reactantB) {
+std::array<std::string, 2>
+GateChemicalCountingActor::CanonicalizeReactants(const std::string &reactantA,
+                                                 const std::string &reactantB) {
   std::array<std::string, 2> reactants{reactantA, reactantB};
   std::sort(reactants.begin(), reactants.end());
   return reactants;
@@ -499,8 +502,8 @@ std::vector<std::string> GateChemicalCountingActor::CanonicalizeProducts(
   return sortedProducts;
 }
 
-std::string GateChemicalCountingActor::ResolveRuntimeMoleculeName(
-    const G4Track &track) {
+std::string
+GateChemicalCountingActor::ResolveRuntimeMoleculeName(const G4Track &track) {
   const auto *molecule = G4Molecule::GetMolecule(&track);
   if (molecule != nullptr) {
     const auto *configuration = molecule->GetMolecularConfiguration();

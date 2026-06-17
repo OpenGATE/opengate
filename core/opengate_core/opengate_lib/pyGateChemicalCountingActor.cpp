@@ -40,7 +40,8 @@ void init_GateChemicalCountingActor(py::module &m) {
            &GateChemicalCountingActor::GetAccumulatedEnergyDeposit)
       .def("GetMeanRestrictedLET",
            &GateChemicalCountingActor::GetMeanRestrictedLET)
-      .def("GetStdRestrictedLET", &GateChemicalCountingActor::GetStdRestrictedLET)
+      .def("GetStdRestrictedLET",
+           &GateChemicalCountingActor::GetStdRestrictedLET)
       .def("GetSpeciesInfo", &GateChemicalCountingActor::GetSpeciesInfo)
       .def("GetRecordedTimes", &GateChemicalCountingActor::GetRecordedTimes)
       .def("RegisterConfiguredReactionCounter",
