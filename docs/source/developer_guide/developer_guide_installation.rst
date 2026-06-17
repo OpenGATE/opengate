@@ -19,16 +19,36 @@ most tasks performed at initialization (before the run).
 Virtual environment
 -------------------
 
-:warning: It is highly, highly, *highly* recommended to create a python
-  environment prior to the installation, for example with
-  `venv <https://docs.python.org/3/library/venv.html#module-venv>`__.
+:warning: It is highly, highly, *highly* recommended to create a Python
+  environment prior to the installation.
 
-Example: You can create a new virtual environment via:
+We recommend the Python package and project manager `uv <https://docs.astral.sh/uv/>`_ for creating GATE environments because it makes it easy to manage Python versions. Installation instructions are available in the official `uv installation guide <https://docs.astral.sh/uv/getting-started/installation/>`_. 
+
+GATE 10 is currently tested with Python 3.10 to 3.14.
+
+We recommend one of the following approaches:
 
 .. code:: bash
 
-     python -m venv --name opengate_env
+     uv venv opengate_env
      source opengate_env/bin/activate
+
+Or, if you prefer to use ``venv``, call it with an explicit interpreter:
+
+.. code:: bash
+
+     python3.11 -m venv opengate_env
+     source opengate_env/bin/activate
+
+Then upgrade ``pip`` in the activated environment:
+
+.. code:: bash
+
+     python -m pip install --upgrade pip
+
+If you use a generic command such as ``python -m venv``, make sure that the
+selected ``python`` executable is one of the supported versions above. A
+virtual environment inherits the interpreter it was created from.
 
 To **develop** in GATE 10, you need 1) to compile and create the
 ``opengate_core`` subpackage (this is the hardest part) and 2) install
@@ -111,7 +131,7 @@ Once it is done, you can compile ``opengate_core``.
 
    cd <path-to-opengate>/core
    export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
-   pip install -v -e .
+   python -m pip install -v -e .
 
 The pip install will run cmake, compile the sources and create the
 module. If you are curious you can have a look the compilation folder in
@@ -131,7 +151,7 @@ The second part is easier : just go in the main folder and pip install:
 .. code:: bash
 
    cd <path-to-opengate>
-   pip install -v -e .
+   python -m pip install -v -e .
 
 STEP 5 - Before running
 -----------------------
@@ -170,9 +190,9 @@ pytorch and gaga-phsp first with:
 
 .. code:: bash
 
-   pip install torch
-   pip install gaga-phsp
-   pip install garf
+   python -m pip install torch
+   python -m pip install gaga-phsp
+   python -m pip install garf
 
 
 
@@ -181,7 +201,7 @@ Documentation for the documentation
 
 The document is created with `readthedoc <https://docs.readthedocs.io/en/stable/index.html>`_. To build the html pages locally, use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/conf.py` file. The current theme is `sphinx_pdj_theme <https://github.com/jucacrispim/sphinx_pdj_theme>`_.
 
-You also need to install some packages : ``pip install sphinx sphinx-copybutton pydata-sphinx-theme``
+You also need to install some packages : ``python -m pip install sphinx sphinx-copybutton pydata-sphinx-theme``
 
 Help with reStructuredText syntax:
 

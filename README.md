@@ -20,21 +20,25 @@ GATE 10 introduces a Python-based interface, replacing the macro scripting of GA
 First, create a python environment:
 
 ```
-python -m venv opengate_env
+uv venv opengate_env
 source opengate_env/bin/activate
-pip install --upgrade pip
+python -m pip install --upgrade pip
 ```
 
-Then install the package opengate. The associated package ```opengate_core``` is automatically downloaded. ```opengate_core``` installs Geant4 librairies.
+(We recommend the Python package manager [`uv`](https://docs.astral.sh/uv/) because it creates isolated environments and makes Python version management easier.) 
+
+Then install the package opengate:
 
 ```
-pip install opengate
+python -m pip install opengate
 ```
+
+The associated package ```opengate_core``` is automatically downloaded. ```opengate_core``` installs Geant4 librairies.
 
 If you already installed the packages and want to upgrade to the latest version:
 
 ```
-pip install --upgrade opengate
+python -m pip install --upgrade opengate
 ```
 
 Once installed, you can run all tests:
@@ -43,7 +47,7 @@ Once installed, you can run all tests:
 opengate_tests
 ````
 
-**WARNING (1)** The first time you run this command, the geant4 data and the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests:
+**WARNING (1)** The first time you run this command, the Geant4 data and the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests:
 
 ````
 export GIT_SSL_NO_VERIFY=1
@@ -54,8 +58,8 @@ All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/mas
 **WARNING (2)** Some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we don't know how to do). So, in order to run those tests, you will have to install both PyTorch and gaga-phsp first with:
 
 ````
-pip install torch
-pip install gaga-phsp
+python -m pip install torch
+python -m pip install gaga-phsp
 ````
 
 The test history can be visualized here: https://opengate.github.io/opengate_tests_results
