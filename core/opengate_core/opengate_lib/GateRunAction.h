@@ -25,6 +25,8 @@ public:
 
   virtual void EndOfRunAction(const G4Run *run);
 
+  bool fChemistryIsActive;
+
 protected:
   GateSourceManager *fSourceManager;
   std::vector<GateVActor *> fBeginOfRunAction_actors;

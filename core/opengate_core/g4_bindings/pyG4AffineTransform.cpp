@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4AffineTransform.hh"
+#include <G4AffineTransform.hh>
 
 void init_G4AffineTransform(py::module &m) {
   py::class_<G4AffineTransform>(m, "G4AffineTransform")

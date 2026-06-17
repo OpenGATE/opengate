@@ -12,6 +12,7 @@ namespace py = pybind11;
 #include "G4SteppingVerbose.hh"
 #include "G4UserEventAction.hh"
 #include "G4UserRunAction.hh"
+#include "G4UserStackingAction.hh"
 #include "G4UserSteppingAction.hh"
 #include "G4UserTrackingAction.hh"
 #include "G4VUserActionInitialization.hh"
@@ -71,6 +72,10 @@ public:
     // std::cout << "PyG4VUserActionInitialization::SetUserAction" << std::endl;
     G4VUserActionInitialization::SetUserAction(e);
   }
+
+  void SetUserAction(G4UserStackingAction *e) {
+    G4VUserActionInitialization::SetUserAction(e);
+  }
 };
 
 void init_G4VUserActionInitialization(py::module &m) {
@@ -127,5 +132,10 @@ void init_G4VUserActionInitialization(py::module &m) {
       .def("SetUserAction",
            (void (G4VUserActionInitialization::*)(
                G4UserSteppingAction
+                   *))&PyG4VUserActionInitialization::SetUserAction)
+
+      .def("SetUserAction",
+           (void (G4VUserActionInitialization::*)(
+               G4UserStackingAction
                    *))&PyG4VUserActionInitialization::SetUserAction);
 }

@@ -15,5 +15,6 @@ void init_GateEventAction(py::module &m) {
              std::unique_ptr<GateEventAction, py::nodelete>>(m,
                                                              "GateEventAction")
       .def(py::init())
+      .def_readwrite("fChemistryIsActive", &GateEventAction::fChemistryIsActive)
       .def("RegisterActor", &GateEventAction::RegisterActor);
 }

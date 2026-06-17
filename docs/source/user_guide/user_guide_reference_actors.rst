@@ -1301,11 +1301,9 @@ in the PG database (ROOT file).
 
    # Get the 1D PG yield computed for a human-averaged material, for proton and neutron inelastic processes
    with uproot.open(paths.data / "test081_pgtle" / "data_merge_proton.root") as root_file:
-      histo = root_file["standard_Weight"]["Weight"].to_hist()
-      vect_p = histo.to_numpy()[0]
+      vect_p = root_file["standard_Weight"]["Weight"].to_numpy()[0]
    with uproot.open(paths.data / "test081_pgtle" / "data_merge_neutron.root") as root_file:
-      histo = root_file["standard_Weight"]["Weight"].to_hist()
-      vect_n = histo.to_numpy()[0]
+      vect_n = root_file["standard_Weight"]["Weight"].to_numpy()[0]
 
    vpg_tle.weight = True
    vpg_tle.vect_p = vect_p
