@@ -84,8 +84,7 @@ def find_emission_vector(
     # if el == "Phosphor":
     #    el = "Phosphorus"
     el = elements_name_symbol[el]
-    histo = root_data[el]["GammaZ"].to_hist()
-    w = histo.to_numpy()[0]
+    w = root_data[el]["GammaZ"].to_numpy()[0]
     return w
 
 
@@ -247,11 +246,9 @@ if __name__ == "__main__":
 
     # LOOKHERE :: if database not well implanted, has to be modified
     with uproot.open(paths.data / test_name / "data_merge_proton.root") as root_file:
-        histo = root_file["standard_Weight"]["Weight"].to_hist()
-        vect_p = histo.to_numpy()[0]
+        vect_p = root_file["standard_Weight"]["Weight"].to_numpy()[0]
     with uproot.open(paths.data / test_name / "data_merge_neutron.root") as root_file:
-        histo = root_file["standard_Weight"]["Weight"].to_hist()
-        vect_n = histo.to_numpy()[0]
+        vect_n = root_file["standard_Weight"]["Weight"].to_numpy()[0]
 
     vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpg_tle")
     vpg_tle.attached_to = vol_name

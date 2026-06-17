@@ -7,4 +7,5 @@ from . import (
     arfactors,
     dynamicactors,
     biasingactors,
+    chemistrycounters,
 )

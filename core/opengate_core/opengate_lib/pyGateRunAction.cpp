@@ -19,5 +19,6 @@ void init_GateRunAction(py::module &m) {
   py::class_<GateRunAction, G4UserRunAction,
              std::unique_ptr<GateRunAction, py::nodelete>>(m, "GateRunAction")
       .def(py::init<GateSourceManager *>())
+      .def_readwrite("fChemistryIsActive", &GateRunAction::fChemistryIsActive)
       .def("RegisterActor", &GateRunAction::RegisterActor);
 }

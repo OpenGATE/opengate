@@ -25,6 +25,8 @@ public:
 
   virtual void EndOfEventAction(const G4Event *event);
 
+  bool fChemistryIsActive;
+
 protected:
   std::vector<GateVActor *> fBeginOfEventAction_actors;
   std::vector<GateVActor *> fEndOfEventAction_actors;
