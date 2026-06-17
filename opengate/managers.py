@@ -1040,6 +1040,12 @@ class ChemistryManager(GateObject):
     Everything related to chemistry (Geant4-DNA) should be here.
     """
 
+    alpha_warning_message = (
+        "Alpha-stage feature warning: GATE chemistry functionality is still under "
+        "active development. Interfaces, behavior, and outputs may change, and "
+        "results should be validated carefully before production use."
+    )
+
     user_info_defaults = {
         "chemistry_list_name": (
             None,
@@ -1202,6 +1208,14 @@ class ChemistryManager(GateObject):
 
         self.chemistry_list_name = chemistry_list_name
         return chemistry_list_name
+
+    def simulation_uses_chemistry(self):
+        return (
+            self.simulation.actor_manager.has_chemistry_actors()
+            or self.chemistry_list_name not in (None, "")
+            or self.chemistry_list.has_customizations()
+            or self.chemistry_world is not None
+        )
 
     def prepare_chemistry_list_if_needed(self):
         chemistry_list_name = self.check_chemistry_list_requests()

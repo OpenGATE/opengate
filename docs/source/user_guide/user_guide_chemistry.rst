@@ -5,6 +5,12 @@ This chapter explains how to run a Geant4-DNA chemistry simulation in GATE 10,
 how to configure chemistry lists and track-structure EM physics, and how to
 use chemistry actors.
 
+.. warning::
+
+   The chemistry functionality is currently in alpha stage. Interfaces,
+   behavior, and outputs may still change, so results should be validated
+   carefully before production use.
+
 The current chemistry support is built around the Geant4-DNA workflow:
 
 - activate track-structure EM in the region where DNA physics should run;

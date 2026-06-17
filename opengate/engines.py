@@ -1750,6 +1750,9 @@ class SimulationEngine(GateSingletonFatal):
         logger.info("Simulation: initialize Auxiliary attributes")
         self.simulation.initialize_auxiliary_attributes()
 
+        if self.simulation.chemistry_manager.simulation_uses_chemistry():
+            warning(self.simulation.chemistry_manager.alpha_warning_message)
+
         need_chemistry = (
             self.simulation.chemistry_manager.prepare_chemistry_list_if_needed()
         )
