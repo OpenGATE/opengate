@@ -89,14 +89,14 @@ class ChemistryWorldComponent(GateObject):
         "species": (
             None,
             {
-                "doc": "Name of the chemistry-world component species.",
+                "doc": "Name of the species present as a background component inside the chemistry world.",
                 "type": "str",
             },
         ),
         "concentration": (
             None,
             {
-                "doc": "Initial concentration of the species in the chemistry world.",
+                "doc": "Initial concentration of the background component in the chemistry world.",
             },
         ),
     }
@@ -107,34 +107,34 @@ class ScavengerReaction(GateObject):
         "tracked_molecule": (
             None,
             {
-                "doc": "Name of the mobile species to which the scavenger process is attached.",
+                "doc": "Name of the mobile chemistry species that should be removed by the scavenger process.",
                 "type": "str",
             },
         ),
         "scavenger": (
             None,
             {
-                "doc": "Name of the background scavenger species defined in the chemistry world.",
+                "doc": "Name of the background scavenger component already defined in the chemistry world.",
                 "type": "str",
             },
         ),
         "products": (
             [],
             {
-                "doc": "Product species created by the scavenger reaction.",
+                "doc": "List of product species created when the tracked molecule reacts with the scavenger component.",
                 "type": "list_of_str",
             },
         ),
         "rate_constant": (
             None,
             {
-                "doc": "Observed reaction rate constant for the scavenger reaction.",
+                "doc": "Observed reaction rate constant for the scavenger reaction, typically expressed in dm^3 / (mole * s).",
             },
         ),
         "reaction_type": (
             0,
             {
-                "doc": "Geant4-DNA reaction type identifier.",
+                "doc": "Geant4-DNA reaction type identifier passed to the underlying reaction data.",
                 "type": "int",
             },
         ),
@@ -155,38 +155,38 @@ class ChemistryWorld(GateObject):
         "translation": (
             [0.0, 0.0, 0.0],
             {
-                "doc": "Center of the chemistry world box in the global frame.",
+                "doc": "Center of the chemistry-world box in the global frame.",
             },
         ),
         "half_size": (
             [1.0 * nm, 1.0 * nm, 1.0 * nm],
             {
-                "doc": "Half-side lengths of the chemistry world box.",
+                "doc": "Half-side lengths of the chemistry-world box.",
             },
         ),
         "source_volume_name": (
             None,
             {
-                "doc": "Name of the source volume from which the chemistry world box was derived.",
+                "doc": "Name of the source volume from which the chemistry-world box was derived, if it was created from a volume.",
                 "type": "str",
             },
         ),
         "pH": (
             None,
             {
-                "doc": "Optional pH value associated with the chemistry world.",
+                "doc": "Optional pH value associated with the chemistry world. The stock Geant4 scavenger material currently expects an integer pH.",
             },
         ),
         "components": (
             [],
             {
-                "doc": "List of ChemistryWorldComponent objects defining the chemistry-world composition.",
+                "doc": "List of ChemistryWorldComponent objects defining the chemistry-world background composition.",
             },
         ),
         "scavenger_reactions": (
             [],
             {
-                "doc": "List of ScavengerReaction objects defining scavenger processes.",
+                "doc": "List of ScavengerReaction objects defining scavenger processes active inside this chemistry world.",
             },
         ),
     }

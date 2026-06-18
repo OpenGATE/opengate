@@ -360,13 +360,13 @@ class ConfiguredReactionCounter(CounterBase):
         "tracked_reactions": (
             [],
             {
-                "doc": "List of tracked chemistry reaction signatures.",
+                "doc": "List of tracked chemistry reaction signatures to count cumulatively during the chemistry stage.",
             },
         ),
         "record_time_series": (
             True,
             {
-                "doc": "If True, store cumulative counts versus chemistry time. If False, keep only the total count in a single-point series.",
+                "doc": "If True, store a cumulative count-versus-time series in chemistry time. If False, keep only the final total count in a single-point series.",
             },
         ),
     }
@@ -453,13 +453,13 @@ class ConfiguredSpeciesCounter(CounterBase):
         "tracked_species": (
             [],
             {
-                "doc": "List of chemistry species names whose appearance should be counted.",
+                "doc": "List of chemistry species whose cumulative appearances should be counted during the chemistry stage.",
             },
         ),
         "record_time_series": (
             True,
             {
-                "doc": "If True, store cumulative appearance counts versus chemistry time. If False, keep only the total count in a single-point series.",
+                "doc": "If True, store a cumulative appearance count-versus-time series in chemistry time. If False, keep only the final total count in a single-point series.",
             },
         ),
     }
