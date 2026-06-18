@@ -19,36 +19,32 @@ most tasks performed at initialization (before the run).
 Virtual environment
 -------------------
 
-:warning: It is highly, highly, *highly* recommended to create a Python
-  environment prior to the installation.
-
-We recommend the Python package and project manager `uv <https://docs.astral.sh/uv/>`_ for creating GATE environments because it makes it easy to manage Python versions. Installation instructions are available in the official `uv installation guide <https://docs.astral.sh/uv/getting-started/installation/>`_. 
-
-GATE 10 is currently tested with Python 3.10 to 3.14.
-
-We recommend one of the following approaches:
+.. tip:: It is highly, highly, *highly* recommended to create a Python environment prior to the installation.
 
 .. code:: bash
 
-     uv venv opengate_env
+     python3 -m venv opengate_env
      source opengate_env/bin/activate
 
-Or, if you prefer to use ``venv``, call it with an explicit interpreter:
+You can also select a specific Python version: 
 
 .. code:: bash
 
      python3.11 -m venv opengate_env
-     source opengate_env/bin/activate
 
 Then upgrade ``pip`` in the activated environment:
 
 .. code:: bash
 
-     python -m pip install --upgrade pip
+     python3 -m pip install --upgrade pip
 
-If you use a generic command such as ``python -m venv``, make sure that the
-selected ``python`` executable is one of the supported versions above. A
-virtual environment inherits the interpreter it was created from.
+Make sure that the selected ``python3`` executable is one of the supported versions. 
+
+Note: A virtual environment inherits the interpreter it was created from. 
+To avoid this issue, consider using a Python package and project manager such as `uv <https://docs.astral.sh/uv/>`_ or `pixi <https://pixi.prefix.dev/latest/>`_ for creating environments because it makes it easy to manage distinct Python versions. 
+
+Prepare the installation
+------------------------
 
 To **develop** in GATE 10, you need 1) to compile and create the
 ``opengate_core`` subpackage (this is the hardest part) and 2) install
@@ -62,7 +58,7 @@ Then clone the unique repository that contains both packages:
    git clone --recurse-submodules https://github.com/OpenGATE/opengate
 
 :warning: When you update, the data for the tests must also be updated,
-  use : ``git submodule update --init --recursive``. This also update the
+  use : ``git submodule update --init --recursive``. This also updates the
   included subpackages (pybind11, etc).
 
 The subpackage ``opengate_core`` depends on the ITK and Geant4

@@ -5,7 +5,7 @@ Install GATE with:
 
 .. code-block:: bash
 
-    uv venv opengate_env
+    python3 -m venv opengate_env
     source opengate_env/bin/activate
     python -m pip install --upgrade pip
     python -m pip install opengate
@@ -14,7 +14,7 @@ Then, you can create a simulation using the `opengate` module (see below). For *
 
 
 
-.. tip:: We highly recommend creating a specific Python environment to 1) ensure all dependencies are handled properly, and 2) avoid mixing with your other Python modules. We recommend the Python package and project manager `uv <https://docs.astral.sh/uv/>`_ for creating GATE environments because it makes it easy to manage Python versions. Installation instructions are available in the official `uv installation guide <https://docs.astral.sh/uv/getting-started/installation/>`_. 
+.. tip:: We highly recommend creating a specific Python environment to 1) ensure all dependencies are handled properly, and 2) avoid mixing with your other Python modules. 
 
 If you already have `opengate` installed, upgrade it with:
 
@@ -33,8 +33,9 @@ The first time a simulation is executed, Geant4 data must be downloaded and inst
 
 GATE 10 is currently tested with Python 3.10 to 3.14.
 If you want to use a specific Python version, create the environment with an
-explicit interpreter, for example ``uv venv --python 3.11 opengate_env`` or
-``python3.11 -m venv opengate_env``.
+explicit interpreter, for example ``python3.11 -m venv opengate_env``.
+
+Note that ``venv`` inherits the system Python interpreter that was used when creating the virtual environment. To avoid this issue, consider using a Python package and project manager such as `uv <https://docs.astral.sh/uv/>`_ or `pixi <https://pixi.prefix.dev/latest/>`_ for creating environments because it makes it easy to manage distinct Python versions. 
 
 Version without visualization
 -----------------------------
@@ -43,7 +44,7 @@ For some systems (clusters or older computers), the main `opengate_core` cannot 
 
 .. code-block:: bash
 
-    uv venv opengate_env
+    python3 -m venv opengate_env
     source opengate_env/bin/activate
     python -m pip install --upgrade pip
     python -m pip install "opengate[novis]"
