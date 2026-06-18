@@ -8,9 +8,9 @@
 #ifndef GatePhaseSpaceSource_h
 #define GatePhaseSpaceSource_h
 
-#include "GateSPSVoxelsPosDistribution.h"
-#include "GateSingleParticleSource.h"
 #include "GateVSource.h"
+#include <G4ParticleMomentum.hh>
+#include <G4ParticleTable.hh>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

@@ -5,13 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateImageNestedParameterisation.h"
+#include <G4VNestedParameterisation.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "G4VNestedParameterisation.hh"
-#include "GateImageNestedParameterisation.h"
 
 void init_GateImageNestedParameterisation(py::module &m) {
 

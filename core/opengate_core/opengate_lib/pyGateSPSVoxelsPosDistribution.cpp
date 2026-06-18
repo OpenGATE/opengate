@@ -5,13 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateSPSPosDistribution.h"
+#include "GateSPSVoxelsPosDistribution.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "GateSPSPosDistribution.h"
-#include "GateSPSVoxelsPosDistribution.h"
 
 void init_GateSPSVoxelsPosDistribution(py::module &m) {
 

@@ -16,3 +16,8 @@ Teaching Resources and Examples
 - `Geant 4 events <https://geant4.web.cern.ch/collaboration/events>`_ Geant4 events
 
 - `Geant 4 past events <https://geant4.web.cern.ch/collaboration/events?past>`_ Geant4 past events
+
+- Example of SPECT system matrix `here https://github.com/leontiou/PERSPECT/tree/main/GATE10`_
+
+
+

@@ -8,7 +8,7 @@
 #ifndef GateDigiAttributeLastProcessDefinedStepInVolumeActor_h
 #define GateDigiAttributeLastProcessDefinedStepInVolumeActor_h
 
-#include "../GateHelpers.h"
+#include "../GateVActor.h"
 #include <pybind11/stl.h>
 
 class GateDigiAttributeLastProcessDefinedStepInVolume;

@@ -8,11 +8,11 @@
 #ifndef GateRepeatParameterisation_h
 #define GateRepeatParameterisation_h
 
-#include "G4NistManager.hh"
-#include "G4VPVParameterisation.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4VTouchable.hh"
-#include "GateHelpers.h"
+#include <G4VPVParameterisation.hh>
+#include <G4VPhysicalVolume.hh>
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 class GateRepeatParameterisation : public G4VPVParameterisation {
 

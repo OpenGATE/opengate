@@ -6,12 +6,12 @@
    -------------------------------------------------- */
 
 #include "GatePhaseSpaceSource.h"
-#include "G4IonTable.hh"
-#include "G4ParticleTable.hh"
-#include "G4UnitsTable.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersPyBind.h"
-#include "Randomize.hh"
+#include <G4IonTable.hh>
+#include <G4ParticleTable.hh>
+#include <Randomize.hh>
 
 GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCharge = 0;
@@ -47,8 +47,8 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
     if (fParticleDefinition == nullptr) {
       Fatal("GatePhaseSpaceSource: PDGCode not found. Aborting.");
     }
-    fCharge = fParticleDefinition->GetPDGCharge();
-    fMass = fParticleDefinition->GetPDGMass();
+    fCharge = static_cast<std::float_t>(fParticleDefinition->GetPDGCharge());
+    fMass = static_cast<std::float_t>(fParticleDefinition->GetPDGMass());
   }
 
   // Init

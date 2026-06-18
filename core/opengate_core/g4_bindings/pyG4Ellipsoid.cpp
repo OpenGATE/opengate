@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Ellipsoid.hh"
+#include <G4Ellipsoid.hh>
 
 void init_G4Ellipsoid(py::module &m) {
   py::class_<G4Ellipsoid, G4VSolid, std::unique_ptr<G4Ellipsoid, py::nodelete>>(

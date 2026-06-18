@@ -9,6 +9,8 @@
 #define GateDigiCollection_h
 
 #include "GateVDigiAttribute.h"
+#include <G4Cache.hh>
+#include <G4VHitsCollection.hh>
 #include <pybind11/stl.h>
 
 class GateDigiCollectionManager;

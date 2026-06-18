@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4MTRunManager.hh"
-#include "G4RunManagerFactory.hh"
+#include <G4MTRunManager.hh>
+#include <G4RunManagerFactory.hh>
 
 void init_G4RunManagerFactory(py::module &m) {
 

@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4MagneticField.hh"
-#include "G4SextupoleMagField.hh"
+#include <G4MagneticField.hh>
+#include <G4SextupoleMagField.hh>
 
 void init_G4SextupoleMagField(py::module &m) {
 

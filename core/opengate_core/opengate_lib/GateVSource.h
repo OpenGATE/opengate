@@ -8,9 +8,9 @@
 #ifndef GateVSource_h
 #define GateVSource_h
 
-#include "G4Cache.hh"
-#include "G4Event.hh"
-#include "G4RotationMatrix.hh"
+#include <G4Cache.hh>
+#include <G4Event.hh>
+#include <G4RotationMatrix.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

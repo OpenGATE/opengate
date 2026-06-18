@@ -8,12 +8,12 @@
 
 namespace py = pybind11;
 
-#include "G4Run.hh"
-#include "G4RunManager.hh"
-#include "G4VUserActionInitialization.hh"
-#include "G4VUserDetectorConstruction.hh"
-#include "G4VUserPhysicsList.hh"
-#include "G4VUserPrimaryGeneratorAction.hh"
+#include <G4Run.hh>
+#include <G4RunManager.hh>
+#include <G4VUserActionInitialization.hh>
+#include <G4VUserDetectorConstruction.hh>
+#include <G4VUserPhysicsList.hh>
+#include <G4VUserPrimaryGeneratorAction.hh>
 
 // A thin wrapper around the G4RunManager,
 // to expose protected members from the G4RunManager class.

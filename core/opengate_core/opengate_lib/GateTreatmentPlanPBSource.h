@@ -9,12 +9,10 @@
 #define GateTreatmentPlanPBSource_h
 
 // CLHEP
-#include "CLHEP/Random/RandGauss.h"
-#include "CLHEP/Random/RandomEngine.h"
-#include "Randomize.hh"
-
 #include "GateSingleParticleSourcePencilBeam.h"
 #include "GateVSource.h"
+#include <CLHEP/Random/RandGeneral.h>
+#include <CLHEP/Random/RandomEngine.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

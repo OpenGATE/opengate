@@ -6,8 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateGANSource.h"
-#include "G4ParticleTable.hh"
-#include "G4UnitsTable.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 GateGANSource::GateGANSource() : GateGenericSource() {

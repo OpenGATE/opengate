@@ -5,13 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateUniqueVolumeID.h"
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "GateUniqueVolumeID.h"
 
 void init_GateUniqueVolumeID(py::module &m) {
   // need to nodelete to avoid double destruction in c++ and py sides.

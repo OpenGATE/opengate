@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4BogackiShampine45.hh"
-#include "G4EquationOfMotion.hh"
-#include "G4MagIntegratorStepper.hh"
+#include <G4BogackiShampine45.hh>
+#include <G4EquationOfMotion.hh>
+#include <G4MagIntegratorStepper.hh>
 
 void init_G4BogackiShampine45(py::module &m) {
   // G4BogackiShampine45 inherits from G4MagIntegratorStepper

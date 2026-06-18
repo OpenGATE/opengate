@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateInteractionCounterAttribute.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateInteractionCounterAttribute.h"
 
 void init_GateInteractionCounterAttribute(py::module &m) {
   py::class_<GateInteractionCounterAttribute, GateVAuxiliaryAttribute>(

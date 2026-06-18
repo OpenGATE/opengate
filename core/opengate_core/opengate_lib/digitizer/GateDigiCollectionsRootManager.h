@@ -8,7 +8,6 @@
 #ifndef GateDigiCollectionsRootManager_h
 #define GateDigiCollectionsRootManager_h
 
-#include "../GateHelpers.h"
 #include "GateDigiCollection.h"
 #include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>

@@ -8,7 +8,6 @@
 #ifndef GateKillNonInteractingParticleActor_h
 #define GateKillNonInteractingParticleActor_h
 
-#include "G4Cache.hh"
 #include "GateVActor.h"
 #include <pybind11/stl.h>
 

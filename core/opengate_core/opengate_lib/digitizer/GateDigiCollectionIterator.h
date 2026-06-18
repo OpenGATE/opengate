@@ -8,7 +8,7 @@
 #ifndef GateDigiCollectionIterator_h
 #define GateDigiCollectionIterator_h
 
-#include "G4TouchableHistory.hh"
+#include "../GateUniqueVolumeID.h"
 #include "GateDigiCollection.h"
 
 /*

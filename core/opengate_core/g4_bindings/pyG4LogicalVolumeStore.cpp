@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4LogicalVolumeStore.hh"
+#include <G4LogicalVolumeStore.hh>
 
 void init_G4LogicalVolumeStore(py::module &m) {
   using pybind11::operator""_a;

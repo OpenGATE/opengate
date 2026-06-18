@@ -4,10 +4,9 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
-#include <pybind11/pybind11.h>
 
-namespace py = pybind11;
 #include "GateLastVertexInteractionSplittingActor.h"
+#include <pybind11/pybind11.h>
 
 void init_GateLastVertexInteractionSplittingActor(py::module &m) {
 

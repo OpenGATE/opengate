@@ -8,8 +8,8 @@
 #ifndef GateMagneticField_h
 #define GateMagneticField_h
 
-#include "G4MagneticField.hh"
 #include "GateFieldBase.h"
+#include <G4MagneticField.hh>
 #include <vector>
 
 class G4VSolid;

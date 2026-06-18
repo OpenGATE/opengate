@@ -9,10 +9,10 @@
 
 namespace py = pybind11;
 
-#include "G4EquationOfMotion.hh"
-#include "G4Mag_EqRhs.hh"
-#include "G4Mag_UsualEqRhs.hh"
-#include "G4MagneticField.hh"
+#include <G4EquationOfMotion.hh>
+#include <G4Mag_EqRhs.hh>
+#include <G4Mag_UsualEqRhs.hh>
+#include <G4MagneticField.hh>
 
 void init_G4Mag_UsualEqRhs(py::module &m) {
 

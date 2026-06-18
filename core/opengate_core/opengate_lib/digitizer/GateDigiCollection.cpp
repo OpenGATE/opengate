@@ -6,10 +6,11 @@
    -------------------------------------------------- */
 
 #include "GateDigiCollection.h"
-#include "G4Step.hh"
+#include "../GateHelpers.h"
 #include "GateDigiAttributeManager.h"
 #include "GateDigiCollectionIterator.h"
 #include "GateDigiCollectionsRootManager.h"
+#include <G4Step.hh>
 
 GateDigiCollection::GateDigiCollection(const std::string &collName)
     : G4VHitsCollection("", collName), fDigiCollectionName(collName) {
@@ -237,14 +238,14 @@ std::set<std::string> GateDigiCollection::GetDigiAttributeNames() const {
 }
 
 GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
-  return {this, 0};
+  return GateDigiCollectionIterator(this, 0);
 }
 
 std::string GateDigiCollection::DumpLastDigi() const {
   if (GetSize() == 0)
     return "";
   auto n = GetSize() - 1;
-  return DumpDigi(n);
+  return DumpDigi(static_cast<int>(n));
 }
 
 std::string GateDigiCollection::DumpDigi(int i) const {

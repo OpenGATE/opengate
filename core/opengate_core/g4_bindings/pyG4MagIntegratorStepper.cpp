@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4EquationOfMotion.hh"
-#include "G4MagIntegratorStepper.hh"
+#include <G4EquationOfMotion.hh>
+#include <G4MagIntegratorStepper.hh>
 
 void init_G4MagIntegratorStepper(py::module &m) {
 

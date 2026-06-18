@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Sphere.hh"
+#include <G4Sphere.hh>
 
 void init_G4Sphere(py::module &m) {
   py::class_<G4Sphere, G4VSolid>(m, "G4Sphere")

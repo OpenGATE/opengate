@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4MagneticField.hh"
-#include "G4UniformMagField.hh"
+#include <G4MagneticField.hh>
+#include <G4UniformMagField.hh>
 
 void init_G4UniformMagField(py::module &m) {
 

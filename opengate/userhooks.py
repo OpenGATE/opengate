@@ -120,3 +120,52 @@ def user_hook_active_regions(simulation_engine):
         print(f"    deexcitation activated: {s[0]}")
         print(f"    auger activated: {s[1]}")
     simulation_engine.user_hook_log.append(active_regions)
+
+
+def user_hook_dna_regions(simulation_engine):
+    em = simulation_engine.physics_engine.g4_em_parameters
+    dna_regions = {
+        str(region_name): str(dna_type)
+        for region_name, dna_type in zip(em.RegionsDNA(), em.TypesDNA())
+    }
+    volume_regions = {}
+    for (
+        volume_name,
+        volume,
+    ) in simulation_engine.simulation.volume_manager.volumes.items():
+        region_name = None
+        if volume.g4_region is not None:
+            region_name = volume.g4_region.GetName()
+        volume_regions[volume_name] = region_name
+
+    print("Found the following DNA regions via the user hook:")
+    for region_name, dna_type in dna_regions.items():
+        print(f"Region {region_name}: {dna_type}")
+
+    simulation_engine.user_hook_log.append(
+        {
+            "dna_regions": dna_regions,
+            "volume_regions": volume_regions,
+        }
+    )
+
+
+def user_hook_dna_region_models(simulation_engine):
+    eV = g4.G4UnitDefinition.GetValueOf("eV")
+    model_checks = {}
+    for (
+        volume_name,
+        volume,
+    ) in simulation_engine.simulation.volume_manager.volumes.items():
+        model_checks[volume_name] = g4.check_em_model_in_volume(
+            volume.g4_logical_volume,
+            "e-",
+            "e-_G4DNAIonisation",
+            100.0 * eV,
+        )
+
+    print("Found the following DNA ionisation models via the user hook:")
+    for volume_name, model_name in model_checks.items():
+        print(f"Volume {volume_name}: {model_name}")
+
+    simulation_engine.user_hook_log.append(model_checks)

@@ -8,8 +8,8 @@
 #ifndef GateSteppingAction_h
 #define GateSteppingAction_h
 
-#include "G4UserSteppingAction.hh"
 #include "GateVAuxiliaryAttribute.h"
+#include <G4UserSteppingAction.hh>
 #include <vector>
 
 /*

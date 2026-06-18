@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateUnscatteredPrimaryAttribute.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateUnscatteredPrimaryAttribute.h"
 
 void init_GateUnscatteredPrimaryAttribute(py::module &m) {
   py::class_<GateUnscatteredPrimaryAttribute, GateVAuxiliaryAttribute>(

@@ -6,11 +6,10 @@
    -------------------------------------------------- */
 
 #include "GateVSource.h"
-#include "G4PhysicalVolumeStore.hh"
-#include "G4RandomTools.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
+#include <G4RandomTools.hh>
 
 GateVSource::GateVSource() {
   fName = "";

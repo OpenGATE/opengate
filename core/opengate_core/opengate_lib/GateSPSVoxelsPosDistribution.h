@@ -8,11 +8,8 @@
 #ifndef GateSPSVoxelsPosDistribution_h
 #define GateSPSVoxelsPosDistribution_h
 
-#include <utility>
-
-#include "G4ParticleDefinition.hh"
 #include "GateSPSPosDistribution.h"
-#include "itkImage.h"
+#include <itkImage.h>
 
 class GateSPSVoxelsPosDistribution : public GateSPSPosDistribution {
 

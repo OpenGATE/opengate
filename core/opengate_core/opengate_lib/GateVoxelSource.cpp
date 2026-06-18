@@ -6,9 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateVoxelSource.h"
-#include "G4ParticleTable.hh"
-#include "GateHelpersDict.h"
-#include "GateHelpersGeometry.h"
 
 GateVoxelSource::GateVoxelSource() : GateGenericSource() {
   fVoxelPositionGenerator = new GateSPSVoxelsPosDistribution();

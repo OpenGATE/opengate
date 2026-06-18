@@ -6,6 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateAttributeComparisonFilter.h"
+#include "../GateHelpersDict.h"
+#include "../digitizer/GateDigiAttributeManager.h"
 #include <sstream>
 
 // Explicitly instantiate the numeric types

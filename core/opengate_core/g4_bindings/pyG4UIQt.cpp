@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4UIExecutive.hh"
-#include "G4VisExecutive.hh"
 #include "GateConfiguration.h"
+#include <G4UIExecutive.hh>
+#include <G4VisExecutive.hh>
 // #include "qglobal.h"
 // #include <G4UIQt.hh>
 // #include <qmainwindow.h>

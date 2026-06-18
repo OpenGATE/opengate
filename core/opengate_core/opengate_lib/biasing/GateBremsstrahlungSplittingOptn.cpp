@@ -6,8 +6,8 @@ Copyright (C): OpenGATE Collaboration
    -------------------------------------------------- */
 
 #include "GateBremsstrahlungSplittingOptn.h"
-#include "G4BiasingProcessInterface.hh"
-#include "G4ParticleChangeForLoss.hh"
+#include <G4BiasingProcessInterface.hh>
+#include <G4ParticleChangeForLoss.hh>
 
 GateBremsstrahlungSplittingOptn::GateBremsstrahlungSplittingOptn(
     const G4String &name)

@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateMultiFunctionalDetector.h"
-#include "G4VPrimitiveScorer.hh"
 
 GateMultiFunctionalDetector::GateMultiFunctionalDetector(G4String s)
     : G4MultiFunctionalDetector(s) {}
