@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4ParticleGun.hh"
-#include "G4RunManager.hh"
-#include "G4VPrimaryGenerator.hh"
+#include <G4ParticleGun.hh>
+#include <G4RunManager.hh>
+#include <G4VPrimaryGenerator.hh>
 
 void init_G4ParticleGun(py::module &m) {
 

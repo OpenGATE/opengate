@@ -182,6 +182,11 @@ def run_series(label, use_actor_requested_dna_em):
 
 
 if __name__ == "__main__":
+
+    paths = utility.get_default_test_paths(
+        __file__, None, output_folder="test102_chem_aggregate"
+    )
+
     results_global, is_ok = run_series(
         "Explicit region DNA EM",
         use_actor_requested_dna_em=False,
@@ -189,7 +194,7 @@ if __name__ == "__main__":
     plot_species_counts(
         results_global,
         "Explicit region DNA EM (10 x 1 primary)",
-        "test102_species_explicit_region_dna_em.png",
+        paths.output / "test102_species_explicit_region_dna_em.png",
     )
 
     results_actor, is_ok_actor = run_series(
@@ -199,7 +204,7 @@ if __name__ == "__main__":
     plot_species_counts(
         results_actor,
         "Actor-requested DNA EM (10 x 1 primary)",
-        "test102_species_actor_requested_dna_em.png",
+        paths.output / "test102_species_actor_requested_dna_em.png",
     )
 
     utility.test_ok(is_ok and is_ok_actor)

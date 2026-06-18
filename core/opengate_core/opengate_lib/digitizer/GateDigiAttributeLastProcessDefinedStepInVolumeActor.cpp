@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
-#include "../GateHelpersDict.h"
 #include "GateDigiAttributeLastProcessDefinedStepInVolume.h"
 #include <G4RunManager.hh>
 #include <G4VProcess.hh>

@@ -8,8 +8,8 @@
 #ifndef GateTrackData_h
 #define GateTrackData_h
 
-#include "G4ThreeVector.hh"
 #include "GateUniqueVolumeID.h"
+#include <G4ThreeVector.hh>
 #include <cstdint>
 #include <string>
 

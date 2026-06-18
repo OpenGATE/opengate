@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4ThreeVector.hh"
+#include <G4ThreeVector.hh>
 
 void init_G4ThreeVector(py::module &m) {
   py::class_<G4ThreeVector>(m, "G4ThreeVector")

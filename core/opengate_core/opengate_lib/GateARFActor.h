@@ -8,7 +8,6 @@
 #ifndef GateARFActor_h
 #define GateARFActor_h
 
-#include "GateHelpers.h"
 #include "GateVActor.h"
 #include <pybind11/stl.h>
 

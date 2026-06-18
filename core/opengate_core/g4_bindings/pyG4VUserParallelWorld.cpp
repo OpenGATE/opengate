@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4VPhysicalVolume.hh"
-#include "G4VUserParallelWorld.hh"
+#include <G4VPhysicalVolume.hh>
+#include <G4VUserParallelWorld.hh>
 
 namespace py = pybind11;
 

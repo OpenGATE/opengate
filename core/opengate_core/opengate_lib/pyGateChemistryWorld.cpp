@@ -7,8 +7,8 @@
 
 #include "GateChemistryWorld.h"
 
-#include "G4ThreeVector.hh"
 #include "pybind11/pybind11.h"
+#include <G4ThreeVector.hh>
 
 #include <stdexcept>
 

@@ -8,8 +8,8 @@
 #ifndef GateITTrackingInteractivity_h
 #define GateITTrackingInteractivity_h
 
-#include "G4ITTrackingInteractivity.hh"
 #include "GateVChemistryActor.h"
+#include <G4ITTrackingInteractivity.hh>
 
 class GateITTrackingInteractivity : public G4ITTrackingInteractivity {
 

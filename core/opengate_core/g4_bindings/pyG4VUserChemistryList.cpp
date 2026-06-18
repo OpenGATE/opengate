@@ -1,8 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "G4DNAMolecularReactionTable.hh"
-#include "G4VUserChemistryList.hh"
+#include <G4DNAMolecularReactionTable.hh>
+#include <G4VUserChemistryList.hh>
 
 namespace py = pybind11;
 

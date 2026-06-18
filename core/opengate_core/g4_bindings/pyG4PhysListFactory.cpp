@@ -10,8 +10,8 @@
 
 namespace py = pybind11;
 
-#include "G4PhysListFactory.hh"
-#include "G4VModularPhysicsList.hh"
+#include <G4PhysListFactory.hh>
+#include <G4VModularPhysicsList.hh>
 
 void init_G4PhysListFactory(py::module &m) {
 

@@ -1,8 +1,8 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
-#include "G4MoleculeCounter.hh"
-#include "G4MoleculeTable.hh"
+#include <G4MoleculeCounter.hh>
+#include <G4MoleculeTable.hh>
 
 namespace py = pybind11;
 

@@ -4,11 +4,10 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
-#include <pybind11/pybind11.h>
 
-namespace py = pybind11;
-#include "G4VBiasingOperator.hh"
 #include "GateGammaFreeFlightOptrActor.h"
+#include <G4VBiasingOperator.hh>
+#include <pybind11/pybind11.h>
 
 void init_GateGammaFreeFlightOptrActor(py::module &m) {
 

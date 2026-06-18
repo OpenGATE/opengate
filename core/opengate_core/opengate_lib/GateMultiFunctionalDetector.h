@@ -8,7 +8,7 @@
 #ifndef GateMultiFunctionalDetector_h
 #define GateMultiFunctionalDetector_h 1
 
-#include "G4MultiFunctionalDetector.hh"
+#include <G4MultiFunctionalDetector.hh>
 
 // Re-implementation of G4MultiFunctionalDetector to better control destructor
 // It seems that, in MT mode, the primitive should not be deleted by all

@@ -8,8 +8,8 @@
 #ifndef GateTimeStepAction_h
 #define GateTimeStepAction_h
 
-#include "G4UserTimeStepAction.hh"
 #include "GateVChemistryActor.h"
+#include <G4UserTimeStepAction.hh>
 
 class GateTimeStepAction : public G4UserTimeStepAction {
 

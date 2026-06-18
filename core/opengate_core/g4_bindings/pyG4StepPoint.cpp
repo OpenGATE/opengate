@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4StepPoint.hh"
+#include <G4StepPoint.hh>
 
 void init_G4StepPoint(py::module &m) {
 

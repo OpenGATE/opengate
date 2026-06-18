@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4VSteppingVerbose.hh"
+#include <G4VSteppingVerbose.hh>
 
 void init_G4VSteppingVerbose(py::module &m) {
   py::class_<G4VSteppingVerbose>(m, "G4VSteppingVerbose")

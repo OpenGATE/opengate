@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4DormandPrince745.hh"
-#include "G4EquationOfMotion.hh"
-#include "G4MagIntegratorStepper.hh"
+#include <G4DormandPrince745.hh>
+#include <G4EquationOfMotion.hh>
+#include <G4MagIntegratorStepper.hh>
 
 void init_G4DormandPrince745(py::module &m) {
   // G4DormandPrince745 inherits from G4MagIntegratorStepper

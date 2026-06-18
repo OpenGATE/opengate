@@ -8,7 +8,7 @@
 #include "GateChemistryController.h"
 #include "GateHelpersDict.h"
 
-#include "G4ITTrackHolder.hh"
+#include <G4ITTrackHolder.hh>
 
 GateChemistryController::GateChemistryController(py::dict &user_info)
     : GateVChemistryActor(user_info, true) {}

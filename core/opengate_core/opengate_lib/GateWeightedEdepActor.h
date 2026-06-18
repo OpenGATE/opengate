@@ -8,13 +8,11 @@
 #ifndef GateWeightedEdepActor_h
 #define GateWeightedEdepActor_h
 
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
-#include "G4VPrimitiveScorer.hh"
-#include "GateHelpersImage.h"
 #include "GateVActor.h"
-#include "itkImage.h"
+#include <G4Cache.hh>
+#include <G4EmCalculator.hh>
+#include <G4VPrimitiveScorer.hh>
+#include <itkImage.h>
 #include <memory>
 #include <pybind11/stl.h>
 

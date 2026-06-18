@@ -56,8 +56,16 @@ def is_ok_test096(rootfile_1, rootfile_2, time_intervals, nb_run, nb_part):
         print(f"Experimental number of particle in run_{i}: {len(tmp_time)}")
     if count_true_source_2 == 5:
         bool_source_1 = True
+    else:
+        print(
+            f"Error: for n source, all particles should be emitted at the beginning of the run, but {5-count_true_source_2} runs do not satisfy this condition."
+        )
     if count_true_source_1 == 10:
         bool_source_2 = True
+    else:
+        print(
+            f"Error: for activity source, the number of particles emitted in each run should be compatible with a Poisson distribution, but {10-count_true_source_1} runs do not satisfy this condition."
+        )
 
     return bool_source_1 and bool_source_2
 

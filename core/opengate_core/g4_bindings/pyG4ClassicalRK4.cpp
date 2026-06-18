@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4ClassicalRK4.hh"
-#include "G4EquationOfMotion.hh"
-#include "G4MagErrorStepper.hh"
+#include <G4ClassicalRK4.hh>
+#include <G4EquationOfMotion.hh>
+#include <G4MagErrorStepper.hh>
 
 void init_G4ClassicalRK4(py::module &m) {
   // G4ClassicalRK4 inherits from G4MagErrorStepper

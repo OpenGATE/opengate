@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4LogicalVolume.hh"
-#include "G4PVReplica.hh"
+#include <G4LogicalVolume.hh>
+#include <G4PVReplica.hh>
 
 namespace py = pybind11;
 

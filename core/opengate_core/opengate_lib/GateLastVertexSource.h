@@ -9,7 +9,6 @@
 #define GateLastVertexSource_h
 
 #include "GateLastVertexSplittingDataContainer.h"
-#include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
 

@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Cons.hh"
+#include <G4Cons.hh>
 
 void init_G4Cons(py::module &m) {
   py::class_<G4Cons, G4VSolid>(m, "G4Cons")

@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4SPSEneDistribution.hh"
+#include <G4SPSEneDistribution.hh>
 
 void init_G4SPSEneDistribution(py::module &m) {
 

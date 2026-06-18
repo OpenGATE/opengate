@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4CashKarpRKF45.hh"
-#include "G4EquationOfMotion.hh"
-#include "G4MagIntegratorStepper.hh"
+#include <G4CashKarpRKF45.hh>
+#include <G4EquationOfMotion.hh>
+#include <G4MagIntegratorStepper.hh>
 
 void init_G4CashKarpRKF45(py::module &m) {
   // G4CashKarpRKF45 inherits from G4MagIntegratorStepper

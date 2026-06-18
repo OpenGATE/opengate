@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigiCollectionIterator.h"
+#include "../GateUniqueVolumeID.h"
 #include "GateDigiCollection.h"
 
 GateDigiCollectionIterator::GateDigiCollectionIterator(GateDigiCollection *h,

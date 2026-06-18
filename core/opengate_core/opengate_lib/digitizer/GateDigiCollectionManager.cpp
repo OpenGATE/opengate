@@ -21,7 +21,7 @@ GateDigiCollectionManager::GateDigiCollectionManager() = default;
 GateDigiCollection *
 GateDigiCollectionManager::NewDigiCollection(const std::string &name) {
   auto hc = new GateDigiCollection(name);
-  hc->SetTupleId(fMapOfDigiCollections.size());
+  hc->SetTupleId(static_cast<int>(fMapOfDigiCollections.size()));
   fMapOfDigiCollections[name] = hc;
   return hc;
 }

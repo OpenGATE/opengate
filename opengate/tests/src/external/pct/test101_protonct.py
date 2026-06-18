@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import uproot
-
 from opengate.contrib.protonct.protonct import protonct
 from opengate.tests import utility
 

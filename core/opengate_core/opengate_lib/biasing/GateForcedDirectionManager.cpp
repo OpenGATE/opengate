@@ -6,11 +6,12 @@
    -------------------------------------------------- */
 
 #include "GateForcedDirectionManager.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include "../GateHelpersGeometry.h"
-#include "G4LogicalVolumeStore.hh"
-#include "G4PhysicalVolumeStore.hh"
-#include "G4RunManager.hh"
+#include <G4LogicalVolumeStore.hh>
+#include <G4Run.hh>
+#include <G4RunManager.hh>
 
 GateForcedDirectionManager::GateForcedDirectionManager() {
   fEnabledFlag = false;

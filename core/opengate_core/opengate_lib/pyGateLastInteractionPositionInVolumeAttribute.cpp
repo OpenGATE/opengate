@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateLastInteractionPositionInVolumeAttribute.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateLastInteractionPositionInVolumeAttribute.h"
 
 void init_GateLastInteractionPositionInVolumeAttribute(py::module &m) {
   py::class_<GateLastInteractionPositionInVolumeAttribute,

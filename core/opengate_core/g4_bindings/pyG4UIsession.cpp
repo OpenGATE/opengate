@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4UIsession.hh"
+#include <G4UIsession.hh>
 
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
 // Needed helper class because of the pure virtual method

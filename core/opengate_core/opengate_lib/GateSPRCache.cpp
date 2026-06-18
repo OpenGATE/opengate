@@ -6,11 +6,10 @@
    ------------------------------------ -------------- */
 
 #include "GateSPRCache.h"
-
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4Threading.hh"
+#include <G4Electron.hh>
+#include <G4EmCalculator.hh>
+#include <G4Gamma.hh>
+#include <G4Threading.hh>
 
 G4Mutex SetSPRMutex = G4MUTEX_INITIALIZER;
 

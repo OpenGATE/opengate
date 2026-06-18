@@ -6,14 +6,17 @@
    -------------------------------------------------- */
 
 #include "GateHelpers.h"
-
-#include "G4GammaGeneralProcess.hh"
+#include <G4GammaGeneralProcess.hh>
 #include <G4VProcess.hh>
+#include <pybind11/pybind11.h>
+#include <stdexcept>
+
 #if USE_VISU == 1
 #include <QApplication>
 #include <QWidget>
 #endif
-#include <stdexcept>
+
+namespace py = pybind11;
 
 const int LogLevel_RUN = 20;
 const int LogLevel_EVENT = 50;

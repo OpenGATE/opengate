@@ -9,11 +9,11 @@
 
 namespace py = pybind11;
 
-#include "G4ChordFinder.hh"
-#include "G4Field.hh"
-#include "G4FieldManager.hh"
-#include "G4MagneticField.hh"
-#include "G4Track.hh"
+#include <G4ChordFinder.hh>
+#include <G4Field.hh>
+#include <G4FieldManager.hh>
+#include <G4MagneticField.hh>
+#include <G4Track.hh>
 
 void init_G4FieldManager(py::module &m) {
   py::class_<G4FieldManager, std::unique_ptr<G4FieldManager, py::nodelete>>(

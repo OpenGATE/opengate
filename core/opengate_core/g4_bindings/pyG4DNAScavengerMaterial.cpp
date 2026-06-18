@@ -5,11 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4DNAScavengerMaterial.hh"
-#include "G4MolecularConfiguration.hh"
-#include "G4MoleculeTable.hh"
 #include "GateChemistryWorld.h"
 #include "pybind11/pybind11.h"
+#include <G4DNAScavengerMaterial.hh>
+#include <G4MolecularConfiguration.hh>
+#include <G4MoleculeTable.hh>
 
 namespace py = pybind11;
 

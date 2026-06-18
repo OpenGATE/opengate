@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigiAttributeManager.h"
+#include "../GateHelpers.h"
 #include "GateTDigiAttribute.h"
 
 GateDigiAttributeManager *GateDigiAttributeManager::fInstance = nullptr;

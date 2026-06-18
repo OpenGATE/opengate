@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Trd.hh"
+#include <G4Trd.hh>
 
 void init_G4Trd(py::module &m) {
   py::class_<G4Trd, G4VSolid>(m, "G4Trd")

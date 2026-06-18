@@ -5,12 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
-#include "GateHelpers.h"
 #include "GateVActor.h"
+#include <pybind11/pybind11.h>
 
 /*
  * The "trampoline" functions below are required if we want to

@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigitizerPileupActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiCollectionManager.h"
 #include "GateHelpersDigitizer.h"

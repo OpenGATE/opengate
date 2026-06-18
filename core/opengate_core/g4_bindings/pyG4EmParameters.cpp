@@ -11,7 +11,7 @@
 
 namespace py = pybind11;
 
-#include "G4EmParameters.hh"
+#include <G4EmParameters.hh>
 
 void init_G4EmParameters(py::module &m) {
   py::enum_<G4ChemTimeStepModel>(m, "G4ChemTimeStepModel")

@@ -1,14 +1,14 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
-#include "G4ElectronOccupancy.hh"
-#include "G4MolecularConfiguration.hh"
-#include "G4MolecularDissociationChannel.hh"
-#include "G4Molecule.hh"
-#include "G4MoleculeDefinition.hh"
-#include "G4MoleculeTable.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4SystemOfUnits.hh"
+#include <G4ElectronOccupancy.hh>
+#include <G4MolecularConfiguration.hh>
+#include <G4MolecularDissociationChannel.hh>
+#include <G4Molecule.hh>
+#include <G4MoleculeDefinition.hh>
+#include <G4MoleculeTable.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4SystemOfUnits.hh>
 
 namespace py = pybind11;
 

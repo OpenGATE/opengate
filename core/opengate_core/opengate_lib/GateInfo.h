@@ -5,7 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHelpers.h"
+#include <string>
 
 class GateInfo {
 public:

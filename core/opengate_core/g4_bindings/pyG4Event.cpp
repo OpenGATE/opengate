@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Event.hh"
+#include <G4Event.hh>
 
 void init_G4Event(py::module &m) {
   py::class_<G4Event>(m, "G4Event")

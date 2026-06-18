@@ -6,9 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateRunAction.h"
-#include "G4MoleculeCounterManager.hh"
-#include "GateHelpers.h"
 #include "GateUniqueVolumeIDManager.h"
+#include <G4MoleculeCounterManager.hh>
 
 GateRunAction::GateRunAction(GateSourceManager *sm) : G4UserRunAction() {
   fSourceManager = sm;

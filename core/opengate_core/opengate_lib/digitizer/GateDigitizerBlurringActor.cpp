@@ -6,11 +6,9 @@
    -------------------------------------------------- */
 
 #include "GateDigitizerBlurringActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
-#include "GateDigiAdderInVolume.h"
-#include "GateDigiCollectionManager.h"
 #include <Randomize.hh>
-#include <iostream>
 
 GateDigitizerBlurringActor::GateDigitizerBlurringActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {

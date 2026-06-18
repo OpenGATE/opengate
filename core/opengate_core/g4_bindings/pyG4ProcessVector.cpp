@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4ProcessVector.hh"
-#include "G4VProcess.hh"
+#include <G4ProcessVector.hh>
+#include <G4VProcess.hh>
 
 void init_G4ProcessVector(py::module &m) {
 

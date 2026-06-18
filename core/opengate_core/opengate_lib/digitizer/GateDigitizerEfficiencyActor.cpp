@@ -7,10 +7,7 @@
 
 #include "GateDigitizerEfficiencyActor.h"
 #include "../GateHelpersDict.h"
-#include "GateDigiAdderInVolume.h"
-#include "GateDigiCollectionManager.h"
 #include <Randomize.hh>
-#include <iostream>
 
 GateDigitizerEfficiencyActor::GateDigitizerEfficiencyActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {

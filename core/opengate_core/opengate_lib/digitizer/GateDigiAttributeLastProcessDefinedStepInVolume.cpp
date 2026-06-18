@@ -6,9 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateDigiAttributeLastProcessDefinedStepInVolume.h"
-#include "../GateActorManager.h"
-#include "../GateHelpers.h"
-#include "../GateUniqueVolumeID.h"
 #include "GateDigiAttributeManager.h"
 #include "GateTDigiAttribute.h"
 #include <G4RunManager.hh>

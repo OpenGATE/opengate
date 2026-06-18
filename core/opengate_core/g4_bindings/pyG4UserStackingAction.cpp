@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4Track.hh"
-#include "G4UserStackingAction.hh"
+#include <G4Track.hh>
+#include <G4UserStackingAction.hh>
 
 class PyG4UserStackingAction : public G4UserStackingAction {
 public:

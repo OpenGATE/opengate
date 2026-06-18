@@ -9,7 +9,6 @@
 #define GateGANSource_h
 
 #include "GateGenericSource.h"
-#include "GateSPSVoxelsPosDistribution.h"
 #include "GateSingleParticleSource.h"
 #include <pybind11/stl.h>
 
