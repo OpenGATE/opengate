@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+import opengate_core
 from opengate.tests import utility
 
 
@@ -49,12 +50,12 @@ def main():
     run_info = sim.user_hook_log[0]
     produced_events = run_info["number_of_events"]
     requested_events = run_info["number_of_events_to_be_processed"]
-    platform_limit = gate.g4.GateSourceManager.GetPlatformMaxPrimariesPerRun()
+    platform_limit = opengate_core.GateSourceManager.GetPlatformMaxPrimariesPerRun()
     is_ok = True
 
     utility.print_test(
         requested_events == platform_limit,
-        f"Geant4 BeamOn still requests the platform G4int maximum: {requested_events}",
+        f"Geant4 BeamOn requests the platform G4int maximum: {requested_events}",
     )
     is_ok = requested_events == platform_limit and is_ok
 
