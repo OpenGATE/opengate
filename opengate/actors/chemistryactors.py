@@ -31,7 +31,7 @@ class ChemistryActorBase(ActorBase):
         "chemistry_list_name": (
             None,
             {
-                "doc": "Chemistry list requested by this actor. ",
+                "doc": "Chemistry list requested by this actor. If set, it must agree with the ChemistryManager and all other chemistry actors in the simulation.",
             },
         ),
     }
@@ -296,13 +296,14 @@ class ActorOutputChemicalCounter(ActorOutputUsingDataItemContainer):
 
 class ChemicalCountingActor(ChemistryActorBase, g4.GateChemicalCountingActor):
     """
-    Minimal chemistry-aware actor inspired by chem6.
+    Passive chemistry-scoring actor inspired by chem6.
 
     It currently provides:
     - chem6-like primary killer logic
     - restricted LET scoring
     - chemistry-time species sampling
     - reaction counting
+    - built-in and configured chemistry counter outputs
     """
 
     counter_config = {
