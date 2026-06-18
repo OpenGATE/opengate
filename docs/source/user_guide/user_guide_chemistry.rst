@@ -282,7 +282,7 @@ Adding a chemistry actor
 ------------------------
 
 The current reference chemistry actor is ``ChemicalCountingActor``.
-Further chemistry actors can be developed and made available in the future. 
+Further chemistry actors can be developed and made available in the future.
 
 It is intended as a passive chemistry-scoring actor. Simulation-wide chemistry
 control stays on ``ChemistryManager``.
