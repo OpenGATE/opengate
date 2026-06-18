@@ -25,7 +25,7 @@ source opengate_env/bin/activate
 python -m pip install --upgrade pip
 ```
 
-(We recommend the Python package manager [`uv`](https://docs.astral.sh/uv/) because it creates isolated environments and makes Python version management easier.) 
+(We recommend the Python package manager [`uv`](https://docs.astral.sh/uv/) because it creates isolated environments and makes Python version management easier.)
 
 Then install the package opengate:
 

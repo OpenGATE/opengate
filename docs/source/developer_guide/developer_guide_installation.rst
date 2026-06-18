@@ -26,7 +26,7 @@ Virtual environment
      python3 -m venv opengate_env
      source opengate_env/bin/activate
 
-You can also select a specific Python version: 
+You can also select a specific Python version:
 
 .. code:: bash
 
@@ -38,10 +38,10 @@ Then upgrade ``pip`` in the activated environment:
 
      python3 -m pip install --upgrade pip
 
-Make sure that the selected ``python3`` executable is one of the supported versions. 
+Make sure that the selected ``python3`` executable is one of the supported versions.
 
-Note: A virtual environment inherits the interpreter it was created from. 
-To avoid this issue, consider using a Python package and project manager such as `uv <https://docs.astral.sh/uv/>`_ or `pixi <https://pixi.prefix.dev/latest/>`_ for creating environments because it makes it easy to manage distinct Python versions. 
+Note: A virtual environment inherits the interpreter it was created from.
+To avoid this issue, consider using a Python package and project manager such as `uv <https://docs.astral.sh/uv/>`_ or `pixi <https://pixi.prefix.dev/latest/>`_ for creating environments because it makes it easy to manage distinct Python versions.
 
 Prepare the installation
 ------------------------

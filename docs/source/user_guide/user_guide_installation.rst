@@ -14,7 +14,7 @@ Then, you can create a simulation using the `opengate` module (see below). For *
 
 
 
-.. tip:: We highly recommend creating a specific Python environment to 1) ensure all dependencies are handled properly, and 2) avoid mixing with your other Python modules. 
+.. tip:: We highly recommend creating a specific Python environment to 1) ensure all dependencies are handled properly, and 2) avoid mixing with your other Python modules.
 
 If you already have `opengate` installed, upgrade it with:
 
@@ -29,13 +29,13 @@ Once installed, we recommend checking the installation by printing GATE informat
     opengate_info
     opengate_tests
 
-The first time a simulation is executed, Geant4 data must be downloaded and installed. This step is automated but may take some time depending on your bandwidth. Note that this is only done once. Running `opengate_info` will display details and the path of the data. 
+The first time a simulation is executed, Geant4 data must be downloaded and installed. This step is automated but may take some time depending on your bandwidth. Note that this is only done once. Running `opengate_info` will display details and the path of the data.
 
 GATE 10 is currently tested with Python 3.10 to 3.14.
 If you want to use a specific Python version, create the environment with an
 explicit interpreter, for example ``python3.11 -m venv opengate_env``.
 
-Note that ``venv`` inherits the system Python interpreter that was used when creating the virtual environment. To avoid this issue, consider using a Python package and project manager such as `uv <https://docs.astral.sh/uv/>`_ or `pixi <https://pixi.prefix.dev/latest/>`_ for creating environments because it makes it easy to manage distinct Python versions. 
+Note that ``venv`` inherits the system Python interpreter that was used when creating the virtual environment. To avoid this issue, consider using a Python package and project manager such as `uv <https://docs.astral.sh/uv/>`_ or `pixi <https://pixi.prefix.dev/latest/>`_ for creating environments because it makes it easy to manage distinct Python versions.
 
 Version without visualization
 -----------------------------
