@@ -20,12 +20,10 @@ GATE 10 introduces a Python-based interface, replacing the macro scripting of GA
 First, create a python environment:
 
 ```
-uv venv opengate_env
+python3 -m venv opengate_env
 source opengate_env/bin/activate
 python -m pip install --upgrade pip
 ```
-
-(We recommend the Python package manager [`uv`](https://docs.astral.sh/uv/) because it creates isolated environments and makes Python version management easier.)
 
 Then install the package opengate:
 
