@@ -403,6 +403,8 @@ void init_GateAttributeComparisonFilter(py::module &);
 // Gate actors
 void init_GateDoseActor(py::module &m);
 
+void init_GateDebugActor(py::module &m);
+
 void init_GateVoxelizedPromptGammaTLEActor(py::module &m);
 
 void init_GateVoxelizedPromptGammaAnalogActor(py::module &m);
@@ -529,6 +531,8 @@ void init_GateLastVertexSource(py::module &);
 void init_GateSourceManager(py::module &);
 
 void init_GateGenericSource(py::module &);
+
+void init_GateDebugSource(py::module &);
 
 void init_GateTreatmentPlanPBSource(py::module &);
 
@@ -781,6 +785,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateLastVertexSource(m);
   init_GateSourceManager(m);
   init_GateGenericSource(m);
+  init_GateDebugSource(m);
   init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
@@ -807,6 +812,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateProcessDefinedStepInVolumeAttribute(m);
 
   init_GateDoseActor(m);
+  init_GateDebugActor(m);
   init_GateTLEDoseActor(m);
   init_GateVoxelizedPromptGammaTLEActor(m);
   init_GateVoxelizedPromptGammaAnalogActor(m);

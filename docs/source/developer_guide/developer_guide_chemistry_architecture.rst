@@ -9,11 +9,14 @@ chemistry-aware actor.
 Scope
 -----
 
-In this branch, ``chemistry`` means the Geant4-DNA chemistry workflow:
+In the current implementation, ``chemistry`` means the Geant4-DNA chemistry
+workflow:
 
 - a Geant4-DNA track-structure EM configuration is activated in one or more
   regions;
 - a Geant4 chemistry list is selected and optionally extended;
+- an optional chemistry world defines the chemistry-space box and may add
+  background components and scavenger reactions;
 - Geant4's chemistry scheduler is configured and started;
 - chemistry-aware actors receive dedicated chemistry callbacks;
 - chemistry counters are exposed as actor-owned scoring components.
@@ -42,6 +45,10 @@ The main components are:
   the python-facing chemistry-list object that wraps one built-in Geant4
   chemistry list and optionally appends species, reactions, and dissociation
   channels.
+- ``ChemistryWorld``:
+  the python-facing description of the chemistry-space box, optional background
+  components, and optional scavenger reactions used to build the runtime
+  chemistry world.
 - ``GateVChemistryActor``:
   the C++ base class for chemistry-aware actors.
 - ``GateTimeStepAction`` and ``GateITTrackingInteractivity``:
@@ -120,6 +127,45 @@ Current configurable content includes:
 - ``reactions``
 - ``dissociations``
 
+
+``ChemistryWorld``
+------------------
+
+``ChemistryManager`` can also own one optional ``ChemistryWorld`` instance.
+This object is separate from ``ChemistryList``: it does not define the
+chemistry network itself, but the runtime chemistry-space box and optional
+background/scavenger setup used by Geant4-DNA.
+
+Current configurable content includes:
+
+- ``translation`` / ``half_size``
+- ``source_volume_name``
+- ``pH``
+- ``components``
+- ``scavenger_reactions``
+
+The current construction entry point is
+``ChemistryManager.create_chemistry_world(...)``. This can either:
+
+- derive the chemistry box from a supported volume;
+- or define it explicitly from ``translation`` and ``half_size``.
+
+At runtime, ``ChemistryWorld`` is responsible for building:
+
+- a ``GateChemistryWorld`` with the chemistry boundary and background
+  components;
+- and, when scavenger reactions are configured, the corresponding
+  ``G4DNAScavengerMaterial`` setup used by Geant4.
+
+The current implementation intentionally validates several constraints early,
+for example:
+
+- chemistry-world creation from a volume currently only supports a
+  non-repeated, axis-aligned ``BoxVolume`` attached directly to the world;
+- scavenger reactions must reference a scavenger species already declared as a
+  chemistry-world component;
+- Geant4's stock scavenger material currently expects an integer ``pH`` value.
+
 Lifecycle
 ~~~~~~~~~
 
@@ -177,14 +223,19 @@ The relevant sequence in ``SimulationEngine.initialize()`` is:
 
 1. initialize geometry;
 2. initialize physics before the run manager;
-3. initialize sources;
-4. prepare chemistry before the run manager;
-5. register geometry, physics list, and action engine in Geant4;
-6. initialize actors and filters;
-7. initialize the Geant4 run manager;
-8. finalize physics after the run manager;
-9. finalize chemistry after the run manager;
-10. link sources and actors and register actor actions.
+3. apply Geant4 commands meant to run before initialization;
+4. initialize sources;
+5. initialize auxiliary attributes;
+6. emit the alpha-stage warning when the simulation uses chemistry;
+7. resolve chemistry-list requests through
+   ``prepare_chemistry_list_if_needed()``;
+8. prepare chemistry before the run manager, if needed;
+9. register geometry, physics list, and action engine in Geant4;
+10. initialize actors and filters;
+11. initialize the Geant4 run manager;
+12. finalize physics after the run manager;
+13. finalize chemistry after the run manager;
+14. initialize worker threads with ``FakeBeamOn()`` in MT mode.
 
 The chemistry-specific parts are split across the two chemistry engine stages.
 
@@ -197,6 +248,8 @@ Before run-manager initialization
 - initializes the active ``ChemistryList``;
 - attaches that chemistry list to the already-created augmented physics list;
 - configures ``G4EmParameters`` with the selected chemistry time-step model;
+- creates the runtime chemistry world and optional scavenger material when a
+  ``ChemistryWorld`` is configured;
 - resolves and applies the shared ``G4MoleculeCounterManager`` policy required
   by chemistry actors.
 
@@ -332,19 +385,32 @@ At runtime:
 Chemistry Counter Architecture
 ------------------------------
 
-Current chemistry counters are wrappers around built-in Geant4 counters:
+Current chemistry counters come in two groups.
 
 - ``BuiltinMoleculeCounter``
 - ``BuiltinReactionCounter``
+- ``ConfiguredReactionCounter``
+- ``ConfiguredSpeciesCounter``
 
-They inherit from:
+The built-in counters wrap Geant4 implementations directly, while the
+configured counters currently use actor-owned accumulation callbacks.
+
+The built-in counters inherit from:
 
 - a pure-python base class hierarchy
   (``CounterBase``, ``MoleculeCounterBase``, ``ReactionCounterBase``);
 - and the corresponding pybind-exposed Geant4 class.
 
-This means the concrete python counter object is itself the Geant4 counter
-object. No extra wrapper-by-composition layer is used.
+This means the concrete python built-in counter object is itself the Geant4
+counter object. No extra wrapper-by-composition layer is used for those two
+counters.
+
+``ConfiguredReactionCounter`` and ``ConfiguredSpeciesCounter`` currently take a
+simpler path: Python configures tracked reaction or species signatures, and the
+actor's C++ side accumulates the corresponding cumulative counts and optional
+count-versus-time series. This is intentionally a lightweight implementation
+for now and should eventually be refactored into proper first-class concrete
+counter classes parallel to the built-in Geant4-backed ones.
 
 Why actor-owned counters?
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -389,8 +455,8 @@ One chemistry counter corresponds to one actor output.
 How To Implement A Chemistry Actor
 ----------------------------------
 
-The current reference implementation is ``ChemicalCountingActor``. A new chemistry
-actor should follow the same split between python and C++.
+The current reference implementation is ``ChemicalCountingActor``. A new
+chemistry actor should follow the same split between python and C++.
 
 Step 1: Define the python actor
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -522,16 +588,22 @@ normal GATE actor-output architecture.
 
 - it is a chemistry-aware actor built from ``ChemistryActorBase`` and
   ``GateChemicalCountingActor``;
-- it declares one built-in molecule counter and one built-in reaction counter;
+- it declares four actor-owned counters:
+  ``molecule_counter``, ``reaction_counter``,
+  ``configured_reaction_counter``, and ``configured_species_counter``;
 - it keeps a regular summary output called ``results``;
-- detailed molecule and reaction histories are exposed on dedicated outputs:
-  ``molecule_counter`` and ``reaction_counter``;
+- detailed counter outputs are exposed on dedicated outputs with the same
+  names as the counters;
 - its C++ side implements chemistry scheduler callbacks and chemistry-track
   callbacks through ``GateVChemistryActor``.
 
 One useful design detail is that the detailed reaction output no longer comes
 from a hand-crafted GATE-side reaction histogram. Instead, it uses the built-in
 Geant4 reaction counter, which is closer to the underlying chemistry model.
+
+Another useful detail is that the configured counters are passive scoring
+extensions. They do not alter track fate or chemistry control; they only expose
+additional observables derived from the chemistry callbacks.
 
 
 Current Constraints
@@ -540,11 +612,16 @@ Current Constraints
 The current implementation has a few intentional limits:
 
 - one simulation must resolve to one coherent chemistry list;
+- chemistry functionality is still alpha-stage and should be treated as under
+  active development;
 - chemistry counter writing is not implemented yet on the python side;
 - chemistry counter merging is currently a simple successive-run merge that
   preserves cumulative counts but does not yet reorder seam-time overlaps;
-- ``ChemicalCountingActor`` currently assumes at most one molecule counter for its
-  built-in C++ species-sampling path.
+- ``ChemicalCountingActor`` currently assumes at most one molecule counter for
+  its built-in C++ species-sampling path;
+- configured scavenger observables may be more robustly captured through
+  configured species counting than direct reaction counting, depending on which
+  Geant4 callback path the process uses.
 
 These are not accidental limitations. They reflect the current stage of the
 architecture and should be kept in mind when extending it.

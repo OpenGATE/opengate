@@ -86,7 +86,7 @@ class SourceEngine(EngineBase):
         self.progress_bar = False
         self.expected_number_of_events = "unknown"
 
-        # List of sources (GateSource), for all threads
+        # List of sources (GateSource)
         self.sources = []
 
         # The source manager will be constructed at build (during ActionManager)
@@ -108,6 +108,8 @@ class SourceEngine(EngineBase):
     def close(self):
         if self.verbose_close:
             warning("Closing SourceEngine")
+        for source in self.source_manager.sources.values():
+            source.close()
         self.release_g4_references()
         super().close()
 
@@ -126,6 +128,11 @@ class SourceEngine(EngineBase):
         #    )
         self.progress_bar = progress_bar
         self.initialize_dynamic_parametrisations()
+
+        # Pre-create C++ sources for all threads (1 master + N workers) on the main thread
+        num_instances = 1 + self.simulation_engine.simulation.number_of_threads
+        for source in self.source_manager.sources.values():
+            source.pre_create_g4_sources(num_instances)
 
     def initialize_actors(self):
         """
@@ -152,6 +159,12 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager = self.create_g4_thread_source_manager(
             append=False
         )
+        # Initialize all worker thread-local C++ sources on the main thread to size G4Cache properly.
+        # This is safe because physics and geometry are fully initialized now.
+        for source in self.source_manager.sources.values():
+            if source.g4_thread_sources:
+                for g4_src in source.g4_thread_sources[1:]:
+                    source.initialize_g4_source(g4_src, self.run_timing_intervals)
         return self.g4_master_source_manager
 
     def create_g4_thread_source_manager(self, append=True):
@@ -165,8 +178,13 @@ class SourceEngine(EngineBase):
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
         for source in source_manager.sources.values():
-            source.initialize(self.run_timing_intervals)
-            source.add_to_source_manager(ms)
+            g4_source = source.get_next_g4_source()
+            if g4_source is not None:
+                source.initialize_g4_source(g4_source, self.run_timing_intervals)
+                ms.AddSource(g4_source)
+            else:
+                source.initialize(self.run_timing_intervals)
+                source.add_to_source_manager(ms)
             # store all the sources (will be used later by SimulationOutput)
             self.sources.append(source)
 
@@ -219,6 +237,11 @@ class SourceEngine(EngineBase):
         # once terminated, packup the sources (if needed)
         for source in self.sources:
             source.prepare_output()
+            if source.g4_thread_sources:
+                source.gather_outputs(source.g4_thread_sources)
+            # Clear C++ sources now on the main thread while G4Cache is active
+            source.g4_thread_sources = []
+            source.g4_thread_sources_index = 0
 
     def can_predict_expected_number_of_event(self):
         # can_predict = True
@@ -1501,6 +1524,9 @@ class SimulationEngine(GateSingletonFatal):
                 self.g4_RunManager.SetVerboseLevel(0)
             self._is_closed = True
         self.g4_RunManager = None
+        if self.run_manager_finalizer:
+            self.run_manager_finalizer.detach()
+            self.run_manager_finalizer = None
 
     def __enter__(self):
         return self

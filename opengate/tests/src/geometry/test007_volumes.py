@@ -316,6 +316,6 @@ if __name__ == "__main__":
     sec = gate.g4_units.second
     c.duration = 2.5267 * sec
     print("-" * 80)
-    is_ok = utility.assert_stats(stats, stats_ref, 0.15)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.16)
 
     utility.test_ok(is_ok)

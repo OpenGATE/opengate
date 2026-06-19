@@ -16,6 +16,7 @@ The current chemistry support is built around the Geant4-DNA workflow:
 - activate track-structure EM in the region where DNA physics should run;
 - select a Geant4 chemistry list;
 - optionally customize that chemistry list;
+- optionally define a chemistry world and scavenger reactions;
 - add one or more chemistry-aware actors;
 - read summary and counter results from actor outputs.
 
@@ -216,17 +217,82 @@ If you customize species, reactions, or dissociations, make sure a valid base
 chemistry list is still selected.
 
 
+Chemistry worlds and scavengers
+-------------------------------
+
+The optional ``ChemistryWorld`` object defines the chemistry-space box used by
+Geant4 chemistry and can also carry background components and scavenger
+reactions.
+
+You usually create it from a volume:
+
+.. code-block:: python
+
+    chemistry_world = sim.chemistry_manager.create_chemistry_world(volume=target)
+    chemistry_world.pH = 7
+
+You can also create it explicitly from a box:
+
+.. code-block:: python
+
+    chemistry_world = sim.chemistry_manager.create_chemistry_world(
+        translation=[0, 0, 0],
+        half_size=[10 * gate.g4_units.um] * 3,
+    )
+
+Once the chemistry world exists, you can define background components:
+
+.. code-block:: python
+
+    chemistry_world.add_component("H2O", 55.5)
+    chemistry_world.add_component("O2", 2.5e-2 * gate.g4_units.mole / gate.g4_units.liter)
+
+and then add scavenger reactions:
+
+.. code-block:: python
+
+    dm3_per_mole_s = (
+        1e-3 * gate.g4_units.m3 / (gate.g4_units.mole * gate.g4_units.s)
+    )
+
+    chemistry_world.add_scavenger_reaction(
+        tracked_molecule="e_aq",
+        scavenger="O2",
+        products=["O2m"],
+        rate_constant=1.74e10 * dm3_per_mole_s,
+    )
+
+The ``scavenger`` species must already be present as a chemistry-world
+component. Scavenger products and tracked molecules must resolve to known
+chemistry species in the active Geant4-DNA chemistry setup.
+
+``pH`` is optional. At the moment, Geant4's stock scavenger material expects an
+integer pH value.
+
+This chemistry-world configuration is independent from
+``confine_chemistry_to_volume``:
+
+- ``ChemistryWorld`` defines the chemistry-space box and optional scavenger
+  reservoir;
+- ``confine_chemistry_to_volume`` defines a GATE-side policy that kills
+  chemistry tracks starting outside a chosen volume subtree.
+
+
 Adding a chemistry actor
 ------------------------
 
 The current reference chemistry actor is ``ChemicalCountingActor``.
+Further chemistry actors can be developed and made available in the future.
+
+It is intended as a passive chemistry-scoring actor. Simulation-wide chemistry
+control stays on ``ChemistryManager``.
 
 It provides:
 
 - chem6-like energy-loss and LET bookkeeping;
 - chemistry-time species sampling;
 - reaction counting;
-- dedicated molecule and reaction counter outputs.
+- built-in and configured chemistry counter outputs.
 
 A typical setup looks like this:
 
@@ -292,11 +358,13 @@ probing and scoring.
 Chemistry actor outputs
 -----------------------
 
-``ChemicalCountingActor`` currently exposes three outputs:
+``ChemicalCountingActor`` currently exposes five outputs:
 
 - ``results``
 - ``molecule_counter``
 - ``reaction_counter``
+- ``configured_reaction_counter``
+- ``configured_species_counter``
 
 Summary output
 ~~~~~~~~~~~~~~
@@ -334,8 +402,10 @@ The detailed chemistry histories live on the dedicated counter outputs:
 
 - ``chem_actor.molecule_counter``
 - ``chem_actor.reaction_counter``
+- ``chem_actor.configured_reaction_counter``
+- ``chem_actor.configured_species_counter``
 
-Both follow the same in-memory structure:
+All of these detailed counter outputs follow the same in-memory structure:
 
 - a dictionary;
 - keys are molecule or reaction labels;
@@ -355,6 +425,58 @@ Example:
 
 The counts are cumulative.
 
+Configured counters
+~~~~~~~~~~~~~~~~~~~
+
+The configured counters let you track selected observables without relying only
+on the stock Geant4 built-in counter classes.
+
+``configured_reaction_counter`` tracks cumulative counts of selected chemistry
+reaction signatures versus chemistry time.
+
+.. code-block:: python
+
+    chem_actor.counters.configured_reaction_counter.tracked_reactions = [
+        {
+            "reactant_a": "H",
+            "reactant_b": "H",
+            "products": ["H2"],
+        }
+    ]
+    chem_actor.counters.configured_reaction_counter.active = True
+
+``configured_species_counter`` tracks cumulative appearances of selected
+species versus chemistry time.
+
+.. code-block:: python
+
+    chem_actor.counters.configured_species_counter.tracked_species = [
+        "e_aq",
+        "O2m",
+    ]
+    chem_actor.counters.configured_species_counter.active = True
+
+This can be especially useful in scavenger workflows, where counting the
+appearance of signature product species is sometimes more robust than trying to
+count a direct reaction callback.
+
+Naming conventions
+~~~~~~~~~~~~~~~~~~
+
+Chemistry names appear at several layers, and the exact Geant4-facing labels
+should be treated as examples rather than a stable long-term naming contract:
+
+- Python chemistry configuration usually uses names such as ``e_aq``, ``O2``,
+  or ``O2m``;
+- molecule-counter outputs often expose Geant4 runtime names such as
+  ``e_aq^-1``, ``O_2^-1``, or ``HO_2°^0``.
+
+Configured counters accept chemistry-species names that resolve through the
+Geant4 molecule table, while returned output keys may follow the runtime naming
+used by the underlying counter. As development evolves, these runtime labels may
+change. In practice, inspect the keys returned by ``get_data()`` rather than
+assuming one naming convention everywhere.
+
 Activating and deactivating outputs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -365,6 +487,8 @@ through the normal actor-output interface:
 
     chem_actor.molecule_counter.active = False
     chem_actor.reaction_counter.active = False
+    chem_actor.configured_reaction_counter.active = False
+    chem_actor.configured_species_counter.active = False
 
 The same can also be controlled through the actor-owned counter objects:
 
@@ -372,6 +496,8 @@ The same can also be controlled through the actor-owned counter objects:
 
     chem_actor.counters.molecule_counter.active = False
     chem_actor.counters.reaction_counter.active = False
+    chem_actor.counters.configured_reaction_counter.active = False
+    chem_actor.counters.configured_species_counter.active = False
 
 For most user scripts, using the actor output interface directly is the
 clearest choice.
@@ -438,6 +564,10 @@ are worth keeping in mind:
   confinement policy;
 - chemistry counter writing to disk is not implemented yet on the python side;
 - chemistry counter merged data currently uses a simple successive-run merge;
+- scavenger-related observables may require configured species counting rather
+  than direct reaction counting, depending on which Geant4 callback path the
+  process uses;
+- some advanced reaction-counter scenarios may still be fragile;
 - ``ChemicalCountingActor`` currently assumes at most one molecule counter for its
   built-in species-sampling path.
 

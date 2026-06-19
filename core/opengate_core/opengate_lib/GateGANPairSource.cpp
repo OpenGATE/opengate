@@ -14,8 +14,7 @@ GateGANPairSource::~GateGANPairSource() = default;
 
 void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
   GateGANSource::InitializeUserInfo(user_info);
-  auto &l = GetThreadLocalDataGenericSource();
-  if (l.fAAManager->IsEnabled()) {
+  if (fAAManager->IsEnabled()) {
     std::ostringstream oss;
     oss << "Error, cannot use AngularAcceptance with GAN pairs (yet), for the "
            "source '"
@@ -71,8 +70,7 @@ void GateGANPairSource::GeneratePrimaries(G4Event *event,
   fCurrentIndex++;
 
   // update the number of generated event
-  auto &l = fThreadLocalData.Get();
-  l.fNumberOfGeneratedEvents++;
+  fNumberOfGeneratedEvents++;
 }
 
 void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
@@ -89,12 +87,11 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
                           fDirectionZ2[fCurrentIndex]);
 
   // move position according to mother volume
-  auto &l = fThreadLocalData.Get();
-  position = l.fGlobalRotation * position + l.fGlobalTranslation;
+  position = fGlobalRotation * position + fGlobalTranslation;
   // normalize (needed)
   direction = direction / direction.mag();
   // move according to mother volume
-  direction = l.fGlobalRotation * direction;
+  direction = fGlobalRotation * direction;
 
   // energy of the second particle
   double energy = fEnergy2[fCurrentIndex];
@@ -105,22 +102,20 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
   if (!accept_energy) {
     energy = 0;
     // at least one of the two vertices has been skipped with zeroE
-    auto &ll = GetThreadLocalDataGenericSource();
-    ll.fCurrentZeroEvents = 1;
+    fCurrentZeroEvents = 1;
   }
 
-  auto &ll = fThreadLocalDataGenericSource.Get();
   if (fTime_is_set_by_GAN && accept_energy) {
     // time
-    double time = ll.fEffectiveEventTime;
+    double time = fEffectiveEventTime;
     if (fRelativeTiming)
       time += fTime2[fCurrentIndex];
     else
       time = fTime2[fCurrentIndex];
     // consider the earliest one
-    ll.fEffectiveEventTime = std::min(time, ll.fEffectiveEventTime);
+    fEffectiveEventTime = std::min(time, fEffectiveEventTime);
   } else {
-    ll.fEffectiveEventTime = current_simulation_time;
+    fEffectiveEventTime = current_simulation_time;
   }
 
   // weights
@@ -130,6 +125,6 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
   }
 
   // Vertex
-  AddOnePrimaryVertex(event, position, direction, energy,
-                      ll.fEffectiveEventTime, w);
+  AddOnePrimaryVertex(event, position, direction, energy, fEffectiveEventTime,
+                      w);
 }
