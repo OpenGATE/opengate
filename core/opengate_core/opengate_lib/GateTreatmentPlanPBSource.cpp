@@ -25,22 +25,21 @@ GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
   fSortedSpotGenerationFlag = false;
   fPDF = nullptr;
   fTotalNumberOfSpots = 0;
+
+  fSPS_PB = nullptr;
+  fCurrentSpot = 0;
+  fPreviousSpot = -1;
+  fInitGenericIon = false;
 }
 
 GateTreatmentPlanPBSource::~GateTreatmentPlanPBSource() = default;
 
-GateTreatmentPlanPBSource::threadLocalTPSource &
-GateTreatmentPlanPBSource::GetThreadLocalDataTPSource() {
-  return fThreadLocalDataTPSource.Get();
-}
-
 void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
-  auto &ll = GetThreadLocalDataTPSource();
   // Create single particle source only once. Parameters are then updated for
   // the different spots.
-  ll.fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
-                                                      fAttachedToVolumeName);
+  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
+                                                   fAttachedToVolumeName);
 
   // common to all spots
   InitializeParticle(user_info);
@@ -58,9 +57,9 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   fSpotPosition = DictGetVecG4ThreeVector(user_info, "positions");
   fSpotRotation = DictGetVecG4RotationMatrix(user_info, "rotations");
 
-  fTotalNumberOfSpots = static_cast<int>(fSpotWeight.size());
-  ll.fNbGeneratedSpots.resize(fTotalNumberOfSpots,
-                              0); // keep track for debug
+  fTotalNumberOfSpots = fSpotWeight.size();
+  fNbGeneratedSpots.resize(fTotalNumberOfSpots,
+                           0); // keep track for debug
 
   // Init the random fEngine
   InitRandomEngine();
@@ -71,12 +70,11 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateTreatmentPlanPBSource::InitNbPrimariesVec() {
-  auto &ll = GetThreadLocalDataTPSource();
   // Initialize all spots to zero particles
-  ll.fNbIonsToGenerate.resize(fTotalNumberOfSpots, 0);
-  for (unsigned long i = 0; i < fMaxN; i++) {
-    int bin = static_cast<int>(fTotalNumberOfSpots * fDistriGeneral->fire());
-    ++ll.fNbIonsToGenerate[bin];
+  fNbIonsToGenerate.resize(fTotalNumberOfSpots, 0);
+  for (long int i = 0; i < fMaxN; i++) {
+    int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
+    ++fNbIonsToGenerate[bin];
   }
 }
 void GateTreatmentPlanPBSource::InitRandomEngine() {
@@ -121,117 +119,106 @@ void GateTreatmentPlanPBSource::PrepareNextRun() {
 void GateTreatmentPlanPBSource::GeneratePrimaries(
     G4Event *event, double current_simulation_time) {
 
-  auto &ll = GetThreadLocalDataTPSource();
   // Find next spot to initialize
   FindNextSpot();
   // if we moved to a new spot, we need to update the SPS parameters
-  if (ll.fCurrentSpot != ll.fPreviousSpot) {
+  if (fCurrentSpot != fPreviousSpot) {
     ConfigureSingleSpot();
   }
 
   // Generate vertex
-  ll.fSPS_PB->SetParticleTime(current_simulation_time);
-  ll.fSPS_PB->GeneratePrimaryVertex(event);
+  fSPS_PB->SetParticleTime(current_simulation_time);
+  fSPS_PB->GeneratePrimaryVertex(event);
 
   // weight
-  double w = fSpotWeight[ll.fCurrentSpot];
+  double w = fSpotWeight[fCurrentSpot];
   for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
     event->GetPrimaryVertex(i)->SetWeight(w);
   }
 
   // update number of generated events
   // fNumberOfGeneratedEvents++;
-  ll.fNbGeneratedSpots[ll.fCurrentSpot]++;
+  fNbGeneratedSpots[fCurrentSpot]++;
 
   if (fSortedSpotGenerationFlag) {
     // we generated an ion from this spot, so we remove it from the vector
-    --ll.fNbIonsToGenerate[ll.fCurrentSpot];
+    --fNbIonsToGenerate[fCurrentSpot];
   }
   // update previous spot
-  ll.fPreviousSpot = ll.fCurrentSpot;
+  fPreviousSpot = fCurrentSpot;
 }
 
 void GateTreatmentPlanPBSource::FindNextSpot() {
-  auto &ll = GetThreadLocalDataTPSource();
   if (fSortedSpotGenerationFlag) {
     // move to next spot if there are no more particles to generate in the
     // current one
-    while ((ll.fCurrentSpot < fTotalNumberOfSpots) &&
-           (ll.fNbIonsToGenerate[ll.fCurrentSpot] <= 0)) {
-      ll.fCurrentSpot++;
+    while ((fCurrentSpot < fTotalNumberOfSpots) &&
+           (fNbIonsToGenerate[fCurrentSpot] <= 0)) {
+      fCurrentSpot++;
     }
 
   } else {
     // select random spot according to PDF
-    int bin = static_cast<int>(fTotalNumberOfSpots * fDistriGeneral->fire());
-    ll.fCurrentSpot = bin;
+    int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
+    fCurrentSpot = bin;
   }
 }
 
 void GateTreatmentPlanPBSource::ConfigureSingleSpot() {
-  auto &ll = GetThreadLocalDataTPSource();
   // Particle definition if ion
-  if (ll.fInitGenericIon) {
+  if (fInitGenericIon) {
     auto *ion_table = G4IonTable::GetIonTable();
     auto *ion = ion_table->GetIon(fZ, fA, fE);
-    ll.fSPS_PB->SetParticleDefinition(ion);
-    ll.fInitGenericIon = false; // only the first time
+    fSPS_PB->SetParticleDefinition(ion);
+    fInitGenericIon = false; // only the first time
   }
   // Energy
-  double energy = fSpotEnergy[ll.fCurrentSpot];
-  double sigmaE = fSigmaEnergy[ll.fCurrentSpot];
+  double energy = fSpotEnergy[fCurrentSpot];
+  double sigmaE = fSigmaEnergy[fCurrentSpot];
   UpdateEnergySPS(energy, sigmaE);
 
   // rotation and translation
-  G4ThreeVector translation = fSpotPosition[ll.fCurrentSpot];
-  G4RotationMatrix rotation = fSpotRotation[ll.fCurrentSpot];
+  G4ThreeVector translation = fSpotPosition[fCurrentSpot];
+  G4RotationMatrix rotation = fSpotRotation[fCurrentSpot];
   UpdatePositionSPS(translation, rotation);
 
   // Phase space parameters
-  std::vector<double> x_param = fPhSpaceX[ll.fCurrentSpot];
-  std::vector<double> y_param = fPhSpaceY[ll.fCurrentSpot];
-  ll.fSPS_PB->SetPBSourceParam(x_param, y_param);
+  std::vector<double> x_param = fPhSpaceX[fCurrentSpot];
+  std::vector<double> y_param = fPhSpaceY[fCurrentSpot];
+  fSPS_PB->SetPBSourceParam(x_param, y_param);
 }
 
 void GateTreatmentPlanPBSource::UpdatePositionSPS(
     const G4ThreeVector &localTransl, const G4RotationMatrix &localRot) {
 
   // update local translation and rotation
-  auto &ll = GetThreadLocalDataTPSource();
-  auto &l = fThreadLocalData.Get();
-
-  l.fGlobalTranslation = localTransl;
-  l.fGlobalRotation = localRot; // ConvertToG4RotationMatrix(localRot);
-
-  //   // update global rotation
-  //   GateVSource::SetOrientationAccordingToAttachedVolume();
+  fGlobalTranslation = localTransl;
+  fGlobalRotation = localRot; // ConvertToG4RotationMatrix(localRot);
 
   // No change in the translation rotation if mother is the world
   if (fAttachedToVolumeName == "world") {
     // set it to the vertex
-    ll.fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
+    fSPS_PB->SetSourceRotTransl(fGlobalTranslation, fGlobalRotation);
     return;
   }
 
   // compute global translation rotation.
-  // l.fGlobalTranslation and l.fGlobalRotation values are updated here.
+  // fGlobalTranslation and fGlobalRotation values are updated here.
   ComputeTransformationFromVolumeToWorld(
-      fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
+      fAttachedToVolumeName, fGlobalTranslation, fGlobalRotation, false);
 
   // set it to the vertex
-  ll.fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
+  fSPS_PB->SetSourceRotTransl(fGlobalTranslation, fGlobalRotation);
 }
 
 void GateTreatmentPlanPBSource::UpdateEnergySPS(double energy, double sigma) {
-  auto &ll = GetThreadLocalDataTPSource();
-  auto *ene = ll.fSPS_PB->GetEneDist();
+  auto *ene = fSPS_PB->GetEneDist();
   ene->SetEnergyDisType("Gauss");
   ene->SetMonoEnergy(energy);
   ene->SetBeamSigmaInE(sigma);
 }
 
 void GateTreatmentPlanPBSource::InitializeParticle(py::dict &user_info) {
-  auto &ll = GetThreadLocalDataTPSource();
   std::string pname = DictGetStr(user_info, "particle");
   // If the particle is an ion (name start with ion)
   if (pname.rfind("ion", 0) == 0) {
@@ -245,23 +232,22 @@ void GateTreatmentPlanPBSource::InitializeParticle(py::dict &user_info) {
   if (fParticleDefinition == nullptr) {
     Fatal("Cannot find the particle '" + pname + "'.");
   }
-  ll.fSPS_PB->SetParticleDefinition(fParticleDefinition);
+  fSPS_PB->SetParticleDefinition(fParticleDefinition);
 }
 
 void GateTreatmentPlanPBSource::InitializeIon(py::dict &user_info) {
-  auto &ll = GetThreadLocalDataTPSource();
   auto u = py::dict(user_info["ion"]);
   fA = DictGetInt(u, "A");
   fZ = DictGetInt(u, "Z");
   fE = DictGetDouble(u, "E");
-  ll.fInitGenericIon = true;
+  fInitGenericIon = true;
 }
 
 py::list GateTreatmentPlanPBSource::GetGeneratedPrimaries() {
   py::list n_spot_vec;
-  //   for (const auto &item : fNbGeneratedSpots) {
-  //     n_spot_vec.append(item);
-  //   }
+  for (const auto &item : fNbGeneratedSpots) {
+    n_spot_vec.append(item);
+  }
 
   return n_spot_vec;
 }

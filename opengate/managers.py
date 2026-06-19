@@ -1,3 +1,4 @@
+from PIL import DcxImagePlugin
 import copy
 import io
 import shutil
@@ -34,6 +35,7 @@ from .physics import (
 )
 from .processing import dispatch_to_subprocess
 from .serialization import dump_json, dumps_json, load_json, loads_json
+from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.gansources import GANPairsSource, GANSource
 from .sources.generic import GenericSource, SourceBase
@@ -52,6 +54,7 @@ from .voxelize import voxelize_geometry
 
 source_types = {
     "GenericSource": GenericSource,
+    "DebugSource": DebugSource,
     "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
@@ -110,6 +113,7 @@ from .actors.miscactors import (
     KillActor,
     KillNonInteractingParticleActor,
     SimulationStatisticsActor,
+    DebugActor,
 )
 from .actors.pgactors import (
     VoxelizedPromptGammaAnalogActor,
@@ -169,6 +173,7 @@ actor_types = {
     "ChemicalCountingActor": ChemicalCountingActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    "DebugActor": DebugActor,
     # digit
     "PhaseSpaceActor": PhaseSpaceActor,
     "DigitizerAdderActor": DigitizerAdderActor,
@@ -375,6 +380,18 @@ class SourceManager(GateObject):
         for source in self.sources.values():
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["sources"] = dict([(k, v.to_dictionary()) for k, v in self.sources.items()])
+        return d
+
+    def from_dictionary(self, d):
+        self.sources = {}
+        super().from_dictionary(d)
+        for k, v in d["sources"].items():
+            s = self.add_source(v["object_type"], name=v["user_info"]["name"])
+            s.from_dictionary(v)
 
 
 class ActorManager(GateObject):
@@ -1929,6 +1946,7 @@ class Simulation(GateObject):
         d["physics_manager"] = self.physics_manager.to_dictionary()
         d["chemistry_manager"] = self.chemistry_manager.to_dictionary()
         d["actor_manager"] = self.actor_manager.to_dictionary()
+        d["source_manager"] = self.source_manager.to_dictionary()
         d["auxiliary_attributes"] = dict(
             [(k, v.to_dictionary()) for k, v in self.auxiliary_attributes.items()]
         )
@@ -1941,6 +1959,8 @@ class Simulation(GateObject):
         if "chemistry_manager" in d:
             self.chemistry_manager.from_dictionary(d["chemistry_manager"])
         self.actor_manager.from_dictionary(d["actor_manager"])
+        if "source_manager" in d:
+            self.source_manager.from_dictionary(d["source_manager"])
         self.auxiliary_attributes = {}
         for _, v in d.get("auxiliary_attributes", {}).items():
             a = self.activate_auxiliary_attribute(
@@ -1949,11 +1969,9 @@ class Simulation(GateObject):
             a.from_dictionary(v)
 
     def to_json_string(self):
-        warning("Only parts of the simulation can currently be dumped as JSON")
         return dumps_json(self.to_dictionary())
 
     def to_json_file(self, directory=None, filename=None):
-        warning("Only parts of the simulation can currently be dumped as JSON.")
         d = self.to_dictionary()
         if filename is None:
             filename = self.json_archive_filename
@@ -1965,11 +1983,9 @@ class Simulation(GateObject):
             self.copy_input_files(directory, dct=d)
 
     def from_json_string(self, json_string):
-        warning("Only parts of the simulation can currently be reloaded from JSON.")
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
-        warning("Only parts of the simulation can currently be reloaded from JSON.")
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 
@@ -2209,7 +2225,6 @@ class Simulation(GateObject):
 
             # FIXME: temporary workaround to copy from output the additional
             # information of the source (such as fTotalSkippedEvents)
-            s = {}
             for source in self.source_manager.sources.values():
                 # WARNING: when multithread, the sources are stored in
                 # simulation_output.sources_by_thread
@@ -2219,12 +2234,7 @@ class Simulation(GateObject):
                     s = output.get_source(source.name)
                 except:
                     continue
-                if "total_zero_events" in s.__dict__:
-                    source.total_zero_events = s.__dict__["total_zero_events"]
-                    source.total_skipped_events = s.__dict__["total_skipped_events"]
-                if "particle_generators" in s.__dict__:
-                    source.particle_generators = s.__dict__["particle_generators"]
-                    source.num_entries = s.__dict__["num_entries"]
+                source.recover_user_output(s)
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process

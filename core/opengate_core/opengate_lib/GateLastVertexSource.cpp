@@ -85,7 +85,6 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
     G4double weight = containerToSplit.GetWeight();
     fProcessToSplit = containerToSplit.GetProcessNameToSplit();
 
-    auto &l = fThreadLocalData.Get();
     auto *particle_table = G4ParticleTable::GetParticleTable();
     auto *fParticleDefinition = particle_table->FindParticle(particleName);
     auto *particle = new G4PrimaryParticle(fParticleDefinition);

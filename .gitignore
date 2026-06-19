@@ -76,6 +76,8 @@ data/
 
 # --- Tests
 opengate/tests/output_dashboard/
+opengate/tests/src/external/pytomography/output
+opengate/tests/src/external/pytomography/data
 opengate/tests/log
 .clang-format
 a.txt
