@@ -21,7 +21,8 @@ public:
 
 protected:
   std::string fProcessName;
-  std::string fVolumeName;
+  std::vector<std::string> fVolumeNameList;
+  // std::string fVolumeName;
   bool fPropagateFromParentTrack{false};
 };
 

@@ -21,10 +21,14 @@ if __name__ == "__main__":
     sim.world.size = [1 * m, 1 * m, 1 * m]
     sim.world.material = "G4_Galactic"
 
-    water_box = sim.add_volume("Box", "water_box")
-    water_box.size = [10 * cm, 10 * cm, 5 * cm]
-    water_box.material = "G4_WATER"
-    water_box.translation = [0, 0, 0]
+    water_box1 = sim.add_volume("Box", "water_box1")
+    water_box1.size = [10 * cm, 10 * cm, 2.5 * cm]
+    water_box1.material = "G4_WATER"
+    water_box1.translation = [0, 0, -1.25 * cm]
+    water_box2 = sim.add_volume("Box", "water_box2")
+    water_box2.size = [10 * cm, 10 * cm, 2.5 * cm]
+    water_box2.material = "G4_WATER"
+    water_box2.translation = [0, 0, 1.25 * cm]
 
     plane = sim.add_volume("Box", "plane")
     plane.size = [20 * cm, 20 * cm, 1 * nm]
@@ -46,7 +50,7 @@ if __name__ == "__main__":
         "ProcessDefinedStep__compt__water_box",
     )
     aux.process_name = "compt"
-    aux.volume_name = water_box.name
+    aux.volume_name = [water_box1.name, water_box2.name]
 
     phsp_all = sim.add_actor("PhaseSpaceActor", "phsp_all")
     phsp_all.attached_to = plane.name

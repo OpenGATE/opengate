@@ -89,7 +89,7 @@ class ProcessDefinedStepInVolumeAttribute(
 ):
     """
     Count how often the configured process defined a step in the configured
-    volume for the current track. Optionally propagate the current count
+    volumes for the current track. Optionally propagate the current count
     snapshot to secondaries created along the track.
     """
 
@@ -100,10 +100,10 @@ class ProcessDefinedStepInVolumeAttribute(
                 "doc": "Name of the Geant4 process to count.",
             },
         ),
-        "volume_name": (
+        "volume_names": (
             None,
             {
-                "doc": "Name of the volume in which the process count is evaluated.",
+                "doc": "Names of the volumes in which the process count is evaluated.",
             },
         ),
         "propagate_from_parent_track": (
