@@ -50,7 +50,7 @@ if __name__ == "__main__":
         "ProcessDefinedStep__compt__water_box",
     )
     aux.process_name = "compt"
-    aux.volume_name = [water_box1.name, water_box2.name]
+    aux.volume_names = [water_box1.name, water_box2.name]
 
     phsp_all = sim.add_actor("PhaseSpaceActor", "phsp_all")
     phsp_all.attached_to = plane.name
