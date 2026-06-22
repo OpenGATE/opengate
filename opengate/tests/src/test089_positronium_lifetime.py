@@ -6,6 +6,7 @@ from opengate.tests import utility
 
 import numpy as np
 import uproot
+import matplotlib.pyplot as plt
 
 # Units
 MeV = gate.g4_units.MeV
@@ -72,10 +73,9 @@ def calculate_lifetimes(group):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__,
-        "gate_test089_positronium_statistics",
-        output_folder="test089")
+    paths = utility.get_default_test_paths(__file__,
+                                           "gate_test089_positronium_lifetime",
+                                           output_folder="test089")
     print("Starting")
 
     # create the simulation
@@ -133,10 +133,16 @@ if __name__ == "__main__":
     df = phsp_output["PhaseSpace"].arrays(library="pd")
 
     lifetimes = df.groupby('EventID').apply(calculate_lifetimes).reset_index(
-        name='lifetime')
+        name='lifetime')["lifetime"]
 
-    mean_lifetime = lifetimes["lifetime"].mean()
+    mean_lifetime = lifetimes.mean()
+
+    plt.figure()
+    plt.hist(lifetimes, bins=100)
+    plt.yscale("log")
+    plt.savefig(paths.output / "lifetime.pdf")
 
     print("Mean lifetime: " + str(mean_lifetime))
 
-    assert np.isclose(mean_lifetime, MEAN_LIFETIME_NS, atol=0., rtol=.1)
+    is_ok = np.isclose(mean_lifetime, MEAN_LIFETIME_NS, atol=0., rtol=.1)
+    utility.test_ok(is_ok)
