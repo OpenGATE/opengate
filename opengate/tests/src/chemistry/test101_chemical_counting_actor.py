@@ -283,6 +283,11 @@ def compare_results(result1, result2):
 
 
 if __name__ == "__main__":
+
+    paths = utility.get_default_test_paths(
+        __file__, gate_folder="", output_folder="test101_chemical_counting_actor"
+    )
+
     sim_global, stats_global, chem_actor_global = create_simulation(
         use_actor_requested_dna_em=False
     )
@@ -290,11 +295,8 @@ if __name__ == "__main__":
     results_global = chem_actor_global.results.get_data()
     print_results("Explicit region DNA EM results:", results_global)
 
-    plot_species_counts(
-        results_global,
-        "Explicit region DNA EM",
-        "test101_species_explicit_region_dna_em.png",
-    )
+    fn = paths.output / "test101_species_explicit_region_dna_em.png"
+    plot_species_counts(results_global, "Explicit region DNA EM", fn)
 
     # sim_actor, stats_actor, chem_actor_actor = create_simulation(
     #     use_actor_requested_dna_em=True

@@ -22,7 +22,7 @@ import opengate as gate
 from opengate.geometry import fields
 from opengate.tests import utility
 
-from test099_fields_helpers import (
+from opengate.tests.src.geometry.test099_fields_helpers import (
     g4_m,
     g4_cm,
     g4_mm,
