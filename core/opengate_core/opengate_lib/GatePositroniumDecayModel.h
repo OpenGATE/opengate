@@ -31,6 +31,8 @@ class GatePositroniumDecayModel:public GateGammaEmissionModel
   G4PrimaryVertex* GetPrimaryVertexFromPositroniumAnnihilation(G4double particle_time, const G4ThreeVector &particle_position, int decayIndex);
   G4PrimaryParticle* GetGammaFromDeexcitation(int decayIndex);
   std::vector<G4PrimaryParticle*> GetGammasFromPositroniumAnnihilation(int decayIndex);
+  GateEmittedGammaInformation::DecayModel GetDecayModel(int decayIndex) const;
+  GateEmittedGammaInformation::SourceKind GetSourceKind(int decayIndex) const;
 
   private:
   PositroniumDecayModelParams fModelParams;
