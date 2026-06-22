@@ -6,8 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateGANSource.h"
-#include "G4ParticleTable.hh"
-#include "G4UnitsTable.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 GateGANSource::GateGANSource() : GateGenericSource() {
@@ -49,9 +48,8 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   // AAManager is already set in GenericSource BUT MUST be iso direction here?
   auto d = py::dict(user_info["direction"]);
   auto dd = DictToMap(d["angular_acceptance"]);
-  auto &ll = GetThreadLocalDataGenericSource();
-  ll.fAAManager->Initialize(dd, true);
-  ll.fSPS->SetAAManager(ll.fAAManager);
+  fAAManager->Initialize(dd, true);
+  fSPS->SetAAManager(fAAManager);
 
   // energy threshold mode
   auto s = DictGetStr(user_info, "skip_policy");
@@ -69,12 +67,12 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   }
 
   // FIXME generic ion ? Should be possible, not tested
-  if (ll.fInitGenericIon) {
+  if (fInitGenericIon) {
     Fatal("Sorry, generic ion is not implemented with GAN source");
   }
 
   // FIXME confine ?
-  if (ll.fInitConfine) {
+  if (fInitConfine) {
     Fatal("Sorry, confine is not implemented with GAN source");
   }
 }
@@ -88,13 +86,11 @@ void GateGANSource::PrepareNextRun() {
   GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
-  auto &l = fThreadLocalData.Get();
-  auto &lll = GetThreadLocalDataGenericSource();
-  auto *pos = lll.fSPS->GetPosDist();
-  pos->SetCentreCoords(l.fGlobalTranslation);
+  auto *pos = fSPS->GetPosDist();
+  pos->SetCentreCoords(fGlobalTranslation);
 
   // orientation according to mother volume
-  auto rotation = l.fGlobalRotation;
+  auto rotation = fGlobalRotation;
   G4ThreeVector r1(rotation(0, 0), rotation(1, 0), rotation(2, 0));
   G4ThreeVector r2(rotation(0, 1), rotation(1, 1), rotation(2, 1));
   pos->SetPosRot1(r1);
@@ -162,15 +158,13 @@ void GateGANSource::GeneratePrimaries(G4Event *event,
   fCurrentIndex++;
 
   // update the number of generated event
-  auto &l = fThreadLocalData.Get();
-  l.fNumberOfGeneratedEvents++;
+  fNumberOfGeneratedEvents++;
 }
 
 void GateGANSource::GenerateOnePrimary(G4Event *event,
                                        double current_simulation_time) {
   // If AA (Angular Acceptance) is enabled, we perform rejection
-  auto &l = GetThreadLocalDataGenericSource();
-  if (l.fAAManager->IsEnabled())
+  if (fAAManager->IsEnabled())
     return GenerateOnePrimaryWithAA(event, current_simulation_time);
 
   // If no AA, we loop until energy is acceptable,
@@ -178,19 +172,19 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
   G4ThreeVector position;
   G4ThreeVector direction;
   double energy = 0;
-  l.fCurrentZeroEvents = 0;
-  l.fCurrentSkippedEvents = 0;
+  fCurrentZeroEvents = 0;
+  fCurrentSkippedEvents = 0;
 
   while (energy == 0 && fCurrentIndex < fCurrentBatchSize) {
     // position
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
-    if (fPosition_is_set_by_GAN || l.fCurrentSkippedEvents == 0)
+    if (fPosition_is_set_by_GAN || fCurrentSkippedEvents == 0)
       position = GeneratePrimariesPosition();
     // FIXME change position is not set by GAN
 
     // direction
     // (if it is not set by the GAN, we may avoid to sample at each iteration)
-    if (fDirection_is_set_by_GAN || l.fCurrentSkippedEvents == 0)
+    if (fDirection_is_set_by_GAN || fCurrentSkippedEvents == 0)
       direction = GeneratePrimariesDirection();
 
     // energy
@@ -203,11 +197,11 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
       if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy ||
           fCurrentIndex >= fCurrentBatchSize - 1) {
         energy = -1;
-        l.fCurrentZeroEvents = 1;
+        fCurrentZeroEvents = 1;
       } else {
         // energy is not ok, we skip the event and try the next one
         energy = 0;
-        l.fCurrentSkippedEvents++;
+        fCurrentSkippedEvents++;
         fCurrentIndex++;
       }
     }
@@ -217,7 +211,7 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
   // we continue with a zeroE event
   if (energy == -1 || fCurrentIndex >= fCurrentBatchSize - 1) {
     energy = 0;
-    l.fCurrentZeroEvents = 1;
+    fCurrentZeroEvents = 1;
   }
 
   // timing
@@ -231,8 +225,6 @@ void GateGANSource::GenerateOnePrimary(G4Event *event,
 }
 
 G4ThreeVector GateGANSource::GeneratePrimariesPosition() {
-  auto &l = GetThreadLocalData();
-  auto &ll = GetThreadLocalDataGenericSource();
   G4ThreeVector position;
   if (fPosition_is_set_by_GAN) {
     position =
@@ -240,15 +232,14 @@ G4ThreeVector GateGANSource::GeneratePrimariesPosition() {
                       fPositionZ[fCurrentIndex]);
     position = fLocalRotation * position + fLocalTranslation; // FIXME
     // move position according to mother volume
-    position = l.fGlobalRotation * position + l.fGlobalTranslation;
+    position = fGlobalRotation * position + fGlobalTranslation;
   } else
-    position = ll.fSPS->GetPosDist()->VGenerateOne();
+    position = fSPS->GetPosDist()->VGenerateOne();
   return position;
 }
 
 G4ThreeVector GateGANSource::GeneratePrimariesDirection() {
   G4ThreeVector direction;
-  auto &ll = GetThreadLocalDataGenericSource();
   if (fDirection_is_set_by_GAN) {
     direction = G4ParticleMomentum(fDirectionX[fCurrentIndex],
                                    fDirectionY[fCurrentIndex],
@@ -256,54 +247,50 @@ G4ThreeVector GateGANSource::GeneratePrimariesDirection() {
     // normalize (needed)
     direction = direction / direction.mag();
     // move according to mother volume
-    auto &l = fThreadLocalData.Get();
-    direction = l.fGlobalRotation * direction;
+    direction = fGlobalRotation * direction;
   } else
-    direction = ll.fSPS->GetAngDist()->GenerateOne();
+    direction = fSPS->GetAngDist()->GenerateOne();
   return direction;
 }
 
 double GateGANSource::GeneratePrimariesEnergy() {
   double energy;
-  auto &ll = GetThreadLocalDataGenericSource();
 
   if (fEnergy_is_set_by_GAN)
     energy = fEnergy[fCurrentIndex];
   else
-    energy = ll.fSPS->GetEneDist()->VGenerateOne(fParticleDefinition);
+    energy = fSPS->GetEneDist()->VGenerateOne(fParticleDefinition);
   return energy;
 }
 
 double GateGANSource::GeneratePrimariesTime(double current_simulation_time) {
-  auto &ll = fThreadLocalDataGenericSource.Get();
-
   if (!fTime_is_set_by_GAN) {
-    ll.fEffectiveEventTime = current_simulation_time;
-    return ll.fEffectiveEventTime;
+    fEffectiveEventTime = current_simulation_time;
+    return fEffectiveEventTime;
   }
 
-  if (ll.fCurrentZeroEvents > 0) {
-    ll.fEffectiveEventTime = current_simulation_time;
-    return ll.fEffectiveEventTime;
+  if (fCurrentZeroEvents > 0) {
+    fEffectiveEventTime = current_simulation_time;
+    return fEffectiveEventTime;
   }
 
   // if the time is managed by the GAN, it can be relative or absolute.
   if (fRelativeTiming) {
     // update the real time (important as the event is in the
     // future according to the current_simulation_time)
-    UpdateEffectiveEventTime(current_simulation_time, ll.fCurrentSkippedEvents);
+    UpdateEffectiveEventTime(current_simulation_time, fCurrentSkippedEvents);
   }
 
   // Get the time from the GAN except if it is a zeroE
-  if (ll.fCurrentZeroEvents > 0)
-    ll.fEffectiveEventTime = current_simulation_time;
+  if (fCurrentZeroEvents > 0)
+    fEffectiveEventTime = current_simulation_time;
   else {
     if (fRelativeTiming)
-      ll.fEffectiveEventTime += fTime[fCurrentIndex];
+      fEffectiveEventTime += fTime[fCurrentIndex];
     else
-      ll.fEffectiveEventTime = fTime[fCurrentIndex];
+      fEffectiveEventTime = fTime[fCurrentIndex];
   }
-  return ll.fEffectiveEventTime;
+  return fEffectiveEventTime;
 }
 
 double GateGANSource::GeneratePrimariesWeight() {
@@ -318,10 +305,9 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
   G4ThreeVector direction;
   double energy = 0;
   bool cont = true;
-  auto &l = GetThreadLocalDataGenericSource();
-  l.fCurrentZeroEvents = 0;
-  l.fCurrentSkippedEvents = 0;
-  l.fAAManager->StartAcceptLoop();
+  fCurrentZeroEvents = 0;
+  fCurrentSkippedEvents = 0;
+  fAAManager->StartAcceptLoop();
 
   while (cont) {
     // position
@@ -331,17 +317,17 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
     direction = GeneratePrimariesDirection();
 
     // check AA
-    bool accept_angle = l.fAAManager->TestIfAccept(position, direction);
+    bool accept_angle = fAAManager->TestIfAccept(position, direction);
 
     if (!accept_angle &&
-        l.fAAManager->GetPolicy() == GateAcceptanceAngleManager::AAZeroEnergy) {
+        fAAManager->GetPolicy() == GateAcceptanceAngleManager::AAZeroEnergy) {
       energy = 0;
       cont = false;
       continue; // stop here
     }
     if (!accept_angle &&
-        l.fAAManager->GetPolicy() == GateAcceptanceAngleManager::AASkipEvent) {
-      l.fCurrentSkippedEvents++;
+        fAAManager->GetPolicy() == GateAcceptanceAngleManager::AASkipEvent) {
+      fCurrentSkippedEvents++;
       fCurrentIndex++;
       continue; // no need to check energy now
     }
@@ -356,11 +342,11 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
       if (fSkipEnergyPolicy == SEPolicyType::AAZeroEnergy) {
         cont = false;
         energy = 0;
-        l.fCurrentZeroEvents = 1;
+        fCurrentZeroEvents = 1;
         continue; // stop here
       } else {
         // energy is not ok, we skip the event and try the next one
-        l.fCurrentSkippedEvents++;
+        fCurrentSkippedEvents++;
         fCurrentIndex++;
       }
     }
@@ -369,7 +355,7 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
     if (fCurrentIndex >= fCurrentBatchSize) {
       cont = false;
       energy = 0;
-      l.fCurrentZeroEvents = 1;
+      fCurrentZeroEvents = 1;
       continue; // stop here
     } else {
       cont = false;

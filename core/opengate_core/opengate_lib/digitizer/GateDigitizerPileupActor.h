@@ -8,7 +8,9 @@
 #ifndef GateDigitizerPileupActor_h
 #define GateDigitizerPileupActor_h
 
+#include "../GateUniqueVolumeID.h"
 #include "GateDigiCollection.h"
+#include "GateDigiCollectionIterator.h"
 #include "GateTimeSorter.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>

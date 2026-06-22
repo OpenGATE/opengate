@@ -8,10 +8,10 @@
 #ifndef GateTrackingAction_h
 #define GateTrackingAction_h
 
-#include "G4Track.hh"
-#include "G4UserTrackingAction.hh"
 #include "GateVActor.h"
 #include "GateVAuxiliaryAttribute.h"
+#include <G4Track.hh>
+#include <G4UserTrackingAction.hh>
 #include <vector>
 
 /*

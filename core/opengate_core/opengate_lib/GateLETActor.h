@@ -8,13 +8,8 @@
 #ifndef GateLETActor_h
 #define GateLETActor_h
 
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
-#include "G4VPrimitiveScorer.hh"
-#include "GateHelpersImage.h"
 #include "GateWeightedEdepActor.h"
-#include "itkImage.h"
+#include <G4VPrimitiveScorer.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

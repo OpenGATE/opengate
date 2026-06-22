@@ -7,9 +7,8 @@ Copyright (C): OpenGATE Collaboration
 
 #include "GateGammaFreeFlightOptrActor.h"
 #include "../GateHelpers.h"
-#include "../GateHelpersDict.h"
-#include "G4BiasingProcessInterface.hh"
-#include "G4EmParameters.hh"
+#include <G4BiasingProcessInterface.hh>
+#include <G4EmParameters.hh>
 
 GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
     : GateVBiasOptrActor("GammaFreeFlightOperator", user_info, true) {

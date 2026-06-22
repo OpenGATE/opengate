@@ -8,11 +8,9 @@
 #ifndef GateDigiAttributeLastProcessDefinedStepInVolume_h
 #define GateDigiAttributeLastProcessDefinedStepInVolume_h
 
-#include "../GateHelpers.h"
+#include "GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 #include "GateTDigiAttribute.h"
 #include <pybind11/stl.h>
-
-#include "GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 
 class GateDigiAttributeLastProcessDefinedStepInVolume
     : public GateTDigiAttribute<std::string> {

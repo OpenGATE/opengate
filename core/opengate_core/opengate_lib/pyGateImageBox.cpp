@@ -5,13 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateImageBox.h"
+#include <G4Box.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "G4Box.hh"
-#include "GateImageBox.h"
 
 void init_GateImageBox(py::module &m) {
 

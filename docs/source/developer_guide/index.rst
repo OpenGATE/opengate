@@ -14,6 +14,7 @@ Developer guide
 
    developer_guide_code_structure
    developer_guide_how_to_implement
+   developer_guide_chemistry_architecture
    developer_guide_dynamic_parametrisations
    developer_guide_auxiliary_attributes
 

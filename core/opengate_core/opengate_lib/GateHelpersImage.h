@@ -8,10 +8,8 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERSIMAGE_H
 #define OPENGATE_CORE_OPENGATEHELPERSIMAGE_H
 
-#include "G4LogicalVolumeStore.hh"
-#include "G4PhysicalVolumeStore.hh"
-#include "GateHelpers.h"
-#include "itkImage.h"
+#include <G4RotationMatrix.hh>
+#include <G4Step.hh>
 
 template <class ImageType>
 void ImageAddValue(typename ImageType::Pointer image,

@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateTrackingAction.h"
-#include "G4RunManager.hh"
 #include "GateUserEventInformation.h"
+#include <G4RunManager.hh>
 
 GateTrackingAction::GateTrackingAction() : G4UserTrackingAction() {
   fUserEventInformationFlag = false;

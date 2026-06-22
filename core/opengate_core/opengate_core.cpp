@@ -77,6 +77,7 @@ void init_G4ParallelWorldPhysics(py::module &);
 void init_G4VModularPhysicsList(py::module &);
 
 void init_G4VPhysicsConstructor(py::module &);
+void init_G4PhysicsListHelper(py::module &);
 
 void init_G4PhysicsFreeVector(py::module &);
 
@@ -96,6 +97,8 @@ void init_G4UserEventAction(py::module &);
 
 void init_G4UserTrackingAction(py::module &);
 
+void init_G4UserStackingAction(py::module &);
+
 void init_G4UserSteppingAction(py::module &);
 
 void init_G4Track(py::module &);
@@ -103,6 +106,30 @@ void init_G4Track(py::module &);
 void init_G4Step(py::module &);
 
 void init_G4StepPoint(py::module &);
+
+// Geant4-DNA
+
+void init_G4VUserChemistryList(py::module &);
+
+void init_G4MoleculeTable(py::module &);
+
+void init_G4MoleculeCounterTimeComparer(py::module &);
+
+void init_G4MoleculeCounter(py::module &);
+
+void init_G4MoleculeReactionCounter(py::module &);
+
+void init_G4MoleculeCounterManager(py::module &);
+
+void init_G4DNAChemistryManager(py::module &);
+void init_G4DNAScavengerMaterial(py::module &);
+void init_G4DNAScavengerProcess(py::module &);
+
+void init_G4Scheduler(py::module &);
+
+void init_G4UserTimeStepAction(py::module &);
+
+void init_G4ITTrackingInteractivity(py::module &);
 
 // processes/electromagnetic/utils
 
@@ -348,10 +375,15 @@ void init_QMainWindow(py::module &);
 
 // Gate
 void init_GateCheckDeex(py::module &);
+void init_GateCheckEmModel(py::module &);
 
 void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
+
+void init_GateVChemistryActor(py::module &);
+void init_GateChemistryController(py::module &);
+void init_GateChemistryWorld(py::module &);
 
 void init_GateWeightedEdepActor(py::module &);
 
@@ -370,6 +402,8 @@ void init_GateAttributeComparisonFilter(py::module &);
 
 // Gate actors
 void init_GateDoseActor(py::module &m);
+
+void init_GateDebugActor(py::module &m);
 
 void init_GateVoxelizedPromptGammaTLEActor(py::module &m);
 
@@ -414,6 +448,14 @@ void init_GateEventAction(py::module &);
 void init_GateTrackingAction(py::module &);
 
 void init_GateSteppingAction(py::module &);
+
+void init_GateStackingAction(py::module &);
+
+void init_GateTimeStepAction(py::module &);
+
+void init_GateITTrackingInteractivity(py::module &);
+
+void init_GateChemicalCountingActor(py::module &);
 
 void init_GateVAuxiliaryAttribute(py::module &);
 
@@ -490,6 +532,8 @@ void init_GateSourceManager(py::module &);
 
 void init_GateGenericSource(py::module &);
 
+void init_GateDebugSource(py::module &);
+
 void init_GateTreatmentPlanPBSource(py::module &);
 
 void init_GateTemplateSource(py::module &);
@@ -558,6 +602,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4VPhysicsConstructor(m);
   init_G4VModularPhysicsList(m);
   init_G4PhysListFactory(m);
+  init_G4PhysicsListHelper(m);
   init_G4PhysicsFreeVector(m);
 
   init_G4VUserParallelWorld(m);
@@ -572,10 +617,32 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4PrimaryVertex(m);
   init_G4UserEventAction(m);
   init_G4UserTrackingAction(m);
+  init_G4UserStackingAction(m);
+  init_G4VProcess(m);
   init_G4StepPoint(m);
   init_G4Track(m);
   init_G4Step(m);
   init_G4UserSteppingAction(m);
+
+  init_G4ParticleTable(m);
+  init_G4ParticleDefinition(m);
+  init_G4Ions(m);
+  init_G4IonTable(m);
+  init_G4DecayTable(m);
+  init_G4VDecayChannel(m);
+
+  init_G4VUserChemistryList(m);
+  init_G4MoleculeTable(m);
+  init_G4MoleculeCounterTimeComparer(m);
+  init_G4MoleculeCounter(m);
+  init_G4MoleculeReactionCounter(m);
+  init_G4MoleculeCounterManager(m);
+  init_G4DNAChemistryManager(m);
+  init_G4DNAScavengerMaterial(m);
+  init_G4DNAScavengerProcess(m);
+  init_G4Scheduler(m);
+  init_G4UserTimeStepAction(m);
+  init_G4ITTrackingInteractivity(m);
 
   init_G4VSolid(m);
   init_G4VFacet(m);
@@ -661,7 +728,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4LinInterpolator(m);
   init_G4DataVector(m);
 
-  init_G4VProcess(m);
   init_G4VBiasingOperator(m);
   init_G4ProcessManager(m);
   init_G4ProcessTable(m);
@@ -685,13 +751,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4SPSEneDistribution(m);
   init_G4SingleParticleSource(m);
 
-  init_G4ParticleTable(m);
-  init_G4ParticleDefinition(m);
-  init_G4Ions(m);
-  init_G4IonTable(m);
-  init_G4DecayTable(m);
-  init_G4VDecayChannel(m);
-
   init_G4VPrimitiveScorer(m);
 
   init_G4UImanager(m);
@@ -710,8 +769,12 @@ PYBIND11_MODULE(opengate_core, m) {
 
   // Gate
   init_GateCheckDeex(m);
+  init_GateCheckEmModel(m);
   init_GateInfo(m);
   init_GateVActor(m);
+  init_GateVChemistryActor(m);
+  init_GateChemistryController(m);
+  init_GateChemistryWorld(m);
   init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
@@ -726,6 +789,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateLastVertexSource(m);
   init_GateSourceManager(m);
   init_GateGenericSource(m);
+  init_GateDebugSource(m);
   init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
@@ -742,6 +806,10 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateEventAction(m);
   init_GateTrackingAction(m);
   init_GateSteppingAction(m);
+  init_GateStackingAction(m);
+  init_GateTimeStepAction(m);
+  init_GateITTrackingInteractivity(m);
+  init_GateChemicalCountingActor(m);
   init_GateVAuxiliaryAttribute(m);
   init_GateInteractionCounterAttribute(m);
   init_GateUnscatteredPrimaryAttribute(m);
@@ -750,6 +818,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateProcessDefinedStepInVolumeAttribute(m);
 
   init_GateDoseActor(m);
+  init_GateDebugActor(m);
   init_GateTLEDoseActor(m);
   init_GateVoxelizedPromptGammaTLEActor(m);
   init_GateVoxelizedPromptGammaAnalogActor(m);

@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateTDigiAttribute.h"
-#include "G4RootAnalysisManager.hh"
-#include "GateDigiCollectionsRootManager.h"
+#include "../GateHelpers.h"
+#include <G4RootAnalysisManager.hh>
 
 template <class T>
 GateTDigiAttribute<T>::GateTDigiAttribute(std::string vname)
@@ -24,7 +24,7 @@ void GateTDigiAttribute<T>::InitDefaultProcessHitsFunction() {
 }
 
 template <class T> int GateTDigiAttribute<T>::GetSize() const {
-  return Values().size();
+  return static_cast<int>(Values().size());
 }
 
 template <class T> void GateTDigiAttribute<T>::FillDValue(double) {
@@ -266,7 +266,7 @@ template <> void GateTDigiAttribute<int>::FillToRoot(size_t index) const {
 template <> void GateTDigiAttribute<int64_t>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   const auto v = Values()[index];
-  ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
+  ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, static_cast<G4int>(v));
 }
 
 template <>

@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4Field.hh"
+#include <G4Field.hh>
 
 /*
  * Trampoline class to allow Python to override GetFieldValue and

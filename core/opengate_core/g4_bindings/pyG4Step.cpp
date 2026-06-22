@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4Step.hh"
+#include <G4Step.hh>
 
 void init_G4Step(py::module &m) {
 

@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4StepLimiter.hh"
-#include "G4VProcess.hh"
+#include <G4StepLimiter.hh>
+#include <G4VProcess.hh>
 
 void init_G4StepLimiter(py::module &m) {
 

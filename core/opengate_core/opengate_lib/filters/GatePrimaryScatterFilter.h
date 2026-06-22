@@ -11,8 +11,6 @@
 #include "GateVFilter.h"
 #include <pybind11/stl.h>
 
-namespace py = pybind11;
-
 class GateUnscatteredPrimaryFilter : public GateVFilter {
 
 public:

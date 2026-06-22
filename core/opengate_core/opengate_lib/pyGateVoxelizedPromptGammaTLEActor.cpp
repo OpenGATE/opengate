@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateVoxelizedPromptGammaTLEActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateVoxelizedPromptGammaTLEActor.h"
 
 class PyGateVoxelizedPromptGammaTLEActor
     : public GateVoxelizedPromptGammaTLEActor {

@@ -5,22 +5,14 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
-#include "G4Track.hh"
-
-#include "G4HadronInelasticProcess.hh"
-#include "GateHelpers.h"
+#include "GateVoxelizedPromptGammaTLEActor.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-#include "GateMaterialMuHandler.h"
-#include "GateVoxelizedPromptGammaTLEActor.h"
-
-#include "CLHEP/Random/Randomize.h"
+#include <G4EmCalculator.hh>
+#include <G4HadronInelasticProcess.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4RunManager.hh>
+#include <G4Track.hh>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkCastImageFilter.h>

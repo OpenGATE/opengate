@@ -6,7 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateSingleParticleSourcePencilBeam.h"
-#include "GateHelpersDict.h"
+#include <G4Event.hh>
+#include <G4PrimaryVertex.hh>
 
 GateSingleParticleSourcePencilBeam::GateSingleParticleSourcePencilBeam(
     std::string motherVolume, std::string)

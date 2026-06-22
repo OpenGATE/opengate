@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Trap.hh"
+#include <G4Trap.hh>
 
 void init_G4Trap(py::module &m) {
   py::class_<G4Trap, G4VSolid>(m, "G4Trap")

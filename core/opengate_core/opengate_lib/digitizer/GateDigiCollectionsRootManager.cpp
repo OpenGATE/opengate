@@ -6,9 +6,10 @@
    -------------------------------------------------- */
 
 #include "GateDigiCollectionsRootManager.h"
-#include "G4RootAnalysisManager.hh"
-#include "G4Run.hh"
-#include "G4RunManager.hh"
+#include "../GateHelpers.h"
+#include <G4RootAnalysisManager.hh>
+#include <G4Run.hh>
+#include <G4RunManager.hh>
 
 GateDigiCollectionsRootManager *GateDigiCollectionsRootManager::fInstance =
     nullptr;

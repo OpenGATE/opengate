@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4VIntegrationDriver.hh"
+#include <G4VIntegrationDriver.hh>
 
 void init_G4VIntegrationDriver(py::module &m) {
 

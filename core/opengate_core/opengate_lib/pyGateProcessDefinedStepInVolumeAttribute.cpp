@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateProcessDefinedStepInVolumeAttribute.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateProcessDefinedStepInVolumeAttribute.h"
 
 void init_GateProcessDefinedStepInVolumeAttribute(py::module &m) {
   py::class_<GateProcessDefinedStepInVolumeAttribute, GateVAuxiliaryAttribute>(

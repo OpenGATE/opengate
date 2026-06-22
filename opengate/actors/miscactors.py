@@ -636,6 +636,63 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
         self.user_output.attenuation_image.end_of_simulation()
 
 
+class DebugActor(ActorBase, g4.GateDebugActor):
+    """
+    Process tracking for debugging and education purposes.
+
+    Example usage in Python:
+      debug = sim.add_actor("DebugActor", "debug")
+      debug.debug_flag = True
+    """
+
+    user_info_defaults = {"debug_flag": (False, {"doc": "Test option"})}
+
+    def __init__(self, *args, **kwargs):
+        print(f"(python) DebugActor: __init__")
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        print(f"(python) DebugActor ({self.name}) : __initcpp__")
+        g4.GateDebugActor.__init__(self, self.user_info)
+        print(f"(python) DebugActor ({self.name}) : AddActions")
+        self.AddActions(
+            {
+                "BeginOfSimulationAction",
+                "BeginOfRunAction",
+                "PreUserTrackingAction",
+                "PostUserTrackingAction",
+                "BeginOfEventAction",
+                "EndOfEventAction",
+                "SteppingAction",
+                "EndOfRunAction",
+                "EndOfSimulationAction",
+            }
+        )
+
+    def __getstate__(self):
+        print(f"(python) DebugActor ({self.name}) : __getstate__")
+        return ActorBase.__getstate__(self)
+
+    def __setstate__(self, state):
+        print(f"(python) DebugActor ({self.name}) : __setstate__")
+        ActorBase.__setstate__(self, state)
+
+    def initialize(self):
+        print(f"(python) DebugActor ({self.name}) : initialize")
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def BeginOfSimulationAction(self):
+        print(f"(python) DebugActor ({self.name}) : BeginOfSimulationAction")
+        g4.GateDebugActor.BeginOfSimulationAction(self)
+
+    def EndOfSimulationAction(self):
+        print(f"(python) DebugActor ({self.name}) : EndOfSimulationAction")
+        g4.GateDebugActor.EndOfSimulationAction(self)
+
+
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
@@ -646,3 +703,4 @@ process_cls(KillAccordingParticleNameActor)
 process_cls(ActorOutputKillNonInteractingParticleActor)
 process_cls(KillNonInteractingParticleActor)
 process_cls(AttenuationImageActor)
+process_cls(DebugActor)

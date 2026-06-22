@@ -6,11 +6,11 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4LogicalVolume.hh"
-#include "G4RotationMatrix.hh"
-#include "G4VPVParameterisation.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4Version.hh"
+#include <G4LogicalVolume.hh>
+#include <G4RotationMatrix.hh>
+#include <G4VPVParameterisation.hh>
+#include <G4VPhysicalVolume.hh>
+#include <G4Version.hh>
 
 namespace py = pybind11;
 

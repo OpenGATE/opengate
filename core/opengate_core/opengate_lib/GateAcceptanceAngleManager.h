@@ -9,7 +9,6 @@
 #define GateAcceptanceAngleManager_h
 
 #include "GateAcceptanceAngleSingleVolume.h"
-#include "GateHelpers.h"
 
 class GateAcceptanceAngleManager {
 public:

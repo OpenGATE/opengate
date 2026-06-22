@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateEventAction.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateEventAction.h"
 
 void init_GateEventAction(py::module &m) {
 
@@ -18,5 +15,6 @@ void init_GateEventAction(py::module &m) {
              std::unique_ptr<GateEventAction, py::nodelete>>(m,
                                                              "GateEventAction")
       .def(py::init())
+      .def_readwrite("fChemistryIsActive", &GateEventAction::fChemistryIsActive)
       .def("RegisterActor", &GateEventAction::RegisterActor);
 }

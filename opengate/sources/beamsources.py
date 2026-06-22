@@ -97,7 +97,7 @@ class PBSDirectionValidator(DirectionValidator):
 _pbs_dir_validator = PBSDirectionValidator()
 
 
-class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
+class IonPencilBeamSource(GenericSource):
     """
     Pencil Beam source
     """
@@ -110,19 +110,15 @@ class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        GenericSource.__init__(self, *args, **kwargs)
         self.position.type = "disc"
         self._dir_validator = PBSDirectionValidator()
 
-    def __initcpp__(self):
-        g4.GatePencilBeamSource.__init__(self)
-
-    def initialize(self, run_timing_intervals):
-        GenericSource.initialize(self, run_timing_intervals)
+    def create_g4_source(self):
+        return g4.GatePencilBeamSource()
 
 
-class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
+class TreatmentPlanPBSource(SourceBase):
     """
     Treatment Plan source Pencil Beam
     """
@@ -234,8 +230,7 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        SourceBase.__init__(self, *args, **kwargs)
         # initialize internal members
         self.spots = None
         self.rotation = None
@@ -246,18 +241,15 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         self.proportion_factor_x = None
         self.proportion_factor_y = None
 
-    def __initcpp__(self):
-        g4.GateTreatmentPlanPBSource.__init__(self)
+    def create_g4_source(self):
+        return g4.GateTreatmentPlanPBSource()
 
-    def initialize(self, run_timing_intervals):
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
         if not self.beam_data_dict and not self.plan_path:
             raise ValueError(
                 "User must provide either a treatment plan file path or a beam data dictionary "
                 "with spots and gantry angle."
             )
-
-        # if len(self.user_info.n_primaries_vector) != len(self.user_info.run_timing_intervals):
-        #     raise ValueError("Particles per run must have the same length of the number of runs")
 
         # set pbs param
         self._set_pbs_param_all_spots()
@@ -272,11 +264,14 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
             if len(words) > 3:
                 self.ion.E = words[3]
 
-        # initialize
-        SourceBase.initialize(self, run_timing_intervals)
+        self.initialize_start_end_time(run_timing_intervals)
+        self.check_ui_activity(self.user_info)
+        g4_source.InitializeUserInfo(self.user_info)
 
     def get_generated_primaries(self):
-        return self.g4_source.GetGeneratedPrimaries()
+        if self.g4_thread_sources:
+            return self.g4_thread_sources[0].GetGeneratedPrimaries()
+        return []
 
     def _set_pbs_param_all_spots(self):
         # initialize vectors every time, otherwise issues with MT

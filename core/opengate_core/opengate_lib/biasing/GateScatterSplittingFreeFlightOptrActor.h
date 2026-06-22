@@ -8,10 +8,10 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptrSplitComptonScatteringActor_h
 #define GateOptrSplitComptonScatteringActor_h
 
-#include "G4VBiasingOperator.hh"
 #include "GateGammaFreeFlightOptn.h"
 #include "GateScatterSplittingFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
+#include <G4VBiasingOperator.hh>
 #include <unordered_set>
 
 namespace py = pybind11;

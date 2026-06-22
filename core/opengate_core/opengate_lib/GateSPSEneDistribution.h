@@ -8,7 +8,7 @@
 #ifndef GateSPSEneDistribution_h
 #define GateSPSEneDistribution_h
 
-#include "G4SPSEneDistribution.hh"
+#include <G4SPSEneDistribution.hh>
 
 class GateSPSEneDistribution : public G4SPSEneDistribution {
 

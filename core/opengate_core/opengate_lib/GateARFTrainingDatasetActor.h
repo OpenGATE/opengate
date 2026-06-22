@@ -8,8 +8,6 @@
 #ifndef GateARFTrainingDatasetActor_h
 #define GateARFTrainingDatasetActor_h
 
-#include "GateHelpers.h"
-#include "GateVActor.h"
 #include "digitizer/GateDigitizerEnergyWindowsActor.h"
 #include "digitizer/GateDigitizerHitsCollectionActor.h"
 #include <pybind11/stl.h>

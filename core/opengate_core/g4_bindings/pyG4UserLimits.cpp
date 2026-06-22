@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4Track.hh"
-#include "G4UserLimits.hh"
+#include <G4Track.hh>
+#include <G4UserLimits.hh>
 
 void init_G4UserLimits(py::module &m) {
   py::class_<G4UserLimits>(m, "G4UserLimits")

@@ -10,8 +10,8 @@
 
 namespace py = pybind11;
 
-#include "G4Field.hh"
-#include "G4MagneticField.hh"
+#include <G4Field.hh>
+#include <G4MagneticField.hh>
 
 /*
  * Trampoline class to allow Python to override GetFieldValue for magnetic

@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4MagIntegratorStepper.hh"
-#include "G4Mag_EqRhs.hh"
-#include "G4NystromRK4.hh"
+#include <G4MagIntegratorStepper.hh>
+#include <G4Mag_EqRhs.hh>
+#include <G4NystromRK4.hh>
 
 void init_G4NystromRK4(py::module &m) {
   // G4NystromRK4 inherits from G4MagIntegratorStepper

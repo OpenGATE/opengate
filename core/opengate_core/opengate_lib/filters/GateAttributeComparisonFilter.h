@@ -8,7 +8,6 @@
 #ifndef GateAttributeComparisonFilter_h
 #define GateAttributeComparisonFilter_h
 
-#include "../GateHelpersDict.h"
 #include "../GateVAuxiliaryAttribute.h"
 #include "../digitizer/GateTDigiAttribute.h"
 #include "GateVFilter.h"
