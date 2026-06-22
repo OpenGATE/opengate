@@ -26,7 +26,8 @@ class GateEmittedGammaInformation : public G4VUserPrimaryParticleInformation
    NotDefined = 0, // by default
    SingleGammaEmitter = 1, // just emitted single gamma with specfic energy ( by class GateGammaEmissionModel )
    ParaPositronium = 2, // 2 gammas ( plus prompt if it is required ) from pPs decay ( by GatePositroniumDecayModel )
-   OrthoPositronium = 3 // 3 gammas ( plus prompt if it is required ) from oPs decay ( by GatePositroniumDecayModel )
+   OrthoPositronium = 3, // 3 gammas ( plus prompt if it is required ) from oPs decay ( by GatePositroniumDecayModel )
+   DirectAnnihilation = 4 // 2 gammas from direct annihilation of positron without formation of positronium
   };
 
   /** This enum specifies model of source decay ( if it is present )
@@ -57,6 +58,9 @@ class GateEmittedGammaInformation : public G4VUserPrimaryParticleInformation
   void SetGammaKind( GammaKind gamma_kind );
   GammaKind GetGammaKind() const;
 
+  void SetDecayIndex( G4int decay_index );
+  G4int GetDecayIndex() const;
+
   /** Set polarization of gamma at the moment when it was emitted
    **/
   void SetInitialPolarization( const G4ThreeVector& polarization );
@@ -76,6 +80,7 @@ class GateEmittedGammaInformation : public G4VUserPrimaryParticleInformation
   SourceKind fSourceKind = SourceKind::NotDefined;
   DecayModel fDecayModel = DecayModel::None;
   GammaKind fGammaKind = GammaKind::Unknown;
+  G4int fDecayIndex = -1;
   G4ThreeVector fInitialPolarization = G4ThreeVector( 0.0, 0.0, 0.0 );
   G4double fTimeShift = 0.0;//[ns]
 };
