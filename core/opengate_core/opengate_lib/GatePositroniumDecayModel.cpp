@@ -91,10 +91,45 @@ G4int GatePositroniumDecayModel::GeneratePrimaryVertices(G4Event* event, G4doubl
   return number_of_vertices;
 }
 
+GateEmittedGammaInformation::DecayModel GatePositroniumDecayModel::GetDecayModel(int decayIndex) const
+{
+  if (fModelParams.fPromptGammaProbabilities[decayIndex] > 0)
+    return GateEmittedGammaInformation::DecayModel::Deexcitation;
+  return GateEmittedGammaInformation::DecayModel::Standard;
+}
+
+GateEmittedGammaInformation::SourceKind GatePositroniumDecayModel::GetSourceKind(int decayIndex) const
+{
+  // fPositronInteractions is only populated when positron_interactions is explicitly set.
+  // We intentionally do not fall back to inferring SourceKind from fDecayKind because
+  // k2Gamma does not uniquely identify pPs: oPs pick-off/quenching also produces 2 gammas.
+  if (decayIndex >= static_cast<int>(fModelParams.fPositronInteractions.size()))
+    return GateEmittedGammaInformation::SourceKind::NotDefined;
+
+  switch (fModelParams.fPositronInteractions[decayIndex])
+  {
+    case PositronElectronInteraction::kParaPs:
+      return GateEmittedGammaInformation::SourceKind::ParaPositronium;
+    case PositronElectronInteraction::kOrthoPs:
+      return GateEmittedGammaInformation::SourceKind::OrthoPositronium;
+    case PositronElectronInteraction::kDirect:
+      return GateEmittedGammaInformation::SourceKind::DirectAnnihilation;
+    default:
+      return GateEmittedGammaInformation::SourceKind::NotDefined;
+  }
+}
+
 G4PrimaryParticle* GatePositroniumDecayModel::GetGammaFromDeexcitation(int decayIndex)
 {
  G4PrimaryParticle* gamma = GetSingleGamma(fModelParams.fPromptGammaEnergy[decayIndex]);
- gamma->SetUserInformation( GetPrimaryParticleInformation( gamma, GateEmittedGammaInformation::GammaKind::Prompt ) );
+ GateEmittedGammaInformation *info = GetPrimaryParticleInformation(gamma, GateEmittedGammaInformation::GammaKind::Prompt);
+ info->SetDecayIndex(decayIndex);
+ info->SetDecayModel(GetDecayModel(decayIndex));
+ auto sourceKind = GetSourceKind(decayIndex);
+ if (sourceKind != GateEmittedGammaInformation::SourceKind::NotDefined) {
+   info->SetSourceKind(sourceKind);
+ }
+ gamma->SetUserInformation(info);
  return gamma;
 }
 
@@ -111,15 +146,21 @@ std::vector<G4PrimaryParticle*> GatePositroniumDecayModel::GetGammasFromPositron
  std::vector<G4PrimaryParticle*> gammas(annihilation_gammas_number);
 
  G4DecayProducts* decay_products = fPositroniumDecayChannel[decayIndex].GetDecayProducts();
- for ( G4int i = 0; i < annihilation_gammas_number; ++i )
+ for (G4int i = 0; i < annihilation_gammas_number; ++i)
  {
-  G4PrimaryParticle* gamma = new G4PrimaryParticle( pGammaDefinition );
+  G4PrimaryParticle* gamma = new G4PrimaryParticle(pGammaDefinition);
 
-  G4DynamicParticle* dynamic_gamma = (*decay_products)[i];
+  G4DynamicParticle *dynamic_gamma = (*decay_products)[i];
   G4LorentzVector lv = dynamic_gamma->Get4Momentum();
-  gamma->Set4Momentum( lv.px(), lv.py(), lv.pz(), lv.e() );
-  gamma->SetPolarization( dynamic_gamma->GetPolarization() );
-  gamma->SetUserInformation( GetPrimaryParticleInformation(  gamma, GateEmittedGammaInformation::GammaKind::Annihilation ) );
+  gamma->Set4Momentum(lv.px(), lv.py(), lv.pz(), lv.e());
+  gamma->SetPolarization(dynamic_gamma->GetPolarization());
+  GateEmittedGammaInformation *info = GetPrimaryParticleInformation(gamma, GateEmittedGammaInformation::GammaKind::Annihilation);
+  info->SetDecayIndex(decayIndex);
+  info->SetDecayModel(GetDecayModel(decayIndex));
+  auto sourceKind = GetSourceKind(decayIndex);
+  if (sourceKind != GateEmittedGammaInformation::SourceKind::NotDefined)
+    info->SetSourceKind(sourceKind);
+  gamma->SetUserInformation(info);
   gammas[i] = gamma;
  }
  delete decay_products;
