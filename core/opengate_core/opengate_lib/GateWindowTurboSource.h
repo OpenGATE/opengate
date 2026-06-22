@@ -8,8 +8,9 @@
 #include <G4ThreeVector.hh>
 #include <G4Types.hh>
 #include <G4Vector3D.hh>
-#include <map>
+#include <memory>
 #include <mutex>
+#include <vector>
 
 /*
 author: LiKun (likun@dotuai.com/tontyoutoure@gmail.com)
@@ -25,12 +26,20 @@ azimuthal angles of source point seeing pphi1 and pphi2.
 
 class GateSingleParticleSourceWindowTurbo;
 
+struct GateWindowTurboSharedCache {
+  std::mutex fMutex;
+  std::vector<G4double> fActRatio;
+  std::vector<G4double> fMaxSolidAngle;
+  std::vector<G4double> fInitDuration;
+};
+
 class GateWindowTurboSource : public GateGenericSource {
 public:
   GateWindowTurboSource() = default;
   ~GateWindowTurboSource() override = default;
 
   virtual void PrepareNextRun() override;
+  void SetSharedCache(std::shared_ptr<GateWindowTurboSharedCache> cache);
 
   void VisualizeOneWindow(G4Color color, G4double width, int run_id) const;
   void InitializeUserInfo(py::dict &user_info) override;
@@ -43,8 +52,7 @@ protected:
   virtual void InitializeVisualization(py::dict user_info) override;
 
 private:
-  std::vector<G4double> fA1, fA2, fB1, fB2, fPlaneDistance, fPlanePhi,
-      fActRatio, fMaxSolidAngle, fInitDuration;
+  std::vector<G4double> fA1, fA2, fB1, fB2, fPlaneDistance, fPlanePhi;
   G4int fCurrentRunId;
   G4double fCurrentActRatio;
   G4double GetValueThisRun(const std::vector<G4double> &vec) const {
@@ -57,12 +65,11 @@ private:
     else
       return vec[run_id];
   }
-  void SetValueThisRun(std::vector<G4double> &vec, G4int run_id,
-                       G4double value) {
+  void SetValueThisRun(std::vector<G4double> &vec, G4double value) {
     if (vec.size() == 1)
       vec[0] = value;
     else
-      vec[run_id] = value;
+      vec[fCurrentRunId] = value;
   }
   std::vector<G4Color> visualization_window_color;
   std::vector<G4double> visualization_window_width;
@@ -81,14 +88,12 @@ private:
                        G4ThreeVector &pos3, G4ThreeVector &pos4,
                        int run_id) const;
 
-  void CallOnceBeforeRun(G4int run_id,
-                         GateSingleParticleSourceWindowTurbo *spswt);
+  void PrepareSharedBeforeRun();
+  void InitializeSharedCache(py::dict &user_info);
+  void WriteBackUserInfo();
   py::dict fUserInfo; // to write back act ratio and max solid angle
 
-  std::once_flag &GetInitializeBeforeRunFlag(G4int run_id);
-
-  std::mutex fInitializeBeforeRunMutex;
-  std::map<G4int, std::once_flag> fInitializeBeforeRunFlags = {};
+  std::shared_ptr<GateWindowTurboSharedCache> fSharedCache;
   bool fSkip; // true for act ratio, false for event skipping base on
               // solid angle
 };

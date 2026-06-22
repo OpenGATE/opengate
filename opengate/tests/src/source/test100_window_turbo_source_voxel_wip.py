@@ -36,7 +36,7 @@ def make_itk_source():
     itk_image.SetSpacing([50, 50, 50])
     itk_image.SetOrigin([-125 + 25, -125 + 25, -125 + 25])
     sitk.WriteImage(itk_image, paths.output / "voxel_source.mhd")
-    print(data)
+    # print(data)
 
 
 def initialize(duration=10):

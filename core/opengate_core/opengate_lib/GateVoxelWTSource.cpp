@@ -9,9 +9,8 @@ GateVoxelWTSource::GateVoxelWTSource() : GateWindowTurboSource() {
 void GateVoxelWTSource::PrepareNextRun() {
   GateWindowTurboSource::PrepareNextRun();
 
-  auto &l = GetThreadLocalData();
-  fGlobalRotation = l.fGlobalRotation;
-  fVoxelPositionGenerator->fGlobalTranslation = l.fGlobalTranslation;
+  fVoxelPositionGenerator->fGlobalRotation = fGlobalRotation;
+  fVoxelPositionGenerator->fGlobalTranslation = fGlobalTranslation;
 }
 
 void GateVoxelWTSource::InitializePosition(py::dict) {

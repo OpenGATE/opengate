@@ -1,4 +1,3 @@
-from .base import SourceBase
 import opengate_core as g4
 from .generic import GenericSource, VisualizationValidator
 from box import Box
@@ -233,7 +232,7 @@ class WTSVisualizationValidator(VisualizationValidator):
             )
 
 
-class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
+class WindowTurboSource(GenericSource):
     direction: Box
 
     user_info_defaults = {
@@ -251,17 +250,19 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        GenericSource.__init__(self, *args, **kwargs)
+        self._g4_shared_cache = g4.GateWindowTurboSharedCache()
         self._dir_validator = WTSDirectionValidator()
         self._dir_validator.set_simulation(self.simulation)
         self._visu_validator = WTSVisualizationValidator()
         self._visu_validator.set_simulation(self.simulation)
 
-    def __initcpp__(self):
-        g4.GateWindowTurboSource.__init__(self)
+    def create_g4_source(self):
+        g4_source = g4.GateWindowTurboSource()
+        g4_source.SetSharedCache(self._g4_shared_cache)
+        return g4_source
 
-    def initialize(self, run_timing_intervals):
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
 
         if self.particle == "back_to_back":
             fatal(
@@ -288,7 +289,7 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
                 f"Particle type '{self.particle}' is not 'gamma'. WindowTurboSource is designed for gamma primary purpose only. Proceed ONLY if you know what you are doing."
             )
 
-        GenericSource.initialize(self, run_timing_intervals)
+        GenericSource.initialize_g4_source(self, g4_source, run_timing_intervals)
 
     def can_predict_number_of_events(self):
         # Actually, can, but initialization is needed. However act ratio is dependent on mother volume movement, therefore cannot be predicted before the simulation starts.
@@ -304,14 +305,12 @@ class WindowTurboSource(GenericSource, g4.GateWindowTurboSource):
             fatal(
                 f"Invalid timing interval index {timing_interval_index}. Must be between 0 and {len(self.simulation.run_timing_intervals) - 1}."
             )
-        self.validate_color(color)
+        self._visu_validator.validate_color(color)
         if isinstance(color, str):
             color = color.lower()
-            self.PendingVisualizeWindowWithColourName(
-                color, width, timing_interval_index
-            )
-        else:
-            self.PendingVisualizeWindowWithRGBA(color, width, timing_interval_index)
+        self.visualization.window_color.append(color)
+        self.visualization.window_width.append(width)
+        self.visualization.window_run_id.append(timing_interval_index)
 
 
 process_cls(WindowTurboSource)

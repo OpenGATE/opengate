@@ -13,8 +13,14 @@ namespace py = pybind11;
 
 void init_GateWindowTurboSource(py::module &m) {
 
+  py::class_<GateWindowTurboSharedCache,
+             std::shared_ptr<GateWindowTurboSharedCache>>(
+      m, "GateWindowTurboSharedCache")
+      .def(py::init<>());
+
   py::class_<GateWindowTurboSource, GateGenericSource>(m,
                                                        "GateWindowTurboSource")
       .def(py::init())
+      .def("SetSharedCache", &GateWindowTurboSource::SetSharedCache)
       .def("InitializeUserInfo", &GateWindowTurboSource::InitializeUserInfo);
 }

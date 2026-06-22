@@ -11,6 +11,9 @@
 #include "GateSingleParticleSource.h"
 #include <G4ThreeVector.hh>
 #include <G4Types.hh>
+#include <pybind11/pytypes.h>
+
+namespace py = pybind11;
 
 class GateSingleParticleSourceWindowTurbo : public GateSingleParticleSource {
 public:

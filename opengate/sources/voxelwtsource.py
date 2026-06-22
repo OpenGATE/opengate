@@ -9,7 +9,7 @@ from ..base import process_cls
 from ..actors.dynamicactors import SourceActivityImageChanger
 
 
-class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
+class VoxelWTSource(WindowTurboSource):
     # basically the same as VoxelSource, just avoiding diamond inheritance
 
     # hints for IDE
@@ -18,13 +18,18 @@ class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
     user_info_defaults = VoxelSource.user_info_defaults
 
     def __init__(self, *args, **kwargs):
-        self.__initcpp__()
-        super().__init__(self, *args, **kwargs)
+        WindowTurboSource.__init__(self, *args, **kwargs)
         # the loaded image
         self._current_itk_image = None
+        # cached CDFs
+        self._cdf_x = None
+        self._cdf_y = None
+        self._cdf_z = None
 
-    def __initcpp__(self):
-        g4.GateVoxelWTSource.__init__(self)
+    def create_g4_source(self):
+        g4_source = g4.GateVoxelWTSource()
+        g4_source.SetSharedCache(self._g4_shared_cache)
+        return g4_source
 
     def create_changers(self):
         changers = super().create_changers()
@@ -45,26 +50,21 @@ class VoxelWTSource(WindowTurboSource, g4.GateVoxelWTSource):
                 )
         return changers
 
-    def set_transform_from_user_info(self):
-        VoxelSource.set_transform_from_user_info(self)
+    def set_transform_from_user_info(self, g4_source):
+        VoxelSource.set_transform_from_user_info(self, g4_source)
 
-    def cumulative_distribution_functions(self):
-        VoxelSource.cumulative_distribution_functions(self)
+    def cumulative_distribution_functions(self, g4_source):
+        VoxelSource.cumulative_distribution_functions(self, g4_source)
 
     def update_activity_image(self, filename):
+        VoxelSource.update_activity_image(self, filename)
 
-        self._current_itk_image = itk.imread(ensure_filename_is_str(filename))
-
-        # compute position
-        self.set_transform_from_user_info()
-
-        # create Cumulative Distribution Function
-        self.cumulative_distribution_functions()
-
-    def initialize(self, run_timing_intervals):
-        self.update_activity_image(self.image)
-
-        super().initialize(run_timing_intervals)
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
+        if self._current_itk_image is None:
+            self._current_itk_image = itk.imread(ensure_filename_is_str(self.image))
+        self.set_transform_from_user_info(g4_source)
+        self.cumulative_distribution_functions(g4_source)
+        WindowTurboSource.initialize_g4_source(self, g4_source, run_timing_intervals)
 
 
 process_cls(VoxelWTSource)

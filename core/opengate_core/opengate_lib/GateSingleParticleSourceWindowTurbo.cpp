@@ -9,6 +9,10 @@
 #include "G4Threading.hh"
 #include "GateHelpersDict.h"
 #include "Randomize.hh"
+#include <G4Event.hh>
+#include <G4PrimaryParticle.hh>
+#include <G4PrimaryVertex.hh>
+#include <fmt/core.h>
 #include <string>
 
 GateSingleParticleSourceWindowTurbo::GateSingleParticleSourceWindowTurbo(

@@ -3,18 +3,27 @@
 #include "GateGenericSource.h"
 #include "GateHelpersDict.h"
 #include "GateSingleParticleSourceWindowTurbo.h"
-#include "GateVSource.h"
 #include <G4Color.hh>
 #include <G4Event.hh>
 #include <G4ExceptionSeverity.hh>
 #include <G4Run.hh>
 #include <G4RunManager.hh>
+#include <G4Scene.hh>
 #include <G4String.hh>
 #include <G4Threading.hh>
 #include <G4Types.hh>
+#include <G4UImanager.hh>
+#include <G4VGraphicsScene.hh>
+#include <G4VisAttributes.hh>
+#include <G4VisManager.hh>
 #include <Randomize.hh>
 #include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
+
+void GateWindowTurboSource::SetSharedCache(
+    std::shared_ptr<GateWindowTurboSharedCache> cache) {
+  fSharedCache = std::move(cache);
+}
 
 void GateWindowTurboSource::CreateSPS() {
   fSPS = new GateSingleParticleSourceWindowTurbo(fAttachedToVolumeName);
@@ -25,8 +34,7 @@ void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
   fWeight = -1;
   fWeightSigma = -1;
   fDirectionRelativeToAttachedVolume = false;
-  if (G4Threading::IsMasterThread())
-    fUserInfo = user_info;
+  fUserInfo = user_info;
 }
 
 double GateWindowTurboSource::CalcNextTime(double current_simulation_time) {
@@ -49,15 +57,44 @@ double GateWindowTurboSource::CalcNextTime(double current_simulation_time) {
   return next_time;
 }
 
-void GateWindowTurboSource::CallOnceBeforeRun(
-    G4int run_id, GateSingleParticleSourceWindowTurbo *spswt) {
-  fCurrentRunId = run_id;
-  fCurrentActRatio = GetValueThisRun(fActRatio, run_id);
-  G4double max_solid_angle = GetValueThisRun(fMaxSolidAngle, run_id);
+void GateWindowTurboSource::InitializeSharedCache(py::dict &user_info) {
+  if (!fSharedCache->fActRatio.empty())
+    return;
+  std::lock_guard<std::mutex> lock(fSharedCache->fMutex);
+  if (py::isinstance<py::float_>(user_info["act_ratio"])) {
+    fSharedCache->fActRatio = {DictGetDouble(user_info, "act_ratio")};
+    fSharedCache->fMaxSolidAngle = {
+        DictGetDouble(user_info, "max_solid_angle")};
+  } else {
+    fSharedCache->fActRatio = DictGetVecDouble(user_info, "act_ratio");
+    fSharedCache->fMaxSolidAngle =
+        DictGetVecDouble(user_info, "max_solid_angle");
+  }
+}
+
+void GateWindowTurboSource::WriteBackUserInfo() {
+  if (!fUserInfo)
+    return;
+  py::gil_scoped_acquire acquire; // write back needs to acquire gil
+  auto direction = py::dict(fUserInfo["direction"]);
+  direction["act_ratio"] = fSharedCache->fActRatio;
+  direction["max_solid_angle"] = fSharedCache->fMaxSolidAngle;
+  direction["init_duration"] = fSharedCache->fInitDuration;
+}
+
+void GateWindowTurboSource::PrepareSharedBeforeRun() {
+  fCurrentRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
+  GateSingleParticleSourceWindowTurbo *spswt =
+      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(fSPS);
+  fCurrentActRatio = GetValueThisRun(fSharedCache->fActRatio);
+  G4double max_solid_angle = GetValueThisRun(fSharedCache->fMaxSolidAngle);
   if (max_solid_angle >= 0 and fCurrentActRatio >= 0)
     return;
   if (fSkip)
     return;
+
+  std::lock_guard<std::mutex> lock(fSharedCache->fMutex);
+
   G4double a1 = GetValueThisRun(fA1);
   G4double a2 = GetValueThisRun(fA2);
   G4double b1 = GetValueThisRun(fB1);
@@ -67,19 +104,11 @@ void GateWindowTurboSource::CallOnceBeforeRun(
   spswt->SetParameters(a1, a2, b1, b2, plane_distance, plane_phi);
   G4double duration_sec =
       spswt->InitializeBeforeRun(fCurrentActRatio, max_solid_angle);
-  fInitDuration.push_back(duration_sec);
-  SetValueThisRun(fActRatio, run_id, fCurrentActRatio);
-  SetValueThisRun(fMaxSolidAngle, run_id, max_solid_angle);
-  // G4cout << "CallOnceBeforeRun for run " << run_id
-  //        << ", current act ratio: " << fCurrentActRatio
-  //        << " current max solid angle: " << max_solid_angle << " source name
-  //        "
-  //        << fName << G4endl;
-  py::gil_scoped_acquire acquire; // write back need to acquire gil
-  auto direction = py::dict(fUserInfo["direction"]);
-  direction["act_ratio"] = fActRatio;
-  direction["max_solid_angle"] = fMaxSolidAngle;
-  direction["init_duration"] = fInitDuration;
+
+  fSharedCache->fInitDuration.push_back(duration_sec);
+  SetValueThisRun(fSharedCache->fActRatio, fCurrentActRatio);
+  SetValueThisRun(fSharedCache->fMaxSolidAngle, max_solid_angle);
+  WriteBackUserInfo();
 }
 
 void GateWindowTurboSource::PrepareNextRun() {
@@ -88,13 +117,9 @@ void GateWindowTurboSource::PrepareNextRun() {
   auto *ang = fSPS->GetAngDist();
   auto *spswt = reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(fSPS);
   ang->fGlobalRotation = G4RotationMatrix();
-  const G4int run_id =
-      G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
 
-  // setup act ratio and max solid if needed with one of the worker thread
-  std::call_once(GetInitializeBeforeRunFlag(run_id),
-                 &GateWindowTurboSource::CallOnceBeforeRun, this, run_id,
-                 spswt);
+  // setup act ratio and max solid angle once per shared cache/run
+  PrepareSharedBeforeRun();
 
   G4double a1 = GetValueThisRun(fA1);
   G4double a2 = GetValueThisRun(fA2);
@@ -103,15 +128,9 @@ void GateWindowTurboSource::PrepareNextRun() {
   G4double plane_distance = GetValueThisRun(fPlaneDistance);
   G4double plane_phi = GetValueThisRun(fPlanePhi);
   spswt->SetParameters(a1, a2, b1, b2, plane_distance, plane_phi);
-  const G4double max_solid_angle = GetValueThisRun(fMaxSolidAngle);
+  const G4double max_solid_angle =
+      GetValueThisRun(fSharedCache->fMaxSolidAngle);
   spswt->SetMaxSolidAngle(max_solid_angle);
-}
-
-std::once_flag &
-GateWindowTurboSource::GetInitializeBeforeRunFlag(G4int run_id) {
-  std::lock_guard<std::mutex> lock(fInitializeBeforeRunMutex);
-  auto it = fInitializeBeforeRunFlags.try_emplace(run_id).first;
-  return it->second;
 }
 
 void GateWindowTurboSource::Visualize() const {
@@ -143,8 +162,6 @@ void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
     fB2 = {DictGetDouble(user_info, "b2")};
     fPlaneDistance = {DictGetDouble(user_info, "plane_distance")};
     fPlanePhi = {DictGetDouble(user_info, "plane_phi")};
-    fActRatio = {DictGetDouble(user_info, "act_ratio")};
-    fMaxSolidAngle = {DictGetDouble(user_info, "max_solid_angle")};
   } else {
     fA1 = DictGetVecDouble(user_info, "a1");
     fA2 = DictGetVecDouble(user_info, "a2");
@@ -152,9 +169,8 @@ void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
     fB2 = DictGetVecDouble(user_info, "b2");
     fPlaneDistance = DictGetVecDouble(user_info, "plane_distance");
     fPlanePhi = DictGetVecDouble(user_info, "plane_phi");
-    fActRatio = DictGetVecDouble(user_info, "act_ratio");
-    fMaxSolidAngle = DictGetVecDouble(user_info, "max_solid_angle");
   }
+  InitializeSharedCache(user_info);
 
   fSkip = DictGetBool(user_info, "skip_mode");
 
