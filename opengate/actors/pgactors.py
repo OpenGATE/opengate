@@ -14,7 +14,9 @@ class VoxelizedPromptGammaTLEActor(
     VoxelDepositActor, g4.GateVoxelizedPromptGammaTLEActor
 ):
     """
-    FIXME doc todo
+    Actor which computes 4d voxelized volumes of prompt-gamma (PG) energy yields and emission time.
+    It is based on the track-length estimator and requires a PG database stored in a root file.
+    This actor is limited to proton sources and can be activated for protons and neutrons.
     """
 
     user_info_defaults = {
@@ -147,7 +149,6 @@ class VoxelizedPromptGammaTLEActor(
 
         self.SetVector(self.user_info.get("vect_p"), self.user_info.get("vect_n"))
 
-        self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
@@ -230,7 +231,9 @@ class VoxelizedPromptGammaAnalogActor(
     VoxelDepositActor, g4.GateVoxelizedPromptGammaAnalogActor
 ):
     """
-    FIXME doc todo
+    Actor which computes 4d voxelized volumes of prompt-gamma (PG) energy yields and emission time.
+    It is an analog Monte Carlo actor where the scoring is triggered by the nuclear inelastic process (protonInelastic or neutronInelastic).
+    This actor is limited to proton sources and can be activated for protons and neutrons.
     """
 
     user_info_defaults = {
@@ -342,7 +345,6 @@ class VoxelizedPromptGammaAnalogActor(
         self.SetNeutronEnergyFlag(self.user_output.n_E.get_active(item=0))
         self.SetNeutronTimeFlag(self.user_output.n_tof.get_active(item=0))
 
-        self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):

@@ -9,7 +9,6 @@
 #include "GateGeometryUtils.h"
 #include "GateHelpers.h"
 #include <algorithm>
-#include <shared_mutex>
 
 G4Cache<GateUniqueVolumeIDManager::threadLocalT>
     GateUniqueVolumeIDManager::fThreadLocalData;
@@ -94,6 +93,12 @@ void GateUniqueVolumeIDManager::InitializeNumericIDsForLV(
     const G4LogicalVolume *lv, const G4VTouchable *touchable) {
   auto &l = fThreadLocalData.Get();
 
+  // TODO: In parallel-world setups, revisit this global touchable scan.
+  // FindAllTouchables(lv->GetName()) may aggregate instances across worlds
+  // that share the same LV name, whereas numeric ID assignment should ideally
+  // be resolved in the world context of the current touchable. We keep the
+  // legacy behavior on this branch to avoid mixing that refactor with the
+  // PhaseSpaceActor attached_to work.
   // Collect all touchables for this LV
   const auto touchables = FindAllTouchables(lv->GetName());
 

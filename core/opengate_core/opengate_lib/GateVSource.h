@@ -8,9 +8,9 @@
 #ifndef GateVSource_h
 #define GateVSource_h
 
-#include "G4Cache.hh"
-#include "G4Event.hh"
-#include "G4RotationMatrix.hh"
+#include <G4Cache.hh>
+#include <G4Event.hh>
+#include <G4RotationMatrix.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -52,10 +52,7 @@ public:
   virtual unsigned long
   GetExpectedNumberOfEvents(const TimeInterval &time_interval);
 
-  G4int GetNumberOfSimulatedEvents() {
-    auto &l = fThreadLocalData.Get();
-    return l.fNumberOfGeneratedEvents;
-  }
+  G4int GetNumberOfSimulatedEvents() { return fNumberOfGeneratedEvents; }
 
   std::vector<int> GetVectorOfSimulatedEvents() { return fVectorOfMaxN; }
 
@@ -72,6 +69,7 @@ public:
 
   G4ThreeVector fGlobalTranslation;
   G4RotationMatrix fGlobalRotation;
+  virtual void Visualize() const {}
 
 protected:
   std::vector<int> fVectorOfMaxN;
@@ -81,15 +79,8 @@ protected:
   double fHalfLife;
   double fDecayConstant;
 
-  struct threadLocalT {
-    unsigned long fNumberOfGeneratedEvents = 0;
-    G4ThreeVector fGlobalTranslation;
-    G4RotationMatrix fGlobalRotation;
-    G4int fRunID = 0;
-  };
-  G4Cache<threadLocalT> fThreadLocalData;
-
-  virtual threadLocalT &GetThreadLocalData();
+  unsigned long fNumberOfGeneratedEvents = 0;
+  G4int fRunID = 0;
 };
 
 #endif // GateVSource_h

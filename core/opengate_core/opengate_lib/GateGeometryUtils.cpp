@@ -5,17 +5,14 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "G4LogicalVolume.hh"
-#include "G4Navigator.hh"
-#include "G4PhysicalVolumeStore.hh"
-#include "G4RunManager.hh"
-#include "G4TouchableHistory.hh"
-#include "G4TransportationManager.hh"
-#include "G4VPhysicalVolume.hh"
-
 #include "GateGeometryUtils.h"
 #include "GateHelpers.h"
-#include "GateUniqueVolumeIDManager.h"
+#include <G4LogicalVolume.hh>
+#include <G4Navigator.hh>
+#include <G4RunManager.hh>
+#include <G4TouchableHistory.hh>
+#include <G4TransportationManager.hh>
+#include <G4VPhysicalVolume.hh>
 
 /**
  * @brief Recursively builds the path to each volume using a
@@ -67,7 +64,8 @@ void FindAndBuildTouchables(G4VPhysicalVolume *currentVolume,
 }
 
 std::vector<std::unique_ptr<G4VTouchable>>
-FindAllTouchables(const G4String &targetLVName) {
+FindAllTouchables(const G4String &targetLVName,
+                  const G4String &requestedWorldName) {
   std::vector<std::unique_ptr<G4VTouchable>> touchableResults;
 
   // Get the transportation manager to access all worlds
@@ -79,11 +77,30 @@ FindAllTouchables(const G4String &targetLVName) {
           "The geometry is not initialized.");
   }
 
-  // Get the iterator to all navigators (one per world: mass world + parallel
-  // worlds)
-  const auto navigatorsBegin = transportMgr->GetActiveNavigatorsIterator();
+  if (!requestedWorldName.empty()) {
+    G4Navigator *navigator = transportMgr->GetNavigator(requestedWorldName);
+    if (!navigator) {
+      Fatal("FindAllTouchables: Could not get navigator for world '" +
+            requestedWorldName + "'.");
+    }
 
-  // Get the number of worlds to know how many navigators to iterate through
+    G4VPhysicalVolume *worldVolume = navigator->GetWorldVolume();
+    if (!worldVolume) {
+      Fatal("FindAllTouchables: World volume for world '" + requestedWorldName +
+            "' is null.");
+    }
+
+    G4NavigationHistory navHistory;
+    navHistory.SetFirstEntry(worldVolume);
+    FindAndBuildTouchables(worldVolume, navHistory, targetLVName,
+                           touchableResults, requestedWorldName);
+    return touchableResults;
+  }
+
+  // Legacy fallback: iterate across all worlds when no world was specified.
+  // This remains useful for callers such as unique-volume-ID initialization
+  // that need a global geometry scan.
+  const auto navigatorsBegin = transportMgr->GetActiveNavigatorsIterator();
   const size_t numWorlds = transportMgr->GetNoWorlds();
 
   if (numWorlds == 0) {
@@ -91,29 +108,24 @@ FindAllTouchables(const G4String &targetLVName) {
           "The geometry is not initialized.");
   }
 
-  // Iterate through all navigators
   for (size_t i = 0; i < numWorlds; ++i) {
     const G4Navigator *navigator = *(navigatorsBegin + i);
 
     if (!navigator) {
-      DDD("Warning: Navigator " + std::to_string(i) + " is null");
+      DDD("Warning: Navigator ", i, " is null");
       continue;
     }
 
     G4VPhysicalVolume *worldVolume = navigator->GetWorldVolume();
     if (!worldVolume) {
-      DDD("Warning: World volume for navigator " + std::to_string(i) +
-          " is null");
+      DDD("Warning: World volume for navigator ", i, " is null");
       continue;
     }
 
     const G4String worldName = worldVolume->GetName();
 
-    // Create a navigation history for this world
     G4NavigationHistory navHistory;
     navHistory.SetFirstEntry(worldVolume);
-
-    // Start the recursive search from this world volume
     FindAndBuildTouchables(worldVolume, navHistory, targetLVName,
                            touchableResults, worldName);
   }

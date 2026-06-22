@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include <pybind11/pybind11.h>
 
 void init_GateHelpers(py::module &m) {
   m.def("DictGetG4RotationMatrix", DictGetG4RotationMatrix);

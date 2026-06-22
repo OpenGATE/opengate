@@ -8,6 +8,18 @@
 #ifndef GateSourceManager_h
 #define GateSourceManager_h
 
+#include "GateImageBox.h"
+#include "GateUserEventInformation.h"
+#include "GateVActor.h"
+#include "GateVSource.h"
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#endif
+#include "indicators.hpp"
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #include <G4Cache.hh>
 #include <G4ParticleGun.hh>
 #include <G4Threading.hh>
@@ -15,12 +27,6 @@
 #include <G4UIsession.hh>
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
-
-#include "GateImageBox.h"
-#include "GateUserEventInformation.h"
-#include "GateVActor.h"
-#include "GateVSource.h"
-#include "indicators.hpp"
 
 using namespace indicators;
 
@@ -66,7 +72,13 @@ public:
   // Return a source
   GateVSource *FindSourceByName(const std::string &name) const;
 
-  // [available on py side] start the simulation master thread only
+  // Return the name of the active source
+  G4String GetActiveSourceName();
+
+  // Set the active source by name
+  void SetActiveSourcebyName(G4String sourceName);
+
+  // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 
   // Initialise a new Run

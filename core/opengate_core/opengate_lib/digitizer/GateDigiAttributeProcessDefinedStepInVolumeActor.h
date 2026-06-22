@@ -8,7 +8,7 @@
 #ifndef GateDigiAttributeProcessDefinedStepInVolumeActor_h
 #define GateDigiAttributeProcessDefinedStepInVolumeActor_h
 
-#include "../GateHelpers.h"
+#include "../GateVActor.h"
 #include <pybind11/stl.h>
 
 class GateDigiAttributeProcessDefinedStepInVolume;
@@ -26,7 +26,7 @@ public:
   int GetNumberOfInteractions() const;
 
   std::string fProcessName;
-  int fNumberOfInteractions;
+  G4Cache<int> fNumberOfInteractions;
   GateDigiAttributeProcessDefinedStepInVolume *fAttribute;
 };
 

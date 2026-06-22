@@ -8,8 +8,8 @@
 #ifndef GateVDigiAttribute_h
 #define GateVDigiAttribute_h
 
-#include "../GateHelpers.h"
 #include "../GateUniqueVolumeID.h"
+#include <G4Step.hh>
 
 class GateVDigiAttribute {
 public:
@@ -48,6 +48,11 @@ public:
   virtual void Fill(GateVDigiAttribute * /*unused*/, size_t /*unused*/) {}
 
   virtual void FillDigiWithEmptyValue();
+
+  // When set to true, the attribute stores data in a plain (non-thread-local)
+  // vector so that it can be safely shared across worker threads (under an
+  // external mutex).  The default implementation is a no-op.
+  virtual void SetSharedStorage(bool /*b*/) {}
 
   virtual int GetSize() const = 0;
 

@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4NavigationHistory.hh"
-#include "G4VSolid.hh"
+#include <G4NavigationHistory.hh>
+#include <G4VSolid.hh>
 
 void init_G4NavigationHistory(py::module &m) {
   py::class_<G4NavigationHistory>(m, "G4NavigationHistory")

@@ -206,12 +206,12 @@ class Digitizer:
                 return m
         return None
 
-    def find_module_by_type(this, module_type):
-        for m in this.actors:
+    def find_module_by_type(self, module_type):
+        for m in self.actors:
             if m.type_name == module_type:
                 return m
         fatal(
-            f'Error, the module type "{module_type}" is not found in the digitizer "{this.name}"'
+            f'Error, the module type "{module_type}" is not found in the digitizer "{self.name}"'
         )
         return None
 
@@ -259,7 +259,11 @@ class DigitizerBase(ActorBase):
             att = [self.attached_to]
         for a in att:
             current = self.simulation.volume_manager.get_volume(a).parent
-            while current.name != "world" and hasattr(current, "g4_transform"):
+            while (
+                current is not None
+                and current.name != "world"
+                and hasattr(current, "g4_transform")
+            ):
                 if len(current.g4_transform) > 1:
                     fatal(
                         f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}'. "
@@ -1083,7 +1087,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         solid.BoundingLimits(pMin, pMax)
         d = np.array([0, 0, 1.0])
         d = np.dot(self.detector_orientation_matrix, d)
-        imax = np.argmax(d)
+        imax = np.argmax(np.abs(d))
         thickness = (pMax[imax] - pMin[imax]) / channels
         return thickness
 
@@ -1393,7 +1397,9 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
             "entering",
             {
                 "doc": "Define when to store the hits, can be 'entering', 'exiting', 'first' or 'all'. "
-                "Or several values separated by a space. ",
+                "Or several values separated by a space. When 'exiting' is used with multiple "
+                "attached_to volumes, exit transitions are resolved independently for each "
+                "attached physical volume. ",
                 # "allowed_values": ["entering", "exiting", "first", "all"], # can be multiple
             },
         ),
@@ -1411,6 +1417,11 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
 
     def initialize(self):
         DigitizerBase.initialize(self)
+        if "exiting" in self.steps_to_store:
+            # Exit transitions are resolved later, once Geant4 has constructed
+            # the physical volumes and we can identify concrete (pre, post)
+            # volume pairs for each attached volume copy.
+            self.ClearAttachedVolumeExitPairs()
         if "entering" in self.steps_to_store:
             self.SetStoreEnteringStepFlag(True)
         if "exiting" in self.steps_to_store:
@@ -1469,8 +1480,14 @@ class DigiAttributeProcessDefinedStepInVolumeActor(
         g4.GateDigiAttributeProcessDefinedStepInVolumeActor.StartSimulationAction(self)
 
 
-class ProcessDefinedStepInVolumeAttribute:
-    """ """
+class ProcessDefinedStepInVolumeAttributeLegacy:
+    """
+    Legacy wrapper based on an internal hidden actor.
+
+    Replaced by the auxiliary attribute
+    ``ProcessDefinedStepInVolumeAttribute``. This legacy wrapper is kept for
+    compatibility and will be deprecated soon.
+    """
 
     def __init__(self, sim, process_name, volume_name):
         self.name = f"ProcessDefinedStep__{process_name}__{volume_name}"
@@ -1500,6 +1517,66 @@ class ProcessDefinedStepInVolumeAttribute:
         fatal(f"Cannot change dynamically the volume name")
 
 
+class DigiAttributeLastProcessDefinedStepInVolumeActor(
+    ActorBase, g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor
+):
+    """
+    This actor is use when the user create a ProcessDefinedStepAttribute.
+    The actor is automatically created and use to store how many time a given process (process_name)
+    occur in a given volume (attached_to).
+    This actor is not intended to be used directly by the user.
+    """
+
+    user_info_defaults = {}
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.__init__(
+            self, self.user_info
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        ActorBase.StartSimulationAction(self)
+        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.StartSimulationAction(
+            self
+        )
+
+
+class LastProcessDefinedStepInVolumeAttributeLegacy:
+    """
+    Legacy wrapper based on an internal hidden actor.
+
+    Replaced by the auxiliary attribute
+    ``LastProcessDefinedStepInVolumeAttribute``. This legacy wrapper is kept
+    for compatibility and will be deprecated soon.
+    """
+
+    def __init__(self, sim, volume_name):
+        self.name = f"LastOccuringProcess__{volume_name}"
+        self.actor = sim.add_actor(
+            "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name
+        )
+        self._volume_name = volume_name
+        self.actor.attached_to = volume_name
+        # self.actor.priority = 1  # FIXME before other
+
+    @property
+    def volume_name(self):
+        return self._volume_name
+
+    @volume_name.setter
+    def volume_name(self, value):
+        fatal(f"Cannot change dynamically the volume name")
+
+
 process_cls(DigitizerBase)
 process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
@@ -1514,3 +1591,4 @@ process_cls(CoincidenceSorterActor)
 process_cls(DigitizerReadoutActor)
 process_cls(PhaseSpaceActor)
 process_cls(DigiAttributeProcessDefinedStepInVolumeActor)
+process_cls(DigiAttributeLastProcessDefinedStepInVolumeActor)

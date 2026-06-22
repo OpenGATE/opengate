@@ -1,7 +1,7 @@
 Details: Simulation object
 ==========================
 
-You can configure the general behavior of your simulation via the parameters of the :class:`opengate.Simulation` object.
+You can configure the general behavior of your simulation via the parameters of the :class:`opengate.managers.Simulation` object.
 
 Random Number Generator
 ------------------------
@@ -14,6 +14,10 @@ Run and timing
 --------------
 
 The simulation can be split into several runs, each of them with a given time duration. This is used for example for simulations with a dynamic geometry, e.g. a rotating gantry or a breathing patient. Gaps between the intervals are allowed. By default, the simulation has only one run with a duration of 1 second.
+
+See also :doc:`user_guide_dynamic_parametrisations` for the user-facing dynamic
+parametrisation interface used by moving geometries, dynamic image volumes, and
+dynamic voxel sources.
 
 Splitting a simulation into multiple runs is faster than executing a simulation multiple times because Geant4 is initialized only once at the beginning.
 
@@ -129,4 +133,3 @@ TODO
 .. [//]: # (   output = se.start(True))
 
 .. [//]: # (Here user can also define a function (``my_function`` in the above example) that will be called after the Geant4 engine is initialized, and before it starts the simulation. This function will be called in the newly created process, so all data it accesses must be serializable (Python's pickable) to be copied to the new process.)
-

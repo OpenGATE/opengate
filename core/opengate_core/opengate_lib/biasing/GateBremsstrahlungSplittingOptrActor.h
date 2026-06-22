@@ -8,9 +8,8 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateBOptrBremSplittingActor_h
 #define GateBOptrBremSplittingActor_h 1
 
-#include "../GateVActor.h"
-#include "G4VBiasingOperator.hh"
 #include "GateVBiasOptrActor.h"
+#include <G4VBiasingOperator.hh>
 
 namespace py = pybind11;
 
@@ -30,7 +29,8 @@ public:
   void StartTracking(const G4Track *) override;
   void EndTracking() override {}
   void InitializeUserInfo(py::dict &user_info) override;
-  void InitializeCpp() override;
+  void Configure() override;
+  void ConfigureForWorker() override;
 
 protected:
   G4VBiasingOperation *ProposeNonPhysicsBiasingOperation(

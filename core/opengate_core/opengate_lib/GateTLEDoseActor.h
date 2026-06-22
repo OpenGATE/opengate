@@ -10,15 +10,13 @@
 
 #include "GateDoseActor.h"
 #include "GateMaterialMuHandler.h"
-
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
-
+#include <G4Cache.hh>
+#include <G4EmCalculator.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
+/* Dose actor with Track Length Estimator (TLE) scoring support for gammas. */
 class GateTLEDoseActor : public GateDoseActor {
 
 public:
@@ -26,6 +24,7 @@ public:
   explicit GateTLEDoseActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
+  void InitializeCpp() override;
 
   void BeginOfEventAction(const G4Event *event) override;
 
@@ -40,6 +39,7 @@ public:
 
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
+  void ScoreTLEDepositStep(G4Step *step);
 
   // Kill the gamma if below this energy
   double fEnergyMin;
@@ -53,9 +53,9 @@ public:
   G4EmCalculator *fEmCalc = nullptr;
   G4String fStrTLEThresholdType;
   G4int fTLEThresholdType;
+  int fLegacyTLETrackDataSlotID{-1};
 
   struct threadLocalT {
-    // Bool if current track is a TLE gamma or not
     bool fIsTLEGamma = false;
     bool fIsTLESecondary = false;
     bool fIsFirstStep = false;

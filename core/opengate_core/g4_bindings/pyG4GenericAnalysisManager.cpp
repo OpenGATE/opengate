@@ -6,7 +6,7 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4GenericAnalysisManager.hh"
+#include <G4GenericAnalysisManager.hh>
 
 namespace py = pybind11;
 

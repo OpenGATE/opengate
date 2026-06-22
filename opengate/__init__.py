@@ -135,6 +135,7 @@ import opengate.geometry.materials
 import opengate.geometry.solids
 import opengate.geometry.utility
 import opengate.geometry.volumes
+import opengate.geometry.fields
 import opengate.actors
 import opengate.contrib
 
@@ -158,5 +159,6 @@ import opengate.numerical
 # because users will frequently use them
 from opengate.managers import Simulation
 from opengate.managers import create_sim_from_json
+from opengate.chemistry import TrackedChemicalReaction
 from opengate.utility import g4_units
 from opengate.base import help_on_user_info

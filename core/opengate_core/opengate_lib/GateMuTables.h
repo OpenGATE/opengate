@@ -8,9 +8,8 @@
 #ifndef GATE_MU_TABLES_HH
 #define GATE_MU_TABLES_HH
 
-#include "G4Material.hh"
-#include "G4MaterialCutsCouple.hh"
-#include "G4UnitsTable.hh"
+#include <G4Material.hh>
+#include <G4MaterialCutsCouple.hh>
 
 class GateMuTable {
 

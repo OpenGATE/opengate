@@ -10,6 +10,7 @@ from ..image import (
     divide_itk_images,
     multiply_itk_images,
     scale_itk_image,
+    copy_itk_image,
     create_3d_image,
     write_itk_image,
     get_info_from_image,
@@ -223,6 +224,73 @@ class ArrayDataItem(ArithmeticDataItem):
         super().set_data(np.asarray(data))
 
 
+class TimeCountSeriesDataItem(DataItem):
+    """Sparse cumulative time series keyed by molecule/reaction label.
+
+    The internal payload is a dictionary:
+        label -> structured numpy array with fields ('time', 'count')
+    """
+
+    _required_dtype_names = ("time", "count")
+
+    def set_data(self, data):
+        if data is None:
+            self.data = None
+            return
+        try:
+            items = data.items()
+        except AttributeError:
+            fatal(
+                f"TimeCountSeriesDataItem expects a dictionary-like object, "
+                f"but got {type(data).__name__}."
+            )
+        processed = {}
+        for key, value in items:
+            arr = np.asarray(value)
+            if arr.dtype.names != self._required_dtype_names:
+                fatal(
+                    f"TimeCountSeriesDataItem expects structured numpy arrays with "
+                    f"fields {self._required_dtype_names}, but key '{key}' has dtype "
+                    f"{arr.dtype}."
+                )
+            processed[str(key)] = arr
+        self.data = processed
+
+    def inplace_merge_with(self, other):
+        if other is None or other.data is None:
+            return self
+        if self.data is None:
+            self.set_data(other.data)
+            return self
+        merged = dict(self.data)
+        for key, other_series in other.data.items():
+            if key in merged:
+                base_series = merged[key]
+                if len(base_series) > 0:
+                    offset = int(base_series["count"][-1])
+                else:
+                    offset = 0
+                appended = np.empty_like(other_series)
+                appended["time"] = other_series["time"]
+                appended["count"] = other_series["count"] + offset
+                merged[key] = np.concatenate((base_series, appended))
+            else:
+                merged[key] = other_series.copy()
+        self.data = merged
+        return self
+
+    def merge_with(self, other):
+        result = type(self)()
+        if self.data is not None:
+            result.set_data(self.data)
+        return result.inplace_merge_with(other)
+
+    def write(self, *args, **kwargs):
+        raise NotImplementedError(
+            "Writing of chemistry counter time-count series is not implemented yet."
+        )
+
+
 class ScalarDataItem(ArithmeticDataItem):
 
     def write(self, *args, **kwargs):
@@ -241,8 +309,10 @@ class ItkImageDataItem(DataItem):
         return itk.array_view_from_image(self.image)
 
     def inplace_merge_with(self, other):
+        if other.data is None:
+            return self
         if self.data is None:
-            self.set_data(other.data)
+            self.set_data(copy_itk_image(other.data))
             self.number_of_samples = other.number_of_samples
         else:
             self.__iadd__(other)
@@ -766,11 +836,14 @@ class QuotientMeanItkImage(QuotientItkImage):
     )
 
 
+class SingleTimeCountSeries(DataItemContainer):
+
+    _data_item_classes = (TimeCountSeriesDataItem,)
+
+
 def merge_data(list_of_data):
-    merged_data = type(list_of_data[0])(
-        list_of_data[0].belongs_to, data=list_of_data[0].data
-    )
-    for d in list_of_data[1:]:
+    merged_data = type(list_of_data[0])(list_of_data[0].belongs_to)
+    for d in list_of_data:
         merged_data.inplace_merge_with(d)
     return merged_data
 

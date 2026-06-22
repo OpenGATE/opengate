@@ -8,11 +8,6 @@
 #ifndef GateDigitizerGaussianBlurringActor_h
 #define GateDigitizerGaussianBlurringActor_h
 
-#include "../GateVActor.h"
-#include "GateDigiCollection.h"
-#include "GateDigiCollectionIterator.h"
-#include "GateHelpersDigitizer.h"
-#include "GateTDigiAttribute.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>
 #include <pybind11/stl.h>

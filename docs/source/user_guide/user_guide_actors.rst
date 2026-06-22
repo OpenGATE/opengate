@@ -53,6 +53,65 @@ You can attach filters to an actor to select which data should be processed or s
 
 For a complete list of available attributes and logical operators, see :ref:`filters-label`.
 
+
+Auxiliary attributes
+--------------------
+
+Auxiliary attributes are simulation-level attributes that are computed by
+tracking logic extending beyond the information natively available from the
+current Geant4 step alone. They are useful for quantities such as:
+
+- how many times a given process has occurred so far along a track
+- the last process seen in a given volume
+- the last interaction position in a volume
+
+In practice, an auxiliary attribute is first added to the simulation and
+configured, and can then be used by actors in the same way as other
+attributes.
+
+Example: count how often Compton scattering occurred in a given volume and
+store the value in a :class:`~.opengate.actors.digitizers.PhaseSpaceActor`:
+
+.. code-block:: python
+
+  import opengate as gate
+
+  sim = gate.Simulation()
+
+  water_box = sim.add_volume("Box", "water_box")
+  water_box.size = [10 * cm, 10 * cm, 5 * cm]
+  water_box.material = "G4_WATER"
+
+  aux = sim.activate_auxiliary_attribute(
+      "ProcessDefinedStepInVolumeAttribute",
+      "ProcessDefinedStep__compt__water_box",
+  )
+  aux.process_name = "compt"
+  aux.volume_name = water_box.name
+
+  phsp = sim.add_actor("PhaseSpaceActor", "phsp")
+  phsp.attached_to = "some_plane"
+  phsp.attributes = ["KineticEnergy", aux.name]
+
+The same auxiliary attribute can also be used in filters. For example, to keep
+only particles for which the count is strictly positive:
+
+.. code-block:: python
+
+  F = gate.GateFilterBuilder()
+  phsp.filter = F(aux.name) > 0
+
+This is especially useful when a quantity depends on the track history rather
+than only on the current step.
+
+Some auxiliary attributes can also be used by non-ROOT-based actors internally
+through their C++ runtime getter API. From a user point of view, however, the
+main workflow is:
+
+1. add and configure the auxiliary attribute in the simulation
+2. use its name in an actor attribute list and/or a filter
+
+
 Actor output
 ------------
 
@@ -77,10 +136,10 @@ The :class:`~.opengate.actors.digitizers.PhaseSpaceActor` has only a single outp
   sim.output_dir = "/my/preferred/location/"
   phsp_actor1 = sim.add_actor("PhaseSpaceActor", name="phsp_actor1")
   phsp_actor1.output_filename = 'phsp1.root'
-  phsp_actor2 = sim.add_actor("PhaseSpaceActor", name="phsp_actor1")
+  phsp_actor2 = sim.add_actor("PhaseSpaceActor", name="phsp_actor2")
   phsp_actor2.output_filename = 'phsp2.root'
 
-In the example above, we set the global output directory of the simulation to our preferred location via :attr:`~.opengate.managers.Simulation.output_dir` and define the filename for each actor via :attr:`~.opengate.acrtors.digitizers.PhaseSpaceActor.output_filename`. GATE will automatically combine the filenames with the output path. You can also use relative paths including subfolders, like:
+In the example above, we set the global output directory of the simulation to our preferred location via :attr:`~.opengate.managers.Simulation.output_dir` and define the filename for each actor via :attr:`~.opengate.actors.digitizers.PhaseSpaceActor.output_filename`. GATE will automatically combine the filenames with the output path. You can also use relative paths including subfolders, like:
 
 .. code-block:: python
 
@@ -93,7 +152,7 @@ This will create a subfolder ''phsp'' in your preferred output folder defined vi
 
 .. note:: We highly recommend the pathlib library to work with paths. It makes things very easier and platform independent.
 
-You can also decide not to write data to disk, if you wish so. In the above example, set :attr:`~.opengate.acrtors.digitizers.PhaseSpaceActor.write_to_disk` to ``False``:
+You can also decide not to write data to disk, if you wish so. In the above example, set :attr:`~.opengate.actors.digitizers.PhaseSpaceActor.write_to_disk` to ``False``:
 
 .. code-block:: python
 
@@ -228,8 +287,6 @@ Common parameters and functions
 
 .. autoproperty:: opengate.actors.base.ActorBase.attached_to
 
-.. autoproperty:: opengate.actors.base.ActorBase.filters
-
 .. autoproperty:: opengate.actors.base.ActorBase.priority
 
 Actor output
@@ -247,3 +304,12 @@ Actor output
 
 .. autoproperty:: opengate.actors.actoroutput.BaseUserInterfaceToActorOutput.active
 
+.. autoproperty:: opengate.actors.digitizers.PhaseSpaceActor.root_output
+
+.. autoproperty:: opengate.managers.Simulation.output_dir
+
+.. autoproperty:: opengate.actors.digitizers.PhaseSpaceActor.output_filename
+
+.. autoproperty:: opengate.actors.digitizers.PhaseSpaceActor.write_to_disk
+
+.. autoproperty:: opengate.actors.actoroutput.UserInterfaceToActorOutputImage.image

@@ -5,7 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateHelpersImage.h"
+#include "GateHelpersGeometry.h"
+#include "GateHelpers.h"
+#include <G4PhysicalVolumeStore.hh>
+#include <G4Step.hh>
+#include <G4StepPoint.hh>
+#include <G4TouchableHandle.hh>
+#include <G4VPhysicalVolume.hh>
 
 void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
                                             G4ThreeVector &translation,

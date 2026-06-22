@@ -108,6 +108,7 @@ A test with all available volumes is available in `test0089_geometries.py <https
    myBoxVolume.mother = "world"
    myBoxVolume.material = "Water" # from your GateMaterials.db
    myBoxVolume.color = [0, 0, 0, 0.5]
+   myBoxVolume.style = "solid"
 
 
 .. code:: python
@@ -120,6 +121,7 @@ A test with all available volumes is available in `test0089_geometries.py <https
    mySphereVolume.translation = [0 * cm, 0 * cm, 20 * cm]
    mySphereVolume.material = "Water" # from your GateMaterials.db
    mySphereVolume.color = [1, 0, 0, 1]
+   mySphereVolume.style = "wireframe"
 
 
 Volume hierarchy

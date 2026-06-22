@@ -8,13 +8,9 @@
 #ifndef GateVoxelizedPromptGammaAnalogActor_h
 #define GateVoxelizedPromptGammaAnalogActor_h
 
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
-#include "G4VPrimitiveScorer.hh"
-#include "GateDoseActor.h"
-#include "GateMaterialMuHandler.h"
-
+#include "GateVActor.h"
+#include <G4VPrimitiveScorer.hh>
+#include <itkImage.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -31,13 +27,13 @@ public:
 
   void InitializeCpp() override;
 
-  void BeginOfRunActionMasterThread(int run_id);
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   int EndOfRunActionMasterThread(int run_id) override;
 
-  void EndOfRunAction(const G4Run *run);
+  void EndOfRunAction(const G4Run *run) override;
 
-  void BeginOfRunAction(const G4Run *run);
+  void BeginOfRunAction(const G4Run *run) override;
 
   void BeginOfEventAction(const G4Event *event) override;
 

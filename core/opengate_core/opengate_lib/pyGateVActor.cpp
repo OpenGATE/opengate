@@ -5,12 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
-#include "GateHelpers.h"
 #include "GateVActor.h"
+#include <pybind11/pybind11.h>
 
 /*
  * The "trampoline" functions below are required if we want to
@@ -86,6 +82,9 @@ void init_GateVActor(py::module &m) {
       .def("HasAction", &GateVActor::HasAction)
       .def("SetMotherAttachedToVolumeName",
            &GateVActor::SetMotherAttachedToVolumeName)
+      .def("ClearAttachedVolumeExitPairs",
+           &GateVActor::ClearAttachedVolumeExitPairs)
+      .def("AddAttachedVolumeExitPair", &GateVActor::AddAttachedVolumeExitPair)
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)
       .def("BeginOfRunAction", &GateVActor::BeginOfRunAction)
@@ -98,6 +97,7 @@ void init_GateVActor(py::module &m) {
       .def("EndOfEventAction", &GateVActor::EndOfEventAction)
       .def("PreUserTrackingAction", &GateVActor::PreUserTrackingAction)
       .def("PostUserTrackingAction", &GateVActor::PostUserTrackingAction)
+      .def("NewStage", &GateVActor::NewStage)
       .def("GetOutputPath", &GateVActor::GetOutputPath)
       .def("SetOutputPath", &GateVActor::SetOutputPath)
       .def("GetWriteToDisk", &GateVActor::GetWriteToDisk)

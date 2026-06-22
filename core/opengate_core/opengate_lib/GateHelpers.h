@@ -8,14 +8,12 @@
 #ifndef GateHelpers_h
 #define GateHelpers_h
 
-#include "GateSourceManager.h"
+#include <G4Step.hh>
+#include <G4Threading.hh>
 #include <G4ThreeVector.hh>
 #include <fmt/color.h>
 #include <fmt/core.h>
-#include <iostream>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
 
 extern G4Mutex DebugMutex;
 
@@ -26,12 +24,20 @@ void FatalKeyError(std::string s);
 #define DD(a) std::cout << #a << " = [ " << (a) << " ]\n";
 
 // debug print
-#define DDD(a)                                                                 \
+#define DDD(...)                                                               \
   {                                                                            \
     G4AutoLock __l__(&DebugMutex);                                             \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
-              << __func__ << ") ==> " << #a << " = [ " << (a) << " ]"          \
-              << std::endl;                                                    \
+              << __func__ << ") ==> ";                                         \
+    /* 1. Define a lambda that takes a real parameter pack */                  \
+    auto __print__ = [](auto &&...args) {                                      \
+      /* 2. Use the expander trick on the REAL pack 'args' */                  \
+      using expander = int[];                                                  \
+      (void)expander{0, (std::cout << args, 0)...};                            \
+    };                                                                         \
+    /* 3. Call the lambda with your macro arguments */                         \
+    __print__(__VA_ARGS__);                                                    \
+    std::cout << std::endl;                                                    \
   }
 
 // for vector
@@ -71,6 +77,16 @@ std::string DebugStep(const G4Step *step);
 
 int createTestQtWindow();
 
-#include "GateHelpers.txx"
+template <typename S, typename... Args>
+void Log(int level, int verboseLevel, const S &format_str, Args &&...args) {
+  if (level > verboseLevel)
+    return;
+  fmt::print(fg(fmt::color::bisque), format_str, args...);
+}
+
+template <typename S, typename... Args>
+void LogDebug(const S &format_str, Args &&...args) {
+  fmt::print(fg(fmt::color::crimson), format_str, args...);
+}
 
 #endif // GateHelpers_h

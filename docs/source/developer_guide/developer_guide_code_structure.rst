@@ -308,3 +308,8 @@ inherits from another class, call the superclass:
 
 In particular, the GateObject superclass (and variants) implement a
 ``__str__()`` method which lists all user_info of the object.
+
+Reference
+---------
+
+.. autoclass:: opengate.base.GateObject

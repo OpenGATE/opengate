@@ -23,6 +23,7 @@ from .utility import (
 )
 from ..decorators import requires_fatal, requires_attribute_fatal
 from ..definitions import __world_name__, __gate_list_objects__
+from .fields import FieldBase
 from ..actors.dynamicactors import (
     VolumeImageChanger,
     VolumeTranslationChanger,
@@ -166,6 +167,13 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 )
             },
         ),
+        "style": (
+            "default",
+            {
+                "doc": "Visualization style for this volume. "
+                "Can be 'default', 'solid' or 'wireframe'"
+            },
+        ),
         "rotation": (
             [Rotation.identity().as_matrix()],
             {
@@ -183,6 +191,13 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             {
                 "doc": "Boolean flag (True/False) whether G4 should build a physical volume.",
                 "type": bool,
+            },
+        ),
+        "field": (
+            None,
+            {
+                "doc": "Name of the field attached to this volume.",
+                "type": str,
             },
         ),
     }
@@ -216,6 +231,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # this list contains all physical volumes (in case of repeated volume)
         self.g4_physical_volumes = []
         self.g4_material = None
+        self.g4_field_manager = None
+
+        # Field attached to this volume (only one allowed)
+        self.field = None
 
     def close(self):
         self.release_g4_references()
@@ -228,6 +247,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self.g4_vis_attributes = None
         self.g4_physical_volumes = []
         self.g4_material = None
+        self.g4_field_manager = None
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -237,6 +257,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         return_dict["g4_vis_attributes"] = None
         return_dict["g4_physical_volumes"] = []
         return_dict["g4_material"] = None
+        return_dict["g4_field_manager"] = None
         return_dict["volume_engine"] = None
         return_dict["_is_constructed"] = False
         return return_dict
@@ -439,6 +460,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
         # color
         self.g4_vis_attributes = g4.G4VisAttributes()
+        if self.style == "wireframe":
+            self.g4_vis_attributes.SetForceWireframe(True)
+        elif self.style == "solid":
+            self.g4_vis_attributes.SetForceSolid(True)
         self.g4_vis_attributes.SetColor(*self.color)
         self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
@@ -529,6 +554,29 @@ class VolumeBase(DynamicGateObject, NodeMixin):
     def set_min_range(self, min_range):
         self.volume_manager.simulation.physics_manager.set_min_range(
             self.name, min_range
+        )
+
+    @requires_fatal("volume_manager")
+    def add_field(self, field: FieldBase):
+        if self.field is not None:
+            fatal(
+                f"Volume '{self.name}' already has a field attached ('{self.field}'). "
+                f"A volume can only have one field. Remove the existing field first."
+            )
+        existing = self.volume_manager.fields.get(field.name)
+        if existing is not None and existing is not field:
+            fatal(
+                f"A field named '{field.name}' is already registered in the volume manager. "
+                f"Field names must be unique, please choose a different name for this field."
+            )
+        self.field = field.name
+        field.attached_to.append(self.name)
+        self.volume_manager.fields[field.name] = field
+
+    @requires_fatal("volume_manager")
+    def set_track_structure_em_physics(self, track_structure_em_physics):
+        self.volume_manager.simulation.physics_manager.set_track_structure_em_physics(
+            self.name, track_structure_em_physics
         )
 
 
@@ -1305,6 +1353,21 @@ class ParallelWorldVolume(NodeMixin):
 
         self.g4_world_phys_vol = None
         self.g4_world_log_vol = None
+
+    @property
+    def world_volume(self):
+        """A parallel world acts as its own world volume."""
+        return self
+
+    @property
+    def g4_logical_volume(self):
+        """Map the standard logical volume property to the parallel world's specific attribute."""
+        return self.g4_world_log_vol
+
+    @property
+    def mother(self):
+        """A parallel world is the root of its own geometry tree and has no mother."""
+        return None
 
     def release_g4_references(self):
         self.g4_world_phys_vol = None

@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateVDigiAttribute.h"
+#include "../GateHelpers.h"
 
 GateVDigiAttribute::GateVDigiAttribute(const std::string &vname, char vtype) {
   fDigiAttributeName = vname;

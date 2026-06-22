@@ -8,8 +8,7 @@
 #ifndef GateVolumeVoxelizer_h
 #define GateVolumeVoxelizer_h
 
-#include "GateHelpers.h"
-#include "itkImage.h"
+#include <itkImage.h>
 
 class GateVolumeVoxelizer {
 public:

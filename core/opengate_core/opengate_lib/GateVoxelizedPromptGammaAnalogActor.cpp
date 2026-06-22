@@ -5,33 +5,25 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
-#include "G4Track.hh"
-
-#include "G4HadronInelasticProcess.hh"
-#include "GateHelpers.h"
+#include "GateVoxelizedPromptGammaAnalogActor.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-#include "GateMaterialMuHandler.h"
-#include "GateVoxelizedPromptGammaAnalogActor.h"
-
-#include "CLHEP/Random/Randomize.h"
+#include <G4CrossSectionDataStore.hh>
+#include <G4EmCalculator.hh>
+#include <G4Gamma.hh>
+#include <G4HadronInelasticProcess.hh>
+#include <G4HadronicProcessStore.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4Proton.hh>
+#include <G4RunManager.hh>
+#include <G4Track.hh>
+#include <G4VProcess.hh>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkCastImageFilter.h>
 #include <itkImageRegionIterator.h>
-#include <vector>
 
-#include <G4Proton.hh>
-#include <G4VProcess.hh>
 // #include <G4ProtonInelasticProcess.hh>
-#include <G4CrossSectionDataStore.hh>
-#include <G4HadronicProcessStore.hh>
 
 GateVoxelizedPromptGammaAnalogActor::GateVoxelizedPromptGammaAnalogActor(
     py::dict &user_info)
@@ -49,9 +41,6 @@ GateVoxelizedPromptGammaAnalogActor::~GateVoxelizedPromptGammaAnalogActor() {
 
   // Release the 3D volume
   volume = nullptr;
-  std::cout << "GateVoxelizedPromptGammaAnalogActor destructor called. "
-               "Resources released."
-            << std::endl;
 }
 
 void GateVoxelizedPromptGammaAnalogActor::InitializeUserInfo(
@@ -108,14 +97,13 @@ void GateVoxelizedPromptGammaAnalogActor::InitializeCpp() {
   volume->Allocate();
   volume->FillBuffer(0);
 
-  incidentParticles =
-      0; // initiate the conuter of incidente protons - scaling factor
+  // initiate the counter of incidente protons - scaling factor
+  incidentParticles = 0;
 }
 
 void GateVoxelizedPromptGammaAnalogActor::BeginOfRunActionMasterThread(
     int run_id) {
   // Attach the 3D volume used to
-
   // Fill the 4D volume of interest with 0 to ensure that it is well initiated
   if (fProtonTimeFlag) {
     cpp_tof_proton_image->FillBuffer(0);
@@ -250,7 +238,6 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
 }
 
 void GateVoxelizedPromptGammaAnalogActor::EndOfRunAction(const G4Run *run) {
-  // std::cout << "incident particles : " << incidentParticles << std::endl;
   if (incidentParticles == 0) {
     std::cerr << "Error: incidentParticles is zero. Skipping scaling."
               << std::endl;

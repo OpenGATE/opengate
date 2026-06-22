@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateDoseActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateDoseActor.h"
 
 class PyGateDoseActor : public GateDoseActor {
 public:
@@ -56,6 +53,7 @@ void init_GateDoseActor(py::module &m) {
       .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
       .def("SetUncertaintyGoal", &GateDoseActor::SetUncertaintyGoal)
+      .def("SetTopVoxelsCount", &GateDoseActor::SetTopVoxelsCount)
       .def("SetThreshEdepPerc", &GateDoseActor::SetThreshEdepPerc)
       .def("SetOvershoot", &GateDoseActor::SetOvershoot)
       .def("SetNbEventsFirstCheck", &GateDoseActor::SetNbEventsFirstCheck)

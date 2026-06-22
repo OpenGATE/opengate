@@ -136,6 +136,63 @@ Here are some examples (mostly from ``test010_generic_source.py``):
     source.position.translation = [8 * cm, 8 * cm, 30 * cm]
 
 
+Source position visualization
+-----------------------------
+
+A ``GenericSource`` can draw a point cloud sampled from its position
+distribution in the Geant4 visualization scene. This is useful to check
+the source shape, translation, rotation, or attachment before running a
+large simulation.
+
+The same method is also available for source classes that inherit from
+``GenericSource``. See source definitions `here
+<https://github.com/OpenGATE/opengate/tree/master/opengate/sources>`_ for
+source inheritance details.
+
+The following figure is generated from test file ``test010_generic_source_visu.py``.
+It shows the position distribution of 5 different sources with different color:
+
+.. image:: ../figures/source_visualization.png
+   :align: center
+   :width: 70%
+
+Enable simulation visualization and set the source visualization parameters
+before ``sim.run()``:
+
+.. code:: python
+
+    sim.visu = True
+    sim.visu_type = "qt"
+
+    source = sim.add_source("GenericSource", "mysource")
+    source.position.type = "sphere"
+    source.position.radius = 5 * cm
+    source.visualization.count = 2000
+    source.visualization.color = "red"
+    source.visualization.size = 3
+
+The visualization of the source is only available with ``"qt"``.
+
+The ``count`` parameter controls the number of sampled positions. Values
+larger than 10000 are reduced to 2000. The ``size`` parameter controls the
+screen size of the markers and must be in the range ``(0, 20)``; otherwise
+the default value ``3`` is used.
+
+The ``color`` parameter can be one of ``"white"``, ``"grey"``, ``"gray"``,
+``"black"``, ``"brown"``, ``"red"``, ``"green"``, ``"blue"``, ``"cyan"``,
+``"magenta"``, or ``"yellow"``. It can also be an RGB or RGBA list with
+components between 0 and 1:
+
+.. code:: python
+
+    source.visualization.color = [0.0, 0.5, 1.0, 0.7]
+
+This point cloud only represents the source initial position distribution
+at initialization time. If the source is attached to a volume that moves
+during the run, this visualization does not show the updated source
+distribution after the volume movement.
+
+
 .. _source-direction:
 
 Particle initial direction

@@ -19,16 +19,32 @@ most tasks performed at initialization (before the run).
 Virtual environment
 -------------------
 
-:warning: It is highly, highly, *highly* recommended to create a python
-  environment prior to the installation, for example with
-  `venv <https://docs.python.org/3/library/venv.html#module-venv>`__.
-
-Example: You can create a new virtual environment via:
+.. tip:: It is highly, highly, *highly* recommended to create a Python environment prior to the installation.
 
 .. code:: bash
 
-     python -m venv --name opengate_env
+     python3 -m venv opengate_env
      source opengate_env/bin/activate
+
+You can also select a specific Python version:
+
+.. code:: bash
+
+     python3.11 -m venv opengate_env
+
+Then upgrade ``pip`` in the activated environment:
+
+.. code:: bash
+
+     python3 -m pip install --upgrade pip
+
+Make sure that the selected ``python3`` executable is one of the supported versions.
+
+Note: A virtual environment inherits the interpreter it was created from.
+To avoid this issue, consider using a Python package and project manager such as `uv <https://docs.astral.sh/uv/>`_ or `pixi <https://pixi.prefix.dev/latest/>`_ for creating environments because it makes it easy to manage distinct Python versions.
+
+Prepare the installation
+------------------------
 
 To **develop** in GATE 10, you need 1) to compile and create the
 ``opengate_core`` subpackage (this is the hardest part) and 2) install
@@ -42,7 +58,7 @@ Then clone the unique repository that contains both packages:
    git clone --recurse-submodules https://github.com/OpenGATE/opengate
 
 :warning: When you update, the data for the tests must also be updated,
-  use : ``git submodule update --init --recursive``. This also update the
+  use : ``git submodule update --init --recursive``. This also updates the
   included subpackages (pybind11, etc).
 
 The subpackage ``opengate_core`` depends on the ITK and Geant4
@@ -111,7 +127,7 @@ Once it is done, you can compile ``opengate_core``.
 
    cd <path-to-opengate>/core
    export CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/:<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
-   pip install -v -e .
+   python -m pip install -v -e .
 
 The pip install will run cmake, compile the sources and create the
 module. If you are curious you can have a look the compilation folder in
@@ -131,7 +147,7 @@ The second part is easier : just go in the main folder and pip install:
 .. code:: bash
 
    cd <path-to-opengate>
-   pip install -v -e .
+   python -m pip install -v -e .
 
 STEP 5 - Before running
 -----------------------
@@ -170,20 +186,21 @@ pytorch and gaga-phsp first with:
 
 .. code:: bash
 
-   pip install torch
-   pip install gaga-phsp
-   pip install garf
+   python -m pip install torch
+   python -m pip install gaga-phsp
+   python -m pip install garf
 
 
 
 Documentation for the documentation
 -----------------------------------
 
-The document is created with `readthedoc <https://docs.readthedocs.io/en/stable/index.html>`_. To build the html pages locally, use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/config.py` file. The current theme is `sphinx_pdj_theme <https://github.com/jucacrispim/sphinx_pdj_theme>`_.
+The document is created with `readthedoc <https://docs.readthedocs.io/en/stable/index.html>`_. To build the html pages locally, use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/conf.py` file. The current theme is `sphinx_pdj_theme <https://github.com/jucacrispim/sphinx_pdj_theme>`_.
 
-You also need to install some packages : `pip install sphinx sphinx_copybutton pydata_sphinx_theme`
+You also need to install some packages : ``python -m pip install sphinx sphinx-copybutton pydata-sphinx-theme``
 
 Help with reStructuredText syntax:
 
 - `quickref <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_
 - `directives <https://docutils.sourceforge.io/docs/ref/rst/directives.html>`_
+- `sphinx for python <https://www.sphinx-doc.org/en/master/usage/domains/python.html>`_

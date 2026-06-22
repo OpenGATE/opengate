@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateUserEventInformation.h"
-#include "GateHelpers.h"
 
 void GateUserEventInformation::Print() const {
   // FIXME

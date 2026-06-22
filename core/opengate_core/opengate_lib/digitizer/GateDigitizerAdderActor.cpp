@@ -6,12 +6,13 @@
    -------------------------------------------------- */
 
 #include "GateDigitizerAdderActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
-#include "../GateUserTrackInformation.h"
 #include "GateDigiAdderInVolume.h"
-#include "GateDigiCollectionManager.h"
-#include <functional>
+#include "GateTDigiAttribute.h"
 #include <sstream>
+
+GateDigitizerAdderActor::threadLocalT::~threadLocalT() = default;
 
 GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
@@ -153,8 +154,6 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
         fOutputNumberOfHitsAttribute->FillDValue(hit->fNumberOfHits);
       lr.fDigiAttributeFiller->Fill(hit->fFinalIndex);
     }
-    // Clean up the allocated GateDigiAdderInVolume object
-    delete hit;
   }
 
   // reset the structure of hits
@@ -189,7 +188,7 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
   // Find or create an entry in the map for this unique key.
   if (l.fMapOfDigiInVolume.find(key) == l.fMapOfDigiInVolume.end()) {
     // If no entry exists, create a new one.
-    l.fMapOfDigiInVolume[key] = new GateDigiAdderInVolume(
+    l.fMapOfDigiInVolume[key] = std::make_unique<GateDigiAdderInVolume>(
         fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);
   }
 

@@ -6,23 +6,14 @@
    ------------------------------------ -------------- */
 
 #include "GateWeightedEdepActor.h"
-#include "G4Navigator.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-
-#include "G4Deuteron.hh"
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4MaterialTable.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
-#include "G4Positron.hh"
-#include "G4Proton.hh"
+#include <G4Electron.hh>
+#include <G4EmCalculator.hh>
+#include <G4Gamma.hh>
+#include <G4NistManager.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4RunManager.hh>
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetWeightedPixelMutex = G4MUTEX_INITIALIZER;
@@ -114,13 +105,16 @@ G4double GateWeightedEdepActor::GetMeanEnergy(G4Step *step) {
 G4double GateWeightedEdepActor::GetCurrentDEDX(G4Step *step) {
   double dedx_cut = DBL_MAX;
   auto &l = fThreadLocalData.Get();
+  if (!l.emcalc) {
+    l.emcalc = std::make_unique<G4EmCalculator>();
+  }
   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
   if (p == G4Gamma::Gamma()) {
     p = G4Electron::Electron();
   }
 
   auto *current_material = step->GetPreStepPoint()->GetMaterial();
-  auto dedx_currstep = l.emcalc.ComputeElectronicDEDX(
+  auto dedx_currstep = l.emcalc->ComputeElectronicDEDX(
                            l.energy_mean, p, current_material, dedx_cut) /
                        CLHEP::MeV * CLHEP::mm;
   if (std::isnan(dedx_currstep)) {
@@ -132,6 +126,9 @@ G4double GateWeightedEdepActor::GetCurrentDEDX(G4Step *step) {
 G4double GateWeightedEdepActor::GetSPROtherMaterial(G4Step *step) {
   double dedx_cut = DBL_MAX;
   auto &l = fThreadLocalData.Get();
+  if (!l.emcalc) {
+    l.emcalc = std::make_unique<G4EmCalculator>();
+  }
   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
   if (p == G4Gamma::Gamma()) {
     p = G4Electron::Electron();
@@ -141,8 +138,8 @@ G4double GateWeightedEdepActor::GetSPROtherMaterial(G4Step *step) {
   // std::cout<< "l.materialToScoreIn: " << l.materialToScoreIn << std::endl;
 
   auto dedx_other_material =
-      l.emcalc.ComputeElectronicDEDX(l.energy_mean, p, l.materialToScoreIn,
-                                     dedx_cut) /
+      l.emcalc->ComputeElectronicDEDX(l.energy_mean, p, l.materialToScoreIn,
+                                      dedx_cut) /
       CLHEP::MeV * CLHEP::mm;
 
   // std::cout<< "dedx_other_material" << dedx_other_material << std::endl;

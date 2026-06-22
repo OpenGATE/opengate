@@ -6,9 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateAttenuationImageActor.h"
-#include "G4SDManager.hh"
-#include "GateHelpersDict.h"
-#include "GateSourceManager.h"
 #include "GateVActor.h"
 
 GateAttenuationImageActor::GateAttenuationImageActor(py::dict &user_info,

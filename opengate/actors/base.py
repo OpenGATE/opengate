@@ -4,8 +4,10 @@ from functools import wraps
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
 from ..base import GateObject, process_cls
+from ..physics import Region
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
+import opengate_core as g4
 
 
 def _setter_hook_attached_to(self, attached_to):
@@ -135,6 +137,18 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
+        "track_structure_em_physics": (
+            None,
+            {
+                "doc": "If not None, request region-based track-structure EM physics "
+                "in the volume to which this actor is attached. "
+                "Use the full Geant4 constructor names where they exist, such as "
+                "`G4EmDNAPhysics_option2`, `G4EmDNAPhysics_option4`, "
+                "`G4EmDNAPhysics_option6`, `G4EmDNAPhysics_option7`, or "
+                "`G4EmDNAPhysics_option8`.",
+                "allowed_values": Region.available_track_structure_em_physics + (None,),
+            },
+        ),
     }
 
     # this dictionary is filled by the developer in each inheriting actor class
@@ -148,6 +162,26 @@ class ActorBase(GateObject):
     # The list is filled automatically during the class manufacturing process triggered by __process_this__
     # Do not redefine this in inheriting classes!
     _existing_properties_to_interfaces = []
+
+    @property
+    def is_chemistry_actor(self):
+        from .chemistryactors import ChemistryActorBase
+
+        return isinstance(self, ChemistryActorBase)
+
+    def get_track_structure_em_physics_request(self):
+        # Freeze-time hook for actors that request region-based track-structure EM
+        # activation before Geant4 physics initialization. Actors should
+        # return None or a (volume_name, track_structure_em_physics) tuple.
+        if self.track_structure_em_physics is None:
+            return None
+        if not isinstance(self.attached_to, str):
+            fatal(
+                f"Actor '{self.name}' requests track_structure_em_physics='{self.track_structure_em_physics}' "
+                f"but is attached to {self.attached_to}. "
+                f"Actors currently support track-structure EM activation only for a single attached volume."
+            )
+        return self.attached_to, self.track_structure_em_physics
 
     @classmethod
     def _process_user_output_config(cls):
@@ -478,6 +512,7 @@ class ActorBase(GateObject):
             self.mother_attached_to = "None"
         # set the name of the attached_to mother volume to cpp
         self.SetMotherAttachedToVolumeName(self.mother_attached_to)
+        self.ClearAttachedVolumeExitPairs()
 
         any_active = False
         for p in self._existing_properties_to_interfaces:
@@ -498,6 +533,46 @@ class ActorBase(GateObject):
                 f"(actor type: {self.type_name}). "
                 f"Does the actor class somehow inherit from GateVActor (as it should)?"
             )
+
+    def initialize_attached_volume_mother_pairs(self, world_name):
+        attached_to = self.attached_to
+        if isinstance(attached_to, str):
+            attached_to = [attached_to]
+
+        for volume_name in attached_to:
+            volume = self.simulation.volume_manager.get_volume(volume_name)
+            if volume.world_volume.name != world_name or volume_name == __world_name__:
+                continue
+
+            valid_instance_ids = {
+                pv.GetInstanceID() for pv in volume.g4_physical_volumes
+            }
+            pairs_added = 0
+
+            # Restrict the touchable lookup to the world currently being
+            # constructed. A global scan across all active navigators is too
+            # fragile during parallel-world setup because some other worlds may
+            # not have a ready navigator yet.
+            for touchable in g4.FindAllTouchables(volume_name, world_name):
+                attached_pv = touchable.GetVolume(0)
+                if attached_pv.GetInstanceID() not in valid_instance_ids:
+                    continue
+                if touchable.GetHistoryDepth() < 1:
+                    fatal(
+                        f"Could not resolve the mother physical volume for "
+                        f"attached volume '{volume_name}' in actor "
+                        f"'{self.name}'."
+                    )
+                mother_pv = touchable.GetVolume(1)
+                self.AddAttachedVolumeExitPair(attached_pv, mother_pv)
+                pairs_added += 1
+
+            # Some actors never use the attached volume / mother volume pairs,
+            # and in parallel-world setup there may be ConstructSDandField
+            # passes where Geant4 does not yield touchables for a given volume
+            # yet. We therefore leave the setup non-fatal here and let actors
+            # that actually need these pairs fail later if they try to use
+            # IsStepExitingAttachedVolume() without any resolved pairs.
 
     def _init_user_output_instance(self):
         for output_name, output_config in self._processed_user_output_config.items():

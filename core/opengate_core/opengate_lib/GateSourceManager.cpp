@@ -5,20 +5,18 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <iostream>
-#include <pybind11/numpy.h>
-
-#ifdef USE_GDML
-
-#include <G4GDMLParser.hh>
-
-#endif
-
+#include "GateSourceManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateSignalHandler.h"
-#include "GateSourceManager.h"
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#endif
 #include "indicators.hpp"
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
@@ -26,6 +24,12 @@
 #include <G4UImanager.hh>
 #include <G4UnitsTable.hh>
 #include <cmath>
+#include <iostream>
+#include <pybind11/numpy.h>
+
+#ifdef USE_GDML
+#include <G4GDMLParser.hh>
+#endif
 
 /* There will be one SourceManager per thread */
 
@@ -119,6 +123,21 @@ GateSourceManager::FindSourceByName(const std::string &name) const {
   return nullptr;
 }
 
+G4String GateSourceManager::GetActiveSourceName() {
+  auto &l = fThreadLocalData.Get();
+  if (l.fNextActiveSource != 0) {
+    G4String name = l.fNextActiveSource->fName;
+    return name;
+  }
+  return "None";
+}
+
+void GateSourceManager::SetActiveSourcebyName(G4String sourceName) {
+  auto &l = fThreadLocalData.Get();
+  auto *source = FindSourceByName(sourceName);
+  l.fNextActiveSource = source;
+}
+
 void GateSourceManager::StartMasterThread() {
   // Create the main macro command
   // (only performed in the master thread)
@@ -144,14 +163,14 @@ void GateSourceManager::StartMasterThread() {
     // The conventional (threaded) BeginOfRun will be called
     // for all threads by the Action loop
     for (const auto &actor : fActors) {
-      actor->BeginOfRunActionMasterThread(run_id);
+      actor->BeginOfRunActionMasterThread(static_cast<int>(run_id));
     }
     InitializeVisualization();
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
 
     for (const auto &actor : fActors) {
-      int ret = actor->EndOfRunActionMasterThread(run_id);
+      int ret = actor->EndOfRunActionMasterThread(static_cast<int>(run_id));
     }
     StartVisualization();
   }
@@ -238,7 +257,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
 void GateSourceManager::PrepareNextSource() const {
   auto &l = fThreadLocalData.Get();
   l.fNextActiveSource = nullptr;
-  G4int nbOfRunFromTimes = fSimulationTimes.size();
+  G4int nbOfRunFromTimes = static_cast<G4int>(fSimulationTimes.size());
 
   double min_time = l.fCurrentTimeInterval.first;
   double max_time = l.fCurrentTimeInterval.second;
@@ -254,8 +273,8 @@ void GateSourceManager::PrepareNextSource() const {
       l.fNextSimulationTime = t;
     }
   }
-  // If no next time in the current interval,
-  // the next active source is nullptr
+
+  // If no next time in the current interval, active source is NULL
 }
 
 void GateSourceManager::CheckForNextRun() const {
@@ -265,7 +284,6 @@ void GateSourceManager::CheckForNextRun() const {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
     l.fNextRunId++;
-    /*
     if (l.fNextRunId >= fSimulationTimes.size()) {
       // Sometimes, the source must clean some data in its own thread, not by
       // the master thread (for example, with a G4SingleParticleSource object)
@@ -274,7 +292,6 @@ void GateSourceManager::CheckForNextRun() const {
         source->CleanWorkerThread();
       }
     }
-    */
   }
 }
 
@@ -426,6 +443,12 @@ void GateSourceManager::StartVisualization() const {
     return;
   }
 #endif
+
+  if (fVisualizationFlag) {
+    for (auto &source : fSources) {
+      source->Visualize();
+    }
+  }
 
   if (fVisualizationFlag && fVisualizationType == "qt") {
     fUIEx->SessionStart();

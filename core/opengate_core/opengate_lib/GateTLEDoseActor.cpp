@@ -6,19 +6,16 @@
    ------------------------------------ -------------- */
 
 #include "GateTLEDoseActor.h"
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Exception.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateMaterialMuHandler.h"
+#include "GateTrackDataSlotRegistry.h"
 #include "GateUserTrackInformation.h"
-
+#include <G4Electron.hh>
+#include <G4EmCalculator.hh>
+#include <G4Exception.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4RunManager.hh>
+#include <G4Threading.hh>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <vector>
@@ -55,22 +52,24 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
   }
 }
 
+void GateTLEDoseActor::InitializeCpp() {
+  GateDoseActor::InitializeCpp();
+  fLegacyTLETrackDataSlotID = GateTrackDataSlotRegistry::RegisterSlot(
+      "actor_" + GetName() + "_tle_secondary_suppressed", "actor", GetName(),
+      "int");
+}
+
 void GateTLEDoseActor::SetTLETrackInformationOnSecondaries(G4Step *step,
                                                            G4bool info,
                                                            G4int nbSec) {
   if (nbSec > 0) {
     for (auto i = 0; i < nbSec; i++) {
-      GateUserTrackInformation *trackInfo = nullptr;
       auto *secs = step->GetfSecondary();
       auto *sec = (*secs)[secs->size() - i - 1];
-      if (sec->GetUserInformation() == 0) {
-        trackInfo = new GateUserTrackInformation();
-      } else {
-        trackInfo =
-            dynamic_cast<GateUserTrackInformation *>(sec->GetUserInformation());
-      }
-      trackInfo->SetGateTrackInformation(this, info);
-      sec->SetUserInformation(trackInfo);
+      auto *track_info = GetOrCreateGateUserTrackInformation(sec);
+      auto *track_data = track_info->GetOrCreateTrackData<GateIntTrackData>(
+          fLegacyTLETrackDataSlotID);
+      track_data->SetValue(static_cast<int>(info));
     }
   }
 }
@@ -139,7 +138,6 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
   GateDoseActor::BeginOfEventAction(event);
 }
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
-  G4Event *event = G4EventManager::GetEventManager()->GetNonconstCurrentEvent();
   auto &l = fThreadLocalData.Get();
   l.fIsFirstStep = true;
   // If the particle is a gamma, the TLE is initiated as false. The TLE
@@ -162,10 +160,14 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
 
   else {
     if (track->GetUserInformation() != 0) {
-      auto *info = track->GetUserInformation();
-      GateUserTrackInformation *trackInfo =
-          dynamic_cast<GateUserTrackInformation *>(info);
-      l.fIsTLESecondary = trackInfo->GetGateTrackInformation(this);
+      auto *track_info = GetGateUserTrackInformation(track);
+      if (track_info != nullptr) {
+        auto *track_data = track_info->GetTrackData<GateIntTrackData>(
+            fLegacyTLETrackDataSlotID);
+        if (track_data != nullptr) {
+          l.fIsTLESecondary = static_cast<bool>(track_data->GetValue());
+        }
+      }
     }
   }
 }
@@ -244,27 +246,32 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
     }
     return GateDoseActor::SteppingAction(step);
   }
-  // std::cout<<"TLE"<<std::endl;
+  ScoreTLEDepositStep(step);
+}
+
+void GateTLEDoseActor::ScoreTLEDepositStep(G4Step *step) {
+  const auto pre_step = step->GetPreStepPoint();
+  auto energy = pre_step->GetKineticEnergy();
   auto weight = step->GetTrack()->GetWeight();
   auto step_length = step->GetStepLength();
   auto density = pre_step->GetMaterial()->GetDensity();
+  G4double mu_en_over_rho;
   if (fTLEThresholdType != 1) {
     mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
         pre_step->GetMaterialCutsCouple(), energy);
+  } else {
+    mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
+        pre_step->GetMaterialCutsCouple(), energy);
   }
-  // (0.1 because length is in mm -> cm)
-
   auto edep = weight * 0.1 * energy * mu_en_over_rho * step_length * density /
               (CLHEP::g / CLHEP::cm3);
 
-  // Kill photon below a given energy
   if (energy <= fEnergyMin) {
     edep = weight * energy;
     step->GetTrack()->SetTrackStatus(fStopAndKill);
   }
   const double dose = edep / density;
 
-  // Get the voxel index and check if the step was within the 3D image
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;

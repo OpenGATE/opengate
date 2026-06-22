@@ -123,7 +123,10 @@ To ensure simulation efficiency, we may wish to stop early when a target uncerta
    # Target statistical uncertainty (e.g., 5%)
    unc_goal = 0.05
 
-   # Define how "high-dose" voxels are selected: here, > 70% of max edep value
+   # Define how "high-dose" voxels are selected:
+   # first compute the mean edep of the N highest voxels,
+   # then keep voxels above 70% of that reference value
+   n_top_voxels = 20
    thresh_voxel_edep_for_unc_calc = 0.7
 
    # Planned number of primary particles or events (e.g., 100 MBq)
@@ -135,22 +138,25 @@ These parameters are then passed to the dose actor:
 
    dose.uncertainty_goal = unc_goal # 0.05
    dose.uncertainty_first_check_after_n_events = 0.01 * n_planned # check statistical uncertainty every 1 MBq particles
+   dose.uncertainty_top_voxels_count = n_top_voxels # 20
    dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc # 0.7
 
 Uncertainty is computed only in high-deposition voxels to focus on the clinically relevant region:
 
 .. code-block:: python
 
-   def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
+   def calculate_mean_unc(edep_arr, unc_arr, n_top_voxels=20, edep_thresh_rel=0.7):
        # Average the uncertainty values ​​over the high energy deposition areas
-       edep_max = np.amax(edep_arr)
-       mask = edep_arr > edep_max * edep_thresh_rel
+       flat = edep_arr.ravel()
+       top_n = np.partition(flat, -n_top_voxels)[-n_top_voxels:]
+       edep_mean_max = float(top_n.mean())
+       mask = edep_arr > edep_mean_max * edep_thresh_rel
        unc_used = unc_arr[mask]
        unc_mean = np.mean(unc_used)
 
        return unc_mean
 
-Note: This method uses a relative threshold based on the maximum deposited energy, which may be sensitive to outliers. Consider using a percentile-based threshold for robustness if needed.
+The parameter ``uncertainty_top_voxels_count`` must be greater than 0 and no larger than the number of voxels in the scoring image.
 
 At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
 
@@ -305,13 +311,86 @@ FluenceActor
 Description
 ~~~~~~~~~~~
 
-This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. The FluenceActor will be extended in the future with features to handle scattered radiation, e.g. in cone beam CT imaging.
+This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. When a particle enters a voxel, it records either the counts or the kinetic energy of the incoming particle. If a particle is created within a voxel of the geometry to which the Fluence Actor is attached, this particle is not counted as part of the incoming flux for that voxel. A basic example of its usage is provided below:
 
+.. code-block:: python
+
+    fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
+    fluence_actor.counts_uncertainty.active = True
+    fluence_actor.counts_squared.active = True
+    fluence_actor.energy.active = True
+    fluence_actor.energy_uncertainty.active = True
+    fluence_actor.energy_squared.active = True
+    fluence_actor.output_filename = "test099.mhd"
+    fluence_actor.attached_to = fluence_plane
+    fluence_actor.size = [10, 10, 1]
+    ts = [10 * cm, 10 * cm, 1 * nm]
+    fluence_actor.spacing = [x / y for x, y in zip(ts, fluence_actor.size)]
+    fluence_actor.hit_type = "random"
+
+
+In addition, it is possible to generate separate fluence maps resolving the particle's tracking state and underlying physics processes (`primaries`, `secondaries`, `compton`, and `rayleigh`). These maps are created as follows: particles originating directly from the source without interacting are recorded as `primaries`, while all others are recorded as `secondaries`. Furthermore, if the incoming particle is a gamma photon and its last interaction was either Compton or Rayleigh scattering, the counts (and optionally the photon energy) are also recorded in the corresponding scattering-process maps. At present, pair production is not yet included as a recordable process. This actor is also compatible with the FreeFlightAngularAcceptance variance reduction technique. To enable the recording of these additional maps, simply set the following boolean to True:
+
+.. code-block:: python
+
+    fluence_actor.score_by_process = True
+
+The activation of the squared counts (and energies) and their associated uncertainty maps is handled automatically, according to the global settings defined by the user for counts and energy scoring.
 
 Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.doseactors.FluenceActor
+
+
+DepositedChargeActor
+--------------------
+
+Description
+~~~~~~~~~~~
+
+The DepositedChargeActor accumulates the net electric charge deposited in a volume during a simulation. The result is expressed in elementary-charge units (Geant4's ``eplus``).
+
+Charge is counted at track endpoints: when a charged track is *born* inside the attached volume, its charge is subtracted from the running total; when a charged track *dies* inside the volume, its charge is added. This counting method is robust with respect to nested geometries and to particles whose tracks end mid-volume from range cuts or in-flight interactions. Each contribution is weighted by the track weight, so totals remain correct under biasing or weighted sources.
+
+Two quantities are accumulated in parallel:
+
+  - ``deposited_nominal_charge``: uses the PDG charge from ``G4ParticleDefinition::GetPDGCharge``.
+  - ``deposited_dynamic_charge``: uses the effective charge from ``G4DynamicParticle::GetCharge``, which accounts for the ionisation state of heavy ions.
+
+For leptons and ordinary protons the two are identical. They diverge only when a track's effective charge differs from its nominal charge, e.g. for partially-stripped ions.
+
+.. code-block:: python
+
+    target = sim.add_volume("Box", "target")
+    target.size = [5 * cm, 5 * cm, 5 * cm]
+    target.material = "G4_WATER"
+
+    charge = sim.add_actor("DepositedChargeActor", "charge")
+    charge.attached_to = target.name
+
+    sim.run()
+    print(charge)
+    print(f"nominal: {charge.deposited_nominal_charge} e")
+    print(f"dynamic: {charge.deposited_dynamic_charge} e")
+
+
+Refer to the test files
+`test099_deposited_charge_actor*.py <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/actors>`_
+for examples covering stopping electrons, stopping positrons, neutral beams, traversal geometries, nested volumes, and multithreaded simulations.
+
+.. note::
+
+   Nested geometries are treated as a partition of space: the charge scored in a mother volume does **not** include the contribution from its daughters. To score the daughter region, attach a second ``DepositedChargeActor`` to the daughter, so that the totals from both actors add up to the charge deposited in the mother's full geometric extent.
+
+.. note::
+
+   For repeated volume placements, the actor will score the total charge deposited across all instances of the volume.
+
+Reference
+~~~~~~~~~
+.. autoclass:: opengate.actors.miscactors.DepositedChargeActor
+
 
 
 TLEDoseActor
@@ -320,18 +399,44 @@ TLEDoseActor
 Description
 ~~~~~~~~~~~
 
-This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor` which scores dose due to low energy gammas in another way, namely via the track length in the given voxel. Most options as well as the output are identical to the :class:`~.opengate.actors.doseactors.DoseActor`.
-It is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_. It is designed to model a photon population instead of treating each photon as a single particle. This approach enables efficient and accurate dose calculation by enabling a multiple energy deposition by a single photon.
+This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor`
+which scores dose due to low-energy gammas through a Track Length Estimator
+(TLE) formulation. Most options and outputs are identical to those of the
+:class:`~.opengate.actors.doseactors.DoseActor`.
+
+It is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_.
+It is designed to model a photon population instead of treating each photon as
+an isolated stochastic energy-deposition event. This enables efficient and
+accurate dose calculation by allowing a single photon track to contribute dose
+continuously along its path.
 
 **How It Works**
-During a step, where a typical photon would interact and deposit its energy stochastically, a TLE photon deposits dose based on the material's mass energy-absorption coefficient (`μ_en`) and the step length. This method implies a local dose deposition at the voxel scale, even though secondary electrons are emitted. This actor indeed do not interfer with the GEANT4 tracking.
+During a step, where a typical photon would interact and deposit its energy
+stochastically, a TLE photon deposits dose based on the material's mass
+energy-absorption coefficient (``mu_en``) and the step length. This implies a
+local dose deposition at the voxel scale, even though secondary electrons are
+emitted. The actor does not replace Geant4 tracking; it changes how dose is
+scored for tracks that enter the TLE mode.
 
-Since the database does not take into account the radiative part during the TLE energy deposition calculation, this method is applied to all photons, whether originating from the primary source or from secondary radiative processes. This approach offers a computationally efficient alternative to traditional dose calculation methods.
+Since the database does not take into account the radiative part during the TLE
+energy-deposition calculation, this method is applied to all photons, whether
+originating from the primary source or from secondary radiative processes. This
+approach offers a computationally efficient alternative to traditional dose
+calculation methods.
 
 **Energy Threshold Option**
-A novel feature of the TLE actor is the ability to activate or deactivate the TLE mechanism based on a user-defined energy threshold. This provides flexibility in simulations, allowing users to tailor the behavior of the TLE actor according to the energy ranges of interest.
+A key feature of the TLE actor is the ability to activate or deactivate the TLE
+mechanism according to user-defined criteria:
 
-Here is the a classical way to use the TLEDoseActor :
+- no threshold
+- photon energy threshold
+- maximum-range threshold
+- average-range threshold
+
+This provides flexibility in simulations, allowing users to tailor the
+behavior of the TLE actor to the energy ranges and materials of interest.
+
+Here is a classical way to use the TLEDoseActor:
 
 .. code-block:: python
 
@@ -342,8 +447,12 @@ Here is the a classical way to use the TLEDoseActor :
    tle_dose_actor.dose_uncertainty.active = True
    tle_dose_actor.size = [200, 200, 200]
    tle_dose_actor.spacing = [x / y for x, y in zip(irradiated_volume.size, tle_dose_actor.size)]
+   tle_dose_actor.tle_threshold_type = "max range"
+   tle_dose_actor.tle_threshold = 10 * mm
+   tle_dose_actor.database = "EPDL"
 
-Refer to test081 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/>`_ for more details.
+Refer to the ``test081_tle_*`` tests in ``opengate/tests/src/actors`` for
+more details.
 
 Reference
 ~~~~~~~~~
@@ -401,6 +510,8 @@ By default, the PhaseSpaceActor stores information about particles entering the 
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
    phsp.steps_to_store = "all"   # all steps (including secondary particles)
 
+If ``steps_to_store`` includes ``"exiting"`` and ``attached_to`` contains multiple volumes, the actor resolves the exit condition independently for each attached physical volume. This allows repeated volumes and attached volumes with different mothers to be handled consistently.
+
 The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
 
 The option “entering” stores the particle information whenever it is at the boundary between the surrounding environment (world, another volume) and the volume to which the actor is attached. The variables to be used are the PrePosition, PreDirection, etc.
@@ -409,6 +520,8 @@ For example: if a particle enters the volume only once, its information is store
 The option “exiting” stores the particle information whenever, starting from within the volume, it is at the boundary between the volume to which the actor is attached and the surrounding environment (world, another volume). The variables to be used are the PostPosition, PostDirection, etc.
 
 The option “all” stores the particle information for every step in the volume, including secondary particles generated in the volume. If you want to track all steps for both primary and secondary particles, use this option.
+
+When using local coordinates such as ``PrePositionLocal`` or ``PostPositionLocal`` with multiple ``attached_to`` volumes, each stored position is expressed in the local frame of the volume touched by that step. To interpret these entries afterwards, it is useful to also store a volume-identifying attribute such as ``PreStepUniqueVolumeID`` or ``PostStepUniqueVolumeID``. For simpler cases, ``TrackVolumeName`` together with ``PreStepVolumeCopyNo`` or ``PostStepVolumeCopyNo`` can also help distinguish the contributing volumes. If uniquely meaningful local coordinates are important for the analysis, it is often simpler to attach one ``PhaseSpaceActor`` per volume rather than combining several ``attached_to`` volumes in the same actor.
 
 
 Reference
@@ -492,8 +605,12 @@ Reference
 
 .. autoclass:: opengate.actors.digitizers.DigitizerHitsCollectionActor
 
-ProcessDefinedStepInVolumeAttribute
------------------------------------
+.. note::
+    The ``ProcessDefinedStepInVolumeAttribute`` "hidden actor" was recently (May 2026) replaced by the ``auxiliary`` actor.
+    These docs will get corresponding updates soon.
+
+ProcessDefinedStepInVolumeAttributeLegacy
+-----------------------------------------
 
 Description
 ~~~~~~~~~~~
@@ -513,14 +630,14 @@ To use it, you must instantiate the class with the simulation object, the proces
 
 .. code-block:: python
 
-   from opengate.actors.digitizers import ProcessDefinedStepInVolumeAttribute
+   from opengate.actors.digitizers import ProcessDefinedStepInVolumeAttributeLegacy
 
    # 1. Define the custom attributes
    # Count "compt" (Compton scattering) interactions in volume "Waterbox1"
-   att_compt = ProcessDefinedStepInVolumeAttribute(sim, "compt", "Waterbox1")
+   att_compt = ProcessDefinedStepInVolumeAttributeLegacy(sim, "compt", "Waterbox1")
 
    # Count "Rayl" (Rayleigh scattering) interactions in volume "world"
-   att_rayl = ProcessDefinedStepInVolumeAttribute(sim, "Rayl", "world")
+   att_rayl = ProcessDefinedStepInVolumeAttributeLegacy(sim, "Rayl", "world")
 
    # 2. Create the actor (e.g. PhaseSpace)
    phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
@@ -551,10 +668,12 @@ Once defined, this custom attribute behaves like any other standard attribute (e
    * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
    * **Volume Name:** Must be the name of a volume existing in the simulation.
 
-Reference
-~~~~~~~~~
+..
+    Reference
+    ~~~~~~~~~
 
-.. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttribute
+..
+    .. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttributeLegacy
 
 DigitizerAdderActor
 -----------------------
@@ -596,7 +715,7 @@ DigitizerReadoutActor
 Description
 ~~~~~~~~~~~
 
-This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerAdderActor.discretize_volume` indicates the volume name where the discrete position will be taken.
+This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume` indicates the volume name where the discrete position will be taken.
 
 .. code-block:: python
 
@@ -796,8 +915,6 @@ To obtain the same pile-up behavior as in GATE 9, set the following options:
    position_attribute_policy = "EnergyWinner"
    attribute_policy = "EnergyWinner"
 
-The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` can currently only be used in single-threaded simulations.
-
 .. code-block:: python
 
     pu = sim.add_actor("DigitizerPileupActor", "Singles_with_pileup")
@@ -856,8 +973,6 @@ The following policies are supported to deal with multiple coincidences in the s
 
 On-line coincidence sorting does not require saving singles to a file,
 which is more economical in terms of disk space if the singles are not needed after the simulation.
-The current limitation, however, is that :class:`~.opengate.actors.digitizers.CoincidenceSorterActor` can only be used
-in single-threaded simulations.
 
 With off-line coincidence sorting, coincidences are returned from the `CoincidenceSorter.run()`` method as a pandas DataFrame.
 Alternatively, `output_file_path` can be specified for saving the coincidences to a file. In this case, the run() method returns `None`.
@@ -1021,14 +1136,13 @@ Reference
 
 .. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
-Free Flight Actors
-------------------
+Free Flight Actors and Directional Biasing
+------------------------------------------
 
 Description
 ~~~~~~~~~~~
 
-Free Flight is a variance reduction technique designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations[cite: 248]. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See paper [Sarrut et al, PMB, 2026, to appear].
-
+Free Flight is a variance reduction technique (VRT) designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See `[Sarrut et al, PMB, 2026] <https://doi.org/10.1088/1361-6560/ae622a>`_.
 
 OpenGATE provides two main actors for this purpose:
 
@@ -1049,6 +1163,22 @@ This actor is typically attached to the world or a specific phantom volume. It e
    # Optionally exclude specific volumes like the detector crystal
    # to let standard Geant4 tracking take over once the particle reaches the detector.
    ff.exclude_volumes = ["spect_1_crystal"]
+
+
+Angular Acceptance and Forced Direction Policies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When configuring directional biasing, the choice of policy is important.
+
+.. warning::
+   The **Rejection** policy should only be used when the acceptance probability is spatially uniform (e.g., for point sources or far-field approximations). When the acceptance probability varies spatially, as is common with volumetric sources near a detector, this policy introduces a systematic spatial bias by "warping" the simulated activity distribution.
+
+For quantitative SPECT simulations, use one of the following:
+
+* **ForceDirection (Recommended)**: This forces particles into the acceptance cone and adjusts their statistical weight (w = w_initial * P_acc). This preserves the correct spatial activity distribution.
+* **ZeroEnergy (or Kill)**: This maintains correct timing and event counts by simply terminating particles that fall outside the acceptance criteria, though it is less computationally efficient than weighting.
+
+**Multi-Target Strategy**: For systems with multiple detector heads, use the "Copy Source" method. Create N copies of the source, each targeting a different detector. If the angular acceptance cones of the targets **do not overlap**, maintain the full activity A for each copy to ensure correct absolute counts in each detector head. If the cones **do overlap**, another strategy is needed to avoid double counting, such as splitting the activity A across the N copies (A/N) or using a single source with an acceptance cone that encompasses all targets. This is not currently implemented in OpenGATE but is planned for future releases.
 
 
 
@@ -1123,7 +1253,69 @@ The helper function ``merge_freeflight_uncertainty`` automates this by processin
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.freeflightactors.GammaFreeFlightActor
-.. autoclass:: opengate.actors.freeflightactors.ScatterSplittingFreeFlightActor
+.. autoclass:: opengate.actors.biasingactors.GammaFreeFlightActor
+.. autoclass:: opengate.actors.biasingactors.ScatterSplittingFreeFlightActor
 
 .. autofunction:: opengate.contrib.spect.spect_freeflight_helpers.merge_freeflight_uncertainty
+
+
+Voxelized Prompt-Gamma Actors
+-----------------------------
+
+Description
+~~~~~~~~~~~
+
+There are two actors to compute the 4D prompt-gamma (PG) energy and time distributions:
+
+* **VoxelizedPromptGammaAnalogActor** for the analog Monte Carlo,
+* **VoxelizedPromptGammaTLEActor** for the track-length estimator (vpgTLE).
+
+Both variations have boolean variables to activate the computation of the energy and/or time distribution for proton and/or neutron particles.
+For example for the analog:
+
+.. code-block:: python
+
+    vpg_analog = sim.add_actor("VoxelizedPromptGammaAnalogActor", "vpg_analog")
+    vpg_analog.prot_E.active = True
+    vpg_analog.neutr_E.active = True
+    vpg_analog.prot_tof.active = True
+    vpg_analog.neutr_tof.active = True
+
+and for the vpgTLE:
+
+.. code-block:: python
+
+    vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpg_tle")
+    vpg_tle.prot_E.active = True
+    vpg_tle.neutr_E.active = True
+    vpg_tle.prot_tof.active = True
+    vpg_tle.neutr_tof.active = True
+
+In addition, the PG time distribution computed by the vpgTLE actor can be weigthed by a PG emission yield,
+a 1D vector indexed by the proton or neutron energy. It makes it possible to take into account the fact that
+when the proton kinetic energy is small (below a few tens of MeV), the prompt gamma yield can be small.
+These vectors should represent an composition-averaged human material, and they are computed off-line and stored
+in the PG database (ROOT file).
+
+.. code-block:: python
+
+   # Get the 1D PG yield computed for a human-averaged material, for proton and neutron inelastic processes
+   with uproot.open(paths.data / "test081_pgtle" / "data_merge_proton.root") as root_file:
+      vect_p = root_file["standard_Weight"]["Weight"].to_numpy()[0]
+   with uproot.open(paths.data / "test081_pgtle" / "data_merge_neutron.root") as root_file:
+      vect_n = root_file["standard_Weight"]["Weight"].to_numpy()[0]
+
+   vpg_tle.weight = True
+   vpg_tle.vect_p = vect_p
+   vpg_tle.vect_n = vect_n
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaAnalogActor
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaTLEActor
+.. autoproperty:: opengate.actors.digitizers.DigitizerBase.authorize_repeated_volumes
+.. autoproperty:: opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume
+.. autoproperty:: opengate.sources.base.SourceBase.half_life
+.. automethod:: opengate.managers.VolumeManager.dump_volume_tree

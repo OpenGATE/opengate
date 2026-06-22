@@ -6,8 +6,9 @@
    -------------------------------------------------- */
 
 #include "GateTemplateSource.h"
-#include "G4ParticleTable.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include <G4ParticleTable.hh>
 #include <G4UnitsTable.hh>
 
 GateTemplateSource::GateTemplateSource() : GateVSource() {
@@ -58,8 +59,7 @@ void GateTemplateSource::GeneratePrimaries(G4Event *event,
 
   // the position is changed according to fGlobalTranslation and fGlobalRotation
   auto pos = G4ThreeVector(fVectorValue[0], fVectorValue[1], fVectorValue[2]);
-  auto &l = fThreadLocalData.Get();
-  pos = l.fGlobalRotation * pos + l.fGlobalTranslation;
+  pos = fGlobalRotation * pos + fGlobalTranslation;
 
   // create the vertex
   auto *vertex = new G4PrimaryVertex(pos, current_simulation_time);

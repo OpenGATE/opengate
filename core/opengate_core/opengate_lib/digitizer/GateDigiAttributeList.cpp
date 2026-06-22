@@ -8,10 +8,10 @@
 #include "../GateUniqueVolumeIDManager.h"
 #include "../GateUserEventInformation.h"
 #include "../filters/GatePrimaryScatterFilter.h"
-#include "G4Run.hh"
-#include "G4RunManager.hh"
-#include "G4Step.hh"
 #include "GateDigiAttributeManager.h"
+#include <G4Run.hh>
+#include <G4RunManager.hh>
+#include <G4Step.hh>
 
 /* Macros to reduce the code size
    Use FILLFS when the step variable is not used to avoid warning

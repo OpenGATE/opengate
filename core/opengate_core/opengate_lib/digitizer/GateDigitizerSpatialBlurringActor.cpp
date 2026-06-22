@@ -7,15 +7,10 @@
 
 #include "GateDigitizerSpatialBlurringActor.h"
 #include "../GateHelpersDict.h"
-#include "../GateHelpersGeometry.h"
-#include "../GateUniqueVolumeIDManager.h"
-#include "GateDigiAdderInVolume.h"
-#include "GateDigiCollectionManager.h"
 #include <G4Navigator.hh>
 #include <G4RunManager.hh>
 #include <G4VoxelLimits.hh>
 #include <Randomize.hh>
-#include <iostream>
 
 #define _USE_MATH_DEFINES
 #include <cmath>

@@ -23,6 +23,24 @@ from .base import GateSingletonFatal
 from .logger import logger
 
 
+def _translate_track_structure_em_physics_to_geant4(track_structure_em_physics):
+    translation = {
+        "G4EmDNAPhysics": "DNA_Opt0",
+        "G4EmDNAPhysics_option2": "DNA_Opt2",
+        "G4EmDNAPhysics_option4": "DNA_Opt4",
+        "G4EmDNAPhysics_option6": "DNA_Opt6",
+        "G4EmDNAPhysics_option7": "DNA_Opt7",
+        "G4EmDNAPhysics_option8": "DNA_Opt8",
+    }
+    try:
+        return translation[track_structure_em_physics]
+    except KeyError:
+        fatal(
+            f"Unknown track-structure EM physics option '{track_structure_em_physics}'. "
+            f"Allowed values are: {tuple(translation.keys())}."
+        )
+
+
 class EngineBase:
     """
     Base class for all engines (SimulationEngine, VolumeEngine, etc.)
@@ -69,7 +87,7 @@ class SourceEngine(EngineBase):
         self.progress_bar = False
         self.expected_number_of_events = "unknown"
 
-        # List of sources (GateSource), for all threads
+        # List of sources (GateSource)
         self.sources = []
 
         # The source manager will be constructed at build (during ActionManager)
@@ -84,9 +102,15 @@ class SourceEngine(EngineBase):
         # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
         self.source_manager_options = Box()
 
+    @property
+    def source_manager(self):
+        return self.simulation_engine.simulation.source_manager
+
     def close(self):
         if self.verbose_close:
             warning("Closing SourceEngine")
+        for source in self.source_manager.sources.values():
+            source.close()
         self.release_g4_references()
         super().close()
 
@@ -104,6 +128,12 @@ class SourceEngine(EngineBase):
         #        "No source: no particle will be generated"
         #    )
         self.progress_bar = progress_bar
+        self.initialize_dynamic_parametrisations()
+
+        # Pre-create C++ sources for all threads (1 master + N workers) on the main thread
+        num_instances = 1 + self.simulation_engine.simulation.number_of_threads
+        for source in self.source_manager.sources.values():
+            source.pre_create_g4_sources(num_instances)
 
     def initialize_actors(self):
         """
@@ -113,11 +143,29 @@ class SourceEngine(EngineBase):
             self.simulation_engine.simulation.actor_manager.sorted_actors
         )
 
+    def initialize_dynamic_parametrisations(self):
+        dynamic_sources = self.source_manager.dynamic_sources
+        for s in self.source_manager.dynamic_sources:
+            s.check_if_dynamic_params_match_run_timing_intervals()
+        if len(dynamic_sources) > 0:
+            dynamic_source_actor = self.simulation_engine.simulation.add_actor(
+                "DynamicSourceActor", "dynamic_source_actor"
+            )
+            dynamic_source_actor.priority = 1
+            for s in self.source_manager.dynamic_sources:
+                dynamic_source_actor.changers.extend(s.create_changers())
+
     def create_master_source_manager(self):
         # create the master source for the masterThread
         self.g4_master_source_manager = self.create_g4_thread_source_manager(
             append=False
         )
+        # Initialize all worker thread-local C++ sources on the main thread to size G4Cache properly.
+        # This is safe because physics and geometry are fully initialized now.
+        for source in self.source_manager.sources.values():
+            if source.g4_thread_sources:
+                for g4_src in source.g4_thread_sources[1:]:
+                    source.initialize_g4_source(g4_src, self.run_timing_intervals)
         return self.g4_master_source_manager
 
     def create_g4_thread_source_manager(self, append=True):
@@ -131,8 +179,13 @@ class SourceEngine(EngineBase):
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
         for source in source_manager.sources.values():
-            source.initialize(self.run_timing_intervals)
-            source.add_to_source_manager(ms)
+            g4_source = source.get_next_g4_source()
+            if g4_source is not None:
+                source.initialize_g4_source(g4_source, self.run_timing_intervals)
+                ms.AddSource(g4_source)
+            else:
+                source.initialize(self.run_timing_intervals)
+                source.add_to_source_manager(ms)
             # store all the sources (will be used later by SimulationOutput)
             self.sources.append(source)
 
@@ -182,6 +235,11 @@ class SourceEngine(EngineBase):
         # once terminated, packup the sources (if needed)
         for source in self.sources:
             source.prepare_output()
+            if source.g4_thread_sources:
+                source.gather_outputs(source.g4_thread_sources)
+            # Clear C++ sources now on the main thread while G4Cache is active
+            source.g4_thread_sources = []
+            source.g4_thread_sources_index = 0
 
     def can_predict_expected_number_of_event(self):
         # can_predict = True
@@ -209,13 +267,15 @@ class PhysicsEngine(EngineBase):
         for optical_surface in self.physics_manager.optical_surfaces.values():
             optical_surface.physics_engine = self
 
-        # main g4 physic list
-        self.g4_physics_list = None
+        # main runtime physics list object passed to the RunManager
+        # (an augmented physics list that may forward chemistry callbacks)
+        self.g4_augmented_physics_list = None
         self.g4_decay = None
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = []
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_dna_physics_activator = None
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
@@ -237,12 +297,15 @@ class PhysicsEngine(EngineBase):
         super().close()
 
     def release_g4_references(self):
-        self.g4_physics_list = None
+        if self.g4_augmented_physics_list is not None:
+            self.g4_augmented_physics_list.close()
+        self.g4_augmented_physics_list = None
         self.g4_decay = None
         self.g4_radioactive_decay = None
         self.g4_cuts_by_regions = None
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
+        self.g4_dna_physics_activator = None
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
@@ -252,7 +315,7 @@ class PhysicsEngine(EngineBase):
             optical_surface.release_g4_references()
 
     @requires_fatal("simulation_engine")
-    @requires_warning("g4_physics_list")
+    @requires_warning("g4_augmented_physics_list")
     def close_physics_constructors(self):
         """This method removes PhysicsConstructors defined in python from the physics list.
 
@@ -264,7 +327,7 @@ class PhysicsEngine(EngineBase):
         current_state = self.simulation_engine.g4_state
         self.simulation_engine.g4_state = g4.G4ApplicationState.G4State_PreInit
         for pc in self.gate_physics_constructors:
-            self.g4_physics_list.RemovePhysics(pc)
+            self.g4_augmented_physics_list.RemovePhysics(pc)
         self.simulation_engine.g4_state = current_state
 
     # make this a property so the communication between
@@ -279,11 +342,29 @@ class PhysicsEngine(EngineBase):
         G4RunManager.Initialize() is called.
 
         """
+        # Regions have a split lifecycle because their G4Region objects must
+        # exist during Geant4 initialization, while some settings are only safe
+        # to apply after G4RunManager.Initialize() has completed.
+        self.initialize_regions_before_runmanager()
         self.initialize_physics_list()
+        self.initialize_dna_physics_regions()
         self.initialize_g4_em_parameters()
         self.initialize_user_limits_physics()
         self.initialize_physics_biasing()
         self.initialize_parallel_world_physics()
+
+    def initialize_dna_physics_regions(self):
+        if not any(
+            region.track_structure_em_physics is not None
+            for region in self.physics_manager.regions.values()
+        ):
+            return
+        # Keep a Python ref to the activator because it is created on the Python
+        # side and then registered into a Geant4-owned physics list.
+        self.g4_dna_physics_activator = g4.G4EmDNAPhysicsActivator(
+            self.physics_manager.simulation.g4_verbose_level
+        )
+        self.g4_augmented_physics_list.RegisterPhysics(self.g4_dna_physics_activator)
 
     def initialize_after_runmanager(self):
         """ """
@@ -298,28 +379,35 @@ class PhysicsEngine(EngineBase):
         self.initialize_ionisation_options()
         self.initialize_users_ionisation_potentials()
 
+    def initialize_regions_before_runmanager(self):
+        for region in self.physics_manager.regions.values():
+            region.initialize_before_runmanager()
+
     def initialize_parallel_world_physics(self):
         for (
             world
         ) in self.physics_manager.simulation.volume_manager.parallel_world_names:
+            # flag "True" for Layered Mass Geometry (parallel world is enabled for all interactions)
             pwp = g4.G4ParallelWorldPhysics(world, True)
             self.g4_parallel_world_physics.append(pwp)
-            self.g4_physics_list.RegisterPhysics(pwp)
+            self.g4_augmented_physics_list.RegisterPhysics(pwp)
 
     def initialize_physics_list(self):
         """
         Create a Physic List from the Factory
         """
         physics_list_name = self.physics_manager.user_info.physics_list_name
-        self.g4_physics_list = (
-            self.physics_manager.physics_list_manager.get_physics_list(
+        # The chemistry list is attached later by ChemistryEngine once the
+        # runtime chemistry-list object has been created and retained there.
+        self.g4_augmented_physics_list = (
+            self.physics_manager.physics_list_builder.create_physics_list(
                 physics_list_name
             )
         )
 
     def initialize_regions(self):
         for region in self.physics_manager.regions.values():
-            region.initialize()
+            region.initialize_after_runmanager()
 
     def initialize_global_cuts(self):
         ui = self.physics_manager.user_info
@@ -336,7 +424,9 @@ class PhysicsEngine(EngineBase):
             # calls SetCutValue for all relevant particles,
             # i.e. proton, gamma, e+, e-
             for pname in cut_particle_names.values():
-                self.g4_physics_list.SetCutValue(ui.global_production_cuts.all, pname)
+                self.g4_augmented_physics_list.SetCutValue(
+                    ui.global_production_cuts.all, pname
+                )
 
         else:
             for pname, value in ui.global_production_cuts.items():
@@ -344,7 +434,7 @@ class PhysicsEngine(EngineBase):
                 if pname == "all":
                     continue
                 if value is not None and value not in ("default", "Default"):
-                    self.g4_physics_list.SetCutValue(
+                    self.g4_augmented_physics_list.SetCutValue(
                         value, translate_particle_name_gate_to_geant4(pname)
                     )
 
@@ -389,6 +479,13 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
+            if region.track_structure_em_physics is not None:
+                self.g4_em_parameters.AddDNA(
+                    region.name,
+                    _translate_track_structure_em_physics_to_geant4(
+                        region.track_structure_em_physics
+                    ),
+                )
 
     def initialize_physics_biasing(self):
         # get a dictionary {particle:[processes]}
@@ -400,7 +497,7 @@ class PhysicsEngine(EngineBase):
             for particle, processes in particles_processes.items():
                 if len(processes) > 0:
                     g4_biasing_physics.PhysicsBias(particle, processes)
-            self.g4_physics_list.RegisterPhysics(g4_biasing_physics)
+            self.g4_augmented_physics_list.RegisterPhysics(g4_biasing_physics)
 
     # This function deals with calling the parse function
     # and setting the returned MaterialPropertyTable to G4Material object
@@ -489,7 +586,7 @@ class PhysicsEngine(EngineBase):
         if need_step_limiter or need_user_special_cut:
             user_limits_physics = UserLimitsPhysics()
             user_limits_physics.physics_engine = self
-            self.g4_physics_list.RegisterPhysics(user_limits_physics)
+            self.g4_augmented_physics_list.RegisterPhysics(user_limits_physics)
             self.gate_physics_constructors.append(user_limits_physics)
 
     @requires_fatal("physics_manager")
@@ -518,6 +615,157 @@ class PhysicsEngine(EngineBase):
             ionisation.SetMeanExcitationEnergy(val)
 
 
+class ChemistryEngine(EngineBase):
+    """
+    Class that contains all the information and mechanism regarding physics
+    to actually run a simulation. It is associated with a simulation engine.
+
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        # Keep a shortcut reference to the current physics_manager
+        self.chemistry_manager = self.simulation_engine.simulation.chemistry_manager
+
+        # g4 references
+        self.g4_chemistry_world = None
+        self.g4_scavenger_material = None
+        self.g4_time_step_action = None
+        self.g4_it_tracking_interactivity = None
+        self.g4_chemistry_controller = None
+
+    def close(self):
+        if self.verbose_close:
+            warning("Closing ChemistryEngine")
+        self.release_g4_references()
+        super().close()
+
+    def release_g4_references(self):
+        # The ChemistryList owned by ChemistryManager keeps the runtime
+        # chemistry-list reference. The engine only releases its own Geant4
+        # manager/action references here.
+        if (
+            self.g4_scavenger_material is not None
+            or self.g4_chemistry_world is not None
+            or self.g4_time_step_action is not None
+            or self.g4_it_tracking_interactivity is not None
+            or self.g4_chemistry_controller is not None
+        ):
+            # G4Scheduler only stores raw pointers to these helper objects.
+            # Detach them explicitly before dropping the Python-side refs.
+            scheduler = g4.G4Scheduler.Instance()
+            scheduler.SetUserAction(None)
+            scheduler.SetInteractivity(None)
+            scheduler.SetScavengerMaterial(None)
+        self.g4_chemistry_world = None
+        self.g4_scavenger_material = None
+        self.g4_time_step_action = None
+        self.g4_it_tracking_interactivity = None
+        self.g4_chemistry_controller = None
+
+    def _create_g4_chemistry_controller(self):
+        confined_volume = self.chemistry_manager.confine_chemistry_to_volume
+        if confined_volume is None:
+            return None
+        user_info = {
+            "name": "chemistry_controller",
+            "attached_to": confined_volume,
+            "confine_chemistry_to_volume": True,
+        }
+        controller = g4.GateChemistryController(user_info)
+        controller.InitializeUserInfo(user_info)
+        controller.AddActions({"StartChemistryTracking"})
+        return controller
+
+    def _resolve_required_molecule_counter_manager_policy(self):
+        resolved_policy = {
+            "reset_counters_before_event": None,
+            "reset_counters_before_run": None,
+            "reset_master_counter_with_workers": None,
+            "accumulate_counter_into_master": None,
+        }
+        for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
+            if not actor.is_chemistry_actor:
+                continue
+            policy = getattr(actor, "required_molecule_counter_manager_policy", {})
+            for key, value in policy.items():
+                if value is None:
+                    continue
+                if resolved_policy[key] is None:
+                    resolved_policy[key] = value
+                elif resolved_policy[key] != value:
+                    fatal(
+                        f"Incompatible molecule-counter manager policy for chemistry actors: "
+                        f"'{key}' is requested as both {resolved_policy[key]} and {value}."
+                    )
+        return resolved_policy
+
+    def _apply_required_molecule_counter_manager_policy(self):
+        g4_molecule_counter_manager = g4.G4MoleculeCounterManager.Instance()
+        policy = self._resolve_required_molecule_counter_manager_policy()
+        setter_map = {
+            "reset_counters_before_event": "SetResetCountersBeforeEvent",
+            "reset_counters_before_run": "SetResetCountersBeforeRun",
+            "reset_master_counter_with_workers": "SetResetMasterCounterWithWorkers",
+            "accumulate_counter_into_master": "SetAccumulateCounterIntoMaster",
+        }
+        for key, setter_name in setter_map.items():
+            value = policy[key]
+            if value is not None:
+                getattr(g4_molecule_counter_manager, setter_name)(value)
+
+    def initialize_before_runmanager(self):
+        self.chemistry_manager.chemistry_list.initialize_before_runmanager()
+        # The augmented physics list forwards ConstructParticle/ConstructProcess
+        # to the chemistry list during Geant4 initialization, so inject the ref
+        # before G4RunManager.Initialize() starts.
+        self.simulation_engine.physics_engine.g4_augmented_physics_list.set_chemistry_list(
+            self.chemistry_manager.chemistry_list
+        )
+        g4.G4EmParameters.Instance().SetTimeStepModel(
+            getattr(
+                g4.G4ChemTimeStepModel,
+                self.chemistry_manager.time_step_model,
+            )
+        )
+        if self.chemistry_manager.chemistry_world is not None:
+            # Build the runtime chemistry-world container before Geant4
+            # initialization, but delay molecule-name resolution until the
+            # chemistry list has populated the molecule table.
+            self.g4_chemistry_world = (
+                self.chemistry_manager.chemistry_world.create_g4_chemistry_world()
+            )
+        self._apply_required_molecule_counter_manager_policy()
+
+    def initialize_after_runmanager(self):
+        chemistry_list = self.chemistry_manager.chemistry_list
+        if chemistry_list.g4_builtin_chemistry_list is None:
+            return
+
+        chemistry_world = self.chemistry_manager.chemistry_world
+        if self.g4_chemistry_world is not None and (
+            chemistry_world is None or chemistry_world.has_scavengers is False
+        ):
+            self.g4_chemistry_world.ConstructChemistryComponents()
+
+        scheduler = g4.G4Scheduler.Instance()
+        if chemistry_world is not None:
+            self.g4_scavenger_material = chemistry_world.g4_scavenger_material
+        self.g4_time_step_action = g4.GateTimeStepAction()
+        self.g4_it_tracking_interactivity = g4.GateITTrackingInteractivity()
+        self.g4_chemistry_controller = self._create_g4_chemistry_controller()
+        if self.g4_chemistry_controller is not None:
+            self.g4_it_tracking_interactivity.RegisterActor(
+                self.g4_chemistry_controller
+            )
+        for actor in self.simulation_engine.simulation.actor_manager.sorted_actors:
+            if actor.is_chemistry_actor:
+                self.g4_time_step_action.RegisterActor(actor)
+                self.g4_it_tracking_interactivity.RegisterActor(actor)
+        scheduler.SetUserAction(self.g4_time_step_action)
+        scheduler.SetInteractivity(self.g4_it_tracking_interactivity)
+
+
 class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     """
     Main object to manage all actions during a simulation.
@@ -538,10 +786,14 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_SteppingAction = []
+        self.g4_StackingAction = []
 
     def close(self):
         if self.verbose_close:
             warning("Closing ActionEngine")
+        g4.GateVAuxiliaryAttribute.ClearRegistry()
+        g4.GateTrackDataSlotRegistry.Clear()
         self.release_g4_references()
         super().close()
 
@@ -551,11 +803,14 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_SteppingAction = []
+        self.g4_StackingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
         self.register_event_actions(actor)
         self.register_tracking_actions(actor)
+        self.register_stacking_actions(actor)
 
     def register_run_actions(self, actor):
         for ra in self.g4_RunAction:
@@ -568,6 +823,21 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def register_auxiliary_attribute_actions(self, attribute):
+        # Auxiliary attributes are simulation-level runtime attributes, but the
+        # Geant4 user action objects are worker-local. Registration therefore
+        # pushes each activated attribute into the appropriate per-worker
+        # tracking/stepping aggregators based on the hooks it implements.
+        for ta in self.g4_TrackingAction:
+            ta.RegisterAuxiliaryAttribute(attribute)
+        for sa in self.g4_SteppingAction:
+            sa.RegisterAuxiliaryAttribute(attribute)
+
+    def register_stacking_actions(self, actor):
+        is_chemistry_actor = actor.is_chemistry_actor
+        for sa in self.g4_StackingAction:
+            sa.RegisterActor(actor, is_chemistry_actor)
 
     def BuildForMaster(self):
         # This function is called only in MT mode, for the master thread
@@ -592,13 +862,20 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
 
+        chemistry_is_active = (
+            self.simulation_engine.simulation.chemistry_manager.check_chemistry_list_requests()
+            is not None
+        )
+
         # set the actions for Run
         ra = g4.GateRunAction(p)
+        ra.fChemistryIsActive = chemistry_is_active
         self.SetUserAction(ra)
         self.g4_RunAction.append(ra)
 
         # set the actions for Event
         ea = g4.GateEventAction()
+        ea.fChemistryIsActive = chemistry_is_active
         self.SetUserAction(ea)
         self.g4_EventAction.append(ea)
 
@@ -609,6 +886,16 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
+
+        # set the global stepping action for auxiliary attributes
+        sa = g4.GateSteppingAction()
+        self.SetUserAction(sa)
+        self.g4_SteppingAction.append(sa)
+
+        sa = g4.GateStackingAction()
+        sa.fChemistryIsActive = chemistry_is_active
+        self.SetUserAction(sa)
+        self.g4_StackingAction.append(sa)
 
 
 def register_sensitive_detector_to_children(actor, lv):
@@ -644,12 +931,21 @@ class ActorEngine(EngineBase):
         super().close()
 
     def initialize(self):
+        # TODO: Split actor initialization into before/after G4RunManager initialization phases.
+        # Some early checks currently run before geometry construction and can touch
+        # image-dependent properties too soon. For example, DoseActor.check_user_input()
+        # may access attached_to_volume.native_translation/native_rotation while the
+        # attached ImageVolume has not loaded its input image yet.
         for actor in self.actor_manager.sorted_actors:
             logger.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
-            self.simulation_engine.action_engine.register_all_actions(actor)
+            # self.simulation_engine.action_engine.register_all_actions(actor)
             actor.initialize()
             # warning: the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
+
+    def register_actions(self):
+        for actor in self.actor_manager.sorted_actors:
+            self.simulation_engine.action_engine.register_all_actions(actor)
 
     def register_to_actors(self):
         for actor in self.actor_manager.actors.values():
@@ -657,9 +953,54 @@ class ActorEngine(EngineBase):
 
     def register_sensitive_detectors(self, world_name):
         for actor in self.actor_manager.sorted_actors:
+            # 1. Determine which volumes this actor is attached to
+            if isinstance(actor.attached_to, str):
+                mothers = [actor.attached_to]
+            else:
+                mothers = actor.attached_to
+
+            # 2. Check if the actor belongs to the world currently being constructed
+            actor_in_current_world = False
+            for volume_name in mothers:
+                volume = self.simulation_engine.simulation.volume_manager.get_volume(
+                    volume_name
+                )
+                if volume.world_volume.name == world_name:
+                    actor_in_current_world = True
+                    break
+
+            # 3. Handle Sensitive Detectors
+            if actor.IsSensitiveDetector() is True:
+                # add SD for all mothers in the current world
+                for volume_name in mothers:
+                    volume = (
+                        self.simulation_engine.simulation.volume_manager.get_volume(
+                            volume_name
+                        )
+                    )
+                    if volume.world_volume.name == world_name:
+                        register_sensitive_detector_to_children(
+                            actor, volume.g4_logical_volume
+                        )
+            # This must happen here, after Geant4 has constructed the physical
+            # volumes for the current world. The ActorBase hook resolves
+            # concrete (attached physical volume -> mother physical volume)
+            # pairs, which cannot be derived earlier from user_info alone.
+            actor.initialize_attached_volume_mother_pairs(world_name)
+
+            # 4. Handle Biasing Operators/Actors (specific)
+            # this is needed for MultiThread run
+            if hasattr(actor, "ConfigureForWorker"):
+                # ONLY configure if the actor belongs to the current world.
+                # This prevents looking up volumes in parallel worlds before they are built
+                if actor_in_current_world:
+                    actor.ConfigureForWorker()
+
+    def register_sensitive_detectors_OLD(self, world_name):
+        for actor in self.actor_manager.sorted_actors:
             if actor.IsSensitiveDetector() is True:
                 # Step: only enabled if attachTo a given volume.
-                # Propagated to all child and sub-child
+                # Propagated to all child and sub-child.
                 # tree = volume_manager.volumes_tree
                 if isinstance(actor.attached_to, str):
                     # make a list with one single element
@@ -681,7 +1022,6 @@ class ActorEngine(EngineBase):
             # this is specific for BiasingOperator/Actor
             # this is needed for MultiThread run
             if hasattr(actor, "ConfigureForWorker"):
-                actor.InitializeUserInfo(actor.user_info)
                 actor.ConfigureForWorker()
 
     def start_simulation(self):
@@ -749,7 +1089,6 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
             volume.construct()
 
     def ConstructSD(self):
-        # FIXME
         self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.parallel_world_name,
         )
@@ -813,7 +1152,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             )
             dynamic_geometry_actor.priority = 0
             for vol in self.volume_manager.dynamic_volumes:
-                dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
+                dynamic_geometry_actor.changers.extend(vol.create_changers())
 
     def Construct(self):
         """
@@ -831,6 +1170,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.volume_manager.update_volume_tree()
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
+
+        for (
+            region
+        ) in self.simulation_engine.simulation.physics_manager.regions.values():
+            region.initialize_during_runmanager()
 
         # return the (main) world physical volume
         self._is_constructed = True
@@ -860,6 +1204,14 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.volume_manager.world_volume.name,
         )
+
+        for field in self.simulation_engine.simulation.volume_manager.fields.values():
+            for volume_name in field.attached_to:
+                volume_obj = self.volume_manager.get_volume(volume_name)
+                volume_obj.g4_field_manager = field.create_field_manager(volume_obj)
+                volume_obj.g4_logical_volume.SetFieldManager(
+                    volume_obj.g4_field_manager, True
+                )
 
     def get_volume(self, name):
         return self.volume_manager.get_volume(name)
@@ -1073,6 +1425,7 @@ class SimulationEngine(GateSingletonFatal):
         self.volume_engine = VolumeEngine(self)
         self.volume_engine.create_parallel_world_engines()
         self.physics_engine = PhysicsEngine(self)
+        self.chemistry_engine = ChemistryEngine(self)
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)
         self.actor_engine = ActorEngine(self)
@@ -1122,21 +1475,27 @@ class SimulationEngine(GateSingletonFatal):
             self.volume_engine.close()
         if self.physics_engine:
             self.physics_engine.close()
+        if self.chemistry_engine:
+            self.chemistry_engine.close()
         if self.source_engine:
             self.source_engine.close()
         if self.action_engine:
             self.action_engine.close()
         if self.actor_engine:
             self.actor_engine.close()
+        if self.filter_engine:
+            self.filter_engine.close()
         if self.visu_engine:
             self.visu_engine.close()
 
     def release_engines(self):
         self.volume_engine = None
         self.physics_engine = None
+        self.chemistry_engine = None
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
+        self.filter_engine = None
         self.visu_engine = None
 
     def release_g4_references(self):
@@ -1148,6 +1507,7 @@ class SimulationEngine(GateSingletonFatal):
 
     def notify_managers(self):
         self.simulation.physics_manager._simulation_engine_closing()
+        self.simulation.chemistry_manager._simulation_engine_closing()
         self.simulation.volume_manager._simulation_engine_closing()
 
     def close(self):
@@ -1162,6 +1522,9 @@ class SimulationEngine(GateSingletonFatal):
                 self.g4_RunManager.SetVerboseLevel(0)
             self._is_closed = True
         self.g4_RunManager = None
+        if self.run_manager_finalizer:
+            self.run_manager_finalizer.detach()
+            self.run_manager_finalizer = None
 
     def __enter__(self):
         return self
@@ -1408,8 +1771,21 @@ class SimulationEngine(GateSingletonFatal):
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
 
-        # action
+        # Auxiliary attributes must register their runtime IDs and DigiAttribute
+        # views before worker tracking starts.
+        logger.info("Simulation: initialize Auxiliary attributes")
+        self.simulation.initialize_auxiliary_attributes()
 
+        if self.simulation.chemistry_manager.simulation_uses_chemistry():
+            warning(self.simulation.chemistry_manager.alpha_warning_message)
+
+        need_chemistry = (
+            self.simulation.chemistry_manager.prepare_chemistry_list_if_needed()
+        )
+        if need_chemistry:
+            logger.info("Simulation: prepare Chemistry")
+            self.chemistry_engine.initialize_before_runmanager()
+            logger.info("Simulation: prepare Chemistry ... done")
         # Visu
         if self.simulation.visu:
             logger.info("Simulation: initialize Visualization")
@@ -1417,10 +1793,18 @@ class SimulationEngine(GateSingletonFatal):
 
         # set pointers to python classes
         self.g4_RunManager.SetUserInitialization(self.volume_engine)
-        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
+        self.g4_RunManager.SetUserInitialization(
+            self.physics_engine.g4_augmented_physics_list
+        )
         self.g4_RunManager.SetUserInitialization(
             self.action_engine
         )  # G4 internally calls action_engine.Build()
+
+        # Actors initialization (before the RunManager initializes)
+        # This pushes user_info to C++ before workers (or master) call ConfigureForWorker()
+        logger.info("Simulation: initialize Actors")
+        self.actor_engine.initialize()
+        self.filter_engine.initialize()
 
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
@@ -1436,26 +1820,32 @@ class SimulationEngine(GateSingletonFatal):
         else:
             logger.info("Simulation: initialize G4RunManager")
             self.g4_RunManager.Initialize()
+            # A this point, ConstructSDandField and Configure are called once
 
         logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
-        self.g4_RunManager.PhysicsHasBeenModified()
+        # self.g4_RunManager.PhysicsHasBeenModified()  # NK: probably a relic. Should not be needed here as call above only touches cuts, not physics
+
+        logger.info("Simulation: initialize Chemistry")
+        self.chemistry_engine.initialize_after_runmanager()
 
         # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
-            logger.info("Simulation: initialize Workers (MT mode)")
+            logger.info("Simulation: initialize the worker threads (MT mode)")
             self.g4_RunManager.FakeBeamOn()
+            # ConstructSDandField then ConfigureForWorker are called for each worker thread
 
         # Actions initialisation
         # This must come after the G4RunManager initialisation
         # because the RM initialisation calls ActionEngine.Build()
-        # which is required for initialize()
-        # Actors initialization (before the RunManager Initialize)
-        # self.actor_engine.create_actors()  # calls the actors' constructors
-        logger.info("Simulation: initialize Actors")
+        # which is required to register actions
+        logger.info("Simulation: initialize Actor-Source links")
         self.source_engine.initialize_actors()
-        self.actor_engine.initialize()
-        self.filter_engine.initialize()
+        logger.info("Simulation: register Actions of actors")
+        self.actor_engine.register_actions()
+        logger.info("Simulation: register Actions of auxiliary attributes")
+        for attribute in self.simulation.auxiliary_attributes.values():
+            self.action_engine.register_auxiliary_attribute_actions(attribute)
 
         self.is_initialized = True
 

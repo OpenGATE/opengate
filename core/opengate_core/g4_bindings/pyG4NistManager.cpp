@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4NistManager.hh"
+#include <G4NistManager.hh>
 
 void init_G4NistManager(py::module &m) {
 

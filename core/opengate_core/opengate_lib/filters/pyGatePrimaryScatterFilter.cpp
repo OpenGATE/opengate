@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GatePrimaryScatterFilter.h"
 #include "GateVFilter.h"
+#include <pybind11/pybind11.h>
 
 void init_GatePrimaryScatterFilter(py::module &m) {
   py::class_<GateUnscatteredPrimaryFilter, GateVFilter>(
