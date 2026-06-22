@@ -21,14 +21,6 @@ namespace py = pybind11;
 class GatePositroniumSource : public GateGenericSource {
 
 public:
-  enum class ModelKind {
-    NotDefined,
-    ParaPositronium,
-    OrthoPositronium,
-    Positronium
-  };
-
-public:
 
   GatePositroniumSource();
 
@@ -46,7 +38,6 @@ protected:
 
 protected:
   std::unique_ptr<GateGammaEmissionModel> pModel;
-  ModelKind fModelKind = ModelKind::NotDefined;
 
 };
 
