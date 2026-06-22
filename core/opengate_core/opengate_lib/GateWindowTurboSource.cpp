@@ -17,8 +17,7 @@
 #include <pybind11/pytypes.h>
 
 void GateWindowTurboSource::CreateSPS() {
-  auto &ll = GetThreadLocalDataGenericSource();
-  ll.fSPS = new GateSingleParticleSourceWindowTurbo(fAttachedToVolumeName);
+  fSPS = new GateSingleParticleSourceWindowTurbo(fAttachedToVolumeName);
 }
 
 void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
@@ -32,8 +31,7 @@ void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
 
 double GateWindowTurboSource::CalcNextTime(double current_simulation_time) {
   GateSingleParticleSourceWindowTurbo *spswt =
-      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(
-          GetThreadLocalDataGenericSource().fSPS);
+      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(fSPS);
   G4double act_ratio;
   if (fSkip) {
     if (not spswt->PosGenerated()) {
@@ -87,10 +85,8 @@ void GateWindowTurboSource::CallOnceBeforeRun(
 void GateWindowTurboSource::PrepareNextRun() {
   GateGenericSource::PrepareNextRun();
   // TBD: voxelized source prepare next run here
-  auto &ll = GetThreadLocalDataGenericSource();
-  auto *ang = ll.fSPS->GetAngDist();
-  auto *spswt =
-      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(ll.fSPS);
+  auto *ang = fSPS->GetAngDist();
+  auto *spswt = reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(fSPS);
   ang->fGlobalRotation = G4RotationMatrix();
   const G4int run_id =
       G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
@@ -137,8 +133,7 @@ void GateWindowTurboSource::Visualize() const {
 
 void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
 
-  auto &ll = fThreadLocalDataGenericSource.Get();
-  auto *ang = ll.fSPS->GetAngDist();
+  auto *ang = fSPS->GetAngDist();
   ang->SetAngDistType("iso");
   auto user_info = py::dict(puser_info["direction"]);
   if (py::isinstance<py::float_>(user_info["a1"])) {
@@ -164,15 +159,15 @@ void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {
   fSkip = DictGetBool(user_info, "skip_mode");
 
   GateSingleParticleSourceWindowTurbo *spswt =
-      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(ll.fSPS);
+      reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(fSPS);
   spswt->InitializeUserInfo(user_info);
-  if (ll.fAAManager == nullptr) {
-    ll.fAAManager = new GateAcceptanceAngleManager;
-    ll.fSPS->SetAAManager(ll.fAAManager);
+  if (fAAManager == nullptr) {
+    fAAManager = new GateAcceptanceAngleManager;
+    fSPS->SetAAManager(fAAManager);
   }
-  if (ll.fFDManager == nullptr) {
-    ll.fFDManager = new GateForcedDirectionManager;
-    ll.fSPS->SetFDManager(ll.fFDManager);
+  if (fFDManager == nullptr) {
+    fFDManager = new GateForcedDirectionManager;
+    fSPS->SetFDManager(fFDManager);
   }
 }
 void GateWindowTurboSource::GetWindowVertex(G4ThreeVector &pos1,

@@ -10,12 +10,11 @@ void GateVoxelWTSource::PrepareNextRun() {
   GateWindowTurboSource::PrepareNextRun();
 
   auto &l = GetThreadLocalData();
-  fVoxelPositionGenerator->fGlobalRotation = l.fGlobalRotation;
+  fGlobalRotation = l.fGlobalRotation;
   fVoxelPositionGenerator->fGlobalTranslation = l.fGlobalTranslation;
 }
 
 void GateVoxelWTSource::InitializePosition(py::dict) {
-  auto &ll = GetThreadLocalDataGenericSource();
-  ll.fSPS->SetPosGenerator(fVoxelPositionGenerator);
+  fSPS->SetPosGenerator(fVoxelPositionGenerator);
   fVoxelPositionGenerator->SetPosDisType("Point");
 }
