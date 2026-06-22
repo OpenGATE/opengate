@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 import numpy as np
 import pandas as pd
 import uproot
@@ -9,9 +8,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from pathlib import Path
 import time
-import argparse
-import json
-import random
 import sys
 
 import opengate as gate
@@ -20,7 +16,7 @@ from opengate.utility import g4_units
 from opengate.contrib.compton_camera.macaco import (
     add_macaco1_camera,
     add_macaco1_camera_digitizer,
-    macaco1_compute_coincidences,
+    macaco1_merge_and_compute_coincidences,
     load_exp_histograms,
     compare_peak_gaussian,
 )
@@ -30,7 +26,7 @@ from opengate.contrib.root_helpers import (
     root_tree_get_branch_types,
     root_write_tree,
 )
-from cc_coincidences_filters import kill_multiple_coinc, kill_same_volume_pairs
+from opengate.actors.coincidences import kill_multiple_coinc, kill_same_volume_pairs
 
 try:
     from scipy.optimize import curve_fit
@@ -713,7 +709,7 @@ def main():
     # 8) VALIDATION : COINCIDENCES
     # ======================================================
     coinc_file = output_folder / "coincidences.root"
-    coincidences = macaco1_compute_coincidences(
+    coincidences = macaco1_merge_and_compute_coincidences(
         scatt_file,
         abs_file,
         time_windows=12 * ns,
