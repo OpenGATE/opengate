@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <cassert>
 
 #include "Randomize.hh"
 #include "G4DecayProducts.hh"
@@ -15,11 +16,11 @@
 #include "GatePositroniumDecayModel.h"
 
 int GatePositroniumDecayModel::getPositroniumDecayIndex(const std::vector<double>& fractions) {
-  auto r = G4UniformRand(); 
+  auto r = G4UniformRand();
   float curr_frac_cumulative = 0.0;
   for (int i = 0; i < fractions.size(); ++i) {
     curr_frac_cumulative = curr_frac_cumulative + fractions[i];
-    if(r<= curr_frac_cumulative) return i;   
+    if (r<= curr_frac_cumulative) return i;
  }
   return static_cast<int>(fractions.size()) - 1;
 }
@@ -70,14 +71,23 @@ G4PrimaryVertex* GatePositroniumDecayModel::GetPrimaryVertexFromPositroniumAnnih
 
 G4int GatePositroniumDecayModel::GeneratePrimaryVertices(G4Event* event, G4double& particle_time,  G4ThreeVector& particle_position)
 {
-  auto decayIndex = GatePositroniumDecayModel::getPositroniumDecayIndex(fModelParams.fFractions);
-  G4int number_of_vertices = 1;
-  if(fModelParams.fPromptGammaProbabilities[decayIndex] > G4UniformRand())
-  {
-    ++number_of_vertices;
-    event->AddPrimaryVertex(GetPrimaryVertexFromDeexcitation(particle_time, particle_position, decayIndex));
+  G4int number_of_vertices = 0;
+  while (number_of_vertices <=0) { 
+    auto decayIndex = GatePositroniumDecayModel::getPositroniumDecayIndex(fModelParams.fFractions);
+    auto no_electron_capture_prob = 1- fModelParams.fElectronCaptureProbabilities[decayIndex];
+    assert(no_electron_capture_prob>=0);
+
+    if(G4UniformRand() <= fModelParams.fPromptGammaProbabilities[decayIndex]) 
+    {
+      ++number_of_vertices;
+      event->AddPrimaryVertex(GetPrimaryVertexFromDeexcitation(particle_time, particle_position, decayIndex));
+    }
+    if(G4UniformRand() <= no_electron_capture_prob) 
+    {
+      ++number_of_vertices;
+      event->AddPrimaryVertex(GetPrimaryVertexFromPositroniumAnnihilation(particle_time, particle_position, decayIndex));
+    }
   }
-  event->AddPrimaryVertex(GetPrimaryVertexFromPositroniumAnnihilation(particle_time, particle_position, decayIndex));
   return number_of_vertices;
 }
 
