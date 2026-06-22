@@ -7,6 +7,7 @@
 
 #include "GateDigitizerDeadTimeActor.h"
 #include "../GateHelpersDict.h"
+#include "GateHelpers.h"
 #include "GateHelpersDigitizer.h"
 #include <memory>
 
