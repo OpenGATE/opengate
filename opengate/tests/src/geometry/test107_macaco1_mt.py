@@ -563,7 +563,7 @@ from opengate.contrib.compton_camera.macaco import *
 def main():
     # get tests paths
     paths = utility.get_default_test_paths(
-        __file__, gate_folder="", output_folder="test099_macaco1"
+        __file__, gate_folder="", output_folder="test107_macaco1"
     )
     output_folder = paths.output
     output_ref = paths.output_ref
@@ -703,8 +703,6 @@ def main():
     is_ok = is_ok and b
     print("✓ MACACO1 singles energy test completed")
 
-    print(f"FIXME the absolute counts is not correct ? normalization issue ? ")
-
     # ======================================================
     # 8) VALIDATION : COINCIDENCES
     # ======================================================
@@ -717,10 +715,6 @@ def main():
         scatt_tree_name="ThrScatt",
         abs_tree_name="ThrAbs",
         merged_tree_name="Singles",
-    )
-    print()
-    print(
-        f"Coincidences file: {coinc_file} : FIXME to be compared with experimental data"
     )
 
     # ======================================================
