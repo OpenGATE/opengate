@@ -6,17 +6,9 @@
    -------------------------------------------------- */
 
 #include "GatePositroniumSource.h"
-#include "G4IonTable.hh"
-#include "G4ParticleTable.hh"
-#include "G4RandomTools.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
-#include "fmt/core.h"
 #include <G4UnitsTable.hh>
-#include <algorithm>
-#include <iterator>
-#include <locale>
-#include <numeric>
 
 #include "GatePositroniumDecayModel.h"
 #include "GatePositroniumDecayModelParams.h"
