@@ -39,7 +39,7 @@ public:
   virtual void PrepareNextRun();
 
   virtual double PrepareNextTime(double current_simulation_time,
-                                 double NumberOfGeneratedEvents);
+                                 unsigned long NumberOfGeneratedEvents);
 
   virtual void GeneratePrimaries(G4Event *event,
                                  double current_simulation_time);

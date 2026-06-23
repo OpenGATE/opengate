@@ -246,3 +246,23 @@ Geant4’s MT mechanism based on locks needs to be bound to python with a
 “py::gil_scoped_release release” statement as above. The serial version
 G4RunManager::Initialize() does not need this statement (and should not
 have it) because it does not check locks at any point.
+
+BeamOn() event-count limit in Gate
+----------------------------------
+
+For the actual simulation run, Gate currently drives Geant4 by calling
+``/run/beamOn INT32_MAX`` once per run timing interval from the source manager.
+This is intentional: Gate does not usually know the exact number of primaries
+in advance, because many sources sample them stochastically over time.
+Instead, Gate enters a large Geant4 event loop and terminates the run early
+from inside ``GateSourceManager::GeneratePrimaries()`` when the sources are
+exhausted.
+
+This design means the Geant4 ``BeamOn()`` limit matters during the run, not
+only during Python-side setup. Since ``G4RunManager::BeamOn()`` takes its event
+count as a ``G4int``, one ``BeamOn()`` call cannot safely exceed the maximum
+value of that type. Gate therefore keeps a dedicated per-run primary counter in
+``GateSourceManager`` and aborts the run with a warning before generating more
+than the allowed number of real primaries. The check must live in the runtime
+loop, because pre-computing the exact number of primaries is not reliable for
+all source types.

@@ -1841,6 +1841,14 @@ class Simulation(GateObject):
                 "doc": "Display a progress bar during the simulation",
             },
         ),
+        "max_primaries_per_run": (
+            g4.GateSourceManager.GetPlatformMaxPrimariesPerRun(),
+            {
+                "doc": "Maximum number of primaries allowed in a single Geant4 BeamOn() call. "
+                "Defaults to the platform-dependent maximum of Geant4's G4int type. "
+                "Primarily useful for testing the overflow guard.",
+            },
+        ),
         "dyn_geom_open_close": (
             True,
             {

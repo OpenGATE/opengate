@@ -17,6 +17,7 @@
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
+#include <G4Exception.hh>
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
@@ -25,6 +26,7 @@
 #include <G4UnitsTable.hh>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <pybind11/numpy.h>
 
 #ifdef USE_GDML
@@ -34,6 +36,9 @@
 /* There will be one SourceManager per thread */
 
 bool GateSourceManager::fRunTerminationFlag = false;
+std::atomic<std::uint64_t> GateSourceManager::fGeneratedPrimariesThisRun{0};
+std::atomic<bool> GateSourceManager::fPrimaryLimitWarningIssued{false};
+std::uint64_t GateSourceManager::fMaxPrimariesPerRun = INT32_MAX;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
@@ -66,6 +71,50 @@ void GateSourceManager::SetRunTerminationFlag(bool flag) {
   fRunTerminationFlag = flag;
 }
 
+std::uint64_t GateSourceManager::GetPlatformMaxPrimariesPerRun() {
+  return std::numeric_limits<G4int>::max();
+}
+
+void GateSourceManager::SetMaxPrimariesPerRun(std::uint64_t value) {
+  if (value == 0) {
+    fMaxPrimariesPerRun = GetPlatformMaxPrimariesPerRun();
+    return;
+  }
+  fMaxPrimariesPerRun = value;
+}
+
+void GateSourceManager::ResetPrimaryCounterForRun() {
+  fGeneratedPrimariesThisRun.store(0, std::memory_order_relaxed);
+  fPrimaryLimitWarningIssued.store(false, std::memory_order_relaxed);
+}
+
+bool GateSourceManager::TryReservePrimarySlot() {
+  auto current = fGeneratedPrimariesThisRun.load(std::memory_order_relaxed);
+  while (current < fMaxPrimariesPerRun) {
+    if (fGeneratedPrimariesThisRun.compare_exchange_weak(
+            current, current + 1, std::memory_order_relaxed,
+            std::memory_order_relaxed)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void GateSourceManager::WarnPrimaryLimitReached() {
+  bool warning_already_issued =
+      fPrimaryLimitWarningIssued.exchange(true, std::memory_order_relaxed);
+  if (warning_already_issued) {
+    return;
+  }
+
+  G4ExceptionDescription ed;
+  ed << "The current Geant4 BeamOn() call reached the maximum supported "
+     << "number of primaries (" << fMaxPrimariesPerRun << "). "
+     << "The run is being stopped before generating additional primaries.";
+  G4Exception("GateSourceManager::GeneratePrimaries", "GateSourceManager0001",
+              JustWarning, ed);
+}
+
 void GateSourceManager::Initialize(const TimeIntervals &simulation_times,
                                    py::dict &options) {
   fSimulationTimes = simulation_times;
@@ -86,6 +135,11 @@ void GateSourceManager::Initialize(const TimeIntervals &simulation_times,
     fVisCommands = DictGetVecStr(options, "visu_commands");
   fVerboseLevel = DictGetInt(options, "running_verbose_level");
   fProgressBarFlag = DictGetBool(options, "progress_bar");
+  if (options.contains("max_primaries_per_run")) {
+    SetMaxPrimariesPerRun(DictGetInt(options, "max_primaries_per_run"));
+  } else {
+    SetMaxPrimariesPerRun(GetPlatformMaxPrimariesPerRun());
+  }
   InstallSignalHandler();
   InitializeProgressBar();
 
@@ -158,6 +212,7 @@ void GateSourceManager::StartMasterThread() {
   auto &l = fThreadLocalData.Get();
   l.fStartNewRun = true;
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
+    ResetPrimaryCounterForRun();
     // Start Begin Of Run for MasterThread
     // (both for multi-thread and mono-thread app)
     // The conventional (threaded) BeginOfRun will be called
@@ -264,7 +319,8 @@ void GateSourceManager::PrepareNextSource() const {
 
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    G4int numberOfSimulatedEvents = source->GetNumberOfSimulatedEvents();
+    unsigned long numberOfSimulatedEvents =
+        source->GetNumberOfSimulatedEvents();
     auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
                                      numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
@@ -319,20 +375,35 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     event->AddPrimaryVertex(vertex);
     // (allocated memory is leaked)
   } else {
-    // shoot particle
-    l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
-    // log (after particle creation)
-    if (LogLevel_EVENT <= GateSourceManager::fVerboseLevel) {
-      const auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
-      std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
-      std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
-      std::string s = l.fNextActiveSource->fName;
-      Log(LogLevel_EVENT, fVerboseLevel,
-          "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n", event->GetEventID(),
-          t, prim->GetParticleDefinition()->GetParticleName(), e,
-          event->GetPrimaryVertex(0)->GetPosition()[0],
-          event->GetPrimaryVertex(0)->GetPosition()[1],
-          event->GetPrimaryVertex(0)->GetPosition()[2], s);
+    if (TryReservePrimarySlot()) {
+      // shoot particle
+      l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
+      // log (after particle creation)
+      if (LogLevel_EVENT <= GateSourceManager::fVerboseLevel) {
+        const auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
+        std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
+        std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
+        std::string s = l.fNextActiveSource->fName;
+        Log(LogLevel_EVENT, fVerboseLevel,
+            "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
+            event->GetEventID(), t,
+            prim->GetParticleDefinition()->GetParticleName(), e,
+            event->GetPrimaryVertex(0)->GetPosition()[0],
+            event->GetPrimaryVertex(0)->GetPosition()[1],
+            event->GetPrimaryVertex(0)->GetPosition()[2], s);
+      }
+    } else {
+      WarnPrimaryLimitReached();
+      fRunTerminationFlag = true;
+
+      auto *particle_table = G4ParticleTable::GetParticleTable();
+      const auto *particle_def = particle_table->FindParticle("geantino");
+      auto *particle = new G4PrimaryParticle(particle_def);
+      const auto p = G4ThreeVector();
+      auto *vertex = new G4PrimaryVertex(p, l.fCurrentSimulationTime);
+      vertex->SetPrimary(particle);
+      event->AddPrimaryVertex(vertex);
+      // (allocated memory is leaked)
     }
   }
 

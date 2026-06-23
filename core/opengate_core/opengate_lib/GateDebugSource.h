@@ -27,7 +27,7 @@ public:
   void UpdateActivity(const double time) override;
 
   double PrepareNextTime(double current_simulation_time,
-                         double NumberOfGeneratedEvents) override;
+                         unsigned long NumberOfGeneratedEvents) override;
 
   void PrepareNextRun() override;
 
