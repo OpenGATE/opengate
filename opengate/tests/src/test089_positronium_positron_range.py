@@ -65,7 +65,7 @@ if __name__ == "__main__":
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     phsp.filters.append(f)
-    phsp.output_filename = "output_positronium.root"
+    phsp.output_filename = "output_positronium_positrong_range.root"
 
     # start simulation
     sim.run()
