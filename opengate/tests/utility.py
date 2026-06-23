@@ -998,7 +998,7 @@ def open_root_as_np(root_file, tree_name):
 
 
 # https://stackoverflow.com/questions/4527942/comparing-two-dictionaries-and-checking-how-many-key-value-pairs-are-equal
-def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
+def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key="", atol=1e-9):
     """
     Compare two dictionaries with a tolerance for float values and optional keys to ignore.
 
@@ -1007,6 +1007,7 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
         tolerance: Float tolerance for float values
         ignored_keys: List of keys that are optional
         parent_key: Internal use for tracking nested key path
+        atol: Absolute tolerance for float values close to 0
     """
     ignored_keys = set() if ignored_keys is None else set(ignored_keys)
 
@@ -1041,7 +1042,7 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
                     r = np.divide(
                         abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0)
                     )
-                    if r > tolerance:
+                    if abs(v1 - v2) > atol and r > tolerance:
                         print(
                             f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)}, {r*100} %)"
                         )
@@ -1061,14 +1062,14 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
 
         if isinstance(v1, dict) and isinstance(v2, dict):
             _, _, nested_modified, _ = dict_compare(
-                v1, v2, tolerance, ignored_keys, full_key
+                v1, v2, tolerance, ignored_keys, full_key, atol
             )
             return len(nested_modified) == 0
         elif isinstance(v1, list) and isinstance(v2, list):
             return compare_arrays(v1, v2, full_key)
         elif isinstance(v1, float) and isinstance(v2, float):
             r = np.divide(abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0))
-            if r > tolerance:
+            if abs(v1 - v2) > atol and r > tolerance:
                 print(
                     f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)}) (diff: {r*100} %)"
                 )
