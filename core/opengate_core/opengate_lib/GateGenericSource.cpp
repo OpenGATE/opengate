@@ -395,12 +395,12 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto *ang = fSPS->GetAngDist();
   auto ang_type = DictGetStr(user_info, "type");
   fangType = ang_type;
-  std::vector<std::string> llt = {"iso", "histogram", "momentum", "focused",
-                                  "beam2d"};
+  std::vector<std::string> llt = {"iso",     "histogram", "momentum",
+                                  "focused", "beam2d",    "cos"};
   CheckIsIn(ang_type, llt);
 
-  if (ang_type == "iso") {
-    ang->SetAngDistType("iso");
+  if (ang_type == "iso" || ang_type == "cos") {
+    ang->SetAngDistType(ang_type);
 
     auto theta = DictGetVecDouble(user_info, "theta");
     ang->SetMinTheta(theta[0]);

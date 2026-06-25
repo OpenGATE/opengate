@@ -157,7 +157,7 @@ class DirectionValidator(UserInfoValidatorBase):
         """
         context_name = super().validate(parent_obj, attr_name, parent_context)
         b = getattr(parent_obj, attr_name)
-        valid_types = ["iso", "histogram", "momentum", "focused", "beam2d"]
+        valid_types = ["iso", "histogram", "momentum", "focused", "beam2d", "cos"]
         if b.type not in valid_types:
             fatal(
                 f"In {context_name}: Cannot find the direction type '{b.type}'. "
