@@ -320,7 +320,8 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   auto user_info = py::dict(puser_info["position"]);
   auto *pos = fSPS->GetPosDist();
   auto pos_type = DictGetStr(user_info, "type");
-  std::vector<std::string> l = {"sphere", "point", "box", "disc", "cylinder"};
+  std::vector<std::string> l = {"sphere", "point",    "box",
+                                "disc",   "cylinder", "surface_sphere"};
   CheckIsIn(pos_type, l);
   auto translation = DictGetG4ThreeVector(user_info, "translation");
   fInitTranslation = translation;
@@ -349,8 +350,12 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
     auto dz = DictGetDouble(user_info, "dz");
     pos->SetHalfZ(dz);
   }
+  if (pos_type == "surface_sphere") {
+    pos->SetPosDisType("Surface");
+    pos->SetPosDisShape("Sphere");
+  }
 
-  // radius for sphere, disc, cylinder
+  // radius for sphere, disc, cylinder, surface_sphere
   auto radius = DictGetDouble(user_info, "radius");
   pos->SetRadius(radius);
 

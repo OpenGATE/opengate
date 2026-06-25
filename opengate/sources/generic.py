@@ -95,7 +95,7 @@ class PositionValidator(UserInfoValidatorBase):
     def validate(self, parent_obj, attr_name: str, parent_context: str = None):
         context_name = super().validate(parent_obj, attr_name, parent_context)
         b = getattr(parent_obj, attr_name)
-        valid_types = {"sphere", "point", "box", "disc", "cylinder"}
+        valid_types = {"sphere", "point", "box", "disc", "cylinder", "surface_sphere"}
         if b.type not in valid_types:
             fatal(
                 f"In {context_name}: '{b.type}' is not a valid position type. "
