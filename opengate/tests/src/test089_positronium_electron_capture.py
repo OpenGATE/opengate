@@ -47,12 +47,11 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 20 * cm
 
-    source.positronium_fractions = [1.]
+    source.channels_from_fractions.fractions = [1.]
+    source.channels_from_fractions.decay_kinds = ["k2Gamma"]
     source.positronium_lifetimes = [0.122 * ns]
-    source.decay_kinds = ["k2Gamma"]
-    source.prompt_photon_probabilities = [gammasPromptProbability]
-    source.prompt_photon_energies = [1.244 * MeV]
-    source.mean_positron_range = [0. * mm]
+    source.prompt_gamma_probabilities = [gammasPromptProbability]
+    source.prompt_gamma_energies = [1.244 * MeV]
     source.electron_capture_probabilities = [electronCaptureProbability]
 
     # actors
