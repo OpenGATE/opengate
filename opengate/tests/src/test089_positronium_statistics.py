@@ -50,13 +50,15 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 20 * cm
 
-    source.positronium_fractions = [twoGammasRatio, threeGammasRatio]
+    source.channels_from_fractions.fractions = [
+        twoGammasRatio, threeGammasRatio
+    ]
+    source.channels_from_fractions.decay_kinds = ["k2Gamma", "k3Gamma"]
     source.positronium_lifetimes = [0.122 * ns, 0.122 * ns]
-    source.decay_kinds = ["k2Gamma", "k3Gamma"]
-    source.prompt_photon_probabilities = [
+    source.prompt_gamma_probabilities = [
         twoGammasPromptProbability, threeGammasPromptProbability
     ]
-    source.prompt_photon_energies = [1.244 * MeV, 1.244 * MeV]
+    source.prompt_gamma_energies = [1.244 * MeV, 1.244 * MeV]
     source.mean_positron_range = [0. * mm, 0. * mm]
     source.electron_capture_probabilities = [0., 0.]
 
