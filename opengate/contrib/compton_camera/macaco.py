@@ -2,6 +2,7 @@ from pathlib import Path
 import uproot
 from opengate.utility import g4_units
 from opengate.actors.coincidences import *
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -281,6 +282,51 @@ def macaco1_merge_and_compute_coincidences(
     coincidences = kill_multiple_coinc(coincidences)
     coincidences = kill_same_volume_pairs(coincidences)
     return coincidences
+
+def order_coincidence_pairs(
+    df: pd.DataFrame,
+    by: str,
+    source_position: tuple = (0.0, 0.0, 0.0),
+    ascending: bool = True,
+    group_col: str = "CoincID",
+) -> pd.DataFrame:
+    """
+    Reorder the two rows within each coincidence pair by a chosen criterion.
+
+    Parameters
+    ----------
+    df : coincidences DataFrame (2 rows per CoincID after filtering)
+    by : one of "time", "distance", "energy"
+        - "time"     : order by GlobalTime
+        - "distance" : order by distance from source_position (PostPosition_X/Y/Z)
+        - "energy"   : order by TotalEnergyDeposit
+    source_position : (x, y, z) in mm, used only when by="distance"
+    ascending : if True, smallest value first (e.g. earlier time, closer, lower energy)
+    group_col : coincidence ID column name
+    """
+    if by == "time":
+        df = df.copy()
+        df["_sort_key"] = df["GlobalTime"]
+    elif by == "distance":
+        df = df.copy()
+        sx, sy, sz = source_position
+        df["_sort_key"] = (
+            (df["PostPosition_X"] - sx) ** 2
+            + (df["PostPosition_Y"] - sy) ** 2
+            + (df["PostPosition_Z"] - sz) ** 2
+        ) ** 0.5
+    elif by == "energy":
+        df = df.copy()
+        df["_sort_key"] = df["TotalEnergyDeposit"]
+    else:
+        raise ValueError(f"'by' must be 'time', 'distance', or 'energy', got '{by}'")
+
+    df = (
+        df.sort_values([group_col, "_sort_key"], ascending=[True, ascending])
+        .drop(columns=["_sort_key"])
+        .reset_index(drop=True)
+    )
+    return df
 
 
 def load_exp_histograms(
