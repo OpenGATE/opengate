@@ -283,6 +283,7 @@ def macaco1_merge_and_compute_coincidences(
     coincidences = kill_same_volume_pairs(coincidences)
     return coincidences
 
+
 def order_coincidence_pairs(
     df: pd.DataFrame,
     by: str,
