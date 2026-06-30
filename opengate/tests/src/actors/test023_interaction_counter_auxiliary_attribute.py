@@ -69,7 +69,7 @@ def run_simulation(
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     if max_step_size is not None:
         sim.physics_manager.set_max_step_size(slab.name, max_step_size)
-        sim.physics_manager.set_user_limits_particles("gamma")
+        sim.physics_manager.user_limits_particles = "gamma"
     sim.run(start_new_process=True)
 
     tree = uproot.open(phsp.get_output_path())["phsp"]
