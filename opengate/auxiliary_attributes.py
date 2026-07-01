@@ -234,12 +234,35 @@ class UnscatteredPrimaryAttribute(
         g4.GateUnscatteredPrimaryAttribute.__init__(self, self.user_info)
 
 
+class GammaAncestorAttribute(AuxiliaryAttributeBase, g4.GateGammaAncestorAttribute):
+    """
+    Return the position of the first gamma ancestor of the current particle. If already exist, propagate to secondaries.
+    """
+
+    user_info_defaults = {
+        "value_to_store": (
+            "VertexKineticEnergy",
+            {
+                "doc": "The quantity to store for the first gamma ancestor. It can be: VertexKineticEnergy or VertexPosition",
+            },
+        )
+    }
+
+    def __init__(self, *args, **kwargs):
+        AuxiliaryAttributeBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateGammaAncestorAttribute.__init__(self, self.user_info)
+
+
 auxiliary_attribute_types = {
     "InteractionCounterAttribute": InteractionCounterAttribute,
     "LastInteractionPositionInVolumeAttribute": LastInteractionPositionInVolumeAttribute,
     "LastProcessDefinedStepInVolumeAttribute": LastProcessDefinedStepInVolumeAttribute,
     "ProcessDefinedStepInVolumeAttribute": ProcessDefinedStepInVolumeAttribute,
     "UnscatteredPrimaryAttribute": UnscatteredPrimaryAttribute,
+    "GammaAncestorAttribute": GammaAncestorAttribute,
 }
 
 
@@ -249,3 +272,4 @@ process_cls(LastInteractionPositionInVolumeAttribute)
 process_cls(LastProcessDefinedStepInVolumeAttribute)
 process_cls(ProcessDefinedStepInVolumeAttribute)
 process_cls(UnscatteredPrimaryAttribute)
+process_cls(GammaAncestorAttribute)
