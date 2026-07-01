@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     x_0.set_max_step_size(1.0 * mm)
     # sim.physics_manager.user_limits_particles = "proton"
-    sim.physics_manager.user_limits_particles = ['proton','GenericIon']
+    sim.physics_manager.user_limits_particles = ["proton", "GenericIon"]
 
     sim.physics_manager.set_production_cut("world", "gamma", 100 * m)
     sim.physics_manager.set_production_cut("world", "electron", 100 * m)
