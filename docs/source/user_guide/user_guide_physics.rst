@@ -131,7 +131,7 @@ Additionally, you need to tell GATE to which particles you want to apply the ste
 
 .. code-block:: python
 
-    sim.physics_manager.set_user_limits_particles(['electron', 'positron'])
+    sim.physics_manager.user_limits_particles = ['electron', 'positron']
 
 There are other user limits like ''maximum track length'' and ''minimium kinetic energy'', that are used in analogy to the ''maximum step size''.
 You can also use Regions if your geometry is complex. Have a look at the section :ref:`user-limits-details-label` in the detailed part of this user guide for more info.
