@@ -12,7 +12,9 @@ from test097_pileup_helpers import (
 from test097_pileup_simulation import create_simulation
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test097", "test097")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test097", "test097_pileup"
+    )
 
     sim, pu, root_filename = create_simulation(paths, num_threads=1)
 
