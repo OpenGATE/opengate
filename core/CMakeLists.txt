@@ -5,7 +5,7 @@
 #   See LICENSE.md for further details
 # --------------------------------------------------
 
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10.0)
 
 # remove warning about project version
 cmake_policy(SET CMP0048 NEW)
