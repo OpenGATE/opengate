@@ -533,8 +533,13 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        # Total net deposited charge (sum over events), in eplus.
         self.deposited_nominal_charge = 0.0
         self.deposited_dynamic_charge = 0.0
+        # History-by-history statistics, filled at EndSimulationAction.
+        self.deposited_nominal_charge_squared = 0.0
+        self.deposited_dynamic_charge_squared = 0.0
+        self.number_of_events = 0
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -544,8 +549,10 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
                 "StartSimulationAction",
                 "EndSimulationAction",
                 "BeginOfRunAction",
+                "BeginOfEventAction",
                 "PreUserTrackingAction",
                 "PostUserTrackingAction",
+                "EndOfEventAction",
                 "EndOfSimulationWorkerAction",
             }
         )
@@ -558,12 +565,89 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
     def EndSimulationAction(self):
         self.deposited_nominal_charge = self.GetDepositedNominalCharge()
         self.deposited_dynamic_charge = self.GetDepositedDynamicCharge()
+        self.deposited_nominal_charge_squared = self.GetDepositedNominalChargeSquared()
+        self.deposited_dynamic_charge_squared = self.GetDepositedDynamicChargeSquared()
+        self.number_of_events = self.GetNumberOfEvents()
+
+    def recover_user_output(self, actor):
+        # The results are stored as plain scalar attributes (not in user_output),
+        # so when the simulation runs in a subprocess (start_new_process=True)
+        # they must be copied back explicitly from the subprocess actor.
+        super().recover_user_output(actor)
+        self.deposited_nominal_charge = actor.deposited_nominal_charge
+        self.deposited_dynamic_charge = actor.deposited_dynamic_charge
+        self.deposited_nominal_charge_squared = actor.deposited_nominal_charge_squared
+        self.deposited_dynamic_charge_squared = actor.deposited_dynamic_charge_squared
+        self.number_of_events = actor.number_of_events
+
+    @staticmethod
+    def _history_statistics(sum_x, sum_x2, n):
+        """History-by-history statistics from the first and second moments.
+
+        Returns a dict with, for the per-event charge distribution:
+            - ``mean``: mean net charge per event (sum_x / n)
+            - ``std``: sample standard deviation of the per-event charge (Bessel-corrected)
+            - ``sem``: standard error of the mean (std / sqrt(n))
+            - ``total``: total net charge (sum_x)
+            - ``total_uncertainty``: absolute uncertainty on ``total``
+            - ``relative_uncertainty``: total_uncertainty / |total|
+        """
+        stats = {
+            "mean": 0.0,
+            "std": 0.0,
+            "sem": 0.0,
+            "total": sum_x,
+            "total_uncertainty": 0.0,
+            "relative_uncertainty": 0.0,
+        }
+        if n < 2:
+            return stats
+        mean = sum_x / n
+        # Sum of squared deviations = sum_x2 - (sum_x)^2 / n, clamped to >= 0
+        sum_sq_dev = max(sum_x2 - sum_x * sum_x / n, 0.0)
+        variance = sum_sq_dev / (n - 1)
+        std = variance**0.5
+        sem = std / n**0.5
+        total_uncertainty = n * sem
+        stats.update(
+            mean=mean,
+            std=std,
+            sem=sem,
+            total_uncertainty=total_uncertainty,
+            relative_uncertainty=(
+                total_uncertainty / abs(sum_x) if sum_x != 0.0 else 0.0
+            ),
+        )
+        return stats
+
+    @property
+    def nominal_charge_statistics(self):
+        """History-by-history statistics for the nominal deposited charge."""
+        return self._history_statistics(
+            self.deposited_nominal_charge,
+            self.deposited_nominal_charge_squared,
+            self.number_of_events,
+        )
+
+    @property
+    def dynamic_charge_statistics(self):
+        """History-by-history statistics for the dynamic deposited charge."""
+        return self._history_statistics(
+            self.deposited_dynamic_charge,
+            self.deposited_dynamic_charge_squared,
+            self.number_of_events,
+        )
 
     def __str__(self):
+        nominal = self.nominal_charge_statistics
+        dynamic = self.dynamic_charge_statistics
         return (
             f"DepositedChargeActor {self.name}:"
-            f"  Nominal: {self.deposited_nominal_charge} e"
-            f"  Dynamic: {self.deposited_dynamic_charge} e"
+            f"  Nominal: {self.deposited_nominal_charge} "
+            f"+/- {nominal['total_uncertainty']} e"
+            f"  Dynamic: {self.deposited_dynamic_charge} "
+            f"+/- {dynamic['total_uncertainty']} e"
+            f"  (N events: {self.number_of_events})"
         )
 
 

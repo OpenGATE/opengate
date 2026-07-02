@@ -16,5 +16,10 @@ void init_GateDepositedChargeActor(py::module &m) {
       .def("GetDepositedNominalCharge",
            &GateDepositedChargeActor::GetDepositedNominalCharge)
       .def("GetDepositedDynamicCharge",
-           &GateDepositedChargeActor::GetDepositedDynamicCharge);
+           &GateDepositedChargeActor::GetDepositedDynamicCharge)
+      .def("GetDepositedNominalChargeSquared",
+           &GateDepositedChargeActor::GetDepositedNominalChargeSquared)
+      .def("GetDepositedDynamicChargeSquared",
+           &GateDepositedChargeActor::GetDepositedDynamicChargeSquared)
+      .def("GetNumberOfEvents", &GateDepositedChargeActor::GetNumberOfEvents);
 }
