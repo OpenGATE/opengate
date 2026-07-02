@@ -41,6 +41,8 @@ from .sources.gansources import GANPairsSource, GANSource
 from .sources.generic import GenericSource, SourceBase
 from .sources.lastvertexsources import LastVertexSource
 from .sources.phidsources import PhotonFromIonDecaySource
+from .sources.windowturbosource import WindowTurboSource
+from .sources.voxelwtsource import VoxelWTSource
 from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelizedPromptGammaTLESource, VoxelSource
 from .utility import (
@@ -64,6 +66,8 @@ source_types = {
     "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
     "TreatmentPlanPBSource": TreatmentPlanPBSource,
     "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
+    "WindowTurboSource": WindowTurboSource,
+    "VoxelWTSource": VoxelWTSource,
 }
 
 from .actors.chemistryactors import ChemistryActorBase, ChemicalCountingActor
