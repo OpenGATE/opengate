@@ -4,8 +4,9 @@
 import opengate as gate
 from opengate.tests import utility
 
-import numpy as np
 import uproot
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Units
 MeV = gate.g4_units.MeV
@@ -17,69 +18,12 @@ m = gate.g4_units.m
 cm = gate.g4_units.cm
 ns = gate.g4_units.ns
 
-PROMPT_PHOTON_KINETIC_ENERGY_MEV = 1.244
-MEAN_LIFETIME_NS = 10
-SPEED_OF_LIGHT_MM_PER_NS = 299.79246
-
-
-def propagation_time(hit_position, source_position):
-    distance_cm = np.sqrt((hit_position[0] - source_position[0])**2 +
-                          (hit_position[1] - source_position[1])**2 +
-                          (hit_position[2] - source_position[2])**2)
-    return distance_cm / SPEED_OF_LIGHT_MM_PER_NS
-
-
-def emission_time(hit_time, propagation_time):
-    return hit_time - propagation_time
-
-
-def lifetime(emission_time_annihilation, emission_time_prompt):
-    return emission_time_annihilation - emission_time_prompt
-
-
-def calculate_lifetime(prompt_photon, annihilation_photon, source_position):
-    annihilation_hit_position = [
-        annihilation_photon["Position_X"], annihilation_photon["Position_Y"],
-        annihilation_photon["Position_Z"]
-    ]
-    prompt_hit_position = [
-        prompt_photon["Position_X"], prompt_photon["Position_Y"],
-        prompt_photon["Position_Z"]
-    ]
-    propagation_time_annihilation = propagation_time(annihilation_hit_position,
-                                                     source_position)
-    propagation_time_prompt = propagation_time(prompt_hit_position,
-                                               source_position)
-    emission_time_annihilation = emission_time(
-        annihilation_photon["GlobalTime"], propagation_time_annihilation)
-    emission_time_prompt = emission_time(prompt_photon["GlobalTime"],
-                                         propagation_time_prompt)
-    return lifetime(emission_time_annihilation, emission_time_prompt)
-
-
-def calculate_lifetimes(group):
-    prompt_photon =  group[group["KineticEnergy"] > 600 *keV].iloc[0]
-    annihilation_photon  =  group[group["KineticEnergy"] < 600 *keV].iloc[0]
-    # annihilation_photon = group.iloc[0]
-    # prompt_photon = group.iloc[3]
-    print(prompt_photon["KineticEnergy"])
-    print(f"prompt_photon?={prompt_photon}")
-    assert np.isclose(prompt_photon["KineticEnergy"],
-                      PROMPT_PHOTON_KINETIC_ENERGY_MEV)
-    source_position = [
-        annihilation_photon["EventPosition_X"],
-        annihilation_photon["EventPosition_Y"],
-        annihilation_photon["EventPosition_Z"]
-    ]
-    return calculate_lifetime(prompt_photon, annihilation_photon,
-                              source_position)
-
+MEAN_POSITRON_RANGE_MM = 10
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__,
-        "gate_test089_positronium_statistics",
-        output_folder="test089")
+    paths = utility.get_default_test_paths(__file__,
+                                           "gate_test089_positronium_range",
+                                           output_folder="test089")
     print("Starting")
 
     # create the simulation
@@ -100,15 +44,14 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("PositroniumSource", "source")
     source.n = 1000
-    source.position.type = "sphere"
-    source.position.radius = 0.000001 * cm
+    source.position.type = "point"
 
     source.positronium_fractions = [1.]
-    source.positronium_lifetimes = [MEAN_LIFETIME_NS * ns]
+    source.positronium_lifetimes = [100. * ns]
     source.decay_kinds = ["k3Gamma"]
-    source.prompt_photon_probabilities = [1.]
-    source.prompt_photon_energies = [PROMPT_PHOTON_KINETIC_ENERGY_MEV * MeV]
-    source.mean_positron_range = [100 * mm]
+    source.prompt_photon_probabilities = [0.]
+    source.prompt_photon_energies = [1. * MeV]
+    source.mean_positron_range = [MEAN_POSITRON_RANGE_MM * mm]
     source.electron_capture_probabilities = [0.]
 
     # actors
@@ -117,10 +60,7 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp.attributes = [
-        "EventID", "Position", "KineticEnergy", "GlobalTime", "EventPosition"
-    ]
-    phsp.debug = True
+    phsp.attributes = ["PrePosition"]
     phsp.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
@@ -136,11 +76,28 @@ if __name__ == "__main__":
     phsp_output = uproot.open(phsp.get_output_path())
     df = phsp_output["PhaseSpace"].arrays(library="pd")
 
-    lifetimes = df.groupby('EventID').apply(calculate_lifetimes).reset_index(
-        name='lifetime')
+    source_position = source.position.translation
+    position_x = df["PrePosition_X"]
+    position_y = df["PrePosition_Y"]
+    position_z = df["PrePosition_Z"]
+    r = np.sqrt((position_x - source_position[0])**2 +
+                (position_y - source_position[1])**2 +
+                (position_z - source_position[2])**2)
+    sigma = r.mean() / np.sqrt(8. / np.pi)
 
-    mean_lifetime = lifetimes["lifetime"].mean()
+    fig, (fig_x, fig_y, fig_z) = plt.subplots(nrows=1, ncols=3)
+    nbins = 50
+    fig_x.hist(position_x, bins=nbins)
+    fig_x.set_title('$x$')
+    fig_y.hist(position_y, bins=nbins)
+    fig_y.set_title('$y$')
+    fig_z.hist(position_z, bins=nbins)
+    fig_z.set_title('$z$')
+    plt.savefig(paths.output / "positron_range.pdf")
 
-    print("Mean lifetime: " + str(mean_lifetime))
+    is_ok = np.isclose(r.mean(), MEAN_POSITRON_RANGE_MM, atol=.5, rtol=0.)
+    is_ok = is_ok and np.isclose(position_x.std(), sigma, atol=.5, rtol=0.)
+    is_ok = is_ok and np.isclose(position_y.std(), sigma, atol=.5, rtol=0.)
+    is_ok = is_ok and np.isclose(position_z.std(), sigma, atol=.5, rtol=0.)
 
-    assert np.isclose(mean_lifetime, MEAN_LIFETIME_NS, atol=0., rtol=.1)
+    utility.test_ok(is_ok)
