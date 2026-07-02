@@ -3,10 +3,10 @@
 
 import opengate as gate
 from opengate.tests import utility
+
 import uproot
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy
+import matplotlib.pyplot as plt
 
 # Units
 MeV = gate.g4_units.MeV
@@ -18,24 +18,11 @@ m = gate.g4_units.m
 cm = gate.g4_units.cm
 ns = gate.g4_units.ns
 
-
-def one_photon_energy(en):
-    m = 1
-    first_term = en * (m - en) / (2 * m - en)**2
-    second_term = (2 * m - en) / en
-    third_term = ((2 * m * (m - en) / (en * en) - 2 * m * (m - en)**2 /
-                   (2 * m - en)**3)) * np.log((m - en) / m)
-    return first_term + second_term + third_term
-
-
-def normalize_energies(en):
-    MeVToKeV = 1e3
-    return en * MeVToKeV / 511
-
+MEAN_POSITRON_RANGE_MM = 10
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__,
-                                           "gate_test089_positronium_energy",
+                                           "gate_test089_positronium_range",
                                            output_folder="test089")
     print("Starting")
 
@@ -52,22 +39,19 @@ if __name__ == "__main__":
 
     # set the world size like in the Gate macro
     world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
-
-    # parameters
+    world.size = [1. * m, 1. * m, 1. * m]
 
     # test sources
     source = sim.add_source("PositroniumSource", "source")
-    source.position.type = "sphere"
-    source.position.radius = 1 * mm
-    source.n = 10_000
+    source.n = 1000
+    source.position.type = "point"
 
     source.positronium_fractions = [1.]
-    source.positronium_lifetimes = [0.122 * ns]
+    source.positronium_lifetimes = [100. * ns]
     source.decay_kinds = ["k3Gamma"]
     source.prompt_photon_probabilities = [0.]
-    source.prompt_photon_energies = [1.244 * MeV]
-    source.mean_positron_range = [0. * mm]
+    source.prompt_photon_energies = [1. * MeV]
+    source.mean_positron_range = [MEAN_POSITRON_RANGE_MM * mm]
     source.electron_capture_probabilities = [0.]
 
     # actors
@@ -76,13 +60,12 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp.attributes = ["KineticEnergy"]
-    phsp.debug = True
+    phsp.attributes = ["PrePosition"]
     phsp.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     phsp.filters.append(f)
-    phsp.output_filename = "output_positronium_energy.root"
+    phsp.output_filename = "output_positronium_positrong_range.root"
 
     # start simulation
     sim.run()
@@ -90,24 +73,31 @@ if __name__ == "__main__":
     # get results
     print(stats)
 
-    # check energy distribution
-
-    nbins = 100
-
     phsp_output = uproot.open(phsp.get_output_path())
     df = phsp_output["PhaseSpace"].arrays(library="pd")
-    counts, bins = np.histogram(normalize_energies(df["KineticEnergy"]), nbins)
-    counts = counts / np.max(counts)
 
-    xs = np.linspace(0.0001, 0.9999, nbins)
-    expected_distribution = one_photon_energy(xs)
+    source_position = source.position.translation
+    position_x = df["PrePosition_X"]
+    position_y = df["PrePosition_Y"]
+    position_z = df["PrePosition_Z"]
+    r = np.sqrt((position_x - source_position[0])**2 +
+                (position_y - source_position[1])**2 +
+                (position_z - source_position[2])**2)
+    sigma = r.mean() / np.sqrt(8. / np.pi)
 
-    plt.figure()
-    plt.stairs(counts, bins)
-    plt.plot(xs, expected_distribution)
-    plt.savefig(paths.output / "distribution.pdf")
+    fig, (fig_x, fig_y, fig_z) = plt.subplots(nrows=1, ncols=3)
+    nbins = 50
+    fig_x.hist(position_x, bins=nbins)
+    fig_x.set_title('$x$')
+    fig_y.hist(position_y, bins=nbins)
+    fig_y.set_title('$y$')
+    fig_z.hist(position_z, bins=nbins)
+    fig_z.set_title('$z$')
+    plt.savefig(paths.output / "positron_range.pdf")
 
-    ks = scipy.stats.kstest(counts, expected_distribution)
-    is_ok = ks.pvalue > .95
+    is_ok = np.isclose(r.mean(), MEAN_POSITRON_RANGE_MM, atol=.5, rtol=0.)
+    is_ok = is_ok and np.isclose(position_x.std(), sigma, atol=.5, rtol=0.)
+    is_ok = is_ok and np.isclose(position_y.std(), sigma, atol=.5, rtol=0.)
+    is_ok = is_ok and np.isclose(position_z.std(), sigma, atol=.5, rtol=0.)
 
     utility.test_ok(is_ok)

@@ -21,6 +21,7 @@ class GatePositroniumDecayModel:public GateGammaEmissionModel
 {
   public:
   static int getPositroniumDecayIndex(const std::vector<double>& fractions);
+  static G4ThreeVector AddPositronRangeShift(const G4ThreeVector& original_position,  G4double mean_positron_range);
 
   explicit GatePositroniumDecayModel(const PositroniumDecayModelParams& modelParams);
 
@@ -30,6 +31,8 @@ class GatePositroniumDecayModel:public GateGammaEmissionModel
   G4PrimaryVertex* GetPrimaryVertexFromPositroniumAnnihilation(G4double particle_time, const G4ThreeVector &particle_position, int decayIndex);
   G4PrimaryParticle* GetGammaFromDeexcitation(int decayIndex);
   std::vector<G4PrimaryParticle*> GetGammasFromPositroniumAnnihilation(int decayIndex);
+  GateEmittedGammaInformation::DecayModel GetDecayModel(int decayIndex) const;
+  GateEmittedGammaInformation::SourceKind GetSourceKind(int decayIndex) const;
 
   private:
   PositroniumDecayModelParams fModelParams;

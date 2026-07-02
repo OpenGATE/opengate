@@ -8,25 +8,16 @@
 #ifndef GatePositroniumSource_h
 #define GatePositroniumSource_h
 
-#include "GateAcceptanceAngleTesterManager.h"
 #include "GateSingleParticleSource.h"
 #include "GateGenericSource.h"
 #include <pybind11/stl.h>
 
 #include "GateGammaEmissionModel.h"
-#include "GatePositroniumDecayModel.h"
+#include "GatePositroniumDecayModelParams.h"
 
 namespace py = pybind11;
 
 class GatePositroniumSource : public GateGenericSource {
-
-public:
-  enum class ModelKind {
-    NotDefined,
-    ParaPositronium,
-    OrthoPositronium,
-    Positronium
-  };
 
 public:
 
@@ -46,7 +37,6 @@ protected:
 
 protected:
   std::unique_ptr<GateGammaEmissionModel> pModel;
-  ModelKind fModelKind = ModelKind::NotDefined;
 
 };
 
