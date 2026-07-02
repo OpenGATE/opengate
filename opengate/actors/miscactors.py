@@ -600,9 +600,12 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
             "total_uncertainty": 0.0,
             "relative_uncertainty": 0.0,
         }
+        if n < 1:
+            return stats
+        stats["mean"] = sum_x / n
         if n < 2:
             return stats
-        mean = sum_x / n
+        mean = stats["mean"]
         # Sum of squared deviations = sum_x2 - (sum_x)^2 / n, clamped to >= 0
         sum_sq_dev = max(sum_x2 - sum_x * sum_x / n, 0.0)
         variance = sum_sq_dev / (n - 1)
