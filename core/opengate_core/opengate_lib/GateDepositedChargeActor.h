@@ -25,25 +25,54 @@ public:
 
   void BeginOfRunAction(const G4Run *run) override;
 
+  void BeginOfEventAction(const G4Event *event) override;
+
   void PreUserTrackingAction(const G4Track *track) override;
 
   void PostUserTrackingAction(const G4Track *track) override;
 
+  void EndOfEventAction(const G4Event *event) override;
+
   void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
 
+  // Net deposited charge, summed over all events
   double GetDepositedNominalCharge() const { return fDepositedNominalCharge; }
   double GetDepositedDynamicCharge() const { return fDepositedDynamicCharge; }
 
+  // Sum of the squared per-event net charge
+  double GetDepositedNominalChargeSquared() const {
+    return fDepositedNominalChargeSquared;
+  }
+  double GetDepositedDynamicChargeSquared() const {
+    return fDepositedDynamicChargeSquared;
+  }
+
+  // Number of primary events (histories) scored
+  long long GetNumberOfEvents() const { return fNumberOfEvents; }
+
 protected:
   struct threadLocal_t {
-    double fNominalCharge = 0.0; // nominal charge of the particle definition
-    double fDynamicCharge = 0.0; // effective charge due to ionisation
+    // Net charge accumulated during the current event only
+    double fEventNominalCharge = 0.0;
+    double fEventDynamicCharge = 0.0;
+
+    // Running first and second moments over the events scored by this worker.
+    double fSumNominalCharge = 0.0;
+    double fSumNominalChargeSquared = 0.0;
+    double fSumDynamicCharge = 0.0;
+    double fSumDynamicChargeSquared = 0.0;
+
+    // Number of events (histories) scored by this worker.
+    long long fNumberOfEvents = 0;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
-  // Merged net deposited charge in units of eplus
-  double fDepositedNominalCharge;
-  double fDepositedDynamicCharge;
+  // Merged over all workers.
+  double fDepositedNominalCharge;        // Sum x
+  double fDepositedDynamicCharge;        // Sum x
+  double fDepositedNominalChargeSquared; // Sum x^2
+  double fDepositedDynamicChargeSquared; // Sum x^2
+  long long fNumberOfEvents;             // N
 };
 
 #endif // GateDepositedChargeActor_h
