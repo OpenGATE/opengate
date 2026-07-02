@@ -110,7 +110,9 @@ if __name__ == "__main__":
     )
 
     # relative_uncertainty == total_uncertainty / |total|
-    expected_rel = nom["total_uncertainty"] / abs(nom["total"])
+    expected_rel = (
+        nom["total_uncertainty"] / abs(nom["total"]) if nom["total"] != 0.0 else 0.0
+    )
     is_ok = (
         utility.print_test(
             np.isclose(nom["relative_uncertainty"], expected_rel, rtol=1e-9),
