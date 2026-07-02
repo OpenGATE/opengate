@@ -387,6 +387,34 @@ for examples covering stopping electrons, stopping positrons, neutral beams, tra
 
    For repeated volume placements, the actor will score the total charge deposited across all instances of the volume.
 
+Statistical uncertainty
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The actor also provides a history-by-history estimate of the uncertainty on the deposited charge.
+
+After the simulation, the statistics are exposed as two dictionaries, ``nominal_charge_statistics`` and ``dynamic_charge_statistics``, one for each accumulated quantity. Each contains:
+
+  - ``mean``: mean net deposited charge per event, ``Sum x / N``.
+  - ``std``: sample standard deviation of the per-event charge (Bessel-corrected).
+  - ``sem``: standard error of the mean, ``std / sqrt(N)``.
+  - ``total``: total net charge, ``Sum x`` (identical to ``deposited_nominal_charge`` / ``deposited_dynamic_charge``).
+  - ``total_uncertainty``: absolute uncertainty on ``total``, i.e. the standard deviation of the sum, ``sqrt(N) * std = N * sem``.
+  - ``relative_uncertainty``: ``total_uncertainty / |total|``.
+
+.. code-block:: python
+
+    charge = sim.add_actor("DepositedChargeActor", "charge")
+    charge.attached_to = target.name
+
+    sim.run()
+
+    stats = charge.nominal_charge_statistics
+    print(f"total charge: {stats['total']} +/- {stats['total_uncertainty']} e")
+    print(f"relative uncertainty: {stats['relative_uncertainty']:.3%}")
+
+The test ``test099_deposited_charge_actor_uncertainty.py`` cross-checks it against an explicit batch method.
+
+
 Reference
 ~~~~~~~~~
 .. autoclass:: opengate.actors.miscactors.DepositedChargeActor
