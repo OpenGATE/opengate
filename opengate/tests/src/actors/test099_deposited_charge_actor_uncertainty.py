@@ -61,10 +61,11 @@ def run_charge_sim(seed, n_events, paths):
 
     sim.run(start_new_process=True)
 
+    out = charge.user_output.charge
     return {
-        "n_events": charge.number_of_events,
-        "nominal": charge.nominal_charge_statistics,
-        "dynamic": charge.dynamic_charge_statistics,
+        "n_events": out.merged_data.number_of_events,
+        "nominal": out.nominal_charge_statistics,
+        "dynamic": out.dynamic_charge_statistics,
     }
 
 

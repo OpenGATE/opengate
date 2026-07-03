@@ -371,8 +371,9 @@ For leptons and ordinary protons the two are identical. They diverge only when a
 
     sim.run()
     print(charge)
-    print(f"nominal: {charge.deposited_nominal_charge} e")
-    print(f"dynamic: {charge.deposited_dynamic_charge} e")
+    data = charge.user_output.charge.merged_data
+    print(f"nominal: {data.deposited_nominal_charge} e")
+    print(f"dynamic: {data.deposited_dynamic_charge} e")
 
 
 Refer to the test files
@@ -392,12 +393,12 @@ Statistical uncertainty
 
 The actor also provides a history-by-history estimate of the uncertainty on the deposited charge.
 
-After the simulation, the statistics are exposed as two dictionaries, ``nominal_charge_statistics`` and ``dynamic_charge_statistics``, one for each accumulated quantity. Each contains:
+After the simulation, the statistics are exposed on the actor's output object (``charge.user_output.charge``) as two dictionaries, ``nominal_charge_statistics`` and ``dynamic_charge_statistics``, one for each accumulated quantity. Each contains:
 
   - ``mean``: mean net deposited charge per event, ``Sum x / N``.
   - ``std``: sample standard deviation of the per-event charge (Bessel-corrected).
   - ``sem``: standard error of the mean, ``std / sqrt(N)``.
-  - ``total``: total net charge, ``Sum x`` (identical to ``deposited_nominal_charge`` / ``deposited_dynamic_charge``).
+  - ``total``: total net charge, ``Sum x`` (identical to ``merged_data.deposited_nominal_charge`` / ``merged_data.deposited_dynamic_charge``).
   - ``total_uncertainty``: absolute uncertainty on ``total``, i.e. the standard deviation of the sum, ``sqrt(N) * std = N * sem``.
   - ``relative_uncertainty``: ``total_uncertainty / |total|``.
 
@@ -408,11 +409,17 @@ After the simulation, the statistics are exposed as two dictionaries, ``nominal_
 
     sim.run()
 
-    stats = charge.nominal_charge_statistics
+    stats = charge.user_output.charge.nominal_charge_statistics
     print(f"total charge: {stats['total']} +/- {stats['total_uncertainty']} e")
     print(f"relative uncertainty: {stats['relative_uncertainty']:.3%}")
 
 The test ``test099_deposited_charge_actor_uncertainty.py`` cross-checks it against an explicit batch method.
+
+The results of the actor evaluation are held in the actor's ``user_output`` attribute, under the ``charge`` key. The raw totals are in ``charge.user_output.charge.merged_data`` and the statistics are the ``nominal_charge_statistics`` / ``dynamic_charge_statistics`` properties of the same output object. The output can optionally be written to disk as JSON by setting an output filename:
+
+.. code-block:: python
+
+    charge.output_filename = "deposited_charge.json"  # written to the simulation output_dir
 
 
 Reference
