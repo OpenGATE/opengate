@@ -11,7 +11,7 @@
 #include "GateDigiCollectionManager.h"
 #include "GateHelpersDigitizer.h"
 #include <G4Threading.hh>
-#include <memory>
+#include <thread>
 #include <utility>
 
 GateTimeSorter::GateTimeSorter(const std::string &name) : fName(name) {
@@ -181,11 +181,16 @@ void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
       // If the current thread has been identified as the fastest progressing
       // one, then do the processing.
       const int tid = std::max(0, G4Threading::G4GetThreadId());
+      bool hasProcessed = false;
       if (tid == fFastestThread.load()) {
         Process(); // executes time-sorting logic
         work();    // executes the work provided by the actor
+        hasProcessed = true;
       }
       fProcessingOngoing.store(false, std::memory_order_release);
+      if (hasProcessed) {
+        std::this_thread::yield();
+      }
     }
   }
 }
