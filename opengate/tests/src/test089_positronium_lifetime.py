@@ -104,8 +104,6 @@ if __name__ == "__main__":
     source.positronium_lifetimes = [MEAN_LIFETIME_NS * ns]
     source.prompt_gamma_probabilities = [1.]
     source.prompt_gamma_energies = [PROMPT_PHOTON_KINETIC_ENERGY_MEV * MeV]
-    source.mean_positron_range = [0. * mm]
-    source.electron_capture_probabilities = [0.]
 
     # actors
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

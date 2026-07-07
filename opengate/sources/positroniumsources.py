@@ -65,7 +65,7 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
             fatal("Either fractions or intensities must be provided")
         elif fractions_provided:
             specific_parameters = [
-                self.channels_from_fractions,
+                self.channels_from_fractions.fractions,
                 self.channels_from_fractions.decay_kinds
             ]
         elif intensities_provided:
@@ -76,6 +76,13 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
         else:
             fatal("Should never happen")
 
+        # Default values
+        number_of_channels = len(specific_parameters[0])  # arbitrary
+        if len(self.mean_positron_range) == 0:
+            self.mean_positron_range = [0.] * number_of_channels
+        if len(self.electron_capture_probabilities) == 0:
+            self.electron_capture_probabilities = [0.] * number_of_channels
+
         common_parameters = [
             self.positronium_lifetimes, self.prompt_gamma_probabilities,
             self.prompt_gamma_energies, self.mean_positron_range,
@@ -84,12 +91,12 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
 
         parameters = [*specific_parameters, *common_parameters]
 
-        # if not all(
-        #         len(common_parameters[0]) == len(p) for p in parameters[1:]):
-        #     fatal("Positronium source parameters have different lengths")
+        if not all(
+                len(common_parameters[0]) == len(p) for p in parameters[1:]):
+            fatal("Positronium source parameters have different lengths")
 
-        # if any(len(p) == 0 for p in common_parameters):
-        #     fatal("Positronium must have at least one decay channel")
+        if any(len(p) == 0 for p in common_parameters):
+            fatal("Positronium must have at least one decay channel")
 
         if intensities_provided:
             self.calculate_channels_from_lifetimes()
@@ -158,21 +165,12 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
                 positron_interactions.append(
                     self.channels_from_intensities.positron_interactions[i])
 
-                # TODO deal with default values for electron capture probabilities and mean positron range in all cases
-                if len(self.electron_capture_probabilities) > 0:
-                    electron_capture_probabilities.append(
-                        self.electron_capture_probabilities[i])
-                    electron_capture_probabilities.append(
-                        self.electron_capture_probabilities[i])
-                else:
-                    electron_capture_probabilities.append(0.)
-                    electron_capture_probabilities.append(0.)
-                if len(self.mean_positron_range) > 0:
-                    mean_positron_range.append(self.mean_positron_range[i])
-                    mean_positron_range.append(self.mean_positron_range[i])
-                else:
-                    mean_positron_range.append(0.)
-                    mean_positron_range.append(0.)
+                electron_capture_probabilities.append(
+                    self.electron_capture_probabilities[i])
+                electron_capture_probabilities.append(
+                    self.electron_capture_probabilities[i])
+                mean_positron_range.append(self.mean_positron_range[i])
+                mean_positron_range.append(self.mean_positron_range[i])
 
         pPs_inter = PositroniumSource.calc_pps_fraction_from_ops(
             fractions, positron_interactions)
