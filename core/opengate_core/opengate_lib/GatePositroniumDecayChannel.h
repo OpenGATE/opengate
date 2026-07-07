@@ -11,6 +11,12 @@
 #include "G4GeneralPhaseSpaceDecay.hh"
 #include "G4PhysicalConstants.hh"
 
+/** Author: Mateusz Bała
+ *  Email: bala.mateusz@gmail.com
+ *  Original author of the oPs decay model: Daria Kamińska et al. ( Eur. Phys. J. C (2016) 76:445 )
+ *  Refactored by: Wojciech Krzemien
+ *  About class: Implements pPs and oPs positronium decays. Provides support for polarization.
+ **/
 class GatePositroniumDecayChannel : public G4GeneralPhaseSpaceDecay
 {
  public:
