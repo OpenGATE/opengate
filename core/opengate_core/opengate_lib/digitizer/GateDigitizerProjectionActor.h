@@ -68,6 +68,8 @@ protected:
   void ScoreSquaredValue(const ImageType::IndexType &index,
                          int current_event_id, double value) const;
   void FlushSquaredValues() const;
+  void MergeLocalImageToGlobal(const ImageType::Pointer &local_image,
+                               const ImageType::Pointer &global_image) const;
 
   G4ThreeVector fPreviousTranslation;
   G4RotationMatrix fPreviousRotation;
@@ -76,6 +78,8 @@ protected:
   struct threadLocalT {
     std::vector<std::vector<G4ThreeVector> *> fInputPos;
     std::vector<std::vector<double> *> fInputWeights;
+    ImageType::Pointer fLocalImage;
+    ImageType::Pointer fLocalSquaredImage;
     ImageType::Pointer fSquaredTempImage;
     ImageIDType::Pointer fLastEventIdImage;
   };
