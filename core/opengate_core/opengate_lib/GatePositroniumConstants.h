@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-/** Authors: Wojciech Krzemień, Mateusz Bała and Kamil Dulski
- *  Emails: wojciech.krzemien@ncbj.gov.pl, mateusz.bala@ncbj.gov.pl and kamil.dulski@gmail.com
+/** Authors: Wojciech Krzemień, Mateusz Bała, Kamil Dulski and Aurelien Coussat
+ *  Emails: wojciech.krzemien@ncbj.gov.pl, mateusz.bala@ncbj.gov.pl, kamil.dulski@gmail.com and aurelien.coussat@creatis.insa-lyon.fr
  *  Organization: National Centre For Nuclear Research (NCBJ, https://ncbj.gov.pl), Poland
  *  Developed within the IMPET project: https://pet.ncbj.gov.pl/
  *  About class: Namespace of physical constants for positronium physics: para-Ps lifetime (0.1244 ns), ortho-Ps mean lifetime (142 ns), para-to-ortho fraction (1/3), and hyperfine coefficient (372).

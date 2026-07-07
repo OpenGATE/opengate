@@ -6,7 +6,7 @@
    -------------------------------------------------- */
 
 /** Authors: Wojciech Krzemień, Mateusz Bała, Kamil Dulski and Aurelien Coussat
- *  Emails: wojciech.krzemien@ncbj.gov.pl, mateusz.bala@ncbj.gov.pl, kamil.dulski@gmail.com
+ *  Emails: wojciech.krzemien@ncbj.gov.pl, mateusz.bala@ncbj.gov.pl, kamil.dulski@gmail.com and aurelien.coussat@creatis.insa-lyon.fr
  *  Organization: National Centre For Nuclear Research (NCBJ, https://ncbj.gov.pl), Poland
  *  Developed within the IMPET project: https://pet.ncbj.gov.pl/
  *  About class: Geant4 primary event source for positronium annihilation; lazily initializes a GatePositroniumDecayModel user-supplied parameters on the first event and delegates primary vertex generation to the model.
