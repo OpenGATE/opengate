@@ -62,13 +62,11 @@ if __name__ == "__main__":
     source.position.radius = 1 * mm
     source.n = 10_000
 
-    source.positronium_fractions = [1.]
+    source.channels_from_fractions.fractions = [1.]
+    source.channels_from_fractions.decay_kinds = ["k3Gamma"]
     source.positronium_lifetimes = [0.122 * ns]
-    source.decay_kinds = ["k3Gamma"]
-    source.prompt_photon_probabilities = [0.]
-    source.prompt_photon_energies = [1.244 * MeV]
-    source.mean_positron_range = [0. * mm]
-    source.electron_capture_probabilities = [0.]
+    source.prompt_gamma_probabilities = [0.]
+    source.prompt_gamma_energies = [1.244 * MeV]
 
     # actors
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
