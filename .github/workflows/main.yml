@@ -38,7 +38,11 @@ jobs:
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
-        git submodule update --init --recursive
+        for i in 1 2 3 4 5; do
+          git submodule update --init --recursive && break
+          echo "Retry $i"
+          sleep 30
+        done
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
@@ -79,7 +83,11 @@ jobs:
         else
           export GIT_SSL_NO_VERIFY=1
         fi
-        git submodule update --init --recursive
+        for i in 1 2 3 4 5; do
+          git submodule update --init --recursive && break
+          echo "Retry $i"
+          sleep 30
+        done
     - uses: ./.github/workflows/actions_build
       with:
         os: ${{ matrix.os }}
@@ -116,7 +124,11 @@ jobs:
         else
           export GIT_SSL_NO_VERIFY=1
         fi
-        git submodule update --init --recursive
+        for i in 1 2 3 4 5; do
+          git submodule update --init --recursive && break
+          echo "Retry $i"
+          sleep 30
+        done
     - uses: ./.github/workflows/actions_build
       with:
         os: ${{ matrix.os }}
@@ -142,7 +154,11 @@ jobs:
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
-        git submodule update --init --recursive
+        for i in 1 2 3 4 5; do
+          git submodule update --init --recursive && break
+          echo "Retry $i"
+          sleep 30
+        done
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
