@@ -459,7 +459,7 @@ def main():
     plastic.material = "G4_PLEXIGLASS"
     plastic.rmin = 0 * cm
     plastic.rmax = 0.5 * cm
-    plastic.dz   = 0.5 * cm   # half-height → total 1.0 cm
+    plastic.dz = 0.5 * cm  # half-height → total 1.0 cm
     plastic.translation = [0, 0, 2.5 * mm]
 
     src = sim.add_source("GenericSource", "Na22_decay")
