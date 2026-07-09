@@ -165,23 +165,13 @@ If the CAS fails — either because another thread already holds the token or
 the preliminary relaxed load showed it was taken — the calling thread simply
 returns and continues simulating.  It is never blocked.
 
-If the CAS succeeds, the thread checks whether it is the one currently
-tracking the highest ``GlobalTime``:
+If the CAS succeeds, the thread calls ``Process()`` and ``work()``:
 
 .. code-block:: cpp
 
-    if (tid == fFastestThread.load()) {
-        Process();
-        work();   // actor lambda: ProcessTimeSortedSingles + DetectCoincidences
-    }
+    Process(); // executes time-sorting logic
+    work();    // actor lambda: ProcessTimeSortedSingles + DetectCoincidences
     fProcessingOngoing.store(false, std::memory_order_release);
-
-A thread that wins the CAS but is *not* the fastest one releases the token
-immediately without calling ``Process()``.  The intent is that sorting work
-migrates to whichever thread is furthest ahead in simulation time: the fastest
-thread occasionally pauses to do sorting and coincidence detection work,
-which gives the slower threads time to catch up, reducing ``GlobalTime``
-divergence.
 
 Inside ``Process()``:
 
@@ -206,12 +196,6 @@ Inside ``Process()``:
    This *sorting window guarantee* ensures time-monotonicity in the output
    stream: no future ingestion can produce a digi with a low enough
    ``GlobalTime`` to be inserted before anything already drained.
-
-4. **Fastest-thread re-evaluation.** Because the current thread has been
-   doing sorting and coincidence detection work since it was identified
-   as the fastest, it may no longer hold that distinction.
-   ``IdentifyFastestThread()`` refreshes ``fFastestThread`` so that
-   subsequent processing calls are routed to the correct thread.
 
 
 The Sorting Window
@@ -252,10 +236,7 @@ The thread that takes the counter to zero is the last active worker; it calls
 ``fSortedIndicesA`` into ``fOutputCollection`` without applying the sorting
 window, since no further digis will arrive.
 It then calls ``lastThreadWork()``.  Every thread subsequently calls
-``anyThreadWork()``.  Before ``OnEndOfRunAction()`` returns,
-each thread calls ``MarkThreadAsFinished()``, which zeroes its
-``fMaxGlobalTimePerThread`` entry so it is no longer eligible to be selected
-as the fastest thread.
+``anyThreadWork()``.
 
 
 Correctness of the Lock-Free Processing Path
@@ -264,7 +245,7 @@ Correctness of the Lock-Free Processing Path
 After the buffer swap inside ``Process()``, the remainder of that function
 reads and writes ``fIngestionBufferB``, ``fSortedCollectionA``,
 ``fSortedIndicesA``, ``fOutputCollection``, ``fMostRecentTimeArrived``,
-``fMostRecentTimeDeparted``, and ``fFastestThread``
+and ``fMostRecentTimeDeparted``
 **without holding any mutex**, and reads ``fSortingWindow`` via an atomic
 load (``fSortingWindow`` is ``std::atomic<double>`` because ``Ingest()``
 writes to it concurrently).  This section explains why that is safe.
@@ -300,7 +281,7 @@ section around the body of ``Process()``:
   relationship with the **release** store at the end of the *previous*
   ``Process()`` invocation.  All writes made by that invocation to
   ``fSortedCollectionA``, ``fSortedIndicesA``, ``fOutputCollection``,
-  ``fMostRecentTimeArrived``, ``fMostRecentTimeDeparted``, and ``fFastestThread``
+  ``fMostRecentTimeArrived``, and ``fMostRecentTimeDeparted``
   are therefore visible to the current invocation, even though no mutex guards
   those fields directly.  (``fSortingWindow`` is excluded from this list
   because it is an atomic written by ``Ingest()`` independently of the CAS.)
@@ -321,8 +302,7 @@ additional synchronisation.
 Non-Processing Threads Are Never Blocked
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A thread that fails the CAS — or that wins it but is not the fastest thread
-and immediately releases the token — returns from ``OnEndOfEventAction()``
+A thread that fails the CAS returns from ``OnEndOfEventAction()``
 and continues simulating without ever waiting on a lock or spinning.  The
 entire fast path (ingestion counter increment → preliminary flag check → CAS
 attempt → early return) is **wait-free**: it completes in a bounded number of
@@ -336,7 +316,7 @@ Visibility of ``fMaxGlobalTimePerThread``
 padded to one cache-line (64 bytes) to prevent false sharing.  Each thread
 writes only to its own element inside ``Ingest()``.  ``Ingest()`` also reads
 all elements (under ``fIngestionMutex``) to compute the sorting window
-extension.  ``Process()`` reads all elements to re-evaluate the fastest thread.
+extension.
 
 Concurrent access is safe because:
 
@@ -346,12 +326,6 @@ Concurrent access is safe because:
   ``Ingest()`` happen under ``fIngestionMutex``, which serialises concurrent
   ``Ingest()`` calls.  The resulting ``fSortingWindow`` update is an atomic
   store, immediately visible to any subsequent atomic load in ``Process()``.
-* **Benign races for fastest-thread selection.** ``Ingest()`` can run
-  concurrently with ``Process()`` after the buffer swap.  A load of
-  ``fMaxGlobalTimePerThread[tid]`` inside ``IdentifyFastestThread()`` may
-  therefore see a value that is one ingestion stale.  This is harmless:
-  fastest-thread selection is heuristic and routing processing to a slightly
-  suboptimal thread does not affect correctness.
 
 
 GateCoincidenceSorterActor: Consuming the Sorted Stream
@@ -423,13 +397,12 @@ Thread Lifecycle Summary
        to per-thread max, occasional ``fSortingWindow`` extension).  Returns
        early if no digis; otherwise increment ``fNumIngestions`` (relaxed
        atomic).  If threshold reached: attempt CAS on ``fProcessingOngoing``
-       (atomic, non-blocking).  If CAS succeeds and thread is fastest:
-       ``Process()`` — acquires ``fIngestionMutex`` for buffer swap only,
-       then fully lock-free — followed by actor lambda (lock-free).
+       (atomic, non-blocking).  If CAS succeeds: ``Process()`` — acquires
+       ``fIngestionMutex`` for buffer swap only, then fully lock-free —
+       followed by actor lambda (lock-free).
    * - ``EndOfRunAction``
      - All workers
      - Decrement ``fNumActiveWorkingThreads`` (atomic).  Last thread:
        ``Process()`` then ``Flush()`` (both single-threaded at this point)
        then ``lastThreadWork()``.
-       All threads: ``anyThreadWork()``.  Each thread: ``MarkThreadAsFinished()``
-       (atomic store).
+       All threads: ``anyThreadWork()``.
