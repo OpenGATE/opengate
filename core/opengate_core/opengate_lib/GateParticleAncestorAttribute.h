@@ -5,14 +5,14 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateGammaAncestorAttribute_h
-#define GateGammaAncestorAttribute_h
+#ifndef GateParticleAncestorAttribute_h
+#define GateParticleAncestorAttribute_h
 
 #include "GateVAuxiliaryAttribute.h"
 
-class GateGammaAncestorAttribute : public GateVAuxiliaryAttribute {
+class GateParticleAncestorAttribute : public GateVAuxiliaryAttribute {
 public:
-  explicit GateGammaAncestorAttribute(py::dict &user_info);
+  explicit GateParticleAncestorAttribute(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
   void InitializeCpp() override;
@@ -22,6 +22,7 @@ public:
   void PreUserTrackingAction(const G4Track *track) override;
 
   std::string fAttributeToStore;
+  std::string fParticleName;
 };
 
-#endif // GateGammaAncestorAttribute_h
+#endif // GateParticleAncestorAttribute_h

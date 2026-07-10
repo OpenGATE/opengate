@@ -469,7 +469,7 @@ void init_GateLastProcessDefinedStepInVolumeAttribute(py::module &);
 
 void init_GateProcessDefinedStepInVolumeAttribute(py::module &);
 
-void init_GateGammaAncestorAttribute(py::module &);
+void init_GateParticleAncestorAttribute(py::module &);
 
 void init_GateSimulationStatisticsActor(py::module &);
 
@@ -814,7 +814,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateLastInteractionPositionInVolumeAttribute(m);
   init_GateLastProcessDefinedStepInVolumeAttribute(m);
   init_GateProcessDefinedStepInVolumeAttribute(m);
-  init_GateGammaAncestorAttribute(m);
+  init_GateParticleAncestorAttribute(m);
 
   init_GateDoseActor(m);
   init_GateDebugActor(m);

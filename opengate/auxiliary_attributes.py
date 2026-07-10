@@ -234,7 +234,9 @@ class UnscatteredPrimaryAttribute(
         g4.GateUnscatteredPrimaryAttribute.__init__(self, self.user_info)
 
 
-class GammaAncestorAttribute(AuxiliaryAttributeBase, g4.GateGammaAncestorAttribute):
+class ParticleAncestorAttribute(
+    AuxiliaryAttributeBase, g4.GateParticleAncestorAttribute
+):
     """
     Return the position of the first gamma ancestor of the current particle. If already exist, propagate to secondaries.
     """
@@ -245,7 +247,13 @@ class GammaAncestorAttribute(AuxiliaryAttributeBase, g4.GateGammaAncestorAttribu
             {
                 "doc": "The quantity to store for the first gamma ancestor. It can be: VertexKineticEnergy or VertexPosition",
             },
-        )
+        ),
+        "particle_name": (
+            "gamma",
+            {
+                "doc": "The particle to search for. The quantity will be stored for the first ancestor corresponding to this particle type.",
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -253,7 +261,7 @@ class GammaAncestorAttribute(AuxiliaryAttributeBase, g4.GateGammaAncestorAttribu
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateGammaAncestorAttribute.__init__(self, self.user_info)
+        g4.GateParticleAncestorAttribute.__init__(self, self.user_info)
 
 
 auxiliary_attribute_types = {
@@ -262,7 +270,7 @@ auxiliary_attribute_types = {
     "LastProcessDefinedStepInVolumeAttribute": LastProcessDefinedStepInVolumeAttribute,
     "ProcessDefinedStepInVolumeAttribute": ProcessDefinedStepInVolumeAttribute,
     "UnscatteredPrimaryAttribute": UnscatteredPrimaryAttribute,
-    "GammaAncestorAttribute": GammaAncestorAttribute,
+    "ParticleAncestorAttribute": ParticleAncestorAttribute,
 }
 
 
@@ -272,4 +280,4 @@ process_cls(LastInteractionPositionInVolumeAttribute)
 process_cls(LastProcessDefinedStepInVolumeAttribute)
 process_cls(ProcessDefinedStepInVolumeAttribute)
 process_cls(UnscatteredPrimaryAttribute)
-process_cls(GammaAncestorAttribute)
+process_cls(ParticleAncestorAttribute)

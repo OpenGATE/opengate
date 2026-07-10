@@ -133,7 +133,7 @@ def main():
     )
 
     """
-    This test check the new attribute GammaAncestorAttribute
+    This test check the new attribute ParticleAncestorAttribute
     This attribute store the position/energy of the first gamma that is parent of the current particle (including  itself).
     """
     print(paths)
@@ -180,10 +180,13 @@ def main():
     source.half_life = 8.205 * 1e07 * sec  # I need to give this to have results
 
     # new attribute
-    att1 = sim.activate_auxiliary_attribute("GammaAncestorAttribute", "GammaPosition")
+    att1 = sim.activate_auxiliary_attribute(
+        "ParticleAncestorAttribute", "GammaPosition"
+    )
     att1.value_to_store = "VertexPosition"
+    att1.particle_name = "gamma"  # this is the default
     att2 = sim.activate_auxiliary_attribute(
-        "GammaAncestorAttribute", "GammaVertexKineticEnergy"
+        "ParticleAncestorAttribute", "GammaVertexKineticEnergy"
     )
     att2.value_to_store = "VertexKineticEnergy"
 

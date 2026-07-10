@@ -10,10 +10,10 @@
 
 namespace py = pybind11;
 
-#include "GateGammaAncestorAttribute.h"
+#include "GateParticleAncestorAttribute.h"
 
-void init_GateGammaAncestorAttribute(py::module &m) {
-  py::class_<GateGammaAncestorAttribute, GateVAuxiliaryAttribute>(
-      m, "GateGammaAncestorAttribute")
+void init_GateParticleAncestorAttribute(py::module &m) {
+  py::class_<GateParticleAncestorAttribute, GateVAuxiliaryAttribute>(
+      m, "GateParticleAncestorAttribute")
       .def(py::init<py::dict &>());
 }
