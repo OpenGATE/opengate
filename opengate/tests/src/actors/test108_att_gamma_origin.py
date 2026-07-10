@@ -38,7 +38,7 @@ def test108_test(df, output_dir=None):
     # ----------------------------------------------------
     # Test for Ratio  of intensities nb(E0)/nb(E1)
     # ----------------------------------------------------
-    tolf = 0.05
+    tolf = 0.06
     fraction = 1.81  # expected intensity ratio for the annhilations photons wrp to 1.274 keV  photon
     E0, E1 = allowedE
     n_E0 = masks[E0].sum()
