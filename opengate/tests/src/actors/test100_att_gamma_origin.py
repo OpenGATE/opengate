@@ -11,11 +11,11 @@ from opengate.tests import utility
 def test100_test(df, output_dir=None):
     overall_valid = True
 
-    allowedE = {0.510999, 1.274497} #MeV,
-    #validation rules  for position of gamma ancestors : annihilation or isomeric transition
+    allowedE = {0.510999, 1.274497}  # MeV,
+    # validation rules  for position of gamma ancestors : annihilation or isomeric transition
     validation_rules = {
         0.510999: {"mean_max": 1.0, "max_max": 8.0},
-        1.274497: {"mean_max": 0.0, "max_max": 0.0}
+        1.274497: {"mean_max": 0.0, "max_max": 0.0},
     }
     tolE = 0.001
     energies = df["GammaVertexKineticEnergy"]
@@ -29,7 +29,9 @@ def test100_test(df, output_dir=None):
 
     # Compute Euclidean distances for each energy group
     distances = {
-        E: np.sqrt(origin_x[masks[E]] ** 2 + origin_y[masks[E]] ** 2 + origin_z[masks[E]] ** 2)
+        E: np.sqrt(
+            origin_x[masks[E]] ** 2 + origin_y[masks[E]] ** 2 + origin_z[masks[E]] ** 2
+        )
         for E in allowedE
     }
 
@@ -37,7 +39,7 @@ def test100_test(df, output_dir=None):
     # Test for Ratio  of intensities nb(E0)/nb(E1)
     # ----------------------------------------------------
     tolf = 0.05
-    fraction = 1.81 #expected intensity ratio for the annhilations photons wrp to 1.274 keV  photon
+    fraction = 1.81  # expected intensity ratio for the annhilations photons wrp to 1.274 keV  photon
     E0, E1 = allowedE
     n_E0 = masks[E0].sum()
     n_E1 = masks[E1].sum()
@@ -46,8 +48,10 @@ def test100_test(df, output_dir=None):
     else:
         ratio_E0_E1 = n_E0 / n_E1
         print(f"Ratio nb(E0)/nb(E1) = {ratio_E0_E1:.6f}")
-        if ratio_E0_E1 < fraction-tolf or ratio_E0_E1 > fraction:
-            print(f"[FAIL] Ratio nb(E0)/nb(E1) = {ratio_E0_E1:.6f} (allowed between 1.76 and 1.81)")
+        if ratio_E0_E1 < fraction - tolf or ratio_E0_E1 > fraction:
+            print(
+                f"[FAIL] Ratio nb(E0)/nb(E1) = {ratio_E0_E1:.6f} (allowed between 1.76 and 1.81)"
+            )
             overall_valid = False
 
     # ----------------------------------------------------
@@ -62,15 +66,25 @@ def test100_test(df, output_dir=None):
         # Plotting
         # -----------------------------
         plt.figure(figsize=(8, 5))
-        plt.hist(d, bins=60, alpha=0.7, color='steelblue')
+        plt.hist(d, bins=60, alpha=0.7, color="steelblue")
         plt.title(f"Euclidean distance distribution for E = {E} MeV")
         plt.xlabel("Distance (mm)")
         plt.ylabel("Counts")
 
-        plt.axvline(mean_d, color='red', linestyle='--', linewidth=2,
-                    label=f"Mean = {mean_d:.2f}")
-        plt.axvline(max_d, color='green', linestyle='--', linewidth=2,
-                    label=f"Max = {max_d:.2f}")
+        plt.axvline(
+            mean_d,
+            color="red",
+            linestyle="--",
+            linewidth=2,
+            label=f"Mean = {mean_d:.2f}",
+        )
+        plt.axvline(
+            max_d,
+            color="green",
+            linestyle="--",
+            linewidth=2,
+            label=f"Max = {max_d:.2f}",
+        )
 
         plt.legend()
         plt.tight_layout()
@@ -86,21 +100,23 @@ def test100_test(df, output_dir=None):
         # -----------------------------
         rules = validation_rules[E]
         if mean_d > rules["mean_max"] or max_d > rules["max_max"]:
-            print(f"[FAIL] E={E}: mean={mean_d:.3f} (allowed ≤ {rules['mean_max']}), "
-                  f"max={max_d:.3f} (allowed ≤ {rules['max_max']})")
+            print(
+                f"[FAIL] E={E}: mean={mean_d:.3f} (allowed ≤ {rules['mean_max']}), "
+                f"max={max_d:.3f} (allowed ≤ {rules['max_max']})"
+            )
             overall_valid = False
 
     # ----------------------------------------------------
     #  test for fraction of 'invalid' events (not allowed energies), aroudn 0.3%  due to positron annihilation in the fly ?
-    #-----------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------
     valid = energies.apply(lambda x: any(abs(x - e) < tolE for e in allowedE))
     mask_invalid = ~energies.isna() & ~valid
     inv_energies = energies[mask_invalid]
     inv_particle = df.loc[mask_invalid, "ParticleName"]
     inv_proces = df.loc[mask_invalid, "TrackCreatorProcess"]
     n_invalid = len(inv_energies)
-    print("percentage of invalid entries (%): ", n_invalid/n_entries*100)
-    if n_invalid/n_entries> 0.01:
+    print("percentage of invalid entries (%): ", n_invalid / n_entries * 100)
+    if n_invalid / n_entries > 0.01:
         print("Invalid energies found:")
         for e, p, proc in zip(inv_energies, inv_particle, inv_proces):
             print(f"Energy: {e}, Particle: {p}, Process: {proc}")
@@ -135,7 +151,7 @@ def main():
 
     # world size
     world = sim.world
-    world.size = [0.5 * m,0.5 * m, 0.5 * m]
+    world.size = [0.5 * m, 0.5 * m, 0.5 * m]
 
     # water encapsulation for the annihilation of the positron
     encapsulation = sim.add_volume("Sphere", "encapsulation")
@@ -154,15 +170,13 @@ def main():
     # source
     source = sim.add_source("GenericSource", "Nas22_source")
     source.attached_to = encapsulation  # for the annihilation of the positrorn
-    source.particle = "ion 11 22" #Na22
-    source.energy.type= "mono"
+    source.particle = "ion 11 22"  # Na22
+    source.energy.type = "mono"
     source.energy.mono = 0
     source.position.type = "point"
     source.direction.type = "iso"
     source.activity = 5000 * Bq
-    source.half_life = 8.205*1e07 * sec  #I need to give this to have results
-
-
+    source.half_life = 8.205 * 1e07 * sec  # I need to give this to have results
 
     # new attribute
     att1 = sim.activate_auxiliary_attribute("GammaAncestorAttribute", "GammaPosition")
@@ -192,21 +206,21 @@ def main():
 
     sim.run_timing_intervals = [[0, 2.5 * sec]]
     # stats
-    #stat = sim.add_actor("SimulationStatisticsActor", "stat")
-    #stat.track_types_flag = True
+    # stat = sim.add_actor("SimulationStatisticsActor", "stat")
+    # stat.track_types_flag = True
 
     # physics with decay
     sim.physics_manager.enable_decay = True
 
     # run
     sim.run()
-    #print(stat)
+    # print(stat)
 
     # test
     print(phsp.output_filename)
     print(sim.output_dir)
     phsp_out = uproot.open(
-        str(paths.output) +"/"+str(phsp.output_filename) + ":phase_space"
+        str(paths.output) + "/" + str(phsp.output_filename) + ":phase_space"
     )
 
     df = phsp_out.arrays(library="pd")
