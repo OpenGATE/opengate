@@ -91,6 +91,7 @@ def test100_test(df, output_dir=None):
 
         if output_dir is not None:
             fname = os.path.join(output_dir, f"dist_E_{E:.6f}.png")
+            print(f"Figure saved in {fname}")
             plt.savefig(fname, dpi=200)
 
         plt.close()
@@ -205,20 +206,20 @@ def main():
     sim.physics_manager.set_production_cut("world", "all", 1 * mm)
 
     sim.run_timing_intervals = [[0, 2.5 * sec]]
+
     # stats
-    # stat = sim.add_actor("SimulationStatisticsActor", "stat")
-    # stat.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "stat")
+    stat.track_types_flag = True
 
     # physics with decay
     sim.physics_manager.enable_decay = True
 
     # run
     sim.run()
-    # print(stat)
+    print(stat)
 
     # test
-    print(phsp.output_filename)
-    print(sim.output_dir)
+    print(phsp.get_output_path())
     phsp_out = uproot.open(
         str(paths.output) + "/" + str(phsp.output_filename) + ":phase_space"
     )
