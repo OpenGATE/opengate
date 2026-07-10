@@ -8,7 +8,7 @@ import opengate as gate
 from opengate.tests import utility
 
 
-def test100_test(df, output_dir=None):
+def test108_test(df, output_dir=None):
     overall_valid = True
 
     allowedE = {0.510999, 1.274497}  # MeV,
@@ -129,7 +129,7 @@ def test100_test(df, output_dir=None):
 def main():
 
     paths = utility.get_default_test_paths(
-        __file__, None, output_folder="test100_att_gamma_origin"
+        __file__, None, output_folder="test108_att_gamma_origin"
     )
 
     """
@@ -190,7 +190,7 @@ def main():
     # phase space
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
     phsp.attached_to = sphere
-    phsp.output_filename = "test100_phase_space.root"
+    phsp.output_filename = "test108_phase_space.root"
     phsp.attributes = [
         "EventID",
         "TrackID",
@@ -225,7 +225,7 @@ def main():
     )
 
     df = phsp_out.arrays(library="pd")
-    is_ok = test100_test(df, output_dir=paths.output)
+    is_ok = test108_test(df, output_dir=paths.output)
 
     utility.test_ok(is_ok)
 
