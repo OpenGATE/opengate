@@ -1056,7 +1056,9 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.construct_solid()
         self.construct_slices()
         self.construct_logical_volume()
+        self.apply_color_to_slices()
         self.g4_voxel_param = self.create_image_parametrisation()
+        self.apply_color_to_voxels()
         self.construct_physical_volume()
 
     def construct_slices(self):
@@ -1336,6 +1338,51 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         with open(labels_filename, "r") as infile:
             labels = json.load(infile)
         self.voxel_materials = labels
+        
+    def create_voxel_color_image(self):
+        # Encode color for every voxel
+        color = self.color
+        
+        # Format: RGBA en 32-bit (R, G, B, Alpha)
+        color_value = (
+            int(color[0] * 255) << 24 |  # R
+            int(color[1] * 255) << 16 |  # G
+            int(color[2] * 255) << 8 |   # B
+            int(color[3] * 255)           # Alpha
+        )
+ 
+        #Create new image with same size from original image
+        color_image = itk.GetImageFromArray(
+            np.full(itk.GetArrayFromImage(self.label_image).shape,
+                    color_value, dtype=np.uint32)
+        )
+        color_image.CopyInformation(self.label_image)
+ 
+        return color_image
+ 
+    def apply_color_to_voxels(self):
+        # Apply the ImageVolume colors to the voxel parameterization
+        # by storing the color information in the parameterization.
+        if self.g4_voxel_param is None:
+            fatal(f"Voxel parametrization not initialized for {self.name}")
+ 
+        # Create image of colors
+        color_image = self.create_voxel_color_image()
+ 
+        # Store the color in the parameterization
+        if hasattr(self.g4_voxel_param, 'SetColorImage'):
+            update_image_py_to_cpp(color_image, self.g4_voxel_param.color_image, True)
+ 
+    def apply_color_to_slices(self):
+        #Apply color to visible slides
+        self.g4_vis_attributes_logical_slices = g4.G4VisAttributes()
+        self.g4_vis_attributes_logical_slices.SetColor(*self.color)
+        self.g4_vis_attributes_logical_slices.SetVisibility(bool(self.color[3]))
+ 
+        # apply to logical volumes
+        self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
 
 
 class ParallelWorldVolume(NodeMixin):
