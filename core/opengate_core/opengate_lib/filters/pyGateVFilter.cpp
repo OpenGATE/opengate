@@ -5,13 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateVFilter.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "../GateHelpers.h"
-#include "GateVFilter.h"
 
 /*
  * The "trampoline" functions below are required if we want to

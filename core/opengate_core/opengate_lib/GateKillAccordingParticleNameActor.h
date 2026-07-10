@@ -8,8 +8,8 @@
 #ifndef GateKillAccordingParticleNameActor_h
 #define GateKillAccordingParticleNameActor_h
 
-#include "G4Cache.hh"
 #include "GateVActor.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

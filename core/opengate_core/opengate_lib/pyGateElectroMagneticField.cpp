@@ -5,14 +5,13 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateElectroMagneticField.h"
+#include <G4ElectroMagneticField.hh>
+#include <G4VSolid.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "G4ElectroMagneticField.hh"
-#include "G4VSolid.hh"
-#include "GateElectroMagneticField.h"
 
 void init_GateElectroMagneticField(py::module &m) {
   py::class_<GateElectroMagneticField, G4ElectroMagneticField,

@@ -1,4 +1,12 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
 #include "GateTimeSorter.h"
+#include "../GateHelpers.h"
 #include "GateDigiCollection.h"
 #include "GateDigiCollectionManager.h"
 #include "GateHelpersDigitizer.h"
@@ -436,7 +444,8 @@ void GateTimeSorter::IdentifyFastestThread() {
       [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
         return a.value.load() < b.value.load();
       });
-  fFastestThread.store(std::distance(fMaxGlobalTimePerThread.get(), maxIt));
+  fFastestThread.store(
+      static_cast<int>(std::distance(fMaxGlobalTimePerThread.get(), maxIt)));
 }
 
 void GateTimeSorter::MarkThreadAsFinished(int threadId) {

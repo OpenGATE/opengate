@@ -5,13 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "helpers_itk_image_py.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "G4VPrimitiveScorer.hh"
-#include "helpers_itk_image_py.h"
 
 // https://github.com/phcerdan/SGEXT/blob/master/wrap/itk/itk_image_py.cpp
 

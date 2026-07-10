@@ -114,7 +114,7 @@ class PhaseSpaceSourceGenerator:
             )
         return n
 
-    def generate(self, source, pid):
+    def generate(self, g4_source, pid):
         """
         Main function called from C++ to generate a batch of particles.
         """
@@ -130,7 +130,7 @@ class PhaseSpaceSourceGenerator:
             self.cycle_changed_flag = False
 
         # --- 2. Calculate Batch Size ---
-        requested_batch_size = source.batch_size
+        requested_batch_size = self.phsp_source.batch_size
 
         if self.current_index + requested_batch_size >= self.num_entries:
             requested_batch_size = self.num_entries - self.current_index
@@ -139,11 +139,11 @@ class PhaseSpaceSourceGenerator:
 
         if requested_batch_size == 0:
             self.current_index = 0
-            requested_batch_size = min(source.batch_size, self.num_entries)
+            requested_batch_size = min(self.phsp_source.batch_size, self.num_entries)
             self.cycle_count += 1
             self.cycle_changed_flag = True
 
-        if source.verbose_batch:
+        if self.phsp_source.verbose_batch:
             print(
                 f"Thread {g4.G4GetThreadId()} reading {requested_batch_size} events from index {self.current_index}"
             )
@@ -190,39 +190,41 @@ class PhaseSpaceSourceGenerator:
         # We assign to 'self.X' to ensure the Python object survives
         # as long as the C++ side needs it (until the next batch overwrites it).
 
-        self.pos_x = get_data(source.position_key_x, np.float32)
+        self.pos_x = get_data(self.phsp_source.position_key_x, np.float32)
         actual_size = len(self.pos_x)
 
-        self.pos_y = get_data(source.position_key_y, np.float32)
-        self.pos_z = get_data(source.position_key_z, np.float32)
+        self.pos_y = get_data(self.phsp_source.position_key_y, np.float32)
+        self.pos_z = get_data(self.phsp_source.position_key_z, np.float32)
 
-        self.dir_x = get_data(source.direction_key_x, np.float32)
-        self.dir_y = get_data(source.direction_key_y, np.float32)
-        self.dir_z = get_data(source.direction_key_z, np.float32)
+        self.dir_x = get_data(self.phsp_source.direction_key_x, np.float32)
+        self.dir_y = get_data(self.phsp_source.direction_key_y, np.float32)
+        self.dir_z = get_data(self.phsp_source.direction_key_z, np.float32)
 
-        self.energy = get_data(source.energy_key, np.float32)
+        self.energy = get_data(self.phsp_source.energy_key, np.float32)
 
         # Weights
         self.weight = None
-        if source.weight_key:
-            self.weight = get_data(source.weight_key, np.float32, must_exist=False)
+        if self.phsp_source.weight_key:
+            self.weight = get_data(
+                self.phsp_source.weight_key, np.float32, must_exist=False
+            )
         if self.weight is None:
             self.weight = np.ones(actual_size, dtype=np.float32)
 
         # PDG Code
         self.pdg = None
-        if not source.particle:
-            self.pdg = get_data(source.PDGCode_key, np.int32)
+        if not self.phsp_source.particle:
+            self.pdg = get_data(self.phsp_source.PDGCode_key, np.int32)
 
         # --- 6. Transforms (Modify SELF) ---
-        if source.translate_position:
-            self.pos_x += float(source.position.translation[0])
-            self.pos_y += float(source.position.translation[1])
-            self.pos_z += float(source.position.translation[2])
+        if self.phsp_source.translate_position:
+            self.pos_x += float(self.phsp_source.position.translation[0])
+            self.pos_y += float(self.phsp_source.position.translation[1])
+            self.pos_z += float(self.phsp_source.position.translation[2])
 
-        if source.rotate_direction:
+        if self.phsp_source.rotate_direction:
             points = np.column_stack((self.dir_x, self.dir_y, self.dir_z))
-            r = Rotation.from_matrix(source.position.rotation)
+            r = Rotation.from_matrix(self.phsp_source.position.rotation)
             rotated = r.apply(points)
             self.dir_x = np.ascontiguousarray(rotated[:, 0], dtype=np.float32)
             self.dir_y = np.ascontiguousarray(rotated[:, 1], dtype=np.float32)
@@ -233,22 +235,22 @@ class PhaseSpaceSourceGenerator:
             fatal(f"Size mismatch: Pos {actual_size} vs Energy {len(self.energy)}")
 
         # Pass the SELF variables to C++
-        source.SetPositionXBatch(self.pos_x)
-        source.SetPositionYBatch(self.pos_y)
-        source.SetPositionZBatch(self.pos_z)
-        source.SetDirectionXBatch(self.dir_x)
-        source.SetDirectionYBatch(self.dir_y)
-        source.SetDirectionZBatch(self.dir_z)
-        source.SetEnergyBatch(self.energy)
-        source.SetWeightBatch(self.weight)
+        g4_source.SetPositionXBatch(self.pos_x)
+        g4_source.SetPositionYBatch(self.pos_y)
+        g4_source.SetPositionZBatch(self.pos_z)
+        g4_source.SetDirectionXBatch(self.dir_x)
+        g4_source.SetDirectionYBatch(self.dir_y)
+        g4_source.SetDirectionZBatch(self.dir_z)
+        g4_source.SetEnergyBatch(self.energy)
+        g4_source.SetWeightBatch(self.weight)
 
         if self.pdg is not None:
-            source.SetPDGCodeBatch(self.pdg)
+            g4_source.SetPDGCodeBatch(self.pdg)
 
         return actual_size
 
 
-class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
+class PhaseSpaceSource(SourceBase):
     """
     Source of particles from a (root) phase space.
     Read position + direction + energy + weight from the root and use them as event.
@@ -441,15 +443,11 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        SourceBase.__init__(self, *args, **kwargs)
         # there will be one particle generator per thread
         self.particle_generators = {}
         # number of entries in the phsp root file
         self.num_entries = None
-
-    def __initcpp__(self):
-        g4.GatePhaseSpaceSource.__init__(self)
 
     def __getstate__(self):
         # the particle generator cannot (?) being pickled
@@ -461,28 +459,27 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
         state_dict = super().__getstate__()
         return state_dict
 
-    def initialize(self, run_timing_intervals):
-        # create a generator for each thread
-        tid = g4.G4GetThreadId()
-        self.particle_generators[tid] = PhaseSpaceSourceGenerator(tid)
+    def create_g4_source(self):
+        return g4.GatePhaseSpaceSource()
 
-        # initialize source
-        SourceBase.initialize(self, run_timing_intervals)
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
+        # Calculate the target thread ID for this g4_source
+        if g4.IsMultithreadedApplication():
+            try:
+                thread_idx = self.g4_thread_sources.index(g4_source)
+            except ValueError:
+                thread_idx = 0
+            tid = thread_idx - 1
+        else:
+            tid = 0
 
-        # check user info
-        if self.position_key_x is None:
-            self.position_key_x = f"{self.position_key}_X"
-        if self.position_key_y is None:
-            self.position_key_y = f"{self.position_key}_Y"
-        if self.position_key_z is None:
-            self.position_key_z = f"{self.position_key}_Z"
+        # Master source does not need generator
+        if tid < 0:
+            return
 
-        if self.direction_key_x is None:
-            self.direction_key_x = f"{self.direction_key}_X"
-        if self.direction_key_y is None:
-            self.direction_key_y = f"{self.direction_key}_Y"
-        if self.direction_key_z is None:
-            self.direction_key_z = f"{self.direction_key}_Z"
+        # Create/initialize the generator for this thread
+        if tid not in self.particle_generators:
+            self.particle_generators[tid] = PhaseSpaceSourceGenerator(tid)
 
         # check if the source should generate particles until the second one
         # which is identified as primary by name, PDGCode and above a threshold
@@ -502,13 +499,29 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
             if not g4.IsMultithreadedApplication():
                 self.entry_start = 0
             else:
-                # create an entry_start array with the correct number of start entries
-                # all entries are spaced by the number of particles/thread
-                # FIXME: check this line. I corrected it because it seemed like a typo (NK)
                 n_threads = self.simulation.number_of_threads
-                # n_threads = self.simulation.phsp_source.number_of_threads
-                step = np.ceil(self.n / n_threads) + 1  # Specify the increment value
+                step = np.ceil(self.n / n_threads) + 1
                 self.entry_start = [i * step for i in range(n_threads)]
+
+        # check user info
+        if self.position_key_x is None:
+            self.position_key_x = f"{self.position_key}_X"
+        if self.position_key_y is None:
+            self.position_key_y = f"{self.position_key}_Y"
+        if self.position_key_z is None:
+            self.position_key_z = f"{self.position_key}_Z"
+
+        if self.direction_key_x is None:
+            self.direction_key_x = f"{self.direction_key}_X"
+        if self.direction_key_y is None:
+            self.direction_key_y = f"{self.direction_key}_Y"
+        if self.direction_key_z is None:
+            self.direction_key_z = f"{self.direction_key}_Z"
+
+        # Initialize base start/end times and check activity on the python side
+        self.initialize_start_end_time(run_timing_intervals)
+        self.check_ui_activity(self.user_info)
+        g4_source.InitializeUserInfo(self.user_info)
 
         # initialize the generator (read the phsp file)
         self.particle_generators[tid].initialize(self)
@@ -517,17 +530,19 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
         self.num_entries = self.particle_generators[tid].num_entries
 
         # set the function pointer to the cpp side
-        self.SetGeneratorFunction(self.particle_generators[tid].generate)
+        g4_source.SetGeneratorFunction(self.particle_generators[tid].generate)
 
     @property
     def cycle_count(self):
         if not g4.IsMultithreadedApplication():
-            tid = g4.G4GetThreadId()
-            return self.particle_generators[tid].cycle_count
+            if not self.particle_generators:
+                return 0
+            key = list(self.particle_generators.keys())[0]
+            return self.particle_generators[key].cycle_count
         else:
             s = " ".join(
                 str(self.particle_generators[tid].cycle_count)
-                for tid in self.particle_generators.keys()
+                for tid in sorted(self.particle_generators.keys())
             )
             return s
 

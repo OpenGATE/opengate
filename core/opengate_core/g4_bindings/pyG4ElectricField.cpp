@@ -10,8 +10,8 @@
 
 namespace py = pybind11;
 
-#include "G4ElectricField.hh"
-#include "G4ElectroMagneticField.hh"
+#include <G4ElectricField.hh>
+#include <G4ElectroMagneticField.hh>
 
 // Trampoline class to allow Python to override GetFieldValue for electric
 // fields. Inherits from G4ElectricField which already implements

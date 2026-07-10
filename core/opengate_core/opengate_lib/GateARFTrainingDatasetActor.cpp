@@ -6,13 +6,12 @@
    ------------------------------------ -------------- */
 
 #include "GateARFTrainingDatasetActor.h"
-#include "G4Gamma.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
 #include "GateActorManager.h"
 #include "GateHelpersDict.h"
 #include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateTDigiAttribute.h"
+#include <G4Gamma.hh>
+#include <G4RandomTools.hh>
 
 GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
     : GateDigitizerHitsCollectionActor(user_info) {

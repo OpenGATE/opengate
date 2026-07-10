@@ -9,13 +9,12 @@
 #include "GateHelpers.h"
 #include "GateMuDatabase.h"
 #include "GateMuTables.h"
-
-#include "G4Gamma.hh"
-#include "G4ProcessManager.hh"
-#include "G4ProcessVector.hh"
-#include "G4ProductionCutsTable.hh"
-#include "G4VAtomDeexcitation.hh"
-#include "G4VEmProcess.hh"
+#include <G4Gamma.hh>
+#include <G4ProcessManager.hh>
+#include <G4ProcessVector.hh>
+#include <G4ProductionCutsTable.hh>
+#include <G4VAtomDeexcitation.hh>
+#include <G4VEmProcess.hh>
 
 // GateMaterialMuHandler *GateMaterialMuHandler::fSingletonMaterialMuHandler =
 // nullptr;

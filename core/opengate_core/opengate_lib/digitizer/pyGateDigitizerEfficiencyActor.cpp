@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateDigitizerEfficiencyActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateDigitizerEfficiencyActor.h"
 
 void init_GateDigitizerEfficiencyActor(py::module &m) {
 

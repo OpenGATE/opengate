@@ -4,11 +4,9 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
 
 #include "GateSourceManager.h"
+#include <pybind11/pybind11.h>
 
 void init_GateSourceManager(py::module &m) {
 
@@ -22,6 +20,8 @@ void init_GateSourceManager(py::module &m) {
       .def("SetActors", &GateSourceManager::SetActors)
       .def("GetExpectedNumberOfEvents",
            &GateSourceManager::GetExpectedNumberOfEvents)
+      .def_static("GetPlatformMaxPrimariesPerRun",
+                  &GateSourceManager::GetPlatformMaxPrimariesPerRun)
       .def_readwrite("fUserEventInformationFlag",
                      &GateSourceManager::fUserEventInformationFlag)
       .def("StartMasterThread", &GateSourceManager::StartMasterThread,

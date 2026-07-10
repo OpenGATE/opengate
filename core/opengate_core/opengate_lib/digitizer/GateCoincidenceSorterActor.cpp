@@ -6,8 +6,10 @@
    -------------------------------------------------- */
 
 #include "GateCoincidenceSorterActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiCollectionManager.h"
+#include "GateTDigiAttribute.h"
 #include <algorithm>
 #include <limits>
 #include <memory>

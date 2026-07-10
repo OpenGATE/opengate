@@ -6,10 +6,9 @@
    ------------------------------------ -------------- */
 
 #include "GateARFActor.h"
-#include "G4Gamma.hh"
-#include "G4RunManager.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include <G4Gamma.hh>
+#include <G4RunManager.hh>
 
 GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("SteppingAction");

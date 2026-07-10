@@ -9,10 +9,10 @@
 
 namespace py = pybind11;
 
-#include "G4Exception.hh"
-#include "G4LogicalVolume.hh"
-#include "G4PVPlacement.hh"
-#include "G4Version.hh"
+#include <G4Exception.hh>
+#include <G4LogicalVolume.hh>
+#include <G4PVPlacement.hh>
+#include <G4Version.hh>
 
 void init_G4PVPlacement(py::module &m) {
   py::class_<G4PVPlacement, G4VPhysicalVolume>(m, "G4PVPlacement")

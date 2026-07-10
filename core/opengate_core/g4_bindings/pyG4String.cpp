@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4String.hh"
+#include <G4String.hh>
 
 void init_G4String(py::module &m) {
 

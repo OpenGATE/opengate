@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4Step.hh"
-#include "G4UserSteppingAction.hh"
+#include <G4Step.hh>
+#include <G4UserSteppingAction.hh>
 
 class PyG4UserSteppingAction : public G4UserSteppingAction {
 public:

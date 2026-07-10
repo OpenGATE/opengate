@@ -8,7 +8,6 @@
 #ifndef GateLastInteractionPositionInVolumeAttribute_h
 #define GateLastInteractionPositionInVolumeAttribute_h
 
-#include "GateTrackData.h"
 #include "GateVAuxiliaryAttribute.h"
 
 class GateLastInteractionPositionInVolumeAttribute

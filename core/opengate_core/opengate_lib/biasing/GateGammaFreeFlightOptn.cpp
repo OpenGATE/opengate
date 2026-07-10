@@ -6,8 +6,7 @@ Copyright (C): OpenGATE Collaboration
    -------------------------------------------------- */
 
 #include "GateGammaFreeFlightOptn.h"
-#include "../GateHelpers.h"
-#include "G4BiasingProcessInterface.hh"
+#include <G4BiasingProcessInterface.hh>
 
 GateGammaFreeFlightOptn::GateGammaFreeFlightOptn(const G4String &name)
     : G4VBiasingOperation(name) {

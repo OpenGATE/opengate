@@ -9,11 +9,11 @@
 
 namespace py = pybind11;
 
-#include "G4DecayTable.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
-#include "G4ProcessManager.hh"
-#include "G4Version.hh"
+#include <G4DecayTable.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4ParticleTable.hh>
+#include <G4ProcessManager.hh>
+#include <G4Version.hh>
 
 void init_G4ParticleDefinition(py::module &m) {
   py::class_<G4ParticleDefinition>(m, "G4ParticleDefinition")

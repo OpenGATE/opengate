@@ -11,13 +11,13 @@
 #include "GateHelpers.h"
 #include <csignal>
 
-void QuitSignalHandler(int) {
+inline void QuitSignalHandler(int) {
   std::cout << "--- Simulation interrupted by user (Control-C) ---"
             << std::endl;
   exit(0);
 }
 
-void InstallSignalHandler() {
+inline void InstallSignalHandler() {
   if (signal(SIGINT, QuitSignalHandler) == SIG_ERR) {
     Fatal("Error while installing QuitSignalHandler");
   }

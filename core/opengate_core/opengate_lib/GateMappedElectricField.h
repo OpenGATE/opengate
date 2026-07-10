@@ -8,8 +8,8 @@
 #ifndef GateMappedElectricField_h
 #define GateMappedElectricField_h
 
-#include "G4ElectroMagneticField.hh"
 #include "GateMappedFieldBase.h"
+#include <G4ElectroMagneticField.hh>
 #include <vector>
 
 class G4VSolid;

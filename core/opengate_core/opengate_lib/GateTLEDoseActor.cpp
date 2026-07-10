@@ -6,20 +6,16 @@
    ------------------------------------ -------------- */
 
 #include "GateTLEDoseActor.h"
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Exception.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateMaterialMuHandler.h"
 #include "GateTrackDataSlotRegistry.h"
 #include "GateUserTrackInformation.h"
-
+#include <G4Electron.hh>
+#include <G4EmCalculator.hh>
+#include <G4Exception.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4RunManager.hh>
+#include <G4Threading.hh>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <vector>

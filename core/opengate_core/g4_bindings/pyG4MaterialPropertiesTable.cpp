@@ -3,9 +3,9 @@
 
 namespace py = pybind11;
 
-#include "G4MaterialPropertiesIndex.hh"
-#include "G4MaterialPropertiesTable.hh"
-#include "G4MaterialPropertyVector.hh"
+#include <G4MaterialPropertiesIndex.hh>
+#include <G4MaterialPropertiesTable.hh>
+#include <G4MaterialPropertyVector.hh>
 
 void init_G4MaterialPropertiesTable(py::module &m) {
 

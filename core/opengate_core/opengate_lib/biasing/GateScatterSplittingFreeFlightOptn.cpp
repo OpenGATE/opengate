@@ -6,14 +6,11 @@ Copyright (C): OpenGATE Collaboration
    -------------------------------------------------- */
 
 #include "GateScatterSplittingFreeFlightOptn.h"
-#include "../GateHelpers.h"
-#include "G4BiasingProcessInterface.hh"
-#include "G4EmParameters.hh"
-#include "G4GammaGeneralProcess.hh"
-#include "G4ParticleChangeForGamma.hh"
-#include "G4RunManager.hh"
-#include "G4SystemOfUnits.hh"
 #include "GateScatterSplittingFreeFlightOptrActor.h"
+#include <G4BiasingProcessInterface.hh>
+#include <G4EmParameters.hh>
+#include <G4GammaGeneralProcess.hh>
+#include <G4ParticleChangeForGamma.hh>
 
 GateScatterSplittingFreeFlightOptn::GateScatterSplittingFreeFlightOptn(
     const G4String &name, double *nbTracks)

@@ -6,9 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateTrackCreatorProcessFilter.h"
-#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
-#include "G4VProcess.hh"
+#include <G4VProcess.hh>
 
 void GateTrackCreatorProcessFilter::InitializeUserInfo(py::dict &user_info) {
   GateVFilter::InitializeUserInfo(user_info);

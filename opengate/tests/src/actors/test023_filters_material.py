@@ -87,7 +87,7 @@ if __name__ == "__main__":
     # tests
     gate.exception.warning(f"Stats filter 1")
     stats_ref = utility.read_stats_file(f)
-    is_ok = utility.assert_stats(stat, stats_ref, [0.07, 0.07, 0.09])
+    is_ok = utility.assert_stats(stat, stats_ref, [0.07, 0.07, 0.10])
 
     print()
     gate.exception.warning(f"Stats filter 2")

@@ -8,8 +8,8 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateBOptnBremSplitting_h
 #define GateBOptnBremSplitting_h 1
 
-#include "G4ParticleChange.hh"
-#include "G4VBiasingOperation.hh"
+#include <G4ParticleChange.hh>
+#include <G4VBiasingOperation.hh>
 
 class GateBremsstrahlungSplittingOptn : public G4VBiasingOperation {
 public:

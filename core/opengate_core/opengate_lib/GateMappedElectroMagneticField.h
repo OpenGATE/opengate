@@ -8,9 +8,9 @@
 #ifndef GateMappedElectroMagneticField_h
 #define GateMappedElectroMagneticField_h
 
-#include "G4ElectroMagneticField.hh"
 #include "GateFieldBase.h"
 #include "GateGridInterpolator.h"
+#include <G4ElectroMagneticField.hh>
 #include <vector>
 
 class G4VSolid;

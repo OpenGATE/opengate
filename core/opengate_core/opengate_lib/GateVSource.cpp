@@ -6,11 +6,10 @@
    -------------------------------------------------- */
 
 #include "GateVSource.h"
-#include "G4PhysicalVolumeStore.hh"
-#include "G4RandomTools.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
+#include <G4RandomTools.hh>
 
 GateVSource::GateVSource() {
   fName = "";
@@ -27,10 +26,6 @@ GateVSource::GateVSource() {
 }
 
 GateVSource::~GateVSource() = default;
-
-GateVSource::threadLocalT &GateVSource::GetThreadLocalData() {
-  return fThreadLocalData.Get();
-}
 
 void GateVSource::InitializeUserInfo(py::dict &user_info) {
   // get info from the dict
@@ -67,15 +62,14 @@ double GateVSource::CalcNextTime(double current_simulation_time) {
 }
 
 void GateVSource::PrepareNextRun() {
-  auto &l = GetThreadLocalData();
-  l.fNumberOfGeneratedEvents = 0;
-  fMaxN = fVectorOfMaxN[l.fRunID];
-  l.fRunID++;
+  fNumberOfGeneratedEvents = 0;
+  fMaxN = fVectorOfMaxN[fRunID];
+  fRunID++;
   SetOrientationAccordingToAttachedVolume();
 }
 
 double GateVSource::PrepareNextTime(double current_simulation_time,
-                                    double numberOfGeneratedEvents) {
+                                    unsigned long numberOfGeneratedEvents) {
   UpdateActivity(current_simulation_time);
   if ((fMaxN <= 0) || ((fMaxN > numberOfGeneratedEvents) && (fMaxN > 0))) {
     if (current_simulation_time < fStartTime)
@@ -98,9 +92,8 @@ void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
 }
 
 void GateVSource::SetOrientationAccordingToAttachedVolume() {
-  auto &l = GetThreadLocalData();
-  l.fGlobalRotation = fLocalRotation;
-  l.fGlobalTranslation = fLocalTranslation;
+  fGlobalRotation = fLocalRotation;
+  fGlobalTranslation = fLocalTranslation;
 
   // No change in the translation rotation if mother is the world
   if (fAttachedToVolumeName == "world")
@@ -109,7 +102,7 @@ void GateVSource::SetOrientationAccordingToAttachedVolume() {
   // compute global translation rotation and keep it.
   // Will be used, for example, in GenericSource to change position
   ComputeTransformationFromVolumeToWorld(
-      fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
+      fAttachedToVolumeName, fGlobalTranslation, fGlobalRotation, false);
 }
 
 unsigned long

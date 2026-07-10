@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateBooleanFilter.h"
-#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 
 GateBooleanFilter::GateBooleanFilter() : GateVFilter() {}

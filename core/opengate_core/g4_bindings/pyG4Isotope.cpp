@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4Isotope.hh"
+#include <G4Isotope.hh>
 
 void init_G4Isotope(py::module &m) {
   py::class_<G4Isotope>(m, "G4Isotope")

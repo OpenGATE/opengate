@@ -8,8 +8,9 @@
 #ifndef GateAcceptanceAngleSingleVolume_h
 #define GateAcceptanceAngleSingleVolume_h
 
-#include "G4AffineTransform.hh"
-#include "GateHelpers.h"
+#include <G4AffineTransform.hh>
+#include <G4Navigator.hh>
+#include <G4VSolid.hh>
 
 class GateAcceptanceAngleSingleVolume {
 public:

@@ -5,13 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateSPSPosDistribution.h"
+#include <G4SPSPosDistribution.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "G4SPSPosDistribution.hh"
-#include "GateSPSPosDistribution.h"
 
 void init_GateSPSPosDistribution(py::module &m) {
 

@@ -3,7 +3,7 @@
 
 namespace py = pybind11;
 
-#include "G4PhysicsFreeVector.hh"
+#include <G4PhysicsFreeVector.hh>
 
 void init_G4PhysicsFreeVector(py::module &m) {
 

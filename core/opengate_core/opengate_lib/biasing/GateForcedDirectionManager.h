@@ -8,7 +8,8 @@
 #ifndef GateForcedDirectionManager_h
 #define GateForcedDirectionManager_h
 
-#include "../GateHelpers.h"
+#include <G4AffineTransform.hh>
+#include <G4VSolid.hh>
 
 class GateForcedDirectionManager {
 public:

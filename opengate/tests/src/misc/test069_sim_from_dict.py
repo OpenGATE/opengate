@@ -34,6 +34,12 @@ def main(a, b, c, dependency="test069_sim_as_dict.py"):
         sim.volume_manager.get_volume("waterbox_with_hole").creator_volumes[0].name
         == "Waterbox"
     )
+    # Assert that sources have been read back correctly
+    assert "mysource" in sim.source_manager.sources
+    assert sim.source_manager.get_source("mysource").particle == "proton"
+    assert (
+        sim.source_manager.get_source("mysource").energy.mono == 230 * gate.g4_units.MeV
+    )
 
     # If we make it until here without exception, the test is passed
     utility.test_ok(True)

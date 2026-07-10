@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateDigiAttributeLastProcessDefinedStepInVolumeActor.h"
 
 void init_GateDigiAttributeLastProcessDefinedStepInVolumeActor(py::module &m) {
 
