@@ -52,27 +52,27 @@ COINC_TIME_WINDOW_NS = 50.0
 # -----------------------------
 # Helper functions (from working local test)
 # -----------------------------
-def _open_root_tree(path: Path, *, retries: int = 5, delay_s: float = 0.5):
+def load_root_as_dataframe(
+    root_path: Path, *, out_dir: Path, retries: int = 5, delay_s: float = 0.5
+) -> pd.DataFrame:
+    root_path = root_path if root_path.exists() else out_dir / root_path.name
     for attempt in range(1, retries + 1):
-        if not path.exists():
+        if not root_path.exists():
             time.sleep(delay_s)
             continue
-        with uproot.open(str(path)) as f:
-            keys = list(f.keys())
-            if keys:
-                tname = keys[0].split(";")[0]
-                return f[tname]
+        try:
+            with uproot.open(root_path) as f:
+                keys = list(f.keys())
+                if keys:
+                    tname = keys[0].split(";")[0]
+                    return f[tname].arrays(library="pd")
+        except Exception:
+            pass
         time.sleep(delay_s)
     raise RuntimeError(
-        f"ROOT file has no trees after {retries} attempts: {path} "
-        f"(size={path.stat().st_size if path.exists() else 'missing'})"
+        f"ROOT file has no trees or could not be read after {retries} attempts: {root_path} "
+        f"(size={root_path.stat().st_size if root_path.exists() else 'missing'})"
     )
-
-
-def load_root_as_dataframe(root_path: Path, *, out_dir: Path) -> pd.DataFrame:
-    root_path = root_path if root_path.exists() else out_dir / root_path.name
-    tree = _open_root_tree(root_path)
-    return tree.arrays(library="pd")
 
 
 def load_digitizer_singles(
