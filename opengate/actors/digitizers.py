@@ -538,6 +538,93 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
 
 
+class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeActor):
+    """
+    Dititizer module for simulating dead time
+    (drops singles that occur briefly after a previous one, in the same volume).
+    """
+
+    user_info_defaults = {
+        "input_digi_collection": (
+            "Singles",
+            {
+                "doc": "Digi collection to be used as input.",
+            },
+        ),
+        "dead_time": (
+            0,
+            {
+                "doc": "Time interval after one digi during which following digis are dropped",
+            },
+        ),
+        "policy": (
+            "NonParalyzable",
+            {
+                "doc": "Policy controlling whether the dead time interval is extended when new digis occur. "
+                + "NonParalyzable: the dead time interval is fixed and does not change when new digis occur during that interval. "
+                + "Paralyzable: when a new digi arrives during the current dead time interval, the interval is extended to last until dead_time after the new digi. ",
+                "allowed_values": (
+                    "NonParalyzable",
+                    "Paralyzable",
+                ),
+            },
+        ),
+        "group_volume": (
+            None,
+            {
+                "doc": "Name of the volume in which the dead time effect takes place",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
+            },
+        ),
+        "sorting_time": (
+            1e3,
+            {
+                "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "Attributes to be omitted from the output.",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigitizerDeadTimeActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def initialize(self):
+        DigitizerBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def set_group_by_depth(self):
+        depth = -1
+        if self.user_info.group_volume is not None:
+            depth = self.simulation.volume_manager.get_volume(
+                self.user_info.group_volume
+            ).volume_depth_in_tree
+        self.SetGroupVolumeDepth(depth)
+
+    def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
+        self.set_group_by_depth()
+        g4.GateDigitizerDeadTimeActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        g4.GateDigitizerDeadTimeActor.EndSimulationAction(self)
+
+
 class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor):
     """
     Dititizer module for simulating pile-up
@@ -1581,6 +1668,7 @@ process_cls(DigitizerBase)
 process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
 process_cls(DigitizerBlurringActor)
+process_cls(DigitizerDeadTimeActor)
 process_cls(DigitizerPileupActor)
 process_cls(DigitizerSpatialBlurringActor)
 process_cls(DigitizerEfficiencyActor)

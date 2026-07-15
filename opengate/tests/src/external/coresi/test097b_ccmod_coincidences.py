@@ -1,29 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
+import subprocess
+
 from opengate.utility import g4_units
 import opengate.tests.utility as utility
 from opengate.actors.coincidences import *
 import opengate.contrib.compton_camera.macaco as macaco
 import opengate.contrib.compton_camera.coresi_helpers as ch
 
-if __name__ == "__main__":
 
+def main(dependency="test097a_ccmod_simulation.py"):
     # get tests paths
     paths = utility.get_default_test_paths(
         __file__, gate_folder="", output_folder="test097_coresi_ccmod"
     )
     output_folder = paths.output
-    data_folder = paths.data
 
     # units
-    mm = g4_units.mm
-    cm = g4_units.cm
     ns = g4_units.ns
 
-    # compute the coincidences
     scatt_file = output_folder / "ThrScatt.root"
     abs_file = output_folder / "ThrAbs.root"
+
+    # The test needs the output of the simulation step.
+    # When this script is launched via the opengate_tests suite, the
+    # dependency="test097a_ccmod_simulation.py" signature on main() is used by
+    # the runner to schedule test097a before test097b. The fallback below is
+    # only for standalone execution of this script.
+    if not scatt_file.exists() or not abs_file.exists():
+        subdir = os.path.dirname(__file__)
+        print(f"Missing input singles files, running {dependency} first.")
+        subprocess.call(["python", paths.current / subdir / dependency])
+
+    if not scatt_file.exists() or not abs_file.exists():
+        utility.test_ok(
+            False,
+            exceptions=[
+                f"Required input files were not created: {scatt_file.name}, {abs_file.name}"
+            ],
+        )
+
+    # compute the coincidences
     print(f"Computing coincidences from {scatt_file.name} and {abs_file.name}")
     merge_file = output_folder / "singles.root"
     coinc_file = output_folder / "coincidences.root"
@@ -65,3 +84,17 @@ if __name__ == "__main__":
     data_filename = output_folder / "coincidences.dat"
     ch.coresi_convert_root_data(cones_filename, "cones", data_filename)
     print(f"Data file: {data_filename.name}")
+
+    is_ok = (
+        merge_file.exists()
+        and coinc_file.exists()
+        and cones_filename.exists()
+        and data_filename.exists()
+        and len(coincidences) > 0
+        and len(data_cones) > 0
+    )
+    utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

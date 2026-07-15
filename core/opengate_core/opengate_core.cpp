@@ -469,6 +469,8 @@ void init_GateLastProcessDefinedStepInVolumeAttribute(py::module &);
 
 void init_GateProcessDefinedStepInVolumeAttribute(py::module &);
 
+void init_GateParticleAncestorAttribute(py::module &);
+
 void init_GateSimulationStatisticsActor(py::module &);
 
 void init_GatePhaseSpaceActor(py::module &);
@@ -492,6 +494,8 @@ void init_GateVDigitizerWithOutputActor(py::module &);
 void init_GateHitsCollectionActor(py::module &);
 
 void init_GateHitsAdderActor(py::module &);
+
+void init_GateDigitizerDeadTimeActor(py::module &);
 
 void init_GateDigitizerPileupActor(py::module &);
 
@@ -810,6 +814,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateLastInteractionPositionInVolumeAttribute(m);
   init_GateLastProcessDefinedStepInVolumeAttribute(m);
   init_GateProcessDefinedStepInVolumeAttribute(m);
+  init_GateParticleAncestorAttribute(m);
 
   init_GateDoseActor(m);
   init_GateDebugActor(m);
@@ -834,6 +839,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateHitsAdderActor(m);
+  init_GateDigitizerDeadTimeActor(m);
   init_GateDigitizerPileupActor(m);
   init_GateDigitizerReadoutActor(m);
   init_GateDigitizerBlurringActor(m);
