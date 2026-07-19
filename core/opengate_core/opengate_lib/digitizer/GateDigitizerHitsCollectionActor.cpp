@@ -74,11 +74,16 @@ void GateDigitizerHitsCollectionActor::BeginOfEventAction(
      calls SetBeginOfEventIndex.
      The list of hits is cleared every 'fClearEveryNEvents'.
      There is (almost) no time penalty whatever this value, it only impacts
-     memory (lower is better). Default fClearEveryNEvents value is 1. Some other
-     actors may need hits from several events, so we leave the option to keep
-     more events. It only fills to root if needed.
+     memory (lower is better). Default fClearEveryNEvents value is 1e5. Some
+     other actors may need hits from several events, so we leave the option to
+     keep more events. It only fills to root if needed.
    */
-  const bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+  auto &l = fThreadLocalData.Get();
+  const int count = event->GetEventID() / std::max(1, fClearEveryNEvents);
+  const bool must_clear = count != l.fCollectionClearCounter;
+  if (must_clear) {
+    l.fCollectionClearCounter = count;
+  }
   fHits->FillToRootIfNeeded(must_clear);
 }
 

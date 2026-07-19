@@ -92,7 +92,13 @@ void GateDigitizerEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GateDigitizerEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
-  const bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+  auto &threadData = fThreadLocalData.Get();
+  const int count = event->GetEventID() / std::max(1, fClearEveryNEvents);
+  const bool must_clear = count != threadData.fCollectionClearCounter;
+  if (must_clear) {
+    threadData.fCollectionClearCounter = count;
+  }
+
   for (auto *hc : fChannelDigiCollections) {
     hc->FillToRootIfNeeded(must_clear);
   }
