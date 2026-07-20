@@ -1124,6 +1124,7 @@ class PhysicsManager(GateObject):
         for region in self.regions.values():
             region.resolve_and_validate_config()
 
+
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
     if chemistry_list_name is None:
         return None

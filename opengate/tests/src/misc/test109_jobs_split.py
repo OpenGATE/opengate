@@ -36,9 +36,7 @@ def build_simulation(output_path, run_timing_intervals, source_n):
 
     box = sim.add_volume("Box", "dynamic_box")
     box.size = [10.0, 10.0, 10.0]
-    box.add_dynamic_parametrisation(
-        translation=[[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]]
-    )
+    box.add_dynamic_parametrisation(translation=[[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
 
     source = sim.add_source("VoxelSource", "vox_source")
     source.particle = "gamma"
@@ -46,9 +44,7 @@ def build_simulation(output_path, run_timing_intervals, source_n):
     source.image = str(source_image_1_path)
     source.direction.type = "iso"
     source.energy.mono = 1.0 * gate.g4_units.MeV
-    source.add_dynamic_parametrisation(
-        image=[source_image_1_path, source_image_2_path]
-    )
+    source.add_dynamic_parametrisation(image=[source_image_1_path, source_image_2_path])
 
     sim.run_timing_intervals = run_timing_intervals
     return sim, [source_image_1_path, source_image_2_path]
@@ -127,11 +123,12 @@ if __name__ == "__main__":
         == ["job0001", "job0002", "job0003", "job0004"],
         f"Job folders created: {[job['folder_name'] for job in manifest_1['jobs']]}",
     )
-    is_ok = (
-        [job["folder_name"] for job in manifest_1["jobs"]]
-        == ["job0001", "job0002", "job0003", "job0004"]
-        and is_ok
-    )
+    is_ok = [job["folder_name"] for job in manifest_1["jobs"]] == [
+        "job0001",
+        "job0002",
+        "job0003",
+        "job0004",
+    ] and is_ok
 
     first_job_folder = split_root_1 / "job0001"
     first_job_metadata = load_job_metadata(first_job_folder)
@@ -211,7 +208,8 @@ if __name__ == "__main__":
         f"split_time_total job0001 intervals: {job_1_total.run_timing_intervals}",
     )
     is_ok = (
-        np.allclose(job_1_total.run_timing_intervals, expected_job_1_intervals) and is_ok
+        np.allclose(job_1_total.run_timing_intervals, expected_job_1_intervals)
+        and is_ok
     )
 
     utility.print_test(
@@ -219,7 +217,8 @@ if __name__ == "__main__":
         f"split_time_total job0002 intervals: {job_2_total.run_timing_intervals}",
     )
     is_ok = (
-        np.allclose(job_2_total.run_timing_intervals, expected_job_2_intervals) and is_ok
+        np.allclose(job_2_total.run_timing_intervals, expected_job_2_intervals)
+        and is_ok
     )
 
     utility.print_test(
@@ -227,7 +226,8 @@ if __name__ == "__main__":
         f"split_time_total job0003 intervals: {job_3_total.run_timing_intervals}",
     )
     is_ok = (
-        np.allclose(job_3_total.run_timing_intervals, expected_job_3_intervals) and is_ok
+        np.allclose(job_3_total.run_timing_intervals, expected_job_3_intervals)
+        and is_ok
     )
 
     utility.print_test(
@@ -251,10 +251,7 @@ if __name__ == "__main__":
         get_dynamic_source_images(job_1_total) == source_images_2,
         "split_time_total first child keeps both dynamic source images",
     )
-    is_ok = (
-        get_dynamic_source_images(job_1_total) == source_images_2
-        and is_ok
-    )
+    is_ok = get_dynamic_source_images(job_1_total) == source_images_2 and is_ok
 
     # The split must not lose or create source events when child source.n arrays
     # are summed back over the original master runs.

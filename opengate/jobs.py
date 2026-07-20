@@ -9,7 +9,6 @@ from .exception import fatal
 from .runtiming import assert_run_timing
 from .serialization import dump_json
 
-
 JOBS_MANIFEST_FILENAME = "jobs_manifest.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
 JOB_SIMULATION_FILENAME = "simulation.json"
@@ -138,14 +137,17 @@ def _split_time_total(run_timing_intervals, number_of_jobs):
             job_run_timing_intervals.append(
                 [
                     current_time_in_original_run,
-                    current_time_in_original_run + active_time_to_take_from_original_run,
+                    current_time_in_original_run
+                    + active_time_to_take_from_original_run,
                 ]
             )
             job_original_run_indices.append(current_original_run_index)
             current_time_in_original_run += active_time_to_take_from_original_run
 
             if remaining_active_time_to_fill_job is not math.inf:
-                remaining_active_time_to_fill_job -= active_time_to_take_from_original_run
+                remaining_active_time_to_fill_job -= (
+                    active_time_to_take_from_original_run
+                )
                 if remaining_active_time_to_fill_job <= tolerance:
                     break
 
@@ -173,9 +175,7 @@ def _split_time_total(run_timing_intervals, number_of_jobs):
 
 def _generate_job_definitions(run_timing_intervals, number_of_jobs, policy):
     if number_of_jobs < 1:
-        fatal(
-            f"The number of jobs must be >= 1, but received {number_of_jobs}."
-        )
+        fatal(f"The number of jobs must be >= 1, but received {number_of_jobs}.")
     if policy == "split_time":
         return _split_time_per_interval(run_timing_intervals, number_of_jobs)
     if policy == "split_time_total":
@@ -186,7 +186,9 @@ def _generate_job_definitions(run_timing_intervals, number_of_jobs, policy):
     )
 
 
-def _compute_source_n_assignments(simulation, original_run_timing_intervals, job_definitions):
+def _compute_source_n_assignments(
+    simulation, original_run_timing_intervals, job_definitions
+):
     # Keep the child simulations self-consistent for later execution by rewriting
     # per-run source.n arrays to the local runs of each job.
     source_n_assignments = {
@@ -243,9 +245,7 @@ def _compute_source_n_assignments(simulation, original_run_timing_intervals, job
                 # Distribute integer counts proportionally to the fraction of the
                 # original run duration assigned to each child segment.
                 exact_counts = [
-                    count
-                    * segment["duration"]
-                    / total_split_duration_for_original_run
+                    count * segment["duration"] / total_split_duration_for_original_run
                     for segment in contributing_job_segments
                 ]
                 allocated_counts = [int(math.floor(value)) for value in exact_counts]
@@ -260,9 +260,9 @@ def _compute_source_n_assignments(simulation, original_run_timing_intervals, job
             for segment, allocated_count in zip(
                 contributing_job_segments, allocated_counts
             ):
-                assignments_by_job[segment["job_index"]][segment["local_run_index"]] = (
-                    allocated_count
-                )
+                assignments_by_job[segment["job_index"]][
+                    segment["local_run_index"]
+                ] = allocated_count
 
         for job_index, assigned_counts in assignments_by_job.items():
             source_n_assignments[job_index][source.name] = assigned_counts
@@ -315,7 +315,9 @@ def _configure_child_simulation(
     return job_folder, child_metadata
 
 
-def create_split_jobs(simulation, number_of_jobs, split_path, policy="split_time", **options):
+def create_split_jobs(
+    simulation, number_of_jobs, split_path, policy="split_time", **options
+):
     # Split authoritative, resolved configuration rather than the raw user
     # inputs so child jobs inherit explicit timing anchors and helper actors.
     simulation.resolve_and_validate_config()
