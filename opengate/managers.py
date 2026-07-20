@@ -34,6 +34,7 @@ from .physics import (
     translate_particle_name_gate_to_geant4,
 )
 from .processing import dispatch_to_subprocess
+from .runtiming import assert_run_timing
 from .serialization import dump_json, dumps_json, load_json, loads_json
 from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
@@ -198,6 +199,34 @@ actor_types = {
 }
 
 
+def _find_metaimage_payload_files(header_path):
+    payload_files = []
+    try:
+        with open(header_path, "r") as header_file:
+            for line in header_file:
+                if "=" not in line:
+                    continue
+                key, value = [part.strip() for part in line.split("=", 1)]
+                if key != "ElementDataFile":
+                    continue
+                if value.upper() == "LOCAL":
+                    return []
+                payload_path = Path(value)
+                if not payload_path.is_absolute():
+                    payload_path = header_path.parent / payload_path
+                if payload_path.is_file():
+                    payload_files.append(payload_path.resolve())
+                else:
+                    warning(
+                        f"MetaImage header '{header_path}' references payload file "
+                        f"'{payload_path}', but that file does not exist."
+                    )
+                break
+    except OSError as error:
+        warning(f"Unable to inspect MetaImage header '{header_path}': {error}")
+    return payload_files
+
+
 class FilterManager:
     """
     Manage all the Filters in the simulation
@@ -266,6 +295,10 @@ class FilterManager:
 
     def create_filter_deprecated(self, filter_type, name):
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
+
+    def resolve_and_validate_config(self):
+        for filter_obj in self.filters.values():
+            filter_obj.resolve_and_validate_config()
 
 
 class SourceManager(GateObject):
@@ -383,6 +416,42 @@ class SourceManager(GateObject):
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
 
+    def resolve_and_validate_config(self):
+        for source in self.sources.values():
+            # Resolve each source against the master simulation timing now so
+            # split jobs inherit explicit global timing anchors and normalized
+            # source configuration.
+            timing_resolution = source.resolve_and_validate_config(
+                self.simulation.run_timing_intervals
+            )
+            if timing_resolution["start_time_was_resolved"]:
+                logger.info(
+                    f"Config resolution set source '{source.name}' start_time to "
+                    f"{timing_resolution['resolved_start_time']}."
+                )
+            if timing_resolution["end_time_was_resolved"]:
+                logger.info(
+                    f"Config resolution set source '{source.name}' end_time to "
+                    f"{timing_resolution['resolved_end_time']}."
+                )
+
+        dynamic_sources = self.dynamic_sources
+        for source in dynamic_sources:
+            source.check_if_dynamic_params_match_run_timing_intervals()
+
+        if len(dynamic_sources) > 0:
+            dynamic_source_actor = self.simulation.actor_manager.actors.get(
+                "dynamic_source_actor"
+            )
+            if dynamic_source_actor is None:
+                dynamic_source_actor = self.simulation.add_actor(
+                    "DynamicSourceActor", "dynamic_source_actor"
+                )
+            dynamic_source_actor.priority = 1
+            dynamic_source_actor.changers = []
+            for source in dynamic_sources:
+                dynamic_source_actor.changers.extend(source.create_changers())
+
     def to_dictionary(self):
         d = super().to_dictionary()
         d["sources"] = dict([(k, v.to_dictionary()) for k, v in self.sources.items()])
@@ -436,6 +505,10 @@ class ActorManager(GateObject):
 
     def reset(self):
         self.__init__(simulation=self.simulation)
+
+    def resolve_and_validate_config(self):
+        for actor in self.sorted_actors:
+            actor.resolve_and_validate_config()
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -1009,7 +1082,7 @@ class PhysicsManager(GateObject):
         #         )
         #     self.user_info.user_limits_particles[pn] = True
 
-    def freeze_config(self):
+    def resolve_and_validate_config(self):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
@@ -1045,6 +1118,11 @@ class PhysicsManager(GateObject):
         ) in track_structure_em_requests.items():
             self.set_track_structure_em_physics(volume_name, track_structure_em_physics)
 
+        # Resolve all region-to-volume associations against the simulation-side
+        # volume registry during config handling so invalid references fail
+        # early, before any Geant4 initialization begins.
+        for region in self.regions.values():
+            region.resolve_and_validate_config()
 
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
     if chemistry_list_name is None:
@@ -1432,6 +1510,29 @@ class VolumeManager(GateObject):
     @property
     def dynamic_volumes(self):
         return [vol for vol in self.volumes.values() if vol.is_dynamic]
+
+    def resolve_and_validate_config(self):
+        # Resolve the volume tree explicitly during the configuration phase so
+        # invalid mother references and tree loops fail early instead of only
+        # when some later property access triggers a lazy update.
+        self.update_volume_tree()
+
+        dynamic_volumes = self.dynamic_volumes
+        for volume in dynamic_volumes:
+            volume.check_if_dynamic_params_match_run_timing_intervals()
+
+        if len(dynamic_volumes) > 0:
+            dynamic_geometry_actor = self.simulation.actor_manager.actors.get(
+                "dynamic_geometry_actor"
+            )
+            if dynamic_geometry_actor is None:
+                dynamic_geometry_actor = self.simulation.add_actor(
+                    "DynamicGeometryActor", "dynamic_geometry_actor"
+                )
+            dynamic_geometry_actor.priority = 0
+            dynamic_geometry_actor.changers = []
+            for volume in dynamic_volumes:
+                dynamic_geometry_actor.changers.extend(volume.create_changers())
 
     def get_volume(self, volume_name):
         try:
@@ -2013,6 +2114,17 @@ class Simulation(GateObject):
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 
+    def jobs_split(self, number_of_jobs, split_path, policy="split_time", **options):
+        from .jobs import create_split_jobs
+
+        return create_split_jobs(
+            self,
+            number_of_jobs=number_of_jobs,
+            split_path=split_path,
+            policy=policy,
+            **options,
+        )
+
     def copy_input_files(self, directory=None, dct=None):
         directory = self.get_output_path(directory, is_file_or_directory="d")
         if dct is None:
@@ -2028,14 +2140,29 @@ class Simulation(GateObject):
                     if p.is_file() is True
                 ]
             )
-        # post process the list
-        raw_files = []
-        for f in input_files:
-            # check for image header files (mhd) and add the corresponding raw files to the list
-            if f.suffix == ".mhd":
-                raw_files.append(f.parent.absolute() / Path(f.stem + ".raw"))
-        input_files.extend(raw_files)
-        for f in input_files:
+
+        # Workaround: material database files are not yet represented as proper
+        # GateObjects with declarative input-file metadata, so they must be added
+        # explicitly here. In the future, material database handling should be
+        # refactored into a GateObject/manager structure rather than the current
+        # file-based architecture.
+        if self.volume_manager.material_database is not None:
+            input_files.extend(
+                Path(filename)
+                for filename in self.volume_manager.material_database.filenames
+                if Path(filename).is_file()
+            )
+
+        # Post-process MetaImage headers so the actual payload file is copied, too.
+        extra_input_files = []
+        for input_file in input_files:
+            if input_file.suffix.lower() == ".mhd":
+                extra_input_files.extend(_find_metaimage_payload_files(input_file))
+        input_files.extend(extra_input_files)
+
+        # Copy each resolved file only once even if it is referenced several times.
+        unique_input_files = list(dict.fromkeys(Path(f).resolve() for f in input_files))
+        for f in unique_input_files:
             shutil.copy2(f, directory)
 
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
@@ -2203,11 +2330,17 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
-    def freeze_config(self):
+    def resolve_and_validate_config(self):
         # Keep this phase limited to Python-side configuration resolution and
         # negotiation before runtime initialization. It may tie managers and
         # actors together, but it must not create any Geant4 objects yet.
-        self.physics_manager.freeze_config()
+        assert_run_timing(self.run_timing_intervals)
+        self.physics_manager.resolve_and_validate_config()
+        self.initialize_source_before_g4_engine()
+        self.volume_manager.resolve_and_validate_config()
+        self.source_manager.resolve_and_validate_config()
+        self.actor_manager.resolve_and_validate_config()
+        self.filter_manager.resolve_and_validate_config()
 
     def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
@@ -2217,7 +2350,7 @@ class Simulation(GateObject):
         Returns:
             obj:SimulationOutput : The output of the simulation run.
         """
-        self.freeze_config()
+        self.resolve_and_validate_config()
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
@@ -2335,14 +2468,3 @@ process_cls(ActorManager)
 process_cls(PostProcessingManager)
 process_cls(Simulation)
 process_cls(SourceManager)
-    def jobs_split(self, number_of_jobs, split_path, policy="split_time", **options):
-        from .jobs import create_split_jobs
-
-        return create_split_jobs(
-            self,
-            number_of_jobs=number_of_jobs,
-            split_path=split_path,
-            policy=policy,
-            **options,
-        )
-

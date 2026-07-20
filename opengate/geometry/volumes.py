@@ -997,6 +997,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     # @requires_fatal("itk_image")
     @property
     def native_translation(self):
+        # FIXME: some actors may need image-derived geometry information during
+        # resolve_and_validate_config(). Revisit whether ImageVolume should offer
+        # an explicit config-resolution step for input-image metadata, rather
+        # than relying only on these lazy runtime-facing properties.
         if self.itk_image is not None:
             origin = np.array(self.itk_image.GetOrigin())
             spacing = np.array(self.itk_image.GetSpacing())

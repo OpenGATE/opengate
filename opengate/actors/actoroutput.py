@@ -382,8 +382,17 @@ class ActorOutputBase(GateObject):
             )
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
         pass
+
+    def initialize_cpp_parameters(self):
+        pass
+
+    def initialize(self):
+        # Actor outputs should have been resolved already during the simulation
+        # config phase. At runtime, initialize() is limited to registering the
+        # already-resolved output metadata on the actor's C++ side.
+        self.initialize_cpp_parameters()
 
     def _generate_auto_output_filename(self, **kwargs):
         return f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
@@ -945,7 +954,7 @@ class ActorOutputRoot(ActorOutputBase):
             )
         return super().get_output_path(which="merged")
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
         # Warning, for the moment, MT and root output does not work on windows machine
         if sys.platform.startswith("nt"):
             if g4.IsMultithreadedApplication():
@@ -957,8 +966,6 @@ class ActorOutputRoot(ActorOutputBase):
         # for ROOT output, not output_filename means no output to disk (legacy Gate 9 behavior)
         if self.output_filename == "" or self.output_filename is None:
             self.write_to_disk = False
-        self.initialize_cpp_parameters()
-        super().initialize()
 
     def initialize_cpp_parameters(self):
         self.belongs_to_actor.AddActorOutputInfo(self.name)
