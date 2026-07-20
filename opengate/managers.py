@@ -2335,3 +2335,14 @@ process_cls(ActorManager)
 process_cls(PostProcessingManager)
 process_cls(Simulation)
 process_cls(SourceManager)
+    def jobs_split(self, number_of_jobs, split_path, policy="split_time", **options):
+        from .jobs import create_split_jobs
+
+        return create_split_jobs(
+            self,
+            number_of_jobs=number_of_jobs,
+            split_path=split_path,
+            policy=policy,
+            **options,
+        )
+

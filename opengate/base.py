@@ -827,6 +827,25 @@ class DynamicGateObject(GateObject):
         # this base class implementation is here to keep inheritance intact.
         return []
 
+    def reassign_dynamic_params_for_run_indices(self, original_run_indices):
+        if self.is_dynamic is False:
+            return
+
+        reassigned_dynamic_params = {}
+        for name, params in self.dynamic_params.items():
+            reassigned_dynamic_params[name] = {}
+            for key, value in params.items():
+                if key == "extra_params":
+                    reassigned_dynamic_params[name][key] = copy.deepcopy(value)
+                elif key in self.dynamic_user_info:
+                    reassigned_dynamic_params[name][key] = [
+                        copy.deepcopy(value[i]) for i in original_run_indices
+                    ]
+                else:
+                    reassigned_dynamic_params[name][key] = copy.deepcopy(value)
+
+        self.user_info["dynamic_params"] = reassigned_dynamic_params
+
 
 class GateUserInputSwitchDict(Box):
     """
