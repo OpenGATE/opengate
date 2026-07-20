@@ -276,7 +276,13 @@ class GANSource(GenericSource):
     user_info_defaults = {
         "pth_filename": (
             None,
-            {"doc": "Filename of the Generator (.pth), train with gaga_train"},
+            {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "Filename of the Generator (.pth), train with gaga_train",
+                "is_input_file": True,
+            },
         ),
         "backward_distance": (
             None,
@@ -355,6 +361,9 @@ class GANSource(GenericSource):
         "cond_image": (
             None,
             {
+                # FIXME: this conditional image input looks file-backed but is
+                # still modeled as a plain string-like parameter and is not yet
+                # marked as an input file for archiving.
                 "doc": "Filename of the activity distribution (provided as image) to use for the conditional GAN"
             },
         ),

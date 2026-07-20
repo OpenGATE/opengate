@@ -204,12 +204,18 @@ class VolumeImageChanger(GeometryChanger):
         "images": (
             None,
             {
+                # FIXME: these image filenames are file-backed inputs but are
+                # still modeled as a plain list of string-like values rather
+                # than a Path-aware serialized representation.
                 "doc": "List of image names corresponding to the run timing intervals. ",
             },
         ),
         "label_image": (
             None,
             {
+                # FIXME: the keys of this dictionary correspond to image
+                # filenames, but the structure is not yet Path-aware. Revisit
+                # this when input-file serialization is cleaned up.
                 "doc": "Dictionary of label images where the keys correspond to the image names "
                 "stored in the user info 'images'.",
             },
@@ -334,6 +340,9 @@ class SourceActivityImageChanger(SourceChanger):
         "activity_images": (
             None,
             {
+                # FIXME: these image filenames are file-backed inputs but are
+                # still modeled as a plain list of string-like values rather
+                # than a Path-aware serialized representation.
                 "doc": "List of activity map file names corresponding to the run timing intervals. ",
             },
         ),
