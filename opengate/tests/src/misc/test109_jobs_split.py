@@ -12,6 +12,7 @@ from opengate.tests import utility
 def create_reference_image(output_path):
     # The split test only needs image filenames that survive JSON round-tripping.
     # A tiny MetaImage placeholder is enough because we never execute the simulation.
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     raw_path = output_path.with_suffix(".raw")
     with open(raw_path, "wb") as raw_file:
         raw_file.write(np.zeros((5, 5, 5), dtype=np.float32).tobytes())
