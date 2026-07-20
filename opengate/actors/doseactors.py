@@ -938,6 +938,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         "lookup_table_path": (
             "",
             {
+                # FIXME: this appears to be a file-backed input but is still
+                # modeled as a plain string-like parameter rather than a Path.
                 "doc": "path of the z*_1d or alpha_z table.",
                 "setter_hook": _setter_hook_lookup_table_path,
             },

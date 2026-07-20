@@ -289,7 +289,13 @@ class PhaseSpaceSource(SourceBase):
     user_info_defaults = {
         "phsp_file": (
             None,
-            {"doc": "Filename of the phase-space file (root). This is required"},
+            {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "Filename of the phase-space file (root). This is required",
+                "is_input_file": True,
+            },
         ),
         "entry_start": (
             None,
