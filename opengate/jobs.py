@@ -303,14 +303,12 @@ def _configure_child_simulation(
     child_metadata = {
         "job_id": job_definition["job_id"],
         "job_index": job_definition["job_index"],
-        "folder_name": job_definition["folder_name"],
         "parent_simulation_id": parent_simulation_id,
         "run_timing_intervals": _copy_run_timing_intervals(
             job_definition["run_timing_intervals"]
         ),
         "original_run_indices": list(job_definition["original_run_indices"]),
         "simulation_filename": JOB_SIMULATION_FILENAME,
-        "metadata_filename": JOB_METADATA_FILENAME,
     }
     return job_folder, child_metadata
 
@@ -355,7 +353,6 @@ def create_split_jobs(
         "policy": policy,
         "options": options,
         "number_of_jobs": number_of_jobs,
-        "split_root_folder": str(split_root_folder),
         "original_run_timing_intervals": original_run_timing_intervals,
         "master_simulation_filename": MASTER_SIMULATION_FILENAME,
         "jobs": [],
@@ -382,7 +379,13 @@ def create_split_jobs(
         )
         with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
             dump_json(child_metadata, output_file)
-        jobs_manifest["jobs"].append(child_metadata)
+        jobs_manifest["jobs"].append(
+            {
+                "job_id": child_metadata["job_id"],
+                "folder_name": job_definition["folder_name"],
+                "metadata_filename": JOB_METADATA_FILENAME,
+            }
+        )
 
     with open(split_root_folder / JOBS_MANIFEST_FILENAME, "w") as output_file:
         dump_json(jobs_manifest, output_file)
@@ -502,9 +505,7 @@ def get_jobs_status(manifest_or_dir_path):
     with open(manifest_path, "r") as f:
         manifest = load_json(f)
 
-    split_root_folder = Path(manifest.get("split_root_folder", manifest_path.parent))
-    if not split_root_folder.exists():
-        split_root_folder = manifest_path.parent
+    split_root_folder = manifest_path.parent
 
     master_sim_filename = manifest.get(
         "master_simulation_filename", MASTER_SIMULATION_FILENAME
@@ -545,15 +546,17 @@ def get_jobs_status(manifest_or_dir_path):
         folder_name = job_item.get("folder_name", "")
         job_folder = split_root_folder / folder_name
         metadata_filename = job_item.get("metadata_filename", JOB_METADATA_FILENAME)
-        simulation_filename = job_item.get(
-            "simulation_filename", JOB_SIMULATION_FILENAME
-        )
-
         metadata_file = job_folder / metadata_filename
-        simulation_file = job_folder / simulation_filename
 
         folder_exists = job_folder.exists()
         metadata_exists = metadata_file.exists()
+        metadata = {}
+        if metadata_exists:
+            with open(metadata_file, "r") as input_file:
+                metadata = load_json(input_file)
+
+        simulation_filename = metadata.get("simulation_filename", JOB_SIMULATION_FILENAME)
+        simulation_file = job_folder / simulation_filename
         sim_exists = simulation_file.exists()
 
         folder_size = 0
@@ -613,7 +616,7 @@ def get_jobs_status(manifest_or_dir_path):
 
         status_data["jobs"].append(
             {
-                "job_index": job_item.get("job_index"),
+                "job_index": metadata.get("job_index"),
                 "job_id": job_item.get("job_id"),
                 "folder_name": folder_name,
                 "folder_exists": folder_exists,
@@ -621,11 +624,17 @@ def get_jobs_status(manifest_or_dir_path):
                 "simulation_exists": sim_exists,
                 "missing_input_files": missing_input_files,
                 "status": job_status,
+<<<<<<< HEAD
                 "run_timing_intervals": job_item.get("run_timing_intervals", []),
                 "original_run_indices": job_item.get("original_run_indices", []),
                 "folder_size_bytes": folder_size,
                 "folder_size_str": format_bytes(folder_size),
                 "input_mode": "linked" if has_symlink else "copied",
+=======
+                "run_timing_intervals": metadata.get("run_timing_intervals", []),
+                "original_run_indices": metadata.get("original_run_indices", []),
+                "output_files": sorted(output_files),
+>>>>>>> 6659857ed (Simplify split job manifest metadata)
             }
         )
 
