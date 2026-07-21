@@ -421,19 +421,7 @@ class SourceManager(GateObject):
             # Resolve each source against the master simulation timing now so
             # split jobs inherit explicit global timing anchors and normalized
             # source configuration.
-            timing_resolution = source.resolve_and_validate_config(
-                self.simulation.run_timing_intervals
-            )
-            if timing_resolution["start_time_was_resolved"]:
-                logger.info(
-                    f"Config resolution set source '{source.name}' start_time to "
-                    f"{timing_resolution['resolved_start_time']}."
-                )
-            if timing_resolution["end_time_was_resolved"]:
-                logger.info(
-                    f"Config resolution set source '{source.name}' end_time to "
-                    f"{timing_resolution['resolved_end_time']}."
-                )
+            source.resolve_and_validate_config(self.simulation.run_timing_intervals)
 
         dynamic_sources = self.dynamic_sources
         for source in dynamic_sources:

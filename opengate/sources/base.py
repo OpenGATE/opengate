@@ -115,17 +115,7 @@ class SourceBase(DynamicGateObject):
     def resolve_and_validate_timing(self, run_timing_intervals):
         # Resolve implicit source time bounds against the master simulation
         # timeline before any child jobs or runtime engines reinterpret them.
-        original_start_time = self.start_time
-        original_end_time = self.end_time
         self.initialize_start_end_time(run_timing_intervals)
-        return {
-            "start_time_was_resolved": original_start_time is None
-            and self.start_time is not None,
-            "end_time_was_resolved": original_end_time is None
-            and self.end_time is not None,
-            "resolved_start_time": self.start_time,
-            "resolved_end_time": self.end_time,
-        }
 
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
@@ -186,9 +176,8 @@ class SourceBase(DynamicGateObject):
         return True
 
     def resolve_and_validate_config(self, run_timing_intervals):
-        timing_resolution = self.resolve_and_validate_timing(run_timing_intervals)
+        self.resolve_and_validate_timing(run_timing_intervals)
         self.check_ui_activity(self.user_info)
-        return timing_resolution
 
     def check_ui_activity(self, ui):
         # FIXME: This should rather be a function than a method
