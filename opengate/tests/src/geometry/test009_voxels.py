@@ -36,6 +36,7 @@ from opengate.geometry.materials import (
 )
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
+from opengate.jobs import get_jobs_status
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test009_voxels", "test009")
@@ -133,7 +134,27 @@ if __name__ == "__main__":
     sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # create a split simulation (for debug only)
-    sim.jobs_split(3, paths.output / "split_campaigns", policy="split_time")
+    split_root_folder = sim.jobs_split(
+        3, paths.output / "split_campaigns", policy="split_time"
+    )
+
+    # Check initial jobs status
+    status_initial = get_jobs_status(split_root_folder)
+    is_ok = status_initial["summary_counts"]["ready"] == 3
+
+    # Remove files in split folders to simulate errors
+    (split_root_folder / "job0001" / "patient-4mm.raw").unlink(missing_ok=True)
+    (split_root_folder / "job0002" / "job_metadata.json").unlink(missing_ok=True)
+
+    # Re-check status and assert errors are detected
+    status_err = get_jobs_status(split_root_folder)
+    is_ok = status_err["jobs"][0]["status"] == "missing_input_file"
+    is_ok = is_ok and status_err["jobs"][1]["status"] == "missing_metadata"
+    is_ok = is_ok and status_err["jobs"][2]["status"] == "ready"
+    is_ok = is_ok and status_err["summary_counts"]["ready"] == 1
+    is_ok = is_ok and status_err["summary_counts"]["missing_input_file"] == 1
+    is_ok = is_ok and status_err["summary_counts"]["missing_metadata"] == 1
+    utility.print_test(is_ok, "test009_jobs_status")
 
     # start simulation
     sim.run(start_new_process=True)
@@ -144,7 +165,7 @@ if __name__ == "__main__":
 
     # tests
     stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
-    is_ok = utility.assert_stats(stats_actor, stats_ref, 0.15)
+    is_ok = utility.assert_stats(stats_actor, stats_ref, 0.15) and is_ok
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
         dose_actor.edep.get_output_path(),

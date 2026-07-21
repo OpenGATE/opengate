@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import click
+import colored
 import opengate_core as g4
+from opengate.exception import color_error
 from opengate.jobs import get_jobs_status
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -29,9 +31,12 @@ def print_jobs_status_summary(status_data, verbose=False):
     print(f" Split policy:       {status_data['policy']}")
     print(f" Number of jobs:     {status_data['number_of_jobs']}")
     print(f" Time intervals:     {format_timing_intervals(intervals)}")
-    print(
-        f" Master simulation:  {'Found' if status_data['master_simulation_exists'] else 'Missing'}"
+    master_str = (
+        "Found"
+        if status_data["master_simulation_exists"]
+        else colored.stylize("Missing", color_error)
     )
+    print(f" Master simulation:  {master_str}")
     master_inputs = status_data.get("master_input_files", [])
     if master_inputs:
         print(" Master input files:")
@@ -43,18 +48,34 @@ def print_jobs_status_summary(status_data, verbose=False):
         print(" Master input files: None")
     print(" Job Status Summary:")
     counts = status_data["summary_counts"]
+    missing_total = (
+        counts["missing_folder"]
+        + counts["missing_metadata"]
+        + counts.get("missing_input_file", 0)
+    )
+    missing_str = (
+        colored.stylize(str(missing_total), color_error)
+        if missing_total > 0
+        else str(missing_total)
+    )
     print(
-        f"  Total: {counts['total']}  |  Ready: {counts['ready']}  |  Missing: {counts['missing_folder'] + counts['missing_metadata']}"
+        f"  Total: {counts['total']}  |  Ready: {counts['ready']}  |  Missing: {missing_str}"
     )
 
     for job in status_data["jobs"]:
         job_idx = job["job_index"]
         folder = job["folder_name"]
         st = job["status"].upper()
+        st_str = colored.stylize(st, color_error) if st != "READY" else st
         job_intervals = job.get("run_timing_intervals", [])
         print(
-            f"  [Job {job_idx:04d}] {folder}: status = {st}, timing = {format_timing_intervals(job_intervals)}"
+            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, timing = {format_timing_intervals(job_intervals)}"
         )
+        missing_files = job.get("missing_input_files", [])
+        if missing_files:
+            for missing in missing_files:
+                err_msg = f"     Missing input file: {missing}"
+                print(colored.stylize(err_msg, color_error))
         if verbose:
             print(
                 f"     Run timing intervals: {format_timing_intervals(job_intervals)}"
