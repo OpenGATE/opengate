@@ -445,7 +445,7 @@ class GenericSource(SourceBase):
 
     def resolve_and_validate_config(self, run_timing_intervals):
         self.resolve_tac_activity()
-        timing_resolution = super().resolve_and_validate_config(run_timing_intervals)
+        super().resolve_and_validate_config(run_timing_intervals)
 
         # Check the sub-parameters
         self._pos_validator.validate(self, "position")
@@ -475,7 +475,6 @@ class GenericSource(SourceBase):
                 self.user_particle_life_time = 0
 
         self.check_confine(self.user_info)
-        return timing_resolution
 
     def initialize_g4_source(self, g4_source, run_timing_intervals):
         # special case for beta plus energy spectra
