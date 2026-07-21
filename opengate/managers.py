@@ -2125,7 +2125,7 @@ class Simulation(GateObject):
         with open(directory / filename, "w") as f:
             dump_json(d, f)
 
-    def archive_input_files(self, directory=None, dct=None):
+    def archive_input_files(self, directory=None, dct=None, link_files=False):
         directory = self.get_output_path(directory, is_file_or_directory="d")
         if dct is None:
             dct = self.to_dictionary()
@@ -2160,17 +2160,31 @@ class Simulation(GateObject):
                 extra_input_files.extend(_find_metaimage_payload_files(input_file))
         input_files.extend(extra_input_files)
 
-        # Copy each resolved file only once even if it is referenced several times.
+        # Copy or link each resolved file only once even if it is referenced several times.
         unique_input_files = list(dict.fromkeys(Path(f).resolve() for f in input_files))
         for f in unique_input_files:
-            shutil.copy2(f, directory)
+            dest = directory / f.name
+            if link_files:
+                if dest.exists() or dest.is_symlink():
+                    dest.unlink()
+                rel_target = os.path.relpath(f, directory)
+                try:
+                    dest.symlink_to(rel_target)
+                except OSError as e:
+                    fatal(
+                        f"Failed to create symlink from '{rel_target}' to '{dest}': {e}. "
+                        f"On Windows, creating symbolic links requires Developer Mode or Administrator privileges. "
+                        f"Use link_files=False to copy files instead."
+                    )
+            else:
+                shutil.copy2(f, directory)
 
-    def copy_input_files(self, directory=None, dct=None):
+    def copy_input_files(self, directory=None, dct=None, link_files=False):
         warning(
             "Simulation.copy_input_files() is deprecated. "
             "Use Simulation.archive_input_files(...) instead."
         )
-        self.archive_input_files(directory=directory, dct=dct)
+        self.archive_input_files(directory=directory, dct=dct, link_files=link_files)
 
     def from_json_string(self, json_string):
         self.from_dictionary(loads_json(json_string))
@@ -2179,7 +2193,14 @@ class Simulation(GateObject):
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 
-    def jobs_split(self, number_of_jobs, split_path, policy="split_time", **options):
+    def jobs_split(
+        self,
+        number_of_jobs,
+        split_path,
+        policy="split_time",
+        link_files=False,
+        **options,
+    ):
         from .jobs import create_split_jobs
 
         return create_split_jobs(
@@ -2187,6 +2208,7 @@ class Simulation(GateObject):
             number_of_jobs=number_of_jobs,
             split_path=split_path,
             policy=policy,
+            link_files=link_files,
             **options,
         )
 

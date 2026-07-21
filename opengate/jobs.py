@@ -316,7 +316,12 @@ def _configure_child_simulation(
 
 
 def create_split_jobs(
-    simulation, number_of_jobs, split_path, policy="split_time", **options
+    simulation,
+    number_of_jobs,
+    split_path,
+    policy="split_time",
+    link_files=False,
+    **options,
 ):
     # Split authoritative, resolved configuration rather than the raw user
     # inputs so child jobs inherit explicit timing anchors and helper actors.
@@ -342,7 +347,7 @@ def create_split_jobs(
         directory=split_root_folder,
         filename=Path(MASTER_SIMULATION_FILENAME),
     )
-    simulation.archive_input_files(directory=split_root_folder)
+    simulation.archive_input_files(directory=split_root_folder, link_files=link_files)
 
     jobs_manifest = {
         "simulation_id": simulation_id,
@@ -372,7 +377,9 @@ def create_split_jobs(
             directory=job_folder,
             filename=Path(JOB_SIMULATION_FILENAME),
         )
-        child_simulation.archive_input_files(directory=job_folder)
+        child_simulation.archive_input_files(
+            directory=job_folder, link_files=link_files
+        )
         with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
             dump_json(child_metadata, output_file)
         jobs_manifest["jobs"].append(child_metadata)
@@ -467,6 +474,21 @@ def get_simulation_input_files_info(simulation):
     return input_files_info
 
 
+def format_bytes(size_bytes):
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    elif size_bytes < 1024 * 1024 * 1024:
+        val = size_bytes / (1024 * 1024)
+        if val == int(val):
+            return f"{int(val)} MB"
+        return f"{val:.1f} MB"
+    else:
+        val = size_bytes / (1024 * 1024 * 1024)
+        return f"{val:.1f} GB"
+
+
 def get_jobs_status(manifest_or_dir_path):
     path = Path(manifest_or_dir_path).resolve()
     if path.is_dir():
@@ -534,6 +556,18 @@ def get_jobs_status(manifest_or_dir_path):
         metadata_exists = metadata_file.exists()
         sim_exists = simulation_file.exists()
 
+        folder_size = 0
+        has_symlink = False
+        if folder_exists:
+            for item in job_folder.rglob("*"):
+                if item.is_symlink():
+                    has_symlink = True
+                if item.is_file() or item.is_symlink():
+                    try:
+                        folder_size += item.stat().st_size
+                    except OSError:
+                        pass
+
         missing_input_files = []
         if folder_exists and metadata_exists and sim_exists:
             try:
@@ -589,6 +623,9 @@ def get_jobs_status(manifest_or_dir_path):
                 "status": job_status,
                 "run_timing_intervals": job_item.get("run_timing_intervals", []),
                 "original_run_indices": job_item.get("original_run_indices", []),
+                "folder_size_bytes": folder_size,
+                "folder_size_str": format_bytes(folder_size),
+                "input_mode": "linked" if has_symlink else "copied",
             }
         )
 
