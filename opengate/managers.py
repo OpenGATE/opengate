@@ -1599,6 +1599,12 @@ def _setter_hook_verbose_level(self, verbose_level):
     return verbose_level
 
 
+def _setter_hook_progress_hook(simulation, value):
+    if hasattr(value, "_interval") and value._interval is not None:
+        simulation.user_info["progress_hook_interval"] = value._interval
+    return value
+
+
 class Simulation(GateObject):
     """
     Main class that store a simulation.
@@ -1640,8 +1646,8 @@ class Simulation(GateObject):
     g4_commands_after_init: List[str]
     init_only: bool
     progress_bar: bool
-    progress_status_filename: Optional[Union[str, Path]]
-    progress_status_interval: float
+    progress_hook: Optional[Callable]
+    progress_hook_interval: Optional[float]
     dyn_geom_open_close: bool
     dyn_geom_optimise: bool
 
@@ -1859,16 +1865,17 @@ class Simulation(GateObject):
                 "doc": "Display a progress bar during the simulation",
             },
         ),
-        "progress_status_filename": (
+        "progress_hook": (
             None,
             {
-                "doc": "Filename of the JSON progress status report updated periodically during simulation. Default: None",
+                "doc": "Python function hook called periodically during simulation",
+                "setter_hook": _setter_hook_progress_hook,
             },
         ),
-        "progress_status_interval": (
-            30.0,
+        "progress_hook_interval": (
+            None,
             {
-                "doc": "Interval in real wall-clock seconds between progress status report updates. Default: 30 seconds",
+                "doc": "Interval in real wall-clock seconds between progress hook calls",
             },
         ),
         "max_primaries_per_run": (

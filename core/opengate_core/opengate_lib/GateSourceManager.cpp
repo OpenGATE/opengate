@@ -408,7 +408,8 @@ void GateSourceManager::CheckProgressReport() const {
     try {
       fProgressReportCallback();
     } catch (const py::error_already_set &e) {
-      // ignore or log
+      std::cerr << "Error in progress report callback: " << e.what()
+                << std::endl;
     }
   }
 }

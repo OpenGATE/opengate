@@ -63,104 +63,6 @@ class EngineBase:
         )
 
 
-def create_progress_reporter(simulation, source_engine):
-    import time
-    from datetime import datetime
-    from pathlib import Path
-    from opengate.serialization import dump_json
-    from opengate.utility import g4_units
-
-    start_wall_time = time.time()
-    start_iso_time = datetime.now().isoformat()
-
-    intervals = simulation.run_timing_intervals
-    total_sim_time = (
-        sum(interval[1] - interval[0] for interval in intervals) / g4_units.s
-        if intervals
-        else 0.0
-    )
-
-    def update_report(status="running"):
-        fn = simulation.progress_status_filename
-        if not fn:
-            return
-
-        current_wall_time = time.time()
-        elapsed_sec = current_wall_time - start_wall_time
-        current_iso_time = datetime.now().isoformat()
-
-        # retrieve total number of events (summed on all threads and runs)
-        total_events = 0
-        if source_engine.g4_master_source_manager:
-            total_events += (
-                source_engine.g4_master_source_manager.GetTotalNumberOfSimulatedEvents()
-            )
-        for mgr in source_engine.g4_thread_source_managers:
-            total_events += mgr.GetTotalNumberOfSimulatedEvents()
-
-        expected_events = source_engine.expected_number_of_events
-
-        events_per_sec = total_events / elapsed_sec if elapsed_sec > 0 else 0.0
-        g4_master = source_engine.g4_master_source_manager
-        raw_current_sim_time = (
-            g4_master.GetCurrentSimulationTime() / g4_units.s if g4_master else 0.0
-        )
-        if status == "completed":
-            current_sim_time = total_sim_time
-            progress_ratio = 1.0
-        else:
-            current_sim_time = raw_current_sim_time
-            progress_ratio = (
-                min(1.0, total_events / expected_events)
-                if expected_events and expected_events > 0
-                else 0.0
-            )
-
-        progress_pct = 100.0 if status == "completed" else progress_ratio * 100.0
-
-        if status == "completed":
-            current_run_idx = len(intervals) - 1 if intervals else 0
-        else:
-            current_run_idx = g4_master.GetCurrentRunId() if g4_master else 0
-
-        time_pct = (
-            100.0
-            if status == "completed"
-            else (
-                (current_sim_time / total_sim_time * 100.0)
-                if total_sim_time > 0
-                else 0.0
-            )
-        )
-
-        report_data = {
-            "status": status,
-            "simulation_id": getattr(simulation, "simulation_id", "unknown"),
-            "start_time": start_iso_time,
-            "current_time": current_iso_time,
-            "elapsed_time_seconds": round(elapsed_sec, 2),
-            "run_index": current_run_idx,
-            "run_total": len(intervals) if intervals else 0,
-            "simulation_time_current": round(current_sim_time, 4),
-            "simulation_time_total": round(total_sim_time, 4),
-            "simulation_time_progress": round(time_pct, 2),
-            "events_total": total_events,
-            "events_expected": expected_events,
-            "events_progress": round(progress_pct, 2),
-            "events_per_second": round(events_per_sec, 2),
-        }
-
-        out_path = Path(fn)
-        if not out_path.is_absolute():
-            out_path = simulation.output_dir / out_path
-
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_path, "w") as f:
-            dump_json(report_data, f)
-
-    return update_report
-
-
 class SourceEngine(EngineBase):
     """
     Source Engine manages the G4 objects of sources at runtime
@@ -321,18 +223,29 @@ class SourceEngine(EngineBase):
         return ms
 
     def start(self):
-        # Register progress report callback on the executing manager (Thread 0)
-        if self.simulation_engine.simulation.progress_status_filename:
-            self._progress_reporter = create_progress_reporter(
-                self.simulation_engine.simulation, self
+        sim = self.simulation_engine.simulation
+
+        if sim.progress_hook:
+            interval = float(
+                sim.progress_hook_interval
+                if sim.progress_hook_interval is not None
+                else 30.0  # sec
             )
-            interval = float(self.simulation_engine.simulation.progress_status_interval)
             target_manager = (
                 self.g4_thread_source_managers[0]
                 if self.g4_thread_source_managers
                 else self.g4_master_source_manager
             )
-            target_manager.SetProgressReportCallback(self._progress_reporter, interval)
+
+            # Convenience wrapper to handle signature differences
+            def progress_hook_wrapper(status="running"):
+                try:
+                    sim.progress_hook(self.simulation_engine, status)
+                except TypeError:
+                    sim.progress_hook(status)
+
+            self._progress_hook_wrapper = progress_hook_wrapper
+            target_manager.SetProgressReportCallback(progress_hook_wrapper, interval)
 
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # to allow better control on geometry between the different runs
@@ -346,8 +259,11 @@ class SourceEngine(EngineBase):
 
         self.g4_master_source_manager.StartMasterThread()
 
-        if hasattr(self, "_progress_reporter") and self._progress_reporter:
-            self._progress_reporter("completed")
+        if hasattr(self, "_progress_hook_wrapper") and self._progress_hook_wrapper:
+            try:
+                self._progress_hook_wrapper("completed")
+            except Exception:
+                pass
 
         # once terminated, packup the sources (if needed)
         for source in self.sources:

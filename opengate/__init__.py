@@ -162,3 +162,4 @@ from opengate.managers import create_sim_from_json
 from opengate.chemistry import TrackedChemicalReaction
 from opengate.utility import g4_units
 from opengate.base import help_on_user_info
+from opengate.userhooks import progress_status
