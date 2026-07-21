@@ -13,7 +13,6 @@ from test111_helpers import (
     wait_until_execution_status,
 )
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test111_pool")
     shutil.rmtree(paths.output, ignore_errors=True)
@@ -36,8 +35,7 @@ if __name__ == "__main__":
         },
     )
     is_ok = is_ok and utility.print_test(
-        summary["submitted_jobs"] == 2
-        and summary["campaign_process_pid"] is not None,
+        summary["submitted_jobs"] == 2 and summary["campaign_process_pid"] is not None,
         f"local_pool submission summary: {summary}",
     )
 

@@ -630,9 +630,7 @@ def _run_job_folders_in_local_pool(
     maxtasksperchild=1,
 ):
     if int(n_workers) < 1:
-        raise GateJobsBackendError(
-            "The local_pool backend requires n_workers >= 1."
-        )
+        raise GateJobsBackendError("The local_pool backend requires n_workers >= 1.")
     if int(maxtasksperchild) != 1:
         raise GateJobsBackendError(
             "The local_pool backend currently requires maxtasksperchild=1 so each "
@@ -721,14 +719,16 @@ def _example_render_slurm_submit_script_lines(job_folders_file_path, **kwargs):
             f'JOB_FOLDERS_FILE="{job_folders_file_path}"',
             'JOB_FOLDER="$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$JOB_FOLDERS_FILE")"',
             'cd "$JOB_FOLDER"',
-            f'exec {job_runner_command} . --backend slurm',
+            f"exec {job_runner_command} . --backend slurm",
             "",
         ]
     )
     return lines
 
 
-def _write_slurm_submit_script(split_root_folder, job_folders_file_path, backend_options):
+def _write_slurm_submit_script(
+    split_root_folder, job_folders_file_path, backend_options
+):
     submit_file_path = Path(split_root_folder) / backend_options["submit_filename"]
     submit_file_path.parent.mkdir(parents=True, exist_ok=True)
     submit_script_lines = backend_options["submit_script_renderer"](
@@ -743,7 +743,9 @@ def _write_slurm_submit_script(split_root_folder, job_folders_file_path, backend
 
 
 def _extract_slurm_job_id(submit_stdout):
-    match = re.search(r"Submitted batch job\s+(\d+)", submit_stdout, flags=re.IGNORECASE)
+    match = re.search(
+        r"Submitted batch job\s+(\d+)", submit_stdout, flags=re.IGNORECASE
+    )
     if match is None:
         return None
     return match.group(1)
@@ -1018,9 +1020,7 @@ def _validate_jobs_backend_options(backend, backend_options):
         validated_options.setdefault("submit_script_renderer_kwargs", {})
         validated_options.setdefault("command_line_args", [])
         validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
-        validated_options.setdefault(
-            "job_folders_filename", SLURM_JOB_FOLDERS_FILENAME
-        )
+        validated_options.setdefault("job_folders_filename", SLURM_JOB_FOLDERS_FILENAME)
         validated_options.setdefault("submit_binary", "sbatch")
 
         if "submit_script_renderer" not in validated_options:
@@ -1386,7 +1386,9 @@ def get_jobs_status(manifest_or_dir_path):
             if execution_status in status_data["execution_counts"]:
                 status_data["execution_counts"][execution_status] += 1
 
-        simulation_filename = metadata.get("simulation_filename", JOB_SIMULATION_FILENAME)
+        simulation_filename = metadata.get(
+            "simulation_filename", JOB_SIMULATION_FILENAME
+        )
         simulation_file = job_folder / simulation_filename
         sim_exists = simulation_file.exists()
 
