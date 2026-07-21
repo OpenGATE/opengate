@@ -1,18 +1,34 @@
 #!/usr/bin/env python3
 
 import click
+import opengate_core as g4
 from opengate.jobs import get_jobs_status
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
+def format_timing_intervals(intervals):
+    if not intervals:
+        return "[]"
+    formatted = []
+    for interval in intervals:
+        start_str = str(g4.G4BestUnit(interval[0], "Time")).strip()
+        end_str = str(g4.G4BestUnit(interval[1], "Time")).strip()
+        formatted.append(f"[{start_str}, {end_str}]")
+    intervals_str = ", ".join(formatted)
+    nb_runs = len(intervals)
+    return f"{intervals_str}  {nb_runs} run(s)"
+
+
 def print_jobs_status_summary(status_data, verbose=False):
+    intervals = status_data.get("original_run_timing_intervals", [])
     print(f" Manifest file:      {status_data['manifest_path']}")
     print(f" Root directory:     {status_data['split_root_folder']}")
     print(f" Simulation ID:      {status_data['simulation_id']}")
     print(f" Created at:         {status_data['created_at']}")
     print(f" Split policy:       {status_data['policy']}")
     print(f" Number of jobs:     {status_data['number_of_jobs']}")
+    print(f" Time intervals:     {format_timing_intervals(intervals)}")
     print(
         f" Master simulation:  {'Found' if status_data['master_simulation_exists'] else 'Missing'}"
     )
@@ -27,14 +43,19 @@ def print_jobs_status_summary(status_data, verbose=False):
         folder = job["folder_name"]
         st = job["status"].upper()
         outputs = job["output_files"]
+        job_intervals = job.get("run_timing_intervals", [])
         out_str = (
             f" ({len(outputs)} output file(s): {', '.join(outputs[:3])}{'...' if len(outputs) > 3 else ''})"
             if outputs
             else ""
         )
-        print(f"  [Job {job_idx:04d}] {folder}: status = {st}{out_str}")
+        print(
+            f"  [Job {job_idx:04d}] {folder}: status = {st}, timing = {format_timing_intervals(job_intervals)}{out_str}"
+        )
         if verbose:
-            print(f"     Run timing intervals: {job['run_timing_intervals']}")
+            print(
+                f"     Run timing intervals: {format_timing_intervals(job_intervals)}"
+            )
             print(f"     Original run indices: {job['original_run_indices']}")
             print(
                 f"     Folder exists: {job['folder_exists']}, Metadata: {job['metadata_exists']}, Sim: {job['simulation_exists']}"
