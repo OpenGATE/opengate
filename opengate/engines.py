@@ -82,7 +82,6 @@ def create_progress_reporter(simulation, source_engine):
 
     def update_report(status="running"):
         fn = simulation.progress_status_filename
-        print(f"[debug Python] update_report status={status} fn={fn}")
         if not fn:
             return
 
@@ -151,7 +150,6 @@ def create_progress_reporter(simulation, source_engine):
             "events_per_second": round(events_per_sec, 2),
         }
 
-        print(f"[debug Python] writing report data: {report_data}")
         out_path = Path(fn)
         if not out_path.is_absolute():
             out_path = simulation.output_dir / out_path

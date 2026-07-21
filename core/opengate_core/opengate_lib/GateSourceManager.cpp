@@ -388,7 +388,6 @@ void GateSourceManager::SetProgressReportCallback(py::function func,
   fProgressReportCallback = func;
   fProgressReportInterval = interval_seconds / CLHEP::s;
   fLastProgressReportTime = std::chrono::steady_clock::now();
-  DDD("Set progress report callback ", interval_seconds, "  ", func);
 }
 
 void GateSourceManager::CheckProgressReport() const {

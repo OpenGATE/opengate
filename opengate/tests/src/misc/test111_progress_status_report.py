@@ -37,11 +37,9 @@ def main():
     # Progress status report
     status_file = paths.output / "progress_status.json"
     sim.progress_status_filename = status_file
-    sim.progress_status_interval = 0.1 * gate.g4_units.s
+    sim.progress_status_interval = 0.5 * gate.g4_units.s
 
     print(f"Status file will be written in {status_file}")
-    print(f"watch -n 0.1 jq . {status_file})")
-
     # go
     sim.run()
     print(stats)
@@ -53,14 +51,16 @@ def main():
 
         print("\nProgress status JSON content:")
         print(json.dumps(data, indent=2))
-        N = np.sum(np.array(source.n))
-        print("Total events expected = ", N)
 
+        # Expected expected total events = 4e6 from source1 (2e6/2*2 runs*2 threads) + 4e6 from source2 activity
         is_ok = is_ok and data.get("status") == "completed"
         is_ok = is_ok and "elapsed_time_seconds" in data
-        is_ok = is_ok and data.get("number_of_runs") == 2
-        is_ok = is_ok and data.get("progress_percentage") == 100.0
-        is_ok = is_ok and data.get("total_events") == N
+        is_ok = is_ok and data.get("run_total") == 2
+        is_ok = is_ok and data.get("events_progress") == 100.0
+        is_ok = is_ok and data.get("simulation_time_progress") == 100.0
+        is_ok = is_ok and data.get("simulation_time_total") == 2.0
+        is_ok = is_ok and data.get("events_expected") == 8000000
+        is_ok = is_ok and data.get("events_total") > 0
 
     utility.test_ok(is_ok)
 
