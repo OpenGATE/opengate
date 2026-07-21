@@ -22,6 +22,7 @@ JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_SIMULATION_FILENAME = "simulation.json"
 MASTER_SIMULATION_FILENAME = "simulation.json"
 JOB_EXECUTION_ALLOWED_STATUSES = ("running", "completed", "failed", "skipped")
+HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 
 
 def _clone_simulation(simulation):
@@ -643,6 +644,108 @@ def _run_job_folders_in_local_pool(
         return pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
 
 
+def _render_htcondor_submit_file_lines(job_folders, backend_options):
+    submit_file_commands = {
+        "universe": "vanilla",
+        "executable": backend_options["job_runner_command"],
+        "arguments": ". --backend htcondor",
+        "initialdir": "$(job_folder)",
+        "output": "opengate_job_runner.stdout",
+        "error": "opengate_job_runner.stderr",
+        "log": "opengate_job_runner.condor.log",
+        "getenv": "True",
+    }
+    submit_file_commands.update(backend_options.get("submit_file_commands", {}))
+
+    lines = [f"{key} = {value}" for key, value in submit_file_commands.items()]
+    lines.extend(
+        [
+            "",
+            "queue job_folder from (",
+            *[str(Path(job_folder).resolve()) for job_folder in job_folders],
+            ")",
+            "",
+        ]
+    )
+    return lines
+
+
+def _write_htcondor_submit_file(split_root_folder, job_folders, backend_options):
+    submit_file_path = Path(split_root_folder) / backend_options["submit_filename"]
+    submit_file_path.parent.mkdir(parents=True, exist_ok=True)
+    submit_file_content = "\n".join(
+        _render_htcondor_submit_file_lines(job_folders, backend_options)
+    )
+    with open(submit_file_path, "w") as output_file:
+        output_file.write(submit_file_content)
+    return submit_file_path
+
+
+def _extract_htcondor_cluster_id(submit_stdout):
+    match = re.search(r"cluster\s+(\d+)", submit_stdout, flags=re.IGNORECASE)
+    if match is None:
+        return None
+    return match.group(1)
+
+
+def _submit_job_folders_to_htcondor(
+    split_root_folder,
+    job_folders,
+    backend_options,
+    skipped_completed_jobs,
+):
+    submit_file_path = _write_htcondor_submit_file(
+        split_root_folder, job_folders, backend_options
+    )
+    command = [backend_options["submit_binary"]]
+    command.extend(backend_options.get("command_line_args", []))
+    command.append(str(submit_file_path))
+    try:
+        completed_process = subprocess.run(
+            command,
+            cwd=split_root_folder,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as error:
+        raise GateJobsBackendError(
+            f"HTCondor submission command not found: {backend_options['submit_binary']}."
+        ) from error
+
+    if completed_process.returncode != 0:
+        raise GateJobsBackendError(
+            "HTCondor submission failed.\n"
+            f"Command: {' '.join(command)}\n"
+            f"Return code: {completed_process.returncode}\n"
+            f"stdout:\n{completed_process.stdout}\n"
+            f"stderr:\n{completed_process.stderr}"
+        )
+
+    status_data = _write_jobs_backend_status(
+        split_root_folder,
+        backend="htcondor",
+        status="submitted",
+        submitted_jobs=len(job_folders),
+        skipped_completed_jobs=skipped_completed_jobs,
+        submitted_at=_now_isoformat(),
+        scheduler_job_id=_extract_htcondor_cluster_id(completed_process.stdout),
+        submit_file_path=str(submit_file_path),
+        submit_command=command,
+        submission_stdout=completed_process.stdout,
+        submission_stderr=completed_process.stderr,
+    )
+
+    return {
+        "submit_file_path": str(submit_file_path),
+        "submission_command": command,
+        "submission_stdout": completed_process.stdout,
+        "submission_stderr": completed_process.stderr,
+        "scheduler_job_id": status_data["scheduler_job_id"],
+        "backend_status_path": str(_get_jobs_backend_status_path(split_root_folder)),
+    }
+
+
 def _run_jobs_campaign(job_folders, backend, backend_options):
     """Run the detached campaign-level orchestration for a selected backend.
 
@@ -728,6 +831,50 @@ def _validate_jobs_backend_options(backend, backend_options):
                 )
         return {"pooling_options": pooling_options}
 
+    if backend == "htcondor":
+        allowed_top_level_keys = {
+            "submit_file_commands",
+            "command_line_args",
+            "job_runner_command",
+            "submit_filename",
+            "submit_binary",
+        }
+        unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
+        if len(unknown_keys) > 0:
+            raise GateJobsBackendError(
+                f"The htcondor backend received unknown option groups: {sorted(unknown_keys)}."
+            )
+
+        validated_options = dict(backend_options)
+        validated_options.setdefault("submit_file_commands", {})
+        validated_options.setdefault("command_line_args", [])
+        validated_options.setdefault("job_runner_command", "opengate_job_runner")
+        validated_options.setdefault("submit_filename", HTCONDOR_SUBMIT_FILENAME)
+        validated_options.setdefault("submit_binary", "condor_submit")
+
+        if not isinstance(validated_options["submit_file_commands"], dict):
+            raise GateJobsBackendError(
+                "The htcondor backend requires submit_file_commands to be a dictionary."
+            )
+        if not isinstance(validated_options["command_line_args"], (list, tuple)):
+            raise GateJobsBackendError(
+                "The htcondor backend requires command_line_args to be a list or tuple."
+            )
+
+        validated_options["submit_file_commands"] = {
+            str(key): str(value)
+            for key, value in validated_options["submit_file_commands"].items()
+        }
+        validated_options["command_line_args"] = [
+            str(argument) for argument in validated_options["command_line_args"]
+        ]
+        validated_options["job_runner_command"] = str(
+            validated_options["job_runner_command"]
+        )
+        validated_options["submit_filename"] = str(validated_options["submit_filename"])
+        validated_options["submit_binary"] = str(validated_options["submit_binary"])
+        return validated_options
+
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
 
@@ -740,9 +887,11 @@ def jobs_run(
 ):
     """Launch a split-jobs campaign from a split root folder or manifest path.
 
-    The whole campaign is started in a separate orchestration process so this
-    function can return immediately while the selected job folders keep running
-    in the background.
+    Local execution backends launch the whole campaign in a separate
+    orchestration process so this function can return immediately while the
+    selected job folders keep running in the background. External scheduler
+    backends submit synchronously instead, so submission errors are reported
+    directly to the caller while the actual job execution remains asynchronous.
     """
     manifest_path, manifest = _load_jobs_manifest(split_path)
     split_root_folder = manifest_path.parent
@@ -801,6 +950,23 @@ def jobs_run(
             "submitted_jobs": 0,
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
+        }
+
+    if backend == "htcondor":
+        submission_summary = _submit_job_folders_to_htcondor(
+            split_root_folder,
+            selected_job_folders,
+            backend_options,
+            len(skipped_completed_jobs),
+        )
+        return {
+            "backend": backend,
+            "manifest_path": str(manifest_path),
+            "split_root_folder": str(split_root_folder),
+            "submitted_jobs": len(selected_job_folders),
+            "skipped_completed_jobs": len(skipped_completed_jobs),
+            "campaign_process_pid": None,
+            **submission_summary,
         }
 
     if backend in ("local_sequential", "local_pool"):
