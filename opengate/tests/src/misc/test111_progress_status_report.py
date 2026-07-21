@@ -36,7 +36,7 @@ def main():
 
     # Progress status report
     status_file = paths.output / "progress_status.json"
-    status_reporter = gate.progress_status(status_file, 0.5 * sec)
+    status_reporter = gate.progress_status(status_file)
 
     # Custom progress hook verification
     custom_hook_calls = []
@@ -53,7 +53,7 @@ def main():
     sim.progress_hook = custom_hook
     sim.progress_hook_interval = 0.5 * gate.g4_units.s
     # conventional simulation should use :
-    # sim.progress_hook = gate.progress_status(status_file, 0.5 * sec)
+    # sim.progress_hook = gate.progress_status(status_file)
 
     print(f"Status file will be written in {status_file}")
     # go

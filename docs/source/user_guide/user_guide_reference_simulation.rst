@@ -125,14 +125,15 @@ You can attach a progress reporting hook function to monitor the progress of a r
 Standard Use with `progress_status`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The simplest and standard way to monitor simulation progress is using the built-in helper `gate.progress_status(filename, interval)`. This periodically outputs structured simulation metrics (status, elapsed wall time, current run index, event progress percentage, simulation time progress, total and expected events) into a JSON file:
+The simplest and standard way to monitor simulation progress is using the built-in helper `gate.progress_status(filename)`. This periodically outputs structured simulation metrics (status, elapsed wall time, current run index, event progress percentage, simulation time progress, total and expected events) into a JSON file:
 
 .. code-block:: python
 
    import opengate as gate
 
    status_file = "output/progress_status.json"
-   sim.progress_hook = gate.progress_status(status_file, 1.0 * gate.g4_units.s)
+   sim.progress_hook = gate.progress_status(status_file)
+   sim.progress_hook_interval = 0.5 * gate.g4_units.s
 
 Advanced Use with a Custom Hook
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -144,7 +145,7 @@ For advanced usage, you can define a custom Python callback function and set `si
    import opengate as gate
 
    status_file = "output/progress_status.json"
-   status_reporter = gate.progress_status(status_file, 0.5 * gate.g4_units.s)
+   status_reporter = gate.progress_status(status_file)
 
    def custom_hook(sim_engine, status="running"):
        # Perform progress reporting to JSON file

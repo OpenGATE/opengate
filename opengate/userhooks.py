@@ -171,7 +171,7 @@ def user_hook_dna_region_models(simulation_engine):
     simulation_engine.user_hook_log.append(model_checks)
 
 
-def progress_status(filename, interval=30.0):
+def progress_status(filename):
     """
     Factory function returning a progress reporting hook that periodically writes simulation progress status to a JSON file.
     """
@@ -286,5 +286,4 @@ def progress_status(filename, interval=30.0):
 
         return report_data
 
-    progress_reporter._interval = interval
     return progress_reporter
