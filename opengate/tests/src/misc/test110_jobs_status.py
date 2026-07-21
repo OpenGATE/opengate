@@ -35,19 +35,6 @@ def main():
 
     assert status["number_of_jobs"] == 2
     assert status["summary_counts"]["ready"] == 2
-    assert status["summary_counts"]["completed"] == 0
-
-    # Simulate completion of job 1 by writing an output file
-    job1_folder = split_root_folder / "job0001"
-    output_file = job1_folder / "output.root"
-    output_file.touch()
-
-    # 2. Re-check status
-    status_updated = get_jobs_status(split_root_folder)
-    assert status_updated["summary_counts"]["ready"] == 1
-    assert status_updated["summary_counts"]["completed"] == 1
-    assert status_updated["jobs"][0]["status"] == "completed"
-    assert "output.root" in status_updated["jobs"][0]["output_files"]
 
     # 3. Test CLI command execution
     runner = CliRunner()

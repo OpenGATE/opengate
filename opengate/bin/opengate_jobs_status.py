@@ -35,28 +35,21 @@ def print_jobs_status_summary(status_data, verbose=False):
     print(" Job Status Summary:")
     counts = status_data["summary_counts"]
     print(
-        f"  Total: {counts['total']}  |  Ready: {counts['ready']}  |  Completed: {counts['completed']}  |  Missing: {counts['missing_folder'] + counts['missing_metadata']}"
+        f"  Total: {counts['total']}  |  Ready: {counts['ready']}  |  Missing: {counts['missing_folder'] + counts['missing_metadata']}"
     )
 
     for job in status_data["jobs"]:
         job_idx = job["job_index"]
         folder = job["folder_name"]
         st = job["status"].upper()
-        outputs = job["output_files"]
         job_intervals = job.get("run_timing_intervals", [])
-        out_str = (
-            f" ({len(outputs)} output file(s): {', '.join(outputs[:3])}{'...' if len(outputs) > 3 else ''})"
-            if outputs
-            else ""
-        )
         print(
-            f"  [Job {job_idx:04d}] {folder}: status = {st}, timing = {format_timing_intervals(job_intervals)}{out_str}"
+            f"  [Job {job_idx:04d}] {folder}: status = {st}, timing = {format_timing_intervals(job_intervals)}"
         )
         if verbose:
             print(
                 f"     Run timing intervals: {format_timing_intervals(job_intervals)}"
             )
-            print(f"     Original run indices: {job['original_run_indices']}")
             print(
                 f"     Folder exists: {job['folder_exists']}, Metadata: {job['metadata_exists']}, Sim: {job['simulation_exists']}"
             )

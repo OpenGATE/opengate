@@ -420,7 +420,6 @@ def get_jobs_status(manifest_or_dir_path):
         "summary_counts": {
             "total": 0,
             "ready": 0,
-            "completed": 0,
             "missing_folder": 0,
             "missing_metadata": 0,
         },
@@ -441,21 +440,10 @@ def get_jobs_status(manifest_or_dir_path):
         metadata_exists = metadata_file.exists()
         sim_exists = simulation_file.exists()
 
-        output_files = []
-        if folder_exists:
-            for item in job_folder.iterdir():
-                if item.name not in (
-                    metadata_filename,
-                    simulation_filename,
-                ) and not item.name.startswith("."):
-                    output_files.append(item.name)
-
         if not folder_exists:
             job_status = "missing_folder"
         elif not metadata_exists:
             job_status = "missing_metadata"
-        elif len(output_files) > 0:
-            job_status = "completed"
         elif sim_exists:
             job_status = "ready"
         else:
@@ -476,7 +464,6 @@ def get_jobs_status(manifest_or_dir_path):
                 "status": job_status,
                 "run_timing_intervals": job_item.get("run_timing_intervals", []),
                 "original_run_indices": job_item.get("original_run_indices", []),
-                "output_files": sorted(output_files),
             }
         )
 
