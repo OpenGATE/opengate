@@ -383,6 +383,55 @@ def create_split_jobs(
     return split_root_folder
 
 
+from .base import (
+    _get_user_info_options,
+    find_all_gate_objects,
+    find_all_paths,
+)
+from .managers import create_sim_from_json
+
+
+def get_simulation_input_files_info(simulation):
+    input_files_info = []
+    dct = simulation.to_dictionary()
+    for go_dict in find_all_gate_objects(dct):
+        obj_name = go_dict["user_info"].get("name", go_dict.get("name", "Unknown"))
+        class_name = go_dict.get("object_type", "Unknown")
+        class_module = go_dict.get("class_module", "")
+
+        for ui_name, ui_value in go_dict["user_info"].items():
+            if ui_value is None:
+                continue
+            options = _get_user_info_options(ui_name, class_name, class_module)
+            if options.get("is_input_file") is True:
+                paths = find_all_paths(ui_value)
+                for p in paths:
+                    input_files_info.append(
+                        {
+                            "object_name": obj_name,
+                            "class_name": class_name,
+                            "attribute": ui_name,
+                            "value": str(p),
+                        }
+                    )
+
+    if (
+        hasattr(simulation, "volume_manager")
+        and simulation.volume_manager.material_database is not None
+    ):
+        for fn in simulation.volume_manager.material_database.filenames:
+            input_files_info.append(
+                {
+                    "object_name": "MaterialDatabase",
+                    "class_name": "MaterialDatabase",
+                    "attribute": "filenames",
+                    "value": str(fn),
+                }
+            )
+
+    return input_files_info
+
+
 def get_jobs_status(manifest_or_dir_path):
     path = Path(manifest_or_dir_path).resolve()
     if path.is_dir():
@@ -405,6 +454,14 @@ def get_jobs_status(manifest_or_dir_path):
     )
     master_sim_file = split_root_folder / master_sim_filename
 
+    master_input_files = []
+    if master_sim_file.exists():
+        try:
+            master_sim = create_sim_from_json(master_sim_file)
+            master_input_files = get_simulation_input_files_info(master_sim)
+        except Exception:
+            pass
+
     status_data = {
         "manifest_path": str(manifest_path),
         "split_root_folder": str(split_root_folder),
@@ -416,6 +473,7 @@ def get_jobs_status(manifest_or_dir_path):
             "original_run_timing_intervals", []
         ),
         "master_simulation_exists": master_sim_file.exists(),
+        "master_input_files": master_input_files,
         "jobs": [],
         "summary_counts": {
             "total": 0,

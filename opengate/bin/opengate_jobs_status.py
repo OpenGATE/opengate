@@ -32,6 +32,15 @@ def print_jobs_status_summary(status_data, verbose=False):
     print(
         f" Master simulation:  {'Found' if status_data['master_simulation_exists'] else 'Missing'}"
     )
+    master_inputs = status_data.get("master_input_files", [])
+    if master_inputs:
+        print(" Master input files:")
+        for item in master_inputs:
+            print(
+                f"   - [{item['class_name']}] {item['object_name']} -> {item['attribute']}: {item['value']}"
+            )
+    else:
+        print(" Master input files: None")
     print(" Job Status Summary:")
     counts = status_data["summary_counts"]
     print(

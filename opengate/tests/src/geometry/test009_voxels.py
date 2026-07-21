@@ -132,6 +132,9 @@ if __name__ == "__main__":
     # verbose
     sim.g4_commands_after_init.append("/tracking/verbose 0")
 
+    # create a split simulation (for debug only)
+    sim.jobs_split(3, paths.output / "split_campaigns", policy="split_time")
+
     # start simulation
     sim.run(start_new_process=True)
 
