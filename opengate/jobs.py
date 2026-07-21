@@ -391,6 +391,30 @@ from .base import (
 from .managers import create_sim_from_json
 
 
+def _find_metaimage_payload_paths(header_path):
+    payload_paths = []
+    if not header_path.exists():
+        return payload_paths
+    try:
+        with open(header_path, "r") as header_file:
+            for line in header_file:
+                if "=" not in line:
+                    continue
+                key, value = [part.strip() for part in line.split("=", 1)]
+                if key != "ElementDataFile":
+                    continue
+                if value.upper() == "LOCAL":
+                    return []
+                payload_path = Path(value)
+                if not payload_path.is_absolute():
+                    payload_path = header_path.parent / payload_path
+                payload_paths.append(payload_path)
+                break
+    except OSError:
+        pass
+    return payload_paths
+
+
 def get_simulation_input_files_info(simulation):
     input_files_info = []
     dct = simulation.to_dictionary()
@@ -414,6 +438,17 @@ def get_simulation_input_files_info(simulation):
                             "value": str(p),
                         }
                     )
+                    path_obj = Path(p)
+                    if path_obj.suffix.lower() == ".mhd":
+                        for payload in _find_metaimage_payload_paths(path_obj):
+                            input_files_info.append(
+                                {
+                                    "object_name": obj_name,
+                                    "class_name": class_name,
+                                    "attribute": f"{ui_name} payload",
+                                    "value": str(payload),
+                                }
+                            )
 
     if (
         hasattr(simulation, "volume_manager")
@@ -480,6 +515,7 @@ def get_jobs_status(manifest_or_dir_path):
             "ready": 0,
             "missing_folder": 0,
             "missing_metadata": 0,
+            "missing_input_file": 0,
         },
     }
 
@@ -498,10 +534,40 @@ def get_jobs_status(manifest_or_dir_path):
         metadata_exists = metadata_file.exists()
         sim_exists = simulation_file.exists()
 
+        missing_input_files = []
+        if folder_exists and metadata_exists and sim_exists:
+            try:
+                child_sim = create_sim_from_json(simulation_file)
+                job_input_files = get_simulation_input_files_info(child_sim)
+                for info in job_input_files:
+                    val_str = info["value"]
+                    val_path = Path(val_str)
+                    file_found = (
+                        (job_folder / val_path.name).exists()
+                        or (
+                            not val_path.is_absolute()
+                            and (job_folder / val_path).exists()
+                        )
+                        or (
+                            val_path.is_absolute()
+                            and val_path.exists()
+                            and not metadata_exists
+                        )
+                    )
+
+                    if not file_found:
+                        missing_input_files.append(
+                            f"[{info['class_name']}] {info['object_name']} -> {info['attribute']}: {val_str}"
+                        )
+            except Exception:
+                pass
+
         if not folder_exists:
             job_status = "missing_folder"
         elif not metadata_exists:
             job_status = "missing_metadata"
+        elif missing_input_files:
+            job_status = "missing_input_file"
         elif sim_exists:
             job_status = "ready"
         else:
@@ -519,6 +585,7 @@ def get_jobs_status(manifest_or_dir_path):
                 "folder_exists": folder_exists,
                 "metadata_exists": metadata_exists,
                 "simulation_exists": sim_exists,
+                "missing_input_files": missing_input_files,
                 "status": job_status,
                 "run_timing_intervals": job_item.get("run_timing_intervals", []),
                 "original_run_indices": job_item.get("original_run_indices", []),
