@@ -75,7 +75,9 @@ def create_progress_reporter(simulation, g4_master_source_manager):
 
     intervals = simulation.run_timing_intervals
     total_sim_time = (
-        sum(interval[1] - interval[0] for interval in intervals) if intervals else 0.0
+        sum(interval[1] - interval[0] for interval in intervals) / g4_units.s
+        if intervals
+        else 0.0
     )
 
     def update_report(status="running"):
@@ -110,29 +112,39 @@ def create_progress_reporter(simulation, g4_master_source_manager):
 
         progress_pct = 100.0 if status == "completed" else progress_ratio * 100.0
 
-        current_run_idx = 0
-        if intervals and total_sim_time > 0:
-            accum = 0.0
-            for idx, interval in enumerate(intervals):
-                dur = interval[1] - interval[0]
-                if accum + dur >= current_sim_time:
-                    current_run_idx = idx
-                    break
-                accum += dur
+        if status == "completed":
+            current_run_idx = len(intervals) - 1 if intervals else 0
+        else:
+            current_run_idx = (
+                g4_master_source_manager.GetCurrentRunId()
+                if g4_master_source_manager
+                else 0
+            )
+
+        time_pct = (
+            100.0
+            if status == "completed"
+            else (
+                (current_sim_time / total_sim_time * 100.0)
+                if total_sim_time > 0
+                else 0.0
+            )
+        )
 
         report_data = {
             "status": status,
             "simulation_id": getattr(simulation, "simulation_id", "unknown"),
-            "sim_start_time": start_iso_time,
-            "sim_current_time": current_iso_time,
-            "sim_elapsed_time_seconds": round(elapsed_sec, 2),
-            "current_run_index": current_run_idx,
-            "total_number_of_runs": len(intervals) if intervals else 0,
-            "current_simulation_time": round(current_sim_time, 4),
-            "total_simulation_time": round(total_sim_time, 4),
+            "start_time": start_iso_time,
+            "current_time": current_iso_time,
+            "elapsed_time_seconds": round(elapsed_sec, 2),
+            "run_index": current_run_idx,
+            "run_total": len(intervals) if intervals else 0,
+            "simulation_time_current": round(current_sim_time, 4),
+            "simulation_time_total": round(total_sim_time, 4),
+            "simulation_time_progress": round(time_pct, 2),
             "events_total": total_events,
             "events_expected": expected_events,
-            "progress_percentage": round(progress_pct, 2),
+            "events_progress": round(progress_pct, 2),
             "events_per_second": round(events_per_sec, 2),
         }
 
@@ -326,6 +338,9 @@ class SourceEngine(EngineBase):
 
         self.g4_master_source_manager.StartMasterThread()
 
+        if hasattr(self, "_progress_reporter") and self._progress_reporter:
+            self._progress_reporter("completed")
+
         # once terminated, packup the sources (if needed)
         for source in self.sources:
             source.prepare_output()
@@ -334,9 +349,6 @@ class SourceEngine(EngineBase):
             # Clear C++ sources now on the main thread while G4Cache is active
             source.g4_thread_sources = []
             source.g4_thread_sources_index = 0
-
-        if hasattr(self, "_progress_reporter") and self._progress_reporter:
-            self._progress_reporter("completed")
 
     def can_predict_expected_number_of_event(self):
         # can_predict = True

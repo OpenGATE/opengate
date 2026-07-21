@@ -306,6 +306,11 @@ double GateSourceManager::GetCurrentSimulationTime() const {
   return l.fCurrentSimulationTime;
 }
 
+int GateSourceManager::GetCurrentRunId() const {
+  auto &l = fThreadLocalData.Get();
+  return l.fNextRunId;
+}
+
 void GateSourceManager::PrepareRunToStart(int run_id) {
   /*
    In MT mode, this function (PrepareRunToStart) is called

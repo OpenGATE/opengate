@@ -17,11 +17,11 @@ def main():
     box = sim.add_volume("Box", "box")
     box.size = [10.0, 10.0, 10.0]
 
-    # source = sim.add_source("GenericSource", "source")
-    # source.particle = "gamma"
-    # source.n = [2e6, 2e6]
-    # source.direction.type = "iso"
-    # source.energy.mono = 1.0 * gate.g4_units.MeV
+    source = sim.add_source("GenericSource", "source")
+    source.particle = "gamma"
+    source.n = [2e6, 2e6]
+    source.direction.type = "iso"
+    source.energy.mono = 1.0 * gate.g4_units.MeV
 
     source = sim.add_source("GenericSource", "source2")
     source.particle = "gamma"

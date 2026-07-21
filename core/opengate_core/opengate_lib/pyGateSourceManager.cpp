@@ -28,6 +28,7 @@ void init_GateSourceManager(py::module &m) {
            &GateSourceManager::GetTotalNumberOfSimulatedEvents)
       .def("GetCurrentSimulationTime",
            &GateSourceManager::GetCurrentSimulationTime)
+      .def("GetCurrentRunId", &GateSourceManager::GetCurrentRunId)
       .def_static("GetPlatformMaxPrimariesPerRun",
                   &GateSourceManager::GetPlatformMaxPrimariesPerRun)
       .def_readwrite("fUserEventInformationFlag",

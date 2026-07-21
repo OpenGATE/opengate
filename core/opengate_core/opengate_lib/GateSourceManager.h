@@ -116,6 +116,7 @@ public:
   unsigned long GetTotalNumberOfSimulatedEvents() const;
 
   double GetCurrentSimulationTime() const;
+  int GetCurrentRunId() const;
 
   void ComputeExpectedNumberOfEvents();
 
