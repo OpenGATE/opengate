@@ -22,7 +22,7 @@ def render_test_slurm_submit_script(job_folders_file_path, **kwargs):
         f'JOB_FOLDERS_FILE="{job_folders_file_path}"',
         'JOB_FOLDER="$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$JOB_FOLDERS_FILE")"',
         'cd "$JOB_FOLDER"',
-        f'exec {job_runner_command} . --backend slurm',
+        f"exec {job_runner_command} . --backend slurm",
         "",
     ]
     return lines
@@ -34,7 +34,9 @@ if __name__ == "__main__":
     is_ok = True
 
     sim = build_simple_simulation(paths.output / "slurm_input")
-    split_root = gate.jobs_split(sim, 2, paths.output / "slurm_campaign", policy="split_time")
+    split_root = gate.jobs_split(
+        sim, 2, paths.output / "slurm_campaign", policy="split_time"
+    )
 
     # Realistic example for manual usage against a Slurm installation:
     #
@@ -127,7 +129,7 @@ if __name__ == "__main__":
 
     is_ok = is_ok and utility.print_test(
         'cd "$JOB_FOLDER"' in submit_file_content
-        and 'exec opengate_job_runner . --backend slurm' in submit_file_content
+        and "exec opengate_job_runner . --backend slurm" in submit_file_content
         and "SLURM_ARRAY_TASK_ID" in submit_file_content,
         f"slurm script execution block:\n{submit_file_content}",
     )

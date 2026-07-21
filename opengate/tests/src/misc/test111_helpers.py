@@ -57,7 +57,9 @@ def write_execution_status(job_folder, status_data):
         dump_json(status_data, output_file)
 
 
-def wait_until_execution_status(split_root, expected_status, expected_count, timeout=60):
+def wait_until_execution_status(
+    split_root, expected_status, expected_count, timeout=60
+):
     manifest = load_manifest(split_root)
     deadline = time.time() + timeout
     while time.time() < deadline:

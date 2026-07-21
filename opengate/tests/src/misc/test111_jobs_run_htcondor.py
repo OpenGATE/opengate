@@ -9,7 +9,6 @@ from opengate.tests import utility
 
 from test111_helpers import build_simple_simulation, load_backend_status
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test112_htcondor")
     shutil.rmtree(paths.output, ignore_errors=True)

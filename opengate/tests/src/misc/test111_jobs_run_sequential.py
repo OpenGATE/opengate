@@ -15,7 +15,6 @@ from test111_helpers import (
     write_execution_status,
 )
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test111_seq")
     shutil.rmtree(paths.output, ignore_errors=True)
