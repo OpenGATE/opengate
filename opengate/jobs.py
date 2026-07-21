@@ -7,7 +7,7 @@ import numpy as np
 
 from .exception import fatal
 from .runtiming import assert_run_timing
-from .serialization import dump_json
+from .serialization import dump_json, load_json
 
 JOBS_MANIFEST_FILENAME = "jobs_manifest.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
@@ -379,3 +379,103 @@ def create_split_jobs(
         dump_json(jobs_manifest, output_file)
 
     return split_root_folder
+
+
+def get_jobs_status(manifest_or_dir_path):
+    path = Path(manifest_or_dir_path).resolve()
+    if path.is_dir():
+        manifest_path = path / JOBS_MANIFEST_FILENAME
+    else:
+        manifest_path = path
+
+    if not manifest_path.exists():
+        fatal(f"Jobs manifest file not found at '{manifest_path}'.")
+
+    with open(manifest_path, "r") as f:
+        manifest = load_json(f)
+
+    split_root_folder = Path(manifest.get("split_root_folder", manifest_path.parent))
+    if not split_root_folder.exists():
+        split_root_folder = manifest_path.parent
+
+    master_sim_filename = manifest.get(
+        "master_simulation_filename", MASTER_SIMULATION_FILENAME
+    )
+    master_sim_file = split_root_folder / master_sim_filename
+
+    status_data = {
+        "manifest_path": str(manifest_path),
+        "split_root_folder": str(split_root_folder),
+        "simulation_id": manifest.get("simulation_id", "Unknown"),
+        "created_at": manifest.get("created_at", "Unknown"),
+        "policy": manifest.get("policy", "Unknown"),
+        "number_of_jobs": manifest.get("number_of_jobs", len(manifest.get("jobs", []))),
+        "original_run_timing_intervals": manifest.get(
+            "original_run_timing_intervals", []
+        ),
+        "master_simulation_exists": master_sim_file.exists(),
+        "jobs": [],
+        "summary_counts": {
+            "total": 0,
+            "ready": 0,
+            "completed": 0,
+            "missing_folder": 0,
+            "missing_metadata": 0,
+        },
+    }
+
+    for job_item in manifest.get("jobs", []):
+        folder_name = job_item.get("folder_name", "")
+        job_folder = split_root_folder / folder_name
+        metadata_filename = job_item.get("metadata_filename", JOB_METADATA_FILENAME)
+        simulation_filename = job_item.get(
+            "simulation_filename", JOB_SIMULATION_FILENAME
+        )
+
+        metadata_file = job_folder / metadata_filename
+        simulation_file = job_folder / simulation_filename
+
+        folder_exists = job_folder.exists()
+        metadata_exists = metadata_file.exists()
+        sim_exists = simulation_file.exists()
+
+        output_files = []
+        if folder_exists:
+            for item in job_folder.iterdir():
+                if item.name not in (
+                    metadata_filename,
+                    simulation_filename,
+                ) and not item.name.startswith("."):
+                    output_files.append(item.name)
+
+        if not folder_exists:
+            job_status = "missing_folder"
+        elif not metadata_exists:
+            job_status = "missing_metadata"
+        elif len(output_files) > 0:
+            job_status = "completed"
+        elif sim_exists:
+            job_status = "ready"
+        else:
+            job_status = "unknown"
+
+        status_data["summary_counts"]["total"] += 1
+        if job_status in status_data["summary_counts"]:
+            status_data["summary_counts"][job_status] += 1
+
+        status_data["jobs"].append(
+            {
+                "job_index": job_item.get("job_index"),
+                "job_id": job_item.get("job_id"),
+                "folder_name": folder_name,
+                "folder_exists": folder_exists,
+                "metadata_exists": metadata_exists,
+                "simulation_exists": sim_exists,
+                "status": job_status,
+                "run_timing_intervals": job_item.get("run_timing_intervals", []),
+                "original_run_indices": job_item.get("original_run_indices", []),
+                "output_files": sorted(output_files),
+            }
+        )
+
+    return status_data
