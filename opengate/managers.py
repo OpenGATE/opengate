@@ -1640,6 +1640,8 @@ class Simulation(GateObject):
     g4_commands_after_init: List[str]
     init_only: bool
     progress_bar: bool
+    progress_status_filename: Optional[Union[str, Path]]
+    progress_status_interval: float
     dyn_geom_open_close: bool
     dyn_geom_optimise: bool
 
@@ -1855,6 +1857,18 @@ class Simulation(GateObject):
             False,
             {
                 "doc": "Display a progress bar during the simulation",
+            },
+        ),
+        "progress_status_filename": (
+            None,
+            {
+                "doc": "Filename of the JSON progress status report updated periodically during simulation. Default: None",
+            },
+        ),
+        "progress_status_interval": (
+            30.0,
+            {
+                "doc": "Interval in real wall-clock seconds between progress status report updates. Default: 30 seconds",
             },
         ),
         "max_primaries_per_run": (

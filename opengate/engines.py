@@ -63,6 +63,85 @@ class EngineBase:
         )
 
 
+def create_progress_reporter(simulation):
+    import time
+    from datetime import datetime
+    from pathlib import Path
+    from opengate.serialization import dump_json
+
+    start_wall_time = time.time()
+    start_iso_time = datetime.now().isoformat()
+
+    intervals = simulation.run_timing_intervals
+    total_sim_time = (
+        sum(interval[1] - interval[0] for interval in intervals) if intervals else 0.0
+    )
+
+    def update_report(status="running"):
+        fn = simulation.progress_status_filename
+        if not fn:
+            return
+
+        current_wall_time = time.time()
+        elapsed_sec = current_wall_time - start_wall_time
+        current_iso_time = datetime.now().isoformat()
+
+        total_events = 0
+        for s in simulation.source_manager.sources.values():
+            if hasattr(s, "g4_source") and s.g4_source:
+                total_events += s.g4_source.GetNumberOfSimulatedEvents()
+            elif hasattr(s, "fTotalNumberOfSimulatedEvents"):
+                total_events += getattr(s, "fTotalNumberOfSimulatedEvents", 0)
+
+        events_per_sec = total_events / elapsed_sec if elapsed_sec > 0 else 0.0
+
+        expected_events = getattr(simulation, "expected_number_of_events", 0)
+        if expected_events and expected_events > 0:
+            progress_ratio = min(1.0, total_events / expected_events)
+        elif status == "completed":
+            progress_ratio = 1.0
+        else:
+            progress_ratio = 0.0
+
+        current_sim_time = total_sim_time * progress_ratio
+        progress_pct = progress_ratio * 100.0
+
+        current_run_idx = 0
+        if intervals and total_sim_time > 0:
+            accum = 0.0
+            for idx, interval in enumerate(intervals):
+                dur = interval[1] - interval[0]
+                if accum + dur >= current_sim_time:
+                    current_run_idx = idx
+                    break
+                accum += dur
+
+        report_data = {
+            "status": status,
+            "simulation_id": getattr(simulation, "simulation_id", "unknown"),
+            "start_time": start_iso_time,
+            "current_time": current_iso_time,
+            "elapsed_time_seconds": round(elapsed_sec, 2),
+            "current_run_index": current_run_idx,
+            "number_of_runs": len(intervals) if intervals else 0,
+            "current_simulation_time": round(current_sim_time, 4),
+            "total_simulation_time": round(total_sim_time, 4),
+            "progress_percentage": round(progress_pct, 2),
+            "total_events": total_events,
+            "events_per_second": round(events_per_sec, 2),
+        }
+
+        out_path = Path(fn)
+        if not out_path.is_absolute():
+            out_path = simulation.output_dir / out_path
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w") as f:
+            dump_json(report_data, f)
+
+    return update_report
+
+
 class SourceEngine(EngineBase):
     """
     Source Engine manages the G4 objects of sources at runtime
@@ -215,6 +294,14 @@ class SourceEngine(EngineBase):
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
         )
+
+        if self.simulation_engine.simulation.progress_status_filename:
+            self._progress_reporter = create_progress_reporter(
+                self.simulation_engine.simulation
+            )
+            interval = float(self.simulation_engine.simulation.progress_status_interval)
+            ms.SetProgressReportCallback(self._progress_reporter, interval)
+
         # keep the pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
@@ -242,6 +329,9 @@ class SourceEngine(EngineBase):
             # Clear C++ sources now on the main thread while G4Cache is active
             source.g4_thread_sources = []
             source.g4_thread_sources_index = 0
+
+        if hasattr(self, "_progress_reporter") and self._progress_reporter:
+            self._progress_reporter("completed")
 
     def can_predict_expected_number_of_event(self):
         # can_predict = True

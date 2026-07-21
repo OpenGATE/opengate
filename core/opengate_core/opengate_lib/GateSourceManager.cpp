@@ -17,6 +17,7 @@
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
+#include <CLHEP/Units/SystemOfUnits.h>
 #include <G4Exception.hh>
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
@@ -49,6 +50,7 @@ GateSourceManager::GateSourceManager() {
   fVerboseLevel = 0;
   fUserEventInformationFlag = false;
   fProgressBarFlag = false;
+  fProgressReportInterval = 0.0;
   auto &l = fThreadLocalData.Get();
   l.fStartNewRun = true;
   l.fNextRunId = 0;
@@ -351,7 +353,39 @@ void GateSourceManager::CheckForNextRun() const {
   }
 }
 
+void GateSourceManager::SetProgressReportCallback(py::function func,
+                                                  double interval_seconds) {
+  fProgressReportCallback = func;
+  fProgressReportInterval = interval_seconds / CLHEP::s;
+  fLastProgressReportTime = std::chrono::steady_clock::now();
+  DDD("Set progress report callback ", interval_seconds, "  ", func);
+}
+
+void GateSourceManager::CheckProgressReport() const {
+  if (fProgressReportInterval <= 0.0 || !fProgressReportCallback) {
+    return;
+  }
+  auto now = std::chrono::steady_clock::now();
+  std::unique_lock<std::mutex> lock(fProgressReportMutex, std::try_to_lock);
+  if (!lock.owns_lock()) {
+    return;
+  }
+  double elapsed =
+      std::chrono::duration<double>(now - fLastProgressReportTime).count();
+  if (elapsed >= fProgressReportInterval) {
+    fLastProgressReportTime = now;
+    // gil is needed when using fProgressReportCallback
+    py::gil_scoped_acquire acquire;
+    try {
+      fProgressReportCallback();
+    } catch (const py::error_already_set &e) {
+      // ignore or log
+    }
+  }
+}
+
 void GateSourceManager::GeneratePrimaries(G4Event *event) {
+  CheckProgressReport();
   auto &l = fThreadLocalData.Get();
   // Needed to initialize a new Run (all threads)
   if (l.fStartNewRun) {

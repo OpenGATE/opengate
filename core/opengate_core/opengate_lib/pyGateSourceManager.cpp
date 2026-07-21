@@ -24,6 +24,8 @@ void init_GateSourceManager(py::module &m) {
                   &GateSourceManager::GetPlatformMaxPrimariesPerRun)
       .def_readwrite("fUserEventInformationFlag",
                      &GateSourceManager::fUserEventInformationFlag)
+      .def("SetProgressReportCallback",
+           &GateSourceManager::SetProgressReportCallback)
       .def("StartMasterThread", &GateSourceManager::StartMasterThread,
            py::call_guard<py::gil_scoped_release>());
 }

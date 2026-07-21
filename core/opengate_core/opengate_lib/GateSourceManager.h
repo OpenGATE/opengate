@@ -28,7 +28,12 @@
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <mutex>
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 using namespace indicators;
 
@@ -109,6 +114,10 @@ public:
 
   void ComputeExpectedNumberOfEvents();
 
+  void SetProgressReportCallback(py::function func, double interval_seconds);
+
+  void CheckProgressReport() const;
+
   static void SetRunTerminationFlag(bool flag);
   static void ResetPrimaryCounterForRun();
   static bool TryReservePrimarySlot();
@@ -178,6 +187,14 @@ public:
 
   // Options (visualisation for example)
   py::dict fOptions;
+
+  // Progress report
+  double fProgressReportInterval;
+  py::function fProgressReportCallback;
+  mutable std::chrono::steady_clock::time_point
+      fLastProgressReportTime; // (mutable needed in CheckProgressReport)
+  mutable std::mutex
+      fProgressReportMutex; // (mutable needed in CheckProgressReport)
 
   bool fUserEventInformationFlag;
 };
