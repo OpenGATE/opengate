@@ -48,7 +48,6 @@ Makefile
 *.lib
 *.dylib
 *.dll
-bin/
 make*.sh
 
 
