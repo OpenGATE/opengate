@@ -84,9 +84,11 @@ def load_job_metadata(job_folder):
 def aggregate_counts_by_original_run(manifest, split_root):
     aggregated_counts = {}
     for job in manifest["jobs"]:
-        child_simulation = load_child_simulation(split_root / job["folder_name"])
+        job_folder = split_root / job["folder_name"]
+        child_simulation = load_child_simulation(job_folder)
+        job_metadata = load_job_metadata(job_folder)
         for original_run_index, count in zip(
-            job["original_run_indices"], get_source_n(child_simulation)
+            job_metadata["original_run_indices"], get_source_n(child_simulation)
         ):
             aggregated_counts.setdefault(original_run_index, 0)
             aggregated_counts[original_run_index] += int(count)
@@ -116,7 +118,6 @@ if __name__ == "__main__":
     )
     manifest_1 = load_manifest(split_root_1)
     print(f"split manifest    = {split_root_1}")
-    print(f"split root folder = {manifest_1['split_root_folder']}")
 
     utility.print_test(
         split_root_1.name.startswith("jobs_"),
@@ -197,11 +198,11 @@ if __name__ == "__main__":
     )
     manifest_2 = load_manifest(split_root_2)
     print(f"split manifest  = {split_root_2}")
-    print(f"split root folder = {manifest_2['split_root_folder']}")
 
     job_1_total = load_child_simulation(split_root_2 / "job0001")
     job_2_total = load_child_simulation(split_root_2 / "job0002")
     job_3_total = load_child_simulation(split_root_2 / "job0003")
+    job_1_total_metadata = load_job_metadata(split_root_2 / "job0001")
 
     # Active simulation time is 1 s + 3 s = 4 s, therefore each of the 3 jobs
     # should cover 4/3 s of active time.
@@ -242,10 +243,10 @@ if __name__ == "__main__":
     )
 
     utility.print_test(
-        manifest_2["jobs"][0]["original_run_indices"] == [0, 1],
-        f"split_time_total first job original run indices: {manifest_2['jobs'][0]['original_run_indices']}",
+        job_1_total_metadata["original_run_indices"] == [0, 1],
+        f"split_time_total first job original run indices: {job_1_total_metadata['original_run_indices']}",
     )
-    is_ok = manifest_2["jobs"][0]["original_run_indices"] == [0, 1] and is_ok
+    is_ok = job_1_total_metadata["original_run_indices"] == [0, 1] and is_ok
 
     utility.print_test(
         get_dynamic_volume_translation(job_1_total)
