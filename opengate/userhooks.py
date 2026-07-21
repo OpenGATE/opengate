@@ -259,12 +259,21 @@ def progress_status(filename):
             )
         )
 
+        if status == "completed":
+            estimated_remaining_sec = 0.0
+        elif events_per_sec > 0 and expected_events and expected_events > total_events:
+            remaining_events = expected_events - total_events
+            estimated_remaining_sec = remaining_events / events_per_sec
+        else:
+            estimated_remaining_sec = 0.0
+
         report_data = {
             "status": status,
             "simulation_id": getattr(simulation, "simulation_id", "unknown"),
             "start_time": start_iso_time,
             "current_time": current_iso_time,
             "elapsed_time_seconds": round(elapsed_sec, 2),
+            "estimated_time_remaining_seconds": round(estimated_remaining_sec, 2),
             "run_index": current_run_idx,
             "run_total": len(intervals) if intervals else 0,
             "simulation_time_current": round(current_sim_time, 4),

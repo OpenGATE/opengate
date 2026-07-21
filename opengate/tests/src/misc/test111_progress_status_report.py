@@ -71,6 +71,8 @@ def main():
         # Expected expected total events = 4e6 from source1 (2e6/2*2 runs*2 threads) + 4e6 from source2 activity
         is_ok = is_ok and data.get("status") == "completed"
         is_ok = is_ok and "elapsed_time_seconds" in data
+        is_ok = is_ok and "estimated_time_remaining_seconds" in data
+        is_ok = is_ok and data.get("estimated_time_remaining_seconds") == 0.0
         is_ok = is_ok and data.get("run_total") == 2
         is_ok = is_ok and data.get("events_progress") == 100.0
         is_ok = is_ok and data.get("simulation_time_progress") == 100.0
