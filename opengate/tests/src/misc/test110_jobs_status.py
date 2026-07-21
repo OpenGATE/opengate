@@ -8,7 +8,7 @@ from opengate.bin.opengate_jobs_status import (
     print_jobs_status_summary,
 )
 from opengate.geometry.materials import read_voxel_materials
-from opengate.jobs import create_split_jobs, get_jobs_status
+from opengate.jobs import get_jobs_status
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
@@ -35,7 +35,7 @@ def main():
 
     sim1.run_timing_intervals = [[0.0, 1.0], [1.0, 2.0]]
 
-    split_root_folder1 = create_split_jobs(
+    split_root_folder1 = gate.jobs_split(
         sim1, number_of_jobs=2, split_path=paths.output / "basic", policy="split_time"
     )
 
@@ -121,7 +121,8 @@ def main():
     stats_actor = sim2.add_actor("SimulationStatisticsActor", "Stats")
     stats_actor.track_types_flag = True
 
-    split_root_folder2 = sim2.jobs_split(
+    split_root_folder2 = gate.jobs_split(
+        sim2,
         3,
         paths.output / "complex" / "split_campaigns",
         policy="split_time",

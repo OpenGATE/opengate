@@ -1,18 +1,27 @@
 import math
+import multiprocessing
+import os
+import re
+import subprocess
+import sys
+import traceback
 import uuid
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 
-from .exception import fatal
+from .exception import GateJobsBackendError, fatal
 from .runtiming import assert_run_timing
 from .serialization import dump_json, load_json
 
 JOBS_MANIFEST_FILENAME = "jobs_manifest.json"
+JOBS_BACKEND_STATUS_FILENAME = "jobs_backend_status.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
+JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_SIMULATION_FILENAME = "simulation.json"
 MASTER_SIMULATION_FILENAME = "simulation.json"
+JOB_EXECUTION_ALLOWED_STATUSES = ("running", "completed", "failed", "skipped")
 
 
 def _clone_simulation(simulation):
@@ -313,7 +322,7 @@ def _configure_child_simulation(
     return job_folder, child_metadata
 
 
-def create_split_jobs(
+def jobs_split(
     simulation,
     number_of_jobs,
     split_path,
@@ -393,6 +402,449 @@ def create_split_jobs(
     return split_root_folder
 
 
+def _now_isoformat():
+    return datetime.now().isoformat()
+
+
+def _get_platform_process_start_method():
+    if sys.platform == "darwin" or os.name == "nt":
+        return "spawn"
+    return "fork"
+
+
+def _get_job_execution_status_path(job_folder):
+    return Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME
+
+
+def _load_job_metadata(job_folder):
+    with open(Path(job_folder) / JOB_METADATA_FILENAME, "r") as input_file:
+        return load_json(input_file)
+
+
+def _load_jobs_manifest(manifest_or_dir_path):
+    path = Path(manifest_or_dir_path).resolve()
+    manifest_path = path / JOBS_MANIFEST_FILENAME if path.is_dir() else path
+    if not manifest_path.exists():
+        fatal(f"Jobs manifest file not found at '{manifest_path}'.")
+    with open(manifest_path, "r") as input_file:
+        manifest = load_json(input_file)
+    return manifest_path, manifest
+
+
+def _get_jobs_backend_status_path(split_root_folder):
+    return Path(split_root_folder) / JOBS_BACKEND_STATUS_FILENAME
+
+
+def load_jobs_backend_status(split_root_folder):
+    status_path = _get_jobs_backend_status_path(split_root_folder)
+    if not status_path.exists():
+        return None
+    with open(status_path, "r") as input_file:
+        return load_json(input_file)
+
+
+def _write_jobs_backend_status(
+    split_root_folder,
+    backend,
+    status,
+    submitted_jobs,
+    skipped_completed_jobs,
+    submitted_at=None,
+    campaign_process_pid=None,
+    scheduler_job_id=None,
+    submit_file_path=None,
+    submit_command=None,
+    submission_stdout=None,
+    submission_stderr=None,
+):
+    status_data = {
+        "backend": backend,
+        "status": status,
+        "submitted_jobs": submitted_jobs,
+        "skipped_completed_jobs": skipped_completed_jobs,
+        "submitted_at": submitted_at,
+        "updated_at": _now_isoformat(),
+        "campaign_process_pid": campaign_process_pid,
+        "scheduler_job_id": scheduler_job_id,
+        "submit_file_path": submit_file_path,
+        "submit_command": submit_command,
+        "submission_stdout": submission_stdout,
+        "submission_stderr": submission_stderr,
+    }
+    with open(_get_jobs_backend_status_path(split_root_folder), "w") as output_file:
+        dump_json(status_data, output_file)
+    return status_data
+
+
+def load_job_execution_status(job_folder):
+    status_path = _get_job_execution_status_path(job_folder)
+    if not status_path.exists():
+        return None
+    with open(status_path, "r") as input_file:
+        return load_json(input_file)
+
+
+def _write_job_execution_status(
+    job_folder,
+    metadata,
+    backend,
+    status,
+    submitted_at=None,
+    started_at=None,
+    finished_at=None,
+    error_message=None,
+):
+    if status not in JOB_EXECUTION_ALLOWED_STATUSES:
+        fatal(
+            f"Unknown execution status '{status}'. "
+            f"Allowed values are {JOB_EXECUTION_ALLOWED_STATUSES}."
+        )
+    status_data = {
+        "job_id": metadata.get("job_id"),
+        "job_index": metadata.get("job_index"),
+        "backend": backend,
+        "status": status,
+        "submitted_at": submitted_at,
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "updated_at": _now_isoformat(),
+        "error_message": error_message,
+    }
+    with open(_get_job_execution_status_path(job_folder), "w") as output_file:
+        dump_json(status_data, output_file)
+    return status_data
+
+
+def _run_job_folder(job_folder, backend, start_new_process):
+    """Execute one child job from its persisted job folder.
+
+    The caller decides whether the simulation itself should run in the current
+    process or dispatch one more subprocess via
+    ``sim.run(start_new_process=...)``. That choice is separate from the
+    campaign-level process created in ``jobs_run()``, whose role is only to
+    detach orchestration from the caller.
+    """
+    job_folder = Path(job_folder).resolve()
+    metadata = {
+        "job_id": None,
+        "job_index": None,
+    }
+    submitted_at = _now_isoformat()
+    started_at = _now_isoformat()
+
+    try:
+        metadata = _load_job_metadata(job_folder)
+        _write_job_execution_status(
+            job_folder,
+            metadata,
+            backend=backend,
+            status="running",
+            submitted_at=submitted_at,
+            started_at=started_at,
+        )
+
+        simulation_path = job_folder / metadata.get(
+            "simulation_filename", JOB_SIMULATION_FILENAME
+        )
+        sim = create_sim_from_json(simulation_path)
+        sim.output_dir = job_folder
+        sim.run(start_new_process=start_new_process)
+
+        finished_at = _now_isoformat()
+        _write_job_execution_status(
+            job_folder,
+            metadata,
+            backend=backend,
+            status="completed",
+            submitted_at=submitted_at,
+            started_at=started_at,
+            finished_at=finished_at,
+        )
+        return {
+            "job_id": metadata.get("job_id"),
+            "job_index": metadata.get("job_index"),
+            "job_folder": str(job_folder),
+            "status": "completed",
+        }
+    except Exception as error:
+        finished_at = _now_isoformat()
+        error_message = f"{type(error).__name__}: {error}"
+        traceback_str = traceback.format_exc()
+        _write_job_execution_status(
+            job_folder,
+            metadata,
+            backend=backend,
+            status="failed",
+            submitted_at=submitted_at,
+            started_at=started_at,
+            finished_at=finished_at,
+            error_message=f"{error_message}\n{traceback_str}",
+        )
+        return {
+            "job_id": metadata.get("job_id"),
+            "job_index": metadata.get("job_index"),
+            "job_folder": str(job_folder),
+            "status": "failed",
+            "error_message": error_message,
+        }
+
+
+def _run_job_folder_cli(job_folder, backend="local_cli", start_new_process=False):
+    """Run one persisted child job folder and return its execution summary."""
+    return _run_job_folder(
+        job_folder,
+        backend=backend,
+        start_new_process=start_new_process,
+    )
+
+
+def _run_job_folder_local_pool(job_folder):
+    # The pool worker process is already the dedicated execution process for this
+    # job. Avoid dispatching another subprocess from inside the worker.
+    # With maxtasksperchild=1, one pool worker process handles one child job.
+    return _run_job_folder(job_folder, backend="local_pool", start_new_process=False)
+
+
+def _run_job_folders_in_local_sequential(job_folders):
+    return [
+        # A single sequential campaign process executes jobs one after another, so
+        # each child simulation must run in its own subprocess to avoid reusing
+        # Geant4 state across jobs. Here, the orchestration process survives across
+        # several jobs, but the simulation process does not.
+        _run_job_folder(
+            job_folder,
+            backend="local_sequential",
+            start_new_process=True,
+        )
+        for job_folder in job_folders
+    ]
+
+
+def _run_job_folders_in_local_pool(
+    job_folders,
+    n_workers,
+    start_method="spawn",
+    maxtasksperchild=1,
+):
+    if int(n_workers) < 1:
+        raise GateJobsBackendError(
+            "The local_pool backend requires n_workers >= 1."
+        )
+    if int(maxtasksperchild) != 1:
+        raise GateJobsBackendError(
+            "The local_pool backend currently requires maxtasksperchild=1 so each "
+            "worker process executes at most one job."
+        )
+    ctx = multiprocessing.get_context(start_method)
+    with ctx.Pool(
+        processes=int(n_workers),
+        maxtasksperchild=maxtasksperchild,
+    ) as pool:
+        return pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
+
+
+def _run_jobs_campaign(job_folders, backend, backend_options):
+    """Run the detached campaign-level orchestration for a selected backend.
+
+    This function does not represent one simulation run itself. It decides how
+    the selected child jobs are executed after ``jobs_run()`` has detached the
+    campaign from the caller process.
+    """
+    if backend == "local_sequential":
+        return _run_job_folders_in_local_sequential(job_folders)
+
+    if backend == "local_pool":
+        pooling_options = backend_options.get("pooling_options", {})
+        return _run_job_folders_in_local_pool(job_folders, **pooling_options)
+
+    raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+
+
+def _validate_jobs_backend_options(backend, backend_options):
+    if backend_options is None:
+        backend_options = {}
+
+    if backend == "local_sequential":
+        if len(backend_options) > 0:
+            raise GateJobsBackendError(
+                "The local_sequential backend does not accept backend_options."
+            )
+        return {}
+
+    if backend == "local_pool":
+        allowed_top_level_keys = {"pooling_options"}
+        unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
+        if len(unknown_keys) > 0:
+            raise GateJobsBackendError(
+                f"The local_pool backend received unknown option groups: {sorted(unknown_keys)}."
+            )
+        pooling_options = dict(backend_options.get("pooling_options", {}))
+        allowed_pooling_keys = {"n_workers", "start_method", "maxtasksperchild"}
+        unknown_pooling_keys = set(pooling_options.keys()).difference(
+            allowed_pooling_keys
+        )
+        if len(unknown_pooling_keys) > 0:
+            raise GateJobsBackendError(
+                f"The local_pool backend received unknown pooling_options: {sorted(unknown_pooling_keys)}."
+            )
+        if "n_workers" not in pooling_options:
+            pooling_options["n_workers"] = os.cpu_count() or 1
+        try:
+            pooling_options["n_workers"] = int(pooling_options["n_workers"])
+        except (TypeError, ValueError) as error:
+            raise GateJobsBackendError(
+                f"Invalid n_workers value for local_pool: {pooling_options['n_workers']}."
+            ) from error
+        if pooling_options["n_workers"] < 1:
+            raise GateJobsBackendError(
+                "The local_pool backend requires n_workers >= 1."
+            )
+        pooling_options.setdefault("start_method", "spawn")
+        try:
+            multiprocessing.get_context(pooling_options["start_method"])
+        except ValueError as error:
+            raise GateJobsBackendError(
+                f"Unknown multiprocessing start_method '{pooling_options['start_method']}' "
+                "for the local_pool backend."
+            ) from error
+        pooling_options.setdefault("maxtasksperchild", 1)
+        if pooling_options["maxtasksperchild"] is not None:
+            try:
+                pooling_options["maxtasksperchild"] = int(
+                    pooling_options["maxtasksperchild"]
+                )
+            except (TypeError, ValueError) as error:
+                raise GateJobsBackendError(
+                    "The local_pool backend requires maxtasksperchild to be "
+                    "None or an integer >= 1."
+                ) from error
+            if pooling_options["maxtasksperchild"] < 1:
+                raise GateJobsBackendError(
+                    "The local_pool backend requires maxtasksperchild >= 1."
+                )
+            if pooling_options["maxtasksperchild"] != 1:
+                raise GateJobsBackendError(
+                    "The local_pool backend currently requires maxtasksperchild=1."
+                )
+        return {"pooling_options": pooling_options}
+
+    raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+
+
+def jobs_run(
+    split_path,
+    backend="local_sequential",
+    backend_options=None,
+    force=False,
+    restart_running_jobs=False,
+):
+    """Launch a split-jobs campaign from a split root folder or manifest path.
+
+    The whole campaign is started in a separate orchestration process so this
+    function can return immediately while the selected job folders keep running
+    in the background.
+    """
+    manifest_path, manifest = _load_jobs_manifest(split_path)
+    split_root_folder = manifest_path.parent
+    status_data = get_jobs_status(split_root_folder)
+
+    structurally_not_ready_jobs = [
+        job for job in status_data["jobs"] if job.get("status") != "ready"
+    ]
+    if len(structurally_not_ready_jobs) > 0:
+        problematic_jobs = ", ".join(
+            job["folder_name"] for job in structurally_not_ready_jobs
+        )
+        fatal(
+            "Cannot run split jobs because some job folders are not structurally ready: "
+            f"{problematic_jobs}."
+        )
+
+    backend_options = _validate_jobs_backend_options(backend, backend_options)
+
+    running_jobs = []
+    selected_job_folders = []
+    skipped_completed_jobs = []
+
+    for job_item in manifest.get("jobs", []):
+        job_folder = split_root_folder / job_item["folder_name"]
+        execution_status = load_job_execution_status(job_folder)
+        if execution_status is None:
+            selected_job_folders.append(job_folder)
+            continue
+
+        if execution_status.get("status") == "completed" and force is False:
+            skipped_completed_jobs.append(job_folder)
+            continue
+
+        if (
+            execution_status.get("status") == "running"
+            and restart_running_jobs is False
+        ):
+            running_jobs.append(job_folder.name)
+            continue
+
+        selected_job_folders.append(job_folder)
+
+    if len(running_jobs) > 0:
+        fatal(
+            "Some jobs are still marked as running: "
+            f"{', '.join(running_jobs)}. "
+            "Relaunch with restart_running_jobs=True to override them."
+        )
+
+    if len(selected_job_folders) == 0:
+        return {
+            "backend": backend,
+            "manifest_path": str(manifest_path),
+            "split_root_folder": str(split_root_folder),
+            "submitted_jobs": 0,
+            "skipped_completed_jobs": len(skipped_completed_jobs),
+            "campaign_process_pid": None,
+        }
+
+    if backend in ("local_sequential", "local_pool"):
+        launcher_context = multiprocessing.get_context(
+            _get_platform_process_start_method()
+        )
+        campaign_process = launcher_context.Process(
+            # This subprocess is only the campaign orchestrator. Backend-specific
+            # job execution happens inside it, potentially with further worker
+            # processes or per-job subprocesses depending on the backend.
+            target=_run_jobs_campaign,
+            args=(
+                [str(job_folder) for job_folder in selected_job_folders],
+                backend,
+                backend_options,
+            ),
+        )
+        campaign_process.start()
+
+        _write_jobs_backend_status(
+            split_root_folder,
+            backend=backend,
+            status="submitted",
+            submitted_jobs=len(selected_job_folders),
+            skipped_completed_jobs=len(skipped_completed_jobs),
+            submitted_at=_now_isoformat(),
+            campaign_process_pid=campaign_process.pid,
+        )
+
+        return {
+            "backend": backend,
+            "manifest_path": str(manifest_path),
+            "split_root_folder": str(split_root_folder),
+            "submitted_jobs": len(selected_job_folders),
+            "skipped_completed_jobs": len(skipped_completed_jobs),
+            "campaign_process_pid": campaign_process.pid,
+            "backend_status_path": str(
+                _get_jobs_backend_status_path(split_root_folder)
+            ),
+        }
+
+    raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+
+
 from .base import (
     _get_user_info_options,
     find_all_gate_objects,
@@ -425,7 +877,7 @@ def _find_metaimage_payload_paths(header_path):
     return payload_paths
 
 
-def get_simulation_input_files_info(simulation):
+def _get_simulation_input_files_info(simulation):
     input_files_info = []
     dct = simulation.to_dictionary()
     for go_dict in find_all_gate_objects(dct):
@@ -477,7 +929,7 @@ def get_simulation_input_files_info(simulation):
     return input_files_info
 
 
-def format_bytes(size_bytes):
+def _format_bytes(size_bytes):
     if size_bytes < 1024:
         return f"{size_bytes} B"
     elif size_bytes < 1024 * 1024:
@@ -516,7 +968,7 @@ def get_jobs_status(manifest_or_dir_path):
     if master_sim_file.exists():
         try:
             master_sim = create_sim_from_json(master_sim_file)
-            master_input_files = get_simulation_input_files_info(master_sim)
+            master_input_files = _get_simulation_input_files_info(master_sim)
         except Exception:
             pass
 
@@ -532,6 +984,9 @@ def get_jobs_status(manifest_or_dir_path):
         ),
         "master_simulation_exists": master_sim_file.exists(),
         "master_input_files": master_input_files,
+        "backend_status_filename": JOBS_BACKEND_STATUS_FILENAME,
+        "backend_status_exists": False,
+        "backend_status_data": None,
         "jobs": [],
         "summary_counts": {
             "total": 0,
@@ -540,7 +995,18 @@ def get_jobs_status(manifest_or_dir_path):
             "missing_metadata": 0,
             "missing_input_file": 0,
         },
+        "execution_counts": {
+            "running": 0,
+            "completed": 0,
+            "failed": 0,
+            "skipped": 0,
+        },
     }
+
+    backend_status_data = load_jobs_backend_status(split_root_folder)
+    if backend_status_data is not None:
+        status_data["backend_status_exists"] = True
+        status_data["backend_status_data"] = backend_status_data
 
     for job_item in manifest.get("jobs", []):
         folder_name = job_item.get("folder_name", "")
@@ -554,6 +1020,13 @@ def get_jobs_status(manifest_or_dir_path):
         if metadata_exists:
             with open(metadata_file, "r") as input_file:
                 metadata = load_json(input_file)
+
+        execution_status_data = load_job_execution_status(job_folder)
+        execution_status = None
+        if execution_status_data is not None:
+            execution_status = execution_status_data.get("status")
+            if execution_status in status_data["execution_counts"]:
+                status_data["execution_counts"][execution_status] += 1
 
         simulation_filename = metadata.get("simulation_filename", JOB_SIMULATION_FILENAME)
         simulation_file = job_folder / simulation_filename
@@ -575,7 +1048,7 @@ def get_jobs_status(manifest_or_dir_path):
         if folder_exists and metadata_exists and sim_exists:
             try:
                 child_sim = create_sim_from_json(simulation_file)
-                job_input_files = get_simulation_input_files_info(child_sim)
+                job_input_files = _get_simulation_input_files_info(child_sim)
                 for info in job_input_files:
                     val_str = info["value"]
                     val_path = Path(val_str)
@@ -624,17 +1097,15 @@ def get_jobs_status(manifest_or_dir_path):
                 "simulation_exists": sim_exists,
                 "missing_input_files": missing_input_files,
                 "status": job_status,
-<<<<<<< HEAD
-                "run_timing_intervals": job_item.get("run_timing_intervals", []),
-                "original_run_indices": job_item.get("original_run_indices", []),
-                "folder_size_bytes": folder_size,
-                "folder_size_str": format_bytes(folder_size),
-                "input_mode": "linked" if has_symlink else "copied",
-=======
                 "run_timing_intervals": metadata.get("run_timing_intervals", []),
                 "original_run_indices": metadata.get("original_run_indices", []),
-                "output_files": sorted(output_files),
->>>>>>> 6659857ed (Simplify split job manifest metadata)
+                "folder_size_bytes": folder_size,
+                "folder_size_str": _format_bytes(folder_size),
+                "input_mode": "linked" if has_symlink else "copied",
+                "execution_status_filename": JOB_EXECUTION_STATUS_FILENAME,
+                "execution_status_exists": execution_status_data is not None,
+                "execution_status": execution_status,
+                "execution_status_data": execution_status_data,
             }
         )
 

@@ -61,18 +61,29 @@ def print_jobs_status_summary(status_data, verbose=False):
     print(
         f"  Total: {counts['total']}  |  Ready: {counts['ready']}  |  Missing: {missing_str}"
     )
+    execution_counts = status_data.get("execution_counts", {})
+    if len(execution_counts) > 0:
+        print(
+            "  Execution: "
+            f"running={execution_counts.get('running', 0)}  "
+            f"completed={execution_counts.get('completed', 0)}  "
+            f"failed={execution_counts.get('failed', 0)}  "
+            f"skipped={execution_counts.get('skipped', 0)}"
+        )
 
     for job in status_data["jobs"]:
         job_idx = job["job_index"]
         folder = job["folder_name"]
         st = job["status"].upper()
         st_str = colored.stylize(st, color_error) if st != "READY" else st
+        exec_status = job.get("execution_status")
+        exec_str = exec_status.upper() if exec_status is not None else "NONE"
         job_intervals = job.get("run_timing_intervals", [])
         timing_str = format_timing_intervals(job_intervals)
         input_mode = job.get("input_mode", "copied")
         size_str = job.get("folder_size_str", "0 B")
         print(
-            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, timing = {timing_str}, inputs = {input_mode} ({size_str})"
+            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, execution = {exec_str}, timing = {timing_str}, inputs = {input_mode} ({size_str})"
         )
         missing_files = job.get("missing_input_files", [])
         if missing_files:

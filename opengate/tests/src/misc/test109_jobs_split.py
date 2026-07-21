@@ -113,8 +113,8 @@ if __name__ == "__main__":
         [(0.0 * sec, 2.0 * sec), (2.0 * sec, 6.0 * sec)],
         [100, 200],
     )
-    split_root_1 = sim_1.jobs_split(
-        4, paths.output / "split_campaigns", policy="split_time"
+    split_root_1 = gate.jobs_split(
+        sim_1, 4, paths.output / "split_campaigns", policy="split_time"
     )
     manifest_1 = load_manifest(split_root_1)
     print(f"split manifest    = {split_root_1}")
@@ -193,8 +193,8 @@ if __name__ == "__main__":
         [(0.0 * sec, 1.0 * sec), (2.0 * sec, 5.0 * sec)],
         [10, 30],
     )
-    split_root_2 = sim_2.jobs_split(
-        3, paths.output / "split_campaigns", policy="split_time_total"
+    split_root_2 = gate.jobs_split(
+        sim_2, 3, paths.output / "split_campaigns", policy="split_time_total"
     )
     manifest_2 = load_manifest(split_root_2)
     print(f"split manifest  = {split_root_2}")

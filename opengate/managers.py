@@ -2181,25 +2181,6 @@ class Simulation(GateObject):
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 
-    def jobs_split(
-        self,
-        number_of_jobs,
-        split_path,
-        policy="split_time",
-        link_files=False,
-        **options,
-    ):
-        from .jobs import create_split_jobs
-
-        return create_split_jobs(
-            self,
-            number_of_jobs=number_of_jobs,
-            split_path=split_path,
-            policy=policy,
-            link_files=link_files,
-            **options,
-        )
-
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
         if path is None:
             # no input -> return global output directory
