@@ -277,13 +277,33 @@ void GateSourceManager::ComputeExpectedNumberOfEvents() {
   for (auto *source : fSources) {
     fExpectedNumberOfEvents +=
         source->GetExpectedNumberOfEvents(fSimulationTimes);
-    DDD(fExpectedNumberOfEvents);
   }
 }
 
 long int GateSourceManager::GetExpectedNumberOfEvents() const {
-  DDD(fExpectedNumberOfEvents);
   return fExpectedNumberOfEvents;
+}
+
+unsigned long GateSourceManager::GetNumberOfSimulatedEvents() const {
+  unsigned long n = 0;
+  for (const auto *source : fSources) {
+    n += const_cast<GateVSource *>(source)->GetNumberOfSimulatedEvents();
+  }
+  return n;
+}
+
+unsigned long GateSourceManager::GetTotalNumberOfSimulatedEvents() const {
+  unsigned long n = 0;
+  for (const auto *source : fSources) {
+    n += const_cast<GateVSource *>(source)->GetTotalNumberOfSimulatedEvents() +
+         const_cast<GateVSource *>(source)->GetNumberOfSimulatedEvents();
+  }
+  return n;
+}
+
+double GateSourceManager::GetCurrentSimulationTime() const {
+  auto &l = fThreadLocalData.Get();
+  return l.fCurrentSimulationTime;
 }
 
 void GateSourceManager::PrepareRunToStart(int run_id) {

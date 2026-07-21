@@ -68,6 +68,7 @@ def create_progress_reporter(simulation, g4_master_source_manager):
     from datetime import datetime
     from pathlib import Path
     from opengate.serialization import dump_json
+    from opengate.utility import g4_units
 
     start_wall_time = time.time()
     start_iso_time = datetime.now().isoformat()
@@ -86,26 +87,28 @@ def create_progress_reporter(simulation, g4_master_source_manager):
         elapsed_sec = current_wall_time - start_wall_time
         current_iso_time = datetime.now().isoformat()
 
-        # retrive total number of events (summed on all threads)
-        total_events = 0
-        for s in simulation.source_manager.sources.values():
-            for g4_source in s.g4_thread_sources:
-                total_events += g4_source.GetNumberOfSimulatedEvents()
+        # retrive total number of events (summed on all threads and runs)
+        total_events = g4_master_source_manager.GetTotalNumberOfSimulatedEvents()
+        expected_events = g4_master_source_manager.GetExpectedNumberOfEvents()
 
         events_per_sec = total_events / elapsed_sec if elapsed_sec > 0 else 0.0
-
-        expected_events = g4_master_source_manager.GetExpectedNumberOfEvents()
-        print(expected_events)
-
-        if expected_events and expected_events > 0:
-            progress_ratio = min(1.0, total_events / expected_events)
-        elif status == "completed":
+        raw_current_sim_time = (
+            g4_master_source_manager.GetCurrentSimulationTime() / g4_units.s
+            if g4_master_source_manager
+            else 0.0
+        )
+        if status == "completed":
+            current_sim_time = total_sim_time
             progress_ratio = 1.0
         else:
-            progress_ratio = 0.0
+            current_sim_time = raw_current_sim_time
+            progress_ratio = (
+                min(1.0, total_events / expected_events)
+                if expected_events and expected_events > 0
+                else 0.0
+            )
 
-        current_sim_time = total_sim_time * progress_ratio
-        progress_pct = progress_ratio * 100.0
+        progress_pct = 100.0 if status == "completed" else progress_ratio * 100.0
 
         current_run_idx = 0
         if intervals and total_sim_time > 0:
@@ -120,16 +123,16 @@ def create_progress_reporter(simulation, g4_master_source_manager):
         report_data = {
             "status": status,
             "simulation_id": getattr(simulation, "simulation_id", "unknown"),
-            "start_time": start_iso_time,
-            "current_time": current_iso_time,
-            "elapsed_time_seconds": round(elapsed_sec, 2),
+            "sim_start_time": start_iso_time,
+            "sim_current_time": current_iso_time,
+            "sim_elapsed_time_seconds": round(elapsed_sec, 2),
             "current_run_index": current_run_idx,
-            "number_of_runs": len(intervals) if intervals else 0,
+            "total_number_of_runs": len(intervals) if intervals else 0,
             "current_simulation_time": round(current_sim_time, 4),
             "total_simulation_time": round(total_sim_time, 4),
+            "events_total": total_events,
+            "events_expected": expected_events,
             "progress_percentage": round(progress_pct, 2),
-            "total_events": total_events,
-            "expected_events": expected_events,
             "events_per_second": round(events_per_sec, 2),
         }
 

@@ -112,6 +112,11 @@ public:
 
   long int GetExpectedNumberOfEvents() const;
 
+  unsigned long GetNumberOfSimulatedEvents() const;
+  unsigned long GetTotalNumberOfSimulatedEvents() const;
+
+  double GetCurrentSimulationTime() const;
+
   void ComputeExpectedNumberOfEvents();
 
   void SetProgressReportCallback(py::function func, double interval_seconds);

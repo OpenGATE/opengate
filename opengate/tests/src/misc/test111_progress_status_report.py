@@ -17,15 +17,22 @@ def main():
     box = sim.add_volume("Box", "box")
     box.size = [10.0, 10.0, 10.0]
 
-    source = sim.add_source("GenericSource", "source")
+    # source = sim.add_source("GenericSource", "source")
+    # source.particle = "gamma"
+    # source.n = [2e6, 2e6]
+    # source.direction.type = "iso"
+    # source.energy.mono = 1.0 * gate.g4_units.MeV
+
+    source = sim.add_source("GenericSource", "source2")
     source.particle = "gamma"
-    source.n = [5e6, 5e6]
+    source.activity = 2e6 * gate.g4_units.Bq
     source.direction.type = "iso"
     source.energy.mono = 1.0 * gate.g4_units.MeV
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
-    sim.run_timing_intervals = [[0.0, 1.0], [1.0, 2.0]]
+    sec = gate.g4_units.s
+    sim.run_timing_intervals = [[0.0, 1.0 * sec], [1.0 * sec, 2.0 * sec]]
 
     # Progress status report
     status_file = paths.output / "progress_status.json"

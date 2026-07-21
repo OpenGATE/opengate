@@ -18,5 +18,7 @@ void init_GateVSource(py::module &m) {
       .def("SetOrientationAccordingToAttachedVolume",
            &GateVSource::SetOrientationAccordingToAttachedVolume)
       .def("GetNumberOfSimulatedEvents",
-           &GateVSource::GetNumberOfSimulatedEvents);
+           &GateVSource::GetNumberOfSimulatedEvents)
+      .def("GetTotalNumberOfSimulatedEvents",
+           &GateVSource::GetTotalNumberOfSimulatedEvents);
 }
