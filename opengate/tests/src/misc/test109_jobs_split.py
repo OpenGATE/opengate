@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import json
-from pathlib import Path
-
+import shutil
 import numpy as np
-
 import opengate as gate
+from pathlib import Path
 from opengate.tests import utility
 
 
@@ -97,11 +96,16 @@ def aggregate_counts_by_original_run(manifest, split_root):
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test109")
     sec = gate.g4_units.s
-
     is_ok = True
+
+    print(f"working folder = {paths.output}")
+    print()
+    # remove previous split_campaigns
+    shutil.rmtree(paths.output / "split_campaigns", ignore_errors=True)
 
     # Validate the simple per-interval split policy first. Each original run is
     # divided independently, so each child should only refer to one original run.
+    print("building a simulation (2 runs, 2 sources) ...")
     sim_1, source_images_1 = build_simulation(
         paths.output / "split_time_input",
         [(0.0 * sec, 2.0 * sec), (2.0 * sec, 6.0 * sec)],
@@ -111,6 +115,8 @@ if __name__ == "__main__":
         4, paths.output / "split_campaigns", policy="split_time"
     )
     manifest_1 = load_manifest(split_root_1)
+    print(f"split manifest    = {split_root_1}")
+    print(f"split root folder = {manifest_1['split_root_folder']}")
 
     utility.print_test(
         split_root_1.name.startswith("jobs_"),
@@ -178,6 +184,9 @@ if __name__ == "__main__":
 
     # Validate the total-time split policy next. The first child should span the
     # end of original run 0 and the beginning of original run 1.
+    print()
+    print()
+    print("building another simulation (2 runs, 2 sources) ...")
     sim_2, source_images_2 = build_simulation(
         paths.output / "split_time_total_input",
         [(0.0 * sec, 1.0 * sec), (2.0 * sec, 5.0 * sec)],
@@ -187,6 +196,8 @@ if __name__ == "__main__":
         3, paths.output / "split_campaigns", policy="split_time_total"
     )
     manifest_2 = load_manifest(split_root_2)
+    print(f"split manifest  = {split_root_2}")
+    print(f"split root folder = {manifest_2['split_root_folder']}")
 
     job_1_total = load_child_simulation(split_root_2 / "job0001")
     job_2_total = load_child_simulation(split_root_2 / "job0002")
