@@ -217,7 +217,6 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
-    sim.store_json_archive = True
     sim.output_dir = paths.output / "test007"
 
     # add a material database

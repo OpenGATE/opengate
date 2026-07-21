@@ -17,7 +17,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 3
     if os.name == "nt":
         sim.number_of_threads = 1
-    sim.store_json_archive = True
+    archive_filename = "simulation.json"
 
     # units
     m = gate.g4_units.m
@@ -48,12 +48,13 @@ if __name__ == "__main__":
 
     # start simulation in another process
     sim.run(start_new_process=True)
+    sim.to_json_file(filename=archive_filename)
 
     # print results at the end
     print(stat)
     print(debug_source)
 
-    print(f"Simulation json saved in {sim.output_dir / sim.json_archive_filename}")
+    print(f"Simulation json saved in {sim.output_dir / archive_filename}")
 
     # assertions to verify MT execution and output recovery
     assert stat.counts.events == debug_source.n * sim.number_of_threads
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     assert debug_source.debug_value == debug_source.n * sim.number_of_threads
 
     # check simulation json source_manager entry
-    json_path = sim.output_dir / sim.json_archive_filename
+    json_path = sim.output_dir / archive_filename
     assert json_path.exists()
 
     from opengate.serialization import load_json
