@@ -63,7 +63,7 @@ class EngineBase:
         )
 
 
-def create_progress_reporter(simulation, g4_master_source_manager):
+def create_progress_reporter(simulation, source_engine):
     import time
     from datetime import datetime
     from pathlib import Path
@@ -82,6 +82,7 @@ def create_progress_reporter(simulation, g4_master_source_manager):
 
     def update_report(status="running"):
         fn = simulation.progress_status_filename
+        print(f"[debug Python] update_report status={status} fn={fn}")
         if not fn:
             return
 
@@ -89,15 +90,21 @@ def create_progress_reporter(simulation, g4_master_source_manager):
         elapsed_sec = current_wall_time - start_wall_time
         current_iso_time = datetime.now().isoformat()
 
-        # retrive total number of events (summed on all threads and runs)
-        total_events = g4_master_source_manager.GetTotalNumberOfSimulatedEvents()
-        expected_events = g4_master_source_manager.GetExpectedNumberOfEvents()
+        # retrieve total number of events (summed on all threads and runs)
+        total_events = 0
+        if source_engine.g4_master_source_manager:
+            total_events += (
+                source_engine.g4_master_source_manager.GetTotalNumberOfSimulatedEvents()
+            )
+        for mgr in source_engine.g4_thread_source_managers:
+            total_events += mgr.GetTotalNumberOfSimulatedEvents()
+
+        expected_events = source_engine.expected_number_of_events
 
         events_per_sec = total_events / elapsed_sec if elapsed_sec > 0 else 0.0
+        g4_master = source_engine.g4_master_source_manager
         raw_current_sim_time = (
-            g4_master_source_manager.GetCurrentSimulationTime() / g4_units.s
-            if g4_master_source_manager
-            else 0.0
+            g4_master.GetCurrentSimulationTime() / g4_units.s if g4_master else 0.0
         )
         if status == "completed":
             current_sim_time = total_sim_time
@@ -115,11 +122,7 @@ def create_progress_reporter(simulation, g4_master_source_manager):
         if status == "completed":
             current_run_idx = len(intervals) - 1 if intervals else 0
         else:
-            current_run_idx = (
-                g4_master_source_manager.GetCurrentRunId()
-                if g4_master_source_manager
-                else 0
-            )
+            current_run_idx = g4_master.GetCurrentRunId() if g4_master else 0
 
         time_pct = (
             100.0
@@ -148,6 +151,7 @@ def create_progress_reporter(simulation, g4_master_source_manager):
             "events_per_second": round(events_per_sec, 2),
         }
 
+        print(f"[debug Python] writing report data: {report_data}")
         out_path = Path(fn)
         if not out_path.is_absolute():
             out_path = simulation.output_dir / out_path
@@ -312,13 +316,6 @@ class SourceEngine(EngineBase):
             self.simulation_engine.user_event_information_flag
         )
 
-        if self.simulation_engine.simulation.progress_status_filename:
-            self._progress_reporter = create_progress_reporter(
-                self.simulation_engine.simulation, ms
-            )
-            interval = float(self.simulation_engine.simulation.progress_status_interval)
-            ms.SetProgressReportCallback(self._progress_reporter, interval)
-
         # keep the pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
@@ -326,6 +323,19 @@ class SourceEngine(EngineBase):
         return ms
 
     def start(self):
+        # Register progress report callback on the executing manager (Thread 0)
+        if self.simulation_engine.simulation.progress_status_filename:
+            self._progress_reporter = create_progress_reporter(
+                self.simulation_engine.simulation, self
+            )
+            interval = float(self.simulation_engine.simulation.progress_status_interval)
+            target_manager = (
+                self.g4_thread_source_managers[0]
+                if self.g4_thread_source_managers
+                else self.g4_master_source_manager
+            )
+            target_manager.SetProgressReportCallback(self._progress_reporter, interval)
+
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large

@@ -12,20 +12,20 @@ def main():
 
     sim = gate.Simulation()
     sim.output_dir = paths.output
-    sim.number_of_threads = 1  # FIXME to check in MT
+    sim.number_of_threads = 2
 
     box = sim.add_volume("Box", "box")
     box.size = [10.0, 10.0, 10.0]
 
     source = sim.add_source("GenericSource", "source")
     source.particle = "gamma"
-    source.n = [2e6, 2e6]
+    source.n = [2e6 / sim.number_of_threads, 2e6 / sim.number_of_threads]
     source.direction.type = "iso"
     source.energy.mono = 1.0 * gate.g4_units.MeV
 
     source = sim.add_source("GenericSource", "source2")
     source.particle = "gamma"
-    source.activity = 2e6 * gate.g4_units.Bq
+    source.activity = 2e6 * gate.g4_units.Bq / sim.number_of_threads
     source.direction.type = "iso"
     source.energy.mono = 1.0 * gate.g4_units.MeV
 
@@ -37,7 +37,7 @@ def main():
     # Progress status report
     status_file = paths.output / "progress_status.json"
     sim.progress_status_filename = status_file
-    sim.progress_status_interval = 1 * gate.g4_units.s
+    sim.progress_status_interval = 0.1 * gate.g4_units.s
 
     print(f"Status file will be written in {status_file}")
     print(f"watch -n 0.1 jq . {status_file})")
