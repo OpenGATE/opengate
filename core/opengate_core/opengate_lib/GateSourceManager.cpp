@@ -143,6 +143,7 @@ void GateSourceManager::Initialize(const TimeIntervals &simulation_times,
     SetMaxPrimariesPerRun(GetPlatformMaxPrimariesPerRun());
   }
   InstallSignalHandler();
+  ComputeExpectedNumberOfEvents();
   InitializeProgressBar();
 
   // Fake init of the EventModulo (will be changed in StartMasterThread or by
@@ -245,8 +246,17 @@ void GateSourceManager::StartMasterThread() {
 void GateSourceManager::InitializeProgressBar() {
   if (!fProgressBarFlag)
     return;
-  // (all threads compute the expected number of events)
-  ComputeExpectedNumberOfEvents();
+
+  if (fExpectedNumberOfEvents <= 0) {
+    ComputeExpectedNumberOfEvents();
+  }
+
+  fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
+  if (fExpectedNumberOfEvents > 1e7)
+    fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
+  if (fProgressBarStep < 1) {
+    fProgressBarStep = 1;
+  }
 
   // the progress bar is only for one thread (id ==0)
   if (G4Threading::IsMultithreadedApplication() &&
@@ -267,17 +277,12 @@ void GateSourceManager::ComputeExpectedNumberOfEvents() {
   for (auto *source : fSources) {
     fExpectedNumberOfEvents +=
         source->GetExpectedNumberOfEvents(fSimulationTimes);
-  }
-  fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
-  if (fExpectedNumberOfEvents > 1e7)
-    fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
-
-  if (fProgressBarStep < 1) {
-    fProgressBarStep = 1;
+    DDD(fExpectedNumberOfEvents);
   }
 }
 
 long int GateSourceManager::GetExpectedNumberOfEvents() const {
+  DDD(fExpectedNumberOfEvents);
   return fExpectedNumberOfEvents;
 }
 

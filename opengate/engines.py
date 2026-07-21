@@ -63,7 +63,7 @@ class EngineBase:
         )
 
 
-def create_progress_reporter(simulation):
+def create_progress_reporter(simulation, g4_master_source_manager):
     import time
     from datetime import datetime
     from pathlib import Path
@@ -86,16 +86,17 @@ def create_progress_reporter(simulation):
         elapsed_sec = current_wall_time - start_wall_time
         current_iso_time = datetime.now().isoformat()
 
+        # retrive total number of events (summed on all threads)
         total_events = 0
         for s in simulation.source_manager.sources.values():
-            if hasattr(s, "g4_source") and s.g4_source:
-                total_events += s.g4_source.GetNumberOfSimulatedEvents()
-            elif hasattr(s, "fTotalNumberOfSimulatedEvents"):
-                total_events += getattr(s, "fTotalNumberOfSimulatedEvents", 0)
+            for g4_source in s.g4_thread_sources:
+                total_events += g4_source.GetNumberOfSimulatedEvents()
 
         events_per_sec = total_events / elapsed_sec if elapsed_sec > 0 else 0.0
 
-        expected_events = getattr(simulation, "expected_number_of_events", 0)
+        expected_events = g4_master_source_manager.GetExpectedNumberOfEvents()
+        print(expected_events)
+
         if expected_events and expected_events > 0:
             progress_ratio = min(1.0, total_events / expected_events)
         elif status == "completed":
@@ -128,6 +129,7 @@ def create_progress_reporter(simulation):
             "total_simulation_time": round(total_sim_time, 4),
             "progress_percentage": round(progress_pct, 2),
             "total_events": total_events,
+            "expected_events": expected_events,
             "events_per_second": round(events_per_sec, 2),
         }
 
@@ -297,7 +299,7 @@ class SourceEngine(EngineBase):
 
         if self.simulation_engine.simulation.progress_status_filename:
             self._progress_reporter = create_progress_reporter(
-                self.simulation_engine.simulation
+                self.simulation_engine.simulation, ms
             )
             interval = float(self.simulation_engine.simulation.progress_status_interval)
             ms.SetProgressReportCallback(self._progress_reporter, interval)

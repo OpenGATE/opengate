@@ -4,6 +4,7 @@
 import json
 import opengate as gate
 from opengate.tests import utility
+import numpy as np
 
 
 def main():
@@ -11,7 +12,7 @@ def main():
 
     sim = gate.Simulation()
     sim.output_dir = paths.output
-    sim.number_of_threads = 1
+    sim.number_of_threads = 1  # FIXME to check in MT
 
     box = sim.add_volume("Box", "box")
     box.size = [10.0, 10.0, 10.0]
@@ -26,12 +27,15 @@ def main():
 
     sim.run_timing_intervals = [[0.0, 1.0], [1.0, 2.0]]
 
+    # Progress status report
     status_file = paths.output / "progress_status.json"
     sim.progress_status_filename = status_file
     sim.progress_status_interval = 1 * gate.g4_units.s
 
     print(f"Status file will be written in {status_file}")
     print(f"watch -n 0.1 jq . {status_file})")
+
+    # go
     sim.run()
     print(stats)
 
@@ -42,12 +46,14 @@ def main():
 
         print("\nProgress status JSON content:")
         print(json.dumps(data, indent=2))
+        N = np.sum(np.array(source.n))
+        print("Total events expected = ", N)
 
         is_ok = is_ok and data.get("status") == "completed"
         is_ok = is_ok and "elapsed_time_seconds" in data
         is_ok = is_ok and data.get("number_of_runs") == 2
         is_ok = is_ok and data.get("progress_percentage") == 100.0
-        is_ok = is_ok and data.get("total_events") == 2000
+        is_ok = is_ok and data.get("total_events") == N
 
     utility.test_ok(is_ok)
 

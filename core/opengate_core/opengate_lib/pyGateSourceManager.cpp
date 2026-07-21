@@ -18,6 +18,8 @@ void init_GateSourceManager(py::module &m) {
       .def("RegisterImageBox", &GateSourceManager::RegisterImageBox)
       .def("Initialize", &GateSourceManager::Initialize)
       .def("SetActors", &GateSourceManager::SetActors)
+      .def("ComputeExpectedNumberOfEvents",
+           &GateSourceManager::ComputeExpectedNumberOfEvents)
       .def("GetExpectedNumberOfEvents",
            &GateSourceManager::GetExpectedNumberOfEvents)
       .def_static("GetPlatformMaxPrimariesPerRun",
