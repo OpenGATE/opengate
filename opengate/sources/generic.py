@@ -444,6 +444,7 @@ class GenericSource(SourceBase):
         return g4.GateGenericSource()
 
     def resolve_and_validate_config(self, run_timing_intervals):
+        self.resolve_tac_activity()
         timing_resolution = super().resolve_and_validate_config(run_timing_intervals)
 
         # Check the sub-parameters
@@ -473,7 +474,6 @@ class GenericSource(SourceBase):
             if self.user_particle_life_time < 0:
                 self.user_particle_life_time = 0
 
-        self.resolve_tac_activity()
         self.check_confine(self.user_info)
         return timing_resolution
 
@@ -492,6 +492,8 @@ class GenericSource(SourceBase):
                 g4_source.SetEnergyCDF(ene)
                 g4_source.SetProbabilityCDF(cdf)
 
+        self.initialize_start_end_time(run_timing_intervals)
+        self.check_ui_activity(self.user_info)
         self.update_tac_activity(g4_source)
         g4_source.InitializeUserInfo(self.user_info)
         # warning for non-used ?

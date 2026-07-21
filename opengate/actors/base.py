@@ -522,12 +522,8 @@ class ActorBase(GateObject):
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
 
-        # FIXME: parts of this method are configuration resolution rather than
-        # runtime initialization. In particular, attached_to mother lookup, the
-        # user_output.initialize(), and filter binding should probably be
-        # reviewed for migration into an actor-level
-        # resolve_and_validate_config() phase. Only the Geant4-facing calls
-        # should remain here.
+        if self.mother_attached_to is None:
+            self.resolve_and_validate_config()
 
         # set the name of the attached_to mother volume to cpp
         self.SetMotherAttachedToVolumeName(self.mother_attached_to)
