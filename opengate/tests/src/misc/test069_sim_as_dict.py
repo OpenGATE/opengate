@@ -21,10 +21,8 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
 
-    # store a json archive
-    sim.store_json_archive = True
-    sim.store_input_files = True
-    sim.json_archive_filename = "simu_test069.json"
+    # store a json archive explicitly
+    archive_filename = "simu_test069.json"
     sim.output_dir = paths.output / "test069"
 
     # add a material database
@@ -98,9 +96,11 @@ if __name__ == "__main__":
 
     # run
     sim.run()
+    sim.to_json_file(filename=archive_filename)
+    sim.archive_input_files()
 
     # test the file content
-    fn1 = paths.output / "test069" / sim.json_archive_filename
+    fn1 = paths.output / "test069" / archive_filename
     print(fn1)
 
     from opengate.serialization import load_json

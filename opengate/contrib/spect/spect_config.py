@@ -316,9 +316,6 @@ class SPECTConfig(ConfigBase):
         sim.visu_type = "qt"
         sim.output_dir = self.output_folder
         sim.progress_bar = True
-        sim.store_json_archive = True
-        sim.store_input_files = False
-        sim.json_archive_filename = f"simulation.json"
 
         # threads
         if visu:
