@@ -342,6 +342,7 @@ def create_split_jobs(
         directory=split_root_folder,
         filename=Path(MASTER_SIMULATION_FILENAME),
     )
+    simulation.archive_input_files(directory=split_root_folder)
 
     jobs_manifest = {
         "simulation_id": simulation_id,
@@ -371,6 +372,7 @@ def create_split_jobs(
             directory=job_folder,
             filename=Path(JOB_SIMULATION_FILENAME),
         )
+        child_simulation.archive_input_files(directory=job_folder)
         with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
             dump_json(child_metadata, output_file)
         jobs_manifest["jobs"].append(child_metadata)

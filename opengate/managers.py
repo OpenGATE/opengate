@@ -1735,9 +1735,6 @@ class Simulation(GateObject):
     random_seed: Union[str, int]
     run_timing_intervals: List[List[float]]
     output_dir: Path
-    store_json_archive: bool
-    json_archive_filename: str
-    store_input_files: bool
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
     init_only: bool
@@ -1917,21 +1914,23 @@ class Simulation(GateObject):
         "store_json_archive": (
             False,
             {
-                "doc": "Automatically store a json file containing all parameters of the simulation after the run? "
-                "Default: False"
+                "deprecated": "The user input parameter 'store_json_archive' has been removed. "
+                "Call sim.to_json_file(...) explicitly from the simulation script instead."
             },
         ),
         "json_archive_filename": (
             Path("simulation.json"),
             {
-                "doc": "Name of the json file containing all parameters of the simulation. "
-                "It will be saved in the location specified via the parameter 'output_dir'. "
-                "Default filename: simulation.json"
+                "deprecated": "The user input parameter 'json_archive_filename' has been removed. "
+                "Pass filename=... explicitly to sim.to_json_file(...)."
             },
         ),
         "store_input_files": (
             False,
-            {"doc": "Store all input files used in the simulation? Default: False"},
+            {
+                "deprecated": "The user input parameter 'store_input_files' has been removed. "
+                "Call sim.archive_input_files(...) explicitly from the simulation script instead."
+            },
         ),
         "g4_commands_before_init": (
             [],
@@ -2100,33 +2099,12 @@ class Simulation(GateObject):
     def to_json_file(self, directory=None, filename=None):
         d = self.to_dictionary()
         if filename is None:
-            filename = self.json_archive_filename
+            filename = Path("simulation.json")
         directory = self.get_output_path(directory, is_file_or_directory="d")
         with open(directory / filename, "w") as f:
             dump_json(d, f)
-        # look for input files in the simulation and copy them if requested
-        if self.store_input_files is True:
-            self.copy_input_files(directory, dct=d)
 
-    def from_json_string(self, json_string):
-        self.from_dictionary(loads_json(json_string))
-
-    def from_json_file(self, path):
-        with open(path, "r") as f:
-            self.from_dictionary(load_json(f))
-
-    def jobs_split(self, number_of_jobs, split_path, policy="split_time", **options):
-        from .jobs import create_split_jobs
-
-        return create_split_jobs(
-            self,
-            number_of_jobs=number_of_jobs,
-            split_path=split_path,
-            policy=policy,
-            **options,
-        )
-
-    def copy_input_files(self, directory=None, dct=None):
+    def archive_input_files(self, directory=None, dct=None):
         directory = self.get_output_path(directory, is_file_or_directory="d")
         if dct is None:
             dct = self.to_dictionary()
@@ -2165,6 +2143,31 @@ class Simulation(GateObject):
         unique_input_files = list(dict.fromkeys(Path(f).resolve() for f in input_files))
         for f in unique_input_files:
             shutil.copy2(f, directory)
+
+    def copy_input_files(self, directory=None, dct=None):
+        warning(
+            "Simulation.copy_input_files() is deprecated. "
+            "Use Simulation.archive_input_files(...) instead."
+        )
+        self.archive_input_files(directory=directory, dct=dct)
+
+    def from_json_string(self, json_string):
+        self.from_dictionary(loads_json(json_string))
+
+    def from_json_file(self, path):
+        with open(path, "r") as f:
+            self.from_dictionary(load_json(f))
+
+    def jobs_split(self, number_of_jobs, split_path, policy="split_time", **options):
+        from .jobs import create_split_jobs
+
+        return create_split_jobs(
+            self,
+            number_of_jobs=number_of_jobs,
+            split_path=split_path,
+            policy=policy,
+            **options,
+        )
 
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
         if path is None:
@@ -2411,9 +2414,6 @@ class Simulation(GateObject):
         # store the hook log
         self.user_hook_log = output.user_hook_log
         self._current_random_seed = output.current_random_seed
-
-        if self.store_json_archive is True:
-            self.to_json_file()
 
         # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
         if self.volume_manager.material_database is None:
