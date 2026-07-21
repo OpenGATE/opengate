@@ -68,21 +68,17 @@ def print_jobs_status_summary(status_data, verbose=False):
         st = job["status"].upper()
         st_str = colored.stylize(st, color_error) if st != "READY" else st
         job_intervals = job.get("run_timing_intervals", [])
+        timing_str = format_timing_intervals(job_intervals)
+        input_mode = job.get("input_mode", "copied")
+        size_str = job.get("folder_size_str", "0 B")
         print(
-            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, timing = {format_timing_intervals(job_intervals)}"
+            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, timing = {timing_str}, inputs = {input_mode} ({size_str})"
         )
         missing_files = job.get("missing_input_files", [])
         if missing_files:
             for missing in missing_files:
                 err_msg = f"     Missing input file: {missing}"
                 print(colored.stylize(err_msg, color_error))
-        if verbose:
-            print(
-                f"     Run timing intervals: {format_timing_intervals(job_intervals)}"
-            )
-            print(
-                f"     Folder exists: {job['folder_exists']}, Metadata: {job['metadata_exists']}, Sim: {job['simulation_exists']}"
-            )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

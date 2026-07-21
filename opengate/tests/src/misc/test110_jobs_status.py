@@ -122,11 +122,17 @@ def main():
     stats_actor.track_types_flag = True
 
     split_root_folder2 = sim2.jobs_split(
-        3, paths.output / "complex" / "split_campaigns", policy="split_time"
+        3,
+        paths.output / "complex" / "split_campaigns",
+        policy="split_time",
+        link_files=True,
     )
 
     status_initial2 = get_jobs_status(split_root_folder2)
     is_ok2 = status_initial2["summary_counts"]["ready"] == 3
+    is_ok2 = (
+        is_ok2 and (split_root_folder2 / "job0001" / "patient-4mm.mhd").is_symlink()
+    )
 
     # Remove files in split folders to simulate errors
     (split_root_folder2 / "job0001" / "patient-4mm.raw").unlink(missing_ok=True)
