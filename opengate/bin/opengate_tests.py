@@ -10,7 +10,7 @@ import click
 from opengate.bin.opengate_library_path import return_tests_path
 
 try:
-    import opengate_tests_helpers as helpers
+    import opengate.bin.opengate_tests_helpers as helpers
 except ImportError:
     from opengate.bin import opengate_tests_helpers as helpers
 
