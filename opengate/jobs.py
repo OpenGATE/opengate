@@ -23,6 +23,8 @@ JOB_SIMULATION_FILENAME = "simulation.json"
 MASTER_SIMULATION_FILENAME = "simulation.json"
 JOB_EXECUTION_ALLOWED_STATUSES = ("running", "completed", "failed", "skipped")
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
+SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
+SLURM_JOB_FOLDERS_FILENAME = "slurm_job_folders.txt"
 
 
 def _clone_simulation(simulation):
@@ -688,6 +690,65 @@ def _extract_htcondor_cluster_id(submit_stdout):
     return match.group(1)
 
 
+def _write_slurm_job_folders_file(split_root_folder, job_folders, backend_options):
+    job_folders_path = Path(split_root_folder) / backend_options["job_folders_filename"]
+    job_folders_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(job_folders_path, "w") as output_file:
+        for job_folder in job_folders:
+            output_file.write(f"{Path(job_folder).resolve()}\n")
+    return job_folders_path
+
+
+def _example_render_slurm_submit_script_lines(job_folders_file_path, **kwargs):
+    """Example Slurm submit-script renderer for users and tests.
+
+    The public Slurm backend expects the user to provide a renderer via
+    backend_options["submit_script_renderer"]. This helper remains as a
+    reference template and for internal tests.
+    """
+    script_commands = {
+        "output": "opengate_job_runner.%A_%a.out",
+        "error": "opengate_job_runner.%A_%a.err",
+    }
+    script_commands.update(kwargs.get("script_commands", {}))
+    job_runner_command = kwargs.get("job_runner_command", "opengate_job_runner")
+    lines = ["#!/bin/sh"]
+    lines.extend([f"#SBATCH --{key}={value}" for key, value in script_commands.items()])
+    lines.extend(
+        [
+            "",
+            "set -eu",
+            f'JOB_FOLDERS_FILE="{job_folders_file_path}"',
+            'JOB_FOLDER="$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$JOB_FOLDERS_FILE")"',
+            'cd "$JOB_FOLDER"',
+            f'exec {job_runner_command} . --backend slurm',
+            "",
+        ]
+    )
+    return lines
+
+
+def _write_slurm_submit_script(split_root_folder, job_folders_file_path, backend_options):
+    submit_file_path = Path(split_root_folder) / backend_options["submit_filename"]
+    submit_file_path.parent.mkdir(parents=True, exist_ok=True)
+    submit_script_lines = backend_options["submit_script_renderer"](
+        job_folders_file_path,
+        **backend_options.get("submit_script_renderer_kwargs", {}),
+    )
+    submit_file_content = "\n".join([str(line) for line in submit_script_lines])
+    with open(submit_file_path, "w") as output_file:
+        output_file.write(submit_file_content)
+    os.chmod(submit_file_path, 0o755)
+    return submit_file_path
+
+
+def _extract_slurm_job_id(submit_stdout):
+    match = re.search(r"Submitted batch job\s+(\d+)", submit_stdout, flags=re.IGNORECASE)
+    if match is None:
+        return None
+    return match.group(1)
+
+
 def _submit_job_folders_to_htcondor(
     split_root_folder,
     job_folders,
@@ -738,6 +799,69 @@ def _submit_job_folders_to_htcondor(
 
     return {
         "submit_file_path": str(submit_file_path),
+        "submission_command": command,
+        "submission_stdout": completed_process.stdout,
+        "submission_stderr": completed_process.stderr,
+        "scheduler_job_id": status_data["scheduler_job_id"],
+        "backend_status_path": str(_get_jobs_backend_status_path(split_root_folder)),
+    }
+
+
+def _submit_job_folders_to_slurm(
+    split_root_folder,
+    job_folders,
+    backend_options,
+    skipped_completed_jobs,
+):
+    job_folders_file_path = _write_slurm_job_folders_file(
+        split_root_folder, job_folders, backend_options
+    )
+    submit_file_path = _write_slurm_submit_script(
+        split_root_folder, job_folders_file_path, backend_options
+    )
+    command = [backend_options["submit_binary"]]
+    command.extend(backend_options.get("command_line_args", []))
+    command.append(f"--array=0-{len(job_folders) - 1}")
+    command.append(str(submit_file_path))
+    try:
+        completed_process = subprocess.run(
+            command,
+            cwd=split_root_folder,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as error:
+        raise GateJobsBackendError(
+            f"Slurm submission command not found: {backend_options['submit_binary']}."
+        ) from error
+
+    if completed_process.returncode != 0:
+        raise GateJobsBackendError(
+            "Slurm submission failed.\n"
+            f"Command: {' '.join(command)}\n"
+            f"Return code: {completed_process.returncode}\n"
+            f"stdout:\n{completed_process.stdout}\n"
+            f"stderr:\n{completed_process.stderr}"
+        )
+
+    status_data = _write_jobs_backend_status(
+        split_root_folder,
+        backend="slurm",
+        status="submitted",
+        submitted_jobs=len(job_folders),
+        skipped_completed_jobs=skipped_completed_jobs,
+        submitted_at=_now_isoformat(),
+        scheduler_job_id=_extract_slurm_job_id(completed_process.stdout),
+        submit_file_path=str(submit_file_path),
+        submit_command=command,
+        submission_stdout=completed_process.stdout,
+        submission_stderr=completed_process.stderr,
+    )
+
+    return {
+        "submit_file_path": str(submit_file_path),
+        "job_folders_file_path": str(job_folders_file_path),
         "submission_command": command,
         "submission_stdout": completed_process.stdout,
         "submission_stderr": completed_process.stderr,
@@ -875,6 +999,57 @@ def _validate_jobs_backend_options(backend, backend_options):
         validated_options["submit_binary"] = str(validated_options["submit_binary"])
         return validated_options
 
+    if backend == "slurm":
+        allowed_top_level_keys = {
+            "submit_script_renderer",
+            "submit_script_renderer_kwargs",
+            "command_line_args",
+            "submit_filename",
+            "job_folders_filename",
+            "submit_binary",
+        }
+        unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
+        if len(unknown_keys) > 0:
+            raise GateJobsBackendError(
+                f"The slurm backend received unknown option groups: {sorted(unknown_keys)}."
+            )
+
+        validated_options = dict(backend_options)
+        validated_options.setdefault("submit_script_renderer_kwargs", {})
+        validated_options.setdefault("command_line_args", [])
+        validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
+        validated_options.setdefault(
+            "job_folders_filename", SLURM_JOB_FOLDERS_FILENAME
+        )
+        validated_options.setdefault("submit_binary", "sbatch")
+
+        if "submit_script_renderer" not in validated_options:
+            raise GateJobsBackendError(
+                "The slurm backend requires a submit_script_renderer callable."
+            )
+        if not callable(validated_options["submit_script_renderer"]):
+            raise GateJobsBackendError(
+                "The slurm backend requires submit_script_renderer to be callable."
+            )
+        if not isinstance(validated_options["submit_script_renderer_kwargs"], dict):
+            raise GateJobsBackendError(
+                "The slurm backend requires submit_script_renderer_kwargs to be a dictionary."
+            )
+        if not isinstance(validated_options["command_line_args"], (list, tuple)):
+            raise GateJobsBackendError(
+                "The slurm backend requires command_line_args to be a list or tuple."
+            )
+
+        validated_options["command_line_args"] = [
+            str(argument) for argument in validated_options["command_line_args"]
+        ]
+        validated_options["submit_filename"] = str(validated_options["submit_filename"])
+        validated_options["job_folders_filename"] = str(
+            validated_options["job_folders_filename"]
+        )
+        validated_options["submit_binary"] = str(validated_options["submit_binary"])
+        return validated_options
+
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
 
@@ -954,6 +1129,23 @@ def jobs_run(
 
     if backend == "htcondor":
         submission_summary = _submit_job_folders_to_htcondor(
+            split_root_folder,
+            selected_job_folders,
+            backend_options,
+            len(skipped_completed_jobs),
+        )
+        return {
+            "backend": backend,
+            "manifest_path": str(manifest_path),
+            "split_root_folder": str(split_root_folder),
+            "submitted_jobs": len(selected_job_folders),
+            "skipped_completed_jobs": len(skipped_completed_jobs),
+            "campaign_process_pid": None,
+            **submission_summary,
+        }
+
+    if backend == "slurm":
+        submission_summary = _submit_job_folders_to_slurm(
             split_root_folder,
             selected_job_folders,
             backend_options,
