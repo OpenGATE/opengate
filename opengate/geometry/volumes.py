@@ -1301,17 +1301,14 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         for dp in self.dynamic_params.values():
             if dp["extra_params"]["auto_changer"] is True:
                 if "image" in dp:
-                    # create a LUT of image parametrisations
-                    label_image = {}
-                    for path_to_image in set(dp["image"]):
-                        itk_image = self.load_input_image(path_to_image)
-                        label_image[path_to_image] = self.create_label_image(itk_image)
+                    # Only create the serializable changer definition here.
+                    # The heavy label-image LUT is rebuilt later in
+                    # VolumeImageChanger.initialize().
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
                         attached_to=self,
                         simulation=self.simulation,
                         images=dp["image"],
-                        label_image=label_image,
                     )
                     changers.append(new_changer)
                     counter += 1
