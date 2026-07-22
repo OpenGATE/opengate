@@ -15,7 +15,6 @@ from opengate.tests.src.geometry.test009_voxels_dynamic_helpers import (
     wait_for_completed_jobs,
 )
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test009_voxels", "test009")
     sec = gate.g4_units.s

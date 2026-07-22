@@ -120,10 +120,7 @@ def build_dynamic_voxel_simulation(
 
 def get_dynamic_patient_images(simulation):
     patient = simulation.volume_manager.get_volume("patient")
-    return [
-        Path(path)
-        for path in patient.dynamic_params["parametrisation_0"]["image"]
-    ]
+    return [Path(path) for path in patient.dynamic_params["parametrisation_0"]["image"]]
 
 
 def wait_for_completed_jobs(split_root, expected_count, timeout=180):
@@ -151,8 +148,8 @@ def merge_stats_from_jobs(job_folders, output_path):
     merged_stats = None
     for job_folder in job_folders:
         job_stats = utility.read_stats_file(Path(job_folder) / "stats.txt")
-        merged_stats = job_stats if merged_stats is None else sum_stats(
-            merged_stats, job_stats
+        merged_stats = (
+            job_stats if merged_stats is None else sum_stats(merged_stats, job_stats)
         )
 
     # Keep the merged stats comparable to the historical test009 reference,

@@ -18,7 +18,7 @@ from .base import (
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
     process_cls,
-    _get_user_info_options
+    _get_user_info_options,
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
@@ -2300,7 +2300,9 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                Path(archive_path_map.get(Path(filename).resolve(), Path(filename).name))
+                Path(
+                    archive_path_map.get(Path(filename).resolve(), Path(filename).name)
+                )
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]

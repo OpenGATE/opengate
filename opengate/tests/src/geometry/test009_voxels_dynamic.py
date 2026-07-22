@@ -38,7 +38,6 @@ from opengate.tests.src.geometry.test009_voxels_dynamic_helpers import (
     build_dynamic_voxel_simulation,
 )
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test009_voxels", "test009")
     sec = gate.g4_units.s
