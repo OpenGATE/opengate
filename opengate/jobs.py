@@ -393,6 +393,7 @@ def jobs_split(
             dump_json(child_metadata, output_file)
         jobs_manifest["jobs"].append(
             {
+                "job_index": job_definition["job_index"],
                 "job_id": child_metadata["job_id"],
                 "folder_name": job_definition["folder_name"],
                 "metadata_filename": JOB_METADATA_FILENAME,
@@ -1449,7 +1450,14 @@ def get_jobs_status(manifest_or_dir_path):
 
         status_data["jobs"].append(
             {
-                "job_index": metadata.get("job_index"),
+                # job_index is structural manifest data. Keep it available even
+                # when the child metadata file is missing so status reporting can
+                # still identify the job robustly.
+                "job_index": (
+                    metadata.get("job_index")
+                    if metadata.get("job_index") is not None
+                    else job_item.get("job_index")
+                ),
                 "job_id": job_item.get("job_id"),
                 "folder_name": folder_name,
                 "folder_exists": folder_exists,
