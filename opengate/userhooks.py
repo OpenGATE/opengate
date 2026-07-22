@@ -212,10 +212,10 @@ def progress_status(filename):
         total_events = 0
         if source_engine.g4_master_source_manager:
             total_events += (
-                source_engine.g4_master_source_manager.GetTotalNumberOfSimulatedEvents()
+                source_engine.g4_master_source_manager.GetTotalGeneratedEvents()
             )
         for mgr in source_engine.g4_thread_source_managers:
-            total_events += mgr.GetTotalNumberOfSimulatedEvents()
+            total_events += mgr.GetTotalGeneratedEvents()
 
         expected_events = source_engine.expected_number_of_events
 

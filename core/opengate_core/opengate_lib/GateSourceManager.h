@@ -112,8 +112,8 @@ public:
 
   long int GetExpectedNumberOfEvents() const;
 
-  unsigned long GetNumberOfSimulatedEvents() const;
-  unsigned long GetTotalNumberOfSimulatedEvents() const;
+  unsigned long GetRunGeneratedEvents() const;
+  unsigned long GetTotalGeneratedEvents() const;
 
   double GetCurrentSimulationTime() const;
   int GetCurrentRunId() const;

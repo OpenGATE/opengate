@@ -284,19 +284,18 @@ long int GateSourceManager::GetExpectedNumberOfEvents() const {
   return fExpectedNumberOfEvents;
 }
 
-unsigned long GateSourceManager::GetNumberOfSimulatedEvents() const {
+unsigned long GateSourceManager::GetRunGeneratedEvents() const {
   unsigned long n = 0;
   for (const auto *source : fSources) {
-    n += const_cast<GateVSource *>(source)->GetNumberOfSimulatedEvents();
+    n += source->GetRunGeneratedEvents();
   }
   return n;
 }
 
-unsigned long GateSourceManager::GetTotalNumberOfSimulatedEvents() const {
+unsigned long GateSourceManager::GetTotalGeneratedEvents() const {
   unsigned long n = 0;
   for (const auto *source : fSources) {
-    n += const_cast<GateVSource *>(source)->GetTotalNumberOfSimulatedEvents() +
-         const_cast<GateVSource *>(source)->GetNumberOfSimulatedEvents();
+    n += source->GetTotalGeneratedEvents();
   }
   return n;
 }
@@ -313,10 +312,14 @@ int GateSourceManager::GetCurrentRunId() const {
 
 void GateSourceManager::PrepareRunToStart(int run_id) {
   /*
-   In MT mode, this function (PrepareRunToStart) is called
-   by Master thread AND by workers
-   */
-  // set the current time interval
+    Start run run_id
+    fCurrentTimeInterval = interval run_id
+    fCurrentTime = start of interval run_id
+    fNextTime = end of interval run_id
+    fRunTerminationFlag = false
+    Call PrepareNextRun on all sources
+  */
+
   auto &l = fThreadLocalData.Get();
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
@@ -351,8 +354,7 @@ void GateSourceManager::PrepareNextSource() const {
 
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    unsigned long numberOfSimulatedEvents =
-        source->GetNumberOfSimulatedEvents();
+    unsigned long numberOfSimulatedEvents = source->GetRunGeneratedEvents();
     auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
                                      numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {

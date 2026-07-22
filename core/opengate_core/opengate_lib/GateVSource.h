@@ -52,9 +52,9 @@ public:
   virtual unsigned long
   GetExpectedNumberOfEvents(const TimeInterval &time_interval);
 
-  G4int GetNumberOfSimulatedEvents() { return fNumberOfGeneratedEvents; }
-  G4int GetTotalNumberOfSimulatedEvents() {
-    return fTotalNumberOfGeneratedEvents;
+  unsigned long GetRunGeneratedEvents() const { return fRunGeneratedEvents; }
+  unsigned long GetTotalGeneratedEvents() const {
+    return fTotalGeneratedEvents + fRunGeneratedEvents;
   }
 
   std::vector<int> GetVectorOfSimulatedEvents() { return fVectorOfMaxN; }
@@ -82,8 +82,8 @@ protected:
   double fHalfLife;
   double fDecayConstant;
 
-  unsigned long fNumberOfGeneratedEvents = 0;
-  unsigned long fTotalNumberOfGeneratedEvents = 0;
+  unsigned long fRunGeneratedEvents = 0;
+  unsigned long fTotalGeneratedEvents = 0;
   G4int fRunID = 0;
 };
 

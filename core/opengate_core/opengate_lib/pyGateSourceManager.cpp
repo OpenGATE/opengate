@@ -22,10 +22,9 @@ void init_GateSourceManager(py::module &m) {
            &GateSourceManager::ComputeExpectedNumberOfEvents)
       .def("GetExpectedNumberOfEvents",
            &GateSourceManager::GetExpectedNumberOfEvents)
-      .def("GetNumberOfSimulatedEvents",
-           &GateSourceManager::GetNumberOfSimulatedEvents)
-      .def("GetTotalNumberOfSimulatedEvents",
-           &GateSourceManager::GetTotalNumberOfSimulatedEvents)
+      .def("GetRunGeneratedEvents", &GateSourceManager::GetRunGeneratedEvents)
+      .def("GetTotalGeneratedEvents",
+           &GateSourceManager::GetTotalGeneratedEvents)
       .def("GetCurrentSimulationTime",
            &GateSourceManager::GetCurrentSimulationTime)
       .def("GetCurrentRunId", &GateSourceManager::GetCurrentRunId)

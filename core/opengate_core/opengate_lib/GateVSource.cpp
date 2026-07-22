@@ -62,8 +62,8 @@ double GateVSource::CalcNextTime(double current_simulation_time) {
 }
 
 void GateVSource::PrepareNextRun() {
-  fTotalNumberOfGeneratedEvents += fNumberOfGeneratedEvents;
-  fNumberOfGeneratedEvents = 0;
+  fTotalGeneratedEvents += fRunGeneratedEvents;
+  fRunGeneratedEvents = 0;
   fMaxN = fVectorOfMaxN[fRunID];
   fRunID++;
   SetOrientationAccordingToAttachedVolume();
