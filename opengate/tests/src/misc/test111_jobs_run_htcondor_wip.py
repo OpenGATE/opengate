@@ -7,7 +7,10 @@ from pathlib import Path
 import opengate as gate
 from opengate.tests import utility
 
-from opengate.tests.src.misc.test111_helpers_wip import build_simple_simulation, load_backend_status
+from opengate.tests.src.misc.test111_helpers_wip import (
+    build_simple_simulation,
+    load_backend_status,
+)
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test112_htcondor")

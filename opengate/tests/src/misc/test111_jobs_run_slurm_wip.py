@@ -7,7 +7,10 @@ from pathlib import Path
 import opengate as gate
 from opengate.tests import utility
 
-from opengate.tests.src.misc.test111_helpers_wip import build_simple_simulation, load_backend_status
+from opengate.tests.src.misc.test111_helpers_wip import (
+    build_simple_simulation,
+    load_backend_status,
+)
 
 
 def render_test_slurm_submit_script(job_folders_file_path, **kwargs):
