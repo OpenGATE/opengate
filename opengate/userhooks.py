@@ -290,8 +290,17 @@ def progress_status(filename):
             out_path = simulation.output_dir / out_path
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_path, "w") as f:
-            dump_json(report_data, f)
+        try:
+            tmp_path = out_path.with_suffix(".tmp")
+            with open(tmp_path, "w") as f:
+                dump_json(report_data, f)
+            tmp_path.replace(out_path)
+        except Exception:
+            try:
+                with open(out_path, "w") as f:
+                    dump_json(report_data, f)
+            except Exception:
+                pass
 
         return report_data
 

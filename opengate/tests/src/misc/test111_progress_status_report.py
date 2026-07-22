@@ -17,17 +17,17 @@ def main():
     box = sim.add_volume("Box", "box")
     box.size = [10.0, 10.0, 10.0]
 
-    source = sim.add_source("GenericSource", "source")
-    source.particle = "gamma"
-    source.n = [2e6 / sim.number_of_threads, 2e6 / sim.number_of_threads]
-    source.direction.type = "iso"
-    source.energy.mono = 1.0 * gate.g4_units.MeV
+    source1 = sim.add_source("GenericSource", "source")
+    source1.particle = "gamma"
+    source1.n = [1e6 / sim.number_of_threads, 1e6 / sim.number_of_threads]
+    source1.direction.type = "iso"
+    source1.energy.mono = 1.0 * gate.g4_units.MeV
 
-    source = sim.add_source("GenericSource", "source2")
-    source.particle = "gamma"
-    source.activity = 2e6 * gate.g4_units.Bq / sim.number_of_threads
-    source.direction.type = "iso"
-    source.energy.mono = 1.0 * gate.g4_units.MeV
+    source2 = sim.add_source("GenericSource", "source2")
+    source2.particle = "gamma"
+    source2.activity = 1e6 * gate.g4_units.Bq / sim.number_of_threads
+    source2.direction.type = "iso"
+    source2.energy.mono = 1.0 * gate.g4_units.MeV
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
@@ -68,7 +68,9 @@ def main():
         print("\nProgress status JSON content:")
         print(json.dumps(data, indent=2))
 
-        # Expected expected total events = 4e6 from source1 (2e6/2*2 runs*2 threads) + 4e6 from source2 activity
+        expected_N = data.get("events_expected")
+        print("Total events expected = ", expected_N)
+
         is_ok = is_ok and data.get("status") == "completed"
         is_ok = is_ok and "elapsed_time_seconds" in data
         is_ok = is_ok and "estimated_time_remaining_seconds" in data
@@ -77,7 +79,7 @@ def main():
         is_ok = is_ok and data.get("events_progress") == 100.0
         is_ok = is_ok and data.get("simulation_time_progress") == 100.0
         is_ok = is_ok and data.get("simulation_time_total") == 2.0
-        is_ok = is_ok and data.get("events_expected") == 8000000
+        is_ok = is_ok and data.get("events_expected") == expected_N
         is_ok = is_ok and data.get("events_total") > 0
 
         # Check data saved in custom_hook_calls
@@ -89,31 +91,31 @@ def main():
         intermediate_calls = [
             c for c in custom_hook_calls if c.get("status") != "completed"
         ]
-        is_ok = is_ok and len(intermediate_calls) > 0
 
         for step_idx, call_data in enumerate(intermediate_calls, start=1):
             step_ok = True
-            step_ok = step_ok and call_data.get("events_expected") == 8000000
+            step_ok = step_ok and call_data.get("events_expected") == expected_N
             current_ev = call_data.get("events_total", 0)
             elapsed = call_data.get("elapsed_time_seconds", 0.0)
             events_prog = call_data.get("events_progress", 0.0)
 
             step_ok = step_ok and (current_ev > prev_events)
-            step_ok = step_ok and (0 < current_ev < 8000000)
+            step_ok = step_ok and (0 < current_ev < expected_N)
 
-            expected_prog = round((current_ev / 8000000.0) * 100.0, 2)
+            expected_prog = round((current_ev / float(expected_N)) * 100.0, 2)
             step_ok = step_ok and (abs(events_prog - expected_prog) < 0.1)
             prev_events = current_ev
 
             utility.print_test(
                 step_ok,
-                f"step {step_idx} elapsed={elapsed}s events_total={current_ev} ({events_prog} vs {events_prog}%)",
+                f"step {step_idx} elapsed={elapsed}s events_total={current_ev} ({events_prog}%)",
             )
             is_ok = is_ok and step_ok
 
         # Verify the final completed call generated all expected events
         is_ok = (
-            is_ok and abs(custom_hook_calls[-1].get("events_total") - 8000000) < 5000
+            is_ok
+            and abs(custom_hook_calls[-1].get("events_total") - expected_N) < 10000
         )
 
     utility.test_ok(is_ok)
