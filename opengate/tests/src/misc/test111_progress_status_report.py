@@ -14,6 +14,10 @@ def main():
     sim.output_dir = paths.output
     sim.number_of_threads = 2
 
+    # for windows, use only 1 thread
+    if os.name == "nt":
+        sim.number_of_threads = 1
+
     box = sim.add_volume("Box", "box")
     box.size = [10.0, 10.0, 10.0]
 
