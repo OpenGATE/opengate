@@ -5,6 +5,7 @@ import json
 import opengate as gate
 from opengate.tests import utility
 import numpy as np
+import os
 
 
 def main():
