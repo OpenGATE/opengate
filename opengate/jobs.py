@@ -382,13 +382,15 @@ def jobs_split(
             split_root_folder,
         )
         job_folder.mkdir(parents=True, exist_ok=False)
-        child_simulation.to_json_file(
+        child_simulation_dict = child_simulation.to_dictionary()
+        updated_child_simulation_dict = child_simulation.archive_input_files(
             directory=job_folder,
-            filename=Path(JOB_SIMULATION_FILENAME),
+            dct=child_simulation_dict,
+            link_files=link_files,
+            update_input_paths_in_dict=True,
         )
-        child_simulation.archive_input_files(
-            directory=job_folder, link_files=link_files
-        )
+        with open(job_folder / JOB_SIMULATION_FILENAME, "w") as output_file:
+            dump_json(updated_child_simulation_dict, output_file)
         with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
             dump_json(child_metadata, output_file)
         jobs_manifest["jobs"].append(

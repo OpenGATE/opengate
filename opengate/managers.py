@@ -1,6 +1,7 @@
 from PIL import DcxImagePlugin
 import copy
 import io
+import os
 import shutil
 import weakref
 from pathlib import Path
@@ -17,6 +18,7 @@ from .base import (
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
     process_cls,
+    _get_user_info_options
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
@@ -1447,11 +1449,18 @@ class VolumeManager(GateObject):
         d["volumes"] = dict([(k, v.to_dictionary()) for k, v in self.volumes.items()])
         d["parallel_world_volumes"] = list(self.parallel_world_volumes.keys())
         d["fields"] = dict([(k, v.to_dictionary()) for k, v in self.fields.items()])
+        # Workaround: material database files are still managed outside the
+        # GateObject tree, so their filenames must be serialized explicitly.
+        d["material_database_filenames"] = list(self.material_database.filenames)
         return d
 
     def from_dictionary(self, d):
         self.reset()
         super().from_dictionary(d)
+        # Workaround: restore material database files explicitly because this
+        # state is not yet represented by a dedicated GateObject/manager.
+        for filename in d.get("material_database_filenames", []):
+            self.add_material_database(filename)
         # Restore fields before volumes so that volume references are valid
         for k, v in d.get("fields", {}).items():
             field_type = v["object_type"]
@@ -1511,6 +1520,11 @@ class VolumeManager(GateObject):
             volume.check_if_dynamic_params_match_run_timing_intervals()
 
         if len(dynamic_volumes) > 0:
+            # For split-job workflows, dynamic changers must already exist at
+            # config-resolution time, because jobs_split() rewrites the child
+            # run-timing structure and serializes the resolved child
+            # simulation to JSON before execution. In ordinary single-job
+            # simulations this would not matter in the same way.
             dynamic_geometry_actor = self.simulation.actor_manager.actors.get(
                 "dynamic_geometry_actor"
             )
@@ -2105,15 +2119,79 @@ class Simulation(GateObject):
     def to_json_string(self):
         return dumps_json(self.to_dictionary())
 
+    def _rewrite_input_paths_in_dict(self, dct, base_dir, mode):
+        """Rewrite serialized input-file paths relative to a JSON base directory.
+
+        mode="relativize" stores input paths relative to the directory
+        containing simulation.json. mode="resolve" restores relative paths from
+        that same base directory when rehydrating a simulation from disk.
+        """
+
+        updated_dct = copy.deepcopy(dct)
+        base_dir = Path(base_dir).resolve()
+
+        def rewrite_path(path_obj):
+            path_obj = Path(path_obj)
+            if mode == "relativize":
+                absolute_path = path_obj.resolve()
+                return Path(os.path.relpath(absolute_path, base_dir))
+            if mode == "resolve":
+                if path_obj.is_absolute():
+                    return path_obj
+                return (base_dir / path_obj).resolve()
+            fatal(f"Unknown path rewrite mode '{mode}'.")
+
+        def rewrite_value(obj):
+            if isinstance(obj, Path):
+                return rewrite_path(obj)
+            if isinstance(obj, dict):
+                return {k: rewrite_value(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [rewrite_value(v) for v in obj]
+            if isinstance(obj, tuple):
+                return tuple(rewrite_value(v) for v in obj)
+            return obj
+
+        for go_dict in find_all_gate_objects(updated_dct):
+            object_type = go_dict["object_type"]
+            class_module = go_dict["class_module"]
+            for ui_name, ui_value in list(go_dict["user_info"].items()):
+                options = _get_user_info_options(ui_name, object_type, class_module)
+                if options.get("is_input_file") is True:
+                    go_dict["user_info"][ui_name] = rewrite_value(ui_value)
+
+        # Workaround: material database files are not yet represented as proper
+        # GateObjects with declarative input-file metadata, so their serialized
+        # filenames must be rewritten explicitly here.
+        if (
+            "volume_manager" in updated_dct
+            and "material_database_filenames" in updated_dct["volume_manager"]
+        ):
+            updated_dct["volume_manager"]["material_database_filenames"] = [
+                rewrite_path(filename)
+                for filename in updated_dct["volume_manager"][
+                    "material_database_filenames"
+                ]
+            ]
+
+        return updated_dct
+
     def to_json_file(self, directory=None, filename=None):
-        d = self.to_dictionary()
         if filename is None:
             filename = Path("simulation.json")
         directory = self.get_output_path(directory, is_file_or_directory="d")
+        d = self.to_dictionary()
+        d = self._rewrite_input_paths_in_dict(d, directory, mode="relativize")
         with open(directory / filename, "w") as f:
             dump_json(d, f)
 
-    def archive_input_files(self, directory=None, dct=None, link_files=False):
+    def archive_input_files(
+        self,
+        directory=None,
+        dct=None,
+        link_files=False,
+        update_input_paths_in_dict=False,
+    ):
         directory = self.get_output_path(directory, is_file_or_directory="d")
         if dct is None:
             dct = self.to_dictionary()
@@ -2150,6 +2228,26 @@ class Simulation(GateObject):
 
         # Copy or link each resolved file only once even if it is referenced several times.
         unique_input_files = list(dict.fromkeys(Path(f).resolve() for f in input_files))
+        input_files_by_basename = {}
+        for input_file in unique_input_files:
+            input_files_by_basename.setdefault(input_file.name, []).append(input_file)
+        basename_collisions = {
+            basename: paths
+            for basename, paths in input_files_by_basename.items()
+            if len(paths) > 1
+        }
+        if basename_collisions:
+            collision_messages = []
+            for basename, paths in basename_collisions.items():
+                collision_messages.append(
+                    f"'{basename}' from: {', '.join(str(path) for path in paths)}"
+                )
+            fatal(
+                "Input-file archiving cannot continue because distinct input files "
+                "share the same basename and would collide in the archive folder. "
+                "Please rename the files or adjust the simulation inputs.\n"
+                + "\n".join(collision_messages)
+            )
         for f in unique_input_files:
             dest = directory / f.name
             if link_files:
@@ -2167,6 +2265,49 @@ class Simulation(GateObject):
             else:
                 shutil.copy2(f, directory)
 
+        if update_input_paths_in_dict is False:
+            return dct
+
+        updated_dct = copy.deepcopy(dct)
+        archive_path_map = {Path(f).resolve(): Path(f).name for f in unique_input_files}
+
+        def rewrite_archived_input_paths(obj):
+            if isinstance(obj, Path):
+                return Path(archive_path_map.get(obj.resolve(), obj.name))
+            if isinstance(obj, dict):
+                return {k: rewrite_archived_input_paths(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [rewrite_archived_input_paths(v) for v in obj]
+            if isinstance(obj, tuple):
+                return tuple(rewrite_archived_input_paths(v) for v in obj)
+            return obj
+
+        for go_dict in find_all_gate_objects(updated_dct):
+            object_type = go_dict["object_type"]
+            class_module = go_dict["class_module"]
+            for ui_name, ui_value in list(go_dict["user_info"].items()):
+                options = _get_user_info_options(ui_name, object_type, class_module)
+                if options.get("is_input_file") is True:
+                    go_dict["user_info"][ui_name] = rewrite_archived_input_paths(
+                        ui_value
+                    )
+
+        # Workaround: material database files are not yet represented as proper
+        # GateObjects with declarative input-file metadata, so their serialized
+        # filenames must be rewritten explicitly here.
+        if (
+            "volume_manager" in updated_dct
+            and "material_database_filenames" in updated_dct["volume_manager"]
+        ):
+            updated_dct["volume_manager"]["material_database_filenames"] = [
+                Path(archive_path_map.get(Path(filename).resolve(), Path(filename).name))
+                for filename in updated_dct["volume_manager"][
+                    "material_database_filenames"
+                ]
+            ]
+
+        return updated_dct
+
     def copy_input_files(self, directory=None, dct=None, link_files=False):
         warning(
             "Simulation.copy_input_files() is deprecated. "
@@ -2178,8 +2319,11 @@ class Simulation(GateObject):
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
+        path = Path(path).resolve()
         with open(path, "r") as f:
-            self.from_dictionary(load_json(f))
+            d = load_json(f)
+        d = self._rewrite_input_paths_in_dict(d, path.parent, mode="resolve")
+        self.from_dictionary(d)
 
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
         if path is None:
