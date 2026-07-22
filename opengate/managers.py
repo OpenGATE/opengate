@@ -4,7 +4,7 @@ import io
 import shutil
 import weakref
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 import sys
 
 import opengate_core as g4
