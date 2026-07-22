@@ -52,27 +52,27 @@ COINC_TIME_WINDOW_NS = 50.0
 # -----------------------------
 # Helper functions (from working local test)
 # -----------------------------
-def _open_root_tree(path: Path, *, retries: int = 5, delay_s: float = 0.5):
+def load_root_as_dataframe(
+    root_path: Path, *, out_dir: Path, retries: int = 5, delay_s: float = 0.5
+) -> pd.DataFrame:
+    root_path = root_path if root_path.exists() else out_dir / root_path.name
     for attempt in range(1, retries + 1):
-        if not path.exists():
+        if not root_path.exists():
             time.sleep(delay_s)
             continue
-        with uproot.open(str(path)) as f:
-            keys = list(f.keys())
-            if keys:
-                tname = keys[0].split(";")[0]
-                return f[tname]
+        try:
+            with uproot.open(root_path) as f:
+                keys = list(f.keys())
+                if keys:
+                    tname = keys[0].split(";")[0]
+                    return f[tname].arrays(library="pd")
+        except Exception:
+            pass
         time.sleep(delay_s)
     raise RuntimeError(
-        f"ROOT file has no trees after {retries} attempts: {path} "
-        f"(size={path.stat().st_size if path.exists() else 'missing'})"
+        f"ROOT file has no trees or could not be read after {retries} attempts: {root_path} "
+        f"(size={root_path.stat().st_size if root_path.exists() else 'missing'})"
     )
-
-
-def load_root_as_dataframe(root_path: Path, *, out_dir: Path) -> pd.DataFrame:
-    root_path = root_path if root_path.exists() else out_dir / root_path.name
-    tree = _open_root_tree(root_path)
-    return tree.arrays(library="pd")
 
 
 def load_digitizer_singles(
@@ -415,7 +415,7 @@ def plot_arm_overlay(
 # -----------------------------
 def main():
     paths = utility.get_default_test_paths(
-        __file__, gate_folder="", output_folder="test099_macaco1"
+        __file__, gate_folder="", output_folder="test107_macaco1"
     )
     output_folder = paths.output
     output_ref = paths.output_ref
@@ -428,11 +428,11 @@ def main():
     # ======================================================
     sim = gate.Simulation()
     sim.visu = False
-    sim.number_of_threads = 1
+    sim.number_of_threads = 4
     sim.check_volumes_overlap = False
     sim.progress_bar = True
     sim.output_dir = output_folder
-    sim.random_seed = "auto"
+    sim.random_seed = 123456789
 
     m = g4_units.m
     mm = g4_units.mm
@@ -475,7 +475,7 @@ def main():
     if sim.visu:
         sim.run_timing_intervals = [[0, 0.000003 * sec]]
     else:
-        sim.run_timing_intervals = [[0, 7 * sec]]
+        sim.run_timing_intervals = [[0, 1 * sec]]
 
     # ======================================================
     # 5) Digitizer
@@ -514,7 +514,7 @@ def main():
         exp_abs_edges,
         expected_energy=1274.5,
         label="Absorber 1274.5 keV",
-        output_plot_path=output_folder / "test099_abs_peak_1274.5keV.png",
+        output_plot_path=output_folder / "test107_abs_peak_1274.5keV.png",
     )
     is_ok = is_ok and b
     print()
@@ -524,151 +524,17 @@ def main():
         exp_scatt_edges,
         expected_energy=1274.5,
         label="Scatterer 1274.5 keV",
-        output_plot_path=output_folder / "test099_scatt_peak_1274.5keV.png",
+        output_plot_path=output_folder / "test107_scatt_peak_1274.5keV.png",
     )
     is_ok = is_ok and b
-    print()
-    compare_peak_gaussian(
-        E_abs,
-        exp_abs_counts,
-        exp_abs_edges,
-        expected_energy=511.0,
-        label="Absorber 511 keV",
-        output_plot_path=output_folder / "test099_abs_peak_511keV.png",
-    )
-    is_ok = is_ok and b
-    print()
-    compare_peak_gaussian(
-        E_scatt,
-        exp_scatt_counts,
-        exp_scatt_edges,
-        expected_energy=511.0,
-        label="Scatterer 511 keV",
-        output_plot_path=output_folder / "test099_scatt_peak_511keV.png",
-    )
-    is_ok = is_ok and b
-    print("✓ MACACO1 singles energy test completed")
-
-    print(f"FIXME the absolute counts is not correct ? normalization issue ? ")
-
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import opengate as gate
-from opengate.tests import utility
-from opengate.contrib.compton_camera.macaco import *
-
-
-def main():
-    # get tests paths
-    paths = utility.get_default_test_paths(
-        __file__, gate_folder="", output_folder="test107_macaco1"
-    )
-    output_folder = paths.output
-    output_ref = paths.output_ref
-
-    exp_singles_file = output_ref / "singles_experimental.root"
-    print(exp_singles_file)
-
-    # ======================================================
-    # 1) Create simulation
-    # ======================================================
-    sim = gate.Simulation()
-    sim.visu = False
-    sim.number_of_threads = 4
-    sim.check_volumes_overlap = False
-    sim.progress_bar = True
-    sim.output_dir = output_folder
-    sim.random_seed = 123456789
-
-    m = g4_units.m
-    mm = g4_units.mm
-    keV = g4_units.keV
-    Bq = g4_units.Bq
-    sec = g4_units.s
-    ns = g4_units.ns
-
-    # ======================================================
-    # 2) Geometry
-    # ======================================================
-    sim.world.size = [1 * m, 1 * m, 1 * m]
-    cam = add_macaco1_camera(sim)
-    scatterer = cam["scatterer"]
-    absorber = cam["absorber"]
-    camera = cam["camera"]
-    # 53 mm from the first plane
-    camera.translation = [0, 0, 83 * mm]
-
-    # ======================================================
-    # 3) Source
-    # ======================================================
-    src_holder = sim.add_volume("Sphere", "test_source_holder")
-    src_holder.mother = sim.world
-    src_holder.material = "Plastic"
-    src_holder.rmax = 0.25 * mm
-
-    src = sim.add_source("GenericSource", "test_gammas")
-    src.particle = "gamma"
-    src.attached_to = src_holder
-    src.activity = 847e3 * Bq
-    src.position.type = "sphere"
-    src.position.radius = 0.25 * mm
-    src.direction.type = "iso"
-
-    # Na-22-like spectrum
-    src.energy.type = "spectrum_discrete"
-    src.energy.spectrum_energies = [1274.5 * keV, 511 * keV]
-    src.energy.spectrum_weights = [0.9994, 1.807]
-
-    # ======================================================
-    # 4) Timing
-    # ======================================================
-    if sim.visu:
-        sim.run_timing_intervals = [[0, 0.000003 * sec]]
-    else:
-        sim.run_timing_intervals = [[0, 5 * sec]]
-
-    # ======================================================
-    # 5) Digitizer
-    # ======================================================
-    scatt_file, abs_file = add_macaco1_camera_digitizer(sim, scatterer, absorber)
-    print(f"Scatt file: {scatt_file}")
-    print(f"Abs file: {abs_file}")
-
-    # ======================================================
-    # 6) Run simulation
-    # ======================================================
-    sim.run()
-
-    # ======================================================
-    # 7) VALIDATION : SINGLES
-    # ======================================================
-    #  Load data
-    with uproot.open(scatt_file) as f:
-        scatt = f[f.keys()[0]]
-        E_scatt = np.asarray(scatt["TotalEnergyDeposit"].array()) / keV
-
-    with uproot.open(abs_file) as f:
-        absr = f[f.keys()[0]]
-        E_abs = np.asarray(absr["TotalEnergyDeposit"].array()) / keV
-
-    # Energy-only tests (Gaussian peaks)
-    scatt_name = "E_ly1"  # Scatterer histogram name
-    abs_name = "E_ly2"  # Absorber histogram name
-    exp_hists = load_exp_histograms(exp_singles_file, scatt_name, abs_name)
-    exp_abs_counts, exp_abs_edges = exp_hists[abs_name]
-    exp_scatt_counts, exp_scatt_edges = exp_hists[scatt_name]
-
-    is_ok = True
     print()
     b = compare_peak_gaussian(
         E_abs,
         exp_abs_counts,
         exp_abs_edges,
-        expected_energy=1274.5,
-        label="Absorber 1274.5 keV",
-        output_plot_path=output_folder / "test099_abs_peak_1274.5keV.png",
+        expected_energy=511.0,
+        label="Absorber 511 keV",
+        output_plot_path=output_folder / "test107_abs_peak_511keV.png",
     )
     is_ok = is_ok and b
     print()
@@ -676,29 +542,9 @@ def main():
         E_scatt,
         exp_scatt_counts,
         exp_scatt_edges,
-        expected_energy=1274.5,
-        label="Scatterer 1274.5 keV",
-        output_plot_path=output_folder / "test099_scatt_peak_1274.5keV.png",
-    )
-    is_ok = is_ok and b
-    print()
-    compare_peak_gaussian(
-        E_abs,
-        exp_abs_counts,
-        exp_abs_edges,
-        expected_energy=511.0,
-        label="Absorber 511 keV",
-        output_plot_path=output_folder / "test099_abs_peak_511keV.png",
-    )
-    is_ok = is_ok and b
-    print()
-    compare_peak_gaussian(
-        E_scatt,
-        exp_scatt_counts,
-        exp_scatt_edges,
         expected_energy=511.0,
         label="Scatterer 511 keV",
-        output_plot_path=output_folder / "test099_scatt_peak_511keV.png",
+        output_plot_path=output_folder / "test107_scatt_peak_511keV.png",
     )
     is_ok = is_ok and b
     print("✓ MACACO1 singles energy test completed")
@@ -720,7 +566,6 @@ def main():
     # ======================================================
     # 8b) VALIDATION : COINCIDENCES ARM
     # ======================================================
-
     exp_coinc_root = output_ref / "new_coinc_exp_data.root"
 
     if not exp_coinc_root.exists():
