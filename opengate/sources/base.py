@@ -112,10 +112,16 @@ class SourceBase(DynamicGateObject):
         if not self.end_time:
             self.end_time = run_timing_intervals[-1][1]
 
+    def resolve_and_validate_timing(self, run_timing_intervals):
+        # Resolve implicit source time bounds against the master simulation
+        # timeline before any child jobs or runtime engines reinterpret them.
+        self.initialize_start_end_time(run_timing_intervals)
+
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
-        # this will initialise and set user_info to the cpp side
-        self.check_ui_activity(self.user_info)
+        # The source configuration is expected to have been resolved already by
+        # resolve_and_validate_config(); initialize() should only forward the
+        # resolved user_info to the runtime layer.
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):
@@ -169,9 +175,17 @@ class SourceBase(DynamicGateObject):
     def can_predict_number_of_events(self):
         return True
 
+    def resolve_and_validate_config(self, run_timing_intervals):
+        self.resolve_and_validate_timing(run_timing_intervals)
+        self.check_ui_activity(self.user_info)
+
     def check_ui_activity(self, ui):
         # FIXME: This should rather be a function than a method
         # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
+        # FIXME: this method validates and also rewrites user_info according to
+        # run_timing_intervals. That behavior is part of configuration
+        # resolution and should probably be moved into
+        # resolve_and_validate_config().
         # Old fix_me do not knwo if it's still valid
         if np.array([ui.n]).shape == (1,):
             ui.n = np.array([ui.n], dtype=int)

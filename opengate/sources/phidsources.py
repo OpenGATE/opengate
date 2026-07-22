@@ -79,6 +79,9 @@ class PhotonFromIonDecaySource(GenericSource):
 
     def initialize(self, run_timing_intervals):
         if not self.is_a_sub_source and not self.sub_sources:
+            # FIXME: building PHID sub-sources expands the user-authored source
+            # into a resolved source graph. That is configuration resolution and
+            # should probably move into resolve_and_validate_config().
             phid_build_all_sub_sources(self)
 
         self.initialize_start_end_time(run_timing_intervals)
@@ -88,6 +91,10 @@ class PhotonFromIonDecaySource(GenericSource):
             sub_source.start_time = self.start_time
             sub_source.end_time = self.end_time
 
+            # FIXME: the TAC derivation below depends only on resolved source
+            # configuration and global timing. It should probably move into a
+            # resolve_and_validate_config() phase, leaving add_to_source_manager()
+            # to only register already-resolved runtime sources.
             # get tac from decay
             p = Box(sub_source.tac_from_decay_parameters)
             tac_times, tac_activities = get_tac_from_decay(

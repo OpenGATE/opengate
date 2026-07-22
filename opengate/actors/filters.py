@@ -67,6 +67,9 @@ class FilterBase(GateObject):
     def __initcpp__(self):
         """Nothing to do in the base class."""
 
+    def resolve_and_validate_config(self):
+        pass
+
     def initialize(self):
         self.InitializeUserInfo(self.user_info)
 
@@ -305,6 +308,10 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
     def __initcpp__(self):
         g4.GateBooleanFilter.__init__(self)
 
+    def resolve_and_validate_config(self):
+        for subfilter in self.filters:
+            subfilter.resolve_and_validate_config()
+
     def _clone_negated(self):
         clone = FilterBase._clone_negated(self)
         clone.filters = list(self.filters)
@@ -373,10 +380,9 @@ class AttributeComparisonFilter(FilterBase):
         # Create an instance of the chosen class
         return super().__new__(cls)
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
         if self.user_info.attribute is None:
             fatal(f"The parameter 'attribute' is required for filter '{self.name}'.")
-        super().initialize()
 
 
 class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDouble):

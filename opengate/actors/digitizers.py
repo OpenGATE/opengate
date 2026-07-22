@@ -250,8 +250,8 @@ class DigitizerBase(ActorBase):
     #         )
     #     return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
-    def initialize(self):
-        ActorBase.initialize(self)
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
         if self.authorize_repeated_volumes is True:
             return
         att = self.attached_to
@@ -272,6 +272,9 @@ class DigitizerBase(ActorBase):
                         f"sure, enable the option 'authorize_repeated_volumes'."
                     )
                 current = current.parent
+
+    def initialize(self):
+        ActorBase.initialize(self)
 
 
 class DigitizerWithRootOutput(DigitizerBase):
@@ -363,7 +366,8 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
         g4.GateDigitizerAdderActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
         if (
             self.policy != "EnergyWinnerPosition"
             and self.policy != "EnergyWeightedCentroidPosition"
@@ -372,11 +376,18 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
                 f"Error, the policy for the Adder '{self.name}' must be EnergyWinnerPosition or "
                 f"EnergyWeightedCentroidPosition, while is is '{self.policy}'"
             )
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
         depth = -1
         if self.user_info.group_volume is not None:
             depth = self.simulation.volume_manager.get_volume(
@@ -478,8 +489,13 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
         self.initialize_blurring_parameters()
+
+    def initialize(self):
+        # group_volume existence is validated during resolve_and_validate_config();
+        # runtime preparation here only translates it into the depth expected by C++.
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -603,12 +619,22 @@ class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeAc
         g4.GateDigitizerDeadTimeActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
     def initialize(self):
+        # group_volume existence is validated during resolve_and_validate_config();
+        # runtime preparation here only translates it into the depth expected by C++.
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
         depth = -1
         if self.user_info.group_volume is not None:
             depth = self.simulation.volume_manager.get_volume(
@@ -712,12 +738,20 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
         g4.GateDigitizerPileupActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
     def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
         depth = -1
         if self.user_info.group_volume is not None:
             depth = self.simulation.volume_manager.get_volume(
@@ -834,8 +868,11 @@ class DigitizerSpatialBlurringActor(
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
         self.initialize_blurring_parameters()
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -904,8 +941,11 @@ class DigitizerEfficiencyActor(
                 f"Efficency set to {self.efficiency}, which is not in [0;1]."
             )
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
         self.initialize_blurring_parameters()
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -1114,7 +1154,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def initialize(self):
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
         # for the moment, we cannot use this actor with several volumes
         m = self.attached_to
         if hasattr(m, "__len__") and not isinstance(m, str):
@@ -1127,6 +1168,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
                 f"Sorry, cannot (yet) use ProjectionActor with repeated volumes, "
                 f"set 'authorize_repeated_volumes' to False"
             )
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -1389,12 +1432,20 @@ class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterAc
         g4.GateCoincidenceSorterActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
     def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
         depth = -1
         if self.user_info.group_volume is not None:
             depth = self.simulation.volume_manager.get_volume(
@@ -1440,11 +1491,15 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
+        if self.user_info.discretize_volume is None:
+            fatal('Please, set the option "discretize_volume"')
+        self.simulation.volume_manager.get_volume(self.user_info.discretize_volume)
+
     def StartSimulationAction(self):
         DigitizerBase.StartSimulationAction(self)
         DigitizerAdderActor.set_group_by_depth(self)
-        if self.user_info.discretize_volume is None:
-            fatal('Please, set the option "discretize_volume"')
         depth = self.simulation.volume_manager.get_volume(
             self.discretize_volume
         ).volume_depth_in_tree
@@ -1501,6 +1556,21 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
 
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
+
+    def resolve_and_validate_config(self):
+        super().resolve_and_validate_config()
+        if isinstance(self.steps_to_store, str):
+            requested_steps = self.steps_to_store.split()
+        else:
+            requested_steps = list(self.steps_to_store)
+        allowed_steps = {"entering", "exiting", "first", "all"}
+        unknown_steps = [step for step in requested_steps if step not in allowed_steps]
+        if unknown_steps:
+            fatal(
+                f"Unknown steps_to_store values {unknown_steps} for actor '{self.name}'. "
+                f"Allowed values are {sorted(allowed_steps)}."
+            )
+        self.user_info.steps_to_store = " ".join(requested_steps)
 
     def initialize(self):
         DigitizerBase.initialize(self)

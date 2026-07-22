@@ -689,10 +689,18 @@ class GateObject:
         for k in self.user_info.keys():
             if k in d["user_info"]:
                 if hasattr(self, k):
-                    # get the class property associate with the user info end check if it has a setter
-                    # otherwise, it is read-only
+                    # Writable user infos restore through their generated
+                    # property setter. Read-only user infos may opt into
+                    # deserialization through an explicit developer-provided
+                    # from_dictionary_hook stored alongside the user-info
+                    # definition.
+                    property_options = self.inherited_user_info_defaults[k][1]
                     if getattr(type(self), k).fset is not None:
                         setattr(self, k, d["user_info"][k])
+                    elif "from_dictionary_hook" in property_options:
+                        property_options["from_dictionary_hook"](
+                            self, d["user_info"][k]
+                        )
                 else:
                     if "deprecated" not in self.inherited_user_info_defaults[k][1]:
                         warning(
@@ -728,6 +736,9 @@ class DynamicGateObject(GateObject):
                 "Instead, use the 'add_dynamic_parametrisation()' method of your object."
                 "If None, the object is static (default).",
                 "read_only": True,
+                "from_dictionary_hook": lambda self, value: self.restore_dynamic_params_from_dictionary(
+                    value
+                ),
             },
         )
     }
@@ -794,6 +805,15 @@ class DynamicGateObject(GateObject):
                 )
                 fatal(s)
 
+    def restore_dynamic_params_from_dictionary(self, dynamic_params):
+        # Dynamic parametrisations are normally introduced through
+        # add_dynamic_parametrisation(), which processes and normalizes the
+        # user-facing input before storing the final representation in
+        # user_info["dynamic_params"]. During deserialization we already
+        # receive that persisted, processed representation, so restoring it
+        # directly is the correct object-specific read-only path here.
+        self.user_info["dynamic_params"] = dynamic_params
+
     def _add_dynamic_parametrisation_to_userinfo(self, params, name):
         """This base class implementation only acts as a setter.
         Classes inheriting from this class should implement an
@@ -826,6 +846,25 @@ class DynamicGateObject(GateObject):
     def create_changers(self):
         # this base class implementation is here to keep inheritance intact.
         return []
+
+    def reassign_dynamic_params_for_run_indices(self, original_run_indices):
+        if self.is_dynamic is False:
+            return
+
+        reassigned_dynamic_params = {}
+        for name, params in self.dynamic_params.items():
+            reassigned_dynamic_params[name] = {}
+            for key, value in params.items():
+                if key == "extra_params":
+                    reassigned_dynamic_params[name][key] = copy.deepcopy(value)
+                elif key in self.dynamic_user_info:
+                    reassigned_dynamic_params[name][key] = [
+                        copy.deepcopy(value[i]) for i in original_run_indices
+                    ]
+                else:
+                    reassigned_dynamic_params[name][key] = copy.deepcopy(value)
+
+        self.user_info["dynamic_params"] = reassigned_dynamic_params
 
 
 class GateUserInputSwitchDict(Box):

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 2
     if os.name == "nt":
         sim.number_of_threads = 1
-    sim.store_json_archive = True
+    archive_filename = "simulation.json"
     print(paths)
 
     # units
@@ -58,12 +58,13 @@ if __name__ == "__main__":
 
     # start simulation in another process
     sim.run(start_new_process=True)
+    sim.to_json_file(filename=archive_filename)
 
     # print results at the end
     print(stat)
     print(debug)
 
-    print(f"Simulation json saved in {sim.output_dir / sim.json_archive_filename}")
+    print(f"Simulation json saved in {sim.output_dir / archive_filename}")
 
     # assertions to verify MT execution and output recovery
     assert stat.counts.events == 2 * sim.number_of_threads

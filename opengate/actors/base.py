@@ -497,11 +497,9 @@ class ActorBase(GateObject):
         # close the base GateObject
         super().close()
 
-    def initialize(self):
-        """This base class method initializes common settings and should be called in all inheriting classes."""
-
-        # set the mother of the attached_to volume to the actor
-        # but only if attached to a single volume.
+    def resolve_and_validate_config(self):
+        # Resolve the mother of the attached_to volume now so initialize() only
+        # needs to forward the resolved value to the runtime layer.
         if isinstance(self.attached_to, str):
             vol = self.simulation.volume_manager.get_volume(self.attached_to)
             self.mother_attached_to = vol.mother
@@ -510,16 +508,26 @@ class ActorBase(GateObject):
                 self.mother_attached_to = __world_name__
         else:
             self.mother_attached_to = "None"
-        # set the name of the attached_to mother volume to cpp
-        self.SetMotherAttachedToVolumeName(self.mother_attached_to)
-        self.ClearAttachedVolumeExitPairs()
 
         any_active = False
-        for p in self._existing_properties_to_interfaces:
-            interface = getattr(self, p)
+        for property_name in self._existing_properties_to_interfaces:
+            interface = getattr(self, property_name)
             any_active |= interface.active
         if len(self.user_output) > 0 and not any_active:
             self.warn_user(f"The actor {self.name} has no active output. ")
+
+        for user_output in self.user_output.values():
+            user_output.resolve_and_validate_config()
+
+    def initialize(self):
+        """This base class method initializes common settings and should be called in all inheriting classes."""
+
+        if self.mother_attached_to is None:
+            self.resolve_and_validate_config()
+
+        # set the name of the attached_to mother volume to cpp
+        self.SetMotherAttachedToVolumeName(self.mother_attached_to)
+        self.ClearAttachedVolumeExitPairs()
 
         for k, v in self.user_output.items():
             v.initialize()

@@ -142,7 +142,11 @@ class TreatmentPlanPBSource(SourceBase):
         "plan_path": (
             None,
             {
-                "doc": "path of the treatment plan file to simulate. It can be in DICOM or Gate 9 .txt format "
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "path of the treatment plan file to simulate. It can be in DICOM or Gate 9 .txt format ",
+                "is_input_file": True,
             },
         ),
         "beam_data_dict": (

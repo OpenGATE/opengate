@@ -601,20 +601,20 @@ class Region(GateObject):
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
+    def resolve_and_validate_config(self):
+        # Resolve associated volumes early against the simulation-side volume
+        # registry so invalid region-volume links fail during config handling
+        # rather than later during runmanager initialization. These are the same
+        # Python volume objects that will later receive their G4 logical volumes
+        # during geometry construction.
+        self.resolve_root_logical_volumes()
+
     def dump_production_cuts(self):
         s = ""
         for pname, cut in self.production_cuts.items():
             if cut is not None:
                 s += f"{pname}: {cut}\n"
         return s
-
-    @requires_fatal("physics_engine")
-    def initialize_before_runmanager(self):
-        """Perform Python-side region setup before G4RunManager.Initialize()."""
-        # Only Python objects are touched here. The actual G4Region cannot be
-        # created yet because G4LogicalVolume objects appear during geometry
-        # construction inside G4RunManager.Initialize().
-        self.initialize_volume_dictionaries()
 
     @requires_fatal("physics_engine")
     def initialize_during_runmanager(self):
@@ -631,15 +631,13 @@ class Region(GateObject):
         self.initialize_g4_user_limits()
         self.initialize_g4_region()
 
-    # This method is currently necessary because the actual volume objects
-    # are only created at some point during initialization
-    @requires_fatal("physics_engine")
-    def initialize_volume_dictionaries(self):
-        if self.physics_engine is None:
-            fatal("No physics_engine defined.")
+    # Resolve region-attached volume names into Python volume objects during
+    # the config phase. Their G4 counterparts are created later during geometry
+    # construction, so only the Python-side references are established here.
+    def resolve_root_logical_volumes(self):
         for vname in self.root_logical_volumes.keys():
             self.root_logical_volumes[vname] = (
-                self.physics_engine.simulation_engine.volume_engine.get_volume(vname)
+                self.simulation.volume_manager.get_volume(vname)
             )
 
     def initialize_g4_region(self):

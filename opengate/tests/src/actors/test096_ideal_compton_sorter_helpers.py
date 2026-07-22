@@ -102,7 +102,7 @@ def create_and_run_cc_simulation():
         "GlobalTime",
     ]
     ta2.output_filename = output_path / "PhaseSpace.root"
-    ta2.steps_to_store = "allsteps"
+    ta2.steps_to_store = "all"
     F = GateFilterBuilder()
     ta2.filter = F.ParticleName == "gamma"
 
