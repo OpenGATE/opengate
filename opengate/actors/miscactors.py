@@ -194,6 +194,8 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
     def write_data(self, **kwargs):
         """Override virtual method from base class."""
+        # This raw file write is split-safe because get_output_path() resolves
+        # the filename against the currently running simulation output folder.
         with open(self.get_output_path(which="merged"), "w+") as f:
             if self.encoder == "json":
                 dump_json(self.get_processed_output(), f, indent=4)

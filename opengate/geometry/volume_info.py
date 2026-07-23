@@ -8,7 +8,9 @@ from opengate.geometry.utility import vec_g4_as_np, rot_g4_as_np
 import json
 
 
+# FIXME: consider renaming to store_runtime_volumes_info to distinguish from config writing via to_dictionary()
 def store_volumes_info(sim, json_filename):
+    json_filename = sim.get_output_path(json_filename)
     # get the pointers to the Geant4 volumes
     vol_info_raw = get_g4_volumes_pointers(sim)
 
@@ -28,6 +30,8 @@ def store_expanded_volumes_info(sim, json_filename):
     expanded geometry to a JSON file. This is the correct method for
     geometries with nested replications.
     """
+    json_filename = sim.get_output_path(json_filename)
+
     # 1. Get the initial prototype volumes from the G4 store
     vol_info_raw = get_g4_volumes_pointers(sim)
 
