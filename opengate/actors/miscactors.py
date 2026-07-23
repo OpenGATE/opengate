@@ -262,6 +262,11 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
         self.user_output.stats.store_data(self.GetCounts())
+        # FIXME: split-job merging needs explicit handling of run identities for
+        # the statistics output. Naively summing child-local "runs" counters is
+        # not meaningful. Child outputs should carry original master run indices
+        # or be remapped during merge so the merged stats can reconstruct the
+        # set of original runs directly from actor output data.
 
         if self.simulation is not None:
             sim_start = self.simulation.run_timing_intervals[0][0]
