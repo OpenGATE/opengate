@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4Navigator.hh"
+#include <G4Navigator.hh>
 
 void init_G4Navigator(py::module &m) {
   py::class_<G4Navigator>(m, "G4Navigator")

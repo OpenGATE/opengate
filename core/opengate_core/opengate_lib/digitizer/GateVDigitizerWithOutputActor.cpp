@@ -8,7 +8,6 @@
 #include "GateVDigitizerWithOutputActor.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiCollectionManager.h"
-#include <iostream>
 
 GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
     py::dict &user_info, bool MT_ready)
@@ -26,7 +25,7 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   fOutputDigiCollection = nullptr;
   fInputDigiCollection = nullptr;
   fInitializeRootTupleForMasterFlag = true;
-  fClearEveryNEvents = 1e5;
+  fClearEveryNEvents = 100000;
 }
 
 GateVDigitizerWithOutputActor::~GateVDigitizerWithOutputActor() = default;

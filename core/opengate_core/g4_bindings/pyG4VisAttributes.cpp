@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4VisAttributes.hh"
+#include <G4VisAttributes.hh>
 
 void init_G4VisAttributes(py::module &m) {
   py::class_<G4VisAttributes>(m, "G4VisAttributes")

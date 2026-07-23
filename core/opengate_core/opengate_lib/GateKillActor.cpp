@@ -6,8 +6,6 @@
    ------------------------------------ -------------- */
 
 #include "GateKillActor.h"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
 
 G4Mutex SetNbKillMutex = G4MUTEX_INITIALIZER;
 

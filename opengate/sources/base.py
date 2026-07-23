@@ -1,4 +1,6 @@
+import os
 import numpy as np
+import opengate_core as g4
 
 from ..actors.base import _setter_hook_attached_to
 from ..base import GateObject, DynamicGateObject, process_cls
@@ -71,6 +73,8 @@ class SourceBase(DynamicGateObject):
         GateObject.__init__(self, *args, **kwargs)
         # all times intervals
         self.run_timing_intervals = None
+        self.g4_thread_sources = []
+        self.g4_thread_sources_index = 0
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -115,10 +119,52 @@ class SourceBase(DynamicGateObject):
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):
-        source_manager.AddSource(self)
+        if hasattr(self, "g4_source") and self.g4_source is not None:
+            source_manager.AddSource(self.g4_source)
+        else:
+            source_manager.AddSource(self)
+
+    def close(self):
+        # remove the g4 objects
+        for v in list(self.__dict__.keys()):
+            if "g4_" in v:
+                self.__dict__[v] = None
+        # close the base GateObject
+        GateObject.close(self)
 
     def prepare_output(self):
         pass
+
+    def pre_create_g4_sources(self, num_instances):
+        self.g4_thread_sources = []
+        self.g4_thread_sources_index = 0
+        for _ in range(num_instances):
+            g4_src = self.create_g4_source()
+            if g4_src is not None:
+                self.g4_thread_sources.append(g4_src)
+
+    def get_next_g4_source(self):
+        if self.g4_thread_sources:
+            tid = g4.G4GetThreadId()
+            idx = tid + 1 if tid >= 0 else 0
+            if idx < len(self.g4_thread_sources):
+                return self.g4_thread_sources[idx]
+        return None
+
+    def create_g4_source(self):
+        return None
+
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
+        pass
+
+    def gather_outputs(self, thread_sources):
+        pass
+
+    def recover_user_output(self, s):
+        pid = os.getpid()
+        print(f"(python) recover_user_output {self.name} pid={pid}")
+        for k, v in s.user_info.items():
+            self.user_info[k] = v
 
     def can_predict_number_of_events(self):
         return True
@@ -145,4 +191,46 @@ class SourceBase(DynamicGateObject):
             ui.activity = 0
 
 
+class DebugSource(SourceBase):
+
+    user_info_defaults = {
+        "debug_flag": (False, {"doc": "Fake parameter."}),
+        "debug_value": (0.0, {"doc": "Fake parameter."}),
+    }
+
+    def __init__(self, *args, **kwargs):
+        pid = os.getpid()
+        print(f"(python) DebugSource::__init__ pid={pid}")
+        SourceBase.__init__(self, *args, **kwargs)
+
+    def create_g4_source(self):
+        pid = os.getpid()
+        print(f"(python) DebugSource::create_g4_source pid={pid}")
+        return g4.GateDebugSource()
+
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
+        pid = os.getpid()
+        print(f"(python) DebugSource::initialize_g4_source pid={pid}")
+        self.initialize_start_end_time(run_timing_intervals)
+        self.check_ui_activity(self.user_info)
+        g4_source.InitializeUserInfo(self.user_info)
+
+    def initialize_start_end_time(self, run_timing_intervals):
+        pid = os.getpid()
+        print(f"(python) DebugSource::initialize_start_end_time {self.name} pid={pid}")
+        SourceBase.initialize_start_end_time(self, run_timing_intervals)
+
+    def gather_outputs(self, thread_sources):
+        values = [
+            g4_src.GetDebugValue() for g4_src in thread_sources if g4_src is not None
+        ]
+        print(f"(python) DebugSource::gather_outputs values = {values}")
+        if values:
+            self.debug_value = np.sum(np.array(values))
+            print(
+                f"(python) DebugSource::gather_outputs selected max value = {self.debug_value}"
+            )
+
+
 process_cls(SourceBase)
+process_cls(DebugSource)

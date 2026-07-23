@@ -62,7 +62,14 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.0",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.2",
+)
+@click.option(
+    "--print_last_test",
+    "-l",
+    is_flag=True,
+    default=False,
+    help="Print the number of the last test and exit",
 )
 def go(
     start_id,
@@ -74,9 +81,24 @@ def go(
     run_previously_failed_jobs,
     num_processes,
     g4_version,
+    print_last_test,
 ):
 
     path_tests_src = return_tests_path()  # returns the path to the tests/src dir
+    if print_last_test:
+        import re
+
+        all_files = helpers.discover_all_tests(path_tests_src)
+        pattern = re.compile(r"^test([0-9]+)")
+        test_numbers = []
+        for f in all_files:
+            match = pattern.match(os.path.basename(f))
+            if match:
+                test_numbers.append(int(match.group(1)))
+        if test_numbers:
+            print(max(test_numbers))
+        return
+
     test_dir_path = path_tests_src.parent
     start = time.time()
 

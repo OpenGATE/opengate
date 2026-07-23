@@ -9,12 +9,10 @@
 #define GateTreatmentPlanPBSource_h
 
 // CLHEP
-#include "CLHEP/Random/RandGauss.h"
-#include "CLHEP/Random/RandomEngine.h"
-#include "Randomize.hh"
-
 #include "GateSingleParticleSourcePencilBeam.h"
 #include "GateVSource.h"
+#include <CLHEP/Random/RandGeneral.h>
+#include <CLHEP/Random/RandomEngine.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -28,7 +26,7 @@ public:
   void InitializeUserInfo(py::dict &user_info) override;
   void GeneratePrimaries(G4Event *event, double time) override;
   double PrepareNextTime(double current_simulation_time,
-                         double NumberOfGeneratedEvents) override;
+                         unsigned long NumberOfGeneratedEvents) override;
   void PrepareNextRun() override;
   double CalcNextTime(double current_simulation_time) override;
 
@@ -36,18 +34,12 @@ public:
   py::list GetGeneratedPrimaries();
 
 protected:
-  // thread local structure
-  struct threadLocalTPSource {
-    GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
-    std::vector<int> fNbIonsToGenerate;
-    std::vector<int> fNbGeneratedSpots;
-    int fCurrentSpot = 0;
-    int fPreviousSpot = -1;
-    bool fInitGenericIon = false;
-  };
-  G4Cache<threadLocalTPSource> fThreadLocalDataTPSource;
-
-  threadLocalTPSource &GetThreadLocalDataTPSource();
+  GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
+  std::vector<int> fNbIonsToGenerate;
+  std::vector<int> fNbGeneratedSpots;
+  int fCurrentSpot = 0;
+  int fPreviousSpot = -1;
+  bool fInitGenericIon = false;
 
   // variables common to all spots
   CLHEP::HepRandomEngine *fEngine;

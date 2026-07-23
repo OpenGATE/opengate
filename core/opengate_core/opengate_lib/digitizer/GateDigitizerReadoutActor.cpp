@@ -7,12 +7,9 @@
 
 #include "GateDigitizerReadoutActor.h"
 #include "../GateHelpers.h"
-#include "../GateHelpersDict.h"
-#include "G4Navigator.hh"
-#include "G4PhysicalVolumeStore.hh"
 #include "GateDigiAdderInVolume.h"
-#include "GateDigiCollectionManager.h"
-#include <iostream>
+#include <G4Navigator.hh>
+#include <G4PhysicalVolumeStore.hh>
 
 G4Mutex SetIgnoredHitsMutex = G4MUTEX_INITIALIZER;
 
@@ -89,7 +86,7 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
       // coordinate system
       G4ThreeVector c;
       c = fTouchableHistory.GetHistory()
-              ->GetTransform(fDiscretizeVolumeDepth)
+              ->GetTransform(static_cast<G4int>(fDiscretizeVolumeDepth))
               .InverseTransformPoint(c);
       digi->fFinalPosition.set(c.getX(), c.getY(), c.getZ());
 

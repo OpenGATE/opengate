@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4VPhysicsConstructor.hh"
+#include <G4VPhysicsConstructor.hh>
 #include <iostream>
 
 class PyG4VPhysicsConstructor : public G4VPhysicsConstructor {

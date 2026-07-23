@@ -27,23 +27,7 @@
 #ifndef SimpleContainer_h
 #define SimpleContainer_h
 
-#include "G4Electron.hh"
-#include "G4EmBiasingManager.hh"
-#include "G4EmParameters.hh"
-#include "G4EntanglementAuxInfo.hh"
-#include "G4Gamma.hh"
-#include "G4MaterialCutsCouple.hh"
-#include "G4PhysicalConstants.hh"
-#include "G4PhysicsModelCatalog.hh"
-#include "G4Positron.hh"
-#include "G4ReferenceCountedHandle.hh"
-#include "G4TouchableHandle.hh"
-#include "G4Track.hh"
-#include "G4VEmProcess.hh"
-#include "G4VEnergyLossProcess.hh"
-#include "G4VParticleChange.hh"
-#include "G4eeToTwoGammaModel.hh"
-#include "G4eplusAnnihilation.hh"
+#include <G4TouchableHandle.hh>
 
 class SimpleContainer {
 

@@ -5,16 +5,12 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "G4Navigator.hh"
-#include "G4RunManager.hh"
-#include "G4Threading.hh"
-#include "GateActorManager.h"
-
 #include "GateFluenceActor.h"
+#include "GateActorManager.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
-
-#include <iostream>
+#include <G4RunManager.hh>
+#include <G4Threading.hh>
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
 

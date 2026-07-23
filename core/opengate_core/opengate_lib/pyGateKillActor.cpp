@@ -5,11 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateKillActor.h"
+#include <pybind11/pybind11.h>
 
 void init_GateKillActor(py::module &m) {
   py::class_<GateKillActor, std::unique_ptr<GateKillActor, py::nodelete>,

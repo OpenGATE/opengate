@@ -8,7 +8,6 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERDIGITIZER_H
 #define OPENGATE_CORE_OPENGATEHELPERDIGITIZER_H
 
-#include "G4TouchableHistory.hh"
 #include "GateDigiCollection.h"
 #include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>

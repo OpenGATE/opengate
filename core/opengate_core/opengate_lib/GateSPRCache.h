@@ -8,12 +8,11 @@
 #ifndef GateSPRCache_h
 #define GateSPRCache_h
 
+#include <G4Material.hh>
+#include <G4ParticleDefinition.hh>
 #include <functional>
 #include <string>
 #include <unordered_map>
-
-#include "G4Material.hh"
-#include "G4ParticleDefinition.hh"
 
 struct CacheKey {
   std::string material;

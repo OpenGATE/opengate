@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4IonTable.hh"
-#include "G4ParticleDefinition.hh"
+#include <G4IonTable.hh>
+#include <G4ParticleDefinition.hh>
 
 void init_G4IonTable(py::module &m) {
 

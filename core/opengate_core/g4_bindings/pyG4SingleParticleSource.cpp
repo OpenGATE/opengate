@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4Event.hh"
-#include "G4SingleParticleSource.hh"
+#include <G4Event.hh>
+#include <G4SingleParticleSource.hh>
 
 void init_G4SingleParticleSource(py::module &m) {
 

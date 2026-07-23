@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4VProcess.hh"
+#include <G4VProcess.hh>
 
 void init_G4VProcess(py::module &m) {
   py::class_<G4VProcess, std::unique_ptr<G4VProcess, py::nodelete>>(

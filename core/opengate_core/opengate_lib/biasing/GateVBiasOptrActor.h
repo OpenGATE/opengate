@@ -9,9 +9,9 @@ Copyright (C): OpenGATE Collaboration
 #define GateVBiasOptrActor_h
 
 #include "../GateVActor.h"
-#include "G4Cache.hh"
-#include "G4Navigator.hh"
-#include "G4VBiasingOperator.hh"
+#include <G4Cache.hh>
+#include <G4Navigator.hh>
+#include <G4VBiasingOperator.hh>
 #include <pybind11/stl.h>
 #include <unordered_set>
 

@@ -5,11 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateBooleanFilter.h"
+#include <pybind11/pybind11.h>
 
 void init_GateBooleanFilter(py::module &m) {
   py::class_<GateBooleanFilter, GateVFilter>(m, "GateBooleanFilter")

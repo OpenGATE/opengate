@@ -7,8 +7,8 @@
 
 #include "GateDigitizerHitsCollectionActor.h"
 #include "../GateHelpersDict.h"
-#include "G4RunManager.hh"
 #include "GateDigiCollectionManager.h"
+#include <G4RunManager.hh>
 
 GateDigitizerHitsCollectionActor::GateDigitizerHitsCollectionActor(
     py::dict &user_info)

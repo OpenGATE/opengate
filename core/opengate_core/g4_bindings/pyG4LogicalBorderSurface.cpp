@@ -3,12 +3,12 @@
 
 namespace py = pybind11;
 
-#include "G4LogicalBorderSurface.hh"
-#include "G4OpticalSurface.hh"
-#include "G4PVPlacement.hh"
-#include "G4String.hh"
-#include "G4SurfaceProperty.hh"
-#include "G4VPhysicalVolume.hh"
+#include <G4LogicalBorderSurface.hh>
+#include <G4OpticalSurface.hh>
+#include <G4PVPlacement.hh>
+#include <G4String.hh>
+#include <G4SurfaceProperty.hh>
+#include <G4VPhysicalVolume.hh>
 
 void init_G4LogicalBorderSurface(py::module &m) {
 

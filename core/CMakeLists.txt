@@ -106,7 +106,10 @@ if (WIN32)
 endif ()
 
 # additional utilities
-target_include_directories(opengate_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(opengate_core PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/
+        ${CMAKE_CURRENT_SOURCE_DIR}/opengate_core/opengate_lib
+        )
 
 #set(CMAKE_VERBOSE_MAKEFILE on)
 target_link_libraries(opengate_core PRIVATE pybind11::module ${Geant4_LIBRARIES} Threads::Threads ${ITK_LIBRARIES} fmt::fmt-header-only)

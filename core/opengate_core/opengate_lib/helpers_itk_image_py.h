@@ -6,15 +6,12 @@
 #ifndef DECLARE_ITK_IMAGE_PY_H
 #define DECLARE_ITK_IMAGE_PY_H
 
-#include "pybind11/numpy.h"
+#include <itkImportImageFilter.h>
 #include <pybind11/functional.h>
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-
-#include "itkImage.h"
-#include "itkImportImageFilter.h"
-#include "itkSmartPointer.h"
 
 /** For now make copies of data to numpy arrays.
  * Some examples (pybind11 source code docs are non-existant)
@@ -54,7 +51,7 @@ inline void set_region(TImagePointer &img,
   typename RegionType::IndexType itk_index;
   const auto *data_index = static_cast<int *>(
       np_array_ptr_after_check_dim_and_shape<int>(index, img->ImageDimension));
-  for (int i = 0; i < img->ImageDimension; i++)
+  for (unsigned int i = 0; i < img->ImageDimension; i++)
     itk_index[i] = data_index[i];
   typename RegionType::SizeType itk_size;
   const auto *data_size = static_cast<int *>(
@@ -62,7 +59,7 @@ inline void set_region(TImagePointer &img,
   if (data_size[0] < 0 || data_size[1] < 0 || data_size[2] < 0) {
     throw std::runtime_error("In set_regions, input size cannot be negative.");
   }
-  for (int i = 0; i < img->ImageDimension; i++)
+  for (unsigned int i = 0; i < img->ImageDimension; i++)
     itk_size[i] = data_size[i];
   RegionType itk_region(itk_index, itk_size);
   img->SetRegions(itk_region);
@@ -95,7 +92,7 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
             py::array_t<int, py::array::c_style | py::array::forcecast>
                 zero_index(img->ImageDimension);
             int *raw = static_cast<int *>(zero_index.request().ptr);
-            for (int i = 0; i < img->ImageDimension; i++)
+            for (unsigned int i = 0; i < img->ImageDimension; i++)
               raw[i] = 0;
             return set_region(img, zero_index, size);
           })

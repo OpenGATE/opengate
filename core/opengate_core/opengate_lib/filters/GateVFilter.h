@@ -8,9 +8,9 @@
 #ifndef GateVFilter_h
 #define GateVFilter_h
 
-#include "G4Event.hh"
-#include "G4Run.hh"
-#include "G4Step.hh"
+#include <G4Event.hh>
+#include <G4Run.hh>
+#include <G4Step.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

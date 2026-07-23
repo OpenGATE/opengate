@@ -8,7 +8,6 @@
 #ifndef GateProcessDefinedStepInVolumeAttribute_h
 #define GateProcessDefinedStepInVolumeAttribute_h
 
-#include "GateTrackData.h"
 #include "GateVAuxiliaryAttribute.h"
 
 class GateProcessDefinedStepInVolumeAttribute : public GateVAuxiliaryAttribute {

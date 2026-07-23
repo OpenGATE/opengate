@@ -6,12 +6,8 @@
    ------------------------------------ -------------- */
 
 #include "GateKillAccordingParticleNameActor.h"
-#include "G4LogicalVolumeStore.hh"
-#include "G4PhysicalVolumeStore.hh"
-#include "G4TransportationManager.hh"
-#include "G4ios.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include <G4TransportationManager.hh>
 
 G4Mutex SetNbKillAcordingParticleMutex = G4MUTEX_INITIALIZER;
 

@@ -165,11 +165,12 @@ def root_read_tree(root_file_path, tree_name="phsp"):
     # if not exists, raise_except
     if not Path(root_file_path).exists():
         raise_except(f"Error: File '{root_file_path}' not found.")
-    # open the root file
-    with uproot.open(root_file_path) as file:
-        if tree_name not in file:
-            raise_except(f"Error: TTree '{tree_name}' not found in {root_file_path}.")
-        tree = file[tree_name]
+    # Keep the uproot file alive as long as the returned tree is in use.
+    file = uproot.open(root_file_path)
+    if tree_name not in file:
+        file.close()
+        raise_except(f"Error: TTree '{tree_name}' not found in {root_file_path}.")
+    tree = file[tree_name]
     return tree
 
 

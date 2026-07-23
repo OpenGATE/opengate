@@ -47,7 +47,6 @@ private:
   G4Mutex fIngestionMutex;
   int fNumWorkingThreads{};
   std::atomic<double> fSortingWindow{1000.0}; // nanoseconds
-  std::atomic<int> fFastestThread{};
   std::atomic<int> fNumActiveWorkingThreads{};
   std::atomic<bool> fProcessingOngoing{};
   std::atomic<int> fNumIngestions{};

@@ -6,11 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateSimulationStatisticsActor.h"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include <chrono>
-#include <iostream>
-#include <sstream>
 
 G4Mutex GateSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;
 
@@ -141,26 +138,32 @@ void GateSimulationStatisticsActor::EndOfSimulationWorkerAction(
 void GateSimulationStatisticsActor::EndSimulationAction() {
   // Called when the simulation end (only by the master thread)
   fStopTime = std::chrono::system_clock::now();
-  fDuration = std::chrono::duration_cast<std::chrono::microseconds>(
-                  fStopTime - fStartRunTime)
-                  .count();
-  fInitDuration = std::chrono::duration_cast<std::chrono::microseconds>(
-                      fStartRunTime - fStartTime)
-                      .count();
+  fDuration =
+      static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(
+                              fStopTime - fStartRunTime)
+                              .count());
+  fInitDuration =
+      static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(
+                              fStartRunTime - fStartTime)
+                              .count());
   fDuration = fDuration * CLHEP::microsecond;
   fInitDuration = fInitDuration * CLHEP::microsecond;
   fCountsD["duration"] = fDuration;
   fCountsD["init"] = fInitDuration;
   {
-    std::stringstream ss;
     auto t_c = std::chrono::system_clock::to_time_t(fStartTime);
-    ss << strtok(std::ctime(&t_c), "\n");
-    fCountsStr["start_time"] = ss.str();
+    std::string s = std::ctime(&t_c);
+    if (!s.empty() && s.back() == '\n') {
+      s.pop_back();
+    }
+    fCountsStr["start_time"] = s;
   }
   {
-    std::stringstream ss;
     auto t_c = std::chrono::system_clock::to_time_t(fStopTime);
-    ss << strtok(std::ctime(&t_c), "\n");
-    fCountsStr["stop_time"] = ss.str();
+    std::string s = std::ctime(&t_c);
+    if (!s.empty() && s.back() == '\n') {
+      s.pop_back();
+    }
+    fCountsStr["stop_time"] = s;
   }
 }

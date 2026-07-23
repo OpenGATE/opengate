@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4TouchableHistory.hh"
-#include "G4VSolid.hh"
+#include <G4TouchableHistory.hh>
+#include <G4VSolid.hh>
 
 void init_G4TouchableHistory(py::module &m) {
   py::class_<G4TouchableHistory>(m, "G4TouchableHistory")

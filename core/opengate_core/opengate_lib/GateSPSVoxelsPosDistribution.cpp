@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateSPSVoxelsPosDistribution.h"
-#include "GateHelpers.h"
 #include <Randomize.hh>
 
 GateSPSVoxelsPosDistribution::GateSPSVoxelsPosDistribution() {

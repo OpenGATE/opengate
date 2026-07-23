@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateDigiAdderInVolume.h"
-#include "G4UnitsTable.hh"
 
 GateDigiAdderInVolume::GateDigiAdderInVolume() {
   fFinalEdep = 0.0;

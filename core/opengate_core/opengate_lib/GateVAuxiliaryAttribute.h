@@ -8,13 +8,13 @@
 #ifndef GateVAuxiliaryAttribute_h
 #define GateVAuxiliaryAttribute_h
 
-#include "G4Cache.hh"
-#include "G4Step.hh"
-#include "G4Track.hh"
 #include "GateHelpers.h"
 #include "GateTrackData.h"
 #include "GateUniqueVolumeID.h"
 #include "GateUserTrackInformation.h"
+#include <G4Cache.hh>
+#include <G4Step.hh>
+#include <G4Track.hh>
 #include <map>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

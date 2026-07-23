@@ -8,8 +8,8 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERSGEOMETRY_H
 #define OPENGATE_CORE_OPENGATEHELPERSGEOMETRY_H
 
-#include "G4LogicalVolumeStore.hh"
-#include "GateHelpers.h"
+#include <G4RotationMatrix.hh>
+#include <G4Step.hh>
 
 void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
                                             G4ThreeVector &translation,

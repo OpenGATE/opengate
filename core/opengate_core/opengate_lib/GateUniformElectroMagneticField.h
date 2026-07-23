@@ -8,8 +8,8 @@
 #ifndef GateUniformElectroMagneticField_h
 #define GateUniformElectroMagneticField_h
 
-#include "G4ElectroMagneticField.hh"
-#include "G4ThreeVector.hh"
+#include <G4ElectroMagneticField.hh>
+#include <G4ThreeVector.hh>
 
 // Pure inner field class (Geant4-like): uniform electric and magnetic fields.
 // This does NOT inherit from GateElectroMagneticField; it is a pure Geant4

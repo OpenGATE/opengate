@@ -6,9 +6,9 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4ApplicationState.hh"
-#include "G4StateManager.hh"
-#include "G4ios.hh"
+#include <G4ApplicationState.hh>
+#include <G4StateManager.hh>
+#include <G4ios.hh>
 
 namespace py = pybind11;
 

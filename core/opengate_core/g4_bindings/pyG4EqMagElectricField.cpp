@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4ElectroMagneticField.hh"
-#include "G4EqMagElectricField.hh"
-#include "G4EquationOfMotion.hh"
+#include <G4ElectroMagneticField.hh>
+#include <G4EqMagElectricField.hh>
+#include <G4EquationOfMotion.hh>
 
 void init_G4EqMagElectricField(py::module &m) {
 

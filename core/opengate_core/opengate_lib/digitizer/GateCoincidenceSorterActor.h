@@ -8,6 +8,7 @@
 #ifndef GateCoincidenceSorterActor_h
 #define GateCoincidenceSorterActor_h
 
+#include "../GateUniqueVolumeID.h"
 #include "GateTimeSorter.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Threading.hh>

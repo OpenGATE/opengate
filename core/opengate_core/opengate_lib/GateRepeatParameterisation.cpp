@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateRepeatParameterisation.h"
-#include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
 
 void GateRepeatParameterisation::SetUserInfo(py::dict &user_info) {

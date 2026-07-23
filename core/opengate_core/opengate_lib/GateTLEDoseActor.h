@@ -10,11 +10,8 @@
 
 #include "GateDoseActor.h"
 #include "GateMaterialMuHandler.h"
-
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
-
+#include <G4Cache.hh>
+#include <G4EmCalculator.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

@@ -1,0 +1,141 @@
+# SPDX-FileCopyrightText: 2024 Vincent Lequertier <vincent@vl8r.eu>, Voichita Maxim <voichita.maxim@creatis.insa-lyon.fr>
+#
+# SPDX-License-Identifier: MIT
+
+# data_file: CC_CLARYS_7P_IECPhantom_Cylinders_4Energies_t5000s_Ideal_140keVPeak.dat
+data_file: simulation.raw
+data_type: 'GATE'
+log_dir: 'logs'
+# Energy of the source. If set to -1 the gamma energy is the deposited energy i.e. E1 + E2
+# E0: [140, 245, 364, 511]
+E0: [511.0]
+remove_out_of_range_energies: False
+# Only needed if E0 is unknown and remove_out_of_range_energies is True, ignored
+# otherwise
+energy_range: [100, 600]
+# Ethres = 5 pour données idéales, Ethres = 50 pour resolution finie des d
+# tecteurs.
+# (valeurs Enrique, mais devrait être choisi en fonction de la résolution
+# des détecteurs)
+energy_threshold: 5
+n_events: 10
+starts_at: 0
+
+
+# Cameras have scatterer layers normal on z axis, centered on the z axis, below the source
+# Up to 5 absorbers are implemented
+cameras:
+  n_cameras: 6
+    # Cameras scatterer have the same characteristics besides their positions
+  common_attributes:
+    n_sca_layers: 7
+    sca_material: Si
+    abs_material: BGO
+    sca_layer_0:
+      center: [0, 0, -10]
+      size: [9.0, 9.0, 0.2]
+    sca_layer_1:
+      center: [0, 0, -11]
+      size: [9.0, 9.0, 0.2]
+    sca_layer_2:
+     center: [0, 0, -12]
+     size: [9.0, 9.0, 0.2]
+    sca_layer_3:
+      center: [0, 0, -13]
+      size: [9.0, 9.0, 0.2]
+    sca_layer_4:
+      center: [0, 0, -14]
+      size: [9.0, 9.0, 0.2]
+    sca_layer_5:
+      center: [0, 0, -15]
+      size: [9.0, 9.0, 0.2]
+    sca_layer_6:
+      center: [0, 0, -16]
+      size: [9.0, 9.0, 0.2]
+
+    n_absorbers: 1
+
+    # if an absorber layer is missing, define it as None
+    # For example, abs_layer_1: None
+    abs_layer_0: # bottom
+      center: [0, 0, -31.0]
+      size: [28.0, 21.0, 3]
+    abs_layer_1: None # front
+    abs_layer_2: None # rear
+    abs_layer_3: None # right
+    abs_layer_4: None # left
+
+  position_0:
+    frame_origin: [0, 0, 0]
+    Ox: [1, 0, 0]    # parallel to scatterer edge
+    Oy: [0, 1, 0]    # parallel to scatterer edge
+    Oz: [0, 0, 1]    # orthogonal to the camera, tw the source
+
+  position_1: # Second camera
+    frame_origin: [0, 0, 0]
+    Ox: [0, 0, 1]    # parallel to scatterer edge
+    Oy: [0, 1, 0]    # parallel to scatterer edge
+    Oz: [-1, 0, 0]    # orthogonal to the camera, tw the source
+
+  position_2: # Third camera
+    frame_origin: [0, 0, 0]
+    Ox: [0, 0, -1]    # parallel to scatterer edge
+    Oy: [0, 1, 0]    # parallel to scatterer edge
+    Oz: [1, 0, 0]    # orthogonal to the camera, tw the source
+
+  position_3: # Fourth camera
+    frame_origin: [0, 0, 0]
+    Ox: [-1, 0, 0]    # parallel to scatterer edge
+    Oy: [0, 1, 0]    # parallel to scatterer edge
+    Oz: [0, 0, -1]    # orthogonal to the camera, tw the source
+
+  position_4: # Fifth camera
+    frame_origin: [0, 0, 0]
+    Ox: [0.707106781187, 0, -0.707106781187]    # parallel to scatterer edge
+    Oy: [0, 1, 0]    # parallel to scatterer edge
+    Oz: [0.707106781187, 0, 0.707106781187]    # orthogonal to the camera, tw the source
+
+  position_5: # Sixth camera
+    frame_origin: [0, 0, 0]
+    Ox: [0.707106781187, 0, 0.707106781187]    # parallel to scatterer edge
+    Oy: [0, 1, 0]    # parallel to scatterer edge
+    Oz: [-0.707106781187, 0, 0.707106781187]    # orthogonal to the camera, tw the source
+
+
+volume:
+  volume_dimensions: [20.25, 20.25, 10.25] # In centimeters
+  n_voxels: [81, 81, 41]
+  # volume_dimensions: [20.25, 20.25, 0.25] # In centimeters
+  # n_voxels: [81,81,1]
+  # volume_dimensions: [20,20,0.4] # In centimeters
+  # n_voxels: [50,50,1]
+  volume_centre: [0, 0, 0]
+
+simulation:
+  n_events: 20000
+  # n_events: 20
+  n_V2: 100   # samples of V2 positions
+  phantom: misc/phantom.pth
+  output_file: simulation.raw
+  visualize_generated_source: True
+  angle_threshold: 5 # In degrees. It's hard to compute the exact V2 (second hit in the absorber) that corresponds to the randomly chosen angle. So draw candidates and pick one that loosely match the angle according to this threshold
+
+lm_mlem:
+  cone_thickness: 'parallel' # angular or parallel
+  last_iter: 3
+  model: 'cos0rho0' # Either cos0rho0, cos0rho2 or cos1rho2. Use cos0rho0 if sensitivity is disabled.
+  first_iter: 0
+  save_every: 1
+  checkpoint_dir: checkpoints_test
+  # force sperctral algorithm even if there is only one energy
+  force_spectral: false
+  n_sigma: 2 # Skip the Gaussian above n_sigma * Gaussian std
+  width_factor: 1 # Used to artificially modify the spread of the cone
+  sensitivity: false
+  sensitivity_model: like_system_matrix  #from less precise to more precise: solid_angle, solid_angle_with_attn, like_system_matrix
+  mc_samples: 50000
+  tv: false
+  alpha_tv: 0.000
+  # Supply a sensitivity file. Needs to have the same size as the number of
+  # voxels in the volume
+  sensitivity_file: none

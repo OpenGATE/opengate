@@ -9,7 +9,6 @@
 #include "GateGeometryUtils.h"
 #include "GateHelpers.h"
 #include <algorithm>
-#include <shared_mutex>
 
 G4Cache<GateUniqueVolumeIDManager::threadLocalT>
     GateUniqueVolumeIDManager::fThreadLocalData;

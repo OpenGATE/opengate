@@ -6,9 +6,11 @@
    -------------------------------------------------- */
 
 #include "GateAcceptanceAngleManager.h"
-#include "G4RunManager.hh"
 #include "GateAcceptanceAngleSingleVolume.h"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include <G4Run.hh>
+#include <G4RunManager.hh>
 
 GateAcceptanceAngleManager::GateAcceptanceAngleManager() {
   fEnabledFlag = false;

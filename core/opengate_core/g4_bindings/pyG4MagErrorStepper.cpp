@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4MagErrorStepper.hh"
-#include "G4MagIntegratorStepper.hh"
+#include <G4MagErrorStepper.hh>
+#include <G4MagIntegratorStepper.hh>
 
 void init_G4MagErrorStepper(py::module &m) {
 

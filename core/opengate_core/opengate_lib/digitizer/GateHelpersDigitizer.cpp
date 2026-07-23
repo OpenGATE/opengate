@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateHelpersDigitizer.h"
+#include "../GateHelpers.h"
 
 // Check attribute
 void CheckRequiredAttribute(const GateDigiCollection *hc,

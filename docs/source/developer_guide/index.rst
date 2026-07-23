@@ -14,8 +14,15 @@ Developer guide
 
    developer_guide_code_structure
    developer_guide_how_to_implement
+   developer_guide_chemistry_architecture
    developer_guide_dynamic_parametrisations
    developer_guide_auxiliary_attributes
+
+.. toctree::
+   :caption: Physics
+   :maxdepth: 2
+
+   developer_guide_physics
 
 .. toctree::
    :caption: Good to know

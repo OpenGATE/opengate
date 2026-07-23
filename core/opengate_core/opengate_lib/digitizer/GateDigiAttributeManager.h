@@ -8,7 +8,6 @@
 #ifndef GateDigiAttributeManager_h
 #define GateDigiAttributeManager_h
 
-#include "../GateHelpers.h"
 #include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 

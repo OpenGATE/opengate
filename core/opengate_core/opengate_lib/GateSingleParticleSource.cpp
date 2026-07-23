@@ -6,12 +6,11 @@
    -------------------------------------------------- */
 
 #include "GateSingleParticleSource.h"
-#include "G4Event.hh"
-#include "G4PrimaryVertex.hh"
-#include "G4RunManager.hh"
 #include "GateHelpers.h"
-#include "GateRandomMultiGauss.h"
 #include "biasing/GateForcedDirectionManager.h"
+#include <G4Event.hh>
+#include <G4PrimaryVertex.hh>
+#include <G4RandomTools.hh>
 
 GateSingleParticleSource::GateSingleParticleSource(
     std::string /*mother_volume*/) {

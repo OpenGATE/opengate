@@ -5,13 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateTrackingAction.h"
+#include <G4UserTrackingAction.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "G4UserTrackingAction.hh"
-#include "GateTrackingAction.h"
 
 void init_GateTrackingAction(py::module &m) {
 

@@ -8,9 +8,7 @@
 #ifndef GateDigitizerGaussianBlurringActor_h
 #define GateDigitizerGaussianBlurringActor_h
 
-#include "../GateVActor.h"
-#include "GateHelpersDigitizer.h"
-#include "GateTDigiAttribute.h"
+#include "../GateUniqueVolumeID.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>
 #include <G4Navigator.hh>

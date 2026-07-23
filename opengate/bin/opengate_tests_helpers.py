@@ -74,7 +74,7 @@ def is_torch_available():
 def get_required_g4_version(tests_dir: Path, rel_fpath=".github/workflows/main.yml"):
     fpath = tests_dir.parents[2] / rel_fpath
     if not fpath.exists():
-        return "v11.4.0"  # Safe fallback
+        return "v11.4.2"  # Safe fallback
     with open(fpath) as f:
         githubworfklow = yaml.safe_load(f)
     g4 = githubworfklow["jobs"]["build_wheel"]["env"]["GEANT4_VERSION"]
@@ -120,7 +120,7 @@ def check_environment(g4_version_cli, path_tests_src):
         try:
             g4_version_cli = get_required_g4_version(path_tests_src)
         except Exception:
-            g4_version_cli = "v11.4.0"
+            g4_version_cli = "v11.4.2"
     if not check_g4_version(g4_version_cli):
         warning(f'The geant4 version "{g4_version_cli}" is not the expected version.')
     return True

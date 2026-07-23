@@ -8,6 +8,18 @@
 #ifndef GateSourceManager_h
 #define GateSourceManager_h
 
+#include "GateImageBox.h"
+#include "GateUserEventInformation.h"
+#include "GateVActor.h"
+#include "GateVSource.h"
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#endif
+#include "indicators.hpp"
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #include <G4Cache.hh>
 #include <G4ParticleGun.hh>
 #include <G4Threading.hh>
@@ -15,12 +27,8 @@
 #include <G4UIsession.hh>
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
-
-#include "GateImageBox.h"
-#include "GateUserEventInformation.h"
-#include "GateVActor.h"
-#include "GateVSource.h"
-#include "indicators.hpp"
+#include <atomic>
+#include <cstdint>
 
 using namespace indicators;
 
@@ -102,9 +110,17 @@ public:
   void ComputeExpectedNumberOfEvents();
 
   static void SetRunTerminationFlag(bool flag);
+  static void ResetPrimaryCounterForRun();
+  static bool TryReservePrimarySlot();
+  static void WarnPrimaryLimitReached();
+  static void SetMaxPrimariesPerRun(std::uint64_t value);
+  static std::uint64_t GetPlatformMaxPrimariesPerRun();
 
   // fRunTerminationFlag should not be thread local
   static bool fRunTerminationFlag;
+  static std::atomic<std::uint64_t> fGeneratedPrimariesThisRun;
+  static std::atomic<bool> fPrimaryLimitWarningIssued;
+  static std::uint64_t fMaxPrimariesPerRun;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;

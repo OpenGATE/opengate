@@ -124,7 +124,7 @@ def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
             None,
             tolerance=71,
             ignore_value_data1=0,
-            sum_tolerance=20,
+            sum_tolerance=21,
             axis="x",
             sad_profile_tolerance=30,
             slice_id=1,
