@@ -76,3 +76,27 @@ def wait_until_execution_status(
         f"Timed out waiting for {expected_count} jobs to reach status '{expected_status}'. "
         f"Observed statuses: {statuses}"
     )
+
+
+def wait_until_execution_counts(split_root, expected_counts, timeout=60):
+    manifest = load_manifest(split_root)
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        statuses = []
+        for job in manifest["jobs"]:
+            job_folder = Path(split_root) / job["folder_name"]
+            status = load_execution_status(job_folder)
+            if status is not None:
+                statuses.append(status.get("status"))
+        counts_ok = True
+        for status_name, expected_count in expected_counts.items():
+            if statuses.count(status_name) != expected_count:
+                counts_ok = False
+                break
+        if counts_ok:
+            return statuses
+        time.sleep(0.5)
+    raise RuntimeError(
+        f"Timed out waiting for execution counts {expected_counts}. "
+        f"Observed statuses: {statuses}"
+    )

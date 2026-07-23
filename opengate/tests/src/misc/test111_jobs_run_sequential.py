@@ -6,7 +6,7 @@ import shutil
 import opengate as gate
 from opengate.tests import utility
 
-from opengate.tests.src.misc.test111_helpers_wip import (
+from opengate.tests.src.misc.test111_helpers import (
     load_backend_status,
     build_simple_simulation,
     load_execution_status,
