@@ -103,7 +103,7 @@ if __name__ == "__main__":
     print(f"working folder = {paths.output}")
     print()
     # remove previous split_campaigns
-    shutil.rmtree(paths.output / "split_campaigns_auto", ignore_errors=True)
+    shutil.rmtree(paths.output / "auto_split_root", ignore_errors=True)
     shutil.rmtree(paths.output / "split_campaign_total", ignore_errors=True)
 
     # Validate the simple per-interval split policy first. Each original run is
@@ -114,15 +114,20 @@ if __name__ == "__main__":
         [(0.0 * sec, 2.0 * sec), (2.0 * sec, 6.0 * sec)],
         [100, 200],
     )
-    split_root_1 = gate.jobs_split(sim_1, 4, None, policy="split_in_time_per_run")
+    split_root_1 = gate.jobs_split(
+        sim_1,
+        4,
+        paths.output / "auto_split_root",
+        policy="split_in_time_per_run",
+    )
     manifest_1 = load_manifest(split_root_1)
     print(f"split manifest    = {split_root_1}")
 
     utility.print_test(
-        split_root_1.name.startswith("jobs_"),
-        f"Split root folder name starts with jobs_: {split_root_1.name}",
+        split_root_1.name == "auto_split_root",
+        f"Split root folder name is explicit and stays inside the test output directory: {split_root_1.name}",
     )
-    is_ok = split_root_1.name.startswith("jobs_") and is_ok
+    is_ok = split_root_1.name == "auto_split_root" and is_ok
 
     utility.print_test(
         [job["folder_name"] for job in manifest_1["jobs"]]
