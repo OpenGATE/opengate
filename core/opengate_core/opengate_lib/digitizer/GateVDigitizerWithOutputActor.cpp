@@ -100,7 +100,12 @@ void GateVDigitizerWithOutputActor::DigitInitialize(
 }
 
 void GateVDigitizerWithOutputActor::BeginOfEventAction(const G4Event *event) {
-  bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+  auto &l = fThreadLocalVDigitizerData.Get();
+  const int count = event->GetEventID() / std::max(1, fClearEveryNEvents);
+  const bool must_clear = count != l.fOutputCollectionClearCounter;
+  if (must_clear) {
+    l.fOutputCollectionClearCounter = count;
+  }
   fOutputDigiCollection->FillToRootIfNeeded(must_clear);
 }
 
