@@ -664,11 +664,11 @@ def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
     if ax:
         label = f" {key1} $\mu$={m1:.2f}"
         ax.hist(
-            b1, nb_bins, density=True, histtype="stepfilled", alpha=0.5, label=label
+            b1, nb_bins, density=True, histtype="step", alpha=0.5, label=label
         )
         label = f" {key2} $\mu$={m2:.2f}"
         ax.hist(
-            b2, nb_bins, density=True, histtype="stepfilled", alpha=0.5, label=label
+            b2, nb_bins, density=True, histtype="step", alpha=0.5, label=label
         )
         ax.set_ylabel("Counts")
         ax.legend()
