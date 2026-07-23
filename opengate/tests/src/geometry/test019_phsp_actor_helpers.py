@@ -68,7 +68,11 @@ def build_phsp_actor_simulation(
     if source_n is not None:
         source.n = source_n
     if source_activity is not None:
-        source.activity = source_activity * Bq if isinstance(source_activity, (int, float)) else source_activity
+        source.activity = (
+            source_activity * Bq
+            if isinstance(source_activity, (int, float))
+            else source_activity
+        )
 
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.output_filename = "stats.txt"
@@ -143,9 +147,7 @@ def merge_phase_space_root_from_jobs(
 
 def _single_interval_midpoint(run_timing_intervals):
     if len(run_timing_intervals) != 1:
-        raise ValueError(
-            "This test helper expects exactly one run timing interval."
-        )
+        raise ValueError("This test helper expects exactly one run timing interval.")
     start, stop = run_timing_intervals[0]
     return 0.5 * (start + stop)
 
@@ -161,10 +163,13 @@ def check_child_phase_space_time_medians(job_folders, tolerance=0.05):
         with uproot.open(Path(job_folder) / "test019_phsp_actor.root") as root_file:
             global_time = root_file["PhaseSpace"]["GlobalTime"].array(library="np")
         median_time = float(np.median(global_time))
-        is_ok = utility.print_test(
-            abs(median_time - expected_mid_time) / expected_mid_time <= tolerance,
-            f"{Path(job_folder).name} GlobalTime median: {median_time/g4_units.s:.4f} s ref={expected_mid_time/g4_units.s:.4f} s tol={tolerance}",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                abs(median_time - expected_mid_time) / expected_mid_time <= tolerance,
+                f"{Path(job_folder).name} GlobalTime median: {median_time/g4_units.s:.4f} s ref={expected_mid_time/g4_units.s:.4f} s tol={tolerance}",
+            )
+            and is_ok
+        )
     return is_ok
 
 
@@ -195,28 +200,43 @@ def compare_phase_space_roots(reference_root, merged_root, tree_name="PhaseSpace
         merged_branch_names = sorted(merged_tree.keys())
 
     is_ok = True
-    is_ok = utility.print_test(
-        merged_branch_names == reference_branch_names,
-        f"Phase-space branches match reference: {merged_branch_names}",
-    ) and is_ok
-    is_ok = utility.print_test(
-        abs(merged_num_entries - reference_num_entries) / (merged_num_entries + reference_num_entries) * 2  <= 0.05,
-        f"Phase-space entries: merged={merged_num_entries} ref={reference_num_entries}",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            merged_branch_names == reference_branch_names,
+            f"Phase-space branches match reference: {merged_branch_names}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            abs(merged_num_entries - reference_num_entries)
+            / (merged_num_entries + reference_num_entries)
+            * 2
+            <= 0.05,
+            f"Phase-space entries: merged={merged_num_entries} ref={reference_num_entries}",
+        )
+        and is_ok
+    )
 
     for branch_name, tolerance in (("KineticEnergy", 0.15),):
         merged_mean = merged_arrays[branch_name].mean()
         reference_mean = reference_arrays[branch_name].mean()
-        is_ok = utility.print_test(
-            abs(merged_mean - reference_mean) <= tolerance,
-            f"{branch_name} mean: merged={merged_mean:.4f} ref={reference_mean:.4f} tol={tolerance}",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                abs(merged_mean - reference_mean) <= tolerance,
+                f"{branch_name} mean: merged={merged_mean:.4f} ref={reference_mean:.4f} tol={tolerance}",
+            )
+            and is_ok
+        )
         merged_std = merged_arrays[branch_name].std()
         reference_std = reference_arrays[branch_name].std()
-        is_ok = utility.print_test(
-            abs(merged_std - reference_std) <= tolerance,
-            f"{branch_name} std: merged={merged_std:.4f} ref={reference_std:.4f} tol={tolerance}",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                abs(merged_std - reference_std) <= tolerance,
+                f"{branch_name} std: merged={merged_std:.4f} ref={reference_std:.4f} tol={tolerance}",
+            )
+            and is_ok
+        )
 
     merged_radius = (
         merged_arrays["PrePosition_X"] ** 2 + merged_arrays["PrePosition_Y"] ** 2
@@ -238,9 +258,12 @@ def compare_phase_space_roots(reference_root, merged_root, tree_name="PhaseSpace
         #     1.0,
         # ),
     ):
-        is_ok = utility.print_test(
-            abs(merged_value - reference_value) <= tolerance,
-            f"{label}: merged={merged_value:.4f} ref={reference_value:.4f} tol={tolerance}",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                abs(merged_value - reference_value) <= tolerance,
+                f"{label}: merged={merged_value:.4f} ref={reference_value:.4f} tol={tolerance}",
+            )
+            and is_ok
+        )
 
     return is_ok

@@ -66,11 +66,14 @@ def run_split_campaign(
     merged_stats = merge_stats_from_jobs(job_folders, merged_stats_path)
     merge_phase_space_root_from_jobs(job_folders, merged_root_path)
 
-    is_ok = utility.assert_stats(
-        merged_stats,
-        reference_stats,
-        tolerance=0.15,
-    ) and is_ok
+    is_ok = (
+        utility.assert_stats(
+            merged_stats,
+            reference_stats,
+            tolerance=0.15,
+        )
+        and is_ok
+    )
     is_ok = check_child_phase_space_time_medians(job_folders) and is_ok
     is_ok = (
         check_merged_phase_space_time_median(merged_root_path, run_timing_intervals)
@@ -102,26 +105,32 @@ if __name__ == "__main__":
     reference_stats = utility.read_stats_file(reference_output / "stats.txt")
     reference_root = reference_output / reference_phsp_actor.output_filename
 
-    is_ok = run_split_campaign(
-        paths,
-        paths.output / "jobs_split" / "split_campaign_sequential",
-        backend="local_sequential",
-        run_timing_intervals=run_timing_intervals,
-        reference_stats=reference_stats,
-        reference_root=reference_root,
-    ) and is_ok
-    is_ok = run_split_campaign(
-        paths,
-        paths.output / "jobs_split" / "split_campaign_pool",
-        backend="local_pool",
-        run_timing_intervals=run_timing_intervals,
-        reference_stats=reference_stats,
-        reference_root=reference_root,
-        backend_options={
-            "n_workers": 2,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
-    ) and is_ok
+    is_ok = (
+        run_split_campaign(
+            paths,
+            paths.output / "jobs_split" / "split_campaign_sequential",
+            backend="local_sequential",
+            run_timing_intervals=run_timing_intervals,
+            reference_stats=reference_stats,
+            reference_root=reference_root,
+        )
+        and is_ok
+    )
+    is_ok = (
+        run_split_campaign(
+            paths,
+            paths.output / "jobs_split" / "split_campaign_pool",
+            backend="local_pool",
+            run_timing_intervals=run_timing_intervals,
+            reference_stats=reference_stats,
+            reference_root=reference_root,
+            backend_options={
+                "n_workers": 2,
+                "start_method": "spawn",
+                "maxtasksperchild": 1,
+            },
+        )
+        and is_ok
+    )
 
     utility.test_ok(is_ok)
