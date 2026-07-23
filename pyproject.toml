@@ -50,6 +50,8 @@ opengate_download_data = "opengate.bin.opengate_download_data:go"
 opengate_plot_volume_info = "opengate.bin.opengate_plot_volume_info:go"
 opengate_photon_attenuation_mixture = "opengate.bin.opengate_photon_attenuation_mixture:go"
 opengate_photon_attenuation_image = "opengate.bin.opengate_photon_attenuation_image:go"
+opengate_jobs_status = "opengate.bin.opengate_jobs_status:go"
+opengate_job_runner = "opengate.bin.opengate_job_runner:go"
 
 dose_rate = "opengate.bin.dose_rate:go"
 split_spect_projections = "opengate.bin.split_spect_projections:go"

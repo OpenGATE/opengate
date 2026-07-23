@@ -443,7 +443,10 @@ class GenericSource(SourceBase):
     def create_g4_source(self):
         return g4.GateGenericSource()
 
-    def initialize_g4_source(self, g4_source, run_timing_intervals):
+    def resolve_and_validate_config(self, run_timing_intervals):
+        self.resolve_tac_activity()
+        super().resolve_and_validate_config(run_timing_intervals)
+
         # Check the sub-parameters
         self._pos_validator.validate(self, "position")
         self._ene_validator.validate(self, "energy")
@@ -454,22 +457,6 @@ class GenericSource(SourceBase):
             # force the energy to 511 keV
             self.energy.type = "mono"
             self.energy.mono = 511 * g4_units.keV
-
-        # special case for beta plus energy spectra
-        # FIXME put this elsewhere
-        if self.particle == "e+":
-            if self.energy.type in all_beta_plus_radionuclides:
-                data = get_spectrum(self.user_info.energy.type, "e+", "radar")
-                ene = data[:, 0] / 1000  # convert from KeV to MeV
-                proba = data[:, 1]
-                cdf, _ = compute_cdf_and_total_yield(proba, ene)
-                # total = total * 1000  # (because was in MeV)
-                # self.user_info.activity *= total
-                self.energy.is_cdf = True
-                g4_source.SetEnergyCDF(ene)
-                g4_source.SetProbabilityCDF(cdf)
-
-        self.update_tac_activity(g4_source)
 
         # histogram parameters: histogram_weight, histogram_energy"
         ene = self.energy
@@ -487,8 +474,26 @@ class GenericSource(SourceBase):
             if self.user_particle_life_time < 0:
                 self.user_particle_life_time = 0
 
+        self.check_confine(self.user_info)
+
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
+        # special case for beta plus energy spectra
+        # FIXME put this elsewhere
+        if self.particle == "e+":
+            if self.energy.type in all_beta_plus_radionuclides:
+                data = get_spectrum(self.user_info.energy.type, "e+", "radar")
+                ene = data[:, 0] / 1000  # convert from KeV to MeV
+                proba = data[:, 1]
+                cdf, _ = compute_cdf_and_total_yield(proba, ene)
+                # total = total * 1000  # (because was in MeV)
+                # self.user_info.activity *= total
+                self.energy.is_cdf = True
+                g4_source.SetEnergyCDF(ene)
+                g4_source.SetProbabilityCDF(cdf)
+
         self.initialize_start_end_time(run_timing_intervals)
         self.check_ui_activity(self.user_info)
+        self.update_tac_activity(g4_source)
         g4_source.InitializeUserInfo(self.user_info)
         # warning for non-used ?
 
@@ -514,7 +519,7 @@ class GenericSource(SourceBase):
             if g4_src is not None
         )
 
-    def update_tac_activity(self, g4_source):
+    def resolve_tac_activity(self):
         if self.tac_times is None and self.tac_activities is None:
             return
         if len(self.tac_times) != len(self.tac_activities):
@@ -525,6 +530,10 @@ class GenericSource(SourceBase):
         # may start later than the simulation timing
         self.start_time = self.tac_times[0]
         self.activity = self.tac_activities[0]
+
+    def update_tac_activity(self, g4_source):
+        if self.tac_times is None and self.tac_activities is None:
+            return
         g4_source.SetTAC(self.tac_times, self.tac_activities)
 
     def can_predict_number_of_events(self):

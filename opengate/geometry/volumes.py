@@ -967,11 +967,14 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     @property
     def itk_image(self):
         if self._itk_image is None:
-            warning(
-                f"The itk_image in {self.type_name} '{self.name}' is None. "
-                f"If this is unexpected, run my_image_volume.load_input_image() first, "
-                f"where my_image_volume is the variable name of the {self.type_name} in your script. "
-            )
+            if self.image:
+                self._itk_image = self.load_input_image()
+            else:
+                warning(
+                    f"The itk_image in {self.type_name} '{self.name}' is None. "
+                    f"If this is unexpected, run my_image_volume.load_input_image() first, "
+                    f"where my_image_volume is the variable name of the {self.type_name} in your script. "
+                )
         return self._itk_image
 
     @itk_image.setter
@@ -982,21 +985,25 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     # FIXME: replace this property by function in opengate.image
     @property
     def size_pix(self):
-        if self.itk_image is None:
+        if self._itk_image is None:
             self.load_input_image()
-        return np.array(itk.size(self.itk_image)).astype(int)
+        return np.array(itk.size(self._itk_image)).astype(int)
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
     @property
     def spacing(self):
-        if self.itk_image is None:
+        if self._itk_image is None:
             self.load_input_image()
-        return np.array(self.itk_image.GetSpacing())
+        return np.array(self._itk_image.GetSpacing())
 
     # @requires_fatal("itk_image")
     @property
     def native_translation(self):
+        # FIXME: some actors may need image-derived geometry information during
+        # resolve_and_validate_config(). Revisit whether ImageVolume should offer
+        # an explicit config-resolution step for input-image metadata, rather
+        # than relying only on these lazy runtime-facing properties.
         if self.itk_image is not None:
             origin = np.array(self.itk_image.GetOrigin())
             spacing = np.array(self.itk_image.GetSpacing())

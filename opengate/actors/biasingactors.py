@@ -444,6 +444,10 @@ class ScatterSplittingFreeFlightActor(
 
     def initialize(self):
         SplitProcessActorBase.initialize(self)
+        # FIXME: the world-attachment warning, GenericProcess compatibility
+        # check, angular_acceptance validation, and the derived splitting-factor
+        # defaults below are configuration-resolution concerns and should
+        # probably move into resolve_and_validate_config().
         if self.user_info.attached_to != "world":
             warning(
                 f"ScatterSplittingFreeFlightActor actors can only be attached to the world volume, "

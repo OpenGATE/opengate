@@ -4,7 +4,7 @@ import io
 import shutil
 import weakref
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 import sys
 
 import opengate_core as g4
@@ -34,6 +34,7 @@ from .physics import (
     translate_particle_name_gate_to_geant4,
 )
 from .processing import dispatch_to_subprocess
+from .runtiming import assert_run_timing
 from .serialization import dump_json, dumps_json, load_json, loads_json
 from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
@@ -198,6 +199,34 @@ actor_types = {
 }
 
 
+def _find_metaimage_payload_files(header_path):
+    payload_files = []
+    try:
+        with open(header_path, "r") as header_file:
+            for line in header_file:
+                if "=" not in line:
+                    continue
+                key, value = [part.strip() for part in line.split("=", 1)]
+                if key != "ElementDataFile":
+                    continue
+                if value.upper() == "LOCAL":
+                    return []
+                payload_path = Path(value)
+                if not payload_path.is_absolute():
+                    payload_path = header_path.parent / payload_path
+                if payload_path.is_file():
+                    payload_files.append(payload_path.resolve())
+                else:
+                    warning(
+                        f"MetaImage header '{header_path}' references payload file "
+                        f"'{payload_path}', but that file does not exist."
+                    )
+                break
+    except OSError as error:
+        warning(f"Unable to inspect MetaImage header '{header_path}': {error}")
+    return payload_files
+
+
 class FilterManager:
     """
     Manage all the Filters in the simulation
@@ -266,6 +295,10 @@ class FilterManager:
 
     def create_filter_deprecated(self, filter_type, name):
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
+
+    def resolve_and_validate_config(self):
+        for filter_obj in self.filters.values():
+            filter_obj.resolve_and_validate_config()
 
 
 class SourceManager(GateObject):
@@ -383,6 +416,30 @@ class SourceManager(GateObject):
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
 
+    def resolve_and_validate_config(self):
+        for source in self.sources.values():
+            # Resolve each source against the master simulation timing now so
+            # split jobs inherit explicit global timing anchors and normalized
+            # source configuration.
+            source.resolve_and_validate_config(self.simulation.run_timing_intervals)
+
+        dynamic_sources = self.dynamic_sources
+        for source in dynamic_sources:
+            source.check_if_dynamic_params_match_run_timing_intervals()
+
+        if len(dynamic_sources) > 0:
+            dynamic_source_actor = self.simulation.actor_manager.actors.get(
+                "dynamic_source_actor"
+            )
+            if dynamic_source_actor is None:
+                dynamic_source_actor = self.simulation.add_actor(
+                    "DynamicSourceActor", "dynamic_source_actor"
+                )
+            dynamic_source_actor.priority = 1
+            dynamic_source_actor.changers = []
+            for source in dynamic_sources:
+                dynamic_source_actor.changers.extend(source.create_changers())
+
     def to_dictionary(self):
         d = super().to_dictionary()
         d["sources"] = dict([(k, v.to_dictionary()) for k, v in self.sources.items()])
@@ -436,6 +493,10 @@ class ActorManager(GateObject):
 
     def reset(self):
         self.__init__(simulation=self.simulation)
+
+    def resolve_and_validate_config(self):
+        for actor in self.sorted_actors:
+            actor.resolve_and_validate_config()
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -1009,7 +1070,7 @@ class PhysicsManager(GateObject):
         #         )
         #     self.user_info.user_limits_particles[pn] = True
 
-    def freeze_config(self):
+    def resolve_and_validate_config(self):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
@@ -1044,6 +1105,12 @@ class PhysicsManager(GateObject):
             _,
         ) in track_structure_em_requests.items():
             self.set_track_structure_em_physics(volume_name, track_structure_em_physics)
+
+        # Resolve all region-to-volume associations against the simulation-side
+        # volume registry during config handling so invalid references fail
+        # early, before any Geant4 initialization begins.
+        for region in self.regions.values():
+            region.resolve_and_validate_config()
 
 
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
@@ -1433,6 +1500,29 @@ class VolumeManager(GateObject):
     def dynamic_volumes(self):
         return [vol for vol in self.volumes.values() if vol.is_dynamic]
 
+    def resolve_and_validate_config(self):
+        # Resolve the volume tree explicitly during the configuration phase so
+        # invalid mother references and tree loops fail early instead of only
+        # when some later property access triggers a lazy update.
+        self.update_volume_tree()
+
+        dynamic_volumes = self.dynamic_volumes
+        for volume in dynamic_volumes:
+            volume.check_if_dynamic_params_match_run_timing_intervals()
+
+        if len(dynamic_volumes) > 0:
+            dynamic_geometry_actor = self.simulation.actor_manager.actors.get(
+                "dynamic_geometry_actor"
+            )
+            if dynamic_geometry_actor is None:
+                dynamic_geometry_actor = self.simulation.add_actor(
+                    "DynamicGeometryActor", "dynamic_geometry_actor"
+                )
+            dynamic_geometry_actor.priority = 0
+            dynamic_geometry_actor.changers = []
+            for volume in dynamic_volumes:
+                dynamic_geometry_actor.changers.extend(volume.create_changers())
+
     def get_volume(self, volume_name):
         try:
             return self.volumes[volume_name]
@@ -1599,6 +1689,12 @@ def _setter_hook_verbose_level(self, verbose_level):
     return verbose_level
 
 
+def _setter_hook_progress_hook(simulation, value):
+    if hasattr(value, "_interval") and value._interval is not None:
+        simulation.user_info["progress_hook_interval"] = value._interval
+    return value
+
+
 class Simulation(GateObject):
     """
     Main class that store a simulation.
@@ -1633,13 +1729,12 @@ class Simulation(GateObject):
     random_seed: Union[str, int]
     run_timing_intervals: List[List[float]]
     output_dir: Path
-    store_json_archive: bool
-    json_archive_filename: str
-    store_input_files: bool
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
     init_only: bool
     progress_bar: bool
+    progress_hook: Optional[Callable]
+    progress_hook_interval: Optional[float]
     dyn_geom_open_close: bool
     dyn_geom_optimise: bool
 
@@ -1815,21 +1910,23 @@ class Simulation(GateObject):
         "store_json_archive": (
             False,
             {
-                "doc": "Automatically store a json file containing all parameters of the simulation after the run? "
-                "Default: False"
+                "deprecated": "The user input parameter 'store_json_archive' has been removed. "
+                "Call sim.to_json_file(...) explicitly from the simulation script instead."
             },
         ),
         "json_archive_filename": (
             Path("simulation.json"),
             {
-                "doc": "Name of the json file containing all parameters of the simulation. "
-                "It will be saved in the location specified via the parameter 'output_dir'. "
-                "Default filename: simulation.json"
+                "deprecated": "The user input parameter 'json_archive_filename' has been removed. "
+                "Pass filename=... explicitly to sim.to_json_file(...)."
             },
         ),
         "store_input_files": (
             False,
-            {"doc": "Store all input files used in the simulation? Default: False"},
+            {
+                "deprecated": "The user input parameter 'store_input_files' has been removed. "
+                "Call sim.archive_input_files(...) explicitly from the simulation script instead."
+            },
         ),
         "g4_commands_before_init": (
             [],
@@ -1855,6 +1952,19 @@ class Simulation(GateObject):
             False,
             {
                 "doc": "Display a progress bar during the simulation",
+            },
+        ),
+        "progress_hook": (
+            None,
+            {
+                "doc": "Python function hook called periodically during simulation",
+                "setter_hook": _setter_hook_progress_hook,
+            },
+        ),
+        "progress_hook_interval": (
+            None,
+            {
+                "doc": "Interval in real wall-clock seconds between progress hook calls",
             },
         ),
         "max_primaries_per_run": (
@@ -1998,22 +2108,12 @@ class Simulation(GateObject):
     def to_json_file(self, directory=None, filename=None):
         d = self.to_dictionary()
         if filename is None:
-            filename = self.json_archive_filename
+            filename = Path("simulation.json")
         directory = self.get_output_path(directory, is_file_or_directory="d")
         with open(directory / filename, "w") as f:
             dump_json(d, f)
-        # look for input files in the simulation and copy them if requested
-        if self.store_input_files is True:
-            self.copy_input_files(directory, dct=d)
 
-    def from_json_string(self, json_string):
-        self.from_dictionary(loads_json(json_string))
-
-    def from_json_file(self, path):
-        with open(path, "r") as f:
-            self.from_dictionary(load_json(f))
-
-    def copy_input_files(self, directory=None, dct=None):
+    def archive_input_files(self, directory=None, dct=None, link_files=False):
         directory = self.get_output_path(directory, is_file_or_directory="d")
         if dct is None:
             dct = self.to_dictionary()
@@ -2028,15 +2128,58 @@ class Simulation(GateObject):
                     if p.is_file() is True
                 ]
             )
-        # post process the list
-        raw_files = []
-        for f in input_files:
-            # check for image header files (mhd) and add the corresponding raw files to the list
-            if f.suffix == ".mhd":
-                raw_files.append(f.parent.absolute() / Path(f.stem + ".raw"))
-        input_files.extend(raw_files)
-        for f in input_files:
-            shutil.copy2(f, directory)
+
+        # Workaround: material database files are not yet represented as proper
+        # GateObjects with declarative input-file metadata, so they must be added
+        # explicitly here. In the future, material database handling should be
+        # refactored into a GateObject/manager structure rather than the current
+        # file-based architecture.
+        if self.volume_manager.material_database is not None:
+            input_files.extend(
+                Path(filename)
+                for filename in self.volume_manager.material_database.filenames
+                if Path(filename).is_file()
+            )
+
+        # Post-process MetaImage headers so the actual payload file is copied, too.
+        extra_input_files = []
+        for input_file in input_files:
+            if input_file.suffix.lower() == ".mhd":
+                extra_input_files.extend(_find_metaimage_payload_files(input_file))
+        input_files.extend(extra_input_files)
+
+        # Copy or link each resolved file only once even if it is referenced several times.
+        unique_input_files = list(dict.fromkeys(Path(f).resolve() for f in input_files))
+        for f in unique_input_files:
+            dest = directory / f.name
+            if link_files:
+                if dest.exists() or dest.is_symlink():
+                    dest.unlink()
+                rel_target = os.path.relpath(f, directory)
+                try:
+                    dest.symlink_to(rel_target)
+                except OSError as e:
+                    fatal(
+                        f"Failed to create symlink from '{rel_target}' to '{dest}': {e}. "
+                        f"On Windows, creating symbolic links requires Developer Mode or Administrator privileges. "
+                        f"Use link_files=False to copy files instead."
+                    )
+            else:
+                shutil.copy2(f, directory)
+
+    def copy_input_files(self, directory=None, dct=None, link_files=False):
+        warning(
+            "Simulation.copy_input_files() is deprecated. "
+            "Use Simulation.archive_input_files(...) instead."
+        )
+        self.archive_input_files(directory=directory, dct=dct, link_files=link_files)
+
+    def from_json_string(self, json_string):
+        self.from_dictionary(loads_json(json_string))
+
+    def from_json_file(self, path):
+        with open(path, "r") as f:
+            self.from_dictionary(load_json(f))
 
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
         if path is None:
@@ -2203,11 +2346,17 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
-    def freeze_config(self):
+    def resolve_and_validate_config(self):
         # Keep this phase limited to Python-side configuration resolution and
         # negotiation before runtime initialization. It may tie managers and
         # actors together, but it must not create any Geant4 objects yet.
-        self.physics_manager.freeze_config()
+        assert_run_timing(self.run_timing_intervals)
+        self.physics_manager.resolve_and_validate_config()
+        self.initialize_source_before_g4_engine()
+        self.volume_manager.resolve_and_validate_config()
+        self.source_manager.resolve_and_validate_config()
+        self.actor_manager.resolve_and_validate_config()
+        self.filter_manager.resolve_and_validate_config()
 
     def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
@@ -2217,7 +2366,7 @@ class Simulation(GateObject):
         Returns:
             obj:SimulationOutput : The output of the simulation run.
         """
-        self.freeze_config()
+        self.resolve_and_validate_config()
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
@@ -2277,9 +2426,6 @@ class Simulation(GateObject):
         # store the hook log
         self.user_hook_log = output.user_hook_log
         self._current_random_seed = output.current_random_seed
-
-        if self.store_json_archive is True:
-            self.to_json_file()
 
         # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
         if self.volume_manager.material_database is None:

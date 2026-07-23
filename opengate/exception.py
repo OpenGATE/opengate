@@ -26,6 +26,10 @@ class GateImplementationError(Exception):
     """
 
 
+class GateJobsBackendError(Exception):
+    """Raise this when a split-job execution backend fails or rejects its options."""
+
+
 color_error = colored.fore("red") + colored.style("bold")
 color_warning = colored.fore("orange_1")
 color_ok = colored.fore("light_blue")

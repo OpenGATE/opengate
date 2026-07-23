@@ -159,6 +159,8 @@ import opengate.numerical
 # because users will frequently use them
 from opengate.managers import Simulation
 from opengate.managers import create_sim_from_json
+from opengate.jobs import jobs_split, jobs_run
 from opengate.chemistry import TrackedChemicalReaction
 from opengate.utility import g4_units
 from opengate.base import help_on_user_info
+from opengate.userhooks import progress_status
