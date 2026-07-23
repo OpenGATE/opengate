@@ -21,7 +21,7 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  void StartSimulationAction() override;
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   void BeginOfRunAction(const G4Run *run) override;
 
@@ -33,24 +33,27 @@ public:
 
   void EndOfEventAction(const G4Event *event) override;
 
-  void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
+  void EndOfRunAction(const G4Run *run) override;
 
-  // Net deposited charge, summed over all events
-  double GetDepositedNominalCharge() const { return fDepositedNominalCharge; }
-  double GetDepositedDynamicCharge() const { return fDepositedDynamicCharge; }
+  // Net deposited charge, summed over the events of the current run
+  double GetDepositedNominalCharge() const { return fRunNominalCharge; }
+  double GetDepositedDynamicCharge() const { return fRunDynamicCharge; }
 
-  // Sum of the squared per-event net charge
+  // Sum of the squared per-event net charge over the current run
   double GetDepositedNominalChargeSquared() const {
-    return fDepositedNominalChargeSquared;
+    return fRunNominalChargeSquared;
   }
   double GetDepositedDynamicChargeSquared() const {
-    return fDepositedDynamicChargeSquared;
+    return fRunDynamicChargeSquared;
   }
 
-  // Number of primary events (histories) scored
-  long long GetNumberOfEvents() const { return fNumberOfEvents; }
+  // Number of primary events (histories) scored in the current run
+  long long GetNumberOfEvents() const { return fRunNumberOfEvents; }
 
 protected:
+  // Zero the per-run accumulators (called at construction and before each run).
+  void ResetRunAccumulators();
+
   struct threadLocal_t {
     // Net charge accumulated during the current event only
     double fEventNominalCharge = 0.0;
@@ -67,12 +70,12 @@ protected:
   };
   G4Cache<threadLocal_t> threadLocalData;
 
-  // Merged over all workers.
-  double fDepositedNominalCharge;        // Sum x
-  double fDepositedDynamicCharge;        // Sum x
-  double fDepositedNominalChargeSquared; // Sum x^2
-  double fDepositedDynamicChargeSquared; // Sum x^2
-  long long fNumberOfEvents;             // N
+  // Accumulators for the current run
+  double fRunNominalCharge;
+  double fRunDynamicCharge;
+  double fRunNominalChargeSquared;
+  double fRunDynamicChargeSquared;
+  long long fRunNumberOfEvents;
 };
 
 #endif // GateDepositedChargeActor_h

@@ -14,20 +14,23 @@ GateDepositedChargeActor::GateDepositedChargeActor(py::dict &user_info)
     : GateVActor(user_info, true) {
 
   // Geant4 callbacks need by this actor.
-  fActions.insert("StartSimulationAction");
+  fActions.insert("BeginOfRunActionMasterThread");
   fActions.insert("BeginOfRunAction");
   fActions.insert("BeginOfEventAction");
   fActions.insert("PreUserTrackingAction");
   fActions.insert("PostUserTrackingAction");
   fActions.insert("EndOfEventAction");
-  fActions.insert("EndOfSimulationWorkerAction");
+  fActions.insert("EndOfRunAction");
 
-  // Initialize the merged accumulators to zero.
-  fDepositedNominalCharge = 0.0;
-  fDepositedDynamicCharge = 0.0;
-  fDepositedNominalChargeSquared = 0.0;
-  fDepositedDynamicChargeSquared = 0.0;
-  fNumberOfEvents = 0;
+  ResetRunAccumulators();
+}
+
+void GateDepositedChargeActor::ResetRunAccumulators() {
+  fRunNominalCharge = 0.0;
+  fRunDynamicCharge = 0.0;
+  fRunNominalChargeSquared = 0.0;
+  fRunDynamicChargeSquared = 0.0;
+  fRunNumberOfEvents = 0;
 }
 
 void GateDepositedChargeActor::InitializeUserInfo(py::dict &user_info) {
@@ -35,27 +38,22 @@ void GateDepositedChargeActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
 }
 
-void GateDepositedChargeActor::StartSimulationAction() {
-  // Reset the merged accumulators at the start of the simulation
-  fDepositedNominalCharge = 0.0;
-  fDepositedDynamicCharge = 0.0;
-  fDepositedNominalChargeSquared = 0.0;
-  fDepositedDynamicChargeSquared = 0.0;
-  fNumberOfEvents = 0;
+void GateDepositedChargeActor::BeginOfRunActionMasterThread(int /*run_id*/) {
+  // Reset the per-run accumulators on the master thread, before the worker
+  // threads of this run start scoring.
+  ResetRunAccumulators();
 }
 
-void GateDepositedChargeActor::BeginOfRunAction(const G4Run *run) {
-  // Reset the thread-local accumulators at the beginning of the first run.
-  if (run->GetRunID() == 0) {
-    auto &data = threadLocalData.Get();
-    data.fEventNominalCharge = 0.0;
-    data.fEventDynamicCharge = 0.0;
-    data.fSumNominalCharge = 0.0;
-    data.fSumNominalChargeSquared = 0.0;
-    data.fSumDynamicCharge = 0.0;
-    data.fSumDynamicChargeSquared = 0.0;
-    data.fNumberOfEvents = 0;
-  }
+void GateDepositedChargeActor::BeginOfRunAction(const G4Run * /*run*/) {
+  // Reset the thread-local per-run accumulators at the beginning of each run.
+  auto &data = threadLocalData.Get();
+  data.fEventNominalCharge = 0.0;
+  data.fEventDynamicCharge = 0.0;
+  data.fSumNominalCharge = 0.0;
+  data.fSumNominalChargeSquared = 0.0;
+  data.fSumDynamicCharge = 0.0;
+  data.fSumDynamicChargeSquared = 0.0;
+  data.fNumberOfEvents = 0;
 }
 
 void GateDepositedChargeActor::BeginOfEventAction(const G4Event * /*event*/) {
@@ -137,14 +135,20 @@ void GateDepositedChargeActor::EndOfEventAction(const G4Event * /*event*/) {
   data.fNumberOfEvents += 1;
 }
 
-void GateDepositedChargeActor::EndOfSimulationWorkerAction(
-    const G4Run * /*lastRun*/) {
-  // Accumulate the thread-local moments into the merged accumulators.
+void GateDepositedChargeActor::EndOfRunAction(const G4Run * /*run*/) {
+  // Merge this worker's thread-local moments for the run that just ended and
+  // reset the accumulators for the next run.
   G4AutoLock mutex(&GateDepositedChargeActorMutex);
   auto &data = threadLocalData.Get();
-  fDepositedNominalCharge += data.fSumNominalCharge;
-  fDepositedDynamicCharge += data.fSumDynamicCharge;
-  fDepositedNominalChargeSquared += data.fSumNominalChargeSquared;
-  fDepositedDynamicChargeSquared += data.fSumDynamicChargeSquared;
-  fNumberOfEvents += data.fNumberOfEvents;
+  fRunNominalCharge += data.fSumNominalCharge;
+  fRunDynamicCharge += data.fSumDynamicCharge;
+  fRunNominalChargeSquared += data.fSumNominalChargeSquared;
+  fRunDynamicChargeSquared += data.fSumDynamicChargeSquared;
+  fRunNumberOfEvents += data.fNumberOfEvents;
+
+  data.fSumNominalCharge = 0.0;
+  data.fSumNominalChargeSquared = 0.0;
+  data.fSumDynamicCharge = 0.0;
+  data.fSumDynamicChargeSquared = 0.0;
+  data.fNumberOfEvents = 0;
 }

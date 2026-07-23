@@ -422,6 +422,27 @@ The results of the actor evaluation are held in the actor's ``user_output`` attr
     charge.output_filename = "deposited_charge.json"  # written to the simulation output_dir
 
 
+Multiple runs
+~~~~~~~~~~~~~
+
+If the simulation has several runs, the charge is scored independently for each run and, by default, accumulated into a single merged result covering all runs. The events of all runs are pooled into one set of moments, so ``merged_data`` and the ``nominal_charge_statistics`` / ``dynamic_charge_statistics`` properties always describe the whole simulation.
+
+You can keep the statistics of each individual run by setting ``keep_data_per_run = True``:
+
+.. code-block:: python
+
+    charge.user_output.charge.keep_data_per_run = True
+
+    sim.run()
+
+    out = charge.user_output.charge
+    merged = out.get_data(which="merged")          # accumulated over all runs
+    run0 = out.get_data(which=0)                    # statistics of run 0
+    stats_run0 = out.charge_statistics("nominal", which=0)
+
+The per-run raw moments are accessible using ``get_data(which=run_index)`` and the corresponding history-by-history statistics with ``charge_statistics(kind, which=run_index)``. When the output is written to disk, the merged result is written to the base filename and each kept run to a ``..._run<N>`` file.
+
+
 Reference
 ~~~~~~~~~
 .. autoclass:: opengate.actors.miscactors.DepositedChargeActor
