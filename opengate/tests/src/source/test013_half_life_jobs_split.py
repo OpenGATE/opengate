@@ -242,7 +242,7 @@ if __name__ == "__main__":
         split_sim,
         5,
         split_path,
-        policy="split_time_total",
+        policy="split_in_time_total",
     )
     summary = gate.jobs_run(
         split_root,

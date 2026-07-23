@@ -22,7 +22,10 @@ if __name__ == "__main__":
 
     sim = build_simple_simulation(paths.output / "sequential_input")
     split_root = gate.jobs_split(
-        sim, 2, paths.output / "sequential_campaign", policy="split_time"
+        sim,
+        2,
+        paths.output / "sequential_campaign",
+        policy="split_in_time_per_run",
     )
 
     summary = gate.jobs_run(split_root, backend="local_sequential")

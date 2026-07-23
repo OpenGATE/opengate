@@ -44,7 +44,7 @@ def run_split_campaign(
         sim,
         3,
         split_path,
-        policy="split_time_total",
+        policy="split_in_time_total",
     )
     summary = gate.jobs_run(
         split_root,

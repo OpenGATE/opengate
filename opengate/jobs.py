@@ -84,10 +84,10 @@ def _create_job_definition(job_index, run_timing_intervals, original_run_indices
     }
 
 
-def _split_time_per_interval(run_timing_intervals, number_of_jobs):
+def _split_in_time_per_run(run_timing_intervals, number_of_jobs):
     if number_of_jobs % len(run_timing_intervals) != 0:
         fatal(
-            "The split_time policy requires the number of jobs to be a multiple "
+            "The split_in_time_per_run policy requires the number of jobs to be a multiple "
             f"of the number of run timing intervals. Received {number_of_jobs} jobs "
             f"for {len(run_timing_intervals)} timing intervals."
         )
@@ -114,9 +114,9 @@ def _split_time_per_interval(run_timing_intervals, number_of_jobs):
     return job_definitions
 
 
-def _split_time_total(run_timing_intervals, number_of_jobs):
+def _split_in_time_total(run_timing_intervals, number_of_jobs):
     # Split the total active simulation time into consecutive jobs. Unlike
-    # _split_time_per_interval(), a single job may span several original runs.
+    # _split_in_time_per_run(), a single job may span several original runs.
     total_active_time = sum(end - start for start, end in run_timing_intervals)
     target_job_active_duration = total_active_time / number_of_jobs
     job_definitions = []
@@ -187,7 +187,7 @@ def _split_time_total(run_timing_intervals, number_of_jobs):
 
         if len(job_run_timing_intervals) == 0:
             fatal(
-                f"Unable to build split_time_total job {job_index}. "
+                f"Unable to build split_in_time_total job {job_index}. "
                 "This indicates an internal splitting error."
             )
 
@@ -203,13 +203,13 @@ def _split_time_total(run_timing_intervals, number_of_jobs):
 def _generate_job_definitions(run_timing_intervals, number_of_jobs, policy):
     if number_of_jobs < 1:
         fatal(f"The number of jobs must be >= 1, but received {number_of_jobs}.")
-    if policy == "split_time":
-        return _split_time_per_interval(run_timing_intervals, number_of_jobs)
-    if policy == "split_time_total":
-        return _split_time_total(run_timing_intervals, number_of_jobs)
+    if policy == "split_in_time_per_run":
+        return _split_in_time_per_run(run_timing_intervals, number_of_jobs)
+    if policy == "split_in_time_total":
+        return _split_in_time_total(run_timing_intervals, number_of_jobs)
     fatal(
         f"Unknown split policy '{policy}'. "
-        "Known policies are: 'split_time', 'split_time_total'."
+        "Known policies are: 'split_in_time_per_run', 'split_in_time_total'."
     )
 
 
@@ -344,7 +344,7 @@ def jobs_split(
     simulation,
     number_of_jobs,
     split_path,
-    policy="split_time",
+    policy="split_in_time_per_run",
     link_files=False,
     overwrite_existing_split_folder=False,
     **options,

@@ -39,7 +39,7 @@ def main():
         sim1,
         number_of_jobs=2,
         split_path=paths.output / "basic_campaign",
-        policy="split_time",
+        policy="split_in_time_per_run",
     )
 
     status1 = get_jobs_status(split_root_folder1)
@@ -128,7 +128,7 @@ def main():
         sim2,
         3,
         paths.output / "complex_campaign",
-        policy="split_time",
+        policy="split_in_time_per_run",
         link_files=True,
     )
 

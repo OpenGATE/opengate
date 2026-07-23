@@ -110,11 +110,13 @@ if __name__ == "__main__":
     # divided independently, so each child should only refer to one original run.
     print("building a simulation (2 runs, 2 sources) ...")
     sim_1, source_images_1 = build_simulation(
-        paths.output / "split_time_input",
+        paths.output / "split_in_time_per_run_input",
         [(0.0 * sec, 2.0 * sec), (2.0 * sec, 6.0 * sec)],
         [100, 200],
     )
-    split_root_1 = gate.jobs_split(sim_1, 4, None, policy="split_time")
+    split_root_1 = gate.jobs_split(
+        sim_1, 4, None, policy="split_in_time_per_run"
+    )
     manifest_1 = load_manifest(split_root_1)
     print(f"split manifest    = {split_root_1}")
 
@@ -151,7 +153,7 @@ if __name__ == "__main__":
 
     utility.print_test(
         first_child_simulation.run_timing_intervals == [[0.0 * sec, 1.0 * sec]],
-        f"First split_time child run intervals: {first_child_simulation.run_timing_intervals}",
+        f"First split_in_time_per_run child run intervals: {first_child_simulation.run_timing_intervals}",
     )
     is_ok = (
         first_child_simulation.run_timing_intervals == [[0.0 * sec, 1.0 * sec]]
@@ -178,7 +180,7 @@ if __name__ == "__main__":
 
     utility.print_test(
         get_source_n(first_child_simulation) == [50],
-        f"First child split_time source.n values: {get_source_n(first_child_simulation)}",
+        f"First child split_in_time_per_run source.n values: {get_source_n(first_child_simulation)}",
     )
     is_ok = get_source_n(first_child_simulation) == [50] and is_ok
 
@@ -188,7 +190,7 @@ if __name__ == "__main__":
     print()
     print("building another simulation (2 runs, 2 sources) ...")
     sim_2, source_images_2 = build_simulation(
-        paths.output / "split_time_total_input",
+        paths.output / "split_in_time_total_input",
         [(0.0 * sec, 1.0 * sec), (2.0 * sec, 5.0 * sec)],
         [10, 30],
     )
@@ -196,7 +198,7 @@ if __name__ == "__main__":
         sim_2,
         3,
         paths.output / "split_campaign_total",
-        policy="split_time_total",
+        policy="split_in_time_total",
     )
     manifest_2 = load_manifest(split_root_2)
     print(f"split manifest  = {split_root_2}")
@@ -219,7 +221,7 @@ if __name__ == "__main__":
 
     utility.print_test(
         np.allclose(job_1_total.run_timing_intervals, expected_job_1_intervals),
-        f"split_time_total job0001 intervals: {job_1_total.run_timing_intervals}",
+        f"split_in_time_total job0001 intervals: {job_1_total.run_timing_intervals}",
     )
     is_ok = (
         np.allclose(job_1_total.run_timing_intervals, expected_job_1_intervals)
@@ -228,7 +230,7 @@ if __name__ == "__main__":
 
     utility.print_test(
         np.allclose(job_2_total.run_timing_intervals, expected_job_2_intervals),
-        f"split_time_total job0002 intervals: {job_2_total.run_timing_intervals}",
+        f"split_in_time_total job0002 intervals: {job_2_total.run_timing_intervals}",
     )
     is_ok = (
         np.allclose(job_2_total.run_timing_intervals, expected_job_2_intervals)
@@ -237,7 +239,7 @@ if __name__ == "__main__":
 
     utility.print_test(
         np.allclose(job_3_total.run_timing_intervals, expected_job_3_intervals),
-        f"split_time_total job0003 intervals: {job_3_total.run_timing_intervals}",
+        f"split_in_time_total job0003 intervals: {job_3_total.run_timing_intervals}",
     )
     is_ok = (
         np.allclose(job_3_total.run_timing_intervals, expected_job_3_intervals)
@@ -246,14 +248,14 @@ if __name__ == "__main__":
 
     utility.print_test(
         job_1_total_metadata["original_run_indices"] == [0, 1],
-        f"split_time_total first job original run indices: {job_1_total_metadata['original_run_indices']}",
+        f"split_in_time_total first job original run indices: {job_1_total_metadata['original_run_indices']}",
     )
     is_ok = job_1_total_metadata["original_run_indices"] == [0, 1] and is_ok
 
     utility.print_test(
         get_dynamic_volume_translation(job_1_total)
         == [[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]],
-        "split_time_total first child keeps both dynamic translations",
+        "split_in_time_total first child keeps both dynamic translations",
     )
     is_ok = (
         get_dynamic_volume_translation(job_1_total)
@@ -263,7 +265,7 @@ if __name__ == "__main__":
 
     utility.print_test(
         get_dynamic_source_images(job_1_total) == source_images_2,
-        "split_time_total first child keeps both dynamic source images",
+        "split_in_time_total first child keeps both dynamic source images",
     )
     is_ok = get_dynamic_source_images(job_1_total) == source_images_2 and is_ok
 
@@ -272,7 +274,7 @@ if __name__ == "__main__":
     aggregated_counts = aggregate_counts_by_original_run(manifest_2, split_root_2)
     utility.print_test(
         aggregated_counts == {0: 10, 1: 30},
-        f"split_time_total source.n counts aggregated by original run: {aggregated_counts}",
+        f"split_in_time_total source.n counts aggregated by original run: {aggregated_counts}",
     )
     is_ok = aggregated_counts == {0: 10, 1: 30} and is_ok
 

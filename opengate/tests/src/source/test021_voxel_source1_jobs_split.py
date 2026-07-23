@@ -216,7 +216,7 @@ def run_split_campaign(paths, split_path, backend, link_files, backend_options=N
         sim,
         3,
         split_path,
-        policy="split_time_total",
+        policy="split_in_time_total",
         link_files=link_files,
     )
     summary = gate.jobs_run(

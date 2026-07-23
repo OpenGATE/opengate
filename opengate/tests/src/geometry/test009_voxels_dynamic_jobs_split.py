@@ -34,7 +34,7 @@ def run_split_campaign(paths, split_path, backend, backend_options=None):
         sim,
         3,
         split_path,
-        policy="split_time_total",
+        policy="split_in_time_total",
     )
     summary = gate.jobs_run(
         split_root,
@@ -69,7 +69,7 @@ def run_split_campaign(paths, split_path, backend, backend_options=None):
         child_dynamic_images = get_dynamic_patient_images(child_simulation)
         expected_dynamic_images = expected_job_images[job_index]
 
-        # split_time_total should preserve the global active timeline. The
+        # split_in_time_total should preserve the global active timeline. The
         # middle child bridges the two original runs and must therefore keep
         # both dynamic image entries.
         checks_ok = (

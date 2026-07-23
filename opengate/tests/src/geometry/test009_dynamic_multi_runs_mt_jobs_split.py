@@ -153,7 +153,7 @@ if __name__ == "__main__":
         sim,
         number_of_angles,
         split_path,
-        policy="split_time",
+        policy="split_in_time_per_run",
     )
     summary = gate.jobs_run(
         split_root,
