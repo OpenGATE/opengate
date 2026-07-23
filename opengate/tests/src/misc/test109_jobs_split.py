@@ -114,9 +114,7 @@ if __name__ == "__main__":
         [(0.0 * sec, 2.0 * sec), (2.0 * sec, 6.0 * sec)],
         [100, 200],
     )
-    split_root_1 = gate.jobs_split(
-        sim_1, 4, None, policy="split_in_time_per_run"
-    )
+    split_root_1 = gate.jobs_split(sim_1, 4, None, policy="split_in_time_per_run")
     manifest_1 = load_manifest(split_root_1)
     print(f"split manifest    = {split_root_1}")
 

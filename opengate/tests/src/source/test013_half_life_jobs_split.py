@@ -167,27 +167,36 @@ def check_child_global_time_ordering(
         summary_min_seconds = summary["min"] / time_unit
         summary_mean_seconds = summary["mean"] / time_unit
         summary_max_seconds = summary["max"] / time_unit
-        is_ok = utility.print_test(
-            summary["min"] <= summary["mean"] <= summary["max"],
-            f"{summary['job_folder']} GlobalTime ordering: "
-            f"min={summary_min_seconds:.4f} s "
-            f"mean={summary_mean_seconds:.4f} s "
-            f"max={summary_max_seconds:.4f} s",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                summary["min"] <= summary["mean"] <= summary["max"],
+                f"{summary['job_folder']} GlobalTime ordering: "
+                f"min={summary_min_seconds:.4f} s "
+                f"mean={summary_mean_seconds:.4f} s "
+                f"max={summary_max_seconds:.4f} s",
+            )
+            and is_ok
+        )
         if previous_summary is not None:
             mean_is_monotonic = previous_summary["mean"] < summary["mean"]
-            is_ok = utility.print_test(
-                mean_is_monotonic,
-                f"GlobalTime mean increases from {previous_summary['job_folder']} "
-                f"({previous_summary['mean'] / time_unit:.4f} s) "
-                f"to {summary['job_folder']} ({summary_mean_seconds:.4f} s)",
-            ) and is_ok
+            is_ok = (
+                utility.print_test(
+                    mean_is_monotonic,
+                    f"GlobalTime mean increases from {previous_summary['job_folder']} "
+                    f"({previous_summary['mean'] / time_unit:.4f} s) "
+                    f"to {summary['job_folder']} ({summary_mean_seconds:.4f} s)",
+                )
+                and is_ok
+            )
             gap_seconds = (summary["min"] - previous_summary["max"]) / time_unit
-            is_ok = utility.print_test(
-                0.0 <= gap_seconds <= gap_tolerance_seconds,
-                f"Boundary gap {previous_summary['job_folder']} -> {summary['job_folder']}: "
-                f"{gap_seconds:.4f} s (tol={gap_tolerance_seconds})",
-            ) and is_ok
+            is_ok = (
+                utility.print_test(
+                    0.0 <= gap_seconds <= gap_tolerance_seconds,
+                    f"Boundary gap {previous_summary['job_folder']} -> {summary['job_folder']}: "
+                    f"{gap_seconds:.4f} s (tol={gap_tolerance_seconds})",
+                )
+                and is_ok
+            )
         previous_summary = summary
     return is_ok
 
@@ -253,10 +262,13 @@ if __name__ == "__main__":
             "maxtasksperchild": 1,
         },
     )
-    is_ok = utility.print_test(
-        summary["submitted_jobs"] == 5,
-        f"local_pool split summary:\n{pretty_json(summary)}",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            summary["submitted_jobs"] == 5,
+            f"local_pool split summary:\n{pretty_json(summary)}",
+        )
+        and is_ok
+    )
 
     status_data = wait_for_completed_jobs(split_root, expected_count=5)
     job_folders = [split_root / job["folder_name"] for job in status_data["jobs"]]
@@ -281,23 +293,32 @@ if __name__ == "__main__":
         job_folders, merged_beta_root, "test013_decay_beta_plus.root", "phsp_beta"
     )
 
-    is_ok = utility.assert_stats_json(
-        merged_stats.user_output.stats,
-        reference_stats.user_output.stats,
-        tolerance=0.1,
-        track_types_flag=True,
-    ) and is_ok
-    is_ok = compare_merged_root_with_reference(
-        reference_phsp_ion.get_output_path(),
-        merged_ion_root,
-        "phsp_ion",
-        paths.output / "test013_decay_ion_split_compare.png",
-    ) and is_ok
-    is_ok = compare_merged_root_with_reference(
-        reference_phsp_beta.get_output_path(),
-        merged_beta_root,
-        "phsp_beta",
-        paths.output / "test013_decay_beta_split_compare.png",
-    ) and is_ok
+    is_ok = (
+        utility.assert_stats_json(
+            merged_stats.user_output.stats,
+            reference_stats.user_output.stats,
+            tolerance=0.1,
+            track_types_flag=True,
+        )
+        and is_ok
+    )
+    is_ok = (
+        compare_merged_root_with_reference(
+            reference_phsp_ion.get_output_path(),
+            merged_ion_root,
+            "phsp_ion",
+            paths.output / "test013_decay_ion_split_compare.png",
+        )
+        and is_ok
+    )
+    is_ok = (
+        compare_merged_root_with_reference(
+            reference_phsp_beta.get_output_path(),
+            merged_beta_root,
+            "phsp_beta",
+            paths.output / "test013_decay_beta_split_compare.png",
+        )
+        and is_ok
+    )
 
     utility.test_ok(is_ok)

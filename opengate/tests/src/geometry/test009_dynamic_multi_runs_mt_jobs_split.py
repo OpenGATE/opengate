@@ -164,10 +164,13 @@ if __name__ == "__main__":
             "maxtasksperchild": 1,
         },
     )
-    is_ok = utility.print_test(
-        summary["submitted_jobs"] == number_of_angles,
-        f"local_pool split summary:\n{pretty_json(summary)}",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            summary["submitted_jobs"] == number_of_angles,
+            f"local_pool split summary:\n{pretty_json(summary)}",
+        )
+        and is_ok
+    )
 
     status_data = wait_for_completed_jobs(split_root, expected_count=number_of_angles)
     job_folders = []

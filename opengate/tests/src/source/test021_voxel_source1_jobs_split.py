@@ -160,17 +160,25 @@ def assert_job_input_files(job_folder, link_files):
     for filename in expected_files:
         path = Path(job_folder) / filename
         exists = path.exists() or path.is_symlink()
-        is_ok = utility.print_test(
-            exists,
-            f"{Path(job_folder).name} contains archived input {filename}",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                exists,
+                f"{Path(job_folder).name} contains archived input {filename}",
+            )
+            and is_ok
+        )
         if exists:
-            has_expected_mode = path.is_symlink() if link_files else not path.is_symlink()
+            has_expected_mode = (
+                path.is_symlink() if link_files else not path.is_symlink()
+            )
             mode_label = "symlink" if link_files else "copied file"
-            is_ok = utility.print_test(
-                has_expected_mode,
-                f"{Path(job_folder).name} archived input mode for {filename}: {mode_label}",
-            ) and is_ok
+            is_ok = (
+                utility.print_test(
+                    has_expected_mode,
+                    f"{Path(job_folder).name} archived input mode for {filename}: {mode_label}",
+                )
+                and is_ok
+            )
     return is_ok
 
 
@@ -193,15 +201,21 @@ def assert_rehydrated_child_inputs(job_folder):
         Path(ct.image).resolve() == expected_ct_image,
         f"{Path(job_folder).name} rehydrated CT image path: {ct.image}",
     )
-    is_ok = utility.print_test(
-        Path(source.image).resolve() == expected_source_image,
-        f"{Path(job_folder).name} rehydrated voxel-source image path: {source.image}",
-    ) and is_ok
-    is_ok = utility.print_test(
-        len(material_database_filenames) == 1
-        and Path(material_database_filenames[0]).resolve() == expected_material_db,
-        f"{Path(job_folder).name} rehydrated material DB path: {material_database_filenames}",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            Path(source.image).resolve() == expected_source_image,
+            f"{Path(job_folder).name} rehydrated voxel-source image path: {source.image}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            len(material_database_filenames) == 1
+            and Path(material_database_filenames[0]).resolve() == expected_material_db,
+            f"{Path(job_folder).name} rehydrated material DB path: {material_database_filenames}",
+        )
+        and is_ok
+    )
     return is_ok
 
 
@@ -232,10 +246,13 @@ def run_split_campaign(paths, split_path, backend, link_files, backend_options=N
 
     initial_status = get_jobs_status(split_root)
     for job_status in initial_status["jobs"]:
-        is_ok = utility.print_test(
-            job_status["input_mode"] == mode_label,
-            f"{backend} {job_status['folder_name']} input mode: {job_status['input_mode']}",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                job_status["input_mode"] == mode_label,
+                f"{backend} {job_status['folder_name']} input mode: {job_status['input_mode']}",
+            )
+            and is_ok
+        )
 
     status_data = wait_for_completed_jobs(split_root, expected_count=3)
     job_folders = []
@@ -259,12 +276,15 @@ def run_split_campaign(paths, split_path, backend, link_files, backend_options=N
 
     stats_ref = utility.read_stats_file(paths.output_ref / "stat021_ref_1.txt")
     stats_ref.counts.runs = 1
-    is_ok = utility.assert_stats_json(
-        merged_stats.user_output.stats,
-        stats_ref.user_output.stats,
-        tolerance=0.1,
-        track_types_flag=True,
-    ) and is_ok
+    is_ok = (
+        utility.assert_stats_json(
+            merged_stats.user_output.stats,
+            stats_ref.user_output.stats,
+            tolerance=0.1,
+            track_types_flag=True,
+        )
+        and is_ok
+    )
 
     return is_ok
 

@@ -118,7 +118,9 @@ def check_missing_root_files_are_zero_event_jobs(
         if root_path.exists():
             continue
         stats = utility.read_stats_file(Path(job_folder) / "stats.txt")
-        print(f"stats.user_output.stats.merged_data.events = {stats.user_output.stats.merged_data.events}")
+        print(
+            f"stats.user_output.stats.merged_data.events = {stats.user_output.stats.merged_data.events}"
+        )
         is_ok = (
             # no ROOT file is consistent in case there are no events -> check this
             # there is always at least a geantino (see GateSourceManager), so 1 means effectively 0
@@ -157,10 +159,13 @@ if __name__ == "__main__":
             "maxtasksperchild": 1,
         },
     )
-    is_ok = utility.print_test(
-        summary["submitted_jobs"] == 8,
-        f"local_pool split summary:\n{pretty_json(summary)}",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            summary["submitted_jobs"] == 8,
+            f"local_pool split summary:\n{pretty_json(summary)}",
+        )
+        and is_ok
+    )
 
     status_data = wait_for_completed_jobs(split_root, expected_count=8)
     job_folders = [split_root / job["folder_name"] for job in status_data["jobs"]]
