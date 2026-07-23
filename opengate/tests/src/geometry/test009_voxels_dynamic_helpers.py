@@ -163,10 +163,9 @@ def merge_stats_from_jobs(job_folders, output_path):
 def merge_images_from_jobs(job_folders, output_path):
     """Sum per-job dose images voxel-wise and write the merged image to disk."""
 
-
-    # this is a manual merge for testing only. 
-    # merging based on Actor/ActorOutput objects will be implemented soon 
-    # and should be used in practice 
+    # this is a manual merge for testing only.
+    # merging based on Actor/ActorOutput objects will be implemented soon
+    # and should be used in practice
     first_image = itk.imread(str(Path(job_folders[0]) / "test009-edep_edep.mhd"))
     merged_array = np.array(itk.array_view_from_image(first_image), copy=True)
 

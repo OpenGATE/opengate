@@ -72,14 +72,21 @@ def run_split_campaign(paths, split_path, backend, backend_options=None):
         # split_time_total should preserve the global active timeline. The
         # middle child bridges the two original runs and must therefore keep
         # both dynamic image entries.
-        checks_ok = utility.print_test(
-            child_simulation.run_timing_intervals == expected_job_intervals[job_index],
-            f"{backend} {job['folder_name']} run timing intervals: {child_simulation.run_timing_intervals}",
-        ) and checks_ok
-        checks_ok = utility.print_test(
-            child_dynamic_images == expected_dynamic_images,
-            f"{backend} {job['folder_name']} dynamic images: {child_dynamic_images}",
-        ) and checks_ok
+        checks_ok = (
+            utility.print_test(
+                child_simulation.run_timing_intervals
+                == expected_job_intervals[job_index],
+                f"{backend} {job['folder_name']} run timing intervals: {child_simulation.run_timing_intervals}",
+            )
+            and checks_ok
+        )
+        checks_ok = (
+            utility.print_test(
+                child_dynamic_images == expected_dynamic_images,
+                f"{backend} {job['folder_name']} dynamic images: {child_dynamic_images}",
+            )
+            and checks_ok
+        )
 
     merged_stats_path = paths.output / f"{split_path.name}_{backend}_merged_stats.json"
     merged_dose_path = paths.output / f"{split_path.name}_{backend}_merged_edep.mhd"
@@ -88,48 +95,58 @@ def run_split_campaign(paths, split_path, backend, backend_options=None):
     merge_images_from_jobs(job_folders, merged_dose_path)
 
     stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
-    checks_ok = utility.assert_stats_json(
-        merged_stats.user_output.stats,
-        stats_ref.user_output.stats,
-        tolerance=0.15,
-        track_types_flag=True,
-    ) and checks_ok
-    checks_ok = utility.assert_images(
-        paths.gate_output / "output-Edep.mhd",
-        merged_dose_path,
-        merged_stats,
-        tolerance=35,
-        ignore_value_data2=0,
-        apply_ignore_mask_to_sum_check=False,
-    ) and checks_ok
+    checks_ok = (
+        utility.assert_stats_json(
+            merged_stats.user_output.stats,
+            stats_ref.user_output.stats,
+            tolerance=0.15,
+            track_types_flag=True,
+        )
+        and checks_ok
+    )
+    checks_ok = (
+        utility.assert_images(
+            paths.gate_output / "output-Edep.mhd",
+            merged_dose_path,
+            merged_stats,
+            tolerance=35,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False,
+        )
+        and checks_ok
+    )
 
     return checks_ok
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__, "gate_test009_voxels", "test009"
-    )
+    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels", "test009")
     is_ok = True
 
     shutil.rmtree(paths.output, ignore_errors=True)
 
-    is_ok = run_split_campaign(
-        paths,
-        paths.output / "split_campaign_sequential",
-        backend="local_sequential",
-    ) and is_ok
-    is_ok = run_split_campaign(
-        paths,
-        paths.output / "split_campaign_pool",
-        backend="local_pool",
-        backend_options={
-            # Run 3 jobs with 2 workers so the pooled backend also covers
-            # queued execution instead of a trivial 1:1 worker-to-job map.
-            "n_workers": 2,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
-    ) and is_ok
+    is_ok = (
+        run_split_campaign(
+            paths,
+            paths.output / "split_campaign_sequential",
+            backend="local_sequential",
+        )
+        and is_ok
+    )
+    is_ok = (
+        run_split_campaign(
+            paths,
+            paths.output / "split_campaign_pool",
+            backend="local_pool",
+            backend_options={
+                # Run 3 jobs with 2 workers so the pooled backend also covers
+                # queued execution instead of a trivial 1:1 worker-to-job map.
+                "n_workers": 2,
+                "start_method": "spawn",
+                "maxtasksperchild": 1,
+            },
+        )
+        and is_ok
+    )
 
     utility.test_ok(is_ok)
