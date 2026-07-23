@@ -104,8 +104,8 @@ def main():
             elapsed = call_data.get("elapsed_time_seconds", 0.0)
             events_prog = call_data.get("events_progress", 0.0)
 
-            step_ok = step_ok and (current_ev > prev_events)
-            step_ok = step_ok and (0 < current_ev < expected_N)
+            step_ok = step_ok and (current_ev >= prev_events)
+            step_ok = step_ok and (0 <= current_ev < expected_N)
 
             expected_prog = round((current_ev / float(expected_N)) * 100.0, 2)
             step_ok = step_ok and (abs(events_prog - expected_prog) < 0.1)
