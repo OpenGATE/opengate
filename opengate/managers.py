@@ -4,7 +4,7 @@ import io
 import shutil
 import weakref
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 import sys
 
 import opengate_core as g4
@@ -1689,6 +1689,12 @@ def _setter_hook_verbose_level(self, verbose_level):
     return verbose_level
 
 
+def _setter_hook_progress_hook(simulation, value):
+    if hasattr(value, "_interval") and value._interval is not None:
+        simulation.user_info["progress_hook_interval"] = value._interval
+    return value
+
+
 class Simulation(GateObject):
     """
     Main class that store a simulation.
@@ -1727,6 +1733,8 @@ class Simulation(GateObject):
     g4_commands_after_init: List[str]
     init_only: bool
     progress_bar: bool
+    progress_hook: Optional[Callable]
+    progress_hook_interval: Optional[float]
     dyn_geom_open_close: bool
     dyn_geom_optimise: bool
 
@@ -1944,6 +1952,19 @@ class Simulation(GateObject):
             False,
             {
                 "doc": "Display a progress bar during the simulation",
+            },
+        ),
+        "progress_hook": (
+            None,
+            {
+                "doc": "Python function hook called periodically during simulation",
+                "setter_hook": _setter_hook_progress_hook,
+            },
+        ),
+        "progress_hook_interval": (
+            None,
+            {
+                "doc": "Interval in real wall-clock seconds between progress hook calls",
             },
         ),
         "max_primaries_per_run": (

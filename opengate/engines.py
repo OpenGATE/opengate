@@ -202,6 +202,7 @@ class SourceEngine(EngineBase):
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
         )
+
         # keep the pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
@@ -209,6 +210,30 @@ class SourceEngine(EngineBase):
         return ms
 
     def start(self):
+        sim = self.simulation_engine.simulation
+
+        if sim.progress_hook:
+            interval = float(
+                sim.progress_hook_interval
+                if sim.progress_hook_interval is not None
+                else 30.0  # sec
+            )
+            target_manager = (
+                self.g4_thread_source_managers[0]
+                if self.g4_thread_source_managers
+                else self.g4_master_source_manager
+            )
+
+            # Convenience wrapper to handle signature differences
+            def progress_hook_wrapper(status="running"):
+                try:
+                    sim.progress_hook(self.simulation_engine, status)
+                except TypeError:
+                    sim.progress_hook(status)
+
+            self._progress_hook_wrapper = progress_hook_wrapper
+            target_manager.SetProgressReportCallback(progress_hook_wrapper, interval)
+
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
@@ -220,6 +245,12 @@ class SourceEngine(EngineBase):
         self.simulation_engine.simulation.volume_manager.solid_with_texture_init = []
 
         self.g4_master_source_manager.StartMasterThread()
+
+        if hasattr(self, "_progress_hook_wrapper") and self._progress_hook_wrapper:
+            try:
+                self._progress_hook_wrapper("completed")
+            except Exception:
+                pass
 
         # once terminated, packup the sources (if needed)
         for source in self.sources:

@@ -17,6 +17,7 @@
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
+#include <CLHEP/Units/SystemOfUnits.h>
 #include <G4Exception.hh>
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
@@ -49,6 +50,7 @@ GateSourceManager::GateSourceManager() {
   fVerboseLevel = 0;
   fUserEventInformationFlag = false;
   fProgressBarFlag = false;
+  fProgressReportInterval = 0.0;
   auto &l = fThreadLocalData.Get();
   l.fStartNewRun = true;
   l.fNextRunId = 0;
@@ -141,6 +143,7 @@ void GateSourceManager::Initialize(const TimeIntervals &simulation_times,
     SetMaxPrimariesPerRun(GetPlatformMaxPrimariesPerRun());
   }
   InstallSignalHandler();
+  ComputeExpectedNumberOfEvents();
   InitializeProgressBar();
 
   // Fake init of the EventModulo (will be changed in StartMasterThread or by
@@ -243,8 +246,17 @@ void GateSourceManager::StartMasterThread() {
 void GateSourceManager::InitializeProgressBar() {
   if (!fProgressBarFlag)
     return;
-  // (all threads compute the expected number of events)
-  ComputeExpectedNumberOfEvents();
+
+  if (fExpectedNumberOfEvents <= 0) {
+    ComputeExpectedNumberOfEvents();
+  }
+
+  fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
+  if (fExpectedNumberOfEvents > 1e7)
+    fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
+  if (fProgressBarStep < 1) {
+    fProgressBarStep = 1;
+  }
 
   // the progress bar is only for one thread (id ==0)
   if (G4Threading::IsMultithreadedApplication() &&
@@ -266,25 +278,48 @@ void GateSourceManager::ComputeExpectedNumberOfEvents() {
     fExpectedNumberOfEvents +=
         source->GetExpectedNumberOfEvents(fSimulationTimes);
   }
-  fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
-  if (fExpectedNumberOfEvents > 1e7)
-    fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
-
-  if (fProgressBarStep < 1) {
-    fProgressBarStep = 1;
-  }
 }
 
 long int GateSourceManager::GetExpectedNumberOfEvents() const {
   return fExpectedNumberOfEvents;
 }
 
+unsigned long GateSourceManager::GetRunGeneratedEvents() const {
+  unsigned long n = 0;
+  for (const auto *source : fSources) {
+    n += source->GetRunGeneratedEvents();
+  }
+  return n;
+}
+
+unsigned long GateSourceManager::GetTotalGeneratedEvents() const {
+  unsigned long n = 0;
+  for (const auto *source : fSources) {
+    n += source->GetTotalGeneratedEvents();
+  }
+  return n;
+}
+
+double GateSourceManager::GetCurrentSimulationTime() const {
+  auto &l = fThreadLocalData.Get();
+  return l.fCurrentSimulationTime;
+}
+
+int GateSourceManager::GetCurrentRunId() const {
+  auto &l = fThreadLocalData.Get();
+  return l.fNextRunId;
+}
+
 void GateSourceManager::PrepareRunToStart(int run_id) {
   /*
-   In MT mode, this function (PrepareRunToStart) is called
-   by Master thread AND by workers
-   */
-  // set the current time interval
+    Start run run_id
+    fCurrentTimeInterval = interval run_id
+    fCurrentTime = start of interval run_id
+    fNextTime = end of interval run_id
+    fRunTerminationFlag = false
+    Call PrepareNextRun on all sources
+  */
+
   auto &l = fThreadLocalData.Get();
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
@@ -319,8 +354,7 @@ void GateSourceManager::PrepareNextSource() const {
 
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    unsigned long numberOfSimulatedEvents =
-        source->GetNumberOfSimulatedEvents();
+    unsigned long numberOfSimulatedEvents = source->GetRunGeneratedEvents();
     auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
                                      numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
@@ -351,7 +385,39 @@ void GateSourceManager::CheckForNextRun() const {
   }
 }
 
+void GateSourceManager::SetProgressReportCallback(py::function func,
+                                                  double interval_seconds) {
+  fProgressReportCallback = func;
+  fProgressReportInterval = interval_seconds / CLHEP::s;
+  fLastProgressReportTime = std::chrono::steady_clock::now();
+}
+
+void GateSourceManager::CheckProgressReport() const {
+  if (fProgressReportInterval <= 0.0 || !fProgressReportCallback) {
+    return;
+  }
+  auto now = std::chrono::steady_clock::now();
+  std::unique_lock<std::mutex> lock(fProgressReportMutex, std::try_to_lock);
+  if (!lock.owns_lock()) {
+    return;
+  }
+  double elapsed =
+      std::chrono::duration<double>(now - fLastProgressReportTime).count();
+  if (elapsed >= fProgressReportInterval) {
+    fLastProgressReportTime = now;
+    // gil is needed when using fProgressReportCallback
+    py::gil_scoped_acquire acquire;
+    try {
+      fProgressReportCallback();
+    } catch (const py::error_already_set &e) {
+      std::cerr << "Error in progress report callback: " << e.what()
+                << std::endl;
+    }
+  }
+}
+
 void GateSourceManager::GeneratePrimaries(G4Event *event) {
+  CheckProgressReport();
   auto &l = fThreadLocalData.Get();
   // Needed to initialize a new Run (all threads)
   if (l.fStartNewRun) {

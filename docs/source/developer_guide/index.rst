@@ -17,6 +17,7 @@ Developer guide
    developer_guide_chemistry_architecture
    developer_guide_dynamic_parametrisations
    developer_guide_auxiliary_attributes
+   developer_guide_progress_hook
 
 .. toctree::
    :caption: Physics

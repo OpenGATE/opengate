@@ -18,12 +18,22 @@ void init_GateSourceManager(py::module &m) {
       .def("RegisterImageBox", &GateSourceManager::RegisterImageBox)
       .def("Initialize", &GateSourceManager::Initialize)
       .def("SetActors", &GateSourceManager::SetActors)
+      .def("ComputeExpectedNumberOfEvents",
+           &GateSourceManager::ComputeExpectedNumberOfEvents)
       .def("GetExpectedNumberOfEvents",
            &GateSourceManager::GetExpectedNumberOfEvents)
+      .def("GetRunGeneratedEvents", &GateSourceManager::GetRunGeneratedEvents)
+      .def("GetTotalGeneratedEvents",
+           &GateSourceManager::GetTotalGeneratedEvents)
+      .def("GetCurrentSimulationTime",
+           &GateSourceManager::GetCurrentSimulationTime)
+      .def("GetCurrentRunId", &GateSourceManager::GetCurrentRunId)
       .def_static("GetPlatformMaxPrimariesPerRun",
                   &GateSourceManager::GetPlatformMaxPrimariesPerRun)
       .def_readwrite("fUserEventInformationFlag",
                      &GateSourceManager::fUserEventInformationFlag)
+      .def("SetProgressReportCallback",
+           &GateSourceManager::SetProgressReportCallback)
       .def("StartMasterThread", &GateSourceManager::StartMasterThread,
            py::call_guard<py::gil_scoped_release>());
 }

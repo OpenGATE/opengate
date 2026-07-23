@@ -41,7 +41,7 @@ void GateTemplateSource::PrepareNextRun() {
   // fGlobalTranslation & fGlobalRotation
 
   // init the number of generated events (here, for each run)
-  fNumberOfGeneratedEvents = 0;
+  fRunGeneratedEvents = 0;
 }
 
 void GateTemplateSource::GeneratePrimaries(G4Event *event,
@@ -65,5 +65,5 @@ void GateTemplateSource::GeneratePrimaries(G4Event *event,
   auto *vertex = new G4PrimaryVertex(pos, current_simulation_time);
   vertex->SetPrimary(particle);
   event->AddPrimaryVertex(vertex);
-  fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
 }

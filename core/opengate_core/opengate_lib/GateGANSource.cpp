@@ -158,7 +158,7 @@ void GateGANSource::GeneratePrimaries(G4Event *event,
   fCurrentIndex++;
 
   // update the number of generated event
-  fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
 }
 
 void GateGANSource::GenerateOnePrimary(G4Event *event,

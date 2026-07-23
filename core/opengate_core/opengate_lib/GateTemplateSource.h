@@ -35,7 +35,6 @@ public:
   void GeneratePrimaries(G4Event *event, double time) override;
 
 protected:
-  unsigned long fNumberOfGeneratedEvents;
   unsigned long fN;
   double fFloatValue;
   std::vector<double> fVectorValue;
