@@ -40,6 +40,7 @@ def main():
         number_of_jobs=2,
         split_path=paths.output / "basic_campaign",
         policy="split_in_time_per_run",
+        overwrite_existing_split_folder=True,
     )
 
     status1 = get_jobs_status(split_root_folder1)
@@ -130,6 +131,7 @@ def main():
         paths.output / "complex_campaign",
         policy="split_in_time_per_run",
         link_files=True,
+        overwrite_existing_split_folder=True,
     )
 
     status_initial2 = get_jobs_status(split_root_folder2)
