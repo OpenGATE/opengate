@@ -2131,18 +2131,23 @@ class Simulation(GateObject):
         base_dir = Path(base_dir).resolve()
 
         def rewrite_path(path_obj):
+            original_is_path = isinstance(path_obj, Path)
             path_obj = Path(path_obj)
             if mode == "relativize":
-                absolute_path = path_obj.resolve()
-                return Path(os.path.relpath(absolute_path, base_dir))
-            if mode == "resolve":
+                rewritten_path = Path(os.path.relpath(path_obj.resolve(), base_dir))
+            elif mode == "resolve":
                 if path_obj.is_absolute():
-                    return path_obj
-                return (base_dir / path_obj).resolve()
-            fatal(f"Unknown path rewrite mode '{mode}'.")
+                    rewritten_path = path_obj
+                else:
+                    rewritten_path = (base_dir / path_obj).resolve()
+            else:
+                fatal(f"Unknown path rewrite mode '{mode}'.")
+            if original_is_path:
+                return rewritten_path
+            return str(rewritten_path)
 
         def rewrite_value(obj):
-            if isinstance(obj, Path):
+            if isinstance(obj, (Path, str)):
                 return rewrite_path(obj)
             if isinstance(obj, dict):
                 return {k: rewrite_value(v) for k, v in obj.items()}
@@ -2168,7 +2173,7 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                rewrite_path(filename)
+                rewrite_value(filename)
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]
@@ -2274,6 +2279,8 @@ class Simulation(GateObject):
         def rewrite_archived_input_paths(obj):
             if isinstance(obj, Path):
                 return Path(archive_path_map.get(obj.resolve(), obj.name))
+            if isinstance(obj, str):
+                return archive_path_map.get(Path(obj).resolve(), Path(obj).name)
             if isinstance(obj, dict):
                 return {k: rewrite_archived_input_paths(v) for k, v in obj.items()}
             if isinstance(obj, list):
@@ -2300,9 +2307,7 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                Path(
-                    archive_path_map.get(Path(filename).resolve(), Path(filename).name)
-                )
+                rewrite_archived_input_paths(filename)
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]
