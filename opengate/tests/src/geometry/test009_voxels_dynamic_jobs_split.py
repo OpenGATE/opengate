@@ -124,13 +124,11 @@ if __name__ == "__main__":
         paths.output / "split_campaign_pool",
         backend="local_pool",
         backend_options={
-            "pooling_options": {
-                # Run 3 jobs with 2 workers so the pooled backend also covers
-                # queued execution instead of a trivial 1:1 worker-to-job map.
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            }
+            # Run 3 jobs with 2 workers so the pooled backend also covers
+            # queued execution instead of a trivial 1:1 worker-to-job map.
+            "n_workers": 2,
+            "start_method": "spawn",
+            "maxtasksperchild": 1,
         },
     ) and is_ok
 

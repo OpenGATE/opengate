@@ -27,11 +27,9 @@ if __name__ == "__main__":
         split_root,
         backend="local_pool",
         backend_options={
-            "pooling_options": {
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            }
+            "n_workers": 2,
+            "start_method": "spawn",
+            "maxtasksperchild": 1,
         },
     )
     is_ok = is_ok and utility.print_test(

@@ -925,8 +925,7 @@ def _run_jobs_campaign(job_folders, backend, backend_options):
         return _run_job_folders_in_local_sequential(job_folders)
 
     if backend == "local_pool":
-        pooling_options = backend_options.get("pooling_options", {})
-        return _run_job_folders_in_local_pool(job_folders, **pooling_options)
+        return _run_job_folders_in_local_pool(job_folders, **backend_options)
 
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
@@ -943,20 +942,14 @@ def _validate_jobs_backend_options(backend, backend_options):
         return {}
 
     if backend == "local_pool":
-        allowed_top_level_keys = {"pooling_options"}
-        unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
-        if len(unknown_keys) > 0:
-            raise GateJobsBackendError(
-                f"The local_pool backend received unknown option groups: {sorted(unknown_keys)}."
-            )
-        pooling_options = dict(backend_options.get("pooling_options", {}))
-        allowed_pooling_keys = {"n_workers", "start_method", "maxtasksperchild"}
-        unknown_pooling_keys = set(pooling_options.keys()).difference(
-            allowed_pooling_keys
+        pooling_options = dict(backend_options)
+        allowed_backend_keys = {"n_workers", "start_method", "maxtasksperchild"}
+        unknown_backend_keys = set(pooling_options.keys()).difference(
+            allowed_backend_keys
         )
-        if len(unknown_pooling_keys) > 0:
+        if len(unknown_backend_keys) > 0:
             raise GateJobsBackendError(
-                f"The local_pool backend received unknown pooling_options: {sorted(unknown_pooling_keys)}."
+                f"The local_pool backend received unknown backend_options: {sorted(unknown_backend_keys)}."
             )
         if "n_workers" not in pooling_options:
             pooling_options["n_workers"] = os.cpu_count() or 1
@@ -997,7 +990,7 @@ def _validate_jobs_backend_options(backend, backend_options):
                 raise GateJobsBackendError(
                     "The local_pool backend currently requires maxtasksperchild=1."
                 )
-        return {"pooling_options": pooling_options}
+        return pooling_options
 
     if backend == "htcondor":
         allowed_top_level_keys = {
