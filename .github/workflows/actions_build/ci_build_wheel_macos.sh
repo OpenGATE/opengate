@@ -12,8 +12,6 @@ brew install --force --verbose --overwrite \
 brew uninstall --ignore-dependencies libxext
 brew uninstall --ignore-dependencies libx11
 
-export LDFLAGS="-L/usr/local/opt/llvm/lib"
-export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
 conda list
 export PATH="/Users/runner/miniconda3/envs/opengate_core/bin/:$PATH"
@@ -22,9 +20,13 @@ if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
     brew install --force --verbose --overwrite libiconv
     export QT_PLUGIN_DIR="/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins"
+    export LDFLAGS="-L/usr/local/opt/libiconv/lib -L/usr/local/opt/llvm/lib"
+    export CPPFLAGS="-I/usr/local/opt/libiconv/include -I/usr/local/opt/llvm/include -fopenmp"
 else
     brew install qt
     export QT_PLUGIN_DIR=$(qtpaths6 --plugin-dir)
+    export LDFLAGS="-L/usr/local/opt/llvm/lib"
+    export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 fi
 
 echo "QT_PLUGIN_DIR is $QT_PLUGIN_DIR"
