@@ -103,7 +103,8 @@ if __name__ == "__main__":
     print(f"working folder = {paths.output}")
     print()
     # remove previous split_campaigns
-    shutil.rmtree(paths.output / "split_campaigns", ignore_errors=True)
+    shutil.rmtree(paths.output / "split_campaigns_auto", ignore_errors=True)
+    shutil.rmtree(paths.output / "split_campaign_total", ignore_errors=True)
 
     # Validate the simple per-interval split policy first. Each original run is
     # divided independently, so each child should only refer to one original run.
@@ -113,9 +114,7 @@ if __name__ == "__main__":
         [(0.0 * sec, 2.0 * sec), (2.0 * sec, 6.0 * sec)],
         [100, 200],
     )
-    split_root_1 = gate.jobs_split(
-        sim_1, 4, paths.output / "split_campaigns", policy="split_time"
-    )
+    split_root_1 = gate.jobs_split(sim_1, 4, None, policy="split_time")
     manifest_1 = load_manifest(split_root_1)
     print(f"split manifest    = {split_root_1}")
 
@@ -194,7 +193,10 @@ if __name__ == "__main__":
         [10, 30],
     )
     split_root_2 = gate.jobs_split(
-        sim_2, 3, paths.output / "split_campaigns", policy="split_time_total"
+        sim_2,
+        3,
+        paths.output / "split_campaign_total",
+        policy="split_time_total",
     )
     manifest_2 = load_manifest(split_root_2)
     print(f"split manifest  = {split_root_2}")

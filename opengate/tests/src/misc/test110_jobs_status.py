@@ -36,7 +36,10 @@ def main():
     sim1.run_timing_intervals = [[0.0, 1.0], [1.0, 2.0]]
 
     split_root_folder1 = gate.jobs_split(
-        sim1, number_of_jobs=2, split_path=paths.output / "basic", policy="split_time"
+        sim1,
+        number_of_jobs=2,
+        split_path=paths.output / "basic_campaign",
+        policy="split_time",
     )
 
     status1 = get_jobs_status(split_root_folder1)
@@ -124,7 +127,7 @@ def main():
     split_root_folder2 = gate.jobs_split(
         sim2,
         3,
-        paths.output / "complex" / "split_campaigns",
+        paths.output / "complex_campaign",
         policy="split_time",
         link_files=True,
     )

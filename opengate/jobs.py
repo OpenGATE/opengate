@@ -2,6 +2,7 @@ import math
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
 import traceback
@@ -35,16 +36,30 @@ def _clone_simulation(simulation):
     return cloned_simulation
 
 
-def _create_split_root_folder(split_path):
-    parent = Path(split_path)
-    timestamp = datetime.now().strftime("jobs_%Y%m%d_%H%M%S")
-    split_root = parent / timestamp
-    suffix = 1
-    while split_root.exists():
-        split_root = parent / f"{timestamp}_{suffix:02d}"
-        suffix += 1
-    split_root.mkdir(parents=True, exist_ok=False)
-    return split_root.resolve()
+def _resolve_split_folder(split_path, overwrite_existing_split_folder=False):
+    if split_path is None or split_path == "auto":
+        timestamp = datetime.now().strftime("jobs_%Y%m%d_%H%M%S")
+        split_folder = Path(timestamp)
+        suffix = 1
+        while split_folder.exists():
+            split_folder = Path(f"{timestamp}_{suffix:02d}")
+            suffix += 1
+    else:
+        split_folder = Path(split_path)
+        if split_folder.exists():
+            if overwrite_existing_split_folder is False:
+                fatal(
+                    f"Split path already exists: {split_folder}. "
+                    "Please provide a fresh split_path, use split_path=None/'auto', "
+                    "or set overwrite_existing_split_folder=True."
+                )
+            if split_folder.is_dir() is False:
+                fatal(
+                    f"Cannot overwrite split path {split_folder} because it is not a directory."
+                )
+            shutil.rmtree(split_folder)
+    split_folder.mkdir(parents=True, exist_ok=False)
+    return split_folder.resolve()
 
 
 def _copy_run_timing_intervals(run_timing_intervals):
@@ -331,6 +346,7 @@ def jobs_split(
     split_path,
     policy="split_time",
     link_files=False,
+    overwrite_existing_split_folder=False,
     **options,
 ):
     # Split authoritative, resolved configuration rather than the raw user
@@ -349,7 +365,10 @@ def jobs_split(
     source_n_assignments = _compute_source_n_assignments(
         simulation, original_run_timing_intervals, job_definitions
     )
-    split_root_folder = _create_split_root_folder(split_path)
+    split_root_folder = _resolve_split_folder(
+        split_path,
+        overwrite_existing_split_folder=overwrite_existing_split_folder,
+    )
     simulation_id = uuid.uuid4().hex
     created_at = datetime.now().isoformat()
 
@@ -632,6 +651,15 @@ def _run_job_folders_in_local_pool(
     start_method="spawn",
     maxtasksperchild=1,
 ):
+    # NOTE: local_pool is a convenience backend, not the most crash-resilient
+    # local dispatcher. If a worker suffers a hard crash such as a C++ segfault,
+    # multiprocessing.Pool may propagate an exception to the parent, but in some
+    # failure modes it can also become wedged without a clean Python exception.
+    # For stronger isolation and more reliable crash detection, a future local
+    # backend could dispatch one OS subprocess per job and monitor exit codes,
+    # similar in spirit to scheduler-based backends and to local_sequential.
+    # Another option would be a more defensive pool orchestration based on
+    # apply_async()/timeouts/health checks rather than a single blocking map().
     if int(n_workers) < 1:
         raise GateJobsBackendError("The local_pool backend requires n_workers >= 1.")
     if int(maxtasksperchild) != 1:
@@ -640,11 +668,22 @@ def _run_job_folders_in_local_pool(
             "worker process executes at most one job."
         )
     ctx = multiprocessing.get_context(start_method)
-    with ctx.Pool(
+    pool = ctx.Pool(
         processes=int(n_workers),
         maxtasksperchild=maxtasksperchild,
-    ) as pool:
-        return pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
+    )
+    try:
+        results = pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
+        # Shut the pool down gracefully once all jobs completed. Using the Pool
+        # context manager would terminate workers on exit, which is too abrupt
+        # here and can trigger resource-tracker warnings on shutdown.
+        pool.close()
+        pool.join()
+        return results
+    except Exception:
+        pool.terminate()
+        pool.join()
+        raise
 
 
 def _render_htcondor_submit_file_lines(job_folders, backend_options):
