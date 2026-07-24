@@ -69,8 +69,8 @@ if __name__ == "__main__":
     print(stats)
     print(charge)
 
-    got_nominal = charge.deposited_nominal_charge
-    got_dynamic = charge.deposited_dynamic_charge
+    got_nominal = charge.user_output.charge.merged_data.deposited_nominal_charge
+    got_dynamic = charge.user_output.charge.merged_data.deposited_dynamic_charge
 
     tol = 0.02 * n_events  # absolute tolerance: 2% of primaries
     is_ok = True

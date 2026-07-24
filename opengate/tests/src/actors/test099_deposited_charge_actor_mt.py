@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     events_simulated = stats.counts.events
     expected = -float(events_simulated)
-    got_nominal = charge.deposited_nominal_charge
-    got_dynamic = charge.deposited_dynamic_charge
+    got_nominal = charge.user_output.charge.merged_data.deposited_nominal_charge
+    got_dynamic = charge.user_output.charge.merged_data.deposited_dynamic_charge
 
     tol = 0.05
     is_ok = True

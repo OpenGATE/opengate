@@ -75,11 +75,11 @@ if __name__ == "__main__":
     print(charge_world)
 
     expected = -float(n_events)
-    got_nominal = charge.deposited_nominal_charge
-    got_dynamic = charge.deposited_dynamic_charge
+    got_nominal = charge.user_output.charge.merged_data.deposited_nominal_charge
+    got_dynamic = charge.user_output.charge.merged_data.deposited_dynamic_charge
 
     expected_world = float(n_events)
-    got_world = charge_world.deposited_nominal_charge
+    got_world = charge_world.user_output.charge.merged_data.deposited_nominal_charge
 
     tol = 0.05
     is_ok = True

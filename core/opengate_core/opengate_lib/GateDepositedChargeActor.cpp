@@ -14,15 +14,23 @@ GateDepositedChargeActor::GateDepositedChargeActor(py::dict &user_info)
     : GateVActor(user_info, true) {
 
   // Geant4 callbacks need by this actor.
-  fActions.insert("StartSimulationAction");
+  fActions.insert("BeginOfRunActionMasterThread");
   fActions.insert("BeginOfRunAction");
+  fActions.insert("BeginOfEventAction");
   fActions.insert("PreUserTrackingAction");
   fActions.insert("PostUserTrackingAction");
-  fActions.insert("EndOfSimulationWorkerAction");
+  fActions.insert("EndOfEventAction");
+  fActions.insert("EndOfRunAction");
 
-  // Initialize the total deposited charge to zero
-  fDepositedNominalCharge = 0.0;
-  fDepositedDynamicCharge = 0.0;
+  ResetRunAccumulators();
+}
+
+void GateDepositedChargeActor::ResetRunAccumulators() {
+  fRunNominalCharge = 0.0;
+  fRunDynamicCharge = 0.0;
+  fRunNominalChargeSquared = 0.0;
+  fRunDynamicChargeSquared = 0.0;
+  fRunNumberOfEvents = 0;
 }
 
 void GateDepositedChargeActor::InitializeUserInfo(py::dict &user_info) {
@@ -30,19 +38,29 @@ void GateDepositedChargeActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
 }
 
-void GateDepositedChargeActor::StartSimulationAction() {
-  // Reset the total deposited charges at the start of the simulation
-  fDepositedNominalCharge = 0.0;
-  fDepositedDynamicCharge = 0.0;
+void GateDepositedChargeActor::BeginOfRunActionMasterThread(int /*run_id*/) {
+  // Reset the per-run accumulators on the master thread, before the worker
+  // threads of this run start scoring.
+  ResetRunAccumulators();
 }
 
-void GateDepositedChargeActor::BeginOfRunAction(const G4Run *run) {
-  // Reset the thread-local charge accumulators at the beginning of the first
-  // run.
-  if (run->GetRunID() == 0) {
-    threadLocalData.Get().fNominalCharge = 0.0;
-    threadLocalData.Get().fDynamicCharge = 0.0;
-  }
+void GateDepositedChargeActor::BeginOfRunAction(const G4Run * /*run*/) {
+  // Reset the thread-local per-run accumulators at the beginning of each run.
+  auto &data = threadLocalData.Get();
+  data.fEventNominalCharge = 0.0;
+  data.fEventDynamicCharge = 0.0;
+  data.fSumNominalCharge = 0.0;
+  data.fSumNominalChargeSquared = 0.0;
+  data.fSumDynamicCharge = 0.0;
+  data.fSumDynamicChargeSquared = 0.0;
+  data.fNumberOfEvents = 0;
+}
+
+void GateDepositedChargeActor::BeginOfEventAction(const G4Event * /*event*/) {
+  // Reset the per-event charge buffer.
+  auto &data = threadLocalData.Get();
+  data.fEventNominalCharge = 0.0;
+  data.fEventDynamicCharge = 0.0;
 }
 
 void GateDepositedChargeActor::PreUserTrackingAction(const G4Track *track) {
@@ -71,8 +89,10 @@ void GateDepositedChargeActor::PreUserTrackingAction(const G4Track *track) {
   q_dynamic *= weight;
 
   auto &data = threadLocalData.Get();
-  data.fNominalCharge -= q_nominal; // being born -> subtract nominal charge
-  data.fDynamicCharge -= q_dynamic; // being born -> subtract dynamic charge
+  data.fEventNominalCharge -=
+      q_nominal; // being born -> subtract nominal charge
+  data.fEventDynamicCharge -=
+      q_dynamic; // being born -> subtract dynamic charge
 }
 
 void GateDepositedChargeActor::PostUserTrackingAction(const G4Track *track) {
@@ -97,16 +117,38 @@ void GateDepositedChargeActor::PostUserTrackingAction(const G4Track *track) {
   q_dynamic *= weight;
 
   auto &data = threadLocalData.Get();
-  data.fNominalCharge += q_nominal; // dying -> add nominal charge
-  data.fDynamicCharge += q_dynamic; // dying -> add dynamic charge
+  data.fEventNominalCharge += q_nominal; // dying -> add nominal charge
+  data.fEventDynamicCharge += q_dynamic; // dying -> add dynamic charge
 }
 
-void GateDepositedChargeActor::EndOfSimulationWorkerAction(
-    const G4Run * /*lastRun*/) {
-  // Accumulate the thread-local charges into the total deposited charge
-  G4AutoLock mutex(
-      &GateDepositedChargeActorMutex); // Lock the mutex to protect access to
-                                       // the total deposited charge
-  fDepositedNominalCharge += threadLocalData.Get().fNominalCharge;
-  fDepositedDynamicCharge += threadLocalData.Get().fDynamicCharge;
+void GateDepositedChargeActor::EndOfEventAction(const G4Event * /*event*/) {
+  // Fold the per-event net charge into the running first and second moments.
+  auto &data = threadLocalData.Get();
+
+  const double xn = data.fEventNominalCharge;
+  const double xd = data.fEventDynamicCharge;
+
+  data.fSumNominalCharge += xn;
+  data.fSumNominalChargeSquared += xn * xn;
+  data.fSumDynamicCharge += xd;
+  data.fSumDynamicChargeSquared += xd * xd;
+  data.fNumberOfEvents += 1;
+}
+
+void GateDepositedChargeActor::EndOfRunAction(const G4Run * /*run*/) {
+  // Merge this worker's thread-local moments for the run that just ended and
+  // reset the accumulators for the next run.
+  G4AutoLock mutex(&GateDepositedChargeActorMutex);
+  auto &data = threadLocalData.Get();
+  fRunNominalCharge += data.fSumNominalCharge;
+  fRunDynamicCharge += data.fSumDynamicCharge;
+  fRunNominalChargeSquared += data.fSumNominalChargeSquared;
+  fRunDynamicChargeSquared += data.fSumDynamicChargeSquared;
+  fRunNumberOfEvents += data.fNumberOfEvents;
+
+  data.fSumNominalCharge = 0.0;
+  data.fSumNominalChargeSquared = 0.0;
+  data.fSumDynamicCharge = 0.0;
+  data.fSumDynamicChargeSquared = 0.0;
+  data.fNumberOfEvents = 0;
 }
