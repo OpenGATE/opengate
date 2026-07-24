@@ -138,10 +138,7 @@ def main():
             f"final events count={events_total_from_hook} "
             f"(expected_total_events={expected_N}, rel. difference={rel_diff * 100:04f} %)",
         )
-        is_ok = (
-            is_ok
-            and final_ok
-        )
+        is_ok = is_ok and final_ok
 
     utility.test_ok(is_ok)
 
