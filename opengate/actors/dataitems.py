@@ -385,6 +385,12 @@ class StatisticsDataItem(DataItem):
         self.data.track_types = {}
         self.data.nb_threads = 1
 
+    @classmethod
+    def get_known_entry_names(cls):
+        stats_data_item = cls()
+        stats_data_item.reset_data()
+        return tuple(stats_data_item.data.keys())
+
     def __getattr__(self, item):
         # StatisticsDataItem is the semantic access layer for statistics:
         # some quantities are stored directly in the Box payload (events,
@@ -1225,9 +1231,30 @@ class StatisticsItemContainer(DataItemContainer):
     _data_item_classes = (StatisticsDataItem,)
     primary_item_identifiers = (0,)
 
+    @property
+    def _stats_item(self):
+        try:
+            return self.data[0]
+        except (AttributeError, IndexError):
+            raise AttributeError("Statistics item container has no primary data item.")
+
+    @property
+    def _known_stats_entry_names(self):
+        return self._data_item_classes[0].get_known_entry_names()
+
+    def __getattr__(self, item):
+        if item in ("data", "belongs_to", "__setstate__", "__getstate__"):
+            raise AttributeError(f"No such attribute '{item}'")
+        if item in self._known_stats_entry_names:
+            return getattr(self._stats_item, item)
+        return super().__getattr__(item)
+
     def __setattr__(self, item, value):
         if item in ("data", "belongs_to"):
             object.__setattr__(self, item, value)
+            return
+        if item in self._known_stats_entry_names:
+            setattr(self._stats_item.data, item, value)
             return
         if item not in ("__setstate__", "__getstate__"):
             _raise_pre_interface_convenience_deprecation(
