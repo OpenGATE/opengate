@@ -1295,7 +1295,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
         # keep the initial origin
         self.start_output_origin = list(
-            self.user_output.counts.data_per_run[0].get_image_properties()[0].origin
+            self.user_output.counts.data_per_run[0].get_image_properties().origin
         )
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
@@ -1308,7 +1308,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         )
 
         # set its properties
-        info = self.user_output.counts.data_per_run[0].get_image_properties()[0]
+        info = self.user_output.counts.data_per_run[0].get_image_properties()
         spacing = info.spacing
         if self.origin_as_image_center:
             origin = -info.size * spacing / 2.0 + spacing / 2.0
