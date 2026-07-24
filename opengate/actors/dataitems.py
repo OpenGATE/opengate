@@ -1,10 +1,13 @@
 import itk
 import numpy as np
 import json
+import platform
 from box import Box
 
 from ..exception import fatal, warning, GateImplementationError
+from ..serialization import dump_json
 from ..utility import ensure_filename_is_str, calculate_variance
+from ..utility import g4_best_unit_tuple, g4_units
 from ..image import (
     sum_itk_images,
     divide_itk_images,
@@ -295,6 +298,135 @@ class ScalarDataItem(ArithmeticDataItem):
 
     def write(self, *args, **kwargs):
         raise NotImplementedError
+
+
+class StatisticsDataItem(DataItem):
+    """Semantic data item for simulation statistics.
+
+    The payload is a Box-like dictionary whose entries have dedicated merge
+    semantics. Merging therefore happens here, not based on Python scalar
+    types, because `int` and `float` alone do not tell us whether a field
+    should be summed, minimized, maximized, or otherwise combined.
+    """
+
+    def set_data(self, data, **kwargs):
+        """The input data must behave like a dictionary."""
+        self.reset_data()
+        self.data.update(data)
+
+    def reset_data(self):
+        self.data = Box()
+        self.data.runs = 0
+        self.data.events = 0
+        self.data.tracks = 0
+        self.data.steps = 0
+        self.data.duration = 0
+        self.data.start_time = 0
+        self.data.stop_time = 0
+        self.data.sim_start_time = 0
+        self.data.sim_stop_time = 0
+        self.data.init = 0
+        self.data.track_types = {}
+        self.data.nb_threads = 1
+
+    @property
+    def pps(self):
+        if self.data.duration != 0:
+            return int(self.data.events / (self.data.duration / g4_units.s))
+        return 0
+
+    @property
+    def tps(self):
+        if self.data.duration != 0:
+            return int(self.data.tracks / (self.data.duration / g4_units.s))
+        return 0
+
+    @property
+    def sps(self):
+        if self.data.duration != 0:
+            return int(self.data.steps / (self.data.duration / g4_units.s))
+        return 0
+
+    def get_processed_output(self):
+        d = {}
+        d["runs"] = {"value": self.data.runs, "unit": None}
+        d["events"] = {"value": self.data.events, "unit": None}
+        d["tracks"] = {"value": self.data.tracks, "unit": None}
+        d["steps"] = {"value": self.data.steps, "unit": None}
+        val, unit = g4_best_unit_tuple(self.data.init, "Time")
+        d["init"] = {"value": val, "unit": unit}
+        val, unit = g4_best_unit_tuple(self.data.duration, "Time")
+        d["duration"] = {"value": val, "unit": unit}
+        d["pps"] = {"value": self.pps, "unit": None}
+        d["tps"] = {"value": self.tps, "unit": None}
+        d["sps"] = {"value": self.sps, "unit": None}
+        d["start_time"] = {"value": self.data.start_time, "unit": None}
+        d["stop_time"] = {"value": self.data.stop_time, "unit": None}
+        val, unit = g4_best_unit_tuple(self.data.sim_start_time, "Time")
+        d["sim_start_time"] = {"value": val, "unit": unit}
+        val, unit = g4_best_unit_tuple(self.data.sim_stop_time, "Time")
+        d["sim_stop_time"] = {"value": val, "unit": unit}
+        d["threads"] = {"value": self.data.nb_threads, "unit": None}
+        d["arch"] = {"value": platform.system(), "unit": None}
+        d["python"] = {"value": platform.python_version(), "unit": None}
+        d["track_types"] = {"value": self.data.track_types, "unit": None}
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            if k == "track_types":
+                if len(v["value"]) > 0:
+                    s += "track_types\n"
+                    for t, n in v["value"].items():
+                        s += f"{' ' * 24}{t}: {n}\n"
+            else:
+                unit = "" if v["unit"] is None else str(v["unit"])
+                s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
+        return s.rstrip("\n")
+
+    def inplace_merge_with(self, *other):
+        if self.data is None:
+            self.reset_data()
+
+        for o in other:
+            self.data.runs += o.data.runs
+            self.data.events += o.data.events
+            self.data.tracks += o.data.tracks
+            self.data.steps += o.data.steps
+            self.data.duration += o.data.duration
+            self.data.init += o.data.init
+
+            common_entries = set(self.data.track_types.keys()).intersection(
+                o.data.track_types.keys()
+            )
+            new_entries = set(o.data.track_types.keys()).difference(
+                self.data.track_types.keys()
+            )
+            for k in common_entries:
+                self.data.track_types[k] += o.data.track_types[k]
+            for k in new_entries:
+                self.data.track_types[k] = o.data.track_types[k]
+
+        if len(other) > 0:
+            self.data.start_time = min([o.data.start_time for o in other])
+            self.data.stop_time = max([o.data.stop_time for o in other])
+            self.data.sim_start_time = min([o.data.sim_start_time for o in other])
+            self.data.sim_stop_time = max([o.data.sim_stop_time for o in other])
+        return self
+
+    def merge_with(self, other):
+        merged = type(self)()
+        if self.data is not None:
+            merged.set_data(self.data)
+        return merged.inplace_merge_with(other)
+
+    def write(self, path, encoder="json", **kwargs):
+        with open(path, "w+") as f:
+            if encoder == "json":
+                dump_json(self.get_processed_output(), f, indent=4)
+            else:
+                f.write(self.__str__())
 
 
 # data items holding images
@@ -645,7 +777,7 @@ class DataItemContainer(DataContainer):
     def write(self, path, item, **kwargs):
         data_item = self.get_data_item_object(item)
         if data_item is not None:
-            data_item.write(path)
+            data_item.write(path, **kwargs)
         else:
             warning(f"Cannot write item {item} because it does not exist (=None).")
 
@@ -839,6 +971,29 @@ class QuotientMeanItkImage(QuotientItkImage):
 class SingleTimeCountSeries(DataItemContainer):
 
     _data_item_classes = (TimeCountSeriesDataItem,)
+
+
+class StatisticsItemContainer(DataItemContainer):
+
+    _data_item_classes = (StatisticsDataItem,)
+
+    def __getattr__(self, item):
+        if item not in ("data", "belongs_to", "__setstate__", "__getstate__"):
+            try:
+                return getattr(self.data[0].data, item)
+            except (AttributeError, IndexError):
+                pass
+        return super().__getattr__(item)
+
+    def __setattr__(self, item, value):
+        if item in ("data", "belongs_to"):
+            object.__setattr__(self, item, value)
+            return
+        if "data" in self.__dict__ and len(self.data) > 0 and self.data[0].data is not None:
+            if hasattr(self.data[0].data, item):
+                setattr(self.data[0].data, item, value)
+                return
+        object.__setattr__(self, item, value)
 
 
 def merge_data(list_of_data):

@@ -16,6 +16,7 @@ from .dataitems import (
     SingleItkImage,
     SingleItkImageWithVariance,
     SingleMeanItkImage,
+    StatisticsItemContainer,
     merge_data,
 )
 
@@ -968,6 +969,58 @@ class ActorOutputQuotientMeanImage(ActorOutputImage):
     data_container_class = QuotientMeanItkImage
 
 
+class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
+    """Structured statistics output with semantic merge rules per entry."""
+
+    _default_interface_class = UserInterfaceToActorOutputUsingDataItemContainer
+    data_container_class = StatisticsItemContainer
+
+    # hints for IDE
+    encoder: str
+
+    user_info_defaults = {
+        "encoder": (
+            "json",
+            {
+                "doc": "How should the output be encoded?",
+                "allowed_values": ("json", "legacy"),
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        self.default_suffix = "json"
+        super().__init__(*args, **kwargs)
+        # Preserve the historical behavior of the statistics actor: defining
+        # an output filename should imply persistence, but the mere existence
+        # of an automatic default filename should not force writing to disk.
+        self.set_write_to_disk(False)
+        self.set_active(True)
+
+    @property
+    def _stats_item(self):
+        if self.merged_data is None:
+            return None
+        return self.merged_data.get_data_item_object(0)
+
+    def resolve_and_validate_config(self):
+        if self.get_output_filename() not in ("", None, "auto"):
+            self.set_write_to_disk(True)
+
+    def get_processed_output(self):
+        if self._stats_item is None:
+            return {}
+        return self._stats_item.get_processed_output()
+
+    def __str__(self):
+        if self._stats_item is None:
+            return "No data found. "
+        return str(self._stats_item)
+
+    def write_data(self, which="all", item="all", **kwargs):
+        super().write_data(which=which, item=item, encoder=self.encoder, **kwargs)
+
+
 class ActorOutputRoot(ActorOutputBase):
     # hints for IDE
     output_filename: str
@@ -1066,4 +1119,5 @@ process_cls(ActorOutputSingleMeanImage)
 process_cls(ActorOutputSingleImageWithVariance)
 process_cls(ActorOutputQuotientImage)
 process_cls(ActorOutputQuotientMeanImage)
+process_cls(ActorOutputStatisticsActor)
 process_cls(ActorOutputRoot)
