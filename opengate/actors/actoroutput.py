@@ -1033,7 +1033,12 @@ class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
         return str(self._stats_item)
 
     def write_data(self, which="all", item="all", **kwargs):
-        super().write_data(which=which, item=item, encoder=self.encoder, **kwargs)
+        # The base class implements recursive dispatch for ``which='all'`` and
+        # ``which='all_runs'`` by calling ``self.write_data(...)`` again. Keep
+        # the statistics-specific encoder stable across that recursion without
+        # injecting it twice.
+        kwargs.setdefault("encoder", self.encoder)
+        super().write_data(which=which, item=item, **kwargs)
 
 
 class ActorOutputRoot(ActorOutputBase):
