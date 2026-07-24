@@ -49,6 +49,23 @@ from ..image import (
     add_constant_to_itk_image,
 )
 
+
+class DeprecationError(RuntimeError):
+    pass
+
+
+def _raise_pre_interface_convenience_deprecation(container_cls_name, shortcut_name):
+    raise DeprecationError(
+        f"The convenience shortcut '{shortcut_name}' on container class "
+        f"'{container_cls_name}' is temporarily disabled on purpose. "
+        f"Origin: this shortcut stems from the pre-interface actor-output era, "
+        f"when containers had to provide both structural storage and much of the "
+        f"user-facing convenience API. With actor interfaces now in place, these "
+        f"shortcuts are being audited and may move upward in the architecture. "
+        f"This exception is an intentional probe to identify remaining call sites."
+    )
+
+
 class DataItem:
     """This is the base class for all data items.
     It stores the actual data, e.g. an array, an image, etc. in an attribute 'data'.
@@ -367,6 +384,19 @@ class StatisticsDataItem(DataItem):
         self.data.init = 0
         self.data.track_types = {}
         self.data.nb_threads = 1
+
+    def __getattr__(self, item):
+        # StatisticsDataItem is the semantic access layer for statistics:
+        # some quantities are stored directly in the Box payload (events,
+        # tracks, track_types, ...), while others are derived as properties on
+        # this class (pps, tps, sps, ...). Allow callers to access the raw
+        # payload entries transparently from the data item itself.
+        if item not in ("data", "__setstate__", "__getstate__"):
+            try:
+                return self.data[item]
+            except (TypeError, KeyError):
+                pass
+        raise AttributeError(f"No such attribute '{item}'")
 
     @property
     def pps(self):
@@ -771,7 +801,7 @@ class DataItemContainer(DataContainer):
         # processed_data.extend([None] * (len(self._data_item_classes) - len(data)))
         self.data = processed_data
 
-    def get_data_item_object(self, item):
+    def get_data_item_object(self, item=0):
         identifier = self.normalize_item_identifier(item)
         if isinstance(identifier, int):
             try:
@@ -894,45 +924,9 @@ class DataItemContainer(DataContainer):
             warning(f"Cannot write item {item} because it does not exist (=None).")
 
     def __getattr__(self, item):
-        # FIXME: this generic proxy hides too much of the public API surface of
-        # containers. Prefer explicit container-level wrapper properties and
-        # methods for intentional forwarding, and keep this fallback only for
-        # compatibility until call sites have been migrated.
-        # check if any of the data items has this attribute
-        # exclude 'data' to avoid infinite recursion
-        # exclude '__setstate__' and '__getstate__' to avoid interference with pickling
-        if item not in ("data", "__setstate__", "__getstate__"):
-            methods_in_data = []
-            attributes_in_data = []
-            for d in self.data:
-                if d is not None and hasattr(d, item):
-                    if callable(getattr(d, item)):
-                        methods_in_data.append(getattr(d, item))
-                    else:
-                        attributes_in_data.append(getattr(d, item))
-            if len(attributes_in_data) > 0 and len(methods_in_data) > 0:
-                fatal(
-                    f"Cannot hand down request for attribute to data items "
-                    f"because some contain it as a method and other as a property. "
-                )
-            elif len(attributes_in_data) > 0:
-                if len(attributes_in_data) == 1:
-                    return attributes_in_data[0]
-                else:
-                    return attributes_in_data
-            elif len(methods_in_data) > 0:
-
-                def hand_down(*args, **kwargs):
-                    return_values = []
-                    for m in methods_in_data:
-                        return_values.append(m(*args, **kwargs))
-                    return tuple(return_values)
-
-                return hand_down
-            else:
-                raise AttributeError(f"No such attribute '{item}'")
-        else:
+        if item in ("data", "__setstate__", "__getstate__"):
             raise AttributeError(f"No such attribute '{item}'")
+        _raise_pre_interface_convenience_deprecation(type(self).__name__, item)
 
 
 class SingleArray(DataItemContainer):
@@ -970,26 +964,32 @@ class ImageDataItemContainerMixin:
 
     @property
     def image(self):
-        return self._primary_image_data_item.image
+        _raise_pre_interface_convenience_deprecation(type(self).__name__, "image")
 
     @property
     def image_array(self):
-        return self._primary_image_data_item.image_array
+        _raise_pre_interface_convenience_deprecation(
+            type(self).__name__, "image_array"
+        )
 
     def get_image_properties(self):
-        return tuple(d.get_image_properties() for d in self._image_data_items)
+        _raise_pre_interface_convenience_deprecation(
+            type(self).__name__, "get_image_properties"
+        )
 
     def set_image_properties(self, **properties):
         for image_data_item in self._image_data_items:
             image_data_item.set_image_properties(**properties)
 
     def copy_image_properties(self, other_image):
-        for image_data_item in self._image_data_items:
-            image_data_item.copy_image_properties(other_image)
+        _raise_pre_interface_convenience_deprecation(
+            type(self).__name__, "copy_image_properties"
+        )
 
     def set_array_to_image(self, arr):
-        for image_data_item in self._image_data_items:
-            image_data_item.set_array_to_image(arr)
+        _raise_pre_interface_convenience_deprecation(
+            type(self).__name__, "set_array_to_image"
+        )
 
     def create_empty_image(
         self,
@@ -1155,22 +1155,14 @@ class StatisticsItemContainer(DataItemContainer):
     _data_item_classes = (StatisticsDataItem,)
     primary_item_identifiers = (0,)
 
-    def __getattr__(self, item):
-        if item not in ("data", "belongs_to", "__setstate__", "__getstate__"):
-            try:
-                return getattr(self.data[0].data, item)
-            except (AttributeError, IndexError):
-                pass
-        return super().__getattr__(item)
-
     def __setattr__(self, item, value):
         if item in ("data", "belongs_to"):
             object.__setattr__(self, item, value)
             return
-        if "data" in self.__dict__ and len(self.data) > 0 and self.data[0].data is not None:
-            if hasattr(self.data[0].data, item):
-                setattr(self.data[0].data, item, value)
-                return
+        if item not in ("__setstate__", "__getstate__"):
+            _raise_pre_interface_convenience_deprecation(
+                type(self).__name__, f"setattr({item})"
+            )
         object.__setattr__(self, item, value)
 
 
