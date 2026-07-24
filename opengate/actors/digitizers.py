@@ -1316,8 +1316,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             origin = self.start_output_origin
         origin[2] = 0
         spacing[2] = 1
-        self.user_output.counts.merged_data.SetSpacing(list(spacing))
-        self.user_output.counts.merged_data.SetOrigin(list(origin))
+        self.user_output.counts.merged_data.image.SetSpacing(list(spacing))
+        self.user_output.counts.merged_data.image.SetOrigin(list(origin))
 
         # remove the image for run 0 as the result is in merged_data
         self.user_output.counts.data_per_run.pop(0)
@@ -1329,8 +1329,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             self.user_output.squared_counts.store_data(
                 "merged", get_py_image_from_cpp_image(self.fSquaredImage)
             )
-            self.user_output.squared_counts.merged_data.SetSpacing(list(spacing))
-            self.user_output.squared_counts.merged_data.SetOrigin(list(origin))
+            self.user_output.squared_counts.merged_data.image.SetSpacing(list(spacing))
+            self.user_output.squared_counts.merged_data.image.SetOrigin(list(origin))
             self.user_output.squared_counts.data_per_run.pop(0)
             self.user_output.squared_counts.write_data_if_requested(which="merged")
 

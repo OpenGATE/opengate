@@ -85,12 +85,14 @@ class DataItem:
         # exclude '__setstate__' and '__getstate__' to avoid interference with pickling
         if item not in ("data", "__setstate__", "__getstate__"):
             if hasattr(self.data, item):
-                if callable(getattr(self.data, item)):
+                attribute = getattr(self.data, item)
+                if callable(attribute):
 
                     def hand_down(*args, **kwargs):
                         getattr(self.data, item)(*args, **kwargs)
 
                     return hand_down
+                return attribute
             else:
                 raise AttributeError(f"No such attribute '{item}'")
         else:
@@ -782,6 +784,10 @@ class DataItemContainer(DataContainer):
             warning(f"Cannot write item {item} because it does not exist (=None).")
 
     def __getattr__(self, item):
+        # FIXME: this generic proxy hides too much of the public API surface of
+        # containers. Prefer explicit container-level wrapper properties and
+        # methods for intentional forwarding, and keep this fallback only for
+        # compatibility until call sites have been migrated.
         # check if any of the data items has this attribute
         # exclude 'data' to avoid infinite recursion
         # exclude '__setstate__' and '__getstate__' to avoid interference with pickling
@@ -837,21 +843,65 @@ class DoubleArray(DataItemContainer):
         super().__init__(*args, **kwargs)
 
 
-class SingleItkImage(DataItemContainer):
+class ImageDataItemContainerMixin:
 
-    _data_item_classes = (ItkImageDataItem,)
+    @property
+    def _primary_image_data_item(self):
+        try:
+            return self.data[0]
+        except (AttributeError, IndexError):
+            fatal("No primary image data item found in this container.")
 
     @property
     def image(self):
-        return self.data[0].image
+        return self._primary_image_data_item.image
+
+    @property
+    def image_array(self):
+        return self._primary_image_data_item.image_array
+
+    def get_image_properties(self):
+        return self._primary_image_data_item.get_image_properties()
+
+    def set_image_properties(self, **properties):
+        self._primary_image_data_item.set_image_properties(**properties)
+
+    def copy_image_properties(self, other_image):
+        self._primary_image_data_item.copy_image_properties(other_image)
+
+    def set_array_to_image(self, arr):
+        self._primary_image_data_item.set_array_to_image(arr)
+
+    def create_empty_image(
+        self,
+        size,
+        spacing,
+        origin=None,
+        pixel_type="float",
+        allocate=True,
+        fill_value=0,
+    ):
+        self._primary_image_data_item.create_empty_image(
+            size,
+            spacing,
+            origin=origin,
+            pixel_type=pixel_type,
+            allocate=allocate,
+            fill_value=fill_value,
+        )
 
 
-class SingleMeanItkImage(DataItemContainer):
+class SingleItkImage(ImageDataItemContainerMixin, DataItemContainer):
+
+    _data_item_classes = (ItkImageDataItem,)
+
+
+class SingleMeanItkImage(ImageDataItemContainerMixin, DataItemContainer):
 
     _data_item_classes = (MeanItkImageDataItem,)
 
 
-class SingleItkImageWithVariance(DataItemContainer):
+class SingleItkImageWithVariance(ImageDataItemContainerMixin, DataItemContainer):
 
     _data_item_classes = (
         ItkImageDataItem,
@@ -933,7 +983,7 @@ class SingleItkImageWithVariance(DataItemContainer):
         return self.get_variance_or_uncertainty("uncertainty")
 
 
-class QuotientItkImage(DataItemContainer):
+class QuotientItkImage(ImageDataItemContainerMixin, DataItemContainer):
 
     _data_item_classes = (
         ItkImageDataItem,
