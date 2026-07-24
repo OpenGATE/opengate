@@ -571,12 +571,37 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     def from_dictionary(self, d):
         super().from_dictionary(d)
-        self.data_item_config = d["data_item_config"]
+        self.data_item_config = self._restore_data_item_config_from_dictionary(
+            d["data_item_config"]
+        )
 
     def _fatal_unknown_item(self, item):
         fatal(
             f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
         )
+
+    def _restore_data_item_config_from_dictionary(self, data_item_config):
+        """Restore the canonical key types after JSON deserialization.
+
+        JSON object keys are always strings, but internally some data item
+        identifiers are integers (e.g. 0, 1) while others are named aliases
+        such as 'variance' or 'uncertainty'. Use the class defaults as the
+        authoritative source for which key types should be restored.
+        """
+
+        if self._default_data_item_config is None:
+            return data_item_config
+
+        restored_config = {}
+        default_keys = list(self._default_data_item_config.keys())
+        for key, value in data_item_config.items():
+            restored_key = key
+            for default_key in default_keys:
+                if str(default_key) == key:
+                    restored_key = default_key
+                    break
+            restored_config[restored_key] = value
+        return restored_config
 
     # override methods:
     def set_write_to_disk(self, value, item=0):
@@ -637,7 +662,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         items = self._collect_item_identifiers(item)
         if len(items) > 1:
             fatal("You can set the item suffix only for one item at a time. ")
-        self.data_item_config[item]["suffix"] = value
+        self.data_item_config[items[0]]["suffix"] = value
 
     def _generate_auto_output_filename(self, item=0):
         # try to get a suffix from the data item config dictionary

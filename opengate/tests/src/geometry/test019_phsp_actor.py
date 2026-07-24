@@ -4,79 +4,20 @@
 import opengate as gate
 from opengate.tests import utility
 import uproot
+from opengate.tests.src.geometry.test019_phsp_actor_helpers import (
+    build_phsp_actor_simulation,
+)
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test019")
+    sec = gate.g4_units.s
 
-    # create the simulation
-    sim = gate.Simulation()
-
-    # main options
-    sim.output_dir = paths.output
-    sim.g4_verbose = False
-    sim.visu = False
-    sim.visu_type = "vrml"
-    sim.check_volumes_overlap = False
-    sim.number_of_threads = 1
-    sim.random_seed = 321654
-    sim.output_dir = paths.output
-
-    # units
-    m = gate.g4_units.m
-    mm = gate.g4_units.mm
-    nm = gate.g4_units.nm
-    Bq = gate.g4_units.Bq
-    MeV = gate.g4_units.MeV
-
-    #  adapt world size
-    sim.world.size = [1 * m, 1 * m, 1 * m]
-    sim.world.material = "G4_AIR"
-
-    # virtual plane for phase space
-    plane = sim.add_volume("Tubs", "phase_space_plane")
-    plane.mother = sim.world
-    plane.material = "G4_AIR"
-    plane.rmin = 0
-    plane.rmax = 700 * mm
-    plane.dz = 1 * nm  # half height
-    plane.translation = [0, 0, -100 * mm]
-    plane.color = [1, 0, 0, 1]  # red
-
-    # e- source
-    source = sim.add_source("GenericSource", "Default")
-    source.particle = "gamma"
-    source.energy.type = "gauss"
-    source.energy.mono = 1 * MeV
-    source.energy.sigma_gauss = 0.5 * MeV
-    source.position.type = "disc"
-    source.position.radius = 20 * mm
-    source.position.translation = [0, 0, 0 * mm]
-    source.direction.type = "momentum"
-    source.n = 66
-
-    # add stat actor
-    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats_actor.track_types_flag = True
-
-    # PhaseSpace Actor
-    ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta2.attached_to = plane.name
-    ta2.attributes = [
-        "KineticEnergy",
-        "PostPosition",
-        "PrePosition",
-        "PrePositionLocal",
-        "ParticleName",
-        "PreDirection",
-        "PreDirectionLocal",
-        "PostDirection",
-        "TimeFromBeginOfEvent",
-        "GlobalTime",
-        "LocalTime",
-        "EventPosition",
-        "PDGCode",
-    ]
-    ta2.debug = False
+    sim, source, stats_actor, ta2 = build_phsp_actor_simulation(
+        paths.output,
+        [(0.0 * sec, 1.0 * sec)],
+        66,
+        random_seed=321654,
+    )
 
     # run the simulation once with no particle in the phsp
     source.direction.momentum = [0, 0, 1]
