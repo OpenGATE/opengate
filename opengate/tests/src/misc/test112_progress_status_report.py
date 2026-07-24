@@ -105,22 +105,42 @@ def main():
             events_prog = call_data.get("events_progress", 0.0)
 
             step_ok = step_ok and (current_ev >= prev_events)
-            step_ok = step_ok and (0 <= current_ev < expected_N)
+            step_ok = step_ok and (current_ev >= 0)
 
-            expected_prog = round((current_ev / float(expected_N)) * 100.0, 2)
+            # events_expected is an estimate when activity-driven sources are
+            # present. The actual generated event count is stochastic, so an
+            # intermediate callback may already have reached or slightly
+            # exceeded expected_N before the explicit final "completed"
+            # callback is emitted. The progress hook also clamps progress to
+            # 100% in that case. Therefore the test must compare against the
+            # same clamped ratio rather than assume current_ev < expected_N for
+            # every non-completed callback.
+            raw_expected_prog = round((current_ev / float(expected_N)) * 100.0, 2)
+            expected_prog = min(100.0, raw_expected_prog)
             step_ok = step_ok and (abs(events_prog - expected_prog) < 0.1)
             prev_events = current_ev
 
             utility.print_test(
                 step_ok,
-                f"step {step_idx} elapsed={elapsed}s events_total={current_ev} ({events_prog}%)",
+                f"step {step_idx} elapsed={elapsed}s events_up_to_now={current_ev} "
+                f"(expected_total_events={expected_N}, progress={events_prog}%)",
             )
             is_ok = is_ok and step_ok
 
-        # Verify the final completed call generated all expected events
+        # The completed callback should remain close to the expected event
+        # count, but some numerical flexibility is needed because the
+        # activity-based source generates a stochastic number of primaries.
+        events_total_from_hook = custom_hook_calls[-1].get("events_total")
+        rel_diff = abs(events_total_from_hook - expected_N) / events_total_from_hook
+        final_ok = rel_diff < 0.05
+        utility.print_test(
+            final_ok,
+            f"final events count={events_total_from_hook} "
+            f"(expected_total_events={expected_N}, rel. difference={rel_diff * 100:04f} %)",
+        )
         is_ok = (
             is_ok
-            and abs(custom_hook_calls[-1].get("events_total") - expected_N) < 10000
+            and final_ok
         )
 
     utility.test_ok(is_ok)
