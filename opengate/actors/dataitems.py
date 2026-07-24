@@ -1009,9 +1009,28 @@ class DoubleArray(DataItemContainer):
 
 
 class ImageDataItemContainerMixin:
+    """This class should be mixed in via inheritance when
+    implementing specific image item container class. 
+    
+    It provides convenience shortcuts to the image-specific functionality of the data items
+    handled by the container. 
+    
+    The pattern is: 
+    - getters and getter properties shortcut to item 0
+    - setting operations are propagated to all items. 
+    """
+
     @property
     def _image_data_items(self):
         return [d for d in self.data if d is not None]
+
+    def _get_image_data_items(self, item="all"):
+        if item == "all":
+            return self._image_data_items
+        data_item = self.get_data_item_object(item)
+        if data_item is None:
+            fatal(f"No image data item found for item {item}.")
+        return [data_item]
 
     @property
     def _primary_image_data_item(self):
@@ -1022,32 +1041,26 @@ class ImageDataItemContainerMixin:
 
     @property
     def image(self):
-        _raise_pre_interface_convenience_deprecation(type(self).__name__, "image")
+        return self._primary_image_data_item.image
 
     @property
     def image_array(self):
-        _raise_pre_interface_convenience_deprecation(
-            type(self).__name__, "image_array"
-        )
+        return self._primary_image_data_item.image_array
 
-    def get_image_properties(self):
-        _raise_pre_interface_convenience_deprecation(
-            type(self).__name__, "get_image_properties"
-        )
+    def get_image_properties(self, item=0):
+        return self.get_data_item_object(item).get_image_properties()
 
-    def set_image_properties(self, **properties):
-        for image_data_item in self._image_data_items:
+    def set_image_properties(self, item="all", **properties):
+        for image_data_item in self._get_image_data_items(item=item):
             image_data_item.set_image_properties(**properties)
 
-    def copy_image_properties(self, other_image):
-        _raise_pre_interface_convenience_deprecation(
-            type(self).__name__, "copy_image_properties"
-        )
+    def copy_image_properties(self, other_image, item="all"):
+        for image_data_item in self._get_image_data_items(item=item):
+            image_data_item.copy_image_properties(other_image)
 
-    def set_array_to_image(self, arr):
-        _raise_pre_interface_convenience_deprecation(
-            type(self).__name__, "set_array_to_image"
-        )
+    def set_array_to_image(self, arr, item="all"):
+        for image_data_item in self._get_image_data_items(item=item):
+            image_data_item.set_array_to_image(arr)
 
     def create_empty_image(
         self,
@@ -1057,12 +1070,11 @@ class ImageDataItemContainerMixin:
         pixel_type="float",
         allocate=True,
         fill_value=0,
+        item="all",
     ):
-        # Multi-image containers such as value+squared-value outputs need all
-        # persisted image items to be allocated and kept geometrically aligned.
-        # The old generic forwarding did this implicitly for every image-backed
-        # data item; keep that behavior here explicitly.
-        for image_data_item in self._image_data_items:
+        # Setter-style operations on image containers default to item="all" so
+        # multi-image outputs keep their persisted items structurally aligned.
+        for image_data_item in self._get_image_data_items(item=item):
             image_data_item.create_empty_image(
                 size,
                 spacing,
