@@ -321,6 +321,10 @@ class ActorOutputBase(GateObject):
         return cls._default_interface_class
 
     @classmethod
+    def is_container_output(cls):
+        return False
+
+    @classmethod
     def get_user_info_default_values_interface(cls, **kwargs):
         # FIXME: not sure yet how to handle keep_data_in_memory
         #        because it is not a per-interface but per actor output parameter
@@ -506,6 +510,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     data_container_class = None
     _default_interface_class = UserInterfaceToActorOutputUsingDataItemContainer
     _default_data_item_config = None
+
+    @classmethod
+    def is_container_output(cls):
+        return True
 
     @classmethod
     def get_user_info_default_values_interface(cls, item=0, **kwargs):

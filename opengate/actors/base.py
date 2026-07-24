@@ -650,21 +650,29 @@ class ActorBase(GateObject):
                 )
                 # use the newly created interface to set the defaults
                 interface = self.interfaces_to_user_output[interface_name]
+                is_container_output = self.user_output[
+                    output_name
+                ].is_container_output()
                 for p in default_params:
-                    item_config_overrides = output_config.get("item_config_overrides", {})
-                    item_identifier = interface_config.get("item", 0)
-                    normalized_item_identifier = self.user_output[
-                        output_name
-                    ]._normalize_item_identifier(item_identifier)
-                    item_override = item_config_overrides.get(
-                        normalized_item_identifier,
-                        item_config_overrides.get(str(normalized_item_identifier), {}),
-                    )
-                    # Per-output item_config_overrides are the authoritative
-                    # place for semantic per-item defaults such as suffixes.
-                    # Do not let interface defaults overwrite them.
-                    if p in item_override:
-                        continue
+                    if is_container_output:
+                        item_config_overrides = output_config.get(
+                            "item_config_overrides", {}
+                        )
+                        item_identifier = interface_config.get("item", 0)
+                        normalized_item_identifier = self.user_output[
+                            output_name
+                        ]._normalize_item_identifier(item_identifier)
+                        item_override = item_config_overrides.get(
+                            normalized_item_identifier,
+                            item_config_overrides.get(
+                                str(normalized_item_identifier), {}
+                            ),
+                        )
+                        # Per-output item_config_overrides are the authoritative
+                        # place for semantic per-item defaults such as suffixes.
+                        # Do not let interface defaults overwrite them.
+                        if p in item_override:
+                            continue
                     v = interface_config[p]
                     setattr(interface, p, v)
 
@@ -683,6 +691,9 @@ class ActorBase(GateObject):
             ]
         ):
             raise GateImplementationError("Only one ROOT output per actor supported. ")
+
+        if not actor_output_class.is_container_output():
+            kwargs.pop("item_config_overrides", None)
 
         self.user_output[name] = actor_output_class(
             name=name,
