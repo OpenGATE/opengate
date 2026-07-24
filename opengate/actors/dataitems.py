@@ -1,3 +1,31 @@
+"""Data items and data containers used by actor outputs.
+
+This module defines the Python-side runtime objects that actor outputs use to
+hold, process, merge, and sometimes write scored data.
+
+Core concepts:
+
+- ``DataItem`` wraps one actual payload object such as an ITK image, a numpy
+  array, or a Box-like dictionary. A DataItem is meant to feel as much as
+  possible like that payload while adding GATE-specific behavior such as merge
+  semantics, metadata handling, writing, and derived quantities.
+
+- ``DataItemContainer`` groups one or more DataItems into the structural unit
+  managed by an actor output. Containers are used when one logical actor output
+  is backed by multiple items, for example a value image plus a squared-value
+  image, or a value image plus derived quantities such as uncertainty.
+
+- ``ActorOutputUsingDataItemContainer`` owns concrete container instances for
+  merged data and per-run data. The actor output is responsible for item-level
+  configuration such as activation, output filenames, and persistence, while
+  DataItems and DataItemContainers provide the payload behavior and structural
+  organization underneath.
+
+In short: DataItems model enhanced payload objects, DataItemContainers model
+structured collections of such items, and actor outputs coordinate their use in
+the simulation workflow.
+"""
+
 import itk
 import numpy as np
 import json
@@ -20,7 +48,6 @@ from ..image import (
     itk_image_from_array,
     add_constant_to_itk_image,
 )
-
 
 class DataItem:
     """This is the base class for all data items.
@@ -80,9 +107,19 @@ class DataItem:
         return NotImplemented
 
     def __getattr__(self, item):
-        # check if any of the data items has this attribute
-        # exclude 'data' to avoid infinite recursion
-        # exclude '__setstate__' and '__getstate__' to avoid interference with pickling
+        # Design rationale: a DataItem should feel as much as possible like the
+        # payload it wraps, while adding GATE-specific behavior such as merge
+        # semantics, metadata, writing, or derived quantities. Hand down
+        # unknown attributes and methods to the wrapped payload so callers can
+        # use the DataItem as an enhanced image / array / Box instead of
+        # constantly unwrapping ``.data``.
+        #
+        # This transparency is intentional at the DataItem layer. It is more
+        # problematic at the DataItemContainer layer, where multiplicity and
+        # item identity should remain explicit.
+        #
+        # Exclude 'data' to avoid infinite recursion, and exclude
+        # '__setstate__' / '__getstate__' to avoid interference with pickling.
         if item not in ("data", "__setstate__", "__getstate__"):
             if hasattr(self.data, item):
                 attribute = getattr(self.data, item)
