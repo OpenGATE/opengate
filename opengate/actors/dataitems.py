@@ -722,6 +722,22 @@ class DataItemContainer(DataContainer):
             f"{cls.__name__}. Known identifiers are {cls.get_item_identifiers()}."
         )
 
+    def iter_primary_data_items(self):
+        for item_identifier in self.get_primary_item_identifiers():
+            yield item_identifier, self.get_data_item_object(item_identifier)
+
+    def iter_primary_data_item_objects(self):
+        for _, data_item in self.iter_primary_data_items():
+            yield data_item
+
+    def iter_all_data_items(self):
+        for item_identifier in self.get_item_identifiers():
+            yield item_identifier, self.get_data_item_object(item_identifier)
+
+    def iter_all_data_item_objects(self):
+        for _, data_item in self.iter_all_data_items():
+            yield data_item
+
     @classmethod
     def build_default_data_item_config(cls):
         """Build neutral actor-output config entries for all items in this container."""
@@ -782,6 +798,10 @@ class DataItemContainer(DataContainer):
         # data might be already contained in the correct container class,
         # or intended to be the input to the container class
         if item is not None:
+            if isinstance(item, int):
+                item = [item]
+            else:
+                item = list(item)
             if len(data) != len(item):
                 fatal(
                     f"Inconsistent input to set_data method: "
@@ -790,15 +810,54 @@ class DataItemContainer(DataContainer):
                 )
         else:
             item = [i for i in range(len(data))]
-        processed_data = []
+
+        if len(item) > 0:
+            current_length = len(self.data)
+            if any(not isinstance(i, int) for i in item):
+                fatal(
+                    f"DataItemContainer.set_data() only supports integer indices "
+                    f"for explicit item injection, but received items {item}. "
+                )
+            if item != sorted(item):
+                fatal(
+                    f"DataItemContainer.set_data() only supports ordered item "
+                    f"injection, but received items {item}. "
+                )
+            if len(set(item)) != len(item):
+                fatal(
+                    f"DataItemContainer.set_data() received duplicate item "
+                    f"indices: {item}. "
+                )
+            if item[0] > current_length:
+                fatal(
+                    f"DataItemContainer.set_data() does not support sparse "
+                    f"positional injection with gaps. "
+                    f"Current container length is {current_length}, but the "
+                    f"smallest requested item index is {item[0]}. "
+                )
+            for previous_item, current_item in zip(item, item[1:]):
+                if current_item != previous_item + 1:
+                    fatal(
+                        f"DataItemContainer.set_data() only supports ordered "
+                        f"consecutive positional injection, but received items "
+                        f"{item}. "
+                    )
+
+        processed_data = list(self.data)
         for i, d in zip(item, data):
             c = self._data_item_classes[i]
+            if i > len(processed_data):
+                fatal(
+                    f"DataItemContainer.set_data() only supports appending items "
+                    f"in consecutive positional order. Current processed length "
+                    f"is {len(processed_data)}, but item index {i} was requested. "
+                )
+            if i == len(processed_data):
+                processed_data.append(None)
             if isinstance(d, c):
-                processed_data.append(d)
+                processed_data[i] = d
             else:
-                processed_data.append(c(data=d))
-        # Fill up the data list with None in case not all data were passed
-        # processed_data.extend([None] * (len(self._data_item_classes) - len(data)))
+                processed_data[i] = c(data=d)
         self.data = processed_data
 
     def get_data_item_object(self, item=0):
@@ -950,7 +1009,6 @@ class DoubleArray(DataItemContainer):
 
 
 class ImageDataItemContainerMixin:
-
     @property
     def _image_data_items(self):
         return [d for d in self.data if d is not None]
