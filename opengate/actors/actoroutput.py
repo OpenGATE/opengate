@@ -447,6 +447,10 @@ class ActorOutputBase(GateObject):
     def get_output_path_as_string(self, **kwargs):
         return ensure_filename_is_str(self.get_output_path(**kwargs))
 
+    def reset_data(self):
+        self.merged_data = None
+        self.data_per_run = {}
+
     def close(self):
         if self.keep_data_in_memory is False:
             self.data_per_run = {}
@@ -470,6 +474,9 @@ class ActorOutputBase(GateObject):
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
         )
+
+    def merge_data_from_actor_output(self, *actor_output, **kwargs):
+        raise NotImplementedError("This is the base class. ")
 
 
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
@@ -727,6 +734,19 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             return container.get_data(item=item)
 
+    def reset_data(self):
+        # Delegate resets to data containers where available so actor outputs
+        # can clear their in-memory state symmetrically before reloading or
+        # after importing from other actors.
+        try:
+            if self.merged_data is not None:
+                self.merged_data.reset_data()
+            for v in self.data_per_run.values():
+                if v is not None:
+                    v.reset_data()
+        except (NotImplementedError, AttributeError):
+            super().reset_data()
+
     def store_data(self, which, *data):
         """data can be either the user data to be wrapped into a DataContainer class or
         an already wrapped DataContainer class.
@@ -840,6 +860,38 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 f"and/or write_data() method. "
                 f"A developer needs to fix this. "
             )
+
+    def merge_data_from_actor_output(
+        self, *actor_output, discard_existing_data=True, **kwargs
+    ):
+        """Merge compatible actor outputs into this output.
+
+        This is the in-memory merge contract used later by split-job merging:
+        job orchestration should coordinate actor outputs, but the merge
+        semantics themselves stay local to each ActorOutput class.
+        """
+
+        run_indices_to_import = set()
+        for ao in actor_output:
+            run_indices_to_import.update(ao.data_per_run.keys())
+
+        for run_index in run_indices_to_import:
+            data_to_import = [
+                ao.data_per_run[run_index]
+                for ao in actor_output
+                if run_index in ao.data_per_run
+            ]
+            if discard_existing_data is False and run_index in self.data_per_run:
+                data_to_import.append(self.data_per_run[run_index])
+            self.data_per_run[run_index] = merge_data(data_to_import)
+
+        merged_data_to_import = [
+            ao.merged_data for ao in actor_output if ao.merged_data is not None
+        ]
+        if discard_existing_data is False and self.merged_data is not None:
+            merged_data_to_import.append(self.merged_data)
+        if len(merged_data_to_import) > 0:
+            self.merged_data = merge_data(merged_data_to_import)
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):

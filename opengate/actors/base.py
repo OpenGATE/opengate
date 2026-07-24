@@ -693,6 +693,31 @@ class ActorBase(GateObject):
         for v in self.interfaces_to_user_output.values():
             v.belongs_to_actor = self
 
+    def import_user_output_from_actor(self, *actor, **kwargs):
+        """Import or merge user output from compatible actor instances.
+
+        This is the actor-level entry point we can later reuse for split-job
+        merging once child simulations are rehydrated from disk.
+        """
+
+        if not all([self.type_name == a.type_name for a in actor]):
+            fatal("An actor can only import user output from the same type of actor.")
+
+        if len(actor) == 1:
+            self.recover_user_output(actor[0])
+            return
+
+        for output_name in self.user_output:
+            try:
+                self.user_output[output_name].merge_data_from_actor_output(
+                    *[a.user_output[output_name] for a in actor], **kwargs
+                )
+            except NotImplementedError:
+                self.warn_user(
+                    f"User output {output_name} in {self.type_name} cannot be imported "
+                    "because merge support is not implemented for this output type yet."
+                )
+
     def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)
         self.user_output[output_name].store_data(run_index, *data)
