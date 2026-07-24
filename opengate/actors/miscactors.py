@@ -75,6 +75,19 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
 
+    def EndOfRunActionMasterThread(self, run_index):
+        g4.GateSimulationStatisticsActor.EndOfRunActionMasterThread(
+            self, run_index
+        )
+        data = dict(self.GetCountsCurrentRun())
+        if self.simulation is not None:
+            data["run_start"] = self.simulation.run_timing_intervals[run_index][0]
+            data["run_stop"] = self.simulation.run_timing_intervals[run_index][1]
+            data["nb_threads"] = self.simulation.number_of_threads
+        self.user_output.stats.store_data(run_index, data)
+        self.user_output.stats.write_data_if_requested(which=run_index)
+        return 0
+
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
         data = dict(self.GetCounts())
@@ -100,7 +113,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         data["sim_stop_time"] = self.simulation.run_timing_intervals[-1][1]
         data["nb_threads"] = self.simulation.number_of_threads
         self.user_output.stats.store_data("merged", data)
-        self.user_output.stats.write_data_if_requested()
+        self.user_output.stats.write_data_if_requested(which="merged")
 
 
 class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
