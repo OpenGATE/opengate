@@ -583,8 +583,21 @@ class DataItemContainer(DataContainer):
     # Derived classes must specify this at the class level
     _data_item_classes = ()
 
-    # let the class know which properties should be treated as data items
-    __extra_data_items__ = ()
+    # Primary item identifiers correspond to persisted data items held in
+    # ``self.data``. Derived item identifiers refer to computed views such as
+    # variance or quotient that are exposed as properties on the container.
+    #
+    # Derived classes should define these explicitly so the public item surface
+    # is visible at the container level instead of being inferred implicitly.
+    #
+    # Contract:
+    # - set ``primary_item_identifiers`` to a non-empty tuple/list for concrete
+    #   containers with persisted items
+    # - or explicitly set it to ``None`` when a container intentionally exposes
+    #   no primary items
+    # Inherited values from a base container are valid and intentional.
+    primary_item_identifiers = None
+    derived_item_identifiers = ()
 
     def __init__(self, *args, data=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -601,10 +614,46 @@ class DataItemContainer(DataContainer):
         return obj
 
     @classmethod
-    def __get_data_item_names__(cls):
-        data_item_names = [i for i in range(len(cls._data_item_classes))]
-        data_item_names.extend(cls.__extra_data_items__)
-        return data_item_names
+    def get_primary_item_identifiers(cls):
+        if cls.primary_item_identifiers is None:
+            return []
+        if len(cls.primary_item_identifiers) == 0:
+            raise GateImplementationError(
+                f"Data item container class {cls.__name__} must define "
+                f"'primary_item_identifiers' explicitly as a non-empty "
+                f"sequence or None."
+            )
+        return list(cls.primary_item_identifiers)
+
+    @classmethod
+    def get_item_identifiers(cls):
+        return cls.get_primary_item_identifiers() + list(cls.derived_item_identifiers)
+
+    @classmethod
+    def build_default_item_settings(cls):
+        """Build default actor-output settings for every item handled by the container."""
+
+        default_item_settings = {}
+        for item_identifier in cls.get_item_identifiers():
+            if isinstance(item_identifier, int):
+                suffix = f"item{item_identifier}"
+            else:
+                suffix = item_identifier
+            default_item_settings[item_identifier] = {
+                "output_filename": "auto",
+                "write_to_disk": True,
+                "active": False,
+                "suffix": suffix,
+            }
+
+        # Single-output containers are the common case. Keep their filenames
+        # clean and make the only item active by default.
+        if len(default_item_settings) == 1:
+            only_item_settings = next(iter(default_item_settings.values()))
+            only_item_settings["suffix"] = None
+            only_item_settings["active"] = True
+
+        return default_item_settings
 
     # the actual write config needs to be fetched from the actor output instance
     # which handles this data item container
@@ -828,6 +877,7 @@ class DataItemContainer(DataContainer):
 class SingleArray(DataItemContainer):
 
     _data_item_classes = (ArrayDataItem,)
+    primary_item_identifiers = (0,)
 
     def __init__(self, *args, **kwargs):
         # specify the data item classes
@@ -837,6 +887,7 @@ class SingleArray(DataItemContainer):
 class DoubleArray(DataItemContainer):
 
     _data_item_classes = (ArrayDataItem, ArrayDataItem)
+    primary_item_identifiers = (0, 1)
 
     def __init__(self, *args, **kwargs):
         # specify the data item classes
@@ -894,11 +945,13 @@ class ImageDataItemContainerMixin:
 class SingleItkImage(ImageDataItemContainerMixin, DataItemContainer):
 
     _data_item_classes = (ItkImageDataItem,)
+    primary_item_identifiers = (0,)
 
 
 class SingleMeanItkImage(ImageDataItemContainerMixin, DataItemContainer):
 
     _data_item_classes = (MeanItkImageDataItem,)
+    primary_item_identifiers = (0,)
 
 
 class SingleItkImageWithVariance(ImageDataItemContainerMixin, DataItemContainer):
@@ -907,6 +960,7 @@ class SingleItkImageWithVariance(ImageDataItemContainerMixin, DataItemContainer)
         ItkImageDataItem,
         ItkImageDataItem,
     )
+    primary_item_identifiers = (0, 1)
 
     # # Only the linear quantity is active by default
     # # the uncertainty quantity has write_to_disk=True by default so whenever it is activated,
@@ -928,8 +982,7 @@ class SingleItkImageWithVariance(ImageDataItemContainerMixin, DataItemContainer)
     #         ),
     #     }
     # )
-    # let the class know which properties should be treated as data items
-    __extra_data_items__ = ("variance", "std", "uncertainty")
+    derived_item_identifiers = ("variance", "std", "uncertainty")
 
     def get_variance_or_uncertainty(self, which_quantity):
         try:
@@ -989,6 +1042,7 @@ class QuotientItkImage(ImageDataItemContainerMixin, DataItemContainer):
         ItkImageDataItem,
         ItkImageDataItem,
     )
+    primary_item_identifiers = (0, 1)
 
     # # Specify which items should be written to disk and how
     # # Important: define this at the class level, NOT in the __init__ method
@@ -1002,8 +1056,7 @@ class QuotientItkImage(ImageDataItemContainerMixin, DataItemContainer):
     #     }
     # )
 
-    # let the class know which properties should be treated as data items
-    __extra_data_items__ = ("quotient",)
+    derived_item_identifiers = ("quotient",)
 
     @property
     def quotient(self):
@@ -1021,11 +1074,13 @@ class QuotientMeanItkImage(QuotientItkImage):
 class SingleTimeCountSeries(DataItemContainer):
 
     _data_item_classes = (TimeCountSeriesDataItem,)
+    primary_item_identifiers = (0,)
 
 
 class StatisticsItemContainer(DataItemContainer):
 
     _data_item_classes = (StatisticsDataItem,)
+    primary_item_identifiers = (0,)
 
     def __getattr__(self, item):
         if item not in ("data", "belongs_to", "__setstate__", "__getstate__"):

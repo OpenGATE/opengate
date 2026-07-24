@@ -527,29 +527,13 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     @classmethod
     def __process_this__(cls):
         super().__process_this__()
-        # we need to fill the _default_data_item_config of this class
-        # depending on the container classes it handles
         if cls.data_container_class is not None:
-            cls._default_data_item_config = {}
-            # ask the container class which data item (including aliases and effective names)
-            # it handles so that we can corerctly populate the defaults
-            for k in cls.data_container_class.__get_data_item_names__():
-                if isinstance(k, (int,)):
-                    suffix = f"item{k}"
-                else:
-                    suffix = k
-                cls._default_data_item_config[k] = {
-                    "output_filename": "auto",
-                    "write_to_disk": True,
-                    "active": False,
-                    "suffix": suffix,
-                }
-            # if there is only one item, set suffix to None
-            # because we do not want to append anything to the output_filename in this case
-            # and activate the output
-            if len(cls._default_data_item_config) == 1:
-                list(cls._default_data_item_config.values())[0]["suffix"] = None
-                list(cls._default_data_item_config.values())[0]["active"] = True
+            # The container class is the authoritative place that knows which
+            # primary and derived items it exposes. Actor outputs only consume
+            # that declaration to build their per-item configuration defaults.
+            cls._default_data_item_config = (
+                cls.data_container_class.build_default_item_settings()
+            )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
