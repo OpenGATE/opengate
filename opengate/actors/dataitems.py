@@ -626,20 +626,46 @@ class DataItemContainer(DataContainer):
         return list(cls.primary_item_identifiers)
 
     @classmethod
-    def get_item_identifiers(cls):
-        return cls.get_primary_item_identifiers() + list(cls.derived_item_identifiers)
+    def get_derived_item_identifiers(cls):
+        return list(cls.derived_item_identifiers)
 
     @classmethod
-    def build_default_item_settings(cls):
-        """Build default actor-output settings for every item handled by the container."""
+    def get_item_identifiers(cls):
+        item_identifiers = (
+            cls.get_primary_item_identifiers() + cls.get_derived_item_identifiers()
+        )
+        if len(item_identifiers) != len(set(item_identifiers)):
+            raise GateImplementationError(
+                f"Data item container class {cls.__name__} declares duplicate "
+                f"item identifiers: {item_identifiers}"
+            )
+        return item_identifiers
 
-        default_item_settings = {}
+    @classmethod
+    def validate_item_identifier(cls, item):
+        cls.normalize_item_identifier(item)
+
+    @classmethod
+    def normalize_item_identifier(cls, item):
+        for declared_identifier in cls.get_item_identifiers():
+            if item == declared_identifier or str(item) == str(declared_identifier):
+                return declared_identifier
+        raise GateImplementationError(
+            f"Unknown data item identifier {item!r} for container class "
+            f"{cls.__name__}. Known identifiers are {cls.get_item_identifiers()}."
+        )
+
+    @classmethod
+    def build_default_data_item_config(cls):
+        """Build neutral actor-output config entries for all items in this container."""
+
+        default_data_item_config = {}
         for item_identifier in cls.get_item_identifiers():
             if isinstance(item_identifier, int):
                 suffix = f"item{item_identifier}"
             else:
                 suffix = item_identifier
-            default_item_settings[item_identifier] = {
+            default_data_item_config[item_identifier] = {
                 "output_filename": "auto",
                 "write_to_disk": True,
                 "active": False,
@@ -648,12 +674,12 @@ class DataItemContainer(DataContainer):
 
         # Single-output containers are the common case. Keep their filenames
         # clean and make the only item active by default.
-        if len(default_item_settings) == 1:
-            only_item_settings = next(iter(default_item_settings.values()))
-            only_item_settings["suffix"] = None
-            only_item_settings["active"] = True
+        if len(default_data_item_config) == 1:
+            only_item_config = next(iter(default_data_item_config.values()))
+            only_item_config["suffix"] = None
+            only_item_config["active"] = True
 
-        return default_item_settings
+        return default_data_item_config
 
     # the actual write config needs to be fetched from the actor output instance
     # which handles this data item container
@@ -709,26 +735,24 @@ class DataItemContainer(DataContainer):
         self.data = processed_data
 
     def get_data_item_object(self, item):
-        try:
-            identifier = int(item)
+        identifier = self.normalize_item_identifier(item)
+        if isinstance(identifier, int):
             try:
                 return self.data[identifier]
             except IndexError:
                 return None
-        except ValueError:
-            return getattr(self, str(item), None)
+        return getattr(self, str(identifier), None)
 
     def get_data(self, item=0):
-        try:
-            item_index = int(item)
+        identifier = self.normalize_item_identifier(item)
+        if isinstance(identifier, int):
             try:
-                return self.data[item_index].data
+                return self.data[identifier].data
             except IndexError:
                 pass
-                # fatal(f"No data found for index {item_index}. ")
-        except ValueError:
+        else:
             try:
-                return getattr(self, item).data
+                return getattr(self, identifier).data
             except AttributeError:
                 pass
         fatal(f"No data found for item {item}. ")
@@ -897,6 +921,10 @@ class DoubleArray(DataItemContainer):
 class ImageDataItemContainerMixin:
 
     @property
+    def _image_data_items(self):
+        return [d for d in self.data if d is not None]
+
+    @property
     def _primary_image_data_item(self):
         try:
             return self.data[0]
@@ -912,16 +940,19 @@ class ImageDataItemContainerMixin:
         return self._primary_image_data_item.image_array
 
     def get_image_properties(self):
-        return self._primary_image_data_item.get_image_properties()
+        return tuple(d.get_image_properties() for d in self._image_data_items)
 
     def set_image_properties(self, **properties):
-        self._primary_image_data_item.set_image_properties(**properties)
+        for image_data_item in self._image_data_items:
+            image_data_item.set_image_properties(**properties)
 
     def copy_image_properties(self, other_image):
-        self._primary_image_data_item.copy_image_properties(other_image)
+        for image_data_item in self._image_data_items:
+            image_data_item.copy_image_properties(other_image)
 
     def set_array_to_image(self, arr):
-        self._primary_image_data_item.set_array_to_image(arr)
+        for image_data_item in self._image_data_items:
+            image_data_item.set_array_to_image(arr)
 
     def create_empty_image(
         self,
@@ -932,14 +963,19 @@ class ImageDataItemContainerMixin:
         allocate=True,
         fill_value=0,
     ):
-        self._primary_image_data_item.create_empty_image(
-            size,
-            spacing,
-            origin=origin,
-            pixel_type=pixel_type,
-            allocate=allocate,
-            fill_value=fill_value,
-        )
+        # Multi-image containers such as value+squared-value outputs need all
+        # persisted image items to be allocated and kept geometrically aligned.
+        # The old generic forwarding did this implicitly for every image-backed
+        # data item; keep that behavior here explicitly.
+        for image_data_item in self._image_data_items:
+            image_data_item.create_empty_image(
+                size,
+                spacing,
+                origin=origin,
+                pixel_type=pixel_type,
+                allocate=allocate,
+                fill_value=fill_value,
+            )
 
 
 class SingleItkImage(ImageDataItemContainerMixin, DataItemContainer):

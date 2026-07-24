@@ -510,6 +510,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     @classmethod
     def get_user_info_default_values_interface(cls, item=0, **kwargs):
         defaults = super().get_user_info_default_values_interface(**kwargs)
+        item = cls.data_container_class.normalize_item_identifier(item)
         for k, v in cls._default_data_item_config[item].items():
             defaults[k] = v
         return defaults
@@ -518,11 +519,18 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     def set_user_info_default_values_interface(cls, item=0, **kwargs):
         # pick up the defaults to be stored in the default data item config dictionary
         # and let the base class handle the rest
+        item = cls.data_container_class.normalize_item_identifier(item)
         known_defaults = list(cls._default_data_item_config[item].keys())
         for k in known_defaults:
             if k in kwargs:
                 cls._default_data_item_config[item][k] = kwargs.pop(k)
         super().set_user_info_default_values_interface(**kwargs)
+
+    @classmethod
+    def _build_default_data_item_config(cls):
+        if cls.data_container_class is None:
+            return None
+        return cls.data_container_class.build_default_data_item_config()
 
     @classmethod
     def __process_this__(cls):
@@ -531,13 +539,37 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             # The container class is the authoritative place that knows which
             # primary and derived items it exposes. Actor outputs only consume
             # that declaration to build their per-item configuration defaults.
-            cls._default_data_item_config = (
-                cls.data_container_class.build_default_item_settings()
-            )
+            cls._default_data_item_config = cls._build_default_data_item_config()
 
     def __init__(self, *args, **kwargs):
+        item_config_overrides = kwargs.pop("item_config_overrides", None)
         super().__init__(*args, **kwargs)
         self.data_item_config = copy.deepcopy(self._default_data_item_config)
+        self._apply_item_config_overrides(item_config_overrides)
+
+    def _normalize_item_identifier(self, item):
+        try:
+            return self.data_container_class.normalize_item_identifier(item)
+        except GateImplementationError:
+            self._fatal_unknown_item(item)
+
+    def _apply_item_config_overrides(self, item_config_overrides):
+        if item_config_overrides is None:
+            return
+        # Apply per-output semantic overrides such as suffixes. The container
+        # defines the generic item surface; the concrete actor output instance
+        # refines it for this specific use in a given actor.
+        for item_identifier, item_config in item_config_overrides.items():
+            normalized_identifier = self._normalize_item_identifier(item_identifier)
+            for key, value in item_config.items():
+                if key not in self.data_item_config[normalized_identifier]:
+                    raise GateImplementationError(
+                        f"Unknown data item config key '{key}' for item "
+                        f"{normalized_identifier!r} in actor output {self.name}. "
+                        f"Known keys are "
+                        f"{list(self.data_item_config[normalized_identifier].keys())}."
+                    )
+                self.data_item_config[normalized_identifier][key] = value
 
     def initialize_cpp_parameters(self):
         # Create structs on C++ side for this actor output
@@ -585,13 +617,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             return data_item_config
 
         restored_config = {}
-        default_keys = list(self._default_data_item_config.keys())
         for key, value in data_item_config.items():
-            restored_key = key
-            for default_key in default_keys:
-                if str(default_key) == key:
-                    restored_key = default_key
-                    break
+            restored_key = self.data_container_class.normalize_item_identifier(key)
             restored_config[restored_key] = value
         return restored_config
 
@@ -621,6 +648,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             for k, v in self.data_item_config.items():
                 self.set_output_filename(self._insert_item_suffix(value, k), item=k)
         else:
+            item = self._normalize_item_identifier(item)
             try:
                 self.data_item_config[item]["output_filename"] = str(value)
             except KeyError:
@@ -632,6 +660,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 [(k, self.get_output_filename(item=k)) for k in self.data_item_config]
             )
         else:
+            item = self._normalize_item_identifier(item)
             try:
                 return self.data_item_config[item]["output_filename"]
             except KeyError:
@@ -643,6 +672,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 [(k, self.get_item_suffix(item=k)) for k in self.data_item_config]
             )
         else:
+            item = self._normalize_item_identifier(item)
             try:
                 # FIXME: the .get() method implicitly defines a default value, but it should not. Is this a workaround?
                 # return self.data_item_config[item].get("suffix", str(item))
@@ -663,6 +693,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         return self._insert_item_suffix(output_filename, item)
 
     def _insert_item_suffix(self, output_filename, item):
+        item = self._normalize_item_identifier(item)
         suffix = self.data_item_config[item].get("suffix", str(item))
         if suffix is not None:
             output_filename = insert_suffix_before_extension(output_filename, suffix)
@@ -672,9 +703,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if item == "all":
             items = list(self.data_item_config.keys())
         elif isinstance(item, (tuple, list)):
-            items = item
+            items = [self._normalize_item_identifier(i) for i in item]
         else:
-            items = [item]
+            items = [self._normalize_item_identifier(item)]
         if not all([i in self.data_item_config for i in items]):
             fatal(
                 f"Unknown items. Requested items are: {items}. "

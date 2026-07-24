@@ -1,5 +1,6 @@
 from box import Box
 from functools import wraps
+import copy
 
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
@@ -201,6 +202,9 @@ class ActorBase(GateObject):
 
             # default to "auto" if output_config has no key "interfaces"
             interfaces_of_this_output = output_config.get("interfaces", "auto")
+            item_config_overrides = copy.deepcopy(
+                output_config.get("item_config_overrides", {})
+            )
             # if the GATE developer has not defined any interfaces, we create one automatically
             if interfaces_of_this_output == "auto":
                 interface_name = output_name  # use the output name as interface name
@@ -216,7 +220,12 @@ class ActorBase(GateObject):
                     [
                         (k, v)
                         for k, v in output_config.items()
-                        if k not in ("actor_output_class", "interfaces")
+                        if k
+                        not in (
+                            "actor_output_class",
+                            "interfaces",
+                            "item_config_overrides",
+                        )
                     ]
                 )
                 interfaces_of_this_output[interface_name].update(other_parameters)
@@ -239,6 +248,7 @@ class ActorBase(GateObject):
 
             cls._processed_user_output_config[output_name] = {
                 "actor_output_class": actor_output_class,
+                "item_config_overrides": item_config_overrides,
                 "interfaces": interfaces_of_this_output,
             }
 
@@ -616,7 +626,11 @@ class ActorBase(GateObject):
             )
 
             # create and add the instance of the actor output
-            self._add_user_output(actor_output_class, output_name)
+            self._add_user_output(
+                actor_output_class,
+                output_name,
+                item_config_overrides=output_config.get("item_config_overrides", {}),
+            )
 
             # now create the interface instances linking to the actor output
             for interface_name, interface_config in interfaces.items():
@@ -637,6 +651,20 @@ class ActorBase(GateObject):
                 # use the newly created interface to set the defaults
                 interface = self.interfaces_to_user_output[interface_name]
                 for p in default_params:
+                    item_config_overrides = output_config.get("item_config_overrides", {})
+                    item_identifier = interface_config.get("item", 0)
+                    normalized_item_identifier = self.user_output[
+                        output_name
+                    ]._normalize_item_identifier(item_identifier)
+                    item_override = item_config_overrides.get(
+                        normalized_item_identifier,
+                        item_config_overrides.get(str(normalized_item_identifier), {}),
+                    )
+                    # Per-output item_config_overrides are the authoritative
+                    # place for semantic per-item defaults such as suffixes.
+                    # Do not let interface defaults overwrite them.
+                    if p in item_override:
+                        continue
                     v = interface_config[p]
                     setattr(interface, p, v)
 

@@ -451,6 +451,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     user_output_config = {
         "edep_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
+            "item_config_overrides": {
+                0: {"suffix": "edep"},
+                1: {"suffix": "edep_squared"},
+                "uncertainty": {"suffix": "edep_uncertainty"},
+            },
             "interfaces": {
                 "edep": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -471,6 +476,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         },
         "dose_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
+            "item_config_overrides": {
+                0: {"suffix": "dose"},
+                1: {"suffix": "dose_squared"},
+                "uncertainty": {"suffix": "dose_uncertainty"},
+            },
             "interfaces": {
                 "dose": {
                     "interface_class": UserInterfaceToActorOutputImage,
