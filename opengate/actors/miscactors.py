@@ -299,6 +299,7 @@ class KillNonInteractingParticleActor(
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        # FIXME: Should rely on user_output_config and not call _add_user_output manually
         self._add_user_output(
             ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles"
         )
