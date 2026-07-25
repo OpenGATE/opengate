@@ -127,6 +127,12 @@ def run_split_campaign(
     sim.output_dir = sim_output
     dt.policy = DeadTimePolicy.NonParalyzable.name
     sim.get_actor("Stats").output_filename = "stats.txt"
+    # The original helper uses an absolute ROOT output path derived from
+    # ``paths.output``. For split/merge tests we want the ROOT file to live
+    # under each simulation's output_dir so the merged result is written into
+    # ``merge_path`` and not back into the master-input folder.
+    sim.get_actor("Singles_before_deadtime").output_filename = "output_singles.root"
+    sim.get_actor("Singles_after_deadtime").output_filename = "output_singles.root"
 
     split_root = gate.jobs_split(
         sim,
@@ -194,8 +200,15 @@ if __name__ == "__main__":
     reference_sim.output_dir = reference_output
     reference_dt.policy = DeadTimePolicy.NonParalyzable.name
     reference_sim.get_actor("Stats").output_filename = "stats.txt"
+    reference_sim.get_actor("Singles_before_deadtime").output_filename = (
+        "output_singles.root"
+    )
+    reference_sim.get_actor("Singles_after_deadtime").output_filename = (
+        "output_singles.root"
+    )
     reference_sim.run(start_new_process=True)
     reference_stats = utility.read_stats_file(reference_output / "stats.txt")
+    reference_root = reference_output / "output_singles.root"
 
     is_ok = (
         run_split_campaign(
