@@ -328,6 +328,10 @@ class ActorOutputBase(GateObject):
         return False
 
     @classmethod
+    def is_root_output(cls):
+        return False
+
+    @classmethod
     def get_user_info_default_values_interface(cls, **kwargs):
         # FIXME: not sure yet how to handle keep_data_in_memory
         #        because it is not a per-interface but per actor output parameter
@@ -1233,6 +1237,10 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
     }
 
     default_suffix = "root"
+
+    @classmethod
+    def is_root_output(cls):
+        return True
 
     @classmethod
     def get_user_info_default_values_interface(cls, **kwargs):

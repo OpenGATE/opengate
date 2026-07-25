@@ -33,6 +33,7 @@ import os
 import platform
 import tempfile
 from pathlib import Path
+from collections import OrderedDict
 from box import Box
 
 from ..exception import fatal, warning, GateImplementationError
@@ -51,7 +52,7 @@ from ..image import (
     itk_image_from_array,
     add_constant_to_itk_image,
 )
-from ..contrib.root_helpers import root_write_tree
+from ..contrib.root_helpers import RootMergeFileWriter, root_write_tree
 
 
 class DeprecationError(RuntimeError):
@@ -787,11 +788,18 @@ class RootDataItem(DataItem):
                 f"Target branches are {sorted(target_tree['branches'].keys())}, "
                 f"source branches are {sorted(source_tree['branches'].keys())}."
             )
-        self.root_meta_data.setdefault("merge_sources", []).append(
+        root_output_path = source_item.root_meta_data["root_output_path"]
+        merge_sources = self.root_meta_data.setdefault("merge_sources", [])
+        for merge_source in merge_sources:
+            if merge_source["root_output_path"] == root_output_path:
+                merge_source.setdefault("run_id_map", {})[str(int(run_id_from))] = int(
+                    run_id_to
+                )
+                return
+        merge_sources.append(
             {
-                "root_output_path": source_item.root_meta_data["root_output_path"],
-                "run_id_from": int(run_id_from),
-                "run_id_to": int(run_id_to),
+                "root_output_path": root_output_path,
+                "run_id_map": {str(int(run_id_from)): int(run_id_to)},
             }
         )
 
@@ -810,6 +818,10 @@ class RootDataItem(DataItem):
         return branch_data
 
     def _build_merged_branch_payload(self):
+        # DEPRECATED: eager whole-tree accumulation for ROOT merge. Kept
+        # temporarily during the streamed-merge refactor as a fallback/reference
+        # implementation and should be removed once the chunked writer path is
+        # the only active implementation.
         import uproot
 
         tree_descriptor = self.get_single_tree_descriptor()
@@ -822,19 +834,32 @@ class RootDataItem(DataItem):
         remap_event_ids = "EventID" in branch_names
 
         for merge_source in self.root_meta_data.get("merge_sources", []):
+            run_id_map = {
+                int(local_run_id): int(original_run_id)
+                for local_run_id, original_run_id in merge_source.get(
+                    "run_id_map", {}
+                ).items()
+            }
+            if len(run_id_map) != 1:
+                raise GateImplementationError(
+                    "Legacy eager ROOT merge only supports one local->original "
+                    "RunID mapping per merge source entry. Use the streamed "
+                    "merge path for multi-run child contributions."
+                )
+            run_id_from, run_id_to = next(iter(run_id_map.items()))
             with uproot.open(merge_source["root_output_path"]) as root_file:
                 source_tree = root_file[tree_descriptor["tree_name"]]
                 branch_data = self._read_filtered_branch_data(
                     source_tree,
                     branch_names,
-                    merge_source["run_id_from"],
+                    run_id_from,
                 )
 
             for branch_name, branch_values in branch_data.items():
                 if branch_name == "RunID" and remap_run_ids:
                     branch_values = np.full(
                         len(branch_values),
-                        int(merge_source["run_id_to"]),
+                        int(run_id_to),
                         dtype=branch_values.dtype,
                     )
                 elif (
@@ -866,6 +891,9 @@ class RootDataItem(DataItem):
 
     @classmethod
     def _read_all_tree_payloads(cls, root_file_path):
+        # DEPRECATED: eager whole-file reread helper used by the legacy ROOT
+        # merge path. Streamed merge should write grouped target files once and
+        # avoid reloading existing trees into memory.
         import uproot
 
         tree_payloads = {}
@@ -887,6 +915,9 @@ class RootDataItem(DataItem):
     def _rewrite_root_file_with_tree(
         cls, output_path, tree_name, branch_types, branch_payload
     ):
+        # DEPRECATED: eager whole-file rewrite helper used by the legacy ROOT
+        # merge path. Streamed merge should keep one writable ROOT file open and
+        # append chunks directly into each target tree.
         output_path = Path(output_path)
         existing_trees = {}
         if output_path.exists():
@@ -950,6 +981,9 @@ class RootDataItem(DataItem):
                 temporary_path.unlink()
 
     def write(self, path, metadata_path=None, **kwargs):
+        # DEPRECATED: RootDataItem.write() reflects the legacy eager ROOT merge
+        # path. Grouped file-level streamed merge should be driven from
+        # Simulation.finalize_merge() via RootMergeFileWriter instead.
         if not self.has_root_meta_data():
             fatal(
                 "Cannot write merged ROOT output because no ROOT metadata is available."
@@ -979,6 +1013,154 @@ class RootDataItem(DataItem):
             requested_attributes=self.root_meta_data.get("requested_attributes"),
             skipped_attributes=self.root_meta_data.get("skipped_attributes"),
         )
+        if metadata_path is not None:
+            self.save_root_metadata(metadata_path)
+
+    def _iter_merge_source_chunks(self, merge_source, step_size="64 MB", library="ak"):
+        import uproot
+
+        tree_descriptor = self.get_single_tree_descriptor()
+        branch_names = list(tree_descriptor["branches"].keys())
+        root_output_path = merge_source["root_output_path"]
+        tree_name = tree_descriptor["tree_name"]
+        for chunk in uproot.iterate(
+            f"{root_output_path}:{tree_name}",
+            expressions=branch_names,
+            library=library,
+            step_size=step_size,
+        ):
+            yield OrderedDict((branch_name, chunk[branch_name]) for branch_name in branch_names)
+
+    def _remap_chunk_identifiers(self, chunk_payload, merge_source, event_id_state):
+        remapped_payload = OrderedDict()
+        run_id_map = {
+            int(local_run_id): int(original_run_id)
+            for local_run_id, original_run_id in merge_source.get(
+                "run_id_map", {}
+            ).items()
+        }
+        local_run_ids = None
+        if "RunID" in chunk_payload:
+            # Keep the child-local RunID values in a plain numpy array because we
+            # need them twice:
+            # 1) to remap RunID itself from child-local to original master run
+            #    indices;
+            # 2) to detect local run boundaries inside the current streamed
+            #    chunk when remapping EventID.
+            local_run_ids = np.asarray(chunk_payload["RunID"])
+
+        for branch_name, branch_values in chunk_payload.items():
+            if branch_name == "RunID":
+                run_ids = np.asarray(branch_values)
+                remapped_payload[branch_name] = np.asarray(
+                    [run_id_map.get(int(run_id), int(run_id)) for run_id in run_ids],
+                    dtype=run_ids.dtype,
+                )
+            elif branch_name == "EventID":
+                event_ids = np.asarray(branch_values)
+                if len(event_ids) == 0:
+                    remapped_payload[branch_name] = event_ids
+                elif local_run_ids is None:
+                    # Without RunID we cannot detect local run boundaries, so the
+                    # best we can do is append the whole chunk as one event-ID
+                    # block. This is acceptable only for outputs that do not
+                    # encode per-run identity explicitly.
+                    remapped_event_ids = event_ids + event_id_state["next_event_id"]
+                    event_id_state["next_event_id"] = (
+                        int(remapped_event_ids[-1]) + 1
+                    )
+                    remapped_payload[branch_name] = remapped_event_ids
+                else:
+                    # EventID is only monotonic within one local run. A streamed
+                    # chunk may cross local run boundaries, so we detect
+                    # contiguous same-RunID blocks inside the chunk and apply one
+                    # offset per block rather than one offset for the whole
+                    # chunk. This keeps the merge fully streaming while still
+                    # respecting the fact that child-local EventID restarts from
+                    # zero whenever the child simulation moves to its next local
+                    # run.
+                    remapped_event_ids = np.empty_like(event_ids)
+                    change_indices = np.flatnonzero(np.diff(local_run_ids) != 0) + 1
+                    block_starts = np.concatenate(([0], change_indices))
+                    block_stops = np.concatenate((change_indices, [len(local_run_ids)]))
+                    for start, stop in zip(block_starts, block_stops):
+                        block_event_ids = event_ids[start:stop]
+                        if len(block_event_ids) == 0:
+                            continue
+                        # Within one contiguous local-run block, EventID is
+                        # already ordered and can be shifted by one constant
+                        # offset. The next block starts a fresh local EventID
+                        # sequence, so the global offset must be updated at each
+                        # boundary.
+                        remapped_event_ids[start:stop] = (
+                            block_event_ids + event_id_state["next_event_id"]
+                        )
+                        event_id_state["next_event_id"] = (
+                            int(remapped_event_ids[stop - 1]) + 1
+                        )
+                    remapped_payload[branch_name] = remapped_event_ids
+            else:
+                remapped_payload[branch_name] = branch_values
+        return remapped_payload
+
+    def stream_merge_to_writer(
+        self, writer, tree_name=None, step_size="64 MB", event_id_state=None
+    ):
+        if not self.has_root_meta_data():
+            fatal("Cannot stream-merge ROOT output because no ROOT metadata exists.")
+
+        tree_descriptor = self.get_single_tree_descriptor()
+        tree_name = tree_name or tree_descriptor["tree_name"]
+        if event_id_state is None:
+            event_id_state = {"next_event_id": 0}
+
+        for merge_source in self.root_meta_data.get("merge_sources", []):
+            for chunk in self._iter_merge_source_chunks(
+                merge_source, step_size=step_size, library="ak"
+            ):
+                if len(next(iter(chunk.values()), [])) == 0:
+                    continue
+                remapped_chunk = self._remap_chunk_identifiers(
+                    chunk, merge_source, event_id_state
+                )
+                writer.append_chunk(tree_name, remapped_chunk)
+
+    def stream_write_merged_root(
+        self,
+        output_path,
+        metadata_path=None,
+        step_size="64 MB",
+        writer=None,
+        event_id_state=None,
+    ):
+        if not self.has_root_meta_data():
+            fatal(
+                "Cannot write streamed merged ROOT output because no ROOT metadata "
+                "is available."
+            )
+
+        owns_writer = writer is None
+        tree_descriptor = self.get_single_tree_descriptor()
+
+        if owns_writer:
+            writer = RootMergeFileWriter(output_path)
+            writer.open()
+
+        try:
+            writer.create_tree(
+                tree_descriptor["tree_name"], tree_descriptor["branches"]
+            )
+            self.stream_merge_to_writer(
+                writer,
+                tree_name=tree_descriptor["tree_name"],
+                step_size=step_size,
+                event_id_state=event_id_state,
+            )
+        finally:
+            if owns_writer:
+                writer.close()
+
+        self.root_meta_data["root_output_path"] = str(Path(output_path).resolve())
         if metadata_path is not None:
             self.save_root_metadata(metadata_path)
 
