@@ -2,6 +2,7 @@ import copy
 import inspect
 import sys
 from typing import Optional
+from pathlib import Path
 
 import opengate_core as g4
 from box import Box
