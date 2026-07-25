@@ -22,7 +22,13 @@ from .base import (
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
-from .exception import GateDeprecationError, GateImplementationError, fatal, warning
+from .exception import (
+    GateDeprecationError,
+    GateImplementationError,
+    GateMergeError,
+    fatal,
+    warning,
+)
 from .geometry.fields import FieldBase, field_types
 from .geometry.materials import MaterialDatabase
 from .logger import *
@@ -611,6 +617,26 @@ class ActorManager(GateObject):
 
     def remove_actor(self, name):
         self.actors.pop(name)
+
+    def in_place_merge(self, other_actor_manager, run_index_target, run_index_source):
+        common_actor_names = sorted(
+            set(self.actors.keys()).intersection(other_actor_manager.actors.keys())
+        )
+        for actor_name in common_actor_names:
+            target_actor = self.get_actor(actor_name)
+            source_actor = other_actor_manager.get_actor(actor_name)
+            try:
+                target_actor.in_place_merge(
+                    source_actor,
+                    run_index_target=run_index_target,
+                    run_index_source=run_index_source,
+                )
+            except Exception as error:
+                if isinstance(error, GateMergeError):
+                    raise
+                raise GateMergeError(
+                    f"Failed to merge actor '{actor_name}' between simulations."
+                ) from error
 
     def _create_actor(self, actor_type, name):
         cls = None
@@ -2489,6 +2515,24 @@ class Simulation(GateObject):
 
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
+
+    def in_place_merge(self, other_simulation, run_index_target, run_index_source):
+        self.actor_manager.in_place_merge(
+            other_simulation.actor_manager,
+            run_index_target=run_index_target,
+            run_index_source=run_index_source,
+        )
+
+    def finalize_merge(self):
+        for actor in self.actor_manager.actors.values():
+            for actor_output in actor.user_output.values():
+                if not actor_output.is_container_output():
+                    continue
+                if len(actor_output.data_per_run) == 0:
+                    continue
+                if getattr(actor_output, "merge_data_after_simulation", False) is True:
+                    actor_output.merge_data_from_runs()
+                actor_output.write_data_if_requested(which="all")
 
     def find_actors(self, sub_str, case_sensitive=False):
         return self.actor_manager.find_actors(sub_str, case_sensitive)

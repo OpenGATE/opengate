@@ -7,7 +7,7 @@ import opengate_core as g4
 from box import Box
 
 from ..base import GateObject, process_cls
-from ..exception import GateImplementationError, fatal, warning
+from ..exception import GateImplementationError, GateMergeError, fatal, warning
 from ..image import create_3d_image_of_histogram
 from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from .dataitems import (
@@ -803,11 +803,92 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         data = self.get_data_container(which)
         data.update_meta_data(meta_data)
 
-    def load_data(self, which):
-        raise NotImplementedError(
-            f"Your are calling this method from the base class {type(self).__name__}, "
-            f"but it should be implemented in the specific derived class"
+    def ensure_data_container(self, which):
+        if which == "merged":
+            if self.merged_data is None:
+                self.merged_data = self.data_container_class(belongs_to=self)
+            return self.merged_data
+        try:
+            run_index = int(which)
+        except ValueError:
+            fatal(
+                f"Invalid argument 'which' in ensure_data_container() method of "
+                f"ActorOutput {self.name}. Allowed values are: 'merged' or a valid "
+                f"run_index. "
+            )
+        if run_index not in self.data_per_run or self.data_per_run[run_index] is None:
+            self.data_per_run[run_index] = self.data_container_class(belongs_to=self)
+        return self.data_per_run[run_index]
+
+    def load_data(self, which, item="all", **kwargs):
+        data_container = self.ensure_data_container(which)
+        items = self._collect_item_identifiers(item)
+        output_paths = self.get_output_path(
+            which=which,
+            item=items,
+            always_return_dict=True,
+            **kwargs,
         )
+        if len(items) == 1:
+            item_identifier = items[0]
+            data_container.load_item(
+                item=item_identifier,
+                path=output_paths[item_identifier],
+                **kwargs,
+            )
+        else:
+            data_container.load_item(
+                item="all",
+                path={item_identifier: output_paths[item_identifier] for item_identifier in items},
+                **kwargs,
+            )
+
+    def clear_data(self, which, item="all"):
+        if which == "merged":
+            data_container = self.merged_data
+        else:
+            try:
+                run_index = int(which)
+            except ValueError:
+                fatal(
+                    f"Invalid argument 'which' in clear_data() method of ActorOutput {self.name}. "
+                    f"Allowed values are: 'merged' or a valid run_index. "
+                )
+            data_container = self.data_per_run.get(run_index)
+        if data_container is None:
+            return
+        data_container.clear_items(item=item)
+
+    def merge_data_from_output(self, source_output, which_source, which_target):
+        source_container = source_output.get_data_container(which_source)
+        if source_container is None:
+            return
+        target_container = self.ensure_data_container(which_target)
+        target_container.inplace_merge_with(source_container)
+
+    def in_place_merge(self, other_output, which_target, which_source):
+        if not other_output.is_container_output():
+            raise GateMergeError(
+                f"Cannot merge non-container output '{other_output.name}' into "
+                f"container output '{self.name}'."
+            )
+        merge_item_identifiers = [
+            item_identifier
+            for item_identifier in other_output.data_container_class.get_primary_item_identifiers()
+            if other_output.get_active(item=item_identifier)
+            and other_output.get_write_to_disk(item=item_identifier)
+        ]
+        if len(merge_item_identifiers) == 0:
+            return
+        try:
+            other_output.load_data(which=which_source, item=merge_item_identifiers)
+            self.merge_data_from_output(
+                other_output,
+                which_source=which_source,
+                which_target=which_target,
+            )
+        finally:
+            other_output.clear_data(which=which_source, item=merge_item_identifiers)
 
     def collect_data(self, which, return_identifier=False):
         if which == "merged":
