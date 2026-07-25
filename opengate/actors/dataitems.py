@@ -191,6 +191,7 @@ class DataItem:
     def get_owner_container(self):
         return getattr(self, "_owner_container", None)
 
+
 class SampleCountingDataItemMixin:
     """Mixin for data items that explicitly track how many samples they represent."""
 
@@ -836,7 +837,11 @@ class RootDataItem(DataItem):
                         int(merge_source["run_id_to"]),
                         dtype=branch_values.dtype,
                     )
-                elif branch_name == "EventID" and remap_event_ids and len(branch_values) > 0:
+                elif (
+                    branch_name == "EventID"
+                    and remap_event_ids
+                    and len(branch_values) > 0
+                ):
                     branch_values = branch_values + current_event_offset
                     current_event_offset = int(np.max(branch_values)) + 1
 
@@ -879,7 +884,9 @@ class RootDataItem(DataItem):
         return tree_payloads
 
     @classmethod
-    def _rewrite_root_file_with_tree(cls, output_path, tree_name, branch_types, branch_payload):
+    def _rewrite_root_file_with_tree(
+        cls, output_path, tree_name, branch_types, branch_payload
+    ):
         output_path = Path(output_path)
         existing_trees = {}
         if output_path.exists():
@@ -916,7 +923,9 @@ class RootDataItem(DataItem):
                     try:
                         payload_length = len(branch_payload_value)
                     except Exception as error:
-                        payload_length = f"<len failed: {type(error).__name__}: {error}>"
+                        payload_length = (
+                            f"<len failed: {type(error).__name__}: {error}>"
+                        )
                     try:
                         preview = branch_payload_value[:3]
                     except Exception as error:
@@ -942,7 +951,9 @@ class RootDataItem(DataItem):
 
     def write(self, path, metadata_path=None, **kwargs):
         if not self.has_root_meta_data():
-            fatal("Cannot write merged ROOT output because no ROOT metadata is available.")
+            fatal(
+                "Cannot write merged ROOT output because no ROOT metadata is available."
+            )
         if len(self.root_meta_data.get("merge_sources", [])) == 0:
             return
 
@@ -961,7 +972,9 @@ class RootDataItem(DataItem):
             output_path,
             actor_name=self.root_meta_data.get("actor_name", "unknown_actor"),
             actor_type=self.root_meta_data.get("actor_type", "unknown_type"),
-            actor_output_name=self.root_meta_data.get("actor_output_name", "root_output"),
+            actor_output_name=self.root_meta_data.get(
+                "actor_output_name", "root_output"
+            ),
             tree_descriptors=self.root_meta_data.get("trees"),
             requested_attributes=self.root_meta_data.get("requested_attributes"),
             skipped_attributes=self.root_meta_data.get("skipped_attributes"),

@@ -445,9 +445,7 @@ class GenericSource(SourceBase):
 
     def resolve_and_validate_config(self, run_timing_intervals, context=None):
         self.resolve_tac_activity()
-        super().resolve_and_validate_config(
-            run_timing_intervals, context=context
-        )
+        super().resolve_and_validate_config(run_timing_intervals, context=context)
 
         # Check the sub-parameters
         self._pos_validator.validate(self, "position")

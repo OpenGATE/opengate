@@ -12,9 +12,9 @@
 #include "GateMultiFunctionalDetector.h"
 #include "GateSourceManager.h"
 #include "digitizer/GateDigiCollection.h"
-#include <algorithm>
 #include <G4LogicalVolumeStore.hh>
 #include <G4SDManager.hh>
+#include <algorithm>
 #include <unordered_set>
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)

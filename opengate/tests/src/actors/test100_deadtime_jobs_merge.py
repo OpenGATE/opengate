@@ -97,9 +97,7 @@ def compare_shared_root_file_layout(reference_root, merged_root):
         merged_count = merged_entries[tree_name]
         reference_count = reference_entries[tree_name]
         relative_difference = (
-            abs(merged_count - reference_count)
-            / (merged_count + reference_count)
-            * 2
+            abs(merged_count - reference_count) / (merged_count + reference_count) * 2
             if (merged_count + reference_count) > 0
             else 0.0
         )
@@ -166,7 +164,9 @@ def run_split_campaign(
     # run set during jobs_merge. Normalize the merged stats to the original
     # two-run interpretation so this test stays focused on shared-file ROOT merge.
     merged_stats.counts.runs = 2
-    is_ok = utility.assert_stats(merged_stats, reference_stats, tolerance=0.15) and is_ok
+    is_ok = (
+        utility.assert_stats(merged_stats, reference_stats, tolerance=0.15) and is_ok
+    )
 
     merged_root = merge_path / "output_singles.root"
     is_ok = compare_shared_root_file_layout(reference_root, merged_root) and is_ok

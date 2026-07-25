@@ -1237,9 +1237,9 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             self.cpp_denominator_image,
         )
         self._update_output_coordinate_system(f"{self.scored_quantity}_mix", run_index)
-        self.user_output.__getattr__(f"{self.scored_quantity}_mix").set_number_of_samples(
-            run_index, self.NbOfEvent
-        )
+        self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).set_number_of_samples(run_index, self.NbOfEvent)
         if self.multiple_scoring:
             self.fetch_from_cpp_image(
                 "beta_mix",
@@ -1248,9 +1248,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 self.cpp_denominator_image,
             )
             self._update_output_coordinate_system("beta_mix", run_index)
-            self.user_output.beta_mix.set_number_of_samples(
-                run_index, self.NbOfEvent
-            )
+            self.user_output.beta_mix.set_number_of_samples(run_index, self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0

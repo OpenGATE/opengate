@@ -1391,12 +1391,9 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                 f"Cannot merge incompatible ROOT outputs '{other_output.name}' "
                 f"into '{self.name}'."
             )
-        if (
-            load_mode == "rehydrated"
-            and (
-                not self.get_write_to_disk(item=0)
-                or not other_output.get_write_to_disk(item=0)
-            )
+        if load_mode == "rehydrated" and (
+            not self.get_write_to_disk(item=0)
+            or not other_output.get_write_to_disk(item=0)
         ):
             return
         try:
@@ -1411,7 +1408,10 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
             # keeps only cumulative ROOT output, child trees can be merged in
             # split order without RunID because time ordering is already
             # preserved by the time-based split.
-            if self.keep_data_per_run is True and "RunID" not in source_tree["branches"]:
+            if (
+                self.keep_data_per_run is True
+                and "RunID" not in source_tree["branches"]
+            ):
                 raise GateMergeError(
                     "Cannot merge ROOT output with keep_data_per_run=True because "
                     "the source tree does not contain a RunID branch."

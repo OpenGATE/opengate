@@ -235,8 +235,8 @@ def run_split_campaign(
     )
     is_ok = (
         utility.print_test(
-        summary["submitted_jobs"] == 3,
-        f"{backend} submitted split jobs:\n{pretty_json(summary)}",
+            summary["submitted_jobs"] == 3,
+            f"{backend} submitted split jobs:\n{pretty_json(summary)}",
         )
         and is_ok
     )
@@ -267,7 +267,9 @@ def run_split_campaign(
     # run set during jobs_merge. Normalize the merged statistics back to the
     # original run count so this test stays focused on ROOT output merging.
     merged_stats.counts.runs = len(run_timing_intervals)
-    is_ok = utility.assert_stats(merged_stats, reference_stats, tolerance=0.15) and is_ok
+    is_ok = (
+        utility.assert_stats(merged_stats, reference_stats, tolerance=0.15) and is_ok
+    )
     is_ok = (
         utility.print_test(
             merged_metadata.exists(),

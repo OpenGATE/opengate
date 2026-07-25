@@ -237,7 +237,8 @@ std::set<std::string> GateDigiCollection::GetDigiAttributeNames() const {
   return list;
 }
 
-std::map<std::string, std::string> GateDigiCollection::GetRootBranchTypes() const {
+std::map<std::string, std::string>
+GateDigiCollection::GetRootBranchTypes() const {
   std::map<std::string, std::string> branchTypes;
   for (auto *att : fDigiAttributes) {
     const auto name = att->GetDigiAttributeName();
