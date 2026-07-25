@@ -82,6 +82,7 @@ class DataItem:
 
     def __init__(self, *args, data=None, meta_data=None, **kwargs):
         self.data = None
+        self._owner_container = None
         if data is not None:
             self.set_data(data)
         self.meta_data = Box()
@@ -180,6 +181,12 @@ class DataItem:
 
     def close_data(self):
         self.clear_data()
+
+    def set_owner_container(self, owner_container):
+        self._owner_container = owner_container
+
+    def get_owner_container(self):
+        return getattr(self, "_owner_container", None)
 
 class SampleCountingDataItemMixin:
     """Mixin for data items that explicitly track how many samples they represent."""
@@ -544,6 +551,29 @@ class RootDataItem(DataItem):
     def set_root_meta_data(self, meta_data):
         self.root_meta_data = Box(meta_data)
 
+    def _resolve_expected_tree_names_from_owner(self):
+        owner_container = self.get_owner_container()
+        if owner_container is None:
+            raise GateImplementationError(
+                "Cannot resolve ROOT tree names because this RootDataItem has no owning container."
+            )
+        actor_output = getattr(owner_container, "belongs_to", None)
+        if actor_output is None:
+            raise GateImplementationError(
+                "Cannot resolve ROOT tree names because the owning container is not bound to an actor output."
+            )
+        runtime_getter = getattr(actor_output, "_get_runtime_tree_names", None)
+        if runtime_getter is None:
+            raise GateImplementationError(
+                "Cannot resolve ROOT tree names because the owning actor output does not provide runtime ROOT tree-name discovery."
+            )
+        tree_names = runtime_getter()
+        if not tree_names:
+            raise GateImplementationError(
+                "Cannot resolve ROOT tree names because neither persisted metadata nor live actor-output tree names are available."
+            )
+        return tree_names
+
     def has_root_meta_data(self):
         return self.root_meta_data is not None
 
@@ -561,14 +591,21 @@ class RootDataItem(DataItem):
         return "string" in branch_type_name or "char*" in branch_type_name
 
     @classmethod
-    def inspect_root_file(cls, root_file_path):
+    def inspect_root_file(cls, root_file_path, expected_tree_names=None):
         import uproot
 
         root_file_path = Path(root_file_path)
+        if expected_tree_names is not None:
+            expected_tree_names = set(expected_tree_names)
         with uproot.open(root_file_path) as root_file:
             trees = []
             for key in root_file.keys():
                 tree_name = cls._strip_root_cycle(key)
+                if (
+                    expected_tree_names is not None
+                    and tree_name not in expected_tree_names
+                ):
+                    continue
                 root_object = root_file[tree_name]
                 if not cls._is_tree(root_object):
                     continue
@@ -589,10 +626,34 @@ class RootDataItem(DataItem):
         actor_name,
         actor_type,
         actor_output_name,
+        tree_descriptors=None,
+        tree_names=None,
         requested_attributes=None,
         skipped_attributes=None,
     ):
         root_file_path = Path(root_file_path)
+        if tree_descriptors is None:
+            tree_name_description = (
+                f"expected trees {list(tree_names)}"
+                if tree_names is not None
+                else f"actor '{actor_name}'"
+            )
+            fatal(
+                "Cannot capture ROOT runtime metadata without explicit runtime "
+                f"tree descriptors for {tree_name_description}. "
+                "If you need to infer metadata from an already-written ROOT file, "
+                "use infer_runtime_metadata_from_root_file() explicitly."
+            )
+        if len(tree_descriptors) == 0:
+            tree_name_description = (
+                f"expected trees {list(tree_names)}"
+                if tree_names is not None
+                else f"actor '{actor_name}'"
+            )
+            fatal(
+                f"Cannot capture ROOT metadata for {tree_name_description} "
+                f"in '{root_file_path}'."
+            )
         self.set_root_meta_data(
             {
                 "metadata_version": self.metadata_version,
@@ -602,9 +663,34 @@ class RootDataItem(DataItem):
                 "root_output_path": str(root_file_path),
                 "requested_attributes": requested_attributes,
                 "skipped_attributes": skipped_attributes,
-                "trees": self.inspect_root_file(root_file_path),
+                "trees": tree_descriptors,
                 "merge_sources": [],
             }
+        )
+
+    def infer_runtime_metadata_from_root_file(
+        self,
+        root_file_path,
+        actor_name,
+        actor_type,
+        actor_output_name,
+        tree_names=None,
+        requested_attributes=None,
+        skipped_attributes=None,
+    ):
+        root_file_path = Path(root_file_path)
+        tree_descriptors = self.inspect_root_file(
+            root_file_path, expected_tree_names=tree_names
+        )
+        self.capture_runtime_metadata(
+            root_file_path,
+            actor_name=actor_name,
+            actor_type=actor_type,
+            actor_output_name=actor_output_name,
+            tree_descriptors=tree_descriptors,
+            tree_names=tree_names,
+            requested_attributes=requested_attributes,
+            skipped_attributes=skipped_attributes,
         )
 
     def save_root_metadata(self, path):
@@ -628,11 +714,21 @@ class RootDataItem(DataItem):
         if metadata_path is not None and Path(metadata_path).exists():
             self.load_root_metadata(metadata_path)
         elif not self.has_root_meta_data():
+            tree_names = self._resolve_expected_tree_names_from_owner()
+            tree_descriptors = self.inspect_root_file(
+                root_file_path, expected_tree_names=tree_names
+            )
+            if len(tree_descriptors) == 0:
+                fatal(
+                    "Cannot load ROOT metadata fallback because none of the "
+                    f"expected trees {list(tree_names)} were found in "
+                    f"'{root_file_path}'."
+                )
             self.set_root_meta_data(
                 {
                     "metadata_version": self.metadata_version,
                     "root_output_path": str(root_file_path),
-                    "trees": self.inspect_root_file(root_file_path),
+                    "trees": tree_descriptors,
                     "merge_sources": [],
                 }
             )
@@ -769,6 +865,7 @@ class RootDataItem(DataItem):
             actor_name=self.root_meta_data.get("actor_name", "unknown_actor"),
             actor_type=self.root_meta_data.get("actor_type", "unknown_type"),
             actor_output_name=self.root_meta_data.get("actor_output_name", "root_output"),
+            tree_descriptors=self.root_meta_data.get("trees"),
             requested_attributes=self.root_meta_data.get("requested_attributes"),
             skipped_attributes=self.root_meta_data.get("skipped_attributes"),
         )
@@ -953,6 +1050,9 @@ class DataItemContainer(DataContainer):
         # create the instances of the data item classes
         # and populate them with data if provided
         self.data = [dic(data=None) for dic in self._data_item_classes]
+        for data_item in self.data:
+            if data_item is not None:
+                data_item.set_owner_container(self)
         if data is not None:
             self.set_data(*data)
 
@@ -1196,6 +1296,8 @@ class DataItemContainer(DataContainer):
                 processed_data[i] = d
             else:
                 processed_data[i] = c(data=d)
+            if processed_data[i] is not None:
+                processed_data[i].set_owner_container(self)
         self.data = processed_data
 
     def get_data_item_object(self, item=0):

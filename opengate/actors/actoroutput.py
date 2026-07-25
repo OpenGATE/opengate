@@ -1292,6 +1292,24 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                 self.name, self.get_output_path_as_string()
             )
 
+    def _get_runtime_tree_names(self):
+        tree_names = list(self.belongs_to_actor.GetOutputTreeNames(self.name))
+        return tree_names if len(tree_names) > 0 else None
+
+    def _get_runtime_tree_descriptors(self):
+        tree_info = self.belongs_to_actor.GetOutputTreeInfo(self.name)
+        if not tree_info:
+            return None
+        tree_descriptors = []
+        for tree_name, branch_types in tree_info.items():
+            tree_descriptors.append(
+                {
+                    "tree_name": tree_name,
+                    "branches": dict(branch_types),
+                }
+            )
+        return tree_descriptors if len(tree_descriptors) > 0 else None
+
     def merge_data_from_runs(self):
         # ROOT output is cumulative per simulation. Split-job merge collects
         # child contributions explicitly and materializes one merged tree at the
@@ -1406,6 +1424,8 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
             actor_name=self.belongs_to_actor.name,
             actor_type=self.belongs_to_actor.type_name,
             actor_output_name=self.name,
+            tree_descriptors=self._get_runtime_tree_descriptors(),
+            tree_names=self._get_runtime_tree_names(),
             requested_attributes=requested_attributes,
             skipped_attributes=skipped_attributes,
         )
