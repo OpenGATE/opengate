@@ -443,9 +443,11 @@ class GenericSource(SourceBase):
     def create_g4_source(self):
         return g4.GateGenericSource()
 
-    def resolve_and_validate_config(self, run_timing_intervals):
+    def resolve_and_validate_config(self, run_timing_intervals, context=None):
         self.resolve_tac_activity()
-        super().resolve_and_validate_config(run_timing_intervals)
+        super().resolve_and_validate_config(
+            run_timing_intervals, context=context
+        )
 
         # Check the sub-parameters
         self._pos_validator.validate(self, "position")

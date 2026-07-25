@@ -250,8 +250,8 @@ class DigitizerBase(ActorBase):
     #         )
     #     return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.authorize_repeated_volumes is True:
             return
         att = self.attached_to
@@ -370,8 +370,8 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
         g4.GateDigitizerAdderActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if (
             self.policy != "EnergyWinnerPosition"
             and self.policy != "EnergyWeightedCentroidPosition"
@@ -494,8 +494,8 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
 
     def initialize(self):
@@ -625,8 +625,8 @@ class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeAc
         g4.GateDigitizerDeadTimeActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
 
@@ -745,8 +745,8 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
         g4.GateDigitizerPileupActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
 
@@ -876,8 +876,8 @@ class DigitizerSpatialBlurringActor(
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
 
     def initialize(self):
@@ -950,8 +950,8 @@ class DigitizerEfficiencyActor(
                 f"Efficency set to {self.efficiency}, which is not in [0;1]."
             )
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
 
     def initialize(self):
@@ -1164,8 +1164,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         # for the moment, we cannot use this actor with several volumes
         m = self.attached_to
         if hasattr(m, "__len__") and not isinstance(m, str):
@@ -1442,8 +1442,8 @@ class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterAc
         g4.GateCoincidenceSorterActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
 
@@ -1502,8 +1502,8 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.discretize_volume is None:
             fatal('Please, set the option "discretize_volume"')
         self.simulation.volume_manager.get_volume(self.user_info.discretize_volume)
@@ -1568,8 +1568,8 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if isinstance(self.steps_to_store, str):
             requested_steps = self.steps_to_store.split()
         else:

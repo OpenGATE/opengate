@@ -175,7 +175,7 @@ class SourceBase(DynamicGateObject):
     def can_predict_number_of_events(self):
         return True
 
-    def resolve_and_validate_config(self, run_timing_intervals):
+    def resolve_and_validate_config(self, run_timing_intervals, context=None):
         self.resolve_and_validate_timing(run_timing_intervals)
         self.check_ui_activity(self.user_info)
 

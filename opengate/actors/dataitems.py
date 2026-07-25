@@ -29,7 +29,9 @@ the simulation workflow.
 import itk
 import numpy as np
 import json
+import os
 import platform
+import tempfile
 from pathlib import Path
 from box import Box
 
@@ -49,6 +51,7 @@ from ..image import (
     itk_image_from_array,
     add_constant_to_itk_image,
 )
+from ..contrib.root_helpers import root_write_tree
 
 
 class DeprecationError(RuntimeError):
@@ -856,9 +859,88 @@ class RootDataItem(DataItem):
                     merged_branch_payload[branch_name] = np.concatenate(chunks)
         return tree_descriptor["tree_name"], merged_branch_payload
 
-    def write(self, path, metadata_path=None, **kwargs):
+    @classmethod
+    def _read_all_tree_payloads(cls, root_file_path):
         import uproot
 
+        tree_payloads = {}
+        root_file_path = Path(root_file_path)
+        with uproot.open(root_file_path) as root_file:
+            for tree_descriptor in cls.inspect_root_file(root_file_path):
+                tree_name = tree_descriptor["tree_name"]
+                tree = root_file[tree_name]
+                branch_payload = {}
+                for branch_name in tree_descriptor["branches"]:
+                    branch_payload[branch_name] = tree[branch_name].array(library="ak")
+                tree_payloads[tree_name] = {
+                    "branches": tree_descriptor["branches"],
+                    "payload": branch_payload,
+                }
+        return tree_payloads
+
+    @classmethod
+    def _rewrite_root_file_with_tree(cls, output_path, tree_name, branch_types, branch_payload):
+        output_path = Path(output_path)
+        existing_trees = {}
+        if output_path.exists():
+            existing_trees = cls._read_all_tree_payloads(output_path)
+        existing_trees[tree_name] = {
+            "branches": branch_types,
+            "payload": branch_payload,
+        }
+
+        with tempfile.NamedTemporaryFile(
+            suffix=".root", dir=output_path.parent, delete=False
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+
+        try:
+            import uproot
+
+            # DEBUG: dump branch payload structure before rewriting the shared
+            # ROOT file. This helps diagnose cases where uproot receives an
+            # unsized/scalar-like payload instead of a proper per-entry array.
+            print("DEBUG RootDataItem._rewrite_root_file_with_tree payload inventory:")
+            print(f"  output_path: {output_path}")
+            print(f"  target_tree_name: {tree_name}")
+            for existing_tree_name, existing_tree_data in existing_trees.items():
+                print(f"  tree: {existing_tree_name}")
+                print(
+                    f"    declared branches: {list(existing_tree_data['branches'].keys())}"
+                )
+                for branch_name, branch_payload_value in existing_tree_data[
+                    "payload"
+                ].items():
+                    payload_type = type(branch_payload_value).__name__
+                    payload_shape = getattr(branch_payload_value, "shape", None)
+                    try:
+                        payload_length = len(branch_payload_value)
+                    except Exception as error:
+                        payload_length = f"<len failed: {type(error).__name__}: {error}>"
+                    try:
+                        preview = branch_payload_value[:3]
+                    except Exception as error:
+                        preview = f"<preview failed: {type(error).__name__}: {error}>"
+                    print(f"    branch: {branch_name}")
+                    print(f"      type: {payload_type}")
+                    print(f"      shape: {payload_shape}")
+                    print(f"      len: {payload_length}")
+                    print(f"      preview: {preview}")
+
+            with uproot.recreate(temporary_path) as output_file:
+                for existing_tree_name, existing_tree_data in existing_trees.items():
+                    root_write_tree(
+                        output_file,
+                        existing_tree_name,
+                        existing_tree_data["branches"],
+                        existing_tree_data["payload"],
+                    )
+            os.replace(temporary_path, output_path)
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
+
+    def write(self, path, metadata_path=None, **kwargs):
         if not self.has_root_meta_data():
             fatal("Cannot write merged ROOT output because no ROOT metadata is available.")
         if len(self.root_meta_data.get("merge_sources", [])) == 0:
@@ -867,9 +949,13 @@ class RootDataItem(DataItem):
         output_path = Path(path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         tree_name, merged_branch_payload = self._build_merged_branch_payload()
-        write_mode = uproot.update if output_path.exists() else uproot.recreate
-        with write_mode(output_path) as output_file:
-            output_file[tree_name] = merged_branch_payload
+        tree_descriptor = self.get_single_tree_descriptor()
+        self._rewrite_root_file_with_tree(
+            output_path,
+            tree_name,
+            tree_descriptor["branches"],
+            merged_branch_payload,
+        )
 
         self.capture_runtime_metadata(
             output_path,

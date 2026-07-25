@@ -601,7 +601,8 @@ class Region(GateObject):
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
-    def resolve_and_validate_config(self):
+<<<<<<< HEAD
+    def resolve_and_validate_config(self, context=None):
         if len(self.root_logical_volumes) == 0:
             fatal(
                 f"Region '{self.name}' exists in the PhysicsManager but is not "

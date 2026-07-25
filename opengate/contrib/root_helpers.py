@@ -175,16 +175,25 @@ def root_read_tree(root_file_path, tree_name="phsp"):
 
 
 def root_write_tree(output_file, tree_name, branch_types, branch_data):
-    # Ensure all arrays in branch_data are high-level ak.Array or numpy
-    formatted_data = {
-        k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
-        for k, v in branch_data.items()
-    }
+    def _normalize_branch_payload(value):
+        if isinstance(value, np.ndarray):
+            # uproot.extend expects sized arrays; a 0-D numpy scalar is not
+            # sufficient and triggers ``len() of unsized object``.
+            if value.ndim == 0:
+                return np.asarray([value.item()])
+            return value
+        try:
+            len(value)
+        except TypeError:
+            value = [value]
+        return ak.Array(value)
 
-    # Step 1: Create the empty tree
-    tree = output_file.mktree(tree_name, branch_types)
-    # Step 2: Fill the tree
-    tree.extend(formatted_data)
+    # Ensure all branch payloads are sized array-like objects accepted by uproot.
+    formatted_data = {k: _normalize_branch_payload(v) for k, v in branch_data.items()}
+    # Let uproot infer the writable schema from the normalized payload instead
+    # of forcing an explicit mktree/extend path. This is more robust for mixed
+    # payloads such as string-like branches when recreating shared ROOT files.
+    output_file[tree_name] = formatted_data
 
 
 def root_write_tree_old(output_file, tree_name, branch_types, branch_data):

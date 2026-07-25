@@ -524,7 +524,7 @@ class ActorBase(GateObject):
         # close the base GateObject
         super().close()
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         # Resolve the mother of the attached_to volume now so initialize() only
         # needs to forward the resolved value to the runtime layer.
         if isinstance(self.attached_to, str):
@@ -544,7 +544,7 @@ class ActorBase(GateObject):
             self.warn_user(f"The actor {self.name} has no active output. ")
 
         for user_output in self.user_output.values():
-            user_output.resolve_and_validate_config()
+            user_output.resolve_and_validate_config(context=context)
 
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
@@ -776,6 +776,12 @@ class ActorBase(GateObject):
                 target_output.is_container_output()
                 and source_output.is_container_output()
             ):
+                self.warn_user(
+                    f"Skipping merge of actor output '{output_name}' between "
+                    f"actors '{self.name}' and '{other_actor.name}' because "
+                    "this output type does not yet implement container-based "
+                    "merge support."
+                )
                 continue
             try:
                 target_output.in_place_merge(

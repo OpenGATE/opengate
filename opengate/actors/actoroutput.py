@@ -389,8 +389,27 @@ class ActorOutputBase(GateObject):
             )
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
-    def resolve_and_validate_config(self):
-        pass
+    def resolve_and_validate_config(self, context=None):
+        if context == "split_preparation":
+            self._warn_if_absolute_output_filenames()
+
+    def _warn_if_absolute_output_filenames(self):
+        try:
+            output_filename = self.get_output_filename()
+        except NotImplementedError:
+            return
+        if output_filename in (None, "", "auto"):
+            return
+        try:
+            output_path = Path(output_filename)
+        except TypeError:
+            return
+        if output_path.is_absolute():
+            self.warn_user(
+                f"Actor output '{self.name}' uses the absolute output path "
+                f"'{output_path}'. Absolute output paths can cause split-job "
+                "output merging to fail."
+            )
 
     def initialize_cpp_parameters(self):
         pass
@@ -562,6 +581,25 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             return self.data_container_class.normalize_item_identifier(item)
         except GateImplementationError:
             self._fatal_unknown_item(item)
+
+    def _warn_if_absolute_output_filenames(self):
+        try:
+            output_filenames = self.get_output_filename(item="all")
+        except NotImplementedError:
+            return
+        for item_identifier, output_filename in output_filenames.items():
+            if output_filename in (None, "", "auto"):
+                continue
+            try:
+                output_path = Path(output_filename)
+            except TypeError:
+                continue
+            if output_path.is_absolute():
+                self.warn_user(
+                    f"Actor output '{self.name}' for item '{item_identifier}' "
+                    f"uses the absolute output path '{output_path}'. Absolute "
+                    "output paths can cause split-job output merging to fail."
+                )
 
     def _apply_item_config_overrides(self, item_config_overrides):
         if item_config_overrides is None:
@@ -893,6 +931,12 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             if other_output.get_active(item=item_identifier)
             and other_output.get_write_to_disk(item=item_identifier)
         ]
+        if load_mode == "rehydrated":
+            merge_item_identifiers = [
+                item_identifier
+                for item_identifier in merge_item_identifiers
+                if self.get_write_to_disk(item=item_identifier)
+            ]
         if len(merge_item_identifiers) == 0:
             return
         try:
@@ -1126,7 +1170,8 @@ class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
             return None
         return self.merged_data.get_data_item_object(0)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.get_output_filename() not in ("", None, "auto"):
             self.set_write_to_disk(True)
 
@@ -1272,7 +1317,8 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                     "removing 'RunID' from skip_attributes."
                 )
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         # Warning, for the moment, MT and root output does not work on windows machine
         if sys.platform.startswith("nt"):
             if g4.IsMultithreadedApplication():
@@ -1344,6 +1390,14 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                 f"Cannot merge incompatible ROOT outputs '{other_output.name}' "
                 f"into '{self.name}'."
             )
+        if (
+            load_mode == "rehydrated"
+            and (
+                not self.get_write_to_disk(item=0)
+                or not other_output.get_write_to_disk(item=0)
+            )
+        ):
+            return
         try:
             other_output.load_data(which="merged", load_mode=load_mode)
             target_container = self.ensure_data_container("merged")

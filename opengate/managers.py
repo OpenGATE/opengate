@@ -304,9 +304,9 @@ class FilterManager:
     def create_filter_deprecated(self, filter_type, name):
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         for filter_obj in self.filters.values():
-            filter_obj.resolve_and_validate_config()
+            filter_obj.resolve_and_validate_config(context=context)
 
 
 class SourceManager(GateObject):
@@ -424,12 +424,14 @@ class SourceManager(GateObject):
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         for source in self.sources.values():
             # Resolve each source against the master simulation timing now so
             # split jobs inherit explicit global timing anchors and normalized
             # source configuration.
-            source.resolve_and_validate_config(self.simulation.run_timing_intervals)
+            source.resolve_and_validate_config(
+                self.simulation.run_timing_intervals, context=context
+            )
 
         dynamic_sources = self.dynamic_sources
         for source in dynamic_sources:
@@ -502,9 +504,9 @@ class ActorManager(GateObject):
     def reset(self):
         self.__init__(simulation=self.simulation)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         for actor in self.sorted_actors:
-            actor.resolve_and_validate_config()
+            actor.resolve_and_validate_config(context=context)
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -1108,7 +1110,7 @@ class PhysicsManager(GateObject):
         #         )
         #     self.user_info.user_limits_particles[pn] = True
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
@@ -1148,7 +1150,7 @@ class PhysicsManager(GateObject):
         # volume registry during config handling so invalid references fail
         # early, before any Geant4 initialization begins.
         for region in self.regions.values():
-            region.resolve_and_validate_config()
+            region.resolve_and_validate_config(context=context)
 
         if (
             len(
@@ -1576,7 +1578,7 @@ class VolumeManager(GateObject):
     def dynamic_volumes(self):
         return [vol for vol in self.volumes.values() if vol.is_dynamic]
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         # Resolve the volume tree explicitly during the configuration phase so
         # invalid mother references and tree loops fail early instead of only
         # when some later property access triggers a lazy update.
@@ -2593,17 +2595,17 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         # Keep this phase limited to Python-side configuration resolution and
         # negotiation before runtime initialization. It may tie managers and
         # actors together, but it must not create any Geant4 objects yet.
         assert_run_timing(self.run_timing_intervals)
-        self.physics_manager.resolve_and_validate_config()
+        self.physics_manager.resolve_and_validate_config(context=context)
         self.initialize_source_before_g4_engine()
-        self.volume_manager.resolve_and_validate_config()
-        self.source_manager.resolve_and_validate_config()
-        self.actor_manager.resolve_and_validate_config()
-        self.filter_manager.resolve_and_validate_config()
+        self.volume_manager.resolve_and_validate_config(context=context)
+        self.source_manager.resolve_and_validate_config(context=context)
+        self.actor_manager.resolve_and_validate_config(context=context)
+        self.filter_manager.resolve_and_validate_config(context=context)
 
     def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.

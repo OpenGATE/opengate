@@ -353,7 +353,7 @@ def jobs_split(
 ):
     # Split authoritative, resolved configuration rather than the raw user
     # inputs so child jobs inherit explicit timing anchors and helper actors.
-    simulation.resolve_and_validate_config()
+    simulation.resolve_and_validate_config(context="split_preparation")
 
     original_run_timing_intervals = _copy_run_timing_intervals(
         simulation.run_timing_intervals
