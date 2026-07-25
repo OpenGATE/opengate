@@ -377,7 +377,10 @@ class ActorOutputBase(GateObject):
             )
         elif len(interface_names) > 1:
             joined_interfaces = ", ".join(
-                [f"`my_actor.{interface_name}.{property_name}`" for interface_name in interface_names]
+                [
+                    f"`my_actor.{interface_name}.{property_name}`"
+                    for interface_name in interface_names
+                ]
             )
             interface_hint = (
                 f"This output is exposed through multiple actor interfaces. "
