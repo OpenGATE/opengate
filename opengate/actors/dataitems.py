@@ -705,7 +705,7 @@ class RootDataItem(DataItem):
         with open(path, "r") as input_file:
             self.set_root_meta_data(json.load(input_file))
 
-    def load(self, path, metadata_path=None, **kwargs):
+    def load(self, path, metadata_path=None, load_mode="live", **kwargs):
         import uproot
 
         root_file_path = Path(path)
@@ -714,24 +714,35 @@ class RootDataItem(DataItem):
         if metadata_path is not None and Path(metadata_path).exists():
             self.load_root_metadata(metadata_path)
         elif not self.has_root_meta_data():
-            tree_names = self._resolve_expected_tree_names_from_owner()
-            tree_descriptors = self.inspect_root_file(
-                root_file_path, expected_tree_names=tree_names
-            )
-            if len(tree_descriptors) == 0:
+            if load_mode == "rehydrated":
                 fatal(
-                    "Cannot load ROOT metadata fallback because none of the "
-                    f"expected trees {list(tree_names)} were found in "
-                    f"'{root_file_path}'."
+                    "Cannot load ROOT output in load_mode='rehydrated' without "
+                    f"a persisted metadata file. Missing metadata path: {metadata_path}."
                 )
-            self.set_root_meta_data(
-                {
-                    "metadata_version": self.metadata_version,
-                    "root_output_path": str(root_file_path),
-                    "trees": tree_descriptors,
-                    "merge_sources": [],
-                }
-            )
+            if load_mode == "live":
+                tree_names = self._resolve_expected_tree_names_from_owner()
+                tree_descriptors = self.inspect_root_file(
+                    root_file_path, expected_tree_names=tree_names
+                )
+                if len(tree_descriptors) == 0:
+                    fatal(
+                        "Cannot load ROOT metadata fallback because none of the "
+                        f"expected trees {list(tree_names)} were found in "
+                        f"'{root_file_path}'."
+                    )
+                self.set_root_meta_data(
+                    {
+                        "metadata_version": self.metadata_version,
+                        "root_output_path": str(root_file_path),
+                        "trees": tree_descriptors,
+                        "merge_sources": [],
+                    }
+                )
+            else:
+                fatal(
+                    f"Unknown load_mode '{load_mode}' for RootDataItem.load(). "
+                    "Known modes are 'live' and 'rehydrated'."
+                )
         else:
             self.root_meta_data["root_output_path"] = str(root_file_path)
 

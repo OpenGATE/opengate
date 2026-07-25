@@ -476,7 +476,7 @@ class ActorOutputBase(GateObject):
     def write_data_if_requested(self, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
-    def load_data(self, which):
+    def load_data(self, which, **kwargs):
         raise NotImplementedError(
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
@@ -879,7 +879,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         target_container = self.ensure_data_container(which_target)
         target_container.inplace_merge_with(source_container)
 
-    def in_place_merge(self, other_output, which_target, which_source):
+    def in_place_merge(
+        self, other_output, which_target, which_source, load_mode="live"
+    ):
         if not other_output.is_container_output():
             raise GateMergeError(
                 f"Cannot merge non-container output '{other_output.name}' into "
@@ -894,7 +896,11 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if len(merge_item_identifiers) == 0:
             return
         try:
-            other_output.load_data(which=which_source, item=merge_item_identifiers)
+            other_output.load_data(
+                which=which_source,
+                item=merge_item_identifiers,
+                load_mode=load_mode,
+            )
             self.merge_data_from_output(
                 other_output,
                 which_source=which_source,
@@ -1330,14 +1336,16 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
             return
         super().clear_data(which="merged", item=item)
 
-    def in_place_merge(self, other_output, which_target, which_source):
+    def in_place_merge(
+        self, other_output, which_target, which_source, load_mode="live"
+    ):
         if type(self) is not type(other_output):
             raise GateMergeError(
                 f"Cannot merge incompatible ROOT outputs '{other_output.name}' "
                 f"into '{self.name}'."
             )
         try:
-            other_output.load_data(which="merged")
+            other_output.load_data(which="merged", load_mode=load_mode)
             target_container = self.ensure_data_container("merged")
             source_container = other_output.get_data_container("merged")
             target_item = target_container.get_data_item_object(0)

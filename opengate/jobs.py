@@ -1477,6 +1477,7 @@ class JobsMergeManager:
                 child_simulation,
                 run_index_target=original_run_index,
                 run_index_source=contribution["local_run_index"],
+                load_mode="rehydrated",
             )
         except Exception as error:
             if isinstance(error, GateMergeError):

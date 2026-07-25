@@ -618,7 +618,13 @@ class ActorManager(GateObject):
     def remove_actor(self, name):
         self.actors.pop(name)
 
-    def in_place_merge(self, other_actor_manager, run_index_target, run_index_source):
+    def in_place_merge(
+        self,
+        other_actor_manager,
+        run_index_target,
+        run_index_source,
+        load_mode="live",
+    ):
         common_actor_names = sorted(
             set(self.actors.keys()).intersection(other_actor_manager.actors.keys())
         )
@@ -630,6 +636,7 @@ class ActorManager(GateObject):
                     source_actor,
                     run_index_target=run_index_target,
                     run_index_source=run_index_source,
+                    load_mode=load_mode,
                 )
             except Exception as error:
                 if isinstance(error, GateMergeError):
@@ -2535,11 +2542,14 @@ class Simulation(GateObject):
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
 
-    def in_place_merge(self, other_simulation, run_index_target, run_index_source):
+    def in_place_merge(
+        self, other_simulation, run_index_target, run_index_source, load_mode="live"
+    ):
         self.actor_manager.in_place_merge(
             other_simulation.actor_manager,
             run_index_target=run_index_target,
             run_index_source=run_index_source,
+            load_mode=load_mode,
         )
 
     def finalize_merge(self):

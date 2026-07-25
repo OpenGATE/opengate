@@ -757,7 +757,9 @@ class ActorBase(GateObject):
                     "because merge support is not implemented for this output type yet."
                 )
 
-    def in_place_merge(self, other_actor, run_index_target, run_index_source):
+    def in_place_merge(
+        self, other_actor, run_index_target, run_index_source, load_mode="live"
+    ):
         if self.type_name != other_actor.type_name:
             raise GateMergeError(
                 f"Cannot merge actor '{other_actor.name}' of type {other_actor.type_name} "
@@ -780,6 +782,7 @@ class ActorBase(GateObject):
                     source_output,
                     which_target=run_index_target,
                     which_source=run_index_source,
+                    load_mode=load_mode,
                 )
             except Exception as error:
                 if isinstance(error, GateMergeError):
