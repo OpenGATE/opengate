@@ -52,7 +52,8 @@ from ..image import (
     itk_image_from_array,
     add_constant_to_itk_image,
 )
-from ..contrib.root_helpers import RootMergeFileWriter, root_write_tree
+from ..rootio import RootMergeFileWriter
+from ..contrib.root_helpers import root_write_tree
 
 
 class DeprecationError(RuntimeError):

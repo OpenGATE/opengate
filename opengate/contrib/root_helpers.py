@@ -14,51 +14,6 @@ from opengate.exception import raise_except
 logger = logging.getLogger(__name__)
 
 
-class RootMergeFileWriter:
-    """Incremental ROOT writer used by split-job merge.
-
-    The writer owns one physical ROOT file and keeps writable tree handles open
-    so multiple actor outputs can stream chunks into distinct trees of the same
-    file without repeatedly recreating it.
-    """
-
-    def __init__(self, output_path):
-        self.output_path = Path(output_path)
-        self._file = None
-        self._trees = {}
-
-    def open(self):
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
-        self._file = uproot.recreate(self.output_path)
-
-    def create_tree(self, tree_name, branch_types):
-        if self._file is None:
-            raise RuntimeError(
-                "RootMergeFileWriter.create_tree() called before open()."
-            )
-        if tree_name in self._trees:
-            return self._trees[tree_name]
-        tree = self._file.mktree(tree_name, branch_types)
-        self._trees[tree_name] = tree
-        return tree
-
-    def append_chunk(self, tree_name, branch_payload):
-        if tree_name not in self._trees:
-            raise RuntimeError(
-                f"RootMergeFileWriter.append_chunk() received unknown tree "
-                f"'{tree_name}'. Call create_tree() first."
-            )
-        self._trees[tree_name].extend(
-            _normalize_writable_branch_payload(branch_payload)
-        )
-
-    def close(self):
-        if self._file is not None:
-            self._file.close()
-            self._file = None
-            self._trees = {}
-
-
 def _root_open_trees_safely(paths, tree_name):
     """Opens one or more ROOT files and yields the TTree objects safely."""
     files = [uproot.open(path) for path in paths]
@@ -219,30 +174,17 @@ def root_read_tree(root_file_path, tree_name="phsp"):
     return tree
 
 
-def _normalize_writable_branch_payload(branch_payload):
-    """Convert one streamed ROOT chunk into uproot-writable arrays."""
-
-    def _normalize_one_branch(value):
-        if isinstance(value, np.ndarray):
-            if value.ndim == 0:
-                return np.asarray([value.item()])
-            return value
-        try:
-            len(value)
-        except TypeError:
-            value = [value]
-        return ak.Array(value)
-
-    return {k: _normalize_one_branch(v) for k, v in branch_payload.items()}
-
-
 def root_write_tree(output_file, tree_name, branch_types, branch_data):
-    # Ensure all branch payloads are sized array-like objects accepted by uproot.
-    formatted_data = _normalize_writable_branch_payload(branch_data)
-    # Let uproot infer the writable schema from the normalized payload instead
-    # of forcing an explicit mktree/extend path. This is more robust for mixed
-    # payloads such as string-like branches when recreating shared ROOT files.
-    output_file[tree_name] = formatted_data
+    # Ensure all arrays in branch_data are high-level ak.Array or numpy
+    formatted_data = {
+        k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
+        for k, v in branch_data.items()
+    }
+
+    # Step 1: Create the empty tree
+    tree = output_file.mktree(tree_name, branch_types)
+    # Step 2: Fill the tree
+    tree.extend(formatted_data)
 
 
 def root_write_tree_old(output_file, tree_name, branch_types, branch_data):

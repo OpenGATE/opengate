@@ -2555,7 +2555,7 @@ class Simulation(GateObject):
         )
 
     def finalize_merge(self):
-        from .contrib.root_helpers import RootMergeFileWriter
+        from .rootio import RootMergeFileWriter
 
         root_output_groups = {}
 
