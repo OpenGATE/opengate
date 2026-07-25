@@ -703,7 +703,15 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             item = self._normalize_item_identifier(item)
             try:
-                self.data_item_config[item]["output_filename"] = str(value)
+                # Preserve ``None`` as a sentinel meaning "no output file"
+                # instead of stringifying it to ``"None"``. Several existing
+                # digitizer helpers still set output_filename=None explicitly to
+                # disable ROOT persistence, and config resolution relies on a
+                # real None value to switch write_to_disk off.
+                if value is None:
+                    self.data_item_config[item]["output_filename"] = None
+                else:
+                    self.data_item_config[item]["output_filename"] = str(value)
             except KeyError:
                 self._fatal_unknown_item(item)
 
@@ -1336,16 +1344,22 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                     f"You can run the simulation in single-threaded mode of switch to linux/max."
                 )
 
-        # for ROOT output, not output_filename means no output to disk (legacy Gate 9 behavior)
-        if self.output_filename == "" or self.output_filename is None:
-            self.write_to_disk = False
+        # For ROOT output, an empty or missing filename means "no ROOT file",
+        # which keeps the legacy Gate 9 behavior. Use the explicit getter and
+        # setter on the raw ActorOutput object rather than interface-style
+        # attributes.
+        output_filename = self.get_output_filename(item=0)
+        if output_filename == "" or output_filename is None:
+            self.set_write_to_disk(False, item=0)
 
         self._ensure_run_id_requested_if_needed()
 
     def initialize_cpp_parameters(self):
         self.belongs_to_actor.AddActorOutputInfo(self.name)
-        self.belongs_to_actor.SetWriteToDisk(self.name, self.write_to_disk)
-        if self.output_filename == "" or self.output_filename is None:
+        write_to_disk = self.get_write_to_disk(item=0)
+        output_filename = self.get_output_filename(item=0)
+        self.belongs_to_actor.SetWriteToDisk(self.name, write_to_disk)
+        if output_filename == "" or output_filename is None:
             # this test avoid a warning in get_output_path when it is None
             self.belongs_to_actor.SetOutputPath(self.name, "None")
         else:

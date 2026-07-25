@@ -183,10 +183,12 @@ class Digitizer:
         if "input_digi_collection" in mod.user_info:
             mod.input_digi_collection = self.actors[index - 1].name
         first_key = next(iter(mod.user_output))
-        if module_type == "DigitizerProjectionActor":
-            mod.user_output[first_key].set_write_to_disk(False)
-        else:
-            mod.user_output[first_key].write_to_disk = False
+        # ``mod.user_output[...]`` returns the raw ActorOutput object, not the
+        # user-facing interface proxy. Disabling persistence must therefore go
+        # through the explicit setter method so the internal item config is
+        # updated, instead of creating a stray Python attribute named
+        # ``write_to_disk`` on the ActorOutput instance.
+        mod.user_output[first_key].set_write_to_disk(False)
         self.actors.append(mod)
         return mod
 
