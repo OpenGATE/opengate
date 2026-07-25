@@ -1350,7 +1350,7 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                         ),
                         "requested_attributes": requested_attributes,
                         "skipped_attributes": skipped_attributes,
-                        "trees": source_item.meta_data["trees"],
+                        "trees": source_item.root_meta_data["trees"],
                         "merge_sources": [],
                     }
                 )
@@ -1411,7 +1411,7 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
         )
         metadata_path = self.get_metadata_path()
         try:
-            data_item.store_metadata(metadata_path)
+            data_item.save_root_metadata(metadata_path)
         except NotImplementedError as error:
             self.warn_user(str(error))
 

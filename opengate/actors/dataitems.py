@@ -538,13 +538,14 @@ class RootDataItem(DataItem):
 
     def __init__(self, *args, **kwargs):
         self._root_file = None
+        self.root_meta_data = None
         super().__init__(*args, **kwargs)
 
     def set_root_meta_data(self, meta_data):
-        self.meta_data = Box(meta_data)
+        self.root_meta_data = Box(meta_data)
 
     def has_root_meta_data(self):
-        return "trees" in self.meta_data
+        return self.root_meta_data is not None
 
     @staticmethod
     def _strip_root_cycle(key):
@@ -606,13 +607,15 @@ class RootDataItem(DataItem):
             }
         )
 
-    def store_metadata(self, path):
+    def save_root_metadata(self, path):
         if not self.has_root_meta_data():
-            fatal("Cannot store ROOT metadata because no metadata has been captured yet.")
+            fatal(
+                "Cannot save ROOT metadata because no ROOT metadata has been captured yet."
+            )
         with open(path, "w") as output_file:
-            dump_json(dict(self.meta_data), output_file, indent=4)
+            dump_json(dict(self.root_meta_data), output_file, indent=4)
 
-    def load_metadata(self, path):
+    def load_root_metadata(self, path):
         with open(path, "r") as input_file:
             self.set_root_meta_data(json.load(input_file))
 
@@ -623,7 +626,7 @@ class RootDataItem(DataItem):
         self.close_data()
         self._root_file = uproot.open(root_file_path)
         if metadata_path is not None and Path(metadata_path).exists():
-            self.load_metadata(metadata_path)
+            self.load_root_metadata(metadata_path)
         elif not self.has_root_meta_data():
             self.set_root_meta_data(
                 {
@@ -634,7 +637,7 @@ class RootDataItem(DataItem):
                 }
             )
         else:
-            self.meta_data["root_output_path"] = str(root_file_path)
+            self.root_meta_data["root_output_path"] = str(root_file_path)
 
     def close_data(self):
         if self._root_file is not None:
@@ -646,7 +649,7 @@ class RootDataItem(DataItem):
 
     def get_single_tree_descriptor(self):
         try:
-            trees = self.meta_data["trees"]
+            trees = self.root_meta_data["trees"]
         except (TypeError, KeyError):
             fatal("ROOT metadata does not contain any tree information.")
         if len(trees) != 1:
@@ -661,7 +664,7 @@ class RootDataItem(DataItem):
             self.set_root_meta_data(
                 {
                     "metadata_version": self.metadata_version,
-                    "trees": source_item.meta_data["trees"],
+                    "trees": source_item.root_meta_data["trees"],
                     "merge_sources": [],
                 }
             )
@@ -673,9 +676,9 @@ class RootDataItem(DataItem):
                 f"Target branches are {sorted(target_tree['branches'].keys())}, "
                 f"source branches are {sorted(source_tree['branches'].keys())}."
             )
-        self.meta_data.setdefault("merge_sources", []).append(
+        self.root_meta_data.setdefault("merge_sources", []).append(
             {
-                "root_output_path": source_item.meta_data["root_output_path"],
+                "root_output_path": source_item.root_meta_data["root_output_path"],
                 "run_id_from": int(run_id_from),
                 "run_id_to": int(run_id_to),
             }
@@ -707,7 +710,7 @@ class RootDataItem(DataItem):
         remap_run_ids = "RunID" in branch_names
         remap_event_ids = "EventID" in branch_names
 
-        for merge_source in self.meta_data.get("merge_sources", []):
+        for merge_source in self.root_meta_data.get("merge_sources", []):
             with uproot.open(merge_source["root_output_path"]) as root_file:
                 source_tree = root_file[tree_descriptor["tree_name"]]
                 branch_data = self._read_filtered_branch_data(
@@ -751,7 +754,7 @@ class RootDataItem(DataItem):
 
         if not self.has_root_meta_data():
             fatal("Cannot write merged ROOT output because no ROOT metadata is available.")
-        if len(self.meta_data.get("merge_sources", [])) == 0:
+        if len(self.root_meta_data.get("merge_sources", [])) == 0:
             return
 
         output_path = Path(path)
@@ -763,14 +766,14 @@ class RootDataItem(DataItem):
 
         self.capture_runtime_metadata(
             output_path,
-            actor_name=self.meta_data.get("actor_name", "unknown_actor"),
-            actor_type=self.meta_data.get("actor_type", "unknown_type"),
-            actor_output_name=self.meta_data.get("actor_output_name", "root_output"),
-            requested_attributes=self.meta_data.get("requested_attributes"),
-            skipped_attributes=self.meta_data.get("skipped_attributes"),
+            actor_name=self.root_meta_data.get("actor_name", "unknown_actor"),
+            actor_type=self.root_meta_data.get("actor_type", "unknown_type"),
+            actor_output_name=self.root_meta_data.get("actor_output_name", "root_output"),
+            requested_attributes=self.root_meta_data.get("requested_attributes"),
+            skipped_attributes=self.root_meta_data.get("skipped_attributes"),
         )
         if metadata_path is not None:
-            self.store_metadata(metadata_path)
+            self.save_root_metadata(metadata_path)
 
 
 # data items holding images
