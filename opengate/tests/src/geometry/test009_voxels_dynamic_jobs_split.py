@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import shutil
+import numpy as np
 
 import opengate as gate
 from opengate.tests import utility
@@ -13,6 +14,15 @@ from opengate.tests.src.geometry.test009_voxels_dynamic_helpers import (
     merge_stats_from_jobs,
     wait_for_completed_jobs,
 )
+
+
+def intervals_are_close(intervals_1, intervals_2, atol):
+    if len(intervals_1) != len(intervals_2):
+        return False
+    return all(
+        np.allclose(interval_1, interval_2, rtol=0.0, atol=atol)
+        for interval_1, interval_2 in zip(intervals_1, intervals_2)
+    )
 
 
 def run_split_campaign(paths, split_path, backend, backend_options=None):
@@ -74,8 +84,11 @@ def run_split_campaign(paths, split_path, backend, backend_options=None):
         # both dynamic image entries.
         checks_ok = (
             utility.print_test(
-                child_simulation.run_timing_intervals
-                == expected_job_intervals[job_index],
+                intervals_are_close(
+                    child_simulation.run_timing_intervals,
+                    expected_job_intervals[job_index],
+                    atol=1e-12 * sec,
+                ),
                 f"{backend} {job['folder_name']} run timing intervals: {child_simulation.run_timing_intervals}",
             )
             and checks_ok
