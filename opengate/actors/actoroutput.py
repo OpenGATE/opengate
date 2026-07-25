@@ -355,6 +355,50 @@ class ActorOutputBase(GateObject):
     def get_run_indices(self, **kwargs):
         return [k for k, v in self.data_per_run.items() if v is not None]
 
+    def _find_interface_names_for_this_output(self):
+        try:
+            actor = self.belongs_to_actor
+        except Exception:
+            return []
+        interface_names = []
+        for interface_name, interface in actor.interfaces_to_user_output.items():
+            if getattr(interface, "user_output_name", None) == self.name:
+                interface_names.append(interface_name)
+        return interface_names
+
+    def _format_raw_output_deprecation_message(
+        self, property_name, explicit_setter, explicit_getter
+    ):
+        interface_names = self._find_interface_names_for_this_output()
+        if len(interface_names) == 1:
+            interface_hint = (
+                f"If your actor variable is called my_actor, use "
+                f"`my_actor.{interface_names[0]}.{property_name}` instead."
+            )
+        elif len(interface_names) > 1:
+            joined_interfaces = ", ".join(
+                [f"`my_actor.{interface_name}.{property_name}`" for interface_name in interface_names]
+            )
+            interface_hint = (
+                f"This output is exposed through multiple actor interfaces. "
+                f"If your actor variable is called my_actor, use one of: {joined_interfaces}."
+            )
+        else:
+            interface_hint = (
+                "No matching actor-output interface could be identified automatically "
+                "for this raw output object."
+            )
+
+        return (
+            f"Direct raw ActorOutput access via `actor.user_output['{self.name}'].{property_name}` "
+            f"is deprecated. This convenience property used to look like a simple "
+            f"user_info entry, but its authoritative state now lives in the "
+            f"container-backed item configuration.\n"
+            f"{interface_hint}\n"
+            f"If you intentionally work with the raw ActorOutput object, use "
+            f"`{explicit_setter}` for writes and `{explicit_getter}` for reads."
+        )
+
     def set_write_to_disk(self, value, **kwargs):
         raise NotImplementedError
 
@@ -581,6 +625,86 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         self.data_item_config = copy.deepcopy(self._default_data_item_config)
         self._apply_item_config_overrides(item_config_overrides)
 
+    @property
+    def write_to_disk(self):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "write_to_disk",
+                f"my_actor.user_output['{self.name}'].set_write_to_disk(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_write_to_disk(item=...)",
+            )
+        )
+
+    @write_to_disk.setter
+    def write_to_disk(self, value):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "write_to_disk",
+                f"my_actor.user_output['{self.name}'].set_write_to_disk(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_write_to_disk(item=...)",
+            )
+        )
+
+    @property
+    def output_filename(self):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "output_filename",
+                f"my_actor.user_output['{self.name}'].set_output_filename(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_output_filename(item=...)",
+            )
+        )
+
+    @output_filename.setter
+    def output_filename(self, value):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "output_filename",
+                f"my_actor.user_output['{self.name}'].set_output_filename(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_output_filename(item=...)",
+            )
+        )
+
+    @property
+    def active(self):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "active",
+                f"my_actor.user_output['{self.name}'].set_active(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_active(item=...)",
+            )
+        )
+
+    @active.setter
+    def active(self, value):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "active",
+                f"my_actor.user_output['{self.name}'].set_active(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_active(item=...)",
+            )
+        )
+
+    @property
+    def suffix(self):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "suffix",
+                f"my_actor.user_output['{self.name}'].set_item_suffix(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_item_suffix(item=...)",
+            )
+        )
+
+    @suffix.setter
+    def suffix(self, value):
+        raise DeprecationError(
+            self._format_raw_output_deprecation_message(
+                "suffix",
+                f"my_actor.user_output['{self.name}'].set_item_suffix(VALUE, item=...)",
+                f"my_actor.user_output['{self.name}'].get_item_suffix(item=...)",
+            )
+        )
+
     def _normalize_item_identifier(self, item):
         try:
             return self.data_container_class.normalize_item_identifier(item)
@@ -647,7 +771,20 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         return d
 
     def from_dictionary(self, d):
-        super().from_dictionary(d)
+        # Container-backed actor outputs keep per-item persistence settings in
+        # ``data_item_config``. The legacy raw convenience fields such as
+        # ``output_filename`` and ``write_to_disk`` are intentionally deprecated
+        # on the ActorOutput object itself, so deserialization must not route
+        # through those raw property setters.
+        d_base = copy.deepcopy(d)
+        for deprecated_raw_key in (
+            "output_filename",
+            "write_to_disk",
+            "active",
+            "suffix",
+        ):
+            d_base["user_info"].pop(deprecated_raw_key, None)
+        super().from_dictionary(d_base)
         self.data_item_config = self._restore_data_item_config_from_dictionary(
             d["data_item_config"]
         )
