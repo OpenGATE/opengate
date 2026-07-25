@@ -84,7 +84,7 @@ class DataItem:
         self.data = None
         if data is not None:
             self.set_data(data)
-        self.meta_data = Box({"number_of_samples": 1})
+        self.meta_data = Box()
         if meta_data:
             try:
                 for k, v in meta_data.items():
@@ -181,19 +181,20 @@ class DataItem:
     def close_data(self):
         self.clear_data()
 
+class SampleCountingDataItemMixin:
+    """Mixin for data items that explicitly track how many samples they represent."""
+
+    def __init__(self, *args, number_of_samples=1, **kwargs):
+        self._number_of_samples = int(number_of_samples)
+        super().__init__(*args, **kwargs)
+
     @property
     def number_of_samples(self):
-        try:
-            return self.meta_data["number_of_samples"]
-        except KeyError:
-            fatal(
-                f"This data item holds a mean value, "
-                f"but the meta_data dictionary does not contain any value for 'number_of_samples'."
-            )
+        return self._number_of_samples
 
     @number_of_samples.setter
     def number_of_samples(self, value):
-        self.meta_data["number_of_samples"] = int(value)
+        self._number_of_samples = int(value)
 
 
 class MeanValueDataItemMixin:
@@ -773,7 +774,7 @@ class RootDataItem(DataItem):
 
 
 # data items holding images
-class ItkImageDataItem(DataItem):
+class ItkImageDataItem(SampleCountingDataItemMixin, DataItem):
 
     @property
     def image(self):
@@ -1108,6 +1109,25 @@ class DataItemContainer(DataContainer):
         for d in self.data:
             if d is not None:
                 d.meta_data.update(meta_data)
+
+    def set_number_of_samples(self, number_of_samples, item="all"):
+        if item == "all":
+            item_identifiers = self.get_primary_item_identifiers()
+        elif isinstance(item, (list, tuple)):
+            item_identifiers = [self.normalize_item_identifier(i) for i in item]
+        else:
+            item_identifiers = [self.normalize_item_identifier(item)]
+
+        for item_identifier in item_identifiers:
+            data_item = self.get_data_item_object(item_identifier)
+            if data_item is None:
+                continue
+            if not hasattr(data_item, "number_of_samples"):
+                raise GateImplementationError(
+                    f"Data item {item_identifier!r} of container class "
+                    f"{type(self).__name__} does not support sample counting."
+                )
+            data_item.number_of_samples = number_of_samples
 
     def set_data(self, *data, item=None):
         # data might be already contained in the correct container class,

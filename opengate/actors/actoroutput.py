@@ -11,6 +11,7 @@ from ..exception import GateImplementationError, GateMergeError, fatal, warning
 from ..image import create_3d_image_of_histogram
 from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from .dataitems import (
+    DeprecationError,
     QuotientItkImage,
     QuotientMeanItkImage,
     SingleRootTree,
@@ -797,12 +798,20 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             self.data_per_run[run_index] = data_container
 
     def store_meta_data(self, which, **meta_data):
-        """data can be either the user data to be wrapped into a DataContainer class or
-        an already wrapped DataContainer class.
-        """
+        raise DeprecationError(
+            "ActorOutputUsingDataItemContainer.store_meta_data() is temporarily "
+            "disabled on purpose. Origin: sample counting is being moved away "
+            "from the generic meta_data dictionary toward explicit data-item "
+            "capabilities. Use a dedicated API such as set_number_of_samples() "
+            "instead."
+        )
 
-        data = self.get_data_container(which)
-        data.update_meta_data(meta_data)
+    def set_number_of_samples(self, which, number_of_samples, item="all"):
+        data_container = self.ensure_data_container(which)
+        data_container.set_number_of_samples(
+            number_of_samples=number_of_samples,
+            item=item,
+        )
 
     def ensure_data_container(self, which):
         if which == "merged":
