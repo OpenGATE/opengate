@@ -5,12 +5,14 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import traceback
 import uuid
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import opengate_core as g4
 
 from .exception import GateJobsBackendError, GateMergeError, fatal
 from .runtiming import assert_run_timing
@@ -454,6 +456,58 @@ def _load_jobs_manifest(manifest_or_dir_path):
     with open(manifest_path, "r") as input_file:
         manifest = load_json(input_file)
     return manifest_path, manifest
+
+
+def _format_timing_interval(interval):
+    start_str = str(g4.G4BestUnit(interval[0], "Time")).strip()
+    end_str = str(g4.G4BestUnit(interval[1], "Time")).strip()
+    return f"[{start_str}, {end_str}]"
+
+
+def _format_timing_intervals(intervals):
+    return ", ".join(_format_timing_interval(interval) for interval in intervals)
+
+
+def _format_original_run_indices(original_run_indices):
+    if len(original_run_indices) == 0:
+        return "[]"
+    unique_indices = []
+    for run_index in original_run_indices:
+        if run_index not in unique_indices:
+            unique_indices.append(run_index)
+    return "[" + ", ".join(str(run_index) for run_index in unique_indices) + "]"
+
+
+def format_jobs_split_summary(manifest_or_dir_path):
+    manifest_path, manifest = _load_jobs_manifest(manifest_or_dir_path)
+    split_root_folder = manifest_path.parent
+    lines = [
+        "Jobs split summary:",
+        f"- master folder: {split_root_folder}",
+        f"| simulation: {split_root_folder / manifest.get('master_simulation_filename', MASTER_SIMULATION_FILENAME)}",
+        f"| simulation id: {manifest.get('simulation_id', 'Unknown')}",
+        f"| split policy: {manifest.get('policy', 'Unknown')}",
+        f"| original run timing intervals: {_format_timing_intervals(manifest.get('original_run_timing_intervals', []))}",
+        "| jobs:",
+    ]
+    for job_item in manifest.get("jobs", []):
+        job_folder = split_root_folder / job_item["folder_name"]
+        metadata = _load_job_metadata(job_folder)
+        lines.extend(
+            [
+                f"| - {job_item['folder_name']}",
+                f"|   | folder: {job_folder}",
+                f"|   | original runs: {_format_original_run_indices(metadata.get('original_run_indices', []))}",
+                f"|   | local timing intervals: {_format_timing_intervals(metadata.get('run_timing_intervals', []))}",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def print_jobs_split_summary(manifest_or_dir_path):
+    summary = format_jobs_split_summary(manifest_or_dir_path)
+    print(summary)
+    return summary
 
 
 def _get_jobs_backend_status_path(split_root_folder):
@@ -1351,6 +1405,21 @@ class JobsMergeManager:
         self.original_run_to_sources_map = {}
         self.child_simulations_by_job_id = {}
         self.remaining_local_runs_by_job_id = {}
+        self._merge_result = None
+        self._merge_duration = None
+
+    @property
+    def merge_result(self):
+        if self._merge_result is None:
+            return None
+        return {
+            **self._merge_result,
+            "merge_duration": self.merge_duration,
+        }
+
+    @property
+    def merge_duration(self):
+        return self._merge_duration
 
     def load_campaign_metadata(self):
         self.leaf_sources = _collect_leaf_merge_sources(
@@ -1443,18 +1512,132 @@ class JobsMergeManager:
             },
         }
 
+    def build_summary_dict(self):
+        if self.master_simulation is None:
+            self.rehydrate_master_simulation()
+        if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
+            self.load_campaign_metadata()
+
+        merged_output_dir = (
+            self.output_dir if self.output_dir is not None else self.master_simulation.output_dir
+        )
+        return {
+            "manifest_path": str(self.manifest_path),
+            "split_root_folder": str(self.split_root_folder),
+            "master_simulation_id": self.manifest.get("simulation_id"),
+            "merged_output_dir": str(merged_output_dir),
+            "number_of_leaf_sources": len(self.leaf_sources),
+            "number_of_original_runs": len(
+                self.manifest.get("original_run_timing_intervals", [])
+            ),
+            "original_run_timing_intervals": _copy_run_timing_intervals(
+                self.manifest.get("original_run_timing_intervals", [])
+            ),
+            "source_jobs": [
+                {
+                    "folder_name": source["folder_name"],
+                    "folder": str(source["folder"]),
+                    "job_id": source["job_id"],
+                    "job_index": source["job_index"],
+                    "original_runs": list(source.get("local_run_to_original_run_map", [])),
+                    "local_run_timing_intervals": _copy_run_timing_intervals(
+                        source["metadata"].get("run_timing_intervals", [])
+                    ),
+                }
+                for source in self.leaf_sources
+            ],
+            "merge_plan_by_original_run": {
+                str(original_run_index): [
+                    {
+                        "folder_name": Path(contribution["folder"]).name,
+                        "folder": str(contribution["folder"]),
+                        "job_id": contribution["job_id"],
+                        "job_index": contribution["job_index"],
+                        "local_run_index": contribution["local_run_index"],
+                    }
+                    for contribution in contributions
+                ]
+                for original_run_index, contributions in self.iter_original_run_contributions()
+            },
+            "merge_duration": self.merge_duration,
+            "merge_completed": self.merge_result is not None,
+        }
+
+    def format_merge_summary(self):
+        if self.master_simulation is None:
+            self.rehydrate_master_simulation()
+        if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
+            self.load_campaign_metadata()
+
+        merged_output_dir = (
+            self.output_dir if self.output_dir is not None else self.master_simulation.output_dir
+        )
+        lines = [
+            "Jobs merge summary:",
+            f"- source master folder: {self.split_root_folder}",
+            f"| target merged folder: {merged_output_dir}",
+            f"| master simulation id: {self.manifest.get('simulation_id', 'Unknown')}",
+            f"| original run timing intervals: {_format_timing_intervals(self.manifest.get('original_run_timing_intervals', []))}",
+        ]
+        if self.merge_duration is not None:
+            lines.append(f"| merge duration: {self.merge_duration:.3f} s")
+        lines.append("| source job folders:")
+        for source in self.leaf_sources:
+            lines.extend(
+                [
+                    f"| - {source['folder_name']}",
+                    f"|   | folder: {source['folder']}",
+                    f"|   | original runs: {_format_original_run_indices(source.get('local_run_to_original_run_map', []))}",
+                    f"|   | local timing intervals: {_format_timing_intervals(source['metadata'].get('run_timing_intervals', []))}",
+                ]
+            )
+        lines.append("| merge plan by original run:")
+        for original_run_index, contributions in self.iter_original_run_contributions():
+            contribution_str = ", ".join(
+                f"{Path(contribution['folder']).name}(local {contribution['local_run_index']})"
+                for contribution in contributions
+            )
+            lines.extend(
+                [
+                    f"| - run {original_run_index}",
+                    f"|   | contributors: {contribution_str}",
+                ]
+            )
+        return "\n".join(lines)
+
+    def print_merge_summary(self):
+        summary = self.format_merge_summary()
+        print(summary)
+        return summary
+
+    def save_summary_json(self, path):
+        summary_path = Path(path)
+        with open(summary_path, "w") as output_file:
+            dump_json(self.build_summary_dict(), output_file)
+        return summary_path
+
+    def save_summary_text(self, path):
+        summary_path = Path(path)
+        with open(summary_path, "w") as output_file:
+            output_file.write(self.format_merge_summary())
+            output_file.write("\n")
+        return summary_path
+
     def merge(self):
         if self.master_simulation is None:
             self.rehydrate_master_simulation()
         if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
             self.load_campaign_metadata()
+
+        merge_start_time = time.perf_counter()
         for original_run_index, contributions in self.iter_original_run_contributions():
             for contribution in contributions:
                 self._merge_contribution(contribution, original_run_index)
 
         self.master_simulation.finalize_merge()
+        self._merge_duration = time.perf_counter() - merge_start_time
 
-        return {
+        self._merge_result = {
             "manifest_path": str(self.manifest_path),
             "split_root_folder": str(self.split_root_folder),
             "master_simulation_id": self.manifest.get("simulation_id"),
@@ -1464,13 +1647,30 @@ class JobsMergeManager:
                 self.manifest.get("original_run_timing_intervals", [])
             ),
         }
+        return self._merge_result
 
 
-def jobs_merge(from_path, to_path=None, **options):
+def jobs_merge(from_path, to_path=None, execute=True, **options):
     merge_manager = JobsMergeManager(from_path, output_dir=to_path, **options)
     merge_manager.rehydrate_master_simulation()
     merge_manager.load_campaign_metadata()
-    return merge_manager.merge()
+    if execute:
+        merge_manager.merge()
+    return merge_manager
+
+
+def format_jobs_merge_summary(from_path, to_path=None, **options):
+    merge_manager = JobsMergeManager(from_path, output_dir=to_path, **options)
+    merge_manager.rehydrate_master_simulation()
+    merge_manager.load_campaign_metadata()
+    return merge_manager.format_merge_summary()
+
+
+def print_jobs_merge_summary(from_path, to_path=None, **options):
+    merge_manager = JobsMergeManager(from_path, output_dir=to_path, **options)
+    merge_manager.rehydrate_master_simulation()
+    merge_manager.load_campaign_metadata()
+    return merge_manager.print_merge_summary()
 
 
 from .base import (

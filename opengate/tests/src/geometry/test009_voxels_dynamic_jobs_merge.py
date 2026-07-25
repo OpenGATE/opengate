@@ -87,6 +87,7 @@ def run_split_campaign(paths, split_path, merge_path, backend, backend_options=N
         split_path,
         policy="split_in_time_total",
     )
+    gate.print_jobs_split_summary(split_path)
     summary = gate.jobs_run(
         split_root,
         backend=backend,
@@ -137,14 +138,12 @@ def run_split_campaign(paths, split_path, merge_path, backend, backend_options=N
             and checks_ok
         )
 
-    merge_summary = gate.jobs_merge(split_root, to_path=merge_path)
-    checks_ok = (
-        utility.print_test(
-            merge_summary["number_of_leaf_sources"] == 3,
-            f"{backend} merged split jobs: {merge_summary}",
-        )
-        and checks_ok
-    )
+    merge_manager = gate.jobs_merge(split_root, to_path=merge_path)
+    merge_manager.print_merge_summary()
+    checks_ok = utility.print_test(
+        merge_manager.merge_result["number_of_leaf_sources"] == 3,
+        f"{backend} merged split jobs: {merge_manager.merge_result}",
+    ) and checks_ok
 
     merged_stats = utility.read_stats_file(merge_path / "stats.txt")
     # Keep the merged stats comparable to the historical test009 reference,
