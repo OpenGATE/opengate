@@ -1029,7 +1029,9 @@ class RootDataItem(DataItem):
             library=library,
             step_size=step_size,
         ):
-            yield OrderedDict((branch_name, chunk[branch_name]) for branch_name in branch_names)
+            yield OrderedDict(
+                (branch_name, chunk[branch_name]) for branch_name in branch_names
+            )
 
     def _remap_chunk_identifiers(self, chunk_payload, merge_source, event_id_state):
         remapped_payload = OrderedDict()
@@ -1066,9 +1068,7 @@ class RootDataItem(DataItem):
                     # block. This is acceptable only for outputs that do not
                     # encode per-run identity explicitly.
                     remapped_event_ids = event_ids + event_id_state["next_event_id"]
-                    event_id_state["next_event_id"] = (
-                        int(remapped_event_ids[-1]) + 1
-                    )
+                    event_id_state["next_event_id"] = int(remapped_event_ids[-1]) + 1
                     remapped_payload[branch_name] = remapped_event_ids
                 else:
                     # EventID is only monotonic within one local run. A streamed

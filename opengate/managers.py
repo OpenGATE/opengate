@@ -2579,9 +2579,9 @@ class Simulation(GateObject):
                     output_path = actor_output.get_output_path(which="merged")
                     if output_path is None:
                         continue
-                    root_output_groups.setdefault(
-                        output_path.resolve(), []
-                    ).append(actor_output)
+                    root_output_groups.setdefault(output_path.resolve(), []).append(
+                        actor_output
+                    )
                     continue
                 if getattr(actor_output, "merge_data_after_simulation", False) is True:
                     actor_output.merge_data_from_runs()
@@ -2609,7 +2609,9 @@ class Simulation(GateObject):
                     writer.create_tree(
                         tree_descriptor["tree_name"], tree_descriptor["branches"]
                     )
-                    active_root_outputs.append((actor_output, data_item, tree_descriptor))
+                    active_root_outputs.append(
+                        (actor_output, data_item, tree_descriptor)
+                    )
 
                 for actor_output, data_item, tree_descriptor in active_root_outputs:
                     event_id_state = event_id_states_by_tree.setdefault(
