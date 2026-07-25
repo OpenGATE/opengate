@@ -1493,6 +1493,18 @@ class VolumeManager(GateObject):
         # Workaround: material database files are still managed outside the
         # GateObject tree, so their filenames must be serialized explicitly.
         d["material_database_filenames"] = list(self.material_database.filenames)
+        # Workaround: custom materials added programmatically are not yet
+        # represented by a dedicated GateObject/manager either, so persist
+        # their constructor arguments explicitly until the material handling is
+        # refactored into a proper config object model.
+        d["material_database_new_materials_nb_atoms"] = {
+            name: list(args)
+            for name, args in self.material_database.new_materials_nb_atoms.items()
+        }
+        d["material_database_new_materials_weights"] = {
+            name: list(args)
+            for name, args in self.material_database.new_materials_weights.items()
+        }
         return d
 
     def from_dictionary(self, d):
@@ -1502,6 +1514,13 @@ class VolumeManager(GateObject):
         # state is not yet represented by a dedicated GateObject/manager.
         for filename in d.get("material_database_filenames", []):
             self.add_material_database(filename)
+        # Workaround: restore custom programmatically-added materials
+        # explicitly for split/reload workflows until material handling is
+        # refactored into a proper config object model.
+        for args in d.get("material_database_new_materials_nb_atoms", {}).values():
+            self.material_database.add_material_nb_atoms(*args)
+        for args in d.get("material_database_new_materials_weights", {}).values():
+            self.material_database.add_material_weights(*args)
         # Restore fields before volumes so that volume references are valid
         for k, v in d.get("fields", {}).items():
             field_type = v["object_type"]
