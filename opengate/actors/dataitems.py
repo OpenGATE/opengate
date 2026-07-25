@@ -795,6 +795,8 @@ class DataItemContainer(DataContainer):
     def clear_items(self, item="all"):
         if item == "all":
             items = self.get_item_identifiers()
+        elif isinstance(item, (list, tuple)):
+            items = [self.normalize_item_identifier(i) for i in item]
         else:
             items = [self.normalize_item_identifier(item)]
         for item_identifier in items:
