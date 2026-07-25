@@ -171,6 +171,12 @@ class DataItem:
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
 
+    def load(self, path, **kwargs):
+        raise NotImplementedError(f"This is the base class. ")
+
+    def clear_data(self):
+        self.data = None
+
     @property
     def number_of_samples(self):
         try:
@@ -503,6 +509,17 @@ class StatisticsDataItem(DataItem):
             else:
                 f.write(self.__str__())
 
+    def load(self, path, **kwargs):
+        with open(path, "r") as input_file:
+            processed_output = json.load(input_file)
+        loaded_data = {}
+        for key, entry in processed_output.items():
+            loaded_data[key] = entry["value"]
+            unit = entry["unit"]
+            if unit in g4_units:
+                loaded_data[key] *= g4_units[unit]
+        self.set_data(loaded_data)
+
 
 # data items holding images
 class ItkImageDataItem(DataItem):
@@ -615,6 +632,9 @@ class ItkImageDataItem(DataItem):
 
     def write(self, path):
         write_itk_image(self.data, ensure_filename_is_str(path))
+
+    def load(self, path, **kwargs):
+        self.set_data(itk.imread(str(path)))
 
 
 class MeanItkImageDataItem(MeanValueDataItemMixin, ItkImageDataItem):
@@ -743,6 +763,42 @@ class DataItemContainer(DataContainer):
     def iter_all_data_item_objects(self):
         for _, data_item in self.iter_all_data_items():
             yield data_item
+
+    def load_item(self, item="all", path=None, **kwargs):
+        if item == "all":
+            if path is None:
+                fatal(
+                    "DataItemContainer.load_item(item='all') requires 'path' to be "
+                    "a dictionary mapping item identifiers to file paths."
+                )
+            try:
+                path_items = path.items()
+            except AttributeError:
+                fatal(
+                    "DataItemContainer.load_item(item='all') requires 'path' to be "
+                    "a dictionary-like object mapping item identifiers to file paths."
+                )
+            for item_identifier, item_path in path_items:
+                self.load_item(item=item_identifier, path=item_path, **kwargs)
+            return
+
+        data_item = self.get_data_item_object(item)
+        if data_item is None:
+            fatal(f"No data item found for item {item}.")
+        data_item.load(path, **kwargs)
+
+    def clear_item(self, item=0):
+        data_item = self.get_data_item_object(item)
+        if data_item is not None:
+            data_item.clear_data()
+
+    def clear_items(self, item="all"):
+        if item == "all":
+            items = self.get_item_identifiers()
+        else:
+            items = [self.normalize_item_identifier(item)]
+        for item_identifier in items:
+            self.clear_item(item_identifier)
 
     @classmethod
     def build_default_data_item_config(cls):
