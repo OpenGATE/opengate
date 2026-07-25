@@ -1519,7 +1519,9 @@ class JobsMergeManager:
             self.load_campaign_metadata()
 
         merged_output_dir = (
-            self.output_dir if self.output_dir is not None else self.master_simulation.output_dir
+            self.output_dir
+            if self.output_dir is not None
+            else self.master_simulation.output_dir
         )
         return {
             "manifest_path": str(self.manifest_path),
@@ -1539,7 +1541,9 @@ class JobsMergeManager:
                     "folder": str(source["folder"]),
                     "job_id": source["job_id"],
                     "job_index": source["job_index"],
-                    "original_runs": list(source.get("local_run_to_original_run_map", [])),
+                    "original_runs": list(
+                        source.get("local_run_to_original_run_map", [])
+                    ),
                     "local_run_timing_intervals": _copy_run_timing_intervals(
                         source["metadata"].get("run_timing_intervals", [])
                     ),
@@ -1570,7 +1574,9 @@ class JobsMergeManager:
             self.load_campaign_metadata()
 
         merged_output_dir = (
-            self.output_dir if self.output_dir is not None else self.master_simulation.output_dir
+            self.output_dir
+            if self.output_dir is not None
+            else self.master_simulation.output_dir
         )
         lines = [
             "Jobs merge summary:",

@@ -140,10 +140,13 @@ def run_split_campaign(paths, split_path, merge_path, backend, backend_options=N
 
     merge_manager = gate.jobs_merge(split_root, to_path=merge_path)
     merge_manager.print_merge_summary()
-    checks_ok = utility.print_test(
-        merge_manager.merge_result["number_of_leaf_sources"] == 3,
-        f"{backend} merged split jobs: {merge_manager.merge_result}",
-    ) and checks_ok
+    checks_ok = (
+        utility.print_test(
+            merge_manager.merge_result["number_of_leaf_sources"] == 3,
+            f"{backend} merged split jobs: {merge_manager.merge_result}",
+        )
+        and checks_ok
+    )
 
     merged_stats = utility.read_stats_file(merge_path / "stats.txt")
     # Keep the merged stats comparable to the historical test009 reference,
