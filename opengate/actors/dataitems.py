@@ -1072,14 +1072,14 @@ class DoubleArray(DataItemContainer):
 
 class ImageDataItemContainerMixin:
     """This class should be mixed in via inheritance when
-    implementing specific image item container class. 
-    
+    implementing specific image item container class.
+
     It provides convenience shortcuts to the image-specific functionality of the data items
-    handled by the container. 
-    
-    The pattern is: 
+    handled by the container.
+
+    The pattern is:
     - getters and getter properties shortcut to item 0
-    - setting operations are propagated to all items. 
+    - setting operations are propagated to all items.
     """
 
     @property

@@ -26,6 +26,7 @@ from .base import ActorBase
         do_something()
 """
 
+
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     """Store statistics about a simulation run."""
 
@@ -76,9 +77,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
 
     def EndOfRunActionMasterThread(self, run_index):
-        g4.GateSimulationStatisticsActor.EndOfRunActionMasterThread(
-            self, run_index
-        )
+        g4.GateSimulationStatisticsActor.EndOfRunActionMasterThread(self, run_index)
         data = dict(self.GetCountsCurrentRun())
         if self.simulation is not None:
             data["run_start"] = self.simulation.run_timing_intervals[run_index][0]

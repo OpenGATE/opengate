@@ -78,16 +78,15 @@ py::dict GateSimulationStatisticsActor::GetCounts() {
 }
 
 py::dict GateSimulationStatisticsActor::GetCountsCurrentRun() {
-  auto dd = py::dict(
-      "runs"_a = fCountsCurrentRun["runs"],
-      "events"_a = fCountsCurrentRun["events"],
-      "tracks"_a = fCountsCurrentRun["tracks"],
-      "steps"_a = fCountsCurrentRun["steps"],
-      "duration"_a = fCountsDCurrentRun["duration"],
-      "init"_a = fCountsDCurrentRun["init"],
-      "start_time"_a = fCountsStrCurrentRun["start_time"],
-      "stop_time"_a = fCountsStrCurrentRun["stop_time"],
-      "track_types"_a = fTrackTypesCurrentRun);
+  auto dd = py::dict("runs"_a = fCountsCurrentRun["runs"],
+                     "events"_a = fCountsCurrentRun["events"],
+                     "tracks"_a = fCountsCurrentRun["tracks"],
+                     "steps"_a = fCountsCurrentRun["steps"],
+                     "duration"_a = fCountsDCurrentRun["duration"],
+                     "init"_a = fCountsDCurrentRun["init"],
+                     "start_time"_a = fCountsStrCurrentRun["start_time"],
+                     "stop_time"_a = fCountsStrCurrentRun["stop_time"],
+                     "track_types"_a = fTrackTypesCurrentRun);
   return dd;
 }
 
@@ -198,8 +197,9 @@ void GateSimulationStatisticsActor::EndOfSimulationWorkerAction(
 
 int GateSimulationStatisticsActor::EndOfRunActionMasterThread(int run_id) {
   fStopCurrentRunTime = std::chrono::system_clock::now();
-  const auto run_duration = std::chrono::duration_cast<std::chrono::microseconds>(
-      fStopCurrentRunTime - fStartCurrentRunTime);
+  const auto run_duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          fStopCurrentRunTime - fStartCurrentRunTime);
   fCountsDCurrentRun["duration"] =
       static_cast<double>(run_duration.count()) * CLHEP::microsecond;
   fCountsDCurrentRun["init"] = 0.0;

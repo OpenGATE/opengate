@@ -19,9 +19,7 @@ def read_single_voxel_value(path):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__, output_folder=Path(__file__).stem
-    )
+    paths = utility.get_default_test_paths(__file__, output_folder=Path(__file__).stem)
 
     # This test exercises actor-output consistency over multiple runs in a
     # simple setup without job splitting:
@@ -125,15 +123,15 @@ if __name__ == "__main__":
         dose_values_from_memory.append(run_value_memory)
         dose_values_from_disk.append(run_value_disk)
 
-        run_stats_item = stats.user_output.stats.data_per_run[run_index].get_data_item_object(
-            0
-        )
+        run_stats_item = stats.user_output.stats.data_per_run[
+            run_index
+        ].get_data_item_object(0)
         run_stats_path = stats.stats.get_output_path(which=run_index)
 
         b = run_stats_path.is_file()
-        is_ok = utility.print_test(
-            b, f"Run {run_index} statistics file written"
-        ) and is_ok
+        is_ok = (
+            utility.print_test(b, f"Run {run_index} statistics file written") and is_ok
+        )
 
         run_stats_from_disk = utility.read_stats_file(run_stats_path)
         run_stats_disk_item = (
@@ -275,7 +273,9 @@ if __name__ == "__main__":
     summed_run_tracks = 0
     summed_run_steps = 0
     for run_index in range(len(expected_primaries)):
-        run_stats_item = stats.user_output.stats.data_per_run[run_index].get_data_item_object()
+        run_stats_item = stats.user_output.stats.data_per_run[
+            run_index
+        ].get_data_item_object()
         summed_run_events += run_stats_item.events
         summed_run_tracks += run_stats_item.tracks
         summed_run_steps += run_stats_item.steps

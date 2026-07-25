@@ -839,7 +839,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             data_container.load_item(
                 item="all",
-                path={item_identifier: output_paths[item_identifier] for item_identifier in items},
+                path={
+                    item_identifier: output_paths[item_identifier]
+                    for item_identifier in items
+                },
                 **kwargs,
             )
 

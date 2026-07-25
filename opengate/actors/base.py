@@ -771,7 +771,8 @@ class ActorBase(GateObject):
             target_output = self.user_output[output_name]
             source_output = other_actor.user_output[output_name]
             if not (
-                target_output.is_container_output() and source_output.is_container_output()
+                target_output.is_container_output()
+                and source_output.is_container_output()
             ):
                 continue
             try:
