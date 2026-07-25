@@ -13,6 +13,7 @@ from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from .dataitems import (
     QuotientItkImage,
     QuotientMeanItkImage,
+    SingleRootTree,
     SingleItkImage,
     SingleItkImageWithVariance,
     SingleMeanItkImage,
@@ -1133,11 +1134,13 @@ class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
         super().write_data(which=which, item=item, **kwargs)
 
 
-class ActorOutputRoot(ActorOutputBase):
+class ActorOutputRoot(ActorOutputUsingDataItemContainer):
     # hints for IDE
     output_filename: str
     write_to_disk: bool
     keep_data_in_memory: bool
+
+    data_container_class = SingleRootTree
 
     user_info_defaults = {
         "output_filename": (
@@ -1196,6 +1199,64 @@ class ActorOutputRoot(ActorOutputBase):
             )
         return super().get_output_path(which="merged")
 
+    def get_metadata_path(self):
+        output_path = self.get_output_path(which="merged")
+        if output_path is None:
+            return None
+        output_path = output_path.resolve()
+        metadata_filename = (
+            f"{output_path.stem}-{self.belongs_to_actor.name}-metadata.json"
+        )
+        return output_path.with_name(metadata_filename)
+
+    def _get_requested_attribute_metadata(self):
+        requested_attributes = None
+        skipped_attributes = None
+        if "attributes" in self.belongs_to_actor.user_info:
+            attributes = self.belongs_to_actor.user_info["attributes"]
+            if attributes is not None:
+                requested_attributes = list(attributes)
+        if "skip_attributes" in self.belongs_to_actor.user_info:
+            attributes = self.belongs_to_actor.user_info["skip_attributes"]
+            if attributes is not None:
+                skipped_attributes = list(attributes)
+        return requested_attributes, skipped_attributes
+
+    def _ensure_run_id_requested_if_needed(self):
+        if self.keep_data_per_run is not True:
+            return
+
+        # ROOT output that keeps data per run needs RunID to preserve run
+        # identity after merging. Inject it during config resolution so the
+        # runtime actor and the persisted metadata stay consistent even if the
+        # user did not request it explicitly.
+        if "attributes" in self.belongs_to_actor.user_info:
+            requested_attributes = self.belongs_to_actor.user_info["attributes"]
+            if requested_attributes is not None and "RunID" not in requested_attributes:
+                self.belongs_to_actor.user_info["attributes"] = list(
+                    requested_attributes
+                ) + ["RunID"]
+                self.warn_user(
+                    f"Actor output '{self.name}' enabled keep_data_per_run=True; "
+                    "adding 'RunID' to the requested ROOT attributes."
+                )
+
+        # A conflicting skip_attributes entry would silently defeat the
+        # keep_data_per_run contract, so remove it here as part of the same
+        # normalization step.
+        if "skip_attributes" in self.belongs_to_actor.user_info:
+            skipped_attributes = self.belongs_to_actor.user_info["skip_attributes"]
+            if skipped_attributes is not None and "RunID" in skipped_attributes:
+                self.belongs_to_actor.user_info["skip_attributes"] = [
+                    attribute
+                    for attribute in skipped_attributes
+                    if attribute != "RunID"
+                ]
+                self.warn_user(
+                    f"Actor output '{self.name}' enabled keep_data_per_run=True; "
+                    "removing 'RunID' from skip_attributes."
+                )
+
     def resolve_and_validate_config(self):
         # Warning, for the moment, MT and root output does not work on windows machine
         if sys.platform.startswith("nt"):
@@ -1209,6 +1270,8 @@ class ActorOutputRoot(ActorOutputBase):
         if self.output_filename == "" or self.output_filename is None:
             self.write_to_disk = False
 
+        self._ensure_run_id_requested_if_needed()
+
     def initialize_cpp_parameters(self):
         self.belongs_to_actor.AddActorOutputInfo(self.name)
         self.belongs_to_actor.SetWriteToDisk(self.name, self.write_to_disk)
@@ -1219,6 +1282,132 @@ class ActorOutputRoot(ActorOutputBase):
             self.belongs_to_actor.SetOutputPath(
                 self.name, self.get_output_path_as_string()
             )
+
+    def merge_data_from_runs(self):
+        # ROOT output is cumulative per simulation. Split-job merge collects
+        # child contributions explicitly and materializes one merged tree at the
+        # end instead of merging per-run in memory.
+        return
+
+    def load_data(self, which="merged", item="all", **kwargs):
+        data_container = self.ensure_data_container("merged")
+        data_container.load_item(
+            item=0,
+            path=self.get_output_path(which="merged"),
+            metadata_path=self.get_metadata_path(),
+            **kwargs,
+        )
+
+    def clear_data(self, which="merged", item="all"):
+        if which != "merged":
+            return
+        super().clear_data(which="merged", item=item)
+
+    def in_place_merge(self, other_output, which_target, which_source):
+        if type(self) is not type(other_output):
+            raise GateMergeError(
+                f"Cannot merge incompatible ROOT outputs '{other_output.name}' "
+                f"into '{self.name}'."
+            )
+        try:
+            other_output.load_data(which="merged")
+            target_container = self.ensure_data_container("merged")
+            source_container = other_output.get_data_container("merged")
+            target_item = target_container.get_data_item_object(0)
+            source_item = source_container.get_data_item_object(0)
+            source_tree = source_item.get_single_tree_descriptor()
+            # RunID is only required when the user expects ROOT output to
+            # preserve per-run identity across the merged campaign. If the user
+            # keeps only cumulative ROOT output, child trees can be merged in
+            # split order without RunID because time ordering is already
+            # preserved by the time-based split.
+            if self.keep_data_per_run is True and "RunID" not in source_tree["branches"]:
+                raise GateMergeError(
+                    "Cannot merge ROOT output with keep_data_per_run=True because "
+                    "the source tree does not contain a RunID branch."
+                )
+            if not target_item.has_root_meta_data():
+                requested_attributes, skipped_attributes = (
+                    self._get_requested_attribute_metadata()
+                )
+                target_item.set_root_meta_data(
+                    {
+                        "metadata_version": source_item.metadata_version,
+                        "actor_name": self.belongs_to_actor.name,
+                        "actor_type": self.belongs_to_actor.type_name,
+                        "actor_output_name": self.name,
+                        "root_output_path": str(
+                            self.get_output_path(which="merged").resolve()
+                        ),
+                        "requested_attributes": requested_attributes,
+                        "skipped_attributes": skipped_attributes,
+                        "trees": source_item.meta_data["trees"],
+                        "merge_sources": [],
+                    }
+                )
+            target_item.register_merge_source(
+                source_item,
+                run_id_from=which_source,
+                run_id_to=which_target,
+            )
+        finally:
+            other_output.clear_data(which="merged", item=0)
+
+    def write_data(self, which="all", item="all", **kwargs):
+        if which == "all_runs":
+            return
+        if which == "all":
+            which = "merged"
+        if which != "merged":
+            self.warn_user(
+                "ROOT output can only be written for the cumulative merged result. "
+                f"Ignoring request to write '{which}'."
+            )
+            return
+        data_container = self.get_data_container("merged")
+        if data_container is None:
+            return
+        data_container.write(
+            self.get_output_path(which="merged"),
+            item=0,
+            metadata_path=self.get_metadata_path(),
+            **kwargs,
+        )
+
+    def store_runtime_metadata(self):
+        if not self.get_write_to_disk(item=0):
+            return
+        output_path = self.get_output_path(which="merged")
+        if output_path is None:
+            return
+        output_path = output_path.resolve()
+        if not output_path.exists():
+            self.warn_user(
+                f"Cannot write ROOT metadata for actor output '{self.name}' "
+                f"because the ROOT file does not exist yet: {output_path}"
+            )
+            return
+        requested_attributes, skipped_attributes = (
+            self._get_requested_attribute_metadata()
+        )
+        data_container = self.ensure_data_container("merged")
+        data_item = data_container.get_data_item_object(0)
+        data_item.capture_runtime_metadata(
+            output_path,
+            actor_name=self.belongs_to_actor.name,
+            actor_type=self.belongs_to_actor.type_name,
+            actor_output_name=self.name,
+            requested_attributes=requested_attributes,
+            skipped_attributes=skipped_attributes,
+        )
+        metadata_path = self.get_metadata_path()
+        try:
+            data_item.store_metadata(metadata_path)
+        except NotImplementedError as error:
+            self.warn_user(str(error))
+
+    def end_of_simulation(self, item="all", **kwargs):
+        self.store_runtime_metadata()
 
 
 process_cls(ActorOutputBase)

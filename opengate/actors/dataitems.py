@@ -30,6 +30,7 @@ import itk
 import numpy as np
 import json
 import platform
+from pathlib import Path
 from box import Box
 
 from ..exception import fatal, warning, GateImplementationError
@@ -176,6 +177,9 @@ class DataItem:
 
     def clear_data(self):
         self.data = None
+
+    def close_data(self):
+        self.clear_data()
 
     @property
     def number_of_samples(self):
@@ -521,6 +525,253 @@ class StatisticsDataItem(DataItem):
         self.set_data(loaded_data)
 
 
+class RootDataItem(DataItem):
+    """Metadata-backed handle for ROOT actor output.
+
+    Phase 1 intentionally focuses on the common single-tree case. Metadata is
+    inspected from the already-written ROOT file, persisted to JSON, and later
+    reused during split-job merging.
+    """
+
+    metadata_version = 1
+
+    def __init__(self, *args, **kwargs):
+        self._root_file = None
+        super().__init__(*args, **kwargs)
+
+    def set_root_meta_data(self, meta_data):
+        self.meta_data = Box(meta_data)
+
+    def has_root_meta_data(self):
+        return "trees" in self.meta_data
+
+    @staticmethod
+    def _strip_root_cycle(key):
+        return key.split(";")[0]
+
+    @staticmethod
+    def _is_tree(root_object):
+        return hasattr(root_object, "arrays") and hasattr(root_object, "keys")
+
+    @staticmethod
+    def _is_string_branch_type(branch_type_name):
+        branch_type_name = str(branch_type_name).lower()
+        return "string" in branch_type_name or "char*" in branch_type_name
+
+    @classmethod
+    def inspect_root_file(cls, root_file_path):
+        import uproot
+
+        root_file_path = Path(root_file_path)
+        with uproot.open(root_file_path) as root_file:
+            trees = []
+            for key in root_file.keys():
+                tree_name = cls._strip_root_cycle(key)
+                root_object = root_file[tree_name]
+                if not cls._is_tree(root_object):
+                    continue
+                branch_types = {}
+                for branch_name in root_object.keys():
+                    branch = root_object[branch_name]
+                    branch_types[branch_name] = getattr(
+                        branch,
+                        "typename",
+                        str(getattr(branch, "interpretation", "unknown")),
+                    )
+                trees.append({"tree_name": tree_name, "branches": branch_types})
+        return trees
+
+    def capture_runtime_metadata(
+        self,
+        root_file_path,
+        actor_name,
+        actor_type,
+        actor_output_name,
+        requested_attributes=None,
+        skipped_attributes=None,
+    ):
+        root_file_path = Path(root_file_path)
+        self.set_root_meta_data(
+            {
+                "metadata_version": self.metadata_version,
+                "actor_name": actor_name,
+                "actor_type": actor_type,
+                "actor_output_name": actor_output_name,
+                "root_output_path": str(root_file_path),
+                "requested_attributes": requested_attributes,
+                "skipped_attributes": skipped_attributes,
+                "trees": self.inspect_root_file(root_file_path),
+                "merge_sources": [],
+            }
+        )
+
+    def store_metadata(self, path):
+        if not self.has_root_meta_data():
+            fatal("Cannot store ROOT metadata because no metadata has been captured yet.")
+        with open(path, "w") as output_file:
+            dump_json(dict(self.meta_data), output_file, indent=4)
+
+    def load_metadata(self, path):
+        with open(path, "r") as input_file:
+            self.set_root_meta_data(json.load(input_file))
+
+    def load(self, path, metadata_path=None, **kwargs):
+        import uproot
+
+        root_file_path = Path(path)
+        self.close_data()
+        self._root_file = uproot.open(root_file_path)
+        if metadata_path is not None and Path(metadata_path).exists():
+            self.load_metadata(metadata_path)
+        elif not self.has_root_meta_data():
+            self.set_root_meta_data(
+                {
+                    "metadata_version": self.metadata_version,
+                    "root_output_path": str(root_file_path),
+                    "trees": self.inspect_root_file(root_file_path),
+                    "merge_sources": [],
+                }
+            )
+        else:
+            self.meta_data["root_output_path"] = str(root_file_path)
+
+    def close_data(self):
+        if self._root_file is not None:
+            close_method = getattr(self._root_file, "close", None)
+            if callable(close_method):
+                close_method()
+            self._root_file = None
+        self.clear_data()
+
+    def get_single_tree_descriptor(self):
+        try:
+            trees = self.meta_data["trees"]
+        except (TypeError, KeyError):
+            fatal("ROOT metadata does not contain any tree information.")
+        if len(trees) != 1:
+            raise NotImplementedError(
+                "ROOT merge currently supports only single-tree actor outputs. "
+                f"Found {len(trees)} trees in ROOT metadata."
+            )
+        return trees[0]
+
+    def register_merge_source(self, source_item, run_id_from, run_id_to):
+        if not self.has_root_meta_data():
+            self.set_root_meta_data(
+                {
+                    "metadata_version": self.metadata_version,
+                    "trees": source_item.meta_data["trees"],
+                    "merge_sources": [],
+                }
+            )
+        source_tree = source_item.get_single_tree_descriptor()
+        target_tree = self.get_single_tree_descriptor()
+        if set(source_tree["branches"].keys()) != set(target_tree["branches"].keys()):
+            raise GateImplementationError(
+                "Cannot merge ROOT trees with different branch names. "
+                f"Target branches are {sorted(target_tree['branches'].keys())}, "
+                f"source branches are {sorted(source_tree['branches'].keys())}."
+            )
+        self.meta_data.setdefault("merge_sources", []).append(
+            {
+                "root_output_path": source_item.meta_data["root_output_path"],
+                "run_id_from": int(run_id_from),
+                "run_id_to": int(run_id_to),
+            }
+        )
+
+    def _read_filtered_branch_data(self, source_tree, branch_names, run_id_from):
+        branch_data = {}
+        selection = None
+        if "RunID" in branch_names:
+            run_ids = source_tree["RunID"].array(library="np")
+            selection = run_ids.astype(int) == int(run_id_from)
+        for branch_name in branch_names:
+            branch_values = source_tree[branch_name].array(library="np")
+            if selection is None:
+                branch_data[branch_name] = branch_values
+            else:
+                branch_data[branch_name] = branch_values[selection]
+        return branch_data
+
+    def _build_merged_branch_payload(self):
+        import uproot
+
+        tree_descriptor = self.get_single_tree_descriptor()
+        branch_types = tree_descriptor["branches"]
+        branch_names = list(branch_types.keys())
+        merged_numeric = {branch_name: [] for branch_name in branch_names}
+        merged_strings = {branch_name: [] for branch_name in branch_names}
+        current_event_offset = 0
+        remap_run_ids = "RunID" in branch_names
+        remap_event_ids = "EventID" in branch_names
+
+        for merge_source in self.meta_data.get("merge_sources", []):
+            with uproot.open(merge_source["root_output_path"]) as root_file:
+                source_tree = root_file[tree_descriptor["tree_name"]]
+                branch_data = self._read_filtered_branch_data(
+                    source_tree,
+                    branch_names,
+                    merge_source["run_id_from"],
+                )
+
+            for branch_name, branch_values in branch_data.items():
+                if branch_name == "RunID" and remap_run_ids:
+                    branch_values = np.full(
+                        len(branch_values),
+                        int(merge_source["run_id_to"]),
+                        dtype=branch_values.dtype,
+                    )
+                elif branch_name == "EventID" and remap_event_ids and len(branch_values) > 0:
+                    branch_values = branch_values + current_event_offset
+                    current_event_offset = int(np.max(branch_values)) + 1
+
+                if self._is_string_branch_type(branch_types[branch_name]):
+                    merged_strings[branch_name].extend(branch_values.tolist())
+                else:
+                    merged_numeric[branch_name].append(branch_values)
+
+        merged_branch_payload = {}
+        for branch_name in branch_names:
+            if self._is_string_branch_type(branch_types[branch_name]):
+                merged_branch_payload[branch_name] = merged_strings[branch_name]
+            else:
+                chunks = merged_numeric[branch_name]
+                if len(chunks) == 0:
+                    merged_branch_payload[branch_name] = np.array([])
+                elif len(chunks) == 1:
+                    merged_branch_payload[branch_name] = chunks[0]
+                else:
+                    merged_branch_payload[branch_name] = np.concatenate(chunks)
+        return tree_descriptor["tree_name"], merged_branch_payload
+
+    def write(self, path, metadata_path=None, **kwargs):
+        import uproot
+
+        if not self.has_root_meta_data():
+            fatal("Cannot write merged ROOT output because no ROOT metadata is available.")
+        if len(self.meta_data.get("merge_sources", [])) == 0:
+            return
+
+        output_path = Path(path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        tree_name, merged_branch_payload = self._build_merged_branch_payload()
+        write_mode = uproot.update if output_path.exists() else uproot.recreate
+        with write_mode(output_path) as output_file:
+            output_file[tree_name] = merged_branch_payload
+
+        self.capture_runtime_metadata(
+            output_path,
+            actor_name=self.meta_data.get("actor_name", "unknown_actor"),
+            actor_type=self.meta_data.get("actor_type", "unknown_type"),
+            actor_output_name=self.meta_data.get("actor_output_name", "root_output"),
+            requested_attributes=self.meta_data.get("requested_attributes"),
+            skipped_attributes=self.meta_data.get("skipped_attributes"),
+        )
+        if metadata_path is not None:
+            self.store_metadata(metadata_path)
+
+
 # data items holding images
 class ItkImageDataItem(DataItem):
 
@@ -790,7 +1041,7 @@ class DataItemContainer(DataContainer):
     def clear_item(self, item=0):
         data_item = self.get_data_item_object(item)
         if data_item is not None:
-            data_item.clear_data()
+            data_item.close_data()
 
     def clear_items(self, item="all"):
         if item == "all":
@@ -1284,6 +1535,12 @@ class SingleTimeCountSeries(DataItemContainer):
     primary_item_identifiers = (0,)
 
 
+class SingleRootTree(DataItemContainer):
+
+    _data_item_classes = (RootDataItem,)
+    primary_item_identifiers = (0,)
+
+
 class StatisticsItemContainer(DataItemContainer):
 
     _data_item_classes = (StatisticsDataItem,)
@@ -1335,4 +1592,5 @@ available_data_container_classes = {
     "SingleArray": SingleArray,
     "DoubleArray": DoubleArray,
     "SingleItkImageWithVariance": SingleItkImageWithVariance,
+    "SingleRootTree": SingleRootTree,
 }

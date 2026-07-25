@@ -2527,8 +2527,16 @@ class Simulation(GateObject):
         for actor in self.actor_manager.actors.values():
             for actor_output in actor.user_output.values():
                 if not actor_output.is_container_output():
+                    self.warn_user(
+                        f"Skipping unmergeable actor output '{actor_output.name}' "
+                        f"from actor '{actor.name}' during finalize_merge(). "
+                        "Only container-based actor outputs are currently handled "
+                        "by the jobs-merge framework."
+                    )
                     continue
-                if len(actor_output.data_per_run) == 0:
+                has_per_run_data = len(actor_output.data_per_run) > 0
+                has_merged_data = actor_output.merged_data is not None
+                if not has_per_run_data and not has_merged_data:
                     continue
                 if getattr(actor_output, "merge_data_after_simulation", False) is True:
                     actor_output.merge_data_from_runs()

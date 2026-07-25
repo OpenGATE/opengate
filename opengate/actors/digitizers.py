@@ -276,6 +276,10 @@ class DigitizerBase(ActorBase):
     def initialize(self):
         ActorBase.initialize(self)
 
+    def EndSimulationAction(self):
+        for user_output in self.user_output.values():
+            user_output.end_of_simulation()
+
 
 class DigitizerWithRootOutput(DigitizerBase):
 
@@ -402,6 +406,7 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
 
     def EndSimulationAction(self):
         g4.GateDigitizerAdderActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringActor):
@@ -552,6 +557,7 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
 
     def EndSimulationAction(self):
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeActor):
@@ -649,6 +655,7 @@ class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeAc
 
     def EndSimulationAction(self):
         g4.GateDigitizerDeadTimeActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor):
@@ -766,6 +773,7 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
 
     def EndSimulationAction(self):
         g4.GateDigitizerPileupActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerSpatialBlurringActor(
@@ -883,6 +891,7 @@ class DigitizerSpatialBlurringActor(
 
     def EndSimulationAction(self):
         g4.GateDigitizerSpatialBlurringActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerEfficiencyActor(
@@ -956,6 +965,7 @@ class DigitizerEfficiencyActor(
 
     def EndSimulationAction(self):
         g4.GateDigitizerEfficiencyActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerEnergyWindowsActor(
@@ -1019,8 +1029,8 @@ class DigitizerEnergyWindowsActor(
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        DigitizerBase.EndSimulationAction(self)
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerHitsCollectionActor(
@@ -1078,8 +1088,8 @@ class DigitizerHitsCollectionActor(
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        DigitizerBase.EndSimulationAction(self)
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
@@ -1460,6 +1470,7 @@ class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterAc
 
     def EndSimulationAction(self):
         g4.GateCoincidenceSorterActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
@@ -1602,6 +1613,7 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
                 f"Empty output, no particles stored in {self.get_output_path()}"
             )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigiAttributeProcessDefinedStepInVolumeActor(
