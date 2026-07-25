@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .exception import GateJobsBackendError, fatal
+from .exception import GateJobsBackendError, GateMergeError, fatal
 from .runtiming import assert_run_timing
 from .serialization import dump_json, load_json
 
@@ -1236,6 +1236,241 @@ def jobs_run(
         }
 
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+
+
+def _load_master_simulation_from_manifest(manifest_path, manifest):
+    master_simulation_filename = manifest.get(
+        "master_simulation_filename", MASTER_SIMULATION_FILENAME
+    )
+    master_simulation_path = manifest_path.parent / master_simulation_filename
+    if not master_simulation_path.exists():
+        fatal(
+            f"Master simulation file not found at '{master_simulation_path}'. "
+            "Cannot initialize jobs merge."
+        )
+    return create_sim_from_json(master_simulation_path)
+
+
+def _collect_leaf_merge_sources(manifest_path, manifest):
+    split_root_folder = manifest_path.parent
+    master_simulation_id = manifest.get("simulation_id")
+    original_run_timing_intervals = manifest.get("original_run_timing_intervals", [])
+    leaf_sources = []
+
+    for job_item in manifest.get("jobs", []):
+        job_folder = split_root_folder / job_item["folder_name"]
+        metadata = _load_job_metadata(job_folder)
+        parent_simulation_id = metadata.get("parent_simulation_id")
+        if parent_simulation_id != master_simulation_id:
+            fatal(
+                f"Job folder '{job_folder}' belongs to parent simulation id "
+                f"'{parent_simulation_id}', but the manifest expects "
+                f"'{master_simulation_id}'."
+            )
+        simulation_filename = metadata.get(
+            "simulation_filename", JOB_SIMULATION_FILENAME
+        )
+        simulation_path = job_folder / simulation_filename
+        leaf_sources.append(
+            {
+                "source_kind": "leaf_job",
+                "job_id": metadata.get("job_id", job_item.get("job_id")),
+                "job_index": metadata.get("job_index", job_item.get("job_index")),
+                "folder_name": job_item["folder_name"],
+                "folder": job_folder,
+                "metadata": metadata,
+                "simulation_path": simulation_path,
+                "master_simulation_id": parent_simulation_id,
+                "original_run_timing_intervals": original_run_timing_intervals,
+                "local_run_to_original_run_map": list(
+                    metadata.get("original_run_indices", [])
+                ),
+            }
+        )
+
+    return leaf_sources
+
+
+def _build_original_run_to_sources_map(leaf_sources, original_run_timing_intervals):
+    original_run_to_sources_map = {
+        original_run_index: []
+        for original_run_index in range(len(original_run_timing_intervals))
+    }
+
+    for source in leaf_sources:
+        local_to_original_run_map = source["local_run_to_original_run_map"]
+        local_run_timing_intervals = source["metadata"].get("run_timing_intervals", [])
+        if len(local_to_original_run_map) != len(local_run_timing_intervals):
+            fatal(
+                f"Leaf source '{source['folder']}' has inconsistent run metadata: "
+                f"{len(local_to_original_run_map)} original run indices for "
+                f"{len(local_run_timing_intervals)} local run timing intervals."
+            )
+
+        for local_run_index, original_run_index in enumerate(local_to_original_run_map):
+            if original_run_index not in original_run_to_sources_map:
+                fatal(
+                    f"Leaf source '{source['folder']}' refers to original run index "
+                    f"{original_run_index}, but the master simulation defines only "
+                    f"{len(original_run_timing_intervals)} runs."
+                )
+            original_run_to_sources_map[original_run_index].append(
+                {
+                    "source_kind": source["source_kind"],
+                    "job_id": source["job_id"],
+                    "job_index": source["job_index"],
+                    "folder": source["folder"],
+                    "simulation_path": source["simulation_path"],
+                    "local_run_index": local_run_index,
+                    "original_run_index": original_run_index,
+                    "local_run_timing_interval": local_run_timing_intervals[
+                        local_run_index
+                    ],
+                }
+            )
+
+    return original_run_to_sources_map
+
+
+class JobsMergeManager:
+    """Campaign-level orchestrator for merging split simulation results.
+
+    Phase 1 supports sequential orchestration over leaf job folders only. The
+    manager rehydrates the persisted master simulation as the merge target and
+    uses per-job metadata to align each child-local run index with the original
+    run index of the master simulation.
+    """
+
+    def __init__(self, split_path, output_dir=None, **options):
+        self.manifest_path, self.manifest = _load_jobs_manifest(split_path)
+        self.split_root_folder = self.manifest_path.parent
+        self.output_dir = None if output_dir is None else Path(output_dir).resolve()
+        self.options = dict(options)
+        self.master_simulation = None
+        self.leaf_sources = []
+        self.original_run_to_sources_map = {}
+        self.child_simulations_by_job_id = {}
+        self.remaining_local_runs_by_job_id = {}
+
+    def load_campaign_metadata(self):
+        self.leaf_sources = _collect_leaf_merge_sources(
+            self.manifest_path, self.manifest
+        )
+        self.original_run_to_sources_map = _build_original_run_to_sources_map(
+            self.leaf_sources, self.manifest.get("original_run_timing_intervals", [])
+        )
+        self.remaining_local_runs_by_job_id = {
+            source["job_id"]: set(range(len(source["local_run_to_original_run_map"])))
+            for source in self.leaf_sources
+        }
+
+    def rehydrate_master_simulation(self):
+        self.master_simulation = _load_master_simulation_from_manifest(
+            self.manifest_path, self.manifest
+        )
+        if self.output_dir is not None:
+            self.master_simulation.output_dir = self.output_dir
+        return self.master_simulation
+
+    def iter_original_run_contributions(self):
+        for (
+            original_run_index,
+            contributions,
+        ) in self.original_run_to_sources_map.items():
+            yield original_run_index, contributions
+
+    def _get_leaf_source(self, job_id):
+        for source in self.leaf_sources:
+            if source["job_id"] == job_id:
+                return source
+        fatal(f"Cannot find leaf merge source for job_id '{job_id}'.")
+
+    def _get_child_simulation(self, contribution):
+        job_id = contribution["job_id"]
+        if job_id not in self.child_simulations_by_job_id:
+            source = self._get_leaf_source(job_id)
+            child_simulation = create_sim_from_json(source["simulation_path"])
+            child_simulation.output_dir = source["folder"]
+            self.child_simulations_by_job_id[job_id] = child_simulation
+        return self.child_simulations_by_job_id[job_id]
+
+    def _release_child_simulation_if_done(self, contribution):
+        job_id = contribution["job_id"]
+        remaining_local_runs = self.remaining_local_runs_by_job_id[job_id]
+        remaining_local_runs.discard(contribution["local_run_index"])
+        if len(remaining_local_runs) == 0:
+            self.child_simulations_by_job_id.pop(job_id, None)
+
+    def _merge_contribution(self, contribution, original_run_index):
+        child_simulation = self._get_child_simulation(contribution)
+        try:
+            self.master_simulation.in_place_merge(
+                child_simulation,
+                run_index_target=original_run_index,
+                run_index_source=contribution["local_run_index"],
+            )
+        except Exception as error:
+            if isinstance(error, GateMergeError):
+                raise GateMergeError(
+                    f"Failed to merge contribution from job '{contribution['folder']}' "
+                    f"(job_id={contribution['job_id']}, local_run_index={contribution['local_run_index']}) "
+                    f"into original run index {original_run_index}."
+                ) from error
+            raise GateMergeError(
+                f"Unexpected merge failure for job '{contribution['folder']}' "
+                f"(job_id={contribution['job_id']}, local_run_index={contribution['local_run_index']}) "
+                f"into original run index {original_run_index}."
+            ) from error
+        finally:
+            self._release_child_simulation_if_done(contribution)
+
+    def build_merge_plan(self):
+        if self.master_simulation is None:
+            self.rehydrate_master_simulation()
+        if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
+            self.load_campaign_metadata()
+        return {
+            "manifest_path": str(self.manifest_path),
+            "split_root_folder": str(self.split_root_folder),
+            "master_simulation_id": self.manifest.get("simulation_id"),
+            "number_of_leaf_sources": len(self.leaf_sources),
+            "number_of_original_runs": len(
+                self.manifest.get("original_run_timing_intervals", [])
+            ),
+            "original_run_to_source_counts": {
+                original_run_index: len(contributions)
+                for original_run_index, contributions in self.iter_original_run_contributions()
+            },
+        }
+
+    def merge(self):
+        if self.master_simulation is None:
+            self.rehydrate_master_simulation()
+        if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
+            self.load_campaign_metadata()
+        for original_run_index, contributions in self.iter_original_run_contributions():
+            for contribution in contributions:
+                self._merge_contribution(contribution, original_run_index)
+
+        self.master_simulation.finalize_merge()
+
+        return {
+            "manifest_path": str(self.manifest_path),
+            "split_root_folder": str(self.split_root_folder),
+            "master_simulation_id": self.manifest.get("simulation_id"),
+            "merged_output_dir": str(self.master_simulation.output_dir),
+            "number_of_leaf_sources": len(self.leaf_sources),
+            "number_of_original_runs": len(
+                self.manifest.get("original_run_timing_intervals", [])
+            ),
+        }
+
+
+def jobs_merge(from_path, to_path=None, **options):
+    merge_manager = JobsMergeManager(from_path, output_dir=to_path, **options)
+    merge_manager.rehydrate_master_simulation()
+    merge_manager.load_campaign_metadata()
+    return merge_manager.merge()
 
 
 from .base import (
