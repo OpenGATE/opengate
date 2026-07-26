@@ -731,30 +731,16 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         load_mode = context.get_load_mode(default="rehydrated")
         contributions = context.get_contributions()
 
-        # For the current behavior-preserving transition, ordinary container
-        # outputs still merge one source-local run contribution at a time into
-        # the corresponding target run slot. Merged source payloads stay in the
-        # plan as inventory information, but they are not consumed here because
-        # target-side merged results are still produced later from the target's
-        # run-resolved data.
+        # Jobs-merge treats per-run and merged/cumulative payloads as distinct
+        # slots. Source run slots merge directly into target run slots, while
+        # source merged payloads merge directly into the target merged slot.
+        # The jobs-merge workflow must not rebuild merged output from
+        # ``data_per_run`` because merged-only child outputs are legitimate.
         for contribution in contributions:
             if contribution.get("mergeable") is not True:
                 continue
             source_scope = contribution.get("source_scope")
             target_scope = contribution.get("target_scope")
-            if source_scope == "merged":
-                # FIXME: Transitional limitation of the current execute_merge()
-                # path. We presently rebuild target merged data later from
-                # target per-run slots, so source-side merged contributions are
-                # skipped here to avoid double counting. This breaks outputs
-                # that persist only merged data (keep_data_per_run=False),
-                # because then no per-run source payload exists to merge from.
-                # The execution strategy must support both:
-                # 1) per-run source -> target per-run merge, followed by
-                #    target-side merge_data_from_runs(); and
-                # 2) source merged -> target merged direct merge when no
-                #    per-run source data are available.
-                continue
             item_identifier = contribution.get("item_identifier")
             try:
                 source_output.load_data(
@@ -780,8 +766,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         has_merged_data = self.merged_data is not None
         if not has_per_run_data and not has_merged_data:
             return
-        if self.merge_data_after_simulation is True and not has_merged_data:
-            self.merge_data_from_runs()
+        # In the jobs-merge workflow, cumulative/merged payloads must already
+        # have been constructed explicitly during execute_merge(). Do not
+        # synthesize them from ``data_per_run`` here because merged-only child
+        # outputs are legitimate and would otherwise be dropped.
         self.write_data_if_requested(which="all")
 
     @property
