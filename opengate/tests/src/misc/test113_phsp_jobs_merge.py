@@ -199,7 +199,9 @@ def check_merged_root(
         merged_global_time = merged_tree["GlobalTime"].array(library="np")
         merged_kinetic_energy = merged_tree["KineticEnergy"].array(library="np")
         merged_run_ids = (
-            merged_tree["RunID"].array(library="np") if "RunID" in merged_branches else None
+            merged_tree["RunID"].array(library="np")
+            if "RunID" in merged_branches
+            else None
         )
 
     is_ok = True
@@ -234,7 +236,11 @@ def check_merged_root(
     # Even without EventID, merging should preserve chronological order up to a
     # small tolerance. Two primaries emitted very close in time can still be
     # recorded in slightly inverted order after stochastic transport.
-    min_time_diff = float(np.min(np.diff(merged_global_time))) if len(merged_global_time) > 1 else 0.0
+    min_time_diff = (
+        float(np.min(np.diff(merged_global_time)))
+        if len(merged_global_time) > 1
+        else 0.0
+    )
     is_ok = (
         utility.print_test(
             min_time_diff >= -time_order_tolerance,
@@ -418,7 +424,9 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
     )
 
     merged_manager = gate.jobs_merge(split_root, to_path=merged_output, execute=True)
-    merged_root = merged_manager.master_simulation.get_actor("PhaseSpace").get_output_path()
+    merged_root = merged_manager.master_simulation.get_actor(
+        "PhaseSpace"
+    ).get_output_path()
     reference_root = reference_sim.get_actor("PhaseSpace").get_output_path()
 
     # The merged ROOT file should obey the same branch contract as the child

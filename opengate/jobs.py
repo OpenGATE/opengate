@@ -1409,7 +1409,9 @@ class RootMergeContextView:
         self._merge_context = merge_context
 
     def get_source_info(self, job_index):
-        return self._merge_context.get_informative().get("sources", {}).get(job_index, {})
+        return (
+            self._merge_context.get_informative().get("sources", {}).get(job_index, {})
+        )
 
     def iter_output_plans(self):
         """Yield one deduplicated ROOT-output plan per target actor/output pair."""
@@ -1442,7 +1444,9 @@ class StandardMergeContextView:
         self._merge_context = merge_context
 
     def get_source_info(self, job_index):
-        return self._merge_context.get_informative().get("sources", {}).get(job_index, {})
+        return (
+            self._merge_context.get_informative().get("sources", {}).get(job_index, {})
+        )
 
     def iter_output_plans(self):
         seen = set()
@@ -1521,7 +1525,9 @@ class StandardMergeCoordinator:
                     continue
                 job_index = contribution["job_index"]
                 contributions_by_job.setdefault(job_index, []).append(contribution)
-                self._source_infos[job_index] = standard_context.get_source_info(job_index)
+                self._source_infos[job_index] = standard_context.get_source_info(
+                    job_index
+                )
             self._output_groups[(actor_name, output_name)] = {
                 "target_output": target_output,
                 "contributions_by_job": contributions_by_job,
@@ -1971,9 +1977,7 @@ class JobsMergeManager:
             f"| original run timing intervals: {_format_timing_intervals(self.manifest.get('original_run_timing_intervals', []))}",
         ]
         if self.total_merge_duration is not None:
-            lines.append(
-                f"| total merge duration: {self.total_merge_duration:.3f} s"
-            )
+            lines.append(f"| total merge duration: {self.total_merge_duration:.3f} s")
         if self.planning_duration is not None:
             lines.append(f"| planning duration: {self.planning_duration:.3f} s")
         if self.execution_duration is not None:

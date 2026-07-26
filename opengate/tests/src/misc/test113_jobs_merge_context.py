@@ -46,7 +46,9 @@ def read_single_voxel_value(path):
 
 
 def get_single_voxel_value_from_actor_output(actor_output, which, item=0):
-    return get_single_voxel_value_from_image(actor_output.get_data(which=which, item=item))
+    return get_single_voxel_value_from_image(
+        actor_output.get_data(which=which, item=item)
+    )
 
 
 def get_total_single_voxel_dose_from_actor_output(actor_output, which_values):
@@ -141,26 +143,37 @@ def assert_stats_except_runs(stats_actor_1, stats_actor_2, tolerance):
     )
 
     event_d = 0 if counts2.events == 0 else counts1.events / counts2.events * 100 - 100
-    track_d = 100 if counts2.tracks == 0 else counts1.tracks / counts2.tracks * 100 - 100
+    track_d = (
+        100 if counts2.tracks == 0 else counts1.tracks / counts2.tracks * 100 - 100
+    )
     step_d = 100 if counts2.steps == 0 else counts1.steps / counts2.steps * 100 - 100
 
     b = abs(event_d) <= tolerance[0] * 100
-    is_ok = utility.print_test(
-        b,
-        f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  (tol = {tolerance[0] * 100:.2f} %)",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            b,
+            f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  (tol = {tolerance[0] * 100:.2f} %)",
+        )
+        and is_ok
+    )
 
     b = abs(track_d) <= tolerance[1] * 100
-    is_ok = utility.print_test(
-        b,
-        f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  (tol = {tolerance[1] * 100:.2f} %)",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            b,
+            f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  (tol = {tolerance[1] * 100:.2f} %)",
+        )
+        and is_ok
+    )
 
     b = abs(step_d) <= tolerance[2] * 100
-    is_ok = utility.print_test(
-        b,
-        f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  (tol = {tolerance[2] * 100:.2f} %)",
-    ) and is_ok
+    is_ok = (
+        utility.print_test(
+            b,
+            f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  (tol = {tolerance[2] * 100:.2f} %)",
+        )
+        and is_ok
+    )
 
     return is_ok
 
@@ -276,9 +289,7 @@ def check_phase_space_root(
         reference_branches = sorted(reference_tree.keys())
         reference_entries = reference_tree.num_entries
         reference_global_time = reference_tree["GlobalTime"].array(library="np")
-        reference_kinetic_energy = reference_tree["KineticEnergy"].array(
-            library="np"
-        )
+        reference_kinetic_energy = reference_tree["KineticEnergy"].array(library="np")
 
     with uproot.open(merged_root) as merged_file:
         merged_tree = merged_file["PhaseSpace"]
@@ -456,7 +467,9 @@ if __name__ == "__main__":
     shutil.rmtree(paths.output / "merge_context_input", ignore_errors=True)
     shutil.rmtree(paths.output / "merge_context_input_broken", ignore_errors=True)
     shutil.rmtree(paths.output / "merge_context_input_broken_stats", ignore_errors=True)
-    shutil.rmtree(paths.output / "merge_context_input_identity_mismatch", ignore_errors=True)
+    shutil.rmtree(
+        paths.output / "merge_context_input_identity_mismatch", ignore_errors=True
+    )
     shutil.rmtree(paths.output / "reference", ignore_errors=True)
     shutil.rmtree(paths.output / "merged", ignore_errors=True)
     shutil.rmtree(paths.output / "merged_repeat", ignore_errors=True)
@@ -617,15 +630,17 @@ if __name__ == "__main__":
     # Check that the statistics actor plans per-run output for both local runs
     # of job0001 plus one merged output slot.
     utility.print_test(
-        [contribution["source_scope"] for contribution in stats_plan_job1["contributions"]]
+        [
+            contribution["source_scope"]
+            for contribution in stats_plan_job1["contributions"]
+        ]
         == [0, 1, "merged"],
         f"job0001 statistics source scopes: {[contribution['source_scope'] for contribution in stats_plan_job1['contributions']]}",
     )
-    is_ok = (
-        [contribution["source_scope"] for contribution in stats_plan_job1["contributions"]]
-        == [0, 1, "merged"]
-        and is_ok
-    )
+    is_ok = [
+        contribution["source_scope"]
+        for contribution in stats_plan_job1["contributions"]
+    ] == [0, 1, "merged"] and is_ok
 
     # Check that the merge plan resolves the concrete filenames that the
     # primary dose item will contribute from job0001.
@@ -638,15 +653,11 @@ if __name__ == "__main__":
         == ["dose-run0.mhd", "dose-run1.mhd", "dose.mhd"],
         f"job0001 resolved planned dose output paths: {[Path(contribution['output_path']).name for contribution in dose_plan_job1['contributions'] if contribution['item_identifier'] == 0]}",
     )
-    is_ok = (
-        [
-            Path(contribution["output_path"]).name
-            for contribution in dose_plan_job1["contributions"]
-            if contribution["item_identifier"] == 0
-        ]
-        == ["dose-run0.mhd", "dose-run1.mhd", "dose.mhd"]
-        and is_ok
-    )
+    is_ok = [
+        Path(contribution["output_path"]).name
+        for contribution in dose_plan_job1["contributions"]
+        if contribution["item_identifier"] == 0
+    ] == ["dose-run0.mhd", "dose-run1.mhd", "dose.mhd"] and is_ok
 
     # Check that the phase-space actor contributes one ROOT stream per local
     # run present in job0001.
@@ -659,15 +670,17 @@ if __name__ == "__main__":
     # Check that the cumulative-only statistics actor contributes only its
     # cumulative slot and no per-run payload.
     utility.print_test(
-        [contribution["source_scope"] for contribution in stats_cumulative_plan_job1["contributions"]]
+        [
+            contribution["source_scope"]
+            for contribution in stats_cumulative_plan_job1["contributions"]
+        ]
         == ["merged"],
         f"job0001 cumulative-only statistics source scopes: {[contribution['source_scope'] for contribution in stats_cumulative_plan_job1['contributions']]}",
     )
-    is_ok = (
-        [contribution["source_scope"] for contribution in stats_cumulative_plan_job1["contributions"]]
-        == ["merged"]
-        and is_ok
-    )
+    is_ok = [
+        contribution["source_scope"]
+        for contribution in stats_cumulative_plan_job1["contributions"]
+    ] == ["merged"] and is_ok
 
     # ------------------------------------------------------------------
     # Successful merge path:
@@ -690,7 +703,9 @@ if __name__ == "__main__":
     wait_until_jobs_completed(split_root)
 
     print("Merging split jobs ...")
-    merge_manager = gate.jobs_merge(split_root, to_path=paths.output / "merged", execute=True)
+    merge_manager = gate.jobs_merge(
+        split_root, to_path=paths.output / "merged", execute=True
+    )
     merged_sim = merge_manager.master_simulation
 
     # Check that the merged simulation writes into the explicit merge target
@@ -703,7 +718,9 @@ if __name__ == "__main__":
 
     # Check that the merge lifecycle completed all three stages successfully.
     utility.print_test(
-        merge_manager.merge_planned and merge_manager.merge_executed and merge_manager.merge_finalized,
+        merge_manager.merge_planned
+        and merge_manager.merge_executed
+        and merge_manager.merge_finalized,
         f"Merge lifecycle flags: planned={merge_manager.merge_planned} executed={merge_manager.merge_executed} finalized={merge_manager.merge_finalized}",
     )
     is_ok = (
@@ -736,8 +753,7 @@ if __name__ == "__main__":
             merged_stats_item.data.events == manual_stats["events"]
             and merged_stats_item.data.tracks == manual_stats["tracks"]
             and merged_stats_item.data.steps == manual_stats["steps"]
-            and dict(merged_stats_item.data.track_types)
-            == manual_stats["track_types"],
+            and dict(merged_stats_item.data.track_types) == manual_stats["track_types"],
             "Target cumulative stats equal manual accumulation of target per-run stats except for runs"
             f" | merged: {format_stats_payload(merged_stats_item)}"
             f" | manual: {format_manual_stats_payload(manual_stats)}",
@@ -745,9 +761,9 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    merged_stats_cumulative_output = (
-        merged_sim.get_actor("StatsCumulative").user_output.stats
-    )
+    merged_stats_cumulative_output = merged_sim.get_actor(
+        "StatsCumulative"
+    ).user_output.stats
     merged_stats_cumulative_item = (
         merged_stats_cumulative_output.merged_data.get_data_item_object(0)
     )
@@ -943,7 +959,9 @@ if __name__ == "__main__":
     print(broken_run_summary)
     wait_until_jobs_completed(broken_split_root)
 
-    broken_job_sim = gate.create_sim_from_json(broken_split_root / "job0001" / "simulation.json")
+    broken_job_sim = gate.create_sim_from_json(
+        broken_split_root / "job0001" / "simulation.json"
+    )
     broken_dose_path = broken_job_sim.get_actor("dose").dose.get_output_path(which=0)
     # Check missing-image failure handling at the standard image-output level.
     is_ok = run_failure_probe(broken_split_root, broken_dose_path) and is_ok
@@ -960,7 +978,8 @@ if __name__ == "__main__":
         3,
         paths.output / "merge_context_split_broken_stats",
         policy="split_in_time_total",
-        overwrite_existing_split_folder=True,)
+        overwrite_existing_split_folder=True,
+    )
 
     broken_stats_run_summary = gate.jobs_run(
         broken_stats_split_root, backend="local_sequential"
@@ -969,9 +988,10 @@ if __name__ == "__main__":
     wait_until_jobs_completed(broken_stats_split_root)
     broken_stats_job_path = broken_stats_split_root / "job0001" / "stats-run0.json"
     # Check missing-JSON failure handling at the lightweight stats-output level.
-    is_ok = run_missing_stats_probe(
-        broken_stats_split_root, broken_stats_job_path
-    ) and is_ok
+    is_ok = (
+        run_missing_stats_probe(broken_stats_split_root, broken_stats_job_path)
+        and is_ok
+    )
 
     print()
     print("Probing parent/master simulation ID mismatch ...")
