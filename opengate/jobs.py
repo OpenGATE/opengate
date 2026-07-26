@@ -1332,7 +1332,7 @@ def _collect_leaf_merge_sources(manifest_path, manifest):
         metadata = _load_job_metadata(job_folder)
         parent_simulation_id = metadata.get("parent_simulation_id")
         if parent_simulation_id != master_simulation_id:
-            fatal(
+            raise GateMergeError(
                 f"Job folder '{job_folder}' belongs to parent simulation id "
                 f"'{parent_simulation_id}', but the manifest expects "
                 f"'{master_simulation_id}'."
