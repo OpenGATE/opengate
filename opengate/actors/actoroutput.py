@@ -556,25 +556,21 @@ class ActorOutputBase(GateObject):
     def merge_data_from_actor_output(self, *actor_output, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
-    def plan_merge(self, mode="as_configured", context=None, job_index=None):
-        if context is None or job_index is None:
-            raise GateMergeError(
-                f"ActorOutputBase.plan_merge() requires both context and job_index for output '{self.name}'."
-            )
-        context.set_output_plan(
-            job_index,
-            self.belongs_to_actor.name,
-            self.name,
-            {
-                "output_name": self.name,
-                "output_type": type(self).__name__,
-                "mergeable": False,
-                "is_root_output": self.is_root_output(),
-                "contributions": [],
-            },
-        )
+    def plan_merge(self, mode="as_configured"):
+        return {
+            "actor_name": self.belongs_to_actor.name,
+            "output_name": self.name,
+            "output_type": type(self).__name__,
+            "mergeable": False,
+            "is_root_output": self.is_root_output(),
+            "merge_coordinator": "root" if self.is_root_output() else "standard",
+            "contributions": [],
+        }
 
     def execute_merge(self, source_output, context=None):
+        return
+
+    def finalize_merge(self, context=None):
         return
 
 
@@ -698,31 +694,24 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 )
 
         return {
+            "actor_name": self.belongs_to_actor.name,
             "output_name": self.name,
             "output_type": type(self).__name__,
             "mergeable": any(
                 contribution["mergeable"] for contribution in contributions
             ),
             "is_root_output": self.is_root_output(),
+            "merge_coordinator": "standard",
             "contributions": contributions,
         }
 
-    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+    def plan_merge(self, mode="as_configured"):
         if mode != "as_configured":
             raise NotImplementedError(
                 f"Actor output planning mode '{mode}' is not implemented yet for "
                 f"{type(self).__name__}."
             )
-        if context is None or job_index is None:
-            raise GateMergeError(
-                f"ActorOutputUsingDataItemContainer.plan_merge() requires both context and job_index for output '{self.name}'."
-            )
-        context.set_output_plan(
-            job_index,
-            self.belongs_to_actor.name,
-            self.name,
-            self._build_plan_merge_as_configured_output_plan(),
-        )
+        return self._build_plan_merge_as_configured_output_plan()
 
     def execute_merge(self, source_output, context=None):
         if not source_output.is_container_output():
@@ -780,6 +769,20 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 )
             finally:
                 source_output.clear_data(which=source_scope, item=item_identifier)
+
+    def finalize_merge(self, context=None):
+        if self.is_root_output():
+            # ROOT outputs are finalized by the RootMergeCoordinator because
+            # several actor outputs may contribute distinct trees to the same
+            # physical ROOT file.
+            return
+        has_per_run_data = len(self.data_per_run) > 0
+        has_merged_data = self.merged_data is not None
+        if not has_per_run_data and not has_merged_data:
+            return
+        if self.merge_data_after_simulation is True and not has_merged_data:
+            self.merge_data_from_runs()
+        self.write_data_if_requested(which="all")
 
     @property
     def write_to_disk(self):
@@ -1698,15 +1701,11 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
         tree_names = list(self.belongs_to_actor.GetOutputTreeNames(self.name))
         return tree_names if len(tree_names) > 0 else None
 
-    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+    def plan_merge(self, mode="as_configured"):
         if mode != "as_configured":
             raise NotImplementedError(
                 f"Actor output planning mode '{mode}' is not implemented yet for "
                 f"{type(self).__name__}."
-            )
-        if context is None or job_index is None:
-            raise GateMergeError(
-                f"ActorOutputRoot.plan_merge() requires both context and job_index for output '{self.name}'."
             )
 
         output_filename = self.get_output_filename(item=0)
@@ -1731,20 +1730,17 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                 }
             )
 
-        context.set_output_plan(
-            job_index,
-            self.belongs_to_actor.name,
-            self.name,
-            {
+        return {
+            "actor_name": self.belongs_to_actor.name,
             "output_name": self.name,
             "output_type": type(self).__name__,
             "mergeable": any(
                 contribution["mergeable"] for contribution in contributions
             ),
             "is_root_output": True,
+            "merge_coordinator": "root",
             "contributions": contributions,
-            },
-        )
+        }
 
     def _get_runtime_tree_descriptors(self):
         tree_info = self.belongs_to_actor.GetOutputTreeInfo(self.name)

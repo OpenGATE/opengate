@@ -1402,109 +1402,193 @@ def _build_original_run_to_sources_map(leaf_sources, original_run_timing_interva
     return original_run_to_sources_map
 
 
-class SourceMergeContextView:
-    """Read-only view onto one source/job branch of a MergeContext."""
+class RootMergeContextView:
+    """Read-only view exposing only ROOT-output merge planning information."""
 
-    def __init__(self, merge_context, job_index):
+    def __init__(self, merge_context):
         self._merge_context = merge_context
-        self._job_index = job_index
 
-    @property
-    def job_index(self):
-        return self._job_index
+    def get_source_info(self, job_index):
+        return self._merge_context.get_informative().get("sources", {}).get(job_index, {})
 
-    def get_informative(self):
-        self._merge_context.ensure_source(self._job_index)
-        return self._merge_context.get_informative()["sources"][self._job_index]
+    def iter_output_plans(self):
+        """Yield one deduplicated ROOT-output plan per target actor/output pair."""
+        seen = set()
+        for output_plan in self._merge_context.get_output_inventory():
+            if output_plan.get("merge_coordinator") != "root":
+                continue
+            key = (output_plan.get("actor_name"), output_plan.get("output_name"))
+            if key in seen:
+                continue
+            seen.add(key)
+            yield output_plan
 
-    def get_source_plan(self):
-        self._merge_context.ensure_source(self._job_index)
-        return self._merge_context.get_instructive()["sources"][self._job_index]
-
-    def get_services(self):
-        return self._merge_context.get_services()
-
-    def get_actor_names(self):
-        return list(self.get_source_plan().get("actors", {}).keys())
-
-    def get_actor_plan(self, actor_name):
-        return self.get_source_plan().get("actors", {}).get(actor_name, {})
-
-    def get_actor_view(self, actor_name):
-        return ActorMergeContextView(self, actor_name)
-
-
-class ActorMergeContextView:
-    """Read-only view onto one actor branch within a source merge context."""
-
-    def __init__(self, source_view, actor_name):
-        self._source_view = source_view
-        self._actor_name = actor_name
-
-    @property
-    def actor_name(self):
-        return self._actor_name
-
-    def get_informative(self):
-        return self._source_view.get_informative()
-
-    def get_services(self):
-        return self._source_view.get_services()
-
-    def get_actor_plan(self):
-        return self._source_view.get_actor_plan(self._actor_name)
-
-    def get_output_names(self):
-        return list(self.get_actor_plan().get("outputs", {}).keys())
-
-    def get_output_plan(self, output_name):
-        return self.get_actor_plan().get("outputs", {}).get(output_name, {})
-
-    def get_output_view(self, output_name):
-        return OutputMergeContextView(self, output_name)
+    def get_contributions_for_output(self, actor_name, output_name):
+        contributions = []
+        for output_plan in self._merge_context.get_output_inventory():
+            if (
+                output_plan.get("merge_coordinator") == "root"
+                and output_plan.get("actor_name") == actor_name
+                and output_plan.get("output_name") == output_name
+            ):
+                contributions.extend(output_plan.get("contributions", []))
+        return contributions
 
 
-class OutputMergeContextView:
-    """Read-only view onto one output branch within an actor merge context."""
+class StandardMergeContextView:
+    """Read-only view exposing standard non-ROOT merge planning information."""
 
-    def __init__(self, actor_view, output_name):
-        self._actor_view = actor_view
-        self._output_name = output_name
+    def __init__(self, merge_context):
+        self._merge_context = merge_context
 
-    @property
-    def output_name(self):
-        return self._output_name
+    def get_source_info(self, job_index):
+        return self._merge_context.get_informative().get("sources", {}).get(job_index, {})
 
-    def get_informative(self):
-        return self._actor_view.get_informative()
+    def iter_output_plans(self):
+        seen = set()
+        for output_plan in self._merge_context.get_output_inventory():
+            if output_plan.get("merge_coordinator") != "standard":
+                continue
+            key = (output_plan.get("actor_name"), output_plan.get("output_name"))
+            if key in seen:
+                continue
+            seen.add(key)
+            yield output_plan
 
-    def get_services(self):
-        return self._actor_view.get_services()
+    def get_contributions_for_output(self, actor_name, output_name):
+        contributions = []
+        for output_plan in self._merge_context.get_output_inventory():
+            if (
+                output_plan.get("merge_coordinator") == "standard"
+                and output_plan.get("actor_name") == actor_name
+                and output_plan.get("output_name") == output_name
+            ):
+                contributions.extend(output_plan.get("contributions", []))
+        return contributions
 
-    def get_output_plan(self):
-        return self._actor_view.get_output_plan(self._output_name)
+
+class _CoordinatorOutputMergeContext:
+    """Minimal output-scoped execution context consumed by ActorOutput classes."""
+
+    def __init__(self, contributions, load_mode="rehydrated"):
+        self._contributions = list(contributions)
+        self._load_mode = load_mode
 
     def get_contributions(self):
-        return self.get_output_plan().get("contributions", [])
+        return self._contributions
 
     def get_load_mode(self, default="rehydrated"):
-        return self.get_informative().get("load_mode", default)
+        return self._load_mode if self._load_mode is not None else default
+
+
+class StandardMergeCoordinator:
+    """Execute and finalize merge for standard non-ROOT actor outputs."""
+
+    def __init__(self):
+        self._output_groups = {}
+        self._source_infos = {}
+        self._source_simulations_by_job_index = {}
+
+    def configure_from_context(self, standard_context, target_simulation):
+        self._output_groups = {}
+        self._source_infos = {}
+        self._source_simulations_by_job_index = {}
+
+        for output_plan in standard_context.iter_output_plans():
+            actor_name = output_plan["actor_name"]
+            output_name = output_plan["output_name"]
+            actor = target_simulation.get_actor(actor_name)
+            target_output = actor.user_output.get(output_name)
+            if target_output is None:
+                raise GateMergeError(
+                    f"Cannot configure standard merge for unknown output '{output_name}' "
+                    f"on actor '{actor_name}'."
+                )
+            if target_output.is_container_output() is not True:
+                actor.warn_user(
+                    f"Skipping unmergeable actor output '{output_name}' "
+                    f"from actor '{actor_name}' during merge coordination. "
+                    "Only container-based actor outputs are currently handled "
+                    "by the jobs-merge framework."
+                )
+                continue
+            contributions = standard_context.get_contributions_for_output(
+                actor_name, output_name
+            )
+            contributions_by_job = {}
+            for contribution in contributions:
+                if contribution.get("mergeable") is not True:
+                    continue
+                job_index = contribution["job_index"]
+                contributions_by_job.setdefault(job_index, []).append(contribution)
+                self._source_infos[job_index] = standard_context.get_source_info(job_index)
+            self._output_groups[(actor_name, output_name)] = {
+                "target_output": target_output,
+                "contributions_by_job": contributions_by_job,
+            }
+
+    def _get_source_simulation(self, job_index):
+        if job_index not in self._source_simulations_by_job_index:
+            source_info = self._source_infos[job_index]
+            child_simulation = create_sim_from_json(source_info["simulation_path"])
+            child_simulation.output_dir = Path(source_info["folder"])
+            self._source_simulations_by_job_index[job_index] = child_simulation
+        return self._source_simulations_by_job_index[job_index]
+
+    def execute_merge(self):
+        for (actor_name, output_name), group in self._output_groups.items():
+            target_output = group["target_output"]
+            for job_index, contributions in group["contributions_by_job"].items():
+                source_simulation = self._get_source_simulation(job_index)
+                source_actor = source_simulation.get_actor(actor_name)
+                source_output = source_actor.user_output[output_name]
+                try:
+                    target_output.execute_merge(
+                        source_output,
+                        context=_CoordinatorOutputMergeContext(contributions),
+                    )
+                except Exception as error:
+                    if isinstance(error, GateMergeError):
+                        raise GateMergeError(
+                            f"Failed to execute standard merge for actor output "
+                            f"'{output_name}' of actor '{actor_name}' from job_index "
+                            f"{job_index}."
+                        ) from error
+                    raise GateMergeError(
+                        f"Unexpected failure while executing standard merge for "
+                        f"actor output '{output_name}' of actor '{actor_name}' "
+                        f"from job_index {job_index}."
+                    ) from error
+
+    def finalize_merge(self):
+        for (actor_name, output_name), group in self._output_groups.items():
+            try:
+                group["target_output"].finalize_merge()
+            except Exception as error:
+                if isinstance(error, GateMergeError):
+                    raise GateMergeError(
+                        f"Failed to finalize standard merge for actor output "
+                        f"'{output_name}' of actor '{actor_name}'."
+                    ) from error
+                raise GateMergeError(
+                    f"Unexpected failure while finalizing standard merge for actor "
+                    f"output '{output_name}' of actor '{actor_name}'."
+                ) from error
 
 
 class MergeContext:
-    """Campaign-wide merge planning state plus builder/view helpers.
+    """Campaign-wide merge planning state plus flat output inventory helpers.
 
-    All merge data lives exclusively in the underlying nested dictionary
-    payload. Narrowed source/actor/output views are lightweight navigational
-    lenses that read from that authoritative payload.
+    All merge data lives exclusively in the underlying payload. The canonical
+    instructive layer is a flat output inventory: one entry per source job and
+    actor output, each carrying the contributions planned for that output.
     """
 
     def __init__(self, payload=None):
         if payload is None:
             payload = {
                 "informative": {"sources": {}},
-                "instructive": {"sources": {}},
-                "services": {},
+                "instructive": {"output_inventory": []},
             }
         self._payload = payload
 
@@ -1523,53 +1607,48 @@ class MergeContext:
         return self._payload.setdefault("informative", {"sources": {}})
 
     def get_instructive(self):
-        return self._payload.setdefault("instructive", {"sources": {}})
+        return self._payload.setdefault("instructive", {"output_inventory": []})
 
-    def get_services(self):
-        return self._payload.setdefault("services", {})
-
-    def set_service(self, name, value):
-        self.get_services()[name] = value
-
-    def get_service(self, name, default=None):
-        return self.get_services().get(name, default)
+    def get_output_inventory(self):
+        return self.get_instructive().setdefault("output_inventory", [])
 
     def ensure_source(self, job_index):
         informative_sources = self.get_informative().setdefault("sources", {})
-        instructive_sources = self.get_instructive().setdefault("sources", {})
         informative_sources.setdefault(job_index, {})
-        instructive_sources.setdefault(job_index, {"actors": {}})
 
     def set_source_info(self, job_index, source_info):
         self.ensure_source(job_index)
         self.get_informative()["sources"][job_index] = source_info
 
-    def set_source_plan(self, job_index, source_plan):
-        self.ensure_source(job_index)
-        self.get_instructive()["sources"][job_index] = source_plan
-
-    def set_actor_plan(self, job_index, actor_name, actor_plan):
-        self.ensure_source(job_index)
-        actor_entry = self.get_instructive()["sources"][job_index].setdefault(
-            "actors", {}
-        ).setdefault(actor_name, {"outputs": {}})
-        actor_entry.update(actor_plan)
-
     def set_output_plan(self, job_index, actor_name, output_name, output_plan):
-        self.ensure_source(job_index)
-        actor_plan = self.get_instructive()["sources"][job_index].setdefault(
-            "actors", {}
-        ).setdefault(actor_name, {"outputs": {}})
-        actor_plan.setdefault("outputs", {})[output_name] = output_plan
+        output_plan = dict(output_plan)
+        output_plan["job_index"] = job_index
+        output_plan["actor_name"] = actor_name
+        output_plan["output_name"] = output_name
+        inventory = self.get_output_inventory()
+        for i, existing_plan in enumerate(inventory):
+            if (
+                existing_plan.get("job_index") == job_index
+                and existing_plan.get("actor_name") == actor_name
+                and existing_plan.get("output_name") == output_name
+            ):
+                inventory[i] = output_plan
+                return
+        inventory.append(output_plan)
 
     def append_contribution(self, job_index, actor_name, output_name, contribution):
-        self.ensure_source(job_index)
-        output_plan = self.get_instructive()["sources"][job_index].setdefault(
-            "actors", {}
-        ).setdefault(actor_name, {"outputs": {}}).setdefault(
-            "outputs", {}
-        ).setdefault(output_name, {"contributions": []})
-        output_plan.setdefault("contributions", []).append(contribution)
+        for output_plan in self.get_output_inventory():
+            if (
+                output_plan.get("job_index") == job_index
+                and output_plan.get("actor_name") == actor_name
+                and output_plan.get("output_name") == output_name
+            ):
+                output_plan.setdefault("contributions", []).append(contribution)
+                return
+        fatal(
+            f"Cannot append merge contribution because no output plan exists for "
+            f"job_index={job_index}, actor_name='{actor_name}', output_name='{output_name}'."
+        )
 
     def enrich_source_contributions_with_campaign_mapping(
         self,
@@ -1578,32 +1657,34 @@ class MergeContext:
         job_id,
         source_simulation_id,
     ):
-        actor_plans = self.get_instructive()["sources"][job_index].get("actors", {})
-        for actor_plan in actor_plans.values():
-            for output_plan in actor_plan.get("outputs", {}).values():
-                for contribution in output_plan.get("contributions", []):
-                    source_scope = contribution.get("source_scope")
-                    if source_scope == "merged":
-                        contribution["target_scope"] = "merged"
-                    else:
-                        try:
-                            contribution["target_scope"] = local_to_original_run_map[
-                                int(source_scope)
-                            ]
-                        except (IndexError, TypeError, ValueError) as error:
-                            raise GateMergeError(
-                                f"Cannot map local source scope {source_scope!r} for "
-                                f"job_index={job_index}, job_id={job_id}. "
-                                f"Available local_to_original_run_map is "
-                                f"{local_to_original_run_map}."
-                            ) from error
-                    contribution["job_index"] = job_index
-                    contribution["job_id"] = job_id
-                    contribution["source_simulation_id"] = source_simulation_id
+        for output_plan in self.get_output_inventory():
+            if output_plan.get("job_index") != job_index:
+                continue
+            for contribution in output_plan.get("contributions", []):
+                source_scope = contribution.get("source_scope")
+                if source_scope == "merged":
+                    contribution["target_scope"] = "merged"
+                else:
+                    try:
+                        contribution["target_scope"] = local_to_original_run_map[
+                            int(source_scope)
+                        ]
+                    except (IndexError, TypeError, ValueError) as error:
+                        raise GateMergeError(
+                            f"Cannot map local source scope {source_scope!r} for "
+                            f"job_index={job_index}, job_id={job_id}. "
+                            f"Available local_to_original_run_map is "
+                            f"{local_to_original_run_map}."
+                        ) from error
+                contribution["job_index"] = job_index
+                contribution["job_id"] = job_id
+                contribution["source_simulation_id"] = source_simulation_id
 
-    def get_source_view(self, job_index):
-        self.ensure_source(job_index)
-        return SourceMergeContextView(self, job_index)
+    def get_root_view(self):
+        return RootMergeContextView(self)
+
+    def get_standard_view(self):
+        return StandardMergeContextView(self)
 
 
 class JobsMergeManager:
@@ -1626,8 +1707,18 @@ class JobsMergeManager:
         self.child_simulations_by_job_id = {}
         self.remaining_local_runs_by_job_id = {}
         self._merge_result = None
-        self._merge_duration = None
+        self._total_merge_duration = None
+        self._merge_start_time = None
+        self._planning_start_time = None
+        self._planning_duration = None
+        self._execution_start_time = None
+        self._execution_duration = None
+        self._merge_planned = False
+        self._merge_executed = False
+        self._merge_finalized = False
         self.merge_context = None
+        self.standard_merge_coordinator = None
+        self.root_merge_coordinator = None
 
     @property
     def merge_result(self):
@@ -1635,12 +1726,32 @@ class JobsMergeManager:
             return None
         return {
             **self._merge_result,
-            "merge_duration": self.merge_duration,
+            "total_merge_duration": self.total_merge_duration,
         }
 
     @property
-    def merge_duration(self):
-        return self._merge_duration
+    def total_merge_duration(self):
+        return self._total_merge_duration
+
+    @property
+    def planning_duration(self):
+        return self._planning_duration
+
+    @property
+    def execution_duration(self):
+        return self._execution_duration
+
+    @property
+    def merge_planned(self):
+        return self._merge_planned
+
+    @property
+    def merge_executed(self):
+        return self._merge_executed
+
+    @property
+    def merge_finalized(self):
+        return self._merge_finalized
 
     def load_campaign_metadata(self):
         self.leaf_sources = _collect_leaf_merge_sources(
@@ -1695,38 +1806,17 @@ class JobsMergeManager:
         if len(remaining_local_runs) == 0:
             self.child_simulations_by_job_id.pop(job_id, None)
 
-    def _merge_contribution(self, contribution, original_run_index):
-        child_simulation = self._get_child_simulation(contribution)
-        try:
-            self.master_simulation.in_place_merge(
-                child_simulation,
-                run_index_target=original_run_index,
-                run_index_source=contribution["local_run_index"],
-                load_mode="rehydrated",
-            )
-        except Exception as error:
-            if isinstance(error, GateMergeError):
-                raise GateMergeError(
-                    f"Failed to merge contribution from job '{contribution['folder']}' "
-                    f"(job_id={contribution['job_id']}, local_run_index={contribution['local_run_index']}) "
-                    f"into original run index {original_run_index}."
-                ) from error
-            raise GateMergeError(
-                f"Unexpected merge failure for job '{contribution['folder']}' "
-                f"(job_id={contribution['job_id']}, local_run_index={contribution['local_run_index']}) "
-                f"into original run index {original_run_index}."
-            ) from error
-        finally:
-            self._release_child_simulation_if_done(contribution)
-
     def build_merge_plan(self):
         return self.plan_merge().to_dict()
 
     def plan_merge(self, mode="as_configured"):
+        from .rootio import RootMergeCoordinator
+
         if self.master_simulation is None:
             self.rehydrate_master_simulation()
         if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
             self.load_campaign_metadata()
+        self._planning_start_time = time.perf_counter()
         merge_context = self.create_merge_context()
 
         informative = merge_context.get_informative()
@@ -1762,11 +1852,14 @@ class JobsMergeManager:
             )
             child_simulation = create_sim_from_json(source["simulation_path"])
             child_simulation.output_dir = source["folder"]
-            child_simulation.plan_merge(
-                mode=mode,
-                context=merge_context,
-                job_index=job_index,
-            )
+            output_plans = child_simulation.plan_merge(mode=mode)
+            for output_plan in output_plans:
+                merge_context.set_output_plan(
+                    job_index,
+                    output_plan["actor_name"],
+                    output_plan["output_name"],
+                    output_plan,
+                )
             merge_context.enrich_source_contributions_with_campaign_mapping(
                 job_index=job_index,
                 local_to_original_run_map=list(
@@ -1776,6 +1869,27 @@ class JobsMergeManager:
                 source_simulation_id=source["metadata"].get("simulation_id"),
             )
 
+        self.standard_merge_coordinator = StandardMergeCoordinator()
+        self.standard_merge_coordinator.configure_from_context(
+            merge_context.get_standard_view(),
+            self.master_simulation,
+        )
+        self.root_merge_coordinator = RootMergeCoordinator()
+        self.root_merge_coordinator.configure_from_context(
+            merge_context.get_root_view(),
+            self.master_simulation,
+        )
+        self.master_simulation.set_merge_coordinators(
+            [
+                self.standard_merge_coordinator,
+                self.root_merge_coordinator,
+            ]
+        )
+        if self._planning_start_time is not None:
+            self._planning_duration = time.perf_counter() - self._planning_start_time
+        self._merge_planned = True
+        self._merge_executed = False
+        self._merge_finalized = False
         return merge_context
 
     def build_summary_dict(self):
@@ -1829,7 +1943,12 @@ class JobsMergeManager:
                 ]
                 for original_run_index, contributions in self.iter_original_run_contributions()
             },
-            "merge_duration": self.merge_duration,
+            "total_merge_duration": self.total_merge_duration,
+            "planning_duration": self.planning_duration,
+            "execution_duration": self.execution_duration,
+            "merge_planned": self.merge_planned,
+            "merge_executed": self.merge_executed,
+            "merge_finalized": self.merge_finalized,
             "merge_completed": self.merge_result is not None,
         }
 
@@ -1851,8 +1970,17 @@ class JobsMergeManager:
             f"| master simulation id: {self.manifest.get('simulation_id', 'Unknown')}",
             f"| original run timing intervals: {_format_timing_intervals(self.manifest.get('original_run_timing_intervals', []))}",
         ]
-        if self.merge_duration is not None:
-            lines.append(f"| merge duration: {self.merge_duration:.3f} s")
+        if self.total_merge_duration is not None:
+            lines.append(
+                f"| total merge duration: {self.total_merge_duration:.3f} s"
+            )
+        if self.planning_duration is not None:
+            lines.append(f"| planning duration: {self.planning_duration:.3f} s")
+        if self.execution_duration is not None:
+            lines.append(f"| execution duration: {self.execution_duration:.3f} s")
+        lines.append(f"| merge planned: {self.merge_planned}")
+        lines.append(f"| merge executed: {self.merge_executed}")
+        lines.append(f"| merge finalized: {self.merge_finalized}")
         lines.append("| source job folders:")
         for source in self.leaf_sources:
             lines.extend(
@@ -1895,27 +2023,53 @@ class JobsMergeManager:
             output_file.write("\n")
         return summary_path
 
-    def merge(self):
-        if self.master_simulation is None:
-            self.rehydrate_master_simulation()
-        if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
-            self.load_campaign_metadata()
-        if self.merge_context is None:
-            self.plan_merge()
-
-        merge_start_time = time.perf_counter()
-        for source in self.leaf_sources:
-            child_simulation = create_sim_from_json(source["simulation_path"])
-            child_simulation.output_dir = source["folder"]
-            source_context = self.merge_context.get_source_view(source["job_index"])
-            self.master_simulation.execute_merge(
-                child_simulation,
-                context=source_context,
+    def execute_merge(self):
+        if self._merge_planned is not True:
+            raise GateMergeError(
+                "JobsMergeManager.execute_merge() requires planning to be completed first. "
+                "Call plan_merge() before execute_merge(), or use merge()."
             )
+        if self.master_simulation is None or self.merge_context is None:
+            raise GateMergeError(
+                "JobsMergeManager.execute_merge() is in an inconsistent state: "
+                "merge_planned is True but the prepared simulation or merge context is missing."
+            )
+        if len(self.master_simulation._merge_coordinators) == 0:
+            raise GateMergeError(
+                "JobsMergeManager.execute_merge() found no prepared merge coordinators. "
+                "Call plan_merge() before execute_merge(), or use merge()."
+            )
+        self._execution_start_time = time.perf_counter()
+        self.master_simulation.execute_merge()
+        self._merge_executed = True
 
+    def finalize_merge(self):
+        if self._merge_planned is not True:
+            raise GateMergeError(
+                "JobsMergeManager.finalize_merge() requires planning to be completed first. "
+                "Call plan_merge() before finalize_merge(), or use merge()."
+            )
+        if self.master_simulation is None or self.merge_context is None:
+            raise GateMergeError(
+                "JobsMergeManager.finalize_merge() is in an inconsistent state: "
+                "merge_planned is True but the prepared simulation or merge context is missing."
+            )
+        if len(self.master_simulation._merge_coordinators) == 0:
+            raise GateMergeError(
+                "JobsMergeManager.finalize_merge() found no prepared merge coordinators. "
+                "Call plan_merge() before finalize_merge(), or use merge()."
+            )
+        if self._merge_executed is not True:
+            raise GateMergeError(
+                "JobsMergeManager.finalize_merge() requires execute_merge() to have run first. "
+                "Call execute_merge() before finalize_merge(), or use merge()."
+            )
         self.master_simulation.finalize_merge()
-        self._merge_duration = time.perf_counter() - merge_start_time
-
+        if self._execution_start_time is not None:
+            self._execution_duration = time.perf_counter() - self._execution_start_time
+        if self._merge_start_time is not None:
+            self._total_merge_duration = time.perf_counter() - self._merge_start_time
+        self._merge_finalized = True
         self._merge_result = {
             "manifest_path": str(self.manifest_path),
             "split_root_folder": str(self.split_root_folder),
@@ -1925,7 +2079,27 @@ class JobsMergeManager:
             "number_of_original_runs": len(
                 self.manifest.get("original_run_timing_intervals", [])
             ),
+            "planning_duration": self.planning_duration,
+            "execution_duration": self.execution_duration,
+            "total_merge_duration": self.total_merge_duration,
+            "merge_planned": self.merge_planned,
+            "merge_executed": self.merge_executed,
+            "merge_finalized": self.merge_finalized,
         }
+
+    def merge(self):
+        if self.master_simulation is None:
+            self.rehydrate_master_simulation()
+        if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
+            self.load_campaign_metadata()
+
+        self._merge_start_time = time.perf_counter()
+        if self._merge_planned is not True:
+            self.plan_merge()
+        if self._merge_executed is not True:
+            self.execute_merge()
+        if self._merge_finalized is not True:
+            self.finalize_merge()
         return self._merge_result
 
 

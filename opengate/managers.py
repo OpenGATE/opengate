@@ -620,40 +620,11 @@ class ActorManager(GateObject):
     def remove_actor(self, name):
         self.actors.pop(name)
 
-    def in_place_merge(
-        self,
-        other_actor_manager,
-        run_index_target,
-        run_index_source,
-        load_mode="live",
-    ):
-        common_actor_names = sorted(
-            set(self.actors.keys()).intersection(other_actor_manager.actors.keys())
-        )
-        for actor_name in common_actor_names:
-            target_actor = self.get_actor(actor_name)
-            source_actor = other_actor_manager.get_actor(actor_name)
-            try:
-                target_actor.in_place_merge(
-                    source_actor,
-                    run_index_target=run_index_target,
-                    run_index_source=run_index_source,
-                    load_mode=load_mode,
-                )
-            except Exception as error:
-                if isinstance(error, GateMergeError):
-                    raise
-                raise GateMergeError(
-                    f"Failed to merge actor '{actor_name}' between simulations."
-                ) from error
-
-    def plan_merge(self, mode="as_configured", context=None, job_index=None):
-        if context is None or job_index is None:
-            raise GateMergeError(
-                "ActorManager.plan_merge() requires both context and job_index."
-            )
+    def plan_merge(self, mode="as_configured"):
+        output_plans = []
         for actor_name, actor in self.actors.items():
-            actor.plan_merge(mode=mode, context=context, job_index=job_index)
+            output_plans.extend(actor.plan_merge(mode=mode))
+        return output_plans
 
     def execute_merge(self, source_actor_manager, context=None):
         if context is None:
@@ -2139,6 +2110,7 @@ class Simulation(GateObject):
         self._current_random_seed = None
 
         self.expected_number_of_events = None
+        self._merge_coordinators = []
 
     def __setstate__(self, state):
         super().__setstate__(state)
@@ -2188,6 +2160,12 @@ class Simulation(GateObject):
         # as required by the base class implementation of warn_user()
         self._user_warnings.append(message)
         super().warn_user(message)
+
+    def set_merge_coordinators(self, merge_coordinators):
+        self._merge_coordinators = list(merge_coordinators)
+
+    def add_merge_coordinator(self, merge_coordinator):
+        self._merge_coordinators.append(merge_coordinator)
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -2576,102 +2554,16 @@ class Simulation(GateObject):
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
 
-    def in_place_merge(
-        self, other_simulation, run_index_target, run_index_source, load_mode="live"
-    ):
-        self.actor_manager.in_place_merge(
-            other_simulation.actor_manager,
-            run_index_target=run_index_target,
-            run_index_source=run_index_source,
-            load_mode=load_mode,
-        )
+    def plan_merge(self, mode="as_configured"):
+        return self.actor_manager.plan_merge(mode=mode)
 
-    def plan_merge(self, mode="as_configured", context=None, job_index=None):
-        if context is None or job_index is None:
-            raise GateMergeError(
-                "Simulation.plan_merge() requires both context and job_index."
-            )
-        self.actor_manager.plan_merge(mode=mode, context=context, job_index=job_index)
-
-    def execute_merge(self, source_simulation, context=None):
-        if context is None:
-            raise GateMergeError("Missing simulation-level merge context.")
-        self.actor_manager.execute_merge(
-            source_simulation.actor_manager,
-            context=context,
-        )
+    def execute_merge(self):
+        for merge_coordinator in self._merge_coordinators:
+            merge_coordinator.execute_merge()
 
     def finalize_merge(self):
-        from .rootio import RootMergeFileWriter
-
-        root_output_groups = {}
-
-        for actor in self.actor_manager.actors.values():
-            for actor_output in actor.user_output.values():
-                if not actor_output.is_container_output():
-                    self.warn_user(
-                        f"Skipping unmergeable actor output '{actor_output.name}' "
-                        f"from actor '{actor.name}' during finalize_merge(). "
-                        "Only container-based actor outputs are currently handled "
-                        "by the jobs-merge framework."
-                    )
-                    continue
-                has_per_run_data = len(actor_output.data_per_run) > 0
-                has_merged_data = actor_output.merged_data is not None
-                if not has_per_run_data and not has_merged_data:
-                    continue
-                if actor_output.is_root_output():
-                    if actor_output.get_write_to_disk(item=0) is not True:
-                        continue
-                    output_path = actor_output.get_output_path(which="merged")
-                    if output_path is None:
-                        continue
-                    root_output_groups.setdefault(output_path.resolve(), []).append(
-                        actor_output
-                    )
-                    continue
-                if getattr(actor_output, "merge_data_after_simulation", False) is True:
-                    actor_output.merge_data_from_runs()
-                actor_output.write_data_if_requested(which="all")
-
-        for output_path, actor_outputs in root_output_groups.items():
-            writer = RootMergeFileWriter(output_path)
-            writer.open()
-            try:
-                event_id_states_by_tree = {}
-                active_root_outputs = []
-
-                for actor_output in actor_outputs:
-                    data_container = actor_output.get_data_container("merged")
-                    if data_container is None:
-                        continue
-                    data_item = data_container.get_data_item_object(0)
-                    if (
-                        data_item is None
-                        or not data_item.has_root_meta_data()
-                        or len(data_item.root_meta_data.get("merge_sources", [])) == 0
-                    ):
-                        continue
-                    tree_descriptor = data_item.get_single_tree_descriptor()
-                    writer.create_tree(
-                        tree_descriptor["tree_name"], tree_descriptor["branches"]
-                    )
-                    active_root_outputs.append(
-                        (actor_output, data_item, tree_descriptor)
-                    )
-
-                for actor_output, data_item, tree_descriptor in active_root_outputs:
-                    event_id_state = event_id_states_by_tree.setdefault(
-                        tree_descriptor["tree_name"], {"next_event_id": 0}
-                    )
-                    data_item.stream_write_merged_root(
-                        output_path,
-                        metadata_path=actor_output.get_metadata_path(),
-                        writer=writer,
-                        event_id_state=event_id_state,
-                    )
-            finally:
-                writer.close()
+        for merge_coordinator in self._merge_coordinators:
+            merge_coordinator.finalize_merge()
 
     def find_actors(self, sub_str, case_sensitive=False):
         return self.actor_manager.find_actors(sub_str, case_sensitive)

@@ -757,66 +757,11 @@ class ActorBase(GateObject):
                     "because merge support is not implemented for this output type yet."
                 )
 
-    def in_place_merge(
-        self, other_actor, run_index_target, run_index_source, load_mode="live"
-    ):
-        if self.type_name != other_actor.type_name:
-            raise GateMergeError(
-                f"Cannot merge actor '{other_actor.name}' of type {other_actor.type_name} "
-                f"into actor '{self.name}' of type {self.type_name}."
-            )
-
-        common_output_names = sorted(
-            set(self.user_output.keys()).intersection(other_actor.user_output.keys())
-        )
-        for output_name in common_output_names:
-            target_output = self.user_output[output_name]
-            source_output = other_actor.user_output[output_name]
-            if not (
-                target_output.is_container_output()
-                and source_output.is_container_output()
-            ):
-                self.warn_user(
-                    f"Skipping merge of actor output '{output_name}' between "
-                    f"actors '{self.name}' and '{other_actor.name}' because "
-                    "this output type does not yet implement container-based "
-                    "merge support."
-                )
-                continue
-            try:
-                target_output.in_place_merge(
-                    source_output,
-                    which_target=run_index_target,
-                    which_source=run_index_source,
-                    load_mode=load_mode,
-                )
-            except Exception as error:
-                if isinstance(error, GateMergeError):
-                    raise
-                raise GateMergeError(
-                    f"Failed to merge actor output '{output_name}' from actor "
-                    f"'{other_actor.name}' into actor '{self.name}'."
-                ) from error
-
-    def plan_merge(self, mode="as_configured", context=None, job_index=None):
-        if context is None or job_index is None:
-            raise GateMergeError(
-                f"ActorBase.plan_merge() requires both context and job_index for actor '{self.name}'."
-            )
-        context.set_actor_plan(
-            job_index,
-            self.name,
-            {
-                "actor_name": self.name,
-                "actor_type": self.type_name,
-            },
-        )
+    def plan_merge(self, mode="as_configured"):
+        output_plans = []
         for output_name, output in self.user_output.items():
-            output.plan_merge(
-                mode=mode,
-                context=context,
-                job_index=job_index,
-            )
+            output_plans.append(output.plan_merge(mode=mode))
+        return output_plans
 
     def execute_merge(self, source_actor, context=None):
         if self.type_name != source_actor.type_name:
