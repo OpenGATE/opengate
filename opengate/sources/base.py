@@ -107,9 +107,9 @@ class SourceBase(DynamicGateObject):
         # by default, consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
-        if not self.start_time:
+        if self.start_time is None:
             self.start_time = run_timing_intervals[0][0]
-        if not self.end_time:
+        if self.end_time is None:
             self.end_time = run_timing_intervals[-1][1]
 
     def resolve_and_validate_timing(self, run_timing_intervals):

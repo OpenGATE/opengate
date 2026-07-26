@@ -943,7 +943,6 @@ def recursive_userinfo_to_dict(obj):
 def find_paths_in_gate_object_dictionary(go_dict, only_input_files=False):
     paths = []
     for ui_name, ui in go_dict["user_info"].items():
-        new_paths = find_all_paths(ui)
         if only_input_files is True:
             options = _get_user_info_options(
                 ui_name, go_dict["object_type"], go_dict["class_module"]
@@ -952,8 +951,14 @@ def find_paths_in_gate_object_dictionary(go_dict, only_input_files=False):
                 consider_this = options["is_input_file"]
             except KeyError:
                 consider_this = False
+            # Some historical input-file user infos are still stored as plain
+            # strings rather than Path objects. When a field is explicitly
+            # marked as an input file, collect both representations so JSON
+            # archiving and split-job staging remain backward compatible.
+            new_paths = find_all_file_refs(ui)
         else:
             consider_this = True
+            new_paths = find_all_paths(ui)
         if consider_this is True:
             paths.extend(new_paths)
     return paths
@@ -988,6 +993,13 @@ def find_all_paths(dct):
         return isinstance(obj, (Path))
 
     return recursively_search_object(dct, condition=condition)
+
+
+def find_all_file_refs(dct):
+    def condition(obj):
+        return isinstance(obj, (Path, str))
+
+    return [Path(p) for p in recursively_search_object(dct, condition=condition)]
 
 
 def _get_user_info_options(user_info_name, object_type, class_module):

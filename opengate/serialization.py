@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PosixPath
 
 from .exception import fatal
 

@@ -3,7 +3,7 @@ from functools import wraps
 
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
-from ..base import GateObject, process_cls
+from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..physics import Region
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
@@ -384,7 +384,24 @@ class ActorBase(GateObject):
         return d
 
     def from_dictionary(self, d):
-        super().from_dictionary(d)
+        serialized_filter = d["user_info"].get("filter", None)
+
+        # Filters are GateObjects owned by actors. Reconstruct them explicitly
+        # here rather than letting GateObject.from_dictionary() feed the raw
+        # serialized dictionary into the actor's filter setter hook.
+        d_without_filter = dict(d)
+        d_without_filter["user_info"] = dict(d["user_info"])
+        d_without_filter["user_info"].pop("filter", None)
+
+        super().from_dictionary(d_without_filter)
+
+        if serialized_filter is not None:
+            filter_obj = create_gate_object_from_dict(serialized_filter)
+            filter_obj.from_dictionary(serialized_filter)
+            # Route through the generated property setter so the filter is
+            # rebound to this actor's simulation and registered consistently.
+            self.filter = filter_obj
+
         # Create all actor output objects
         for k, v in d["user_output"].items():
             self.user_output[k].from_dictionary(v)

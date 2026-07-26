@@ -7,7 +7,7 @@ from pathlib import Path
 import opengate as gate
 from opengate.tests import utility
 
-from opengate.tests.src.misc.test111_helpers_wip import (
+from opengate.tests.src.misc.test111_helpers import (
     build_simple_simulation,
     load_backend_status,
 )
@@ -19,7 +19,10 @@ if __name__ == "__main__":
 
     sim = build_simple_simulation(paths.output / "htcondor_input")
     split_root = gate.jobs_split(
-        sim, 2, paths.output / "htcondor_campaign", policy="split_time"
+        sim,
+        2,
+        paths.output / "htcondor_campaign",
+        policy="split_in_time_per_run",
     )
 
     # Realistic example for manual usage against a Condor installation:

@@ -278,6 +278,8 @@ class ActorOutputChemicalCountingActor(ActorOutputBase):
         return "\n".join(lines)
 
     def write_data(self, **kwargs):
+        # This raw file write is split-safe because get_output_path() resolves
+        # the filename against the currently running simulation output folder.
         with open(self.get_output_path(which="merged"), "w+") as f:
             dump_json(self.get_processed_output(), f, indent=4)
 
