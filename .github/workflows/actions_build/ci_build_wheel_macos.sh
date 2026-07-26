@@ -18,7 +18,7 @@ export PATH="/Users/runner/miniconda3/envs/opengate_core/bin/:$PATH"
 
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
-    brew install --force --verbose --overwrite libiconv
+    brew install --force --verbose --overwrite libiconv cups
     export QT_PLUGIN_DIR="/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins"
     export LDFLAGS="-L/usr/local/opt/libiconv/lib -L/usr/local/opt/llvm/lib"
     export CPPFLAGS="-I/usr/local/opt/libiconv/include -I/usr/local/opt/llvm/include -fopenmp"
