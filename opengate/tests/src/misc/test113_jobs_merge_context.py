@@ -1,4 +1,27 @@
 #!/usr/bin/env python3
+"""Exercise mixed-output split-job merging and its failure modes.
+
+This test is the main integration test for the current disk-based merge
+workflow. It combines three output families in one split campaign:
+
+- ``SimulationStatisticsActor`` for lightweight JSON/container-backed output
+- ``DoseActor`` for standard image-based per-run and merged output
+- ``PhaseSpaceActor`` for ROOT-backed output coordinated through the ROOT
+  merge path
+
+The test covers three aspects:
+
+1. Planning:
+   Inspect the ``MergeContext`` and verify that the split campaign is described
+   correctly, including asymmetric run coverage across jobs.
+2. Successful merge:
+   Run a reference simulation and a split campaign, merge the split outputs,
+   and compare standard and ROOT-backed output against the reference.
+3. Failure handling:
+   Intentionally break expected child output or campaign identity metadata and
+   check that merge errors are raised at the right stage with meaningful
+   provenance.
+"""
 
 import json
 import shutil
@@ -251,6 +274,50 @@ def run_failure_probe(split_root, broken_output_path):
     )
 
 
+def run_missing_stats_probe(split_root, broken_stats_path):
+    broken_stats_path = Path(broken_stats_path)
+    moved_stats_path = broken_stats_path.with_name(f"broken_{broken_stats_path.name}")
+    shutil.move(broken_stats_path, moved_stats_path)
+
+    try:
+        gate.jobs_merge(
+            split_root, to_path=split_root.parent / "broken_merge_output_stats"
+        )
+    except GateMergeError as error:
+        return utility.print_test(
+            "stats" in str(error).lower()
+            or "Failed to execute standard merge" in str(error),
+            f"Intentional broken-stats merge raises GateMergeError: {error}",
+        )
+    return utility.print_test(
+        False,
+        "Intentional broken-stats merge should have raised GateMergeError",
+    )
+
+
+def run_identity_mismatch_probe(split_root):
+    job_metadata_path = Path(split_root) / "job0001" / "job_metadata.json"
+    with open(job_metadata_path, "r") as input_file:
+        metadata = json.load(input_file)
+    metadata["parent_simulation_id"] = "wrong_parent_simulation_id"
+    with open(job_metadata_path, "w") as output_file:
+        json.dump(metadata, output_file, indent=2, sort_keys=True)
+        output_file.write("\n")
+
+    try:
+        gate.jobs_merge(split_root, execute=False)
+    except Exception as error:
+        return utility.print_test(
+            "parent simulation id" in str(error).lower()
+            or "manifest expects" in str(error).lower(),
+            f"Parent/master simulation ID mismatch is detected: {error}",
+        )
+    return utility.print_test(
+        False,
+        "Parent/master simulation ID mismatch should have raised an error",
+    )
+
+
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test113")
     sec = gate.g4_units.s
@@ -262,9 +329,13 @@ if __name__ == "__main__":
     shutil.rmtree(broken_split_root, ignore_errors=True)
     shutil.rmtree(paths.output / "merge_context_input", ignore_errors=True)
     shutil.rmtree(paths.output / "merge_context_input_broken", ignore_errors=True)
+    shutil.rmtree(paths.output / "merge_context_input_broken_stats", ignore_errors=True)
+    shutil.rmtree(paths.output / "merge_context_input_identity_mismatch", ignore_errors=True)
     shutil.rmtree(paths.output / "reference", ignore_errors=True)
     shutil.rmtree(paths.output / "merged", ignore_errors=True)
+    shutil.rmtree(paths.output / "merged_repeat", ignore_errors=True)
     shutil.rmtree(paths.output / "broken_merge_output", ignore_errors=True)
+    shutil.rmtree(paths.output / "broken_merge_output_stats", ignore_errors=True)
 
     run_timing_intervals = [(0.0 * sec, 1.0 * sec), (2.0 * sec, 5.0 * sec)]
     source_n = [100, 300]
@@ -284,6 +355,11 @@ if __name__ == "__main__":
     merge_manager = gate.jobs_merge(split_root, execute=False)
     merge_context = merge_manager.plan_merge()
 
+    # ------------------------------------------------------------------
+    # Merge planning inspection:
+    # verify that the flat output inventory and the informative campaign
+    # mapping describe the asymmetric split exactly as intended.
+    # ------------------------------------------------------------------
     print()
     print("MergeContext pretty dump:")
     print("-------------------------")
@@ -293,6 +369,8 @@ if __name__ == "__main__":
     informative_sources = merge_context_dict["informative"]["sources"]
     output_inventory = merge_context_dict["instructive"]["output_inventory"]
 
+    # Check that source records are keyed by the 1-based job indices used in
+    # user-facing split/merge summaries.
     utility.print_test(
         sorted(informative_sources.keys()) == [1, 2, 3],
         f"Informative merge-context sources are keyed by job_index: {sorted(informative_sources.keys())}",
@@ -302,35 +380,55 @@ if __name__ == "__main__":
     inventory_job_indices = sorted(
         {output_plan["job_index"] for output_plan in output_inventory}
     )
+    # Check that the flat output inventory covers all three jobs.
     utility.print_test(
         inventory_job_indices == [1, 2, 3],
         f"Flat output inventory covers job_index values: {inventory_job_indices}",
     )
     is_ok = inventory_job_indices == [1, 2, 3] and is_ok
 
+    # Check the total number of actor-output plans produced by the mixed-output
+    # simulation: one stats output, four dose outputs, and one ROOT output per job.
     utility.print_test(
         len(output_inventory) == 18,
         f"Flat output inventory contains one entry per job and actor output: {len(output_inventory)}",
     )
     is_ok = len(output_inventory) == 18 and is_ok
 
+    # Check that job0001 bridges the original run boundary and therefore maps
+    # two local runs back to original runs 0 and 1.
     utility.print_test(
         informative_sources[1]["local_to_original_run_map"] == [0, 1],
         f"job0001 local-to-original run map: {informative_sources[1]['local_to_original_run_map']}",
     )
     is_ok = informative_sources[1]["local_to_original_run_map"] == [0, 1] and is_ok
 
+    # Check that job0002 contributes only to original run 1.
     utility.print_test(
         informative_sources[2]["local_to_original_run_map"] == [1],
         f"job0002 local-to-original run map: {informative_sources[2]['local_to_original_run_map']}",
     )
     is_ok = informative_sources[2]["local_to_original_run_map"] == [1] and is_ok
 
+    # Check that job0003 also contributes only to original run 1.
     utility.print_test(
         informative_sources[3]["local_to_original_run_map"] == [1],
         f"job0003 local-to-original run map: {informative_sources[3]['local_to_original_run_map']}",
     )
     is_ok = informative_sources[3]["local_to_original_run_map"] == [1] and is_ok
+
+    # Check the asymmetric split multiplicity: one child contributes to
+    # original run 0, while three children contribute to original run 1.
+    utility.print_test(
+        merge_context_dict["informative"]["number_of_children_per_original_run"]
+        == {0: 1, 1: 3},
+        f"Original-run contributor multiplicities: {merge_context_dict['informative']['number_of_children_per_original_run']}",
+    )
+    is_ok = (
+        merge_context_dict["informative"]["number_of_children_per_original_run"]
+        == {0: 1, 1: 3}
+        and is_ok
+    )
 
     stats_plan_job1 = next(
         output_plan
@@ -354,24 +452,29 @@ if __name__ == "__main__":
         and output_plan["output_name"] == "root_output"
     )
 
+    # Check that statistics output is routed to the standard merge coordinator.
     utility.print_test(
         stats_plan_job1["merge_coordinator"] == "standard",
         f"Statistics output merge coordinator: {stats_plan_job1['merge_coordinator']}",
     )
     is_ok = stats_plan_job1["merge_coordinator"] == "standard" and is_ok
 
+    # Check that dose image output is also routed to the standard coordinator.
     utility.print_test(
         dose_plan_job1["merge_coordinator"] == "standard",
         f"Dose output merge coordinator: {dose_plan_job1['merge_coordinator']}",
     )
     is_ok = dose_plan_job1["merge_coordinator"] == "standard" and is_ok
 
+    # Check that ROOT output is delegated to the dedicated ROOT coordinator.
     utility.print_test(
         phsp_plan_job1["merge_coordinator"] == "root",
         f"Phase-space output merge coordinator: {phsp_plan_job1['merge_coordinator']}",
     )
     is_ok = phsp_plan_job1["merge_coordinator"] == "root" and is_ok
 
+    # Check that the statistics actor plans per-run output for both local runs
+    # of job0001 plus one merged output slot.
     utility.print_test(
         [contribution["source_scope"] for contribution in stats_plan_job1["contributions"]]
         == [0, 1, "merged"],
@@ -383,6 +486,8 @@ if __name__ == "__main__":
         and is_ok
     )
 
+    # Check that the merge plan resolves the concrete filenames that the
+    # primary dose item will contribute from job0001.
     utility.print_test(
         [
             Path(contribution["output_path"]).name
@@ -402,12 +507,20 @@ if __name__ == "__main__":
         and is_ok
     )
 
+    # Check that the phase-space actor contributes one ROOT stream per local
+    # run present in job0001.
     utility.print_test(
         len(phsp_plan_job1["contributions"]) == 2,
         f"job0001 planned phase-space contributions: {len(phsp_plan_job1['contributions'])}",
     )
     is_ok = len(phsp_plan_job1["contributions"]) == 2 and is_ok
 
+    # ------------------------------------------------------------------
+    # Successful merge path:
+    # compare the merged campaign against a non-split reference simulation.
+    # This validates the merge lifecycle, per-run image output, merged image
+    # output, and ROOT output ordering/remapping.
+    # ------------------------------------------------------------------
     print()
     print("Running reference simulation ...")
     reference_sim = build_simulation(
@@ -426,12 +539,15 @@ if __name__ == "__main__":
     merge_manager = gate.jobs_merge(split_root, to_path=paths.output / "merged", execute=True)
     merged_sim = merge_manager.master_simulation
 
+    # Check that the merged simulation writes into the explicit merge target
+    # folder instead of reusing the split campaign folder.
     utility.print_test(
         merged_sim.output_dir == paths.output / "merged",
         f"Merged simulation output dir: {merged_sim.output_dir}",
     )
     is_ok = (merged_sim.output_dir == paths.output / "merged") and is_ok
 
+    # Check that the merge lifecycle completed all three stages successfully.
     utility.print_test(
         merge_manager.merge_planned and merge_manager.merge_executed and merge_manager.merge_finalized,
         f"Merge lifecycle flags: planned={merge_manager.merge_planned} executed={merge_manager.merge_executed} finalized={merge_manager.merge_finalized}",
@@ -460,6 +576,8 @@ if __name__ == "__main__":
         reference_run_path = reference_dose.dose.get_output_path(which=run_index)
         merged_run_value = read_single_voxel_value(merged_run_path)
         reference_run_value = read_single_voxel_value(reference_run_path)
+        # Check each per-run merged dose image against the corresponding
+        # reference per-run dose image.
         is_ok = (
             utility.print_test(
                 np.isclose(
@@ -480,6 +598,8 @@ if __name__ == "__main__":
     reference_dose_path = reference_dose.dose.get_output_path(which="merged")
     merged_dose_value = read_single_voxel_value(merged_dose_path)
     reference_dose_value = read_single_voxel_value(reference_dose_path)
+    merged_per_run_sum = 0.0
+    # Check the final merged dose image against the merged reference dose image.
     is_ok = (
         utility.print_test(
             np.isclose(
@@ -493,9 +613,29 @@ if __name__ == "__main__":
         )
         and is_ok
     )
+    for run_index in range(len(run_timing_intervals)):
+        merged_per_run_sum += read_single_voxel_value(
+            merged_dose.dose.get_output_path(which=run_index)
+        )
+    # Check internal dose consistency: the sum of the merged per-run dose
+    # images should reproduce the merged dose image.
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                merged_per_run_sum,
+                merged_dose_value,
+                rtol=1e-3,
+                atol=0.0,
+            ),
+            f"Sum of merged per-run dose values matches merged dose: {merged_per_run_sum:.6e} {merged_dose_value:.6e}",
+        )
+        and is_ok
+    )
 
     merged_root = merged_sim.get_actor("PhaseSpace").get_output_path()
     reference_root = reference_sim.get_actor("PhaseSpace").get_output_path()
+    # Check ROOT consistency: the merged file should preserve run assignment,
+    # ordering, and branch structure relative to the reference simulation.
     is_ok = (
         check_phase_space_root(
             reference_root,
@@ -506,6 +646,39 @@ if __name__ == "__main__":
         and is_ok
     )
 
+    # Re-run the merge into the same target folder and make sure the produced
+    # merged output stays numerically stable. This guards against accidental
+    # append-style behavior or non-idempotent overwrite logic.
+    print()
+    print("Repeating merge into the same target folder ...")
+    repeat_merge_manager = gate.jobs_merge(
+        split_root, to_path=paths.output / "merged", execute=True
+    )
+    repeated_merged_sim = repeat_merge_manager.master_simulation
+    repeated_merged_dose_value = read_single_voxel_value(
+        repeated_merged_sim.get_actor("dose").dose.get_output_path(which="merged")
+    )
+    # Check repeated-merge stability: re-merging into the same target folder
+    # should not perturb the resulting merged dose.
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                repeated_merged_dose_value,
+                merged_dose_value,
+                rtol=1e-3,
+                atol=0.0,
+            ),
+            f"Repeated merge into existing target folder is stable: {repeated_merged_dose_value:.6e} {merged_dose_value:.6e}",
+        )
+        and is_ok
+    )
+
+    # ------------------------------------------------------------------
+    # Failure handling:
+    # deliberately remove individual expected child outputs and corrupt
+    # campaign identity metadata so merge failure modes are exercised on
+    # realistic persisted split folders.
+    # ------------------------------------------------------------------
     print()
     print("Probing failure mode with a missing dose image ...")
     broken_sim = build_simulation(
@@ -525,6 +698,50 @@ if __name__ == "__main__":
 
     broken_job_sim = gate.create_sim_from_json(broken_split_root / "job0001" / "simulation.json")
     broken_dose_path = broken_job_sim.get_actor("dose").dose.get_output_path(which=0)
+    # Check missing-image failure handling at the standard image-output level.
     is_ok = run_failure_probe(broken_split_root, broken_dose_path) and is_ok
+
+    print()
+    print("Probing failure mode with a missing stats JSON ...")
+    broken_stats_sim = build_simulation(
+        paths.output / "merge_context_input_broken_stats",
+        run_timing_intervals,
+        source_n,
+    )
+    broken_stats_split_root = gate.jobs_split(
+        broken_stats_sim,
+        3,
+        paths.output / "merge_context_split_broken_stats",
+        policy="split_in_time_total",
+        overwrite_existing_split_folder=True,)
+
+    broken_stats_run_summary = gate.jobs_run(
+        broken_stats_split_root, backend="local_sequential"
+    )
+    print(broken_stats_run_summary)
+    wait_until_jobs_completed(broken_stats_split_root)
+    broken_stats_job_path = broken_stats_split_root / "job0001" / "stats-run0.json"
+    # Check missing-JSON failure handling at the lightweight stats-output level.
+    is_ok = run_missing_stats_probe(
+        broken_stats_split_root, broken_stats_job_path
+    ) and is_ok
+
+    print()
+    print("Probing parent/master simulation ID mismatch ...")
+    identity_sim = build_simulation(
+        paths.output / "merge_context_input_identity_mismatch",
+        run_timing_intervals,
+        source_n,
+    )
+    identity_split_root = gate.jobs_split(
+        identity_sim,
+        3,
+        paths.output / "merge_context_split_identity_mismatch",
+        policy="split_in_time_total",
+        overwrite_existing_split_folder=True,
+    )
+    # Check that a corrupted child parent/master simulation ID is detected
+    # before merge planning can proceed.
+    is_ok = run_identity_mismatch_probe(identity_split_root) and is_ok
 
     utility.test_ok(is_ok)
