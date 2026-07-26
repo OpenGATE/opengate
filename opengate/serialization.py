@@ -1,4 +1,5 @@
 import json
+import time
 import numpy as np
 from pathlib import Path, PurePath, PosixPath
 
@@ -69,3 +70,22 @@ def dump_json(*args, **kwargs):
 def load_json(*args, **kwargs):
     kwargs.setdefault("object_hook", json_obj_hook)
     return json.load(*args, **kwargs)
+
+
+def load_json_with_retry(path, attempts=5, delay_s=0.05, **kwargs):
+    """Load JSON from a path with a short retry loop for transient read races."""
+    kwargs.setdefault("object_hook", json_obj_hook)
+    path = Path(path)
+    last_error = None
+
+    for attempt in range(attempts):
+        try:
+            with open(path, "r") as input_file:
+                return json.load(input_file, **kwargs)
+        except (FileNotFoundError, json.JSONDecodeError) as error:
+            last_error = error
+            if attempt == attempts - 1:
+                raise
+            time.sleep(delay_s)
+
+    raise last_error
