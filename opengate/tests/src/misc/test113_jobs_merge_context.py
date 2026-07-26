@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     merge_context_dict = merge_context.to_dict()
     informative_sources = merge_context_dict["informative"]["sources"]
-    instructive_sources = merge_context_dict["instructive"]["sources"]
+    output_inventory = merge_context_dict["instructive"]["output_inventory"]
 
     utility.print_test(
         sorted(informative_sources.keys()) == [1, 2, 3],
@@ -106,11 +106,14 @@ if __name__ == "__main__":
     )
     is_ok = sorted(informative_sources.keys()) == [1, 2, 3] and is_ok
 
-    utility.print_test(
-        sorted(instructive_sources.keys()) == [1, 2, 3],
-        f"Instructive merge-context sources are keyed by job_index: {sorted(instructive_sources.keys())}",
+    inventory_job_indices = sorted(
+        {output_plan["job_index"] for output_plan in output_inventory}
     )
-    is_ok = sorted(instructive_sources.keys()) == [1, 2, 3] and is_ok
+    utility.print_test(
+        inventory_job_indices == [1, 2, 3],
+        f"Flat output inventory covers job_index values: {inventory_job_indices}",
+    )
+    is_ok = inventory_job_indices == [1, 2, 3] and is_ok
 
     utility.print_test(
         informative_sources[1]["local_to_original_run_map"] == [0, 1],
@@ -130,7 +133,13 @@ if __name__ == "__main__":
     )
     is_ok = informative_sources[3]["local_to_original_run_map"] == [1] and is_ok
 
-    stats_plan_job0 = instructive_sources[1]["actors"]["Stats"]["outputs"]["stats"]
+    stats_plan_job0 = next(
+        output_plan
+        for output_plan in output_inventory
+        if output_plan["job_index"] == 1
+        and output_plan["actor_name"] == "Stats"
+        and output_plan["output_name"] == "stats"
+    )
     stats_contributions_job0 = stats_plan_job0["contributions"]
 
     utility.print_test(
@@ -189,6 +198,12 @@ if __name__ == "__main__":
         all(contribution["mergeable"] for contribution in stats_contributions_job0)
         and is_ok
     )
+
+    utility.print_test(
+        stats_plan_job0["merge_coordinator"] == "standard",
+        f"job0001 statistics output is assigned to merge coordinator: {stats_plan_job0['merge_coordinator']}",
+    )
+    is_ok = stats_plan_job0["merge_coordinator"] == "standard" and is_ok
 
     utility.print_test(
         all(contribution["job_index"] == 1 for contribution in stats_contributions_job0),
