@@ -443,6 +443,23 @@ def _get_job_execution_status_path(job_folder):
     return Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME
 
 
+def _dump_json_atomic(output_path, data):
+    """Write JSON atomically so status readers never observe a truncated file."""
+    output_path = Path(output_path)
+    temporary_output_path = output_path.with_name(
+        f".{output_path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+    )
+    try:
+        with open(temporary_output_path, "w") as output_file:
+            dump_json(data, output_file)
+            output_file.flush()
+            os.fsync(output_file.fileno())
+        os.replace(temporary_output_path, output_path)
+    finally:
+        if temporary_output_path.exists():
+            temporary_output_path.unlink()
+
+
 def _load_job_metadata(job_folder):
     with open(Path(job_folder) / JOB_METADATA_FILENAME, "r") as input_file:
         return load_json(input_file)
@@ -550,8 +567,7 @@ def _write_jobs_backend_status(
         "submission_stdout": submission_stdout,
         "submission_stderr": submission_stderr,
     }
-    with open(_get_jobs_backend_status_path(split_root_folder), "w") as output_file:
-        dump_json(status_data, output_file)
+    _dump_json_atomic(_get_jobs_backend_status_path(split_root_folder), status_data)
     return status_data
 
 
@@ -589,8 +605,7 @@ def _write_job_execution_status(
         "updated_at": _now_isoformat(),
         "error_message": error_message,
     }
-    with open(_get_job_execution_status_path(job_folder), "w") as output_file:
-        dump_json(status_data, output_file)
+    _dump_json_atomic(_get_job_execution_status_path(job_folder), status_data)
     return status_data
 
 

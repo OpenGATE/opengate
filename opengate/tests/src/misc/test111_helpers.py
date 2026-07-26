@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import time
+import uuid
 from pathlib import Path
 
 import opengate as gate
@@ -10,7 +12,7 @@ from opengate.jobs import (
     JOBS_BACKEND_STATUS_FILENAME,
     JOBS_MANIFEST_FILENAME,
 )
-from opengate.serialization import dump_json, load_json
+from opengate.serialization import dump_json, load_json, load_json_with_retry
 
 
 def build_simple_simulation(output_path):
@@ -40,21 +42,30 @@ def load_execution_status(job_folder):
     status_path = Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return load_json_with_retry(status_path)
 
 
 def load_backend_status(split_root):
     status_path = Path(split_root) / JOBS_BACKEND_STATUS_FILENAME
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return load_json_with_retry(status_path)
 
 
 def write_execution_status(job_folder, status_data):
-    with open(Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME, "w") as output_file:
-        dump_json(status_data, output_file)
+    status_path = Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME
+    temporary_status_path = status_path.with_name(
+        f".{status_path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+    )
+    try:
+        with open(temporary_status_path, "w") as output_file:
+            dump_json(status_data, output_file)
+            output_file.flush()
+            os.fsync(output_file.fileno())
+        os.replace(temporary_status_path, status_path)
+    finally:
+        if temporary_status_path.exists():
+            temporary_status_path.unlink()
 
 
 def wait_until_execution_status(
