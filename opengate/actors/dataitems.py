@@ -557,6 +557,40 @@ class RootDataItem(DataItem):
     def set_root_meta_data(self, meta_data):
         self.root_meta_data = Box(meta_data)
 
+    def capture_empty_runtime_metadata(
+        self,
+        root_file_path,
+        actor_name,
+        actor_type,
+        actor_output_name,
+        requested_attributes=None,
+        skipped_attributes=None,
+    ):
+        """Persist the legitimate 'configured but no ROOT file' outcome.
+
+        Some ROOT-backed actors may finish a run without having produced any
+        entries. In that case, no ROOT file can be inspected, but merge logic
+        still needs authoritative metadata stating that this child contributes
+        no ROOT payload rather than representing a broken run.
+        """
+        root_file_path = Path(root_file_path)
+        self.set_root_meta_data(
+            {
+                "metadata_version": self.metadata_version,
+                "actor_name": actor_name,
+                "actor_type": actor_type,
+                "actor_output_name": actor_output_name,
+                "root_output_path": str(root_file_path),
+                "requested_attributes": requested_attributes,
+                "skipped_attributes": skipped_attributes,
+                "expected_on_disk": True,
+                "root_file_written": False,
+                "number_of_entries": 0,
+                "trees": [],
+                "merge_sources": [],
+            }
+        )
+
     def _resolve_expected_tree_names_from_owner(self):
         owner_container = self.get_owner_container()
         if owner_container is None:
@@ -582,6 +616,11 @@ class RootDataItem(DataItem):
 
     def has_root_meta_data(self):
         return self.root_meta_data is not None
+
+    def root_file_was_written(self):
+        if not self.has_root_meta_data():
+            return None
+        return self.root_meta_data.get("root_file_written")
 
     @staticmethod
     def _strip_root_cycle(key):
@@ -669,6 +708,9 @@ class RootDataItem(DataItem):
                 "root_output_path": str(root_file_path),
                 "requested_attributes": requested_attributes,
                 "skipped_attributes": skipped_attributes,
+                "expected_on_disk": True,
+                "root_file_written": True,
+                "number_of_entries": None,
                 "trees": tree_descriptors,
                 "merge_sources": [],
             }
@@ -716,9 +758,11 @@ class RootDataItem(DataItem):
 
         root_file_path = Path(path)
         self.close_data()
-        self._root_file = uproot.open(root_file_path)
         if metadata_path is not None and Path(metadata_path).exists():
             self.load_root_metadata(metadata_path)
+            if self.root_file_was_written() is False:
+                self.root_meta_data["root_output_path"] = str(root_file_path)
+                return
         elif not self.has_root_meta_data():
             if load_mode == "rehydrated":
                 fatal(
@@ -740,6 +784,9 @@ class RootDataItem(DataItem):
                     {
                         "metadata_version": self.metadata_version,
                         "root_output_path": str(root_file_path),
+                        "expected_on_disk": True,
+                        "root_file_written": True,
+                        "number_of_entries": None,
                         "trees": tree_descriptors,
                         "merge_sources": [],
                     }
@@ -751,6 +798,8 @@ class RootDataItem(DataItem):
                 )
         else:
             self.root_meta_data["root_output_path"] = str(root_file_path)
+
+        self._root_file = uproot.open(root_file_path)
 
     def close_data(self):
         if self._root_file is not None:

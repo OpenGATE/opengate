@@ -1795,6 +1795,13 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
             source_container = other_output.get_data_container("merged")
             target_item = target_container.get_data_item_object(0)
             source_item = source_container.get_data_item_object(0)
+            if source_item.root_file_was_written() is False:
+                self.warn_user(
+                    f"Skipping ROOT merge contribution from actor output "
+                    f"'{other_output.name}' because its persisted metadata "
+                    "declares root_file_written=False."
+                )
+                return
             source_tree = source_item.get_single_tree_descriptor()
             # RunID is only required when the user expects ROOT output to
             # preserve per-run identity across the merged campaign. If the user
@@ -1890,17 +1897,31 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
         if output_path is None:
             return
         output_path = output_path.resolve()
-        if not output_path.exists():
-            self.warn_user(
-                f"Cannot write ROOT metadata for actor output '{self.name}' "
-                f"because the ROOT file does not exist yet: {output_path}"
-            )
-            return
         requested_attributes, skipped_attributes = (
             self._get_requested_attribute_metadata()
         )
         data_container = self.ensure_data_container("merged")
         data_item = data_container.get_data_item_object(0)
+        if not output_path.exists():
+            # Legitimate empty ROOT output currently leaves no ROOT file on
+            # disk. Persist minimal metadata anyway so later rehydrated merge
+            # logic can distinguish "empty contribution" from "broken child".
+            data_item.capture_empty_runtime_metadata(
+                output_path,
+                actor_name=self.belongs_to_actor.name,
+                actor_type=self.belongs_to_actor.type_name,
+                actor_output_name=self.name,
+                requested_attributes=requested_attributes,
+                skipped_attributes=skipped_attributes,
+            )
+            metadata_path = self.get_metadata_path()
+            data_item.save_root_metadata(metadata_path)
+            self.warn_user(
+                f"Actor output '{self.name}' was configured to write ROOT data, "
+                f"but no ROOT file was produced. Writing minimal metadata with "
+                f"root_file_written=False to '{metadata_path}'."
+            )
+            return
         data_item.capture_runtime_metadata(
             output_path,
             actor_name=self.belongs_to_actor.name,

@@ -1371,7 +1371,7 @@ def _build_original_run_to_sources_map(leaf_sources, original_run_timing_interva
         local_to_original_run_map = source["local_run_to_original_run_map"]
         local_run_timing_intervals = source["metadata"].get("run_timing_intervals", [])
         if len(local_to_original_run_map) != len(local_run_timing_intervals):
-            fatal(
+            raise GateMergeError(
                 f"Leaf source '{source['folder']}' has inconsistent run metadata: "
                 f"{len(local_to_original_run_map)} original run indices for "
                 f"{len(local_run_timing_intervals)} local run timing intervals."
@@ -1379,7 +1379,7 @@ def _build_original_run_to_sources_map(leaf_sources, original_run_timing_interva
 
         for local_run_index, original_run_index in enumerate(local_to_original_run_map):
             if original_run_index not in original_run_to_sources_map:
-                fatal(
+                raise GateMergeError(
                     f"Leaf source '{source['folder']}' refers to original run index "
                     f"{original_run_index}, but the master simulation defines only "
                     f"{len(original_run_timing_intervals)} runs."
