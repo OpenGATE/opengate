@@ -798,6 +798,59 @@ class ActorBase(GateObject):
                     f"'{other_actor.name}' into actor '{self.name}'."
                 ) from error
 
+    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+        if context is None or job_index is None:
+            raise GateMergeError(
+                f"ActorBase.plan_merge() requires both context and job_index for actor '{self.name}'."
+            )
+        context.set_actor_plan(
+            job_index,
+            self.name,
+            {
+                "actor_name": self.name,
+                "actor_type": self.type_name,
+            },
+        )
+        for output_name, output in self.user_output.items():
+            output.plan_merge(
+                mode=mode,
+                context=context,
+                job_index=job_index,
+            )
+
+    def execute_merge(self, source_actor, context=None):
+        if self.type_name != source_actor.type_name:
+            raise GateMergeError(
+                f"Cannot execute merge of actor '{source_actor.name}' of type "
+                f"{source_actor.type_name} into actor '{self.name}' of type "
+                f"{self.type_name}."
+            )
+        if context is None:
+            raise GateMergeError(
+                f"Missing actor-level merge context while merging actor '{self.name}'."
+            )
+        if not hasattr(context, "get_output_view"):
+            raise GateMergeError(
+                "ActorBase.execute_merge() expects an ActorMergeContextView."
+            )
+
+        common_output_names = sorted(
+            set(self.user_output.keys()).intersection(source_actor.user_output.keys())
+        )
+        for output_name in common_output_names:
+            target_output = self.user_output[output_name]
+            source_output = source_actor.user_output[output_name]
+            output_context = context.get_output_view(output_name)
+            try:
+                target_output.execute_merge(source_output, context=output_context)
+            except Exception as error:
+                if isinstance(error, GateMergeError):
+                    raise
+                raise GateMergeError(
+                    f"Failed to execute merge of actor output '{output_name}' from "
+                    f"actor '{source_actor.name}' into actor '{self.name}'."
+                ) from error
+
     def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)
         self.user_output[output_name].store_data(run_index, *data)

@@ -556,6 +556,27 @@ class ActorOutputBase(GateObject):
     def merge_data_from_actor_output(self, *actor_output, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
+    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+        if context is None or job_index is None:
+            raise GateMergeError(
+                f"ActorOutputBase.plan_merge() requires both context and job_index for output '{self.name}'."
+            )
+        context.set_output_plan(
+            job_index,
+            self.belongs_to_actor.name,
+            self.name,
+            {
+                "output_name": self.name,
+                "output_type": type(self).__name__,
+                "mergeable": False,
+                "is_root_output": self.is_root_output(),
+                "contributions": [],
+            },
+        )
+
+    def execute_merge(self, source_output, context=None):
+        return
+
 
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
     # hints for IDE
@@ -627,6 +648,138 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         super().__init__(*args, **kwargs)
         self.data_item_config = copy.deepcopy(self._default_data_item_config)
         self._apply_item_config_overrides(item_config_overrides)
+
+    def _build_plan_merge_as_configured_output_plan(self):
+        contributions = []
+        primary_item_identifiers = (
+            self.data_container_class.get_primary_item_identifiers()
+        )
+        run_scopes = []
+        if self.keep_data_per_run:
+            run_scopes.extend(
+                [
+                    {"source_scope": run_index, "target_scope": run_index}
+                    for run_index in range(len(self.simulation.run_timing_intervals))
+                ]
+            )
+        if self.merge_data_after_simulation:
+            run_scopes.append({"source_scope": "merged", "target_scope": "merged"})
+
+        for item_identifier in primary_item_identifiers:
+            item_is_active = self.get_active(item=item_identifier)
+            item_written_to_disk = self.get_write_to_disk(item=item_identifier)
+            output_filename = self.get_output_filename(item=item_identifier)
+            mergeable = bool(item_is_active and item_written_to_disk)
+
+            for run_scope in run_scopes:
+                source_scope = run_scope["source_scope"]
+                target_scope = run_scope["target_scope"]
+                contributions.append(
+                    {
+                        "actor_name": self.belongs_to_actor.name,
+                        "output_name": self.name,
+                        "item_identifier": item_identifier,
+                        "source_scope": source_scope,
+                        "target_scope": target_scope,
+                        "output_filename": output_filename,
+                        "output_path": (
+                            None
+                            if output_filename is None
+                            else str(
+                                self.get_output_path(
+                                    which=source_scope,
+                                    item=item_identifier,
+                                )
+                            )
+                        ),
+                        "expected_on_disk": bool(item_written_to_disk),
+                        "mergeable": mergeable,
+                    }
+                )
+
+        return {
+            "output_name": self.name,
+            "output_type": type(self).__name__,
+            "mergeable": any(
+                contribution["mergeable"] for contribution in contributions
+            ),
+            "is_root_output": self.is_root_output(),
+            "contributions": contributions,
+        }
+
+    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+        if mode != "as_configured":
+            raise NotImplementedError(
+                f"Actor output planning mode '{mode}' is not implemented yet for "
+                f"{type(self).__name__}."
+            )
+        if context is None or job_index is None:
+            raise GateMergeError(
+                f"ActorOutputUsingDataItemContainer.plan_merge() requires both context and job_index for output '{self.name}'."
+            )
+        context.set_output_plan(
+            job_index,
+            self.belongs_to_actor.name,
+            self.name,
+            self._build_plan_merge_as_configured_output_plan(),
+        )
+
+    def execute_merge(self, source_output, context=None):
+        if not source_output.is_container_output():
+            raise GateMergeError(
+                f"Cannot execute merge of non-container output '{source_output.name}' "
+                f"into container output '{self.name}'."
+            )
+        if context is None:
+            raise GateMergeError(
+                f"Missing output-level merge context while merging output '{self.name}'."
+            )
+        if not hasattr(context, "get_contributions"):
+            raise GateMergeError(
+                "ActorOutput.execute_merge() expects an OutputMergeContextView."
+            )
+
+        load_mode = context.get_load_mode(default="rehydrated")
+        contributions = context.get_contributions()
+
+        # For the current behavior-preserving transition, ordinary container
+        # outputs still merge one source-local run contribution at a time into
+        # the corresponding target run slot. Merged source payloads stay in the
+        # plan as inventory information, but they are not consumed here because
+        # target-side merged results are still produced later from the target's
+        # run-resolved data.
+        for contribution in contributions:
+            if contribution.get("mergeable") is not True:
+                continue
+            source_scope = contribution.get("source_scope")
+            target_scope = contribution.get("target_scope")
+            if source_scope == "merged":
+                # FIXME: Transitional limitation of the current execute_merge()
+                # path. We presently rebuild target merged data later from
+                # target per-run slots, so source-side merged contributions are
+                # skipped here to avoid double counting. This breaks outputs
+                # that persist only merged data (keep_data_per_run=False),
+                # because then no per-run source payload exists to merge from.
+                # The execution strategy must support both:
+                # 1) per-run source -> target per-run merge, followed by
+                #    target-side merge_data_from_runs(); and
+                # 2) source merged -> target merged direct merge when no
+                #    per-run source data are available.
+                continue
+            item_identifier = contribution.get("item_identifier")
+            try:
+                source_output.load_data(
+                    which=source_scope,
+                    item=item_identifier,
+                    load_mode=load_mode,
+                )
+                self.merge_data_from_output(
+                    source_output,
+                    which_source=source_scope,
+                    which_target=target_scope,
+                )
+            finally:
+                source_output.clear_data(which=source_scope, item=item_identifier)
 
     @property
     def write_to_disk(self):
@@ -1317,6 +1470,40 @@ class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
         self.set_write_to_disk(False)
         self.set_active(True)
 
+    def execute_merge(self, source_output, context=None):
+        super().execute_merge(source_output, context=context)
+        if context is None or not hasattr(context, "get_contributions"):
+            return
+
+        # Multiple child-local run fragments can contribute to the same
+        # original target run when a simulation is split by total active time.
+        # For the statistics actor, the target per-run slot should still
+        # represent exactly one original run, not the number of child pieces
+        # that happened to cover it. Keep the per-run "runs" counter pinned to
+        # one after merging all fragments into that slot; the later
+        # merge_data_from_runs() step will then correctly reconstruct the total
+        # number of original runs in the cumulative merged statistics output.
+        # FIXME: Statistics merge semantics are special here. In general,
+        # DataItem objects should stay agnostic of the run slot to which they
+        # belong and ActorOutput should own the slotting. For the statistics
+        # actor, however, the numerical merge rule for the "runs" entry depends
+        # on that slot meaning: merging several child fragments into one
+        # original target run should still result in runs=1. Keep this
+        # workaround local to the statistics ActorOutput for now and revisit
+        # later if the merge workflow grows a more explicit notion of slot
+        # semantics.
+        for contribution in context.get_contributions():
+            target_scope = contribution.get("target_scope")
+            if target_scope == "merged":
+                continue
+            target_container = self.data_per_run.get(int(target_scope))
+            if target_container is None:
+                continue
+            target_item = target_container.get_data_item_object(0)
+            if target_item is None or target_item.data is None:
+                continue
+            target_item.data.runs = 1
+
     @property
     def _stats_item(self):
         if self.merged_data is None:
@@ -1511,6 +1698,54 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
         tree_names = list(self.belongs_to_actor.GetOutputTreeNames(self.name))
         return tree_names if len(tree_names) > 0 else None
 
+    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+        if mode != "as_configured":
+            raise NotImplementedError(
+                f"Actor output planning mode '{mode}' is not implemented yet for "
+                f"{type(self).__name__}."
+            )
+        if context is None or job_index is None:
+            raise GateMergeError(
+                f"ActorOutputRoot.plan_merge() requires both context and job_index for output '{self.name}'."
+            )
+
+        output_filename = self.get_output_filename(item=0)
+        item_written_to_disk = self.get_write_to_disk(item=0)
+        contributions = []
+        for run_index in range(len(self.simulation.run_timing_intervals)):
+            contributions.append(
+                {
+                    "actor_name": self.belongs_to_actor.name,
+                    "output_name": self.name,
+                    "item_identifier": 0,
+                    "source_scope": run_index,
+                    "target_scope": run_index,
+                    "output_filename": output_filename,
+                    "output_path": (
+                        None
+                        if output_filename is None
+                        else str(self.get_output_path(which="merged", item=0))
+                    ),
+                    "expected_on_disk": bool(item_written_to_disk),
+                    "mergeable": bool(item_written_to_disk),
+                }
+            )
+
+        context.set_output_plan(
+            job_index,
+            self.belongs_to_actor.name,
+            self.name,
+            {
+            "output_name": self.name,
+            "output_type": type(self).__name__,
+            "mergeable": any(
+                contribution["mergeable"] for contribution in contributions
+            ),
+            "is_root_output": True,
+            "contributions": contributions,
+            },
+        )
+
     def _get_runtime_tree_descriptors(self):
         tree_info = self.belongs_to_actor.GetOutputTreeInfo(self.name)
         if not tree_info:
@@ -1604,6 +1839,32 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
             )
         finally:
             other_output.clear_data(which="merged", item=0)
+
+    def execute_merge(self, source_output, context=None):
+        if context is None:
+            raise GateMergeError(
+                f"Missing output-level merge context while merging ROOT output '{self.name}'."
+            )
+        if not hasattr(context, "get_contributions"):
+            raise GateMergeError(
+                "ActorOutputRoot.execute_merge() expects an OutputMergeContextView."
+            )
+        load_mode = context.get_load_mode(default="rehydrated")
+        contributions = context.get_contributions()
+
+        for contribution in contributions:
+            if contribution.get("mergeable") is not True:
+                continue
+            source_scope = contribution.get("source_scope")
+            target_scope = contribution.get("target_scope")
+            if source_scope == "merged":
+                continue
+            self.in_place_merge(
+                source_output,
+                which_target=target_scope,
+                which_source=source_scope,
+                load_mode=load_mode,
+            )
 
     def write_data(self, which="all", item="all", **kwargs):
         if which == "all_runs":

@@ -647,6 +647,38 @@ class ActorManager(GateObject):
                     f"Failed to merge actor '{actor_name}' between simulations."
                 ) from error
 
+    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+        if context is None or job_index is None:
+            raise GateMergeError(
+                "ActorManager.plan_merge() requires both context and job_index."
+            )
+        for actor_name, actor in self.actors.items():
+            actor.plan_merge(mode=mode, context=context, job_index=job_index)
+
+    def execute_merge(self, source_actor_manager, context=None):
+        if context is None:
+            raise GateMergeError("Missing actor-manager-level merge context.")
+        if not hasattr(context, "get_actor_names"):
+            raise GateMergeError(
+                "ActorManager.execute_merge() expects a SourceMergeContextView."
+            )
+
+        common_actor_names = sorted(
+            set(self.actors.keys()).intersection(source_actor_manager.actors.keys())
+        )
+        for actor_name in common_actor_names:
+            target_actor = self.get_actor(actor_name)
+            source_actor = source_actor_manager.get_actor(actor_name)
+            actor_context = context.get_actor_view(actor_name)
+            try:
+                target_actor.execute_merge(source_actor, context=actor_context)
+            except Exception as error:
+                if isinstance(error, GateMergeError):
+                    raise
+                raise GateMergeError(
+                    f"Failed to execute merge of actor '{actor_name}' between simulations."
+                ) from error
+
     def _create_actor(self, actor_type, name):
         cls = None
         try:
@@ -2552,6 +2584,21 @@ class Simulation(GateObject):
             run_index_target=run_index_target,
             run_index_source=run_index_source,
             load_mode=load_mode,
+        )
+
+    def plan_merge(self, mode="as_configured", context=None, job_index=None):
+        if context is None or job_index is None:
+            raise GateMergeError(
+                "Simulation.plan_merge() requires both context and job_index."
+            )
+        self.actor_manager.plan_merge(mode=mode, context=context, job_index=job_index)
+
+    def execute_merge(self, source_simulation, context=None):
+        if context is None:
+            raise GateMergeError("Missing simulation-level merge context.")
+        self.actor_manager.execute_merge(
+            source_simulation.actor_manager,
+            context=context,
         )
 
     def finalize_merge(self):
