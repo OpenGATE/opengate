@@ -2,6 +2,7 @@ import math
 import multiprocessing
 import os
 import re
+import shutil
 import subprocess
 import sys
 import traceback
@@ -35,16 +36,30 @@ def _clone_simulation(simulation):
     return cloned_simulation
 
 
-def _create_split_root_folder(split_path):
-    parent = Path(split_path)
-    timestamp = datetime.now().strftime("jobs_%Y%m%d_%H%M%S")
-    split_root = parent / timestamp
-    suffix = 1
-    while split_root.exists():
-        split_root = parent / f"{timestamp}_{suffix:02d}"
-        suffix += 1
-    split_root.mkdir(parents=True, exist_ok=False)
-    return split_root.resolve()
+def _resolve_split_folder(split_path, overwrite_existing_split_folder=False):
+    if split_path is None or split_path == "auto":
+        timestamp = datetime.now().strftime("jobs_%Y%m%d_%H%M%S")
+        split_folder = Path(timestamp)
+        suffix = 1
+        while split_folder.exists():
+            split_folder = Path(f"{timestamp}_{suffix:02d}")
+            suffix += 1
+    else:
+        split_folder = Path(split_path)
+        if split_folder.exists():
+            if overwrite_existing_split_folder is False:
+                fatal(
+                    f"Split path already exists: {split_folder}. "
+                    "Please provide a fresh split_path, use split_path=None/'auto', "
+                    "or set overwrite_existing_split_folder=True."
+                )
+            if split_folder.is_dir() is False:
+                fatal(
+                    f"Cannot overwrite split path {split_folder} because it is not a directory."
+                )
+            shutil.rmtree(split_folder)
+    split_folder.mkdir(parents=True, exist_ok=False)
+    return split_folder.resolve()
 
 
 def _copy_run_timing_intervals(run_timing_intervals):
@@ -69,10 +84,10 @@ def _create_job_definition(job_index, run_timing_intervals, original_run_indices
     }
 
 
-def _split_time_per_interval(run_timing_intervals, number_of_jobs):
+def _split_in_time_per_run(run_timing_intervals, number_of_jobs):
     if number_of_jobs % len(run_timing_intervals) != 0:
         fatal(
-            "The split_time policy requires the number of jobs to be a multiple "
+            "The split_in_time_per_run policy requires the number of jobs to be a multiple "
             f"of the number of run timing intervals. Received {number_of_jobs} jobs "
             f"for {len(run_timing_intervals)} timing intervals."
         )
@@ -99,9 +114,9 @@ def _split_time_per_interval(run_timing_intervals, number_of_jobs):
     return job_definitions
 
 
-def _split_time_total(run_timing_intervals, number_of_jobs):
+def _split_in_time_total(run_timing_intervals, number_of_jobs):
     # Split the total active simulation time into consecutive jobs. Unlike
-    # _split_time_per_interval(), a single job may span several original runs.
+    # _split_in_time_per_run(), a single job may span several original runs.
     total_active_time = sum(end - start for start, end in run_timing_intervals)
     target_job_active_duration = total_active_time / number_of_jobs
     job_definitions = []
@@ -172,7 +187,7 @@ def _split_time_total(run_timing_intervals, number_of_jobs):
 
         if len(job_run_timing_intervals) == 0:
             fatal(
-                f"Unable to build split_time_total job {job_index}. "
+                f"Unable to build split_in_time_total job {job_index}. "
                 "This indicates an internal splitting error."
             )
 
@@ -188,13 +203,13 @@ def _split_time_total(run_timing_intervals, number_of_jobs):
 def _generate_job_definitions(run_timing_intervals, number_of_jobs, policy):
     if number_of_jobs < 1:
         fatal(f"The number of jobs must be >= 1, but received {number_of_jobs}.")
-    if policy == "split_time":
-        return _split_time_per_interval(run_timing_intervals, number_of_jobs)
-    if policy == "split_time_total":
-        return _split_time_total(run_timing_intervals, number_of_jobs)
+    if policy == "split_in_time_per_run":
+        return _split_in_time_per_run(run_timing_intervals, number_of_jobs)
+    if policy == "split_in_time_total":
+        return _split_in_time_total(run_timing_intervals, number_of_jobs)
     fatal(
         f"Unknown split policy '{policy}'. "
-        "Known policies are: 'split_time', 'split_time_total'."
+        "Known policies are: 'split_in_time_per_run', 'split_in_time_total'."
     )
 
 
@@ -329,8 +344,9 @@ def jobs_split(
     simulation,
     number_of_jobs,
     split_path,
-    policy="split_time",
+    policy="split_in_time_per_run",
     link_files=False,
+    overwrite_existing_split_folder=False,
     **options,
 ):
     # Split authoritative, resolved configuration rather than the raw user
@@ -349,7 +365,10 @@ def jobs_split(
     source_n_assignments = _compute_source_n_assignments(
         simulation, original_run_timing_intervals, job_definitions
     )
-    split_root_folder = _create_split_root_folder(split_path)
+    split_root_folder = _resolve_split_folder(
+        split_path,
+        overwrite_existing_split_folder=overwrite_existing_split_folder,
+    )
     simulation_id = uuid.uuid4().hex
     created_at = datetime.now().isoformat()
 
@@ -382,13 +401,15 @@ def jobs_split(
             split_root_folder,
         )
         job_folder.mkdir(parents=True, exist_ok=False)
-        child_simulation.to_json_file(
+        child_simulation_dict = child_simulation.to_dictionary()
+        updated_child_simulation_dict = child_simulation.archive_input_files(
             directory=job_folder,
-            filename=Path(JOB_SIMULATION_FILENAME),
+            dct=child_simulation_dict,
+            link_files=link_files,
+            update_input_paths_in_dict=True,
         )
-        child_simulation.archive_input_files(
-            directory=job_folder, link_files=link_files
-        )
+        with open(job_folder / JOB_SIMULATION_FILENAME, "w") as output_file:
+            dump_json(updated_child_simulation_dict, output_file)
         with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
             dump_json(child_metadata, output_file)
         jobs_manifest["jobs"].append(
@@ -630,6 +651,15 @@ def _run_job_folders_in_local_pool(
     start_method="spawn",
     maxtasksperchild=1,
 ):
+    # NOTE: local_pool is a convenience backend, not the most crash-resilient
+    # local dispatcher. If a worker suffers a hard crash such as a C++ segfault,
+    # multiprocessing.Pool may propagate an exception to the parent, but in some
+    # failure modes it can also become wedged without a clean Python exception.
+    # For stronger isolation and more reliable crash detection, a future local
+    # backend could dispatch one OS subprocess per job and monitor exit codes,
+    # similar in spirit to scheduler-based backends and to local_sequential.
+    # Another option would be a more defensive pool orchestration based on
+    # apply_async()/timeouts/health checks rather than a single blocking map().
     if int(n_workers) < 1:
         raise GateJobsBackendError("The local_pool backend requires n_workers >= 1.")
     if int(maxtasksperchild) != 1:
@@ -638,11 +668,22 @@ def _run_job_folders_in_local_pool(
             "worker process executes at most one job."
         )
     ctx = multiprocessing.get_context(start_method)
-    with ctx.Pool(
+    pool = ctx.Pool(
         processes=int(n_workers),
         maxtasksperchild=maxtasksperchild,
-    ) as pool:
-        return pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
+    )
+    try:
+        results = pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
+        # Shut the pool down gracefully once all jobs completed. Using the Pool
+        # context manager would terminate workers on exit, which is too abrupt
+        # here and can trigger resource-tracker warnings on shutdown.
+        pool.close()
+        pool.join()
+        return results
+    except Exception:
+        pool.terminate()
+        pool.join()
+        raise
 
 
 def _render_htcondor_submit_file_lines(job_folders, backend_options):
@@ -884,8 +925,7 @@ def _run_jobs_campaign(job_folders, backend, backend_options):
         return _run_job_folders_in_local_sequential(job_folders)
 
     if backend == "local_pool":
-        pooling_options = backend_options.get("pooling_options", {})
-        return _run_job_folders_in_local_pool(job_folders, **pooling_options)
+        return _run_job_folders_in_local_pool(job_folders, **backend_options)
 
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
@@ -902,20 +942,14 @@ def _validate_jobs_backend_options(backend, backend_options):
         return {}
 
     if backend == "local_pool":
-        allowed_top_level_keys = {"pooling_options"}
-        unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
-        if len(unknown_keys) > 0:
-            raise GateJobsBackendError(
-                f"The local_pool backend received unknown option groups: {sorted(unknown_keys)}."
-            )
-        pooling_options = dict(backend_options.get("pooling_options", {}))
-        allowed_pooling_keys = {"n_workers", "start_method", "maxtasksperchild"}
-        unknown_pooling_keys = set(pooling_options.keys()).difference(
-            allowed_pooling_keys
+        pooling_options = dict(backend_options)
+        allowed_backend_keys = {"n_workers", "start_method", "maxtasksperchild"}
+        unknown_backend_keys = set(pooling_options.keys()).difference(
+            allowed_backend_keys
         )
-        if len(unknown_pooling_keys) > 0:
+        if len(unknown_backend_keys) > 0:
             raise GateJobsBackendError(
-                f"The local_pool backend received unknown pooling_options: {sorted(unknown_pooling_keys)}."
+                f"The local_pool backend received unknown backend_options: {sorted(unknown_backend_keys)}."
             )
         if "n_workers" not in pooling_options:
             pooling_options["n_workers"] = os.cpu_count() or 1
@@ -956,7 +990,7 @@ def _validate_jobs_backend_options(backend, backend_options):
                 raise GateJobsBackendError(
                     "The local_pool backend currently requires maxtasksperchild=1."
                 )
-        return {"pooling_options": pooling_options}
+        return pooling_options
 
     if backend == "htcondor":
         allowed_top_level_keys = {

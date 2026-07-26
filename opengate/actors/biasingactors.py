@@ -599,8 +599,12 @@ class LastVertexInteractionSplittingActor(
         itk.imwrite(new_uncertainty_img, uncertainty_file)
 
     def CorrectDoseUncertainty(self):
+        # FIXME: This post-processing hook appears to be unused at the moment:
+        # no current execution path calls it. Even if revived later, the
+        # authority is awkward because a biasing actor rewrites outputs owned
+        # by dose actors. The uncertainty post-processing should probably live
+        # with the corresponding dose actor or actor output instead.
         actors = self.simulation.actor_manager.actors
-        output_dir = self.simulation.output_dir
         for key in actors.keys():
             actor = actors[key]
             if hasattr(actor, "dose_uncertainty"):
@@ -610,11 +614,11 @@ class LastVertexInteractionSplittingActor(
                     actor.dose_uncertainty.active == True
                     and actor.dose_squared.active == True
                 ):
-                    uncertainty_file = (
-                        output_dir + actor.edep_uncertainty.output_filename
+                    uncertainty_file = actor.edep_uncertainty.get_output_path(
+                        which="merged"
                     )
-                    file = output_dir + actor.dose.output_filename
-                    squared_file = output_dir + actor.dose_squared.output_filename
+                    file = actor.dose.get_output_path(which="merged")
+                    squared_file = actor.dose_squared.get_output_path(which="merged")
                     self.UncertaintyCalculation(
                         t_N, uncertainty_file, file, squared_file
                     )
@@ -622,11 +626,11 @@ class LastVertexInteractionSplittingActor(
                     actor.edep_uncertainty.active == True
                     and actor.edep_squared.active == True
                 ):
-                    uncertainty_file = (
-                        output_dir + actor.edep_uncertainty.output_filename
+                    uncertainty_file = actor.edep_uncertainty.get_output_path(
+                        which="merged"
                     )
-                    file = output_dir + actor.edep.output_filename
-                    squared_file = output_dir + actor.edep_squared.output_filename
+                    file = actor.edep.get_output_path(which="merged")
+                    squared_file = actor.edep_squared.get_output_path(which="merged")
                     self.UncertaintyCalculation(
                         t_N, uncertainty_file, file, squared_file
                     )

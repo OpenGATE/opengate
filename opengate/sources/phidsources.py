@@ -124,7 +124,8 @@ class PhotonFromIonDecaySource(GenericSource):
 
         # dump log
         if self.user_info.dump_log is not None:
-            with open(self.user_info.dump_log, "w") as outfile:
+            dump_log_path = self.simulation.get_output_path(self.user_info.dump_log)
+            with open(dump_log_path, "w") as outfile:
                 outfile.write(self.log)
 
     def prepare_output(self):
