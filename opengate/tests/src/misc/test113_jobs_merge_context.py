@@ -45,6 +45,126 @@ def read_single_voxel_value(path):
     return get_single_voxel_value_from_image(itk.imread(str(path)))
 
 
+def get_single_voxel_value_from_actor_output(actor_output, which, item=0):
+    return get_single_voxel_value_from_image(actor_output.get_data(which=which, item=item))
+
+
+def get_total_single_voxel_dose_from_actor_output(actor_output, which_values):
+    """Return the summed single-voxel dose over the requested output slots."""
+
+    total_dose = 0.0
+    for which in which_values:
+        total_dose += get_single_voxel_value_from_actor_output(
+            actor_output, which=which, item=0
+        )
+    return total_dose
+
+
+def build_manual_cumulative_stats_from_per_run(stats_actor):
+    """Accumulate the target simulation's per-run stats into a plain dict."""
+
+    stats_output = stats_actor.user_output.stats
+    per_run_items = [
+        stats_output.data_per_run[run_index].get_data_item_object(0)
+        for run_index in sorted(stats_output.data_per_run.keys())
+    ]
+    manual_counts = {
+        "runs": len(per_run_items),
+        "events": sum(item.data.events for item in per_run_items),
+        "tracks": sum(item.data.tracks for item in per_run_items),
+        "steps": sum(item.data.steps for item in per_run_items),
+        "duration": sum(item.data.duration for item in per_run_items),
+        "track_types": {},
+    }
+    all_track_names = sorted(
+        {
+            track_name
+            for item in per_run_items
+            for track_name in item.data.track_types.keys()
+        }
+    )
+    for track_name in all_track_names:
+        manual_counts["track_types"][track_name] = sum(
+            int(item.data.track_types.get(track_name, 0)) for item in per_run_items
+        )
+    return manual_counts
+
+
+def format_stats_payload(stats_like):
+    """Return a compact debug string for statistics-like payloads."""
+
+    return (
+        f"runs={stats_like.data.runs}, "
+        f"events={stats_like.data.events}, "
+        f"tracks={stats_like.data.tracks}, "
+        f"steps={stats_like.data.steps}, "
+        f"duration={stats_like.data.duration}, "
+        f"track_types={dict(stats_like.data.track_types)}"
+    )
+
+
+def format_manual_stats_payload(manual_counts):
+    """Return a compact debug string for manual cumulative statistics dicts."""
+
+    return (
+        f"runs={manual_counts['runs']}, "
+        f"events={manual_counts['events']}, "
+        f"tracks={manual_counts['tracks']}, "
+        f"steps={manual_counts['steps']}, "
+        f"duration={manual_counts['duration']}, "
+        f"track_types={manual_counts['track_types']}"
+    )
+
+
+def stats_counts_match_except_runs(stats_item_1, stats_item_2):
+    """Compare cumulative statistics while ignoring non-count derived fields."""
+
+    return (
+        stats_item_1.data.events == stats_item_2.data.events
+        and stats_item_1.data.tracks == stats_item_2.data.tracks
+        and stats_item_1.data.steps == stats_item_2.data.steps
+    )
+
+
+def assert_stats_except_runs(stats_actor_1, stats_actor_2, tolerance):
+    """Compare stats actors while ignoring the cumulative runs count."""
+
+    counts1 = stats_actor_1.user_output.stats.merged_data.get_data_item_object(0)
+    counts2 = stats_actor_2.user_output.stats.merged_data.get_data_item_object(0)
+    if isinstance(tolerance, (int, float)):
+        tolerance = [tolerance, tolerance, tolerance]
+
+    is_ok = True
+    utility.print_test(
+        True,
+        f"Runs:         {counts1.runs} {counts2.runs} (ignored for cumulative stats consistency)",
+    )
+
+    event_d = 0 if counts2.events == 0 else counts1.events / counts2.events * 100 - 100
+    track_d = 100 if counts2.tracks == 0 else counts1.tracks / counts2.tracks * 100 - 100
+    step_d = 100 if counts2.steps == 0 else counts1.steps / counts2.steps * 100 - 100
+
+    b = abs(event_d) <= tolerance[0] * 100
+    is_ok = utility.print_test(
+        b,
+        f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  (tol = {tolerance[0] * 100:.2f} %)",
+    ) and is_ok
+
+    b = abs(track_d) <= tolerance[1] * 100
+    is_ok = utility.print_test(
+        b,
+        f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  (tol = {tolerance[1] * 100:.2f} %)",
+    ) and is_ok
+
+    b = abs(step_d) <= tolerance[2] * 100
+    is_ok = utility.print_test(
+        b,
+        f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  (tol = {tolerance[2] * 100:.2f} %)",
+    ) and is_ok
+
+    return is_ok
+
+
 def build_simulation(output_path, run_timing_intervals, source_n):
     """Build a split-ready simulation with standard and ROOT actor outputs.
 
@@ -93,6 +213,12 @@ def build_simulation(output_path, run_timing_intervals, source_n):
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.output_filename = "stats.json"
     stats.keep_data_per_run = True
+
+    # A second statistics actor stores only the cumulative slot. This probes
+    # the jobs-merge path for standard outputs that do not keep per-run data.
+    stats_cumulative = sim.add_actor("SimulationStatisticsActor", "StatsCumulative")
+    stats_cumulative.output_filename = "stats_cumulative.json"
+    stats_cumulative.keep_data_per_run = False
 
     # Use one voxel covering the full target so merged image checks reduce to
     # scalar comparisons while still exercising the standard image merge path.
@@ -388,12 +514,12 @@ if __name__ == "__main__":
     is_ok = inventory_job_indices == [1, 2, 3] and is_ok
 
     # Check the total number of actor-output plans produced by the mixed-output
-    # simulation: one stats output, four dose outputs, and one ROOT output per job.
+    # simulation: two stats outputs, four dose outputs, and one ROOT output per job.
     utility.print_test(
-        len(output_inventory) == 18,
+        len(output_inventory) == 21,
         f"Flat output inventory contains one entry per job and actor output: {len(output_inventory)}",
     )
-    is_ok = len(output_inventory) == 18 and is_ok
+    is_ok = len(output_inventory) == 21 and is_ok
 
     # Check that job0001 bridges the original run boundary and therefore maps
     # two local runs back to original runs 0 and 1.
@@ -451,6 +577,13 @@ if __name__ == "__main__":
         and output_plan["actor_name"] == "PhaseSpace"
         and output_plan["output_name"] == "root_output"
     )
+    stats_cumulative_plan_job1 = next(
+        output_plan
+        for output_plan in output_inventory
+        if output_plan["job_index"] == 1
+        and output_plan["actor_name"] == "StatsCumulative"
+        and output_plan["output_name"] == "stats"
+    )
 
     # Check that statistics output is routed to the standard merge coordinator.
     utility.print_test(
@@ -472,6 +605,14 @@ if __name__ == "__main__":
         f"Phase-space output merge coordinator: {phsp_plan_job1['merge_coordinator']}",
     )
     is_ok = phsp_plan_job1["merge_coordinator"] == "root" and is_ok
+
+    # Check that the cumulative-only statistics output is still routed through
+    # the standard merge coordinator.
+    utility.print_test(
+        stats_cumulative_plan_job1["merge_coordinator"] == "standard",
+        f"Cumulative-only statistics output merge coordinator: {stats_cumulative_plan_job1['merge_coordinator']}",
+    )
+    is_ok = stats_cumulative_plan_job1["merge_coordinator"] == "standard" and is_ok
 
     # Check that the statistics actor plans per-run output for both local runs
     # of job0001 plus one merged output slot.
@@ -514,6 +655,19 @@ if __name__ == "__main__":
         f"job0001 planned phase-space contributions: {len(phsp_plan_job1['contributions'])}",
     )
     is_ok = len(phsp_plan_job1["contributions"]) == 2 and is_ok
+
+    # Check that the cumulative-only statistics actor contributes only its
+    # cumulative slot and no per-run payload.
+    utility.print_test(
+        [contribution["source_scope"] for contribution in stats_cumulative_plan_job1["contributions"]]
+        == ["merged"],
+        f"job0001 cumulative-only statistics source scopes: {[contribution['source_scope'] for contribution in stats_cumulative_plan_job1['contributions']]}",
+    )
+    is_ok = (
+        [contribution["source_scope"] for contribution in stats_cumulative_plan_job1["contributions"]]
+        == ["merged"]
+        and is_ok
+    )
 
     # ------------------------------------------------------------------
     # Successful merge path:
@@ -560,10 +714,63 @@ if __name__ == "__main__":
     )
 
     is_ok = (
-        utility.assert_stats(
+        assert_stats_except_runs(
             merged_sim.get_actor("Stats"),
             reference_sim.get_actor("Stats"),
             tolerance=[0, 0.10, 0.10],
+        )
+        and is_ok
+    )
+
+    merged_stats_output = merged_sim.get_actor("Stats").user_output.stats
+    merged_stats_item = merged_stats_output.merged_data.get_data_item_object(0)
+    manual_stats = build_manual_cumulative_stats_from_per_run(
+        merged_sim.get_actor("Stats")
+    )
+    # Check that the target cumulative stats slot created by jobs merge equals
+    # a manual accumulation of the target's own per-run stats slots for the
+    # primary count entries. Duration and other derived timing fields are not
+    # asserted here because this check is about accumulation of scored counts.
+    is_ok = (
+        utility.print_test(
+            merged_stats_item.data.events == manual_stats["events"]
+            and merged_stats_item.data.tracks == manual_stats["tracks"]
+            and merged_stats_item.data.steps == manual_stats["steps"]
+            and dict(merged_stats_item.data.track_types)
+            == manual_stats["track_types"],
+            "Target cumulative stats equal manual accumulation of target per-run stats except for runs"
+            f" | merged: {format_stats_payload(merged_stats_item)}"
+            f" | manual: {format_manual_stats_payload(manual_stats)}",
+        )
+        and is_ok
+    )
+
+    merged_stats_cumulative_output = (
+        merged_sim.get_actor("StatsCumulative").user_output.stats
+    )
+    merged_stats_cumulative_item = (
+        merged_stats_cumulative_output.merged_data.get_data_item_object(0)
+    )
+    # Check that the cumulative-only statistics actor received cumulative data
+    # through jobs merge even though it kept no per-run slots.
+    is_ok = (
+        utility.print_test(
+            len(merged_stats_cumulative_output.data_per_run) == 0,
+            "Cumulative-only statistics actor keeps no per-run data after merge",
+        )
+        and is_ok
+    )
+    # Check that the cumulative-only statistics output matches the cumulative
+    # result of the per-run statistics actor for the primary count entries,
+    # again ignoring the unreliable runs count and non-count timing details.
+    is_ok = (
+        utility.print_test(
+            stats_counts_match_except_runs(
+                merged_stats_cumulative_item, merged_stats_item
+            ),
+            "Cumulative-only statistics output matches the per-run statistics actor cumulative output except for runs"
+            f" | cumulative-only: {format_stats_payload(merged_stats_cumulative_item)}"
+            f" | per-run actor cumulative: {format_stats_payload(merged_stats_item)}",
         )
         and is_ok
     )
@@ -598,7 +805,6 @@ if __name__ == "__main__":
     reference_dose_path = reference_dose.dose.get_output_path(which="merged")
     merged_dose_value = read_single_voxel_value(merged_dose_path)
     reference_dose_value = read_single_voxel_value(reference_dose_path)
-    merged_per_run_sum = 0.0
     # Check the final merged dose image against the merged reference dose image.
     is_ok = (
         utility.print_test(
@@ -613,21 +819,62 @@ if __name__ == "__main__":
         )
         and is_ok
     )
-    for run_index in range(len(run_timing_intervals)):
-        merged_per_run_sum += read_single_voxel_value(
-            merged_dose.dose.get_output_path(which=run_index)
-        )
-    # Check internal dose consistency: the sum of the merged per-run dose
-    # images should reproduce the merged dose image.
+
+    merged_per_run_dose_sum_on_disk = sum(
+        read_single_voxel_value(merged_dose.dose.get_output_path(which=run_index))
+        for run_index in range(len(run_timing_intervals))
+    )
+    # Check internal merged-dose consistency on disk: the cumulative merged
+    # dose map should equal the sum of the merged per-run dose maps.
     is_ok = (
         utility.print_test(
             np.isclose(
-                merged_per_run_sum,
+                merged_per_run_dose_sum_on_disk,
                 merged_dose_value,
                 rtol=1e-3,
                 atol=0.0,
             ),
-            f"Sum of merged per-run dose values matches merged dose: {merged_per_run_sum:.6e} {merged_dose_value:.6e}",
+            f"Merged cumulative dose on disk equals sum of merged per-run dose maps: {merged_per_run_dose_sum_on_disk:.6e} {merged_dose_value:.6e}",
+        )
+        and is_ok
+    )
+
+    reference_per_run_dose_sum_on_disk = sum(
+        read_single_voxel_value(reference_dose.dose.get_output_path(which=run_index))
+        for run_index in range(len(run_timing_intervals))
+    )
+    # Check the same cumulative-versus-per-run contract on the unsplit
+    # reference simulation so the test probes both the general actor-output
+    # behavior and the split-merge behavior under the same criterion.
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                reference_per_run_dose_sum_on_disk,
+                reference_dose_value,
+                rtol=1e-3,
+                atol=0.0,
+            ),
+            f"Reference cumulative dose on disk equals sum of reference per-run dose maps: {reference_per_run_dose_sum_on_disk:.6e} {reference_dose_value:.6e}",
+        )
+        and is_ok
+    )
+
+    merged_in_memory_per_run_dose_sum = get_total_single_voxel_dose_from_actor_output(
+        merged_dose.dose, range(len(run_timing_intervals))
+    )
+    merged_in_memory_cumulative_dose = get_single_voxel_value_from_actor_output(
+        merged_dose.dose, which="merged", item=0
+    )
+    # Check the same contract in memory on the merged target actor output.
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                merged_in_memory_per_run_dose_sum,
+                merged_in_memory_cumulative_dose,
+                rtol=1e-3,
+                atol=0.0,
+            ),
+            f"Merged cumulative dose in memory equals sum of merged per-run dose maps: {merged_in_memory_per_run_dose_sum:.6e} {merged_in_memory_cumulative_dose:.6e}",
         )
         and is_ok
     )
