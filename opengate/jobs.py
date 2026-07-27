@@ -435,9 +435,20 @@ def _now_isoformat():
 
 
 def _get_platform_process_start_method():
-    if sys.platform == "darwin" or os.name == "nt":
-        return "spawn"
-    return "fork"
+    # Always use ``spawn`` for the detached jobs campaign launcher.
+    #
+    # Rationale: the launcher process may be created after the caller already
+    # executed another simulation in the current Python process, for example a
+    # reference run inside a test. With ``fork`` on Linux, the child launcher
+    # inherits the parent's in-memory singleton bookkeeping for
+    # ``SimulationEngine`` and Geant4-related state. That can make a later
+    # child job fail with a false-positive "another SimulationEngine already
+    # exists" error even though the job is conceptually isolated.
+    #
+    # Using ``spawn`` keeps the launcher semantics aligned across platforms and
+    # starts the campaign in a fresh interpreter, which is the safer contract
+    # for split-job orchestration.
+    return "spawn"
 
 
 def _get_job_execution_status_path(job_folder):
