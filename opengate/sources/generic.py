@@ -312,11 +312,18 @@ class VisualizationValidator(UserInfoValidatorBase):
     def validate(self, parent_obj, attr_name: str, parent_context: str = None):
         context_name = super().validate(parent_obj, attr_name, parent_context)
         b = getattr(parent_obj, attr_name)
+
+        if not parent_obj.simulation.visu:
+            return context_name  # Skip validation if visualization is disabled
+
         if b.count <= 0:
             logger.info(
                 f"For source {parent_obj.name}, visualization count is set to {b.count}. No visualization will be performed."
             )
-        elif b.count > 10000:
+        elif parent_obj.simulation.number_of_threads > 1:
+            fatal(f"Source visualization is not supported when using multiple threads.")
+
+        if b.count > 10000:
             warning(
                 f"For source {parent_obj.name}, visualization count is too high ({b.count}), using 2000 instead."
             )
