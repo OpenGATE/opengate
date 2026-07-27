@@ -11,10 +11,40 @@ phase-space ROOT output. It covers three related concerns in one place:
 The first configuration checks that GATE auto-injects ``RunID`` while leaving
 ``EventID`` absent. The second configuration checks that merge degrades to
 ordered concatenation with no synthetic identity branches.
+
+The test uses the local controller-based split-run API and also inspects the
+``MergeContext`` after the split stage. This keeps the focus on the current
+user-facing workflow while still checking the asymmetric total-time split plan
+that underlies the ROOT merge.
+
+Minimal user workflow example:
+
+```python
+import opengate as gate
+
+sim = gate.Simulation()
+# ... configure source and PhaseSpaceActor ...
+
+controller = gate.SplitRunController(
+    simulation=sim,
+    jobs_root_dir="my_split_campaign",
+    split_policy="split_in_time_total",
+    backend="local_pool",
+    backend_options={
+        "n_workers": 2,
+        "start_method": "spawn",
+        "maxtasksperchild": 1,
+    },
+)
+
+controller.split(number_of_jobs=3)
+controller.run()
+controller.wait()
+controller.merge()
+```
 """
 
 import shutil
-import time
 from pathlib import Path
 
 import numpy as np
@@ -74,31 +104,6 @@ def build_phsp_only_simulation(
     return sim, phsp
 
 
-def wait_until_jobs_completed(split_root, timeout=60):
-    """Wait until all child jobs report completed status."""
-
-    manifest_path = split_root / "jobs_manifest.json"
-    manifest = load_json_with_retry(manifest_path)
-    deadline = time.time() + timeout
-    last_statuses = []
-    while time.time() < deadline:
-        last_statuses = []
-        for job in manifest["jobs"]:
-            status_path = split_root / job["folder_name"] / "job_execution_status.json"
-            if not status_path.exists():
-                continue
-            status = load_json_with_retry(status_path)
-            last_statuses.append(status.get("status"))
-        if len(last_statuses) == len(manifest["jobs"]) and all(
-            status == "completed" for status in last_statuses
-        ):
-            return manifest
-        time.sleep(0.5)
-    raise RuntimeError(
-        f"Timed out waiting for split jobs to complete. Last observed statuses: {last_statuses}"
-    )
-
-
 def check_merge_context_asymmetric_split(merge_context, expected_multiplicity):
     """Validate the run-coverage pattern induced by total-time splitting."""
 
@@ -142,7 +147,8 @@ def check_child_branch_contract(
         job_folder = split_root / job["folder_name"]
         child_sim = gate.create_sim_from_json(job_folder / "simulation.json")
         child_phsp = child_sim.get_actor("PhaseSpace")
-        with uproot.open(job_folder / "test113_phsp.root") as root_file:
+        child_root_path = child_phsp.get_output_path()
+        with uproot.open(child_root_path) as root_file:
             branch_names = sorted(root_file["PhaseSpace"].keys())
 
         # Rehydrated actor configuration should reflect whether RunID had to be
@@ -151,6 +157,16 @@ def check_child_branch_contract(
             utility.print_test(
                 child_phsp.keep_data_per_run == expect_keep_data_per_run,
                 f"{job['folder_name']} keep_data_per_run after rehydration: {child_phsp.keep_data_per_run}",
+            )
+            and is_ok
+        )
+        # Child output now lives under each child simulation's output_dir, so
+        # always resolve the ROOT file path through the rehydrated actor output
+        # rather than assuming a fixed location directly under the job folder.
+        is_ok = (
+            utility.print_test(
+                child_root_path.exists(),
+                f"{job['folder_name']} ROOT output path exists: {child_root_path}",
             )
             and is_ok
         )
@@ -374,12 +390,25 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
         and is_ok
     )
 
-    split_root = gate.jobs_split(
+    # For this test we instantiate the controller explicitly so we can inspect
+    # the split product and merge plan between stages. Ordinary user code would
+    # usually just call ``sim.run(number_of_jobs=..., ...)`` and let that
+    # construct and drive the controller internally.
+    controller = gate.SplitRunController(
         simulation=sim,
-        number_of_jobs=3,
         jobs_root_dir=split_root,
-        policy="split_in_time_total",
+        split_policy="split_in_time_total",
+        backend="local_pool",
+        backend_options={
+            "n_workers": 2,
+            "start_method": "spawn",
+            "maxtasksperchild": 1,
+        },
     )
+    # The staged controller calls below are likewise slightly lower-level than
+    # the usual user entry point. The test uses them on purpose so it can check
+    # planning state after split, then continue with execution and merge.
+    controller.split(number_of_jobs=3)
 
     merge_manager = gate.jobs_merge(split_root, execute=False)
     merge_context = merge_manager.plan_merge()
@@ -401,7 +430,10 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
     )
     reference_sim.run(start_new_process=True)
 
-    run_summary = gate.jobs_run(split_root, backend="local_sequential")
+    # The actual child execution now goes through the controller API rather
+    # than calling jobs_run() directly. This reflects the recommended local
+    # split-run surface while still letting this test inspect the split product.
+    run_summary = controller.run()
     is_ok = (
         utility.print_test(
             run_summary["submitted_jobs"] == 3,
@@ -409,7 +441,14 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
         )
         and is_ok
     )
-    wait_until_jobs_completed(split_root)
+    controller.wait(poll_interval=0.2, timeout=120)
+    is_ok = (
+        utility.print_test(
+            controller.stage == "completed",
+            f"{case_name} controller reached completed stage after wait(): {controller.stage}",
+        )
+        and is_ok
+    )
 
     # Child simulations and child ROOT files should reflect the expected branch
     # contract after split preparation and execution.
@@ -423,8 +462,17 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
         and is_ok
     )
 
-    merged_manager = gate.jobs_merge(split_root, to_path=merged_output, execute=True)
-    merged_root = merged_manager.master_simulation.get_actor(
+    # Merge through the same controller so the test exercises the intended
+    # user-facing local workflow end to end.
+    controller.merge(to_path=merged_output)
+    is_ok = (
+        utility.print_test(
+            controller.stage == "merged",
+            f"{case_name} controller reached merged stage after merge(): {controller.stage}",
+        )
+        and is_ok
+    )
+    merged_root = controller.merge_manager.master_simulation.get_actor(
         "PhaseSpace"
     ).get_output_path()
     reference_root = reference_sim.get_actor("PhaseSpace").get_output_path()
