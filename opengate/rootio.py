@@ -152,21 +152,13 @@ class RootMergeCoordinator:
 
             source_info = self._source_infos[job_index]
             child_simulation = create_sim_from_json(source_info["simulation_path"])
-            child_simulation.output_dir = Path(source_info["folder"])
+            child_simulation.root_dir = Path(source_info["folder"])
+            child_simulation.output_dir = Path(source_info["folder"]) / "output"
             self._source_simulations_by_job_index[job_index] = child_simulation
         return self._source_simulations_by_job_index[job_index]
 
     def execute_merge(self):
-        class _CoordinatorOutputMergeContext:
-            def __init__(self, contributions, load_mode="rehydrated"):
-                self._contributions = list(contributions)
-                self._load_mode = load_mode
-
-            def get_contributions(self):
-                return self._contributions
-
-            def get_load_mode(self, default="rehydrated"):
-                return self._load_mode if self._load_mode is not None else default
+        from .jobs import _CoordinatorOutputMergeContext
 
         for grouped_outputs in self._root_output_groups.values():
             for grouped_output in grouped_outputs:

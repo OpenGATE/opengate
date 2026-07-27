@@ -25,10 +25,13 @@ def format_timing_intervals(intervals):
 def print_jobs_status_summary(status_data, verbose=False):
     intervals = status_data.get("original_run_timing_intervals", [])
     print(f" Manifest file:      {status_data['manifest_path']}")
-    print(f" Root directory:     {status_data['split_root_folder']}")
+    print(f" Jobs root dir:      {status_data['jobs_root_dir']}")
     print(f" Simulation ID:      {status_data['simulation_id']}")
     print(f" Created at:         {status_data['created_at']}")
     print(f" Split policy:       {status_data['policy']}")
+    print(
+        f" Prefer resolved:    {status_data.get('prefer_resolved_simulation', True)}"
+    )
     print(f" Number of jobs:     {status_data['number_of_jobs']}")
     print(f" Time intervals:     {format_timing_intervals(intervals)}")
     master_str = (
@@ -37,6 +40,13 @@ def print_jobs_status_summary(status_data, verbose=False):
         else colored.stylize("Missing", color_error)
     )
     print(f" Master simulation:  {master_str}")
+    print(f"   Path:             {status_data['master_simulation_path']}")
+    resolved_exists = status_data.get("resolved_simulation_exists", False)
+    resolved_path = status_data.get("resolved_simulation_path")
+    if resolved_path is not None:
+        resolved_str = "Found" if resolved_exists else colored.stylize("Missing", color_error)
+        print(f" Resolved sim:       {resolved_str}")
+        print(f"   Path:             {resolved_path}")
     master_inputs = status_data.get("master_input_files", [])
     if master_inputs:
         print(" Master input files:")

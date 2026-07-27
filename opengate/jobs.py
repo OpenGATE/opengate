@@ -31,6 +31,67 @@ SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
 SLURM_JOB_FOLDERS_FILENAME = "slurm_job_folders.txt"
 
 
+def _prepare_package_root(path, overwrite=False):
+    package_root = Path(path).resolve()
+    if package_root.exists():
+        if package_root.is_dir() is False:
+            fatal(
+                f"Cannot package a simulation into '{package_root}' because it is not a directory."
+            )
+    else:
+        package_root.mkdir(parents=True, exist_ok=False)
+    return package_root
+
+
+def package_simulation(
+    simulation,
+    path,
+    simulation_file="simulation.json",
+    resolved_simulation_file=None,
+    link_files=False,
+    overwrite=False,
+):
+    """Package a simulation under a structural root folder.
+
+    The package root contains the authored ``simulation.json`` plus archived
+    input files. Optionally, a second ``simulation_resolved.json`` snapshot can
+    be written to make the resolved configuration explicit on disk.
+    """
+
+    package_root = _prepare_package_root(path, overwrite=overwrite)
+    simulation_json_path = package_root / simulation_file
+
+    if simulation_json_path.exists() and overwrite is False:
+        fatal(
+            f"Refusing to overwrite existing simulation file '{simulation_json_path}'. "
+            "Set overwrite=True to replace it."
+        )
+
+    simulation.write_simulation_json(
+        directory=package_root,
+        filename=Path(simulation_file),
+    )
+    simulation.archive_input_files(
+        directory=package_root,
+        link_files=link_files,
+    )
+
+    resolved_simulation_path = None
+    if resolved_simulation_file is not None:
+        resolved_simulation_path = package_root / resolved_simulation_file
+        if resolved_simulation_path.exists() and overwrite is False:
+            fatal(
+                f"Refusing to overwrite existing resolved simulation file "
+                f"'{resolved_simulation_path}'. Set overwrite=True to replace it."
+            )
+        simulation.write_resolved_simulation_json(
+            directory=package_root,
+            filename=Path(resolved_simulation_file),
+        )
+
+    return package_root
+
+
 def _clone_simulation(simulation):
     # Clone through the JSON serializer so the child jobs are built from the same
     # persisted representation that later jobs_run()/jobs_merge() will use.
@@ -39,30 +100,54 @@ def _clone_simulation(simulation):
     return cloned_simulation
 
 
-def _resolve_split_folder(split_path, overwrite_existing_split_folder=False):
-    if split_path is None or split_path == "auto":
-        timestamp = datetime.now().strftime("jobs_%Y%m%d_%H%M%S")
-        split_folder = Path(timestamp)
-        suffix = 1
-        while split_folder.exists():
-            split_folder = Path(f"{timestamp}_{suffix:02d}")
-            suffix += 1
+def _load_packaged_simulation(simulation_folder, simulation_file):
+    simulation_folder = Path(simulation_folder).resolve()
+    simulation_path = simulation_folder / simulation_file
+    if simulation_path.exists() is False:
+        fatal(
+            f"Simulation file '{simulation_file}' was not found in simulation_folder "
+            f"'{simulation_folder}'."
+        )
+    from .managers import create_sim_from_json
+
+    simulation = create_sim_from_json(simulation_path)
+    return simulation, simulation_path
+
+
+def _prepare_jobs_root_dir(jobs_root_dir, overwrite_existing_job_folders=False):
+    jobs_root_dir = Path(jobs_root_dir).resolve()
+    if jobs_root_dir.exists():
+        if jobs_root_dir.is_dir() is False:
+            fatal(
+                f"Cannot use jobs_root_dir '{jobs_root_dir}' because it is not a directory."
+            )
     else:
-        split_folder = Path(split_path)
-        if split_folder.exists():
-            if overwrite_existing_split_folder is False:
-                fatal(
-                    f"Split path already exists: {split_folder}. "
-                    "Please provide a fresh split_path, use split_path=None/'auto', "
-                    "or set overwrite_existing_split_folder=True."
-                )
-            if split_folder.is_dir() is False:
-                fatal(
-                    f"Cannot overwrite split path {split_folder} because it is not a directory."
-                )
-            shutil.rmtree(split_folder)
-    split_folder.mkdir(parents=True, exist_ok=False)
-    return split_folder.resolve()
+        jobs_root_dir.mkdir(parents=True, exist_ok=False)
+
+    existing_job_folders = sorted(jobs_root_dir.glob("job[0-9][0-9][0-9][0-9]"))
+    jobs_sidecar_files = [
+        jobs_root_dir / JOBS_MANIFEST_FILENAME,
+        jobs_root_dir / JOBS_BACKEND_STATUS_FILENAME,
+    ]
+    existing_jobs_sidecar_files = [p for p in jobs_sidecar_files if p.exists()]
+
+    if (
+        len(existing_job_folders) > 0 or len(existing_jobs_sidecar_files) > 0
+    ) and overwrite_existing_job_folders is False:
+        blocking_entries = [str(p.name) for p in existing_job_folders]
+        blocking_entries.extend(str(p.name) for p in existing_jobs_sidecar_files)
+        fatal(
+            f"jobs_root_dir '{jobs_root_dir}' already contains split-job artifacts: "
+            f"{blocking_entries}. Set overwrite_existing_job_folders=True to replace them."
+        )
+
+    if overwrite_existing_job_folders is True:
+        for job_folder in existing_job_folders:
+            shutil.rmtree(job_folder)
+        for sidecar_file in existing_jobs_sidecar_files:
+            sidecar_file.unlink()
+
+    return jobs_root_dir
 
 
 def _copy_run_timing_intervals(run_timing_intervals):
@@ -305,10 +390,11 @@ def _configure_child_simulation(
     job_definition,
     source_n_assignments,
     parent_simulation_id,
-    split_root_folder,
+    jobs_root_dir,
 ):
-    job_folder = split_root_folder / job_definition["folder_name"]
-    child_simulation.output_dir = job_folder
+    job_folder = jobs_root_dir / job_definition["folder_name"]
+    child_simulation.root_dir = job_folder
+    child_simulation.output_dir = job_folder / "output"
     child_simulation.run_timing_intervals = _copy_run_timing_intervals(
         job_definition["run_timing_intervals"]
     )
@@ -344,14 +430,35 @@ def _configure_child_simulation(
 
 
 def jobs_split(
-    simulation,
-    number_of_jobs,
-    split_path,
+    simulation=None,
+    simulation_folder=None,
+    simulation_file="simulation.json",
+    resolved_simulation_file="simulation_resolved.json",
+    jobs_root_dir=None,
+    number_of_jobs=1,
     policy="split_in_time_per_run",
     link_files=False,
-    overwrite_existing_split_folder=False,
+    overwrite_existing_job_folders=False,
+    write_resolved_simulation=True,
     **options,
 ):
+    if (simulation is None) == (simulation_folder is None):
+        fatal(
+            "jobs_split() requires exactly one of 'simulation' or "
+            "'simulation_folder'."
+        )
+
+    if simulation is None:
+        simulation, simulation_path = _load_packaged_simulation(
+            simulation_folder, simulation_file
+        )
+        if jobs_root_dir is None:
+            jobs_root_dir = simulation.root_dir
+    else:
+        simulation_path = None
+        if jobs_root_dir is None:
+            jobs_root_dir = simulation.root_dir
+
     # Split authoritative, resolved configuration rather than the raw user
     # inputs so child jobs inherit explicit timing anchors and helper actors.
     simulation.resolve_and_validate_config(context="split_preparation")
@@ -368,18 +475,28 @@ def jobs_split(
     source_n_assignments = _compute_source_n_assignments(
         simulation, original_run_timing_intervals, job_definitions
     )
-    split_root_folder = _resolve_split_folder(
-        split_path,
-        overwrite_existing_split_folder=overwrite_existing_split_folder,
+    jobs_root_dir = _prepare_jobs_root_dir(
+        jobs_root_dir,
+        overwrite_existing_job_folders=overwrite_existing_job_folders,
     )
     simulation_id = uuid.uuid4().hex
     created_at = datetime.now().isoformat()
 
-    simulation.to_json_file(
-        directory=split_root_folder,
-        filename=Path(MASTER_SIMULATION_FILENAME),
+    simulation.write_simulation_json(
+        directory=jobs_root_dir,
+        filename=Path(simulation_file),
     )
-    simulation.archive_input_files(directory=split_root_folder, link_files=link_files)
+    if write_resolved_simulation is True:
+        simulation.write_resolved_simulation_json(
+            directory=jobs_root_dir,
+            filename=Path(resolved_simulation_file),
+            context="split_preparation",
+        )
+    packaged_root_matches_jobs_root = (
+        simulation_path is not None and simulation_path.parent.resolve() == jobs_root_dir
+    )
+    if packaged_root_matches_jobs_root is False:
+        simulation.archive_input_files(directory=jobs_root_dir, link_files=link_files)
 
     jobs_manifest = {
         "simulation_id": simulation_id,
@@ -388,7 +505,11 @@ def jobs_split(
         "options": options,
         "number_of_jobs": number_of_jobs,
         "original_run_timing_intervals": original_run_timing_intervals,
-        "master_simulation_filename": MASTER_SIMULATION_FILENAME,
+        "master_simulation_filename": simulation_file,
+        "resolved_simulation_filename": (
+            resolved_simulation_file if write_resolved_simulation is True else None
+        ),
+        "prefer_resolved_simulation": bool(write_resolved_simulation),
         "jobs": [],
     }
 
@@ -401,7 +522,7 @@ def jobs_split(
             job_definition,
             source_n_assignments[job_definition["job_index"]],
             simulation_id,
-            split_root_folder,
+            jobs_root_dir,
         )
         job_folder.mkdir(parents=True, exist_ok=False)
         child_simulation_dict = child_simulation.to_dictionary()
@@ -424,10 +545,10 @@ def jobs_split(
             }
         )
 
-    with open(split_root_folder / JOBS_MANIFEST_FILENAME, "w") as output_file:
+    with open(jobs_root_dir / JOBS_MANIFEST_FILENAME, "w") as output_file:
         dump_json(jobs_manifest, output_file)
 
-    return split_root_folder
+    return jobs_root_dir
 
 
 def _now_isoformat():
@@ -509,18 +630,24 @@ def _format_original_run_indices(original_run_indices):
 
 def format_jobs_split_summary(manifest_or_dir_path):
     manifest_path, manifest = _load_jobs_manifest(manifest_or_dir_path)
-    split_root_folder = manifest_path.parent
+    jobs_root_dir = manifest_path.parent
+    master_simulation_filename = manifest.get(
+        "master_simulation_filename", MASTER_SIMULATION_FILENAME
+    )
+    resolved_simulation_filename = manifest.get("resolved_simulation_filename")
     lines = [
         "Jobs split summary:",
-        f"- master folder: {split_root_folder}",
-        f"| simulation: {split_root_folder / manifest.get('master_simulation_filename', MASTER_SIMULATION_FILENAME)}",
+        f"- jobs root directory: {jobs_root_dir}",
+        f"| simulation: {jobs_root_dir / master_simulation_filename}",
+        f"| resolved simulation: {jobs_root_dir / resolved_simulation_filename if resolved_simulation_filename is not None else 'None'}",
         f"| simulation id: {manifest.get('simulation_id', 'Unknown')}",
         f"| split policy: {manifest.get('policy', 'Unknown')}",
+        f"| prefer resolved simulation: {manifest.get('prefer_resolved_simulation', False)}",
         f"| original run timing intervals: {_format_timing_intervals(manifest.get('original_run_timing_intervals', []))}",
         "| jobs:",
     ]
     for job_item in manifest.get("jobs", []):
-        job_folder = split_root_folder / job_item["folder_name"]
+        job_folder = jobs_root_dir / job_item["folder_name"]
         metadata = _load_job_metadata(job_folder)
         lines.extend(
             [
@@ -653,7 +780,8 @@ def _run_job_folder(job_folder, backend, start_new_process):
             "simulation_filename", JOB_SIMULATION_FILENAME
         )
         sim = create_sim_from_json(simulation_path)
-        sim.output_dir = job_folder
+        sim.root_dir = job_folder
+        sim.output_dir = job_folder / "output"
         sim.run(start_new_process=start_new_process)
 
         finished_at = _now_isoformat()
@@ -1237,7 +1365,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "split_root_folder": str(split_root_folder),
+            "jobs_root_dir": str(split_root_folder),
             "submitted_jobs": 0,
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
@@ -1253,7 +1381,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "split_root_folder": str(split_root_folder),
+            "jobs_root_dir": str(split_root_folder),
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
@@ -1270,7 +1398,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "split_root_folder": str(split_root_folder),
+            "jobs_root_dir": str(split_root_folder),
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
@@ -1307,7 +1435,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "split_root_folder": str(split_root_folder),
+            "jobs_root_dir": str(split_root_folder),
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": campaign_process.pid,
@@ -1319,17 +1447,40 @@ def jobs_run(
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
 
-def _load_master_simulation_from_manifest(manifest_path, manifest):
+def _get_master_simulation_paths_from_manifest(manifest_path, manifest):
     master_simulation_filename = manifest.get(
         "master_simulation_filename", MASTER_SIMULATION_FILENAME
     )
+    resolved_simulation_filename = manifest.get("resolved_simulation_filename")
     master_simulation_path = manifest_path.parent / master_simulation_filename
-    if not master_simulation_path.exists():
+    resolved_simulation_path = (
+        manifest_path.parent / resolved_simulation_filename
+        if resolved_simulation_filename is not None
+        else None
+    )
+    return master_simulation_path, resolved_simulation_path
+
+
+def _load_master_simulation_from_manifest(manifest_path, manifest):
+    master_simulation_path, resolved_simulation_path = (
+        _get_master_simulation_paths_from_manifest(manifest_path, manifest)
+    )
+    prefer_resolved_simulation = manifest.get("prefer_resolved_simulation", True)
+    preferred_simulation_path = (
+        resolved_simulation_path
+        if (
+            prefer_resolved_simulation
+            and resolved_simulation_path is not None
+            and resolved_simulation_path.exists()
+        )
+        else master_simulation_path
+    )
+    if not preferred_simulation_path.exists():
         fatal(
-            f"Master simulation file not found at '{master_simulation_path}'. "
+            f"Master simulation file not found at '{preferred_simulation_path}'. "
             "Cannot initialize jobs merge."
         )
-    return create_sim_from_json(master_simulation_path)
+    return create_sim_from_json(preferred_simulation_path)
 
 
 def _collect_leaf_merge_sources(manifest_path, manifest):
@@ -1420,14 +1571,12 @@ class RootMergeContextView:
         self._merge_context = merge_context
 
     def get_source_info(self, job_index):
-        return (
-            self._merge_context.get_informative().get("sources", {}).get(job_index, {})
-        )
+        return self._merge_context.get_source_info(job_index)
 
     def iter_output_plans(self):
         """Yield one deduplicated ROOT-output plan per target actor/output pair."""
         seen = set()
-        for output_plan in self._merge_context.get_output_inventory():
+        for output_plan in self._merge_context.iter_output_inventory():
             if output_plan.get("merge_coordinator") != "root":
                 continue
             key = (output_plan.get("actor_name"), output_plan.get("output_name"))
@@ -1438,11 +1587,11 @@ class RootMergeContextView:
 
     def get_contributions_for_output(self, actor_name, output_name):
         contributions = []
-        for output_plan in self._merge_context.get_output_inventory():
+        for output_plan in self._merge_context.iter_output_plans_for_output(
+            actor_name, output_name
+        ):
             if (
                 output_plan.get("merge_coordinator") == "root"
-                and output_plan.get("actor_name") == actor_name
-                and output_plan.get("output_name") == output_name
             ):
                 contributions.extend(output_plan.get("contributions", []))
         return contributions
@@ -1455,13 +1604,11 @@ class StandardMergeContextView:
         self._merge_context = merge_context
 
     def get_source_info(self, job_index):
-        return (
-            self._merge_context.get_informative().get("sources", {}).get(job_index, {})
-        )
+        return self._merge_context.get_source_info(job_index)
 
     def iter_output_plans(self):
         seen = set()
-        for output_plan in self._merge_context.get_output_inventory():
+        for output_plan in self._merge_context.iter_output_inventory():
             if output_plan.get("merge_coordinator") != "standard":
                 continue
             key = (output_plan.get("actor_name"), output_plan.get("output_name"))
@@ -1472,11 +1619,11 @@ class StandardMergeContextView:
 
     def get_contributions_for_output(self, actor_name, output_name):
         contributions = []
-        for output_plan in self._merge_context.get_output_inventory():
+        for output_plan in self._merge_context.iter_output_plans_for_output(
+            actor_name, output_name
+        ):
             if (
                 output_plan.get("merge_coordinator") == "standard"
-                and output_plan.get("actor_name") == actor_name
-                and output_plan.get("output_name") == output_name
             ):
                 contributions.extend(output_plan.get("contributions", []))
         return contributions
@@ -1548,7 +1695,8 @@ class StandardMergeCoordinator:
         if job_index not in self._source_simulations_by_job_index:
             source_info = self._source_infos[job_index]
             child_simulation = create_sim_from_json(source_info["simulation_path"])
-            child_simulation.output_dir = Path(source_info["folder"])
+            child_simulation.root_dir = Path(source_info["folder"])
+            child_simulation.output_dir = Path(source_info["folder"]) / "output"
             self._source_simulations_by_job_index[job_index] = child_simulation
         return self._source_simulations_by_job_index[job_index]
 
@@ -1629,6 +1777,34 @@ class MergeContext:
     def get_output_inventory(self):
         return self.get_instructive().setdefault("output_inventory", [])
 
+    def iter_output_inventory(self):
+        yield from self.get_output_inventory()
+
+    def iter_output_plans_for_job(self, job_index):
+        for output_plan in self.iter_output_inventory():
+            if output_plan.get("job_index") == job_index:
+                yield output_plan
+
+    def get_output_plan(self, job_index, actor_name, output_name):
+        for output_plan in self.iter_output_plans_for_job(job_index):
+            if (
+                output_plan.get("actor_name") == actor_name
+                and output_plan.get("output_name") == output_name
+            ):
+                return output_plan
+        return None
+
+    def iter_output_plans_for_output(self, actor_name, output_name):
+        for output_plan in self.iter_output_inventory():
+            if (
+                output_plan.get("actor_name") == actor_name
+                and output_plan.get("output_name") == output_name
+            ):
+                yield output_plan
+
+    def get_source_info(self, job_index):
+        return self.get_informative().setdefault("sources", {}).get(job_index, {})
+
     def ensure_source(self, job_index):
         informative_sources = self.get_informative().setdefault("sources", {})
         informative_sources.setdefault(job_index, {})
@@ -1642,26 +1818,20 @@ class MergeContext:
         output_plan["job_index"] = job_index
         output_plan["actor_name"] = actor_name
         output_plan["output_name"] = output_name
-        inventory = self.get_output_inventory()
-        for i, existing_plan in enumerate(inventory):
-            if (
-                existing_plan.get("job_index") == job_index
-                and existing_plan.get("actor_name") == actor_name
-                and existing_plan.get("output_name") == output_name
-            ):
-                inventory[i] = output_plan
-                return
-        inventory.append(output_plan)
+        existing_plan = self.get_output_plan(job_index, actor_name, output_name)
+        if existing_plan is not None:
+            inventory = self.get_output_inventory()
+            for i, inventory_plan in enumerate(inventory):
+                if inventory_plan is existing_plan:
+                    inventory[i] = output_plan
+                    return
+        self.get_output_inventory().append(output_plan)
 
     def append_contribution(self, job_index, actor_name, output_name, contribution):
-        for output_plan in self.get_output_inventory():
-            if (
-                output_plan.get("job_index") == job_index
-                and output_plan.get("actor_name") == actor_name
-                and output_plan.get("output_name") == output_name
-            ):
-                output_plan.setdefault("contributions", []).append(contribution)
-                return
+        output_plan = self.get_output_plan(job_index, actor_name, output_name)
+        if output_plan is not None:
+            output_plan.setdefault("contributions", []).append(contribution)
+            return
         fatal(
             f"Cannot append merge contribution because no output plan exists for "
             f"job_index={job_index}, actor_name='{actor_name}', output_name='{output_name}'."
@@ -1674,9 +1844,7 @@ class MergeContext:
         job_id,
         source_simulation_id,
     ):
-        for output_plan in self.get_output_inventory():
-            if output_plan.get("job_index") != job_index:
-                continue
+        for output_plan in self.iter_output_plans_for_job(job_index):
             for contribution in output_plan.get("contributions", []):
                 source_scope = contribution.get("source_scope")
                 if source_scope == "merged":
@@ -1713,12 +1881,21 @@ class JobsMergeManager:
     run index of the master simulation.
     """
 
-    def __init__(self, split_path, output_dir=None, **options):
+    def __init__(
+        self,
+        split_path,
+        output_dir_override=None,
+        target_simulation=None,
+        **options,
+    ):
         self.manifest_path, self.manifest = _load_jobs_manifest(split_path)
-        self.split_root_folder = self.manifest_path.parent
-        self.output_dir = None if output_dir is None else Path(output_dir).resolve()
+        self.jobs_root_dir = self.manifest_path.parent
+        self.output_dir_override = (
+            None if output_dir_override is None else Path(output_dir_override).resolve()
+        )
         self.options = dict(options)
-        self.master_simulation = None
+        self.master_simulation = target_simulation
+        self._target_simulation_was_provided = target_simulation is not None
         self.leaf_sources = []
         self.original_run_to_sources_map = {}
         self.child_simulations_by_job_id = {}
@@ -1736,6 +1913,11 @@ class JobsMergeManager:
         self.merge_context = None
         self.standard_merge_coordinator = None
         self.root_merge_coordinator = None
+
+    def get_master_simulation_paths(self):
+        return _get_master_simulation_paths_from_manifest(
+            self.manifest_path, self.manifest
+        )
 
     @property
     def merge_result(self):
@@ -1782,12 +1964,36 @@ class JobsMergeManager:
             for source in self.leaf_sources
         }
 
-    def rehydrate_master_simulation(self):
-        self.master_simulation = _load_master_simulation_from_manifest(
+    def _validate_target_simulation_against_campaign(self):
+        if self.master_simulation is None:
+            raise GateMergeError(
+                "Cannot validate a target simulation because no target simulation is set."
+            )
+        reference_simulation = _load_master_simulation_from_manifest(
             self.manifest_path, self.manifest
         )
-        if self.output_dir is not None:
-            self.master_simulation.output_dir = self.output_dir
+        differences = self.master_simulation.compare_with(
+            reference_simulation, mode="merge_target_compatibility"
+        )
+        if differences:
+            difference_lines = "\n".join([f"- {difference}" for difference in differences])
+            raise GateMergeError(
+                "The provided target_simulation is incompatible with the split campaign.\n"
+                f"Differences:\n{difference_lines}"
+            )
+
+    def prepare_target_simulation(self):
+        if self.master_simulation is None:
+            self.master_simulation = _load_master_simulation_from_manifest(
+                self.manifest_path, self.manifest
+            )
+        else:
+            if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
+                self.load_campaign_metadata()
+            self._validate_target_simulation_against_campaign()
+
+        if self.output_dir_override is not None:
+            self.master_simulation.output_dir = self.output_dir_override
         return self.master_simulation
 
     def create_merge_context(self):
@@ -1812,7 +2018,8 @@ class JobsMergeManager:
         if job_id not in self.child_simulations_by_job_id:
             source = self._get_leaf_source(job_id)
             child_simulation = create_sim_from_json(source["simulation_path"])
-            child_simulation.output_dir = source["folder"]
+            child_simulation.root_dir = source["folder"]
+            child_simulation.output_dir = Path(source["folder"]) / "output"
             self.child_simulations_by_job_id[job_id] = child_simulation
         return self.child_simulations_by_job_id[job_id]
 
@@ -1830,7 +2037,7 @@ class JobsMergeManager:
         from .rootio import RootMergeCoordinator
 
         if self.master_simulation is None:
-            self.rehydrate_master_simulation()
+            self.prepare_target_simulation()
         if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
             self.load_campaign_metadata()
         self._planning_start_time = time.perf_counter()
@@ -1840,7 +2047,7 @@ class JobsMergeManager:
         informative.update(
             {
                 "target_simulation_id": self.manifest.get("simulation_id"),
-                "split_root_folder": str(self.split_root_folder),
+                "jobs_root_dir": str(self.jobs_root_dir),
                 "manifest_path": str(self.manifest_path),
                 "original_run_timing_intervals": _copy_run_timing_intervals(
                     self.manifest.get("original_run_timing_intervals", [])
@@ -1868,7 +2075,8 @@ class JobsMergeManager:
                 },
             )
             child_simulation = create_sim_from_json(source["simulation_path"])
-            child_simulation.output_dir = source["folder"]
+            child_simulation.root_dir = source["folder"]
+            child_simulation.output_dir = Path(source["folder"]) / "output"
             output_plans = child_simulation.plan_merge(mode=mode)
             for output_plan in output_plans:
                 merge_context.set_output_plan(
@@ -1911,20 +2119,27 @@ class JobsMergeManager:
 
     def build_summary_dict(self):
         if self.master_simulation is None:
-            self.rehydrate_master_simulation()
+            self.prepare_target_simulation()
         if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
             self.load_campaign_metadata()
 
         merged_output_dir = (
-            self.output_dir
-            if self.output_dir is not None
+            self.output_dir_override
+            if self.output_dir_override is not None
             else self.master_simulation.output_dir
         )
         return {
             "manifest_path": str(self.manifest_path),
-            "split_root_folder": str(self.split_root_folder),
+            "jobs_root_dir": str(self.jobs_root_dir),
             "master_simulation_id": self.manifest.get("simulation_id"),
-            "merged_output_dir": str(merged_output_dir),
+            "target_output_dir": str(merged_output_dir),
+            "master_simulation_path": str(self.get_master_simulation_paths()[0]),
+            "resolved_simulation_path": (
+                None
+                if self.get_master_simulation_paths()[1] is None
+                else str(self.get_master_simulation_paths()[1])
+            ),
+            "target_simulation_was_provided": self._target_simulation_was_provided,
             "number_of_leaf_sources": len(self.leaf_sources),
             "number_of_original_runs": len(
                 self.manifest.get("original_run_timing_intervals", [])
@@ -1971,20 +2186,23 @@ class JobsMergeManager:
 
     def format_merge_summary(self):
         if self.master_simulation is None:
-            self.rehydrate_master_simulation()
+            self.prepare_target_simulation()
         if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
             self.load_campaign_metadata()
 
         merged_output_dir = (
-            self.output_dir
-            if self.output_dir is not None
+            self.output_dir_override
+            if self.output_dir_override is not None
             else self.master_simulation.output_dir
         )
         lines = [
             "Jobs merge summary:",
-            f"- source master folder: {self.split_root_folder}",
-            f"| target merged folder: {merged_output_dir}",
+            f"- jobs root directory: {self.jobs_root_dir}",
+            f"| master simulation: {self.get_master_simulation_paths()[0]}",
+            f"| resolved simulation: {self.get_master_simulation_paths()[1] if self.get_master_simulation_paths()[1] is not None else 'None'}",
+            f"| target output directory: {merged_output_dir}",
             f"| master simulation id: {self.manifest.get('simulation_id', 'Unknown')}",
+            f"| target simulation provided: {self._target_simulation_was_provided}",
             f"| original run timing intervals: {_format_timing_intervals(self.manifest.get('original_run_timing_intervals', []))}",
         ]
         if self.total_merge_duration is not None:
@@ -2049,7 +2267,7 @@ class JobsMergeManager:
                 "JobsMergeManager.execute_merge() is in an inconsistent state: "
                 "merge_planned is True but the prepared simulation or merge context is missing."
             )
-        if len(self.master_simulation._merge_coordinators) == 0:
+        if self.master_simulation.has_merge_coordinators() is not True:
             raise GateMergeError(
                 "JobsMergeManager.execute_merge() found no prepared merge coordinators. "
                 "Call plan_merge() before execute_merge(), or use merge()."
@@ -2069,7 +2287,7 @@ class JobsMergeManager:
                 "JobsMergeManager.finalize_merge() is in an inconsistent state: "
                 "merge_planned is True but the prepared simulation or merge context is missing."
             )
-        if len(self.master_simulation._merge_coordinators) == 0:
+        if self.master_simulation.has_merge_coordinators() is not True:
             raise GateMergeError(
                 "JobsMergeManager.finalize_merge() found no prepared merge coordinators. "
                 "Call plan_merge() before finalize_merge(), or use merge()."
@@ -2087,9 +2305,16 @@ class JobsMergeManager:
         self._merge_finalized = True
         self._merge_result = {
             "manifest_path": str(self.manifest_path),
-            "split_root_folder": str(self.split_root_folder),
+            "jobs_root_dir": str(self.jobs_root_dir),
             "master_simulation_id": self.manifest.get("simulation_id"),
-            "merged_output_dir": str(self.master_simulation.output_dir),
+            "target_output_dir": str(self.master_simulation.output_dir),
+            "master_simulation_path": str(self.get_master_simulation_paths()[0]),
+            "resolved_simulation_path": (
+                None
+                if self.get_master_simulation_paths()[1] is None
+                else str(self.get_master_simulation_paths()[1])
+            ),
+            "target_simulation_was_provided": self._target_simulation_was_provided,
             "number_of_leaf_sources": len(self.leaf_sources),
             "number_of_original_runs": len(
                 self.manifest.get("original_run_timing_intervals", [])
@@ -2104,7 +2329,7 @@ class JobsMergeManager:
 
     def merge(self):
         if self.master_simulation is None:
-            self.rehydrate_master_simulation()
+            self.prepare_target_simulation()
         if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
             self.load_campaign_metadata()
 
@@ -2118,25 +2343,110 @@ class JobsMergeManager:
         return self._merge_result
 
 
-def jobs_merge(from_path, to_path=None, execute=True, **options):
-    merge_manager = JobsMergeManager(from_path, output_dir=to_path, **options)
-    merge_manager.rehydrate_master_simulation()
+def jobs_merge(
+    from_path,
+    target_simulation=None,
+    to_path=None,
+    execute=True,
+    **options,
+):
+    merge_manager = JobsMergeManager(
+        from_path,
+        output_dir_override=to_path,
+        target_simulation=target_simulation,
+        **options,
+    )
+    merge_manager.prepare_target_simulation()
     merge_manager.load_campaign_metadata()
     if execute:
         merge_manager.merge()
     return merge_manager
 
 
-def format_jobs_merge_summary(from_path, to_path=None, **options):
-    merge_manager = JobsMergeManager(from_path, output_dir=to_path, **options)
-    merge_manager.rehydrate_master_simulation()
+def jobs_clean_split(
+    jobs_root_dir,
+    remove_job_folders=True,
+    remove_backend_status=True,
+    remove_execution_status=True,
+    remove_manifest=False,
+    remove_resolved_simulation=False,
+):
+    """Remove temporary split-job artifacts while keeping the packaged root.
+
+    The default behavior is conservative with respect to the master campaign
+    description: keep ``simulation.json``, keep ``simulation_resolved.json``,
+    keep the top-level output directory, and remove the per-job execution
+    folders plus transient status sidecars.
+    """
+    manifest_path, manifest = _load_jobs_manifest(jobs_root_dir)
+    jobs_root_dir = manifest_path.parent
+
+    removed_paths = []
+
+    if remove_job_folders:
+        for job_item in manifest.get("jobs", []):
+            job_folder = jobs_root_dir / job_item["folder_name"]
+            if job_folder.exists():
+                shutil.rmtree(job_folder)
+                removed_paths.append(str(job_folder))
+    elif remove_execution_status:
+        for job_item in manifest.get("jobs", []):
+            job_folder = jobs_root_dir / job_item["folder_name"]
+            execution_status_path = job_folder / JOB_EXECUTION_STATUS_FILENAME
+            if execution_status_path.exists():
+                execution_status_path.unlink()
+                removed_paths.append(str(execution_status_path))
+
+    if remove_backend_status:
+        backend_status_path = jobs_root_dir / JOBS_BACKEND_STATUS_FILENAME
+        if backend_status_path.exists():
+            backend_status_path.unlink()
+            removed_paths.append(str(backend_status_path))
+
+    if remove_manifest:
+        if manifest_path.exists():
+            manifest_path.unlink()
+            removed_paths.append(str(manifest_path))
+
+    if remove_resolved_simulation:
+        resolved_simulation_filename = manifest.get("resolved_simulation_filename")
+        if resolved_simulation_filename is not None:
+            resolved_simulation_path = jobs_root_dir / resolved_simulation_filename
+            if resolved_simulation_path.exists():
+                resolved_simulation_path.unlink()
+                removed_paths.append(str(resolved_simulation_path))
+
+    return {
+        "jobs_root_dir": str(jobs_root_dir),
+        "removed_paths": removed_paths,
+        "remove_job_folders": bool(remove_job_folders),
+        "remove_backend_status": bool(remove_backend_status),
+        "remove_execution_status": bool(remove_execution_status),
+        "remove_manifest": bool(remove_manifest),
+        "remove_resolved_simulation": bool(remove_resolved_simulation),
+    }
+
+
+def format_jobs_merge_summary(from_path, target_simulation=None, to_path=None, **options):
+    merge_manager = JobsMergeManager(
+        from_path,
+        output_dir_override=to_path,
+        target_simulation=target_simulation,
+        **options,
+    )
+    merge_manager.prepare_target_simulation()
     merge_manager.load_campaign_metadata()
     return merge_manager.format_merge_summary()
 
 
-def print_jobs_merge_summary(from_path, to_path=None, **options):
-    merge_manager = JobsMergeManager(from_path, output_dir=to_path, **options)
-    merge_manager.rehydrate_master_simulation()
+def print_jobs_merge_summary(from_path, target_simulation=None, to_path=None, **options):
+    merge_manager = JobsMergeManager(
+        from_path,
+        output_dir_override=to_path,
+        target_simulation=target_simulation,
+        **options,
+    )
+    merge_manager.prepare_target_simulation()
     merge_manager.load_campaign_metadata()
     return merge_manager.print_merge_summary()
 
@@ -2258,7 +2568,13 @@ def get_jobs_status(manifest_or_dir_path):
     master_sim_filename = manifest.get(
         "master_simulation_filename", MASTER_SIMULATION_FILENAME
     )
+    resolved_sim_filename = manifest.get("resolved_simulation_filename")
     master_sim_file = split_root_folder / master_sim_filename
+    resolved_sim_file = (
+        split_root_folder / resolved_sim_filename
+        if resolved_sim_filename is not None
+        else None
+    )
 
     master_input_files = []
     if master_sim_file.exists():
@@ -2270,7 +2586,7 @@ def get_jobs_status(manifest_or_dir_path):
 
     status_data = {
         "manifest_path": str(manifest_path),
-        "split_root_folder": str(split_root_folder),
+        "jobs_root_dir": str(split_root_folder),
         "simulation_id": manifest.get("simulation_id", "Unknown"),
         "created_at": manifest.get("created_at", "Unknown"),
         "policy": manifest.get("policy", "Unknown"),
@@ -2278,7 +2594,19 @@ def get_jobs_status(manifest_or_dir_path):
         "original_run_timing_intervals": manifest.get(
             "original_run_timing_intervals", []
         ),
+        "prefer_resolved_simulation": manifest.get(
+            "prefer_resolved_simulation", True
+        ),
+        "master_simulation_filename": master_sim_filename,
+        "master_simulation_path": str(master_sim_file),
         "master_simulation_exists": master_sim_file.exists(),
+        "resolved_simulation_filename": resolved_sim_filename,
+        "resolved_simulation_path": (
+            None if resolved_sim_file is None else str(resolved_sim_file)
+        ),
+        "resolved_simulation_exists": (
+            False if resolved_sim_file is None else resolved_sim_file.exists()
+        ),
         "master_input_files": master_input_files,
         "backend_status_filename": JOBS_BACKEND_STATUS_FILENAME,
         "backend_status_exists": False,

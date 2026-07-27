@@ -763,6 +763,38 @@ class ActorBase(GateObject):
             output_plans.append(output.plan_merge(mode=mode))
         return output_plans
 
+    def compare_with(self, other, mode="merge_target_compatibility"):
+        """Compare this actor against another actor and report differences."""
+        differences = []
+
+        if not isinstance(other, ActorBase):
+            return [
+                f"Object type mismatch: expected ActorBase, received {type(other).__name__}."
+            ]
+
+        if self.type_name != other.type_name:
+            differences.append(
+                f"type mismatch: target={self.type_name}, reference={other.type_name}."
+            )
+
+        self_output_names = set(self.user_output.keys())
+        other_output_names = set(other.user_output.keys())
+        if self_output_names != other_output_names:
+            missing_in_self = sorted(other_output_names - self_output_names)
+            missing_in_other = sorted(self_output_names - other_output_names)
+            if missing_in_self:
+                differences.append(
+                    "missing actor outputs in target actor: "
+                    f"{missing_in_self}."
+                )
+            if missing_in_other:
+                differences.append(
+                    "extra actor outputs in target actor: "
+                    f"{missing_in_other}."
+                )
+
+        return differences
+
     def execute_merge(self, source_actor, context=None):
         if self.type_name != source_actor.type_name:
             raise GateMergeError(

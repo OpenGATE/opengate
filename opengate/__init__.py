@@ -160,9 +160,11 @@ import opengate.numerical
 from opengate.managers import Simulation
 from opengate.managers import create_sim_from_json
 from opengate.jobs import (
+    package_simulation,
     jobs_split,
     jobs_run,
     jobs_merge,
+    jobs_clean_split,
     print_jobs_split_summary,
     print_jobs_merge_summary,
 )

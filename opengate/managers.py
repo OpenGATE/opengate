@@ -508,6 +508,47 @@ class ActorManager(GateObject):
         for actor in self.sorted_actors:
             actor.resolve_and_validate_config(context=context)
 
+    def compare_with(self, other, mode="merge_target_compatibility"):
+        """Compare this actor manager against another one and report differences.
+
+        The first implementation is intentionally conservative and focuses on the
+        structure needed by split-job merge: actor names and actor-output names.
+        Deeper semantic comparisons can be added later in the respective actor
+        classes without changing the merge-manager entry point.
+        """
+        differences = []
+
+        if not isinstance(other, ActorManager):
+            return [
+                f"Object type mismatch: expected ActorManager, received {type(other).__name__}."
+            ]
+
+        self_actor_names = set(self.actors.keys())
+        other_actor_names = set(other.actors.keys())
+        if self_actor_names != other_actor_names:
+            missing_in_self = sorted(other_actor_names - self_actor_names)
+            missing_in_other = sorted(self_actor_names - other_actor_names)
+            if missing_in_self:
+                differences.append(
+                    "Missing actors in target simulation: "
+                    f"{missing_in_self}."
+                )
+            if missing_in_other:
+                differences.append(
+                    "Extra actors in target simulation: "
+                    f"{missing_in_other}."
+                )
+
+        for actor_name in sorted(self_actor_names.intersection(other_actor_names)):
+            actor_differences = self.actors[actor_name].compare_with(
+                other.actors[actor_name], mode=mode
+            )
+            differences.extend(
+                [f"Actor '{actor_name}': {difference}" for difference in actor_differences]
+            )
+
+        return differences
+
     def to_dictionary(self):
         d = super().to_dictionary()
         d["actors"] = dict([(k, v.to_dictionary()) for k, v in self.actors.items()])
@@ -1781,6 +1822,16 @@ def _setter_hook_progress_hook(simulation, value):
     return value
 
 
+def _setter_hook_root_dir(simulation, value):
+    return Path(value)
+
+
+def _setter_hook_output_dir(simulation, value):
+    if hasattr(simulation, "_output_dir_was_user_set"):
+        simulation._output_dir_was_user_set = True
+    return Path(value)
+
+
 class Simulation(GateObject):
     """
     Main class that store a simulation.
@@ -1814,6 +1865,7 @@ class Simulation(GateObject):
     random_engine: str
     random_seed: Union[str, int]
     run_timing_intervals: List[List[float]]
+    root_dir: Path
     output_dir: Path
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
@@ -1823,6 +1875,9 @@ class Simulation(GateObject):
     progress_hook_interval: Optional[float]
     dyn_geom_open_close: bool
     dyn_geom_optimise: bool
+
+    default_simulation_filename = Path("simulation.json")
+    default_resolved_simulation_filename = Path("simulation_resolved.json")
 
     user_info_defaults = {
         "verbose_level": (
@@ -1986,11 +2041,24 @@ class Simulation(GateObject):
                 "doc": "A list of timing intervals provided as 2-element lists of begin and end values"
             },
         ),
+        "root_dir": (
+            Path("."),
+            {
+                "doc": "Structural root directory of the simulation. "
+                "This folder contains simulation.json, archived input files, "
+                "and, for split campaigns, the job000X subfolders.",
+                "setter_hook": _setter_hook_root_dir,
+                "required_type": Path,
+            },
+        ),
         "output_dir": (
-            ".",
+            Path("output"),
             {
                 "doc": "Directory to which any output is written, "
-                "unless an absolute path is provided for a specific output."
+                "unless an absolute path is provided for a specific output. "
+                "If relative, it is resolved relative to the simulation's root_dir.",
+                "setter_hook": _setter_hook_output_dir,
+                "required_type": Path,
             },
         ),
         "store_json_archive": (
@@ -2083,6 +2151,7 @@ class Simulation(GateObject):
         self.log_handler_id = -1
         self.log_output = ""
         _setter_hook_verbose_level(self, INFO)
+        self._output_dir_was_user_set = "output_dir" in kwargs
 
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
@@ -2128,6 +2197,38 @@ class Simulation(GateObject):
         )
         return s
 
+    def compare_with(self, other, mode="merge_target_compatibility"):
+        """Compare this simulation against another one and report differences.
+
+        The current scaffold supports the merge-target compatibility check used
+        by split-job merging. It deliberately compares only the structural
+        elements the merge workflow currently depends on.
+        """
+        differences = []
+
+        if not isinstance(other, Simulation):
+            return [
+                f"Object type mismatch: expected Simulation, received {type(other).__name__}."
+            ]
+
+        if mode == "merge_target_compatibility":
+            self_run_timing_intervals = _copy_run_timing_intervals(
+                self.run_timing_intervals
+            )
+            other_run_timing_intervals = _copy_run_timing_intervals(
+                other.run_timing_intervals
+            )
+            if self_run_timing_intervals != other_run_timing_intervals:
+                differences.append(
+                    "run_timing_intervals differ: "
+                    f"target={self_run_timing_intervals}, "
+                    f"reference={other_run_timing_intervals}."
+                )
+
+        actor_differences = self.actor_manager.compare_with(other.actor_manager, mode=mode)
+        differences.extend(actor_differences)
+        return differences
+
     @property
     def output(self):
         raise GateDeprecationError(
@@ -2166,6 +2267,9 @@ class Simulation(GateObject):
 
     def add_merge_coordinator(self, merge_coordinator):
         self._merge_coordinators.append(merge_coordinator)
+
+    def has_merge_coordinators(self):
+        return len(self._merge_coordinators) > 0
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -2262,12 +2366,36 @@ class Simulation(GateObject):
 
     def to_json_file(self, directory=None, filename=None):
         if filename is None:
-            filename = Path("simulation.json")
-        directory = self.get_output_path(directory, is_file_or_directory="d")
+            filename = self.default_simulation_filename
+        directory = self.get_root_path(directory, is_file_or_directory="d")
         d = self.to_dictionary()
         d = self._rewrite_input_paths_in_dict(d, directory, mode="relativize")
         with open(directory / filename, "w") as f:
             dump_json(d, f)
+
+    def write_simulation_json(self, directory=None, filename=None):
+        """Write the authored simulation configuration under the structural root.
+
+        This persists the current user-facing configuration without implying
+        that resolve_and_validate_config() has been run beforehand.
+        """
+        if filename is None:
+            filename = self.default_simulation_filename
+        self.to_json_file(directory=directory, filename=filename)
+        return self.get_root_path(directory, is_file_or_directory="d") / filename
+
+    def write_resolved_simulation_json(self, directory=None, filename=None, context=None):
+        """Write the resolved simulation configuration under the structural root.
+
+        Note: resolve_and_validate_config() is intentionally allowed to mutate
+        the simulation configuration. This method makes that resolved state
+        explicit on disk instead of overwriting the authored simulation.json.
+        """
+        if filename is None:
+            filename = self.default_resolved_simulation_filename
+        self.resolve_and_validate_config(context=context)
+        self.to_json_file(directory=directory, filename=filename)
+        return self.get_root_path(directory, is_file_or_directory="d") / filename
 
     def archive_input_files(
         self,
@@ -2276,7 +2404,7 @@ class Simulation(GateObject):
         link_files=False,
         update_input_paths_in_dict=False,
     ):
-        directory = self.get_output_path(directory, is_file_or_directory="d")
+        directory = self.get_root_path(directory, is_file_or_directory="d")
         if dct is None:
             dct = self.to_dictionary()
         input_files = []
@@ -2410,17 +2538,52 @@ class Simulation(GateObject):
             d = load_json(f)
         d = self._rewrite_input_paths_in_dict(d, path.parent, mode="resolve")
         self.from_dictionary(d)
+        serialized_output_dir = d.get("user_info", {}).get("output_dir", Path("output"))
+        self._output_dir_was_user_set = Path(serialized_output_dir) != Path(".")
+        if Path(self.root_dir).is_absolute():
+            self.root_dir = Path(self.root_dir)
+        else:
+            self.root_dir = (path.parent / self.root_dir).resolve()
+
+    def get_root_path(self, path=None, is_file_or_directory="file", suffix=None):
+        if path is None:
+            p_out = Path(self.root_dir)
+        else:
+            p = Path(path)
+            if not p.is_absolute():
+                p_out = Path(self.root_dir) / p
+            else:
+                p_out = p
+
+        if suffix is not None:
+            p_out = insert_suffix_before_extension(p_out, suffix)
+
+        if is_file_or_directory in ["file", "File", "f"]:
+            n = len(p_out.parts) - 1
+        elif is_file_or_directory in ["dir", "Dir", "directory", "d"]:
+            n = len(p_out.parts)
+        if len(p_out.parts) > 0 and n > 0:
+            directory = Path(p_out.parts[0])
+            for i in range(n - 1):
+                directory /= p_out.parts[i + 1]
+            ensure_directory_exists(directory)
+
+        return p_out.absolute().resolve()
 
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
+        output_root_dir = Path(self.output_dir)
+        if not output_root_dir.is_absolute():
+            output_root_dir = (Path(self.root_dir) / output_root_dir).resolve()
+
         if path is None:
             # no input -> return global output directory
-            p_out = Path(self.output_dir)
+            p_out = output_root_dir
         else:
             # make sure type is Path
             p = Path(path)
             if not p.is_absolute():
                 # prepend the global output dir if p is relative
-                p_out = self.output_dir / p
+                p_out = output_root_dir / p
             else:
                 # or just keep it
                 p_out = p
@@ -2592,6 +2755,15 @@ class Simulation(GateObject):
         # negotiation before runtime initialization. It may tie managers and
         # actors together, but it must not create any Geant4 objects yet.
         assert_run_timing(self.run_timing_intervals)
+        if (
+            self._output_dir_was_user_set is False
+            and Path(self.output_dir) == Path(".")
+        ):
+            self.warn_user(
+                "This simulation still uses the historical implicit output_dir='.'. "
+                "The recommended default is output_dir='output'. If you rely on the "
+                "current-directory behavior, please set sim.output_dir explicitly."
+            )
         self.physics_manager.resolve_and_validate_config(context=context)
         self.initialize_source_before_g4_engine()
         self.volume_manager.resolve_and_validate_config(context=context)
