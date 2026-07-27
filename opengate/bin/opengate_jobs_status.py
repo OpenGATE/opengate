@@ -4,7 +4,7 @@ import click
 import colored
 import opengate_core as g4
 from opengate.exception import color_error
-from opengate.jobs import get_jobs_status
+from opengate.jobs import jobs_status
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -109,7 +109,7 @@ def go(manifest_or_dir, verbose):
     """
     Print a status summary for an OpenGATE job split campaign given a manifest file or directory.
     """
-    status_data = get_jobs_status(manifest_or_dir)
+    status_data = jobs_status(manifest_or_dir)
     print_jobs_status_summary(status_data, verbose=verbose)
 
 

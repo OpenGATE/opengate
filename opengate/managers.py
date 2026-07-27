@@ -2212,12 +2212,12 @@ class Simulation(GateObject):
             ]
 
         if mode == "merge_target_compatibility":
-            self_run_timing_intervals = _copy_run_timing_intervals(
-                self.run_timing_intervals
-            )
-            other_run_timing_intervals = _copy_run_timing_intervals(
-                other.run_timing_intervals
-            )
+            self_run_timing_intervals = [
+                [interval[0], interval[1]] for interval in self.run_timing_intervals
+            ]
+            other_run_timing_intervals = [
+                [interval[0], interval[1]] for interval in other.run_timing_intervals
+            ]
             if self_run_timing_intervals != other_run_timing_intervals:
                 differences.append(
                     "run_timing_intervals differ: "
@@ -2786,13 +2786,69 @@ class Simulation(GateObject):
             output = se.run_engine()
         return output
 
-    def run(self, start_new_process=False):
+    def run(
+        self,
+        start_new_process=False,
+        number_of_jobs=None,
+        wait_for_result=True,
+        jobs_root_dir=None,
+        split_policy="split_in_time_total",
+        backend_options=None,
+        merge_after_run=True,
+        cleanup_after_run=False,
+        poll_interval=1.0,
+        timeout=None,
+    ):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
                 "Error, the multi-thread option is not available for Windows now. "
                 "Run the simulation with one thread."
             )
+
+        if number_of_jobs is not None:
+            try:
+                number_of_jobs = int(number_of_jobs)
+            except (TypeError, ValueError) as error:
+                fatal(
+                    f"Simulation.run(number_of_jobs=...) expects an integer or None. "
+                    f"Received: {number_of_jobs}"
+                )
+
+            if number_of_jobs < 1:
+                fatal(
+                    f"Simulation.run(number_of_jobs=...) requires number_of_jobs >= 1. "
+                    f"Received: {number_of_jobs}"
+                )
+
+            if number_of_jobs == 1:
+                start_new_process = True
+            else:
+                from .jobs import SplitRunController
+
+                if start_new_process is True:
+                    fatal(
+                        "Simulation.run() received both start_new_process=True and "
+                        "number_of_jobs>1. Split runs are already process-managed "
+                        "through SplitRunController/local_pool."
+                    )
+
+                split_run_controller = SplitRunController(
+                    simulation=self,
+                    jobs_root_dir=jobs_root_dir,
+                    split_policy=split_policy,
+                    backend="local_pool",
+                    backend_options=backend_options,
+                    merge=merge_after_run,
+                    cleanup=cleanup_after_run,
+                )
+                split_run_controller.execute(
+                    number_of_jobs=number_of_jobs,
+                    wait_for_result=wait_for_result,
+                    poll_interval=poll_interval,
+                    timeout=timeout,
+                )
+                return split_run_controller
 
         # prepare the subprocess
         if start_new_process is True:

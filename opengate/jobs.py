@@ -1314,7 +1314,7 @@ def jobs_run(
     """
     manifest_path, manifest = _load_jobs_manifest(split_path)
     split_root_folder = manifest_path.parent
-    status_data = get_jobs_status(split_root_folder)
+    status_data = jobs_status(split_root_folder)
 
     structurally_not_ready_jobs = [
         job for job in status_data["jobs"] if job.get("status") != "ready"
@@ -1445,6 +1445,228 @@ def jobs_run(
         }
 
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+
+
+class SplitRunController:
+    """Local orchestration handle for split-run-merge workflows.
+
+    The controller is an API-layer wrapper around the functional split/run/merge
+    helpers. It does not implement the underlying jobs logic itself; instead it
+    records progress, exposes a compact workflow stage, and lets the caller
+    advance or inspect the campaign explicitly.
+    """
+
+    def __init__(
+        self,
+        simulation,
+        jobs_root_dir=None,
+        split_policy="split_in_time_total",
+        backend="local_pool",
+        backend_options=None,
+        merge=True,
+        cleanup=False,
+    ):
+        self.simulation = simulation
+        self._jobs_root_dir = (
+            None if jobs_root_dir is None else Path(jobs_root_dir).resolve()
+        )
+        self.split_policy = split_policy
+        self.backend = backend
+        self.backend_options = {} if backend_options is None else dict(backend_options)
+        self.merge_after_run = bool(merge)
+        self.cleanup_after_run = bool(cleanup)
+
+        self._stage = "initialized"
+        self._status = {
+            "split_result": None,
+            "run_result": None,
+            "jobs_status": None,
+            "merge_result": None,
+            "clean_result": None,
+            "error": None,
+        }
+        self.merge_manager = None
+
+    @property
+    def stage(self):
+        return self._stage
+
+    @property
+    def status(self):
+        return self._status
+
+    @property
+    def jobs_root_dir(self):
+        return self._jobs_root_dir
+
+    @property
+    def manifest_path(self):
+        if self._jobs_root_dir is None:
+            return None
+        return self._jobs_root_dir / JOBS_MANIFEST_FILENAME
+
+    def _set_error(self, error):
+        self._status["error"] = f"{type(error).__name__}: {error}"
+        self._stage = "failed"
+
+    def _derive_stage_from_status(self):
+        if self._status.get("error") is not None:
+            return "failed"
+        if self._status.get("clean_result") is not None:
+            return "cleaned"
+        if self._status.get("merge_result") is not None:
+            return "merged"
+
+        latest_jobs_status = self._status.get("jobs_status")
+        if latest_jobs_status is not None:
+            execution_counts = latest_jobs_status.get("execution_counts", {})
+            summary_counts = latest_jobs_status.get("summary_counts", {})
+            if execution_counts.get("failed", 0) > 0:
+                return "failed"
+            if execution_counts.get("running", 0) > 0:
+                return "running"
+            if (
+                execution_counts.get("completed", 0) > 0
+                and execution_counts.get("completed", 0)
+                == summary_counts.get("total", 0)
+            ):
+                return "completed"
+
+        if self._status.get("run_result") is not None:
+            return "submitted"
+        if self._status.get("split_result") is not None:
+            return "split"
+        return "initialized"
+
+    def refresh(self):
+        if self._jobs_root_dir is not None and self.manifest_path.exists():
+            self._status["jobs_status"] = jobs_status(self._jobs_root_dir)
+        self._stage = self._derive_stage_from_status()
+        return self._status
+
+    def has_finished(self):
+        self.refresh()
+        return self.stage in ("completed", "merged", "cleaned", "failed")
+
+    def has_failed(self):
+        self.refresh()
+        return self.stage == "failed"
+
+    def split(self, number_of_jobs, **split_options):
+        try:
+            self._jobs_root_dir = jobs_split(
+                simulation=self.simulation,
+                jobs_root_dir=self._jobs_root_dir,
+                number_of_jobs=number_of_jobs,
+                policy=self.split_policy,
+                **split_options,
+            )
+            self._status["split_result"] = {
+                "jobs_root_dir": str(self._jobs_root_dir),
+                "manifest_path": str(self.manifest_path),
+                "number_of_jobs": number_of_jobs,
+                "policy": self.split_policy,
+            }
+            self._stage = "split"
+            self.refresh()
+            return self._status["split_result"]
+        except Exception as error:
+            self._set_error(error)
+            raise
+
+    def run(self, **run_options):
+        if self._jobs_root_dir is None:
+            fatal("SplitRunController.run() requires split() to be called first.")
+        try:
+            run_options = dict(run_options)
+            run_options.setdefault("backend", self.backend)
+            run_options.setdefault("backend_options", self.backend_options)
+            self._status["run_result"] = jobs_run(self._jobs_root_dir, **run_options)
+            self._stage = "submitted"
+            self.refresh()
+            return self._status["run_result"]
+        except Exception as error:
+            self._set_error(error)
+            raise
+
+    def wait(self, poll_interval=1.0, timeout=None):
+        if self._jobs_root_dir is None:
+            fatal("SplitRunController.wait() requires split() to be called first.")
+        start_time = time.perf_counter()
+        while True:
+            self.refresh()
+            if self.stage in ("completed", "failed", "merged", "cleaned"):
+                return self._status
+            if timeout is not None and (time.perf_counter() - start_time) > timeout:
+                error = GateJobsBackendError(
+                    f"Timed out while waiting for split jobs in '{self._jobs_root_dir}'."
+                )
+                self._set_error(error)
+                raise error
+            time.sleep(poll_interval)
+
+    def merge(self, **merge_options):
+        if self._jobs_root_dir is None:
+            fatal("SplitRunController.merge() requires split() to be called first.")
+        try:
+            self.merge_manager = jobs_merge(
+                self._jobs_root_dir,
+                target_simulation=self.simulation,
+                execute=True,
+                **merge_options,
+            )
+            self._status["merge_result"] = self.merge_manager.merge_result
+            self._stage = "merged"
+            self.refresh()
+            return self.merge_manager
+        except Exception as error:
+            self._set_error(error)
+            raise
+
+    def clean(self, **clean_options):
+        if self._jobs_root_dir is None:
+            fatal("SplitRunController.clean() requires split() to be called first.")
+        try:
+            self._status["clean_result"] = jobs_clean_split(
+                self._jobs_root_dir, **clean_options
+            )
+            self._stage = "cleaned"
+            self.refresh()
+            return self._status["clean_result"]
+        except Exception as error:
+            self._set_error(error)
+            raise
+
+    def execute(
+        self,
+        number_of_jobs,
+        wait_for_result=False,
+        poll_interval=1.0,
+        timeout=None,
+        merge_after_run=None,
+        cleanup_after_run=None,
+        split_options=None,
+        run_options=None,
+        merge_options=None,
+        clean_options=None,
+    ):
+        if merge_after_run is None:
+            merge_after_run = self.merge_after_run
+        if cleanup_after_run is None:
+            cleanup_after_run = self.cleanup_after_run
+
+        self.split(number_of_jobs=number_of_jobs, **(split_options or {}))
+        self.run(**(run_options or {}))
+
+        if wait_for_result:
+            self.wait(poll_interval=poll_interval, timeout=timeout)
+            if self.stage == "failed":
+                return self
+            if merge_after_run:
+                self.merge(**(merge_options or {}))
+            if cleanup_after_run:
+                self.clean(**(clean_options or {}))
+        return self
 
 
 def _get_master_simulation_paths_from_manifest(manifest_path, manifest):
@@ -2550,7 +2772,7 @@ def _format_bytes(size_bytes):
         return f"{val:.1f} GB"
 
 
-def get_jobs_status(manifest_or_dir_path):
+def jobs_status(manifest_or_dir_path):
     path = Path(manifest_or_dir_path).resolve()
     if path.is_dir():
         manifest_path = path / JOBS_MANIFEST_FILENAME
@@ -2743,3 +2965,8 @@ def get_jobs_status(manifest_or_dir_path):
         )
 
     return status_data
+
+
+def get_jobs_status(manifest_or_dir_path):
+    """Backward-compatible alias kept temporarily during the jobs API refactor."""
+    return jobs_status(manifest_or_dir_path)
