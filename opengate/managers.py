@@ -530,13 +530,11 @@ class ActorManager(GateObject):
             missing_in_other = sorted(self_actor_names - other_actor_names)
             if missing_in_self:
                 differences.append(
-                    "Missing actors in target simulation: "
-                    f"{missing_in_self}."
+                    "Missing actors in target simulation: " f"{missing_in_self}."
                 )
             if missing_in_other:
                 differences.append(
-                    "Extra actors in target simulation: "
-                    f"{missing_in_other}."
+                    "Extra actors in target simulation: " f"{missing_in_other}."
                 )
 
         for actor_name in sorted(self_actor_names.intersection(other_actor_names)):
@@ -544,7 +542,10 @@ class ActorManager(GateObject):
                 other.actors[actor_name], mode=mode
             )
             differences.extend(
-                [f"Actor '{actor_name}': {difference}" for difference in actor_differences]
+                [
+                    f"Actor '{actor_name}': {difference}"
+                    for difference in actor_differences
+                ]
             )
 
         return differences
@@ -2225,7 +2226,9 @@ class Simulation(GateObject):
                     f"reference={other_run_timing_intervals}."
                 )
 
-        actor_differences = self.actor_manager.compare_with(other.actor_manager, mode=mode)
+        actor_differences = self.actor_manager.compare_with(
+            other.actor_manager, mode=mode
+        )
         differences.extend(actor_differences)
         return differences
 
@@ -2384,7 +2387,9 @@ class Simulation(GateObject):
         self.to_json_file(directory=directory, filename=filename)
         return self.get_root_path(directory, is_file_or_directory="d") / filename
 
-    def write_resolved_simulation_json(self, directory=None, filename=None, context=None):
+    def write_resolved_simulation_json(
+        self, directory=None, filename=None, context=None
+    ):
         """Write the resolved simulation configuration under the structural root.
 
         Note: resolve_and_validate_config() is intentionally allowed to mutate
@@ -2755,9 +2760,8 @@ class Simulation(GateObject):
         # negotiation before runtime initialization. It may tie managers and
         # actors together, but it must not create any Geant4 objects yet.
         assert_run_timing(self.run_timing_intervals)
-        if (
-            self._output_dir_was_user_set is False
-            and Path(self.output_dir) == Path(".")
+        if self._output_dir_was_user_set is False and Path(self.output_dir) == Path(
+            "."
         ):
             self.warn_user(
                 "This simulation still uses the historical implicit output_dir='.'. "

@@ -25,6 +25,7 @@ import numpy as np
 import opengate as gate
 from opengate.tests import utility
 
+
 def build_simple_split_run_simulation(output_path, run_timing_intervals, source_n):
     """Build a small split-friendly simulation with standard mergeable output."""
 
@@ -72,11 +73,14 @@ def build_simple_split_run_simulation(output_path, run_timing_intervals, source_
     sim.run_timing_intervals = run_timing_intervals
     return sim
 
+
 def read_single_voxel_value_from_image_np(image):
     return sum(np.array(image))
 
+
 def read_single_voxel_value_from_image(image):
     return float(np.asarray(itk.GetArrayViewFromImage(image)).ravel()[0])
+
 
 def read_single_voxel_value(path):
     return read_single_voxel_value_from_image_np(itk.imread(str(path)))
@@ -118,13 +122,15 @@ if __name__ == "__main__":
     is_ok = (
         utility.print_test(
             single_job_stats_path.exists() and single_job_dose_path.exists(),
-            "number_of_jobs=1 still produces ordinary simulation output at the actor-resolved output paths: " \
+            "number_of_jobs=1 still produces ordinary simulation output at the actor-resolved output paths: "
             f"{single_job_stats_path} and {single_job_dose_path}",
         )
         and is_ok
     )
 
-    single_job_dose_value_live_actor = read_single_voxel_value_from_image_np(single_job_dose_actor.edep.image)
+    single_job_dose_value_live_actor = read_single_voxel_value_from_image_np(
+        single_job_dose_actor.edep.image
+    )
     print(f"Single job dose value from live actor: {single_job_dose_value_live_actor}")
 
     single_job_dose_value = read_single_voxel_value(single_job_dose_path)
@@ -174,7 +180,8 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
-            async_controller.jobs_root_dir == (paths.output / "async_campaign").resolve(),
+            async_controller.jobs_root_dir
+            == (paths.output / "async_campaign").resolve(),
             f"Controller keeps track of the jobs root directory: {async_controller.jobs_root_dir}",
         )
         and is_ok
@@ -298,7 +305,7 @@ if __name__ == "__main__":
                 rtol=0.05,
                 atol=0.0,
             ),
-            "Normal single job merged dose form disk is close to the normal single-job dose from live actor: " \
+            "Normal single job merged dose form disk is close to the normal single-job dose from live actor: "
             f"{single_job_dose_value} vs {single_job_dose_value_live_actor}",
         )
         and is_ok
@@ -311,7 +318,7 @@ if __name__ == "__main__":
                 rtol=0.05,
                 atol=0.0,
             ),
-            "Async split-run merged dose is close to the normal single-job dose: " \
+            "Async split-run merged dose is close to the normal single-job dose: "
             f"{single_job_dose_value} vs {async_merged_dose_value}",
         )
         and is_ok
@@ -324,7 +331,7 @@ if __name__ == "__main__":
                 rtol=0.05,
                 atol=0.0,
             ),
-            "Synchronous split-run merged dose is close to the normal single-job dose:" \
+            "Synchronous split-run merged dose is close to the normal single-job dose:"
             f"{single_job_dose_value} vs {sync_merged_dose_value}",
         )
         and is_ok
@@ -337,7 +344,7 @@ if __name__ == "__main__":
                 rtol=0.05,
                 atol=0.0,
             ),
-            "Asynchronous and synchronous split-run merged doses are mutually consistent: " \
+            "Asynchronous and synchronous split-run merged doses are mutually consistent: "
             f"{async_merged_dose_value} vs {sync_merged_dose_value}",
         )
         and is_ok

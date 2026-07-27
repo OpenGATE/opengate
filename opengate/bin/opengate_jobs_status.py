@@ -29,9 +29,7 @@ def print_jobs_status_summary(status_data, verbose=False):
     print(f" Simulation ID:      {status_data['simulation_id']}")
     print(f" Created at:         {status_data['created_at']}")
     print(f" Split policy:       {status_data['policy']}")
-    print(
-        f" Prefer resolved:    {status_data.get('prefer_resolved_simulation', True)}"
-    )
+    print(f" Prefer resolved:    {status_data.get('prefer_resolved_simulation', True)}")
     print(f" Number of jobs:     {status_data['number_of_jobs']}")
     print(f" Time intervals:     {format_timing_intervals(intervals)}")
     master_str = (
@@ -44,7 +42,9 @@ def print_jobs_status_summary(status_data, verbose=False):
     resolved_exists = status_data.get("resolved_simulation_exists", False)
     resolved_path = status_data.get("resolved_simulation_path")
     if resolved_path is not None:
-        resolved_str = "Found" if resolved_exists else colored.stylize("Missing", color_error)
+        resolved_str = (
+            "Found" if resolved_exists else colored.stylize("Missing", color_error)
+        )
         print(f" Resolved sim:       {resolved_str}")
         print(f"   Path:             {resolved_path}")
     master_inputs = status_data.get("master_input_files", [])

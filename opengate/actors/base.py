@@ -784,13 +784,11 @@ class ActorBase(GateObject):
             missing_in_other = sorted(self_output_names - other_output_names)
             if missing_in_self:
                 differences.append(
-                    "missing actor outputs in target actor: "
-                    f"{missing_in_self}."
+                    "missing actor outputs in target actor: " f"{missing_in_self}."
                 )
             if missing_in_other:
                 differences.append(
-                    "extra actor outputs in target actor: "
-                    f"{missing_in_other}."
+                    "extra actor outputs in target actor: " f"{missing_in_other}."
                 )
 
         return differences

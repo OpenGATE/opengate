@@ -494,7 +494,8 @@ def jobs_split(
             context="split_preparation",
         )
     packaged_root_matches_jobs_root = (
-        simulation_path is not None and simulation_path.parent.resolve() == jobs_root_dir
+        simulation_path is not None
+        and simulation_path.parent.resolve() == jobs_root_dir
     )
     if packaged_root_matches_jobs_root is False:
         simulation.archive_input_files(directory=jobs_root_dir, link_files=link_files)
@@ -1526,11 +1527,9 @@ class SplitRunController:
                 return "failed"
             if execution_counts.get("running", 0) > 0:
                 return "running"
-            if (
-                execution_counts.get("completed", 0) > 0
-                and execution_counts.get("completed", 0)
-                == summary_counts.get("total", 0)
-            ):
+            if execution_counts.get("completed", 0) > 0 and execution_counts.get(
+                "completed", 0
+            ) == summary_counts.get("total", 0):
                 return "completed"
 
         if self._status.get("run_result") is not None:
@@ -1813,9 +1812,7 @@ class RootMergeContextView:
         for output_plan in self._merge_context.iter_output_plans_for_output(
             actor_name, output_name
         ):
-            if (
-                output_plan.get("merge_coordinator") == "root"
-            ):
+            if output_plan.get("merge_coordinator") == "root":
                 contributions.extend(output_plan.get("contributions", []))
         return contributions
 
@@ -1845,9 +1842,7 @@ class StandardMergeContextView:
         for output_plan in self._merge_context.iter_output_plans_for_output(
             actor_name, output_name
         ):
-            if (
-                output_plan.get("merge_coordinator") == "standard"
-            ):
+            if output_plan.get("merge_coordinator") == "standard":
                 contributions.extend(output_plan.get("contributions", []))
         return contributions
 
@@ -2087,7 +2082,9 @@ class JobsMergeManager:
             reference_simulation, mode="merge_target_compatibility"
         )
         if differences:
-            difference_lines = "\n".join([f"- {difference}" for difference in differences])
+            difference_lines = "\n".join(
+                [f"- {difference}" for difference in differences]
+            )
             raise GateMergeError(
                 "The provided target_simulation is incompatible with the split campaign.\n"
                 f"Differences:\n{difference_lines}"
@@ -2099,7 +2096,10 @@ class JobsMergeManager:
                 self.manifest_path, self.manifest
             )
         else:
-            if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
+            if (
+                len(self.leaf_sources) == 0
+                and len(self.original_run_to_sources_map) == 0
+            ):
                 self.load_campaign_metadata()
             self._validate_target_simulation_against_campaign()
 
@@ -2536,7 +2536,9 @@ def jobs_clean_split(
     }
 
 
-def format_jobs_merge_summary(from_path, target_simulation=None, to_path=None, **options):
+def format_jobs_merge_summary(
+    from_path, target_simulation=None, to_path=None, **options
+):
     merge_manager = JobsMergeManager(
         from_path,
         output_dir_override=to_path,
@@ -2548,7 +2550,9 @@ def format_jobs_merge_summary(from_path, target_simulation=None, to_path=None, *
     return merge_manager.format_merge_summary()
 
 
-def print_jobs_merge_summary(from_path, target_simulation=None, to_path=None, **options):
+def print_jobs_merge_summary(
+    from_path, target_simulation=None, to_path=None, **options
+):
     merge_manager = JobsMergeManager(
         from_path,
         output_dir_override=to_path,
@@ -2703,9 +2707,7 @@ def jobs_status(manifest_or_dir_path):
         "original_run_timing_intervals": manifest.get(
             "original_run_timing_intervals", []
         ),
-        "prefer_resolved_simulation": manifest.get(
-            "prefer_resolved_simulation", True
-        ),
+        "prefer_resolved_simulation": manifest.get("prefer_resolved_simulation", True),
         "master_simulation_filename": master_sim_filename,
         "master_simulation_path": str(master_sim_file),
         "master_simulation_exists": master_sim_file.exists(),
