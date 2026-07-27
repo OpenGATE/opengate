@@ -485,9 +485,9 @@ if __name__ == "__main__":
         source_n,
     )
     split_root = gate.jobs_split(
-        sim,
-        3,
-        split_root,
+        simulation=sim,
+        number_of_jobs=3,
+        jobs_root_dir=split_root,
         policy="split_in_time_total",
     )
 
@@ -950,9 +950,9 @@ if __name__ == "__main__":
         source_n,
     )
     broken_split_root = gate.jobs_split(
-        broken_sim,
-        3,
-        broken_split_root,
+        simulation=broken_sim,
+        number_of_jobs=3,
+        jobs_root_dir=broken_split_root,
         policy="split_in_time_total",
     )
     broken_run_summary = gate.jobs_run(broken_split_root, backend="local_sequential")
@@ -974,11 +974,11 @@ if __name__ == "__main__":
         source_n,
     )
     broken_stats_split_root = gate.jobs_split(
-        broken_stats_sim,
-        3,
-        paths.output / "merge_context_split_broken_stats",
+        simulation=broken_stats_sim,
+        number_of_jobs=3,
+        jobs_root_dir=paths.output / "merge_context_split_broken_stats",
         policy="split_in_time_total",
-        overwrite_existing_split_folder=True,
+        overwrite_existing_job_folders=True,
     )
 
     broken_stats_run_summary = gate.jobs_run(
@@ -1001,11 +1001,11 @@ if __name__ == "__main__":
         source_n,
     )
     identity_split_root = gate.jobs_split(
-        identity_sim,
-        3,
-        paths.output / "merge_context_split_identity_mismatch",
+        simulation=identity_sim,
+        number_of_jobs=3,
+        jobs_root_dir=paths.output / "merge_context_split_identity_mismatch",
         policy="split_in_time_total",
-        overwrite_existing_split_folder=True,
+        overwrite_existing_job_folders=True,
     )
     # Check that a corrupted child parent/master simulation ID is detected
     # before merge planning can proceed.

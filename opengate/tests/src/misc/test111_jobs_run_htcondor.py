@@ -19,9 +19,9 @@ if __name__ == "__main__":
 
     sim = build_simple_simulation(paths.output / "htcondor_input")
     split_root = gate.jobs_split(
-        sim,
-        2,
-        paths.output / "htcondor_campaign",
+        simulation=sim,
+        number_of_jobs=2,
+        jobs_root_dir=paths.output / "htcondor_campaign",
         policy="split_in_time_per_run",
     )
 

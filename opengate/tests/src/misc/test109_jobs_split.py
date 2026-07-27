@@ -115,9 +115,9 @@ if __name__ == "__main__":
         [100, 200],
     )
     split_root_1 = gate.jobs_split(
-        sim_1,
-        4,
-        paths.output / "auto_split_root",
+        simulation=sim_1,
+        number_of_jobs=4,
+        jobs_root_dir=paths.output / "auto_split_root",
         policy="split_in_time_per_run",
     )
     manifest_1 = load_manifest(split_root_1)
@@ -198,9 +198,9 @@ if __name__ == "__main__":
         [10, 30],
     )
     split_root_2 = gate.jobs_split(
-        sim_2,
-        3,
-        paths.output / "split_campaign_total",
+        simulation=sim_2,
+        number_of_jobs=3,
+        jobs_root_dir=paths.output / "split_campaign_total",
         policy="split_in_time_total",
     )
     manifest_2 = load_manifest(split_root_2)

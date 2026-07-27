@@ -29,7 +29,10 @@ if __name__ == "__main__":
 
     sim = build_simple_simulation(paths.output / "pool_input")
     split_root = gate.jobs_split(
-        sim, 4, paths.output / "pool_campaign", policy="split_in_time_per_run"
+        simulation=sim,
+        number_of_jobs=4,
+        jobs_root_dir=paths.output / "pool_campaign",
+        policy="split_in_time_per_run",
     )
 
     summary = gate.jobs_run(

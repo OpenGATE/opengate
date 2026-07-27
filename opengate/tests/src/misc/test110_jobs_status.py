@@ -36,11 +36,11 @@ def main():
     sim1.run_timing_intervals = [[0.0, 1.0], [1.0, 2.0]]
 
     split_root_folder1 = gate.jobs_split(
-        sim1,
+        simulation=sim1,
         number_of_jobs=2,
-        split_path=paths.output / "basic_campaign",
+        jobs_root_dir=paths.output / "basic_campaign",
         policy="split_in_time_per_run",
-        overwrite_existing_split_folder=True,
+        overwrite_existing_job_folders=True,
     )
 
     status1 = get_jobs_status(split_root_folder1)
@@ -57,7 +57,7 @@ def main():
     manifest_file1 = split_root_folder1 / "jobs_manifest.json"
     result_manifest = runner.invoke(jobs_status_cli, [str(manifest_file1)])
     is_ok = is_ok and (result_manifest.exit_code == 0)
-    is_ok = is_ok and ("Root directory" in result_manifest.output)
+    is_ok = is_ok and ("Jobs root dir" in result_manifest.output)
 
     print("\n--- Jobs Status Summary Output (Part 1: Basic) ---")
     print_jobs_status_summary(status1, verbose=True)
@@ -126,12 +126,12 @@ def main():
     stats_actor.track_types_flag = True
 
     split_root_folder2 = gate.jobs_split(
-        sim2,
-        3,
-        paths.output / "complex_campaign",
+        simulation=sim2,
+        number_of_jobs=3,
+        jobs_root_dir=paths.output / "complex_campaign",
         policy="split_in_time_per_run",
         link_files=True,
-        overwrite_existing_split_folder=True,
+        overwrite_existing_job_folders=True,
     )
 
     status_initial2 = get_jobs_status(split_root_folder2)

@@ -375,9 +375,9 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
     )
 
     split_root = gate.jobs_split(
-        sim,
-        3,
-        split_root,
+        simulation=sim,
+        number_of_jobs=3,
+        jobs_root_dir=split_root,
         policy="split_in_time_total",
     )
 
