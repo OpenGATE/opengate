@@ -26,9 +26,9 @@ sim = gate.Simulation()
 # ... configure hits, digitizer adder, deadtime actor ...
 
 split_root = gate.jobs_split(
-    sim,
-    2,
-    "my_split_campaign",
+    simulation=sim,
+    number_of_jobs=2,
+    jobs_root_dir="my_split_campaign",
     policy="split_in_time_per_run",
 )
 
@@ -133,9 +133,9 @@ def run_split_campaign(
     sim.get_actor("Singles_after_deadtime").output_filename = "output_singles.root"
 
     split_root = gate.jobs_split(
-        sim,
-        2,
-        split_path,
+        simulation=sim,
+        number_of_jobs=2,
+        jobs_root_dir=split_path,
         policy="split_in_time_per_run",
     )
     summary = gate.jobs_run(
