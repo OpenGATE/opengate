@@ -21,8 +21,8 @@ contrib helpers for MRCP geometry and dose scoring.
 | Python geometry | Extended | Register and construct the `TetrahedralMesh` volume type. |
 | MRCP contrib module | Added | Load MRCP_AF/MRCP_AM datasets and configure region-based scoring. |
 
-Relative to the OpenGATE 10.1.0 tag, this implementation changes 16 source
-files: 9 new files and 7 modified files. Documentation files are counted
+Relative to the OpenGATE 10.1.1 tag, this implementation changes 15 source
+files: 9 new files and 6 modified files. Documentation files are counted
 separately.
 
 ## New source files
@@ -47,12 +47,15 @@ inputs, build requirements, and validation scope.
 | File | Modified area | Purpose |
 |---|---|---|
 | `core/opengate_core/g4_bindings/pyG4Material.cpp` | `G4Material::AddElement` overloads | Exposes element addition by mass fraction and by number of atoms for MRCP material construction. |
-| `core/opengate_core/g4_bindings/pyG4VisAttributes.cpp` | `SetForceSolid`, `SetForceWireframe`, and related accessors | Enables region-specific solid and wireframe visualization controls. |
 | `core/opengate_core/opengate_core.cpp` | Module declarations and initialization | Registers `GateCopyNumberFilter` and the tetrahedral-mesh builder in the Python module. |
 | `opengate/actors/filters.py` | `CopyNumberFilter` and `filter_classes` | Adds the Python filter class, user configuration, and manager lookup registration. |
 | `opengate/geometry/solids.py` | `TetrahedralMeshEnvelopeSolid` | Reads TetGen node bounds and constructs the enclosing box solid. |
 | `opengate/geometry/volumes.py` | `TetrahedralMeshVolume` | Builds materials and visualization dictionaries, constructs the envelope, and invokes the C++ mesh builder. |
 | `opengate/managers.py` | Volume class import and alias handling | Makes `simulation.add_volume("TetrahedralMesh", name)` resolve to `TetrahedralMeshVolume`. |
+
+OpenGATE 10.1.1 already provides the `G4VisAttributes::SetForceSolid` and
+`SetForceWireframe` bindings required by this feature. The earlier local
+binding changes were therefore not carried into this branch.
 
 ## Geometry construction flow
 
@@ -118,3 +121,30 @@ onto the current `master` branch and validated with:
 
 Any binding already provided by the target upstream version should be removed
 from this change during the rebase to avoid duplicate registrations.
+
+## OpenGATE 10.1.1 validation
+
+The following checks were completed on macOS arm64 with Python 3.12.12,
+Geant4 11.4.0, and ITK 5.2.1:
+
+- Python syntax compilation for all modified Python modules;
+- a clean CMake configure and full `opengate_core` build;
+- import checks for `G4Tet`, `GateCopyNumberFilter`, and
+  `build_tetrahedral_mesh_from_tetgen`;
+- Python registration of `TetrahedralMeshVolume` and `CopyNumberFilter`;
+- a one-tetrahedron geometry/material/filter/dose integration run;
+- a two-thread one-tetrahedron integration run;
+- MRCP_AM default-filename selection and custom-filename preservation using a
+  minimal TetGen fixture;
+- full MRCP_AF geometry initialization with 1,279,642 nodes and 8,582,677
+  tetrahedra; and
+- a five-event MRCP_AF transport run with aggregate and per-region dose actors.
+
+The full MRCP_AF run selected 48,012 tetrahedra for heart/lung scoring and
+created five dose actors. The right-lung and aggregate outputs contained the
+same three nonzero voxels and the same total deposited energy, confirming
+consistent copy-number filtering for that run.
+
+A complete MRCP_AM geometry/transport run remains pending because the full
+MRCP_AM dataset was not available in the local test environment. Validation
+against the current upstream `master` branch also remains pending.

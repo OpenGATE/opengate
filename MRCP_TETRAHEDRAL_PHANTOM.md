@@ -12,9 +12,9 @@ Phantoms (MRCPs) represented as TetGen tetrahedral meshes. It provides:
 - copy-number filtering for region-specific scoring; and
 - helper functions for creating aggregate and per-region dose actors.
 
-The implementation is based on OpenGATE 10.1.0. Compatibility with newer
-OpenGATE releases should be verified after rebasing onto the current upstream
-`master` branch.
+This branch is based on OpenGATE 10.1.1. Compatibility with the current
+upstream `master` branch must still be verified before opening an upstream
+pull request.
 
 ## Public Python API
 
@@ -98,10 +98,9 @@ actors for individual regions, and an optional unfiltered full-grid actor.
 history depth zero:
 
 ```python
-copy_filter = simulation.add_filter(
-    "CopyNumberFilter",
-    "selected_tetrahedra",
-)
+from opengate.actors.filters import CopyNumberFilter
+
+copy_filter = CopyNumberFilter(name="selected_tetrahedra")
 copy_filter.copy_numbers = [0, 1, 2]
 ```
 
