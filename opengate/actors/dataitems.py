@@ -685,9 +685,7 @@ class RootDataItem(DataItem):
             )
             fatal(
                 "Cannot capture ROOT runtime metadata without explicit runtime "
-                f"tree descriptors for {tree_name_description}. "
-                "If you need to infer metadata from an already-written ROOT file, "
-                "use infer_runtime_metadata_from_root_file() explicitly."
+                f"tree descriptors for {tree_name_description}."
             )
         if len(tree_descriptors) == 0:
             tree_name_description = (
@@ -714,31 +712,6 @@ class RootDataItem(DataItem):
                 "trees": tree_descriptors,
                 "merge_sources": [],
             }
-        )
-
-    def infer_runtime_metadata_from_root_file(
-        self,
-        root_file_path,
-        actor_name,
-        actor_type,
-        actor_output_name,
-        tree_names=None,
-        requested_attributes=None,
-        skipped_attributes=None,
-    ):
-        root_file_path = Path(root_file_path)
-        tree_descriptors = self.inspect_root_file(
-            root_file_path, expected_tree_names=tree_names
-        )
-        self.capture_runtime_metadata(
-            root_file_path,
-            actor_name=actor_name,
-            actor_type=actor_type,
-            actor_output_name=actor_output_name,
-            tree_descriptors=tree_descriptors,
-            tree_names=tree_names,
-            requested_attributes=requested_attributes,
-            skipped_attributes=skipped_attributes,
         )
 
     def save_root_metadata(self, path):
