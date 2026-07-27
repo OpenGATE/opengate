@@ -13,9 +13,9 @@ This test focuses on API consistency rather than physics depth. It checks that:
    controller to the user.
 
 The simulation setup is intentionally simple: one water box, one low-energy
-proton point source, a statistics actor, and a single-voxel dose actor. This
-is enough to exercise split, local pool execution, and merge without making the
-test about output physics details.
+isotropic gamma source at the center, a statistics actor, and a single-voxel
+dose actor. This is enough to exercise split, local pool execution, and merge
+without making the test about output physics details.
 """
 
 import shutil
@@ -24,7 +24,6 @@ import itk
 import numpy as np
 import opengate as gate
 from opengate.tests import utility
-
 
 def build_simple_split_run_simulation(output_path, run_timing_intervals, source_n):
     """Build a small split-friendly simulation with standard mergeable output."""
@@ -38,7 +37,7 @@ def build_simple_split_run_simulation(output_path, run_timing_intervals, source_
 
     cm = gate.g4_units.cm
     m = gate.g4_units.m
-    keV = gate.g4_units.keV
+    MeV = gate.g4_units.MeV
 
     world = sim.world
     world.size = [1.0 * m] * 3
@@ -48,13 +47,13 @@ def build_simple_split_run_simulation(output_path, run_timing_intervals, source_
     waterbox.material = "G4_WATER"
 
     source = sim.add_source("GenericSource", "point_source")
+    source.attached_to = waterbox
     source.particle = "proton"
-    source.energy.mono = 10 * keV
+    source.energy.mono = 70 * MeV
     source.n = source_n
     source.position.type = "point"
-    source.position.translation = [0, 0, -9.0 * cm]
-    source.direction.type = "momentum"
-    source.direction.momentum = [0, 0, 1]
+    source.position.translation = [0, 0, 0]
+    source.direction.type = "iso"
 
     # Keep the statistics actor per-run so the split campaign must preserve the
     # original run structure. The dose actor adds a simple standard image output
@@ -64,18 +63,23 @@ def build_simple_split_run_simulation(output_path, run_timing_intervals, source_
     stats.keep_data_per_run = True
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.attached_to = "waterbox"
+    dose.attached_to = waterbox
     dose.size = [1, 1, 1]
     dose.spacing = [20.0 * cm, 20.0 * cm, 20.0 * cm]
-    dose.output_filename = "dose.mhd"
-    dose.keep_data_per_run = True
+    dose.edep.output_filename = "edep.mhd"
+    dose.edep.keep_data_per_run = False
 
     sim.run_timing_intervals = run_timing_intervals
     return sim
 
+def read_single_voxel_value_from_image_np(image):
+    return sum(np.array(image))
+
+def read_single_voxel_value_from_image(image):
+    return float(np.asarray(itk.GetArrayViewFromImage(image)).ravel()[0])
 
 def read_single_voxel_value(path):
-    return float(np.asarray(itk.GetArrayViewFromImage(itk.imread(str(path)))).ravel()[0])
+    return read_single_voxel_value_from_image_np(itk.imread(str(path)))
 
 
 if __name__ == "__main__":
@@ -85,7 +89,7 @@ if __name__ == "__main__":
 
     sec = gate.g4_units.s
     run_timing_intervals = [(0.0 * sec, 1.0 * sec), (1.0 * sec, 3.0 * sec)]
-    source_n = [100, 300]
+    source_n = [1000, 3000]
 
     # ------------------------------------------------------------------
     # 1) Degenerate managed case: number_of_jobs=1 should map to the normal
@@ -97,8 +101,13 @@ if __name__ == "__main__":
         source_n,
     )
     single_job_result = single_job_sim.run(number_of_jobs=1)
-    single_job_stats_path = single_job_sim.get_actor("Stats").get_output_path()
-    single_job_dose_path = single_job_sim.get_actor("dose").edep.get_output_path()
+    single_job_stats_actor = single_job_sim.get_actor("Stats")
+    print("Stats results single job: ")
+    print(single_job_stats_actor.stats)
+    single_job_stats_path = single_job_stats_actor.get_output_path()
+    single_job_dose_actor = single_job_sim.get_actor("dose")
+    single_job_dose_path = single_job_dose_actor.edep.get_output_path()
+
     is_ok = (
         utility.print_test(
             single_job_result is None,
@@ -109,7 +118,20 @@ if __name__ == "__main__":
     is_ok = (
         utility.print_test(
             single_job_stats_path.exists() and single_job_dose_path.exists(),
-            "number_of_jobs=1 still produces ordinary simulation output at the actor-resolved output paths",
+            "number_of_jobs=1 still produces ordinary simulation output at the actor-resolved output paths: " \
+            f"{single_job_stats_path} and {single_job_dose_path}",
+        )
+        and is_ok
+    )
+
+    single_job_dose_value_live_actor = read_single_voxel_value_from_image_np(single_job_dose_actor.edep.image)
+    print(f"Single job dose value from live actor: {single_job_dose_value_live_actor}")
+
+    single_job_dose_value = read_single_voxel_value(single_job_dose_path)
+    is_ok = (
+        utility.print_test(
+            True,
+            f"number_of_jobs=1 dose voxel value: {single_job_dose_value}",
         )
         and is_ok
     )
@@ -187,6 +209,14 @@ if __name__ == "__main__":
         )
         and is_ok
     )
+    async_merged_dose_value = read_single_voxel_value(async_dose_path)
+    is_ok = (
+        utility.print_test(
+            async_merged_dose_value > 0,
+            f"Async split-run merged dose voxel value: {async_merged_dose_value}",
+        )
+        and is_ok
+    )
 
     async_controller.clean()
     is_ok = (
@@ -247,16 +277,68 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    # The merged dose value itself is not the purpose of this test, but
-    # checking that it is positive confirms that the live simulation received
-    # real merged data rather than only bookkeeping state.
-    merged_dose_value = read_single_voxel_value(
+    # Compare the actual merged dose values across all three execution paths.
+    # This makes the test robust against setup changes: if one path gives zero
+    # while the others do not, we see it immediately in the printed values.
+    sync_merged_dose_value = read_single_voxel_value(
         merged_sim.get_actor("dose").edep.get_output_path()
     )
     is_ok = (
         utility.print_test(
-            merged_dose_value > 0.0,
-            f"Merged split-run dose output contains data: voxel value={merged_dose_value}",
+            sync_merged_dose_value > 0,
+            f"Synchronous split-run merged dose voxel value: {sync_merged_dose_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                single_job_dose_value,
+                single_job_dose_value_live_actor,
+                rtol=0.05,
+                atol=0.0,
+            ),
+            "Normal single job merged dose form disk is close to the normal single-job dose from live actor: " \
+            f"{single_job_dose_value} vs {single_job_dose_value_live_actor}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                single_job_dose_value,
+                async_merged_dose_value,
+                rtol=0.05,
+                atol=0.0,
+            ),
+            "Async split-run merged dose is close to the normal single-job dose: " \
+            f"{single_job_dose_value} vs {async_merged_dose_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                single_job_dose_value,
+                sync_merged_dose_value,
+                rtol=0.05,
+                atol=0.0,
+            ),
+            "Synchronous split-run merged dose is close to the normal single-job dose:" \
+            f"{single_job_dose_value} vs {sync_merged_dose_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                async_merged_dose_value,
+                sync_merged_dose_value,
+                rtol=0.05,
+                atol=0.0,
+            ),
+            "Asynchronous and synchronous split-run merged doses are mutually consistent: " \
+            f"{async_merged_dose_value} vs {sync_merged_dose_value}",
         )
         and is_ok
     )
