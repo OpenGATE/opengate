@@ -14,7 +14,6 @@ from .utility import ensure_is_g4_rotation, ensure_is_g4_translation, vec_np_as_
 
 logger = logging.getLogger(__name__)
 
-
 class SolidBase(GateObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -76,7 +75,6 @@ class SolidBase(GateObject):
         # The solid can only be constructed once
         if self.g4_solid is None:
             self.g4_solid = self.build_solid()
-
 
 class BooleanSolid(SolidBase):
     constructor_functions = {
@@ -140,7 +138,6 @@ class BooleanSolid(SolidBase):
             self.creator_volumes[i] = vol
             self.creator_volumes[i].from_dictionary(cv)
 
-
 class BoxSolid(SolidBase):
 
     size: list[float]
@@ -156,7 +153,6 @@ class BoxSolid(SolidBase):
         return g4.G4Box(
             self.name, self.size[0] / 2.0, self.size[1] / 2.0, self.size[2] / 2.0
         )
-
 
 class HexagonSolid(SolidBase):
     """
@@ -196,7 +192,6 @@ class HexagonSolid(SolidBase):
             radius_inner,
             radius_outer,
         )
-
 
 class ConsSolid(SolidBase):
     """Cone section.
@@ -243,7 +238,6 @@ class ConsSolid(SolidBase):
             self.sphi,
             self.dphi,
         )
-
 
 class PolyhedraSolid(SolidBase):
     """
@@ -294,7 +288,6 @@ class PolyhedraSolid(SolidBase):
             self.radius_outer,
         )
 
-
 class SphereSolid(SolidBase):
     user_info_defaults = {
         "rmin": (0, {"doc": "Inner radius (0 means solid sphere)."}),
@@ -321,7 +314,6 @@ class SphereSolid(SolidBase):
             self.stheta,
             self.dtheta,
         )
-
 
 class EllipsoidSolid(SolidBase):
     user_info_defaults = {
@@ -353,7 +345,6 @@ class EllipsoidSolid(SolidBase):
             self.zBottomCut,
             self.zTopCut,
         )
-
 
 class TrapSolid(SolidBase):
     """
@@ -424,7 +415,6 @@ class TrapSolid(SolidBase):
             self.alp2,
         )
 
-
 class TrdSolid(SolidBase):
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=g4trd
@@ -463,7 +453,6 @@ class TrdSolid(SolidBase):
     def build_solid(self):
         return g4.G4Trd(self.name, self.dx1, self.dx2, self.dy1, self.dy2, self.dz)
 
-
 class TubsSolid(SolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -487,7 +476,6 @@ class TubsSolid(SolidBase):
 
     def build_solid(self):
         return g4.G4Tubs(self.name, self.rmin, self.rmax, self.dz, self.sphi, self.dphi)
-
 
 class TesselatedSolid(SolidBase):
     """
@@ -566,7 +554,6 @@ class TesselatedSolid(SolidBase):
 
         return tessellated_solid
 
-
 class ImageSolid(SolidBase):
     """Utility to handle the solids of an ImageVolume.
     It is not intended to be used stand-alone, but only as a base class of ImageVolume.
@@ -639,6 +626,88 @@ class ImageSolid(SolidBase):
         self.g4_solid = g4.GateImageBox(image_dict)
 
 
+# -----------------------------------------------------------------------------
+# Added TetGen helpers and envelope solid for TetrahedralMeshVolume.
+# The tetrahedra themselves are created by the C++ parameterised-mesh builder;
+# this module only reads auxiliary files and constructs the enclosing G4Box.
+# -----------------------------------------------------------------------------
+class TetrahedralMeshEnvelopeSolid(SolidBase):
+    """Build the bounding-box solid that encloses a TetGen tetrahedral mesh.
+
+    This class does not create individual tetrahedra. It derives the envelope
+    size from ``node_file``; the C++ mesh builder later creates the
+    parameterised ``G4Tet`` daughters inside this box.
+    """
+    user_info_defaults = {
+        "node_file": ("", {"doc": "TetGen .node file", "is_input_file": True}),
+        "ele_file": ("", {"doc": "TetGen .ele file", "is_input_file": True}),
+        "material_file": ("", {"doc": "TetGen .material file", "is_input_file": True}),
+        "color_file": ("", {"doc": "colour.dat", "is_input_file": True}),
+        "scale": (1.0, {"doc": "Scale factor for node coordinates"}),
+        "container_margin_mm": (20.0, {"doc": "Extra margin around node bounds (mm)"}),
+    }
+
+    @staticmethod
+    def _read_node_bounds(node_file):
+        """Return the coordinate bounds found in a TetGen .node file."""
+
+        minx = miny = minz = 1e30
+        maxx = maxy = maxz = -1e30
+        with open(node_file, "r") as node_stream:
+            for line in node_stream:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                parts = stripped.split()
+                if len(parts) >= 4 and parts[0].lstrip("+-").isdigit():
+                    x, y, z = float(parts[1]), float(parts[2]), float(parts[3])
+                    minx, miny, minz = min(minx, x), min(miny, y), min(minz, z)
+                    maxx, maxy, maxz = max(maxx, x), max(maxy, y), max(maxz, z)
+                    break
+
+            for line in node_stream:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                parts = stripped.split()
+                if len(parts) < 4:
+                    continue
+                try:
+                    x, y, z = float(parts[1]), float(parts[2]), float(parts[3])
+                except (TypeError, ValueError):
+                    continue
+                minx, miny, minz = min(minx, x), min(miny, y), min(minz, z)
+                maxx, maxy, maxz = max(maxx, x), max(maxy, y), max(maxz, z)
+
+        if minx > 1e20:
+            fatal(f"Cannot parse node bounds from {node_file}")
+        return (minx, miny, minz), (maxx, maxy, maxz)
+
+    def get_bbox_size_and_center_mm(self):
+        """Calculate the scaled envelope size and mesh center in millimetres."""
+
+        (minx, miny, minz), (maxx, maxy, maxz) = self._read_node_bounds(
+            self.node_file
+        )
+        sc = float(self.scale)
+        cx = 0.5 * (minx + maxx) * sc
+        cy = 0.5 * (miny + maxy) * sc
+        cz = 0.5 * (minz + maxz) * sc
+        sx = (maxx - minx) * sc + 2.0 * float(self.container_margin_mm)
+        sy = (maxy - miny) * sc + 2.0 * float(self.container_margin_mm)
+        sz = (maxz - minz) * sc + 2.0 * float(self.container_margin_mm)
+        return (sx, sy, sz), (cx, cy, cz)
+
+    def build_solid(self):
+        """Create the enclosing G4Box, including the configured margin."""
+
+        size_mm, _ = self.get_bbox_size_and_center_mm()
+        sx, sy, sz = size_mm
+        return g4.G4Box(self.name,
+                        0.5 * sx * g4_units.mm,
+                        0.5 * sy * g4_units.mm,
+                        0.5 * sz * g4_units.mm)
+
 process_cls(SolidBase)
 process_cls(BooleanSolid)
 process_cls(BoxSolid)
@@ -652,3 +721,6 @@ process_cls(TrdSolid)
 process_cls(TubsSolid)
 process_cls(ImageSolid)
 process_cls(TesselatedSolid)
+
+# Added class processing for TetrahedralMeshEnvelopeSolid user properties.
+process_cls(TetrahedralMeshEnvelopeSolid)
