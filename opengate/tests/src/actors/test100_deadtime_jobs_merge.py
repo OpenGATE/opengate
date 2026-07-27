@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Test 100 (jobs_merge variant): shared-file multi-tree ROOT output merged through
-GATE's jobs-merge machinery.
+"""Test 100 (split-run variant): shared-file multi-tree ROOT output via the local high-level API.
 
-Objective:
-Validate that a split campaign can merge several ROOT-producing digitizer actors
-that write distinct trees into the same physical ROOT file.
+This test exercises the recommended local split-run workflow, namely
+``sim.run(number_of_jobs=..., ...)`` returning a ``SplitRunController``.
 
-This test intentionally stays narrow:
-- each child job writes one ``output_singles.root`` file
-- that file contains the two trees
-  ``Singles_before_deadtime`` and ``Singles_after_deadtime``
-- after ``jobs_merge(...)``, the merged ROOT file must still contain both trees
-- per-tree entry counts must stay close to a non-split reference simulation
-- the merged file must still satisfy the deadtime consistency check
+Its purpose is intentionally narrow: verify that jobs merge remains correct when
+two digitizer actors write distinct ROOT trees into the same physical ROOT
+file. The lower-level ``jobs_split/jobs_run/jobs_merge`` functions are covered
+elsewhere and are not the focus here.
+
+What is checked:
+
+1. A non-split reference simulation produces a shared ROOT file containing the
+   two expected trees ``Singles_before_deadtime`` and
+   ``Singles_after_deadtime``.
+2. A split simulation run through the controller-based local API still merges
+   into one shared ROOT file with the same tree layout.
+3. Per-tree entry counts stay close to the non-split reference.
+4. The merged file still satisfies the deadtime consistency check.
 
 Minimal user workflow example:
 
@@ -25,28 +29,20 @@ import opengate as gate
 sim = gate.Simulation()
 # ... configure hits, digitizer adder, deadtime actor ...
 
-split_root = gate.jobs_split(
-    simulation=sim,
+controller = sim.run(
     number_of_jobs=2,
+    wait_for_result=True,
     jobs_root_dir="my_split_campaign",
-    policy="split_in_time_per_run",
-)
-
-gate.jobs_run(
-    split_root,
-    backend="local_pool",
+    split_policy="split_in_time_per_run",
     backend_options={
         "n_workers": 2,
         "start_method": "spawn",
         "maxtasksperchild": 1,
     },
+    merge_after_run=True,
 )
 
-merge_manager = gate.jobs_merge(
-    split_root,
-    to_path="my_merged_campaign",
-)
-merge_manager.print_merge_summary()
+controller.merge_manager.print_merge_summary()
 ```
 """
 
@@ -63,9 +59,6 @@ from opengate.tests.src.actors.test100_deadtime_helpers import (
     check_gate_deadtime,
 )
 from opengate.tests.src.actors.test100_deadtime_simulation import create_simulation
-from opengate.tests.src.geometry.test009_voxels_dynamic_helpers import (
-    wait_for_completed_jobs,
-)
 
 
 def pretty_json(data):
@@ -111,55 +104,89 @@ def compare_shared_root_file_layout(reference_root, merged_root):
     return is_ok
 
 
-def run_split_campaign(
-    paths,
-    split_path,
-    merge_path,
-    backend,
-    reference_stats,
-    reference_root,
-    backend_options=None,
-):
-    sim_output = split_path.parent / f"{split_path.name}_master_input"
-    sim, dt, _ = create_simulation(SimpleNamespace(output=sim_output), 1)
-    sim.output_dir = sim_output
+def create_split_run_simulation(output_dir):
+    """Create the deadtime test simulation with split-run-friendly output paths."""
+
+    sim, dt, _ = create_simulation(SimpleNamespace(output=output_dir), 1)
+    sim.output_dir = output_dir
     dt.policy = DeadTimePolicy.NonParalyzable.name
+
+    # Keep all output relative to sim.output_dir so the split children and the
+    # merged live simulation write into their own expected locations.
     sim.get_actor("Stats").output_filename = "stats.txt"
-    # The original helper uses an absolute ROOT output path derived from
-    # ``paths.output``. For split/merge tests we want the ROOT file to live
-    # under each simulation's output_dir so the merged result is written into
-    # ``merge_path`` and not back into the master-input folder.
     sim.get_actor("Singles_before_deadtime").output_filename = "output_singles.root"
     sim.get_actor("Singles_after_deadtime").output_filename = "output_singles.root"
+    return sim, dt
 
-    split_root = gate.jobs_split(
-        simulation=sim,
+
+def run_split_campaign(
+    output_dir,
+    jobs_root_dir,
+    wait_for_result,
+    reference_stats,
+    reference_root,
+):
+    """Run the split campaign through the high-level local API and validate the merged output."""
+
+    sim, dt = create_split_run_simulation(output_dir)
+
+    controller = sim.run(
         number_of_jobs=2,
-        jobs_root_dir=split_path,
-        policy="split_in_time_per_run",
-    )
-    summary = gate.jobs_run(
-        split_root,
-        backend=backend,
-        backend_options=backend_options,
-    )
-    is_ok = utility.print_test(
-        summary["submitted_jobs"] == 2,
-        f"{backend} submitted split jobs:\n{pretty_json(summary)}",
+        wait_for_result=wait_for_result,
+        jobs_root_dir=jobs_root_dir,
+        split_policy="split_in_time_per_run",
+        backend_options={
+            "n_workers": 2,
+            "start_method": "spawn",
+            "maxtasksperchild": 1,
+        },
+        merge_after_run=wait_for_result,
+        cleanup_after_run=False,
+        poll_interval=0.2,
+        timeout=120,
     )
 
-    status_data = wait_for_completed_jobs(split_root, expected_count=2)
-    merge_manager = gate.jobs_merge(split_root, to_path=merge_path)
-    merge_manager.print_merge_summary()
+    is_ok = True
+    mode_label = "synchronous" if wait_for_result else "manual"
     is_ok = (
         utility.print_test(
-            merge_manager.merge_result["number_of_leaf_sources"] == 2,
-            f"{backend} merged split jobs:\n{pretty_json(merge_manager.merge_result)}",
+            isinstance(controller, gate.SplitRunController),
+            f"{mode_label} split run returns a SplitRunController",
         )
         and is_ok
     )
 
-    merged_stats = utility.read_stats_file(merge_path / "stats.txt")
+    if not wait_for_result:
+        # This branch mirrors how a user would explicitly take over after the
+        # asynchronous submission step: wait for completion and then merge.
+        controller.wait(poll_interval=0.2, timeout=120)
+        controller.merge()
+
+    is_ok = (
+        utility.print_test(
+            controller.stage == "merged",
+            f"{mode_label} split run reaches merged stage: {controller.stage}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            controller.merge_manager is not None,
+            f"{mode_label} split run exposes a merge manager after merge",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            controller.status["merge_result"] is not None,
+            f"{mode_label} split run exposes merge_result:\n{pretty_json(controller.status['merge_result'])}",
+        )
+        and is_ok
+    )
+
+    controller.merge_manager.print_merge_summary()
+
+    merged_stats = utility.read_stats_file(output_dir / "stats.txt")
     # FIXME: SimulationStatisticsActor does not yet reconstruct the original
     # run set during jobs_merge. Normalize the merged stats to the original
     # two-run interpretation so this test stays focused on shared-file ROOT merge.
@@ -168,8 +195,12 @@ def run_split_campaign(
         utility.assert_stats(merged_stats, reference_stats, tolerance=0.15) and is_ok
     )
 
-    merged_root = merge_path / "output_singles.root"
+    merged_root = output_dir / "output_singles.root"
     is_ok = compare_shared_root_file_layout(reference_root, merged_root) and is_ok
+
+    # The most important functional check of this test: after merging two trees
+    # that share one physical ROOT file, the downstream deadtime logic still
+    # sees a consistent before/after relationship.
     is_ok = (
         utility.print_test(
             check_gate_deadtime(
@@ -179,7 +210,7 @@ def run_split_campaign(
                 dt.dead_time,
                 DeadTimePolicy.NonParalyzable,
             ),
-            f"{backend} merged shared ROOT file passes deadtime check",
+            f"{mode_label} merged shared ROOT file passes deadtime check",
         )
         and is_ok
     )
@@ -194,46 +225,35 @@ if __name__ == "__main__":
     reference_output = paths.output / "merge_reference"
     shutil.rmtree(reference_output, ignore_errors=True)
 
-    reference_sim, reference_dt, reference_root = create_simulation(
-        SimpleNamespace(output=reference_output), 1
-    )
-    reference_sim.output_dir = reference_output
-    reference_dt.policy = DeadTimePolicy.NonParalyzable.name
-    reference_sim.get_actor("Stats").output_filename = "stats.txt"
-    reference_sim.get_actor("Singles_before_deadtime").output_filename = (
-        "output_singles.root"
-    )
-    reference_sim.get_actor("Singles_after_deadtime").output_filename = (
-        "output_singles.root"
-    )
+    # Reference: ordinary non-split simulation used only as a baseline for tree
+    # layout and approximate entry counts.
+    reference_sim, reference_dt = create_split_run_simulation(reference_output)
     reference_sim.run(start_new_process=True)
+    reference_dt.policy = DeadTimePolicy.NonParalyzable.name
     reference_stats = utility.read_stats_file(reference_output / "stats.txt")
     reference_root = reference_output / "output_singles.root"
 
+    # First exercise the manual controller path: submit, wait, merge.
     is_ok = (
         run_split_campaign(
-            paths,
-            paths.output / "jobs_merge" / "split_campaign_sequential",
-            paths.output / "jobs_merge" / "merged_campaign_sequential",
-            backend="local_sequential",
+            paths.output / "jobs_merge" / "manual_controller_output",
+            paths.output / "jobs_merge" / "manual_controller_campaign",
+            wait_for_result=False,
             reference_stats=reference_stats,
             reference_root=reference_root,
         )
         and is_ok
     )
+
+    # Then exercise the synchronous convenience path where sim.run() advances
+    # the controller all the way to the merged stage before returning it.
     is_ok = (
         run_split_campaign(
-            paths,
-            paths.output / "jobs_merge" / "split_campaign_pool",
-            paths.output / "jobs_merge" / "merged_campaign_pool",
-            backend="local_pool",
+            paths.output / "jobs_merge" / "sync_controller_output",
+            paths.output / "jobs_merge" / "sync_controller_campaign",
+            wait_for_result=True,
             reference_stats=reference_stats,
             reference_root=reference_root,
-            backend_options={
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
         )
         and is_ok
     )
