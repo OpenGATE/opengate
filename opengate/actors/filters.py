@@ -412,13 +412,49 @@ class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterStr
         super().initialize()
 
 
-# Registry update
+# Added filter: Python interface to the C++ GateCopyNumberFilter binding.
+class CopyNumberFilter(FilterBase, g4.GateCopyNumberFilter):
+    """Filter steps using the current volume's Geant4 copy number.
+
+    The copy number is read from the pre-step touchable at history depth 0.
+    A step is accepted when that number occurs in ``copy_numbers``. An empty
+    list disables copy-number filtering and therefore accepts every step.
+    """
+
+    copy_numbers: list
+
+    user_info_defaults = {
+        "copy_numbers": (
+            [],
+            {
+                "doc": (
+                    "Geant4 copy numbers accepted by this filter. "
+                    "An empty list accepts all copy numbers."
+                )
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        # Initialize OpenGATE's Python-side filter state first.
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        # Construct the matching pybind11 C++ base. InitializeUserInfo later
+        # transfers copy_numbers to GateCopyNumberFilter.
+        g4.GateCopyNumberFilter.__init__(self)
+
+
+# Added registration: allow get_filter_class(), filter deserialization, and
+# manager-side lookup to resolve the "CopyNumberFilter" type name.
 filter_classes = {
     "UnscatteredPrimaryFilter": UnscatteredPrimaryFilter,
     "AttributeFilterDouble": AttributeFilterDouble,
     "AttributeFilterInt": AttributeFilterInt,
     "AttributeFilterString": AttributeFilterString,
     "BooleanFilter": BooleanFilter,
+    "CopyNumberFilter": CopyNumberFilter,
 }
 
 
@@ -458,3 +494,7 @@ process_cls(AttributeComparisonFilter)
 process_cls(AttributeFilterDouble)
 process_cls(AttributeFilterInt)
 process_cls(AttributeFilterString)
+
+# Added class processing: install OpenGATE's generated properties and
+# serialization hooks for CopyNumberFilter.user_info_defaults.
+process_cls(CopyNumberFilter)

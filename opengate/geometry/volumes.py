@@ -1337,6 +1337,135 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             labels = json.load(infile)
         self.voxel_materials = labels
 
+# -----------------------------------------------------------------------------
+# Added TetrahedralMesh volume support.
+#
+# This generic geometry class delegates MRCP-specific parsing to
+# opengate.contrib.phantoms.mrcp_utils and mesh construction to opengate_core.
+# -----------------------------------------------------------------------------
+class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
+    """OpenGATE volume backed by a parameterised Geant4 tetrahedral mesh.
+
+    The outer logical volume is a bounding box derived from the TetGen node
+    coordinates. During construction, the C++ builder fills that logical
+    volume with one parameterised daughter whose copies use individual
+    ``G4Tet`` solids and region-specific materials.
+    """
+
+    user_info_defaults = {
+        "pv_name": ("phantom_tetmesh", {"doc": "PV name used by builder"}),
+        "check_overlaps": (False, {"doc": "Enable overlap checking"}),
+        "default_material": ("G4_WATER", {"doc": "Fallback mesh material"}),
+        "keep_regions": ([], {"doc": "Region IDs to keep"}),
+        "verbose": (False, {"doc": "Print tetrahedral mesh construction details"}),
+    }
+
+    def _build_region_dicts(self):
+        """Build the region-to-material, RGBA, and visibility dictionaries."""
+
+        # Import locally to avoid coupling the generic geometry module to the
+        # contrib package during OpenGATE module initialization.
+        from opengate.contrib.phantoms import mrcp_utils
+
+        material_definitions, region_to_name = (
+            mrcp_utils.parse_mrcp_material_file(self.material_file)
+        )
+
+        colour_table = mrcp_utils.parse_colour_dat(self.color_file)
+
+        # 3) Select the regions used by this volume.
+        if self.keep_regions and len(self.keep_regions) > 0:
+            selected_rids = [int(r) for r in self.keep_regions]
+        else:
+            selected_rids = sorted(region_to_name.keys())
+
+        # 4) Build region-to-material, RGBA, and visibility mappings.
+        region_to_material = {}
+        region_to_rgba = {}
+        region_visible = {}
+
+        for rid in selected_rids:
+            if rid not in region_to_name:
+                # Missing regions are omitted and handled by the default
+                # material in the C++ builder.
+                continue
+
+            material_name = region_to_name[rid]
+            if material_name not in material_definitions:
+                continue
+
+            definition = material_definitions[material_name]
+
+            region_to_material[int(rid)] = (
+                mrcp_utils.ensure_custom_material_from_zfrac(
+                    material_name,
+                    definition["density_g_cm3"],
+                    definition["zfrac"],
+                )
+            )
+
+            # Prefer a region-ID colour entry over a material-name entry.
+            rgba_vis = None
+            if int(rid) in colour_table:
+                rgba_vis = colour_table[int(rid)]
+            elif material_name in colour_table:
+                rgba_vis = colour_table[material_name]
+
+            if rgba_vis is None:
+                rgba, vis = ([0.8, 0.8, 0.8, 1.0], True)
+            else:
+                rgba, vis = rgba_vis
+
+            region_to_rgba[int(rid)] = list(rgba)
+            region_visible[int(rid)] = bool(vis)
+
+        return region_to_material, region_to_rgba, region_visible
+
+
+    def construct(self):
+        """Construct the envelope first, then populate it with the TetGen mesh."""
+
+        if self._is_constructed:
+            return
+
+        # 1) Construct the outer bounding-box volume first.
+        self.construct_material()
+        self.construct_solid()
+        self.construct_logical_volume()
+        if self.build_physical_volume is True:
+            self.construct_physical_volume()
+
+        # 2) Build region-specific material and visualization dictionaries.
+        region_to_material, region_to_rgba, region_visible = self._build_region_dicts()
+
+        default_material = g4.G4NistManager.Instance().FindOrBuildMaterial(
+            str(self.default_material), False
+        )
+        if default_material is None:
+            fatal(f"Cannot build default material {self.default_material}")
+
+        if self.verbose:
+            print(
+                f"[TetrahedralMeshVolume] name={self.name}, "
+                f"envelope_material={self.material}, "
+                f"default_material={default_material.GetName()}"
+            )
+
+        g4.build_tetrahedral_mesh_from_tetgen(
+            self.node_file,
+            self.ele_file,
+            self.g4_logical_volume,  # The empty envelope logical volume.
+            region_to_material,
+            region_to_rgba,
+            region_visible,
+            default_material,
+            self.pv_name,
+            bool(self.check_overlaps),
+            float(self.scale),
+        )
+
+        self._is_constructed = True
+# End of added TetrahedralMesh volume support.
 
 class ParallelWorldVolume(NodeMixin):
     def __init__(self, name, volume_manager):
@@ -1433,3 +1562,6 @@ process_cls(TubsVolume)
 process_cls(RepeatParametrisedVolume)
 process_cls(ImageVolume)
 process_cls(TesselatedVolume)
+
+# Added class processing for TetrahedralMeshVolume user properties.
+process_cls(TetrahedralMeshVolume)
