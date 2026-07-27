@@ -150,9 +150,9 @@ if __name__ == "__main__":
     original_run_timing_intervals = list(sim.run_timing_intervals)
 
     split_root = gate.jobs_split(
-        sim,
-        number_of_angles,
-        split_path,
+        simulation=sim,
+        number_of_jobs=number_of_angles,
+        jobs_root_dir=split_path,
         policy="split_in_time_per_run",
     )
     summary = gate.jobs_run(

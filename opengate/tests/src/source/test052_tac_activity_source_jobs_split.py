@@ -145,9 +145,9 @@ if __name__ == "__main__":
     )
 
     split_root = gate.jobs_split(
-        split_sim,
-        8,
-        split_path,
+        simulation=split_sim,
+        number_of_jobs=8,
+        jobs_root_dir=split_path,
         policy="split_in_time_total",
     )
     summary = gate.jobs_run(

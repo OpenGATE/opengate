@@ -29,9 +29,9 @@ sim = gate.Simulation()
 # ... configure geometry, sources, actors, run timing intervals ...
 
 split_root = gate.jobs_split(
-    sim,
-    3,
-    "my_split_campaign",
+    simulation=sim,
+    number_of_jobs=3,
+    jobs_root_dir="my_split_campaign",
     policy="split_in_time_total",
 )
 
@@ -82,9 +82,9 @@ def run_split_campaign(paths, split_path, merge_path, backend, backend_options=N
     )
 
     split_root = gate.jobs_split(
-        sim,
-        3,
-        split_path,
+        simulation=sim,
+        number_of_jobs=3,
+        jobs_root_dir=split_path,
         policy="split_in_time_total",
     )
     gate.print_jobs_split_summary(split_path)
