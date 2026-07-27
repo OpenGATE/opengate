@@ -1324,10 +1324,7 @@ def jobs_run(
             skipped_completed_jobs.append(job_folder)
             continue
 
-        if (
-            execution_status.get("status") == "running"
-            and allow_rerun_running is False
-        ):
+        if execution_status.get("status") == "running" and allow_rerun_running is False:
             running_jobs.append(job_folder.name)
             continue
 

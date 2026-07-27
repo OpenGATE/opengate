@@ -48,7 +48,7 @@ the same script, use ``merge_after_run=True`` together with
    # At this point, the merged output is already available in sim.output_dir
    # and the live simulation object can be used for postprocessing.
 
-In the example, ``controller`` is a ``SplitRunController`` object that can be inspected - see below. It is always return by ``sim.run(...)`` when the simulation is run in multiple jobs. 
+In the example, ``controller`` is a ``SplitRunController`` object that can be inspected - see below. It is always return by ``sim.run(...)`` when the simulation is run in multiple jobs.
 
 Local pooled execution always uses one spawned worker process per child job.
 
@@ -92,7 +92,7 @@ jobs:
 
    merge_manager = gate.jobs_merge("campaign")
    sim = merge_manager.master_simulation
-   gate.jobs_clean("campaign")  # this removes the job folders and other metadata about the split run 
+   gate.jobs_clean("campaign")  # this removes the job folders and other metadata about the split run
 
    merge_manager.print_merge_summary()
    # ... post-process sim, actors, and merged output ...
@@ -147,8 +147,8 @@ In practice, ``split_in_time_total`` is the recommended default unless the
 simulation logic or the validation strategy specifically benefits from staying
 closer to the original run partition.
 
-.. tip:: If you use ``split_in_time_per_run`` and set the number of jobs equal to the number of run timing intervals in your simulation, you will get one job per run timing interval. 
- 
+.. tip:: If you use ``split_in_time_per_run`` and set the number of jobs equal to the number of run timing intervals in your simulation, you will get one job per run timing interval.
+
 
 Server-based execution
 ----------------------
@@ -223,7 +223,7 @@ As a convenience, the command also looks for a default file named
 .. The Slurm backend currently expects a Python callable named
 .. ``submit_script_renderer``. This means that, at the moment, Slurm submission is
 .. best driven from a Python script rather than through a pure JSON configuration
-.. file. This will likely change in the future. 
+.. file. This will likely change in the future.
 
 .. A minimal Python example looks like:
 

@@ -149,7 +149,9 @@ def merge_phase_space_root_from_jobs(
     return output_path
 
 
-def compare_phase_space_root_content(reference_root_path, candidate_root_path, tree_name="phsp"):
+def compare_phase_space_root_content(
+    reference_root_path, candidate_root_path, tree_name="phsp"
+):
     """Check that two merged PhaseSpace ROOT files contain the same branch content."""
 
     with uproot.open(reference_root_path) as reference_root:
@@ -259,7 +261,9 @@ if __name__ == "__main__":
     # compare the resulting ROOT content with the manual merge above.
     merged_output_dir = paths.output / "test052_jobs_merge_output"
     merge_manager = gate.jobs_merge(split_root, to_path=merged_output_dir, execute=True)
-    jobs_merge_root = merge_manager.master_simulation.get_actor("phsp").get_output_path()
+    jobs_merge_root = merge_manager.master_simulation.get_actor(
+        "phsp"
+    ).get_output_path()
     is_ok = compare_phase_space_root_content(merged_root, jobs_merge_root) and is_ok
 
     root_data, _ = utility.open_root_as_np(merged_root, "phsp")
