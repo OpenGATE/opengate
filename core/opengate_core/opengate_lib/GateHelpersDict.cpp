@@ -180,6 +180,42 @@ DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key) {
   return l;
 }
 
+namespace {
+G4Colour GetColour(const py::handle &color) {
+  if (py::isinstance<py::str>(color)) {
+    G4Colour colour;
+    const std::string color_str = color.cast<std::string>();
+    G4Colour::GetColour(color_str, colour);
+    return colour;
+  }
+
+  const auto rgba = color.cast<std::vector<G4double>>();
+
+  if (rgba.size() == 3)
+    return {rgba[0], rgba[1], rgba[2], 1.0};
+  return {rgba[0], rgba[1], rgba[2], rgba[3]};
+}
+} // namespace
+
+G4Colour DictGetColour(py::dict &user_info, const std::string &key) {
+  return GetColour(user_info[key.c_str()]);
+}
+
+std::vector<G4Colour> DictGetVecColour(py::dict &user_info,
+                                       const std::string &key) {
+  std::vector<G4Colour> l;
+  auto color_list = py::list(user_info[key.c_str()]);
+  for (const auto color : color_list) {
+    l.push_back(GetColour(color));
+  }
+  return l;
+}
+
+std::vector<G4Colour> DictGetColourVec(py::dict &user_info,
+                                       const std::string &key) {
+  return DictGetVecColour(user_info, key);
+}
+
 bool IsIn(const std::string &s, std::vector<std::string> &v) {
   for (const auto &x : v)
     if (x == s)
