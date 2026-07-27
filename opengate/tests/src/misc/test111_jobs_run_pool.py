@@ -105,11 +105,11 @@ if __name__ == "__main__":
             },
         )
     except Exception as error:
-        running_failure_detected = "restart_running_jobs=True" in str(error)
+        running_failure_detected = "allow_rerun_running=True" in str(error)
 
     is_ok = is_ok and utility.print_test(
         running_failure_detected,
-        "jobs_run detects a persisted running job and asks for restart_running_jobs=True",
+        "jobs_run detects a persisted running job and asks for allow_rerun_running=True",
     )
 
     print(
@@ -128,8 +128,8 @@ if __name__ == "__main__":
             "start_method": "spawn",
             "maxtasksperchild": 1,
         },
-        force=True,
-        restart_running_jobs=True,
+        force_rerun_completed=True,
+        allow_rerun_running=True,
     )
     is_ok = is_ok and utility.print_test(
         summary_failed["submitted_jobs"] == 4

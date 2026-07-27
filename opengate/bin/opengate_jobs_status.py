@@ -103,13 +103,13 @@ def print_jobs_status_summary(status_data, verbose=False):
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("manifest_or_dir", type=click.Path(exists=True))
+@click.argument("campaign_dir", type=click.Path(exists=True, file_okay=False))
 @click.option("-v", "--verbose", is_flag=True, help="Print verbose job metadata")
-def go(manifest_or_dir, verbose):
+def go(campaign_dir, verbose):
     """
-    Print a status summary for an OpenGATE job split campaign given a manifest file or directory.
+    Print a status summary for an OpenGATE job split campaign given its folder.
     """
-    status_data = jobs_status(manifest_or_dir)
+    status_data = jobs_status(campaign_dir)
     print_jobs_status_summary(status_data, verbose=verbose)
 
 

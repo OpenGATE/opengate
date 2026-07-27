@@ -74,17 +74,17 @@ if __name__ == "__main__":
     try:
         gate.jobs_run(split_root, backend="local_sequential")
     except Exception as error:
-        running_failure_detected = "restart_running_jobs=True" in str(error)
+        running_failure_detected = "allow_rerun_running=True" in str(error)
 
     is_ok = is_ok and utility.print_test(
         running_failure_detected,
-        "jobs_run detects running jobs and asks for restart_running_jobs=True",
+        "jobs_run detects running jobs and asks for allow_rerun_running=True",
     )
 
     summary_restart = gate.jobs_run(
         split_root,
         backend="local_sequential",
-        restart_running_jobs=True,
+        allow_rerun_running=True,
     )
     is_ok = is_ok and utility.print_test(
         summary_restart["submitted_jobs"] == 1

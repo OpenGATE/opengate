@@ -20,12 +20,18 @@ from .exception import GateJobsBackendError, GateMergeError, fatal
 from .runtiming import assert_run_timing
 from .serialization import dump_json, load_json
 
+DEFAULT_SIMULATION_FILENAME = "simulation.json"
+DEFAULT_RESOLVED_SIMULATION_FILENAME = "simulation_resolved.json"
+DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME = "jobs_backend_options.json"
+DEFAULT_SPLIT_POLICY = "split_in_time_total"
+DEFAULT_LOCAL_JOBS_BACKEND = "local_sequential"
+
 JOBS_MANIFEST_FILENAME = "jobs_manifest.json"
 JOBS_BACKEND_STATUS_FILENAME = "jobs_backend_status.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
 JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
-JOB_SIMULATION_FILENAME = "simulation.json"
-MASTER_SIMULATION_FILENAME = "simulation.json"
+JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
+MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 JOB_EXECUTION_ALLOWED_STATUSES = ("running", "completed", "failed", "skipped")
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
@@ -47,7 +53,7 @@ def _prepare_package_root(path, overwrite=False):
 def package_simulation(
     simulation,
     path,
-    simulation_file="simulation.json",
+    simulation_file=DEFAULT_SIMULATION_FILENAME,
     resolved_simulation_file=None,
     link_files=False,
     overwrite=False,
@@ -433,11 +439,11 @@ def _configure_child_simulation(
 def jobs_split(
     simulation=None,
     simulation_folder=None,
-    simulation_file="simulation.json",
-    resolved_simulation_file="simulation_resolved.json",
+    simulation_file=DEFAULT_SIMULATION_FILENAME,
+    resolved_simulation_file=DEFAULT_RESOLVED_SIMULATION_FILENAME,
     jobs_root_dir=None,
     number_of_jobs=1,
-    policy="split_in_time_per_run",
+    policy=DEFAULT_SPLIT_POLICY,
     link_files=False,
     overwrite_existing_job_folders=False,
     write_resolved_simulation=True,
@@ -1301,10 +1307,10 @@ def _validate_jobs_backend_options(backend, backend_options):
 
 def jobs_run(
     split_path,
-    backend="local_sequential",
+    backend=DEFAULT_LOCAL_JOBS_BACKEND,
     backend_options=None,
-    force=False,
-    restart_running_jobs=False,
+    force_rerun_completed=False,
+    allow_rerun_running=False,
 ):
     """Launch a split-jobs campaign from a split root folder or manifest path.
 
@@ -1343,13 +1349,16 @@ def jobs_run(
             selected_job_folders.append(job_folder)
             continue
 
-        if execution_status.get("status") == "completed" and force is False:
+        if (
+            execution_status.get("status") == "completed"
+            and force_rerun_completed is False
+        ):
             skipped_completed_jobs.append(job_folder)
             continue
 
         if (
             execution_status.get("status") == "running"
-            and restart_running_jobs is False
+            and allow_rerun_running is False
         ):
             running_jobs.append(job_folder.name)
             continue
@@ -1360,7 +1369,7 @@ def jobs_run(
         fatal(
             "Some jobs are still marked as running: "
             f"{', '.join(running_jobs)}. "
-            "Relaunch with restart_running_jobs=True to override them."
+            "Relaunch with allow_rerun_running=True to override them."
         )
 
     if len(selected_job_folders) == 0:
@@ -2663,13 +2672,13 @@ def _format_bytes(size_bytes):
         return f"{val:.1f} GB"
 
 
-def jobs_status(manifest_or_dir_path):
-    path = Path(manifest_or_dir_path).resolve()
-    if path.is_dir():
-        manifest_path = path / JOBS_MANIFEST_FILENAME
-    else:
-        manifest_path = path
-
+def jobs_status(jobs_root_dir):
+    path = Path(jobs_root_dir).resolve()
+    if path.is_dir() is False:
+        fatal(
+            f"jobs_status() expects the campaign folder as input, but received '{path}'."
+        )
+    manifest_path = path / JOBS_MANIFEST_FILENAME
     if not manifest_path.exists():
         fatal(f"Jobs manifest file not found at '{manifest_path}'.")
 
@@ -2856,6 +2865,6 @@ def jobs_status(manifest_or_dir_path):
     return status_data
 
 
-def get_jobs_status(manifest_or_dir_path):
+def get_jobs_status(jobs_root_dir):
     """Backward-compatible alias kept temporarily during the jobs API refactor."""
-    return jobs_status(manifest_or_dir_path)
+    return jobs_status(jobs_root_dir)
