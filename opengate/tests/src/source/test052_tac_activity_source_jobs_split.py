@@ -1,5 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Test split-job execution of a TAC-driven source by checking the recovered decay law.
+
+This test is about source-time behavior, not about the high-level jobs API.
+It therefore keeps explicit split/run steps and performs a minimal manual merge
+of the PhaseSpaceActor ROOT output.
+
+What is tested:
+
+1. A ``GenericSource`` configured with a time-activity curve (TAC) is split by
+   total simulation time into several jobs.
+2. The split jobs are executed locally in a pool.
+3. The phase-space output of the child jobs is concatenated in time order.
+4. The same split campaign is also merged through ``jobs_merge``.
+5. The manually merged ROOT file and the ``jobs_merge`` ROOT file are checked
+   for content consistency.
+6. A fit to the merged ``GlobalTime`` distribution recovers the expected
+   half-life within tolerance.
+
+Why this structure is appropriate here:
+
+- The purpose is to probe whether TAC timing survives time splitting.
+- ROOT merging is intentionally kept minimal and manual because the physics
+  observable of interest is only the final time distribution. The test now
+  additionally checks that the formal ``jobs_merge`` path produces the same
+  merged ROOT content.
+- Some edge jobs may legitimately write no ROOT file when the TAC is zero or
+  effectively zero in their active time window. The test checks that these jobs
+  are consistent with zero-event statistics output rather than treating them as
+  failures.
+"""
 
 import json
 import shutil
@@ -26,6 +56,8 @@ def pretty_json(data):
 
 
 def build_tac_activity_simulation(output_dir):
+    """Create a simple TAC-driven source with a known exponential decay law."""
+
     sim = gate.Simulation()
 
     m = gate.g4_units.m
@@ -71,7 +103,8 @@ def build_tac_activity_simulation(output_dir):
     phsp.steps_to_store = "exiting"
     phsp.output_filename = "test052_tac.root"
 
-    # Keep the original runtime gap from the reference test.
+    # Keep the original runtime gap from the reference test so the split
+    # campaign exercises a TAC across two distinct run timing intervals.
     sim.run_timing_intervals = [[0, 2.9 * sec], [3 * sec, 7 * sec]]
     return sim, phsp, half_life
 
@@ -82,9 +115,16 @@ def merge_phase_space_root_from_jobs(
     root_filename="test052_tac.root",
     tree_name="phsp",
 ):
+    """Concatenate child PhaseSpaceActor ROOT trees into one merged ROOT file.
+
+    This is intentionally a minimal merge tailored to this test: the only
+    quantity later analyzed is ``GlobalTime``, so simple ordered concatenation
+    of the child trees is sufficient.
+    """
+
     merged_branch_data = {}
     for job_folder in job_folders:
-        root_path = Path(job_folder) / root_filename
+        root_path = Path(job_folder) / "output" / root_filename
         if not root_path.exists():
             print(
                 f"{Path(job_folder).name}: no {root_filename} written, treating as a valid zero-event job."
@@ -109,15 +149,52 @@ def merge_phase_space_root_from_jobs(
     return output_path
 
 
+def compare_phase_space_root_content(reference_root_path, candidate_root_path, tree_name="phsp"):
+    """Check that two merged PhaseSpace ROOT files contain the same branch content."""
+
+    with uproot.open(reference_root_path) as reference_root:
+        reference_tree = reference_root[tree_name]
+        reference_data = root_tree_get_branch_data(reference_tree, library="np")
+
+    with uproot.open(candidate_root_path) as candidate_root:
+        candidate_tree = candidate_root[tree_name]
+        candidate_data = root_tree_get_branch_data(candidate_tree, library="np")
+
+    is_ok = True
+    reference_branches = sorted(reference_data.keys())
+    candidate_branches = sorted(candidate_data.keys())
+    is_ok = (
+        utility.print_test(
+            candidate_branches == reference_branches,
+            f"Merged ROOT branches match: {candidate_branches}",
+        )
+        and is_ok
+    )
+
+    for branch_name in reference_branches:
+        reference_values = np.asarray(reference_data[branch_name])
+        candidate_values = np.asarray(candidate_data[branch_name])
+        is_ok = (
+            utility.print_test(
+                np.array_equal(candidate_values, reference_values),
+                f"Branch {branch_name} content matches between manual merge and jobs_merge",
+            )
+            and is_ok
+        )
+    return is_ok
+
+
 def check_missing_root_files_are_zero_event_jobs(
     job_folders, root_filename="test052_tac.root"
 ):
+    """Accept missing child ROOT files only when the job effectively had no events."""
+
     is_ok = True
     for job_folder in job_folders:
-        root_path = Path(job_folder) / root_filename
+        root_path = Path(job_folder) / "output" / root_filename
         if root_path.exists():
             continue
-        stats = utility.read_stats_file(Path(job_folder) / "stats.txt")
+        stats = utility.read_stats_file(Path(job_folder) / "output" / "stats.txt")
         print(
             f"stats.user_output.stats.merged_data.events = {stats.user_output.stats.merged_data.events}"
         )
@@ -144,6 +221,9 @@ if __name__ == "__main__":
         split_path.parent / f"{split_path.name}_master_input"
     )
 
+    # Split the simulation in total time rather than per original run. This is
+    # the relevant mode here because the TAC should remain globally consistent
+    # even when jobs bridge across original run boundaries.
     split_root = gate.jobs_split(
         simulation=split_sim,
         number_of_jobs=8,
@@ -169,15 +249,30 @@ if __name__ == "__main__":
 
     status_data = wait_for_completed_jobs(split_root, expected_count=8)
     job_folders = [split_root / job["folder_name"] for job in status_data["jobs"]]
+
+    # Early/late jobs can legitimately produce no ROOT file if the TAC implies
+    # effectively no scored events in that time window. Treat this as valid only
+    # when the statistics actor confirms the job was effectively empty.
     is_ok = check_missing_root_files_are_zero_event_jobs(job_folders) and is_ok
 
+    # First perform the local manual merge tailored to this test's ROOT output.
     merged_root = paths.output / "test052_tac_merged.root"
     merge_phase_space_root_from_jobs(job_folders, merged_root)
+
+    # Then merge the same campaign through the formal jobs-merge workflow and
+    # compare the resulting ROOT content with the manual merge above.
+    merged_output_dir = paths.output / "test052_jobs_merge_output"
+    merge_manager = gate.jobs_merge(split_root, to_path=merged_output_dir, execute=True)
+    jobs_merge_root = merge_manager.master_simulation.get_actor("phsp").get_output_path()
+    is_ok = compare_phase_space_root_content(merged_root, jobs_merge_root) and is_ok
 
     root_data, _ = utility.open_root_as_np(merged_root, "phsp")
     event_times_seconds = root_data["GlobalTime"] / sec
     print(f"Number of merged events: {len(event_times_seconds)}")
 
+    # The physics check of this test is entirely based on the merged emission
+    # times: fit an exponential decay and compare the recovered half-life with
+    # the half-life used to build the TAC.
     fitted_half_life_seconds, fit_xx, fit_yy = utility.fit_exponential_decay(
         event_times_seconds, 0, 7
     )
@@ -194,6 +289,8 @@ if __name__ == "__main__":
         and is_ok
     )
 
+    # The diagnostic plot helps interpret failures by showing whether the
+    # merged time spectrum still follows the expected exponential law.
     figure, axis = plt.subplots(1, 1, figsize=(25, 10))
     utility.plot_hist(axis, event_times_seconds, "Merged events times")
     axis.plot(fit_xx, fit_yy, label="fit")
