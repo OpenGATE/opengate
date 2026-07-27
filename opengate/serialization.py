@@ -17,7 +17,14 @@ class GateJSONEncoder(json.JSONEncoder):
                 "__shape__": obj.shape,
             }
         elif isinstance(obj, Path):
-            return {"__pathlib_path__": PurePath(obj).parts}
+            path_parts = PurePath(obj).parts
+            if len(path_parts) == 0:
+                # Path(".") round-trips to an empty ``parts`` tuple. Persist an
+                # explicit current-directory marker so JSON reload can
+                # reconstruct the same relative path instead of failing on an
+                # empty list access.
+                path_parts = (".",)
+            return {"__pathlib_path__": path_parts}
         elif isinstance(obj, g4.G4BestUnit):
             return str(obj).split()
         elif hasattr(obj, "to_dictionary"):
@@ -41,8 +48,11 @@ def json_obj_hook(input):
             input["__shape__"]
         )
     elif isinstance(input, dict) and "__pathlib_path__" in input:
-        obj = Path(input["__pathlib_path__"][0])
-        for p in input["__pathlib_path__"][1:]:
+        path_parts = input["__pathlib_path__"]
+        if len(path_parts) == 0:
+            path_parts = ["."]
+        obj = Path(path_parts[0])
+        for p in path_parts[1:]:
             obj /= p
     else:
         obj = input
