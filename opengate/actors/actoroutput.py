@@ -103,6 +103,14 @@ class BaseUserInterfaceToActorOutput:
         return_dict["belongs_to_actor"] = None
         return return_dict
 
+    def __str__(self):
+        """Forward string conversion to the underlying actor output."""
+        return str(self._user_output)
+
+    def __repr__(self):
+        """Forward the debug representation to the underlying actor output."""
+        return repr(self._user_output)
+
     @property
     def _user_output(self):
         return self.belongs_to_actor.user_output[self.user_output_name]
