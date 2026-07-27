@@ -865,8 +865,6 @@ def _run_job_folders_in_local_sequential(job_folders):
 def _run_job_folders_in_local_pool(
     job_folders,
     n_workers,
-    start_method="spawn",
-    maxtasksperchild=1,
 ):
     # NOTE: local_pool is a convenience backend, not the most crash-resilient
     # local dispatcher. If a worker suffers a hard crash such as a C++ segfault,
@@ -879,15 +877,16 @@ def _run_job_folders_in_local_pool(
     # apply_async()/timeouts/health checks rather than a single blocking map().
     if int(n_workers) < 1:
         raise GateJobsBackendError("The local_pool backend requires n_workers >= 1.")
-    if int(maxtasksperchild) != 1:
-        raise GateJobsBackendError(
-            "The local_pool backend currently requires maxtasksperchild=1 so each "
-            "worker process executes at most one job."
-        )
-    ctx = multiprocessing.get_context(start_method)
+    # Hard-code "spawn" and maxtasksperchild=1:
+    # - "spawn" is required because local split execution must start each worker
+    #   from a clean Python process rather than inheriting Geant4/Python state
+    #   via fork.
+    # - maxtasksperchild=1 is required because one worker process may execute
+    #   only one Geant4 simulation in its lifetime under the current contract.
+    ctx = multiprocessing.get_context("spawn")
     pool = ctx.Pool(
         processes=int(n_workers),
-        maxtasksperchild=maxtasksperchild,
+        maxtasksperchild=1,
     )
     try:
         results = pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
@@ -1160,7 +1159,7 @@ def _validate_jobs_backend_options(backend, backend_options):
 
     if backend == "local_pool":
         pooling_options = dict(backend_options)
-        allowed_backend_keys = {"n_workers", "start_method", "maxtasksperchild"}
+        allowed_backend_keys = set()
         unknown_backend_keys = set(pooling_options.keys()).difference(
             allowed_backend_keys
         )
@@ -1168,45 +1167,6 @@ def _validate_jobs_backend_options(backend, backend_options):
             raise GateJobsBackendError(
                 f"The local_pool backend received unknown backend_options: {sorted(unknown_backend_keys)}."
             )
-        if "n_workers" not in pooling_options:
-            pooling_options["n_workers"] = os.cpu_count() or 1
-        try:
-            pooling_options["n_workers"] = int(pooling_options["n_workers"])
-        except (TypeError, ValueError) as error:
-            raise GateJobsBackendError(
-                f"Invalid n_workers value for local_pool: {pooling_options['n_workers']}."
-            ) from error
-        if pooling_options["n_workers"] < 1:
-            raise GateJobsBackendError(
-                "The local_pool backend requires n_workers >= 1."
-            )
-        pooling_options.setdefault("start_method", "spawn")
-        try:
-            multiprocessing.get_context(pooling_options["start_method"])
-        except ValueError as error:
-            raise GateJobsBackendError(
-                f"Unknown multiprocessing start_method '{pooling_options['start_method']}' "
-                "for the local_pool backend."
-            ) from error
-        pooling_options.setdefault("maxtasksperchild", 1)
-        if pooling_options["maxtasksperchild"] is not None:
-            try:
-                pooling_options["maxtasksperchild"] = int(
-                    pooling_options["maxtasksperchild"]
-                )
-            except (TypeError, ValueError) as error:
-                raise GateJobsBackendError(
-                    "The local_pool backend requires maxtasksperchild to be "
-                    "None or an integer >= 1."
-                ) from error
-            if pooling_options["maxtasksperchild"] < 1:
-                raise GateJobsBackendError(
-                    "The local_pool backend requires maxtasksperchild >= 1."
-                )
-            if pooling_options["maxtasksperchild"] != 1:
-                raise GateJobsBackendError(
-                    "The local_pool backend currently requires maxtasksperchild=1."
-                )
         return pooling_options
 
     if backend == "htcondor":
@@ -1309,6 +1269,7 @@ def jobs_run(
     split_path,
     backend=DEFAULT_LOCAL_JOBS_BACKEND,
     backend_options=None,
+    number_of_workers=None,
     force_rerun_completed=False,
     allow_rerun_running=False,
 ):
@@ -1319,6 +1280,13 @@ def jobs_run(
     selected job folders keep running in the background. External scheduler
     backends submit synchronously instead, so submission errors are reported
     directly to the caller while the actual job execution remains asynchronous.
+
+    For the ``local_pool`` backend, ``number_of_workers`` controls how many
+    child simulations can run concurrently. If fewer workers than jobs are
+    used, the jobs are executed in several waves and each additional wave pays
+    the full overhead of starting and finalizing another Geant4 simulation. In
+    most practical local runs, ``number_of_workers`` should therefore be equal
+    to ``number_of_jobs``.
     """
     manifest_path, manifest = _load_jobs_manifest(split_path)
     split_root_folder = manifest_path.parent
@@ -1417,6 +1385,26 @@ def jobs_run(
         }
 
     if backend in ("local_sequential", "local_pool"):
+        if number_of_workers is None and backend == "local_pool":
+            number_of_workers = manifest.get(
+                "number_of_jobs", len(manifest.get("jobs", []))
+            )
+        if number_of_workers is not None:
+            try:
+                number_of_workers = int(number_of_workers)
+            except (TypeError, ValueError) as error:
+                raise GateJobsBackendError(
+                    f"Invalid number_of_workers value for {backend}: {number_of_workers}."
+                ) from error
+            if number_of_workers < 1:
+                raise GateJobsBackendError(
+                    f"The {backend} backend requires number_of_workers >= 1."
+                )
+        if backend == "local_pool":
+            backend_options = {
+                "n_workers": number_of_workers,
+            }
+
         launcher_context = multiprocessing.get_context(
             _get_platform_process_start_method()
         )
@@ -1473,7 +1461,6 @@ class SplitRunController:
         jobs_root_dir=None,
         split_policy="split_in_time_total",
         backend="local_pool",
-        backend_options=None,
         merge=True,
         cleanup=False,
     ):
@@ -1483,7 +1470,6 @@ class SplitRunController:
         )
         self.split_policy = split_policy
         self.backend = backend
-        self.backend_options = {} if backend_options is None else dict(backend_options)
         self.merge_after_run = bool(merge)
         self.cleanup_after_run = bool(cleanup)
 
@@ -1584,12 +1570,28 @@ class SplitRunController:
             raise
 
     def run(self, **run_options):
+        """Launch the already split campaign through the configured backend.
+
+        For the ``local_pool`` backend, an explicit ``number_of_workers`` lower
+        than the number of split jobs means that multiple child simulations are
+        executed sequentially across several worker waves. This is valid, but
+        every additional wave incurs the full startup/finalization overhead of
+        another Geant4 simulation. In most practical local runs,
+        ``number_of_workers`` should therefore be equal to the number of split
+        jobs.
+        """
         if self._jobs_root_dir is None:
             fatal("SplitRunController.run() requires split() to be called first.")
         try:
             run_options = dict(run_options)
             run_options.setdefault("backend", self.backend)
-            run_options.setdefault("backend_options", self.backend_options)
+            if (
+                run_options["backend"] == "local_pool"
+                and "number_of_workers" not in run_options
+            ):
+                run_options["number_of_workers"] = self._status["split_result"][
+                    "number_of_jobs"
+                ]
             self._status["run_result"] = jobs_run(self._jobs_root_dir, **run_options)
             self._stage = "submitted"
             self.refresh()

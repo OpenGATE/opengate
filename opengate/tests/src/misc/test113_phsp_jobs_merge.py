@@ -30,15 +30,10 @@ controller = gate.SplitRunController(
     jobs_root_dir="my_split_campaign",
     split_policy="split_in_time_total",
     backend="local_pool",
-    backend_options={
-        "n_workers": 2,
-        "start_method": "spawn",
-        "maxtasksperchild": 1,
-    },
 )
 
 controller.split(number_of_jobs=3)
-controller.run()
+controller.run(number_of_workers=2)
 controller.wait()
 controller.merge()
 ```
@@ -399,11 +394,6 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
         jobs_root_dir=split_root,
         split_policy="split_in_time_total",
         backend="local_pool",
-        backend_options={
-            "n_workers": 2,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
     )
     # The staged controller calls below are likewise slightly lower-level than
     # the usual user entry point. The test uses them on purpose so it can check
@@ -433,7 +423,7 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
     # The actual child execution now goes through the controller API rather
     # than calling jobs_run() directly. This reflects the recommended local
     # split-run surface while still letting this test inspect the split product.
-    run_summary = controller.run()
+    run_summary = controller.run(number_of_workers=2)
     is_ok = (
         utility.print_test(
             run_summary["submitted_jobs"] == 3,

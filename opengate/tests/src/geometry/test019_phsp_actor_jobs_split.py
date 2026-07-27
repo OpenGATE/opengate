@@ -31,7 +31,7 @@ def run_split_campaign(
     run_timing_intervals,
     reference_stats,
     reference_root,
-    backend_options=None,
+    number_of_workers=None,
 ):
     sim, _, _, _ = build_phsp_actor_simulation(
         split_path.parent / f"{split_path.name}_master_input",
@@ -49,7 +49,7 @@ def run_split_campaign(
     summary = gate.jobs_run(
         split_root,
         backend=backend,
-        backend_options=backend_options,
+        number_of_workers=number_of_workers,
     )
     is_ok = utility.print_test(
         summary["submitted_jobs"] == 3,
@@ -124,11 +124,7 @@ if __name__ == "__main__":
             run_timing_intervals=run_timing_intervals,
             reference_stats=reference_stats,
             reference_root=reference_root,
-            backend_options={
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            number_of_workers=2,
         )
         and is_ok
     )

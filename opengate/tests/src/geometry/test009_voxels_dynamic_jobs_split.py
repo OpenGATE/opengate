@@ -25,7 +25,7 @@ def intervals_are_close(intervals_1, intervals_2, atol):
     )
 
 
-def run_split_campaign(paths, split_path, backend, backend_options=None):
+def run_split_campaign(paths, split_path, backend, number_of_workers=None):
     sec = gate.g4_units.s
     run_timing_intervals = [(0, 0.5 * sec), (0.5 * sec, 1 * sec)]
     dynamic_image_paths = [
@@ -49,7 +49,7 @@ def run_split_campaign(paths, split_path, backend, backend_options=None):
     summary = gate.jobs_run(
         split_root,
         backend=backend,
-        backend_options=backend_options,
+        number_of_workers=number_of_workers,
     )
     checks_ok = utility.print_test(
         summary["submitted_jobs"] == 3,
@@ -151,13 +151,9 @@ if __name__ == "__main__":
             paths,
             paths.output / "split_campaign_pool",
             backend="local_pool",
-            backend_options={
-                # Run 3 jobs with 2 workers so the pooled backend also covers
-                # queued execution instead of a trivial 1:1 worker-to-job map.
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            # Run 3 jobs with 2 workers so the pooled backend also covers
+            # queued execution instead of a trivial 1:1 worker-to-job map.
+            number_of_workers=2,
         )
         and is_ok
     )

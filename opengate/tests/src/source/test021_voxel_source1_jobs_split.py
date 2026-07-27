@@ -219,7 +219,7 @@ def assert_rehydrated_child_inputs(job_folder):
     return is_ok
 
 
-def run_split_campaign(paths, split_path, backend, link_files, backend_options=None):
+def run_split_campaign(paths, split_path, backend, link_files, number_of_workers=None):
     sim, _, _ = build_voxel_source_simulation(
         paths,
         split_path.parent / f"{split_path.name}_master_input",
@@ -236,7 +236,7 @@ def run_split_campaign(paths, split_path, backend, link_files, backend_options=N
     summary = gate.jobs_run(
         split_root,
         backend=backend,
-        backend_options=backend_options,
+        number_of_workers=number_of_workers,
     )
     mode_label = "linked" if link_files else "copied"
     is_ok = utility.print_test(
@@ -309,11 +309,7 @@ if __name__ == "__main__":
             paths.output / "split_campaign_pool_copied",
             backend="local_pool",
             link_files=False,
-            backend_options={
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            number_of_workers=2,
         )
         and is_ok
     )
@@ -332,11 +328,7 @@ if __name__ == "__main__":
             paths.output / "split_campaign_pool_linked",
             backend="local_pool",
             link_files=True,
-            backend_options={
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            number_of_workers=2,
         )
         and is_ok
     )

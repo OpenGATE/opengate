@@ -256,11 +256,7 @@ if __name__ == "__main__":
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": 4,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=4,
     )
     is_ok = (
         utility.print_test(

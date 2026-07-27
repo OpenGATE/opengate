@@ -34,11 +34,6 @@ controller = sim.run(
     wait_for_result=True,
     jobs_root_dir="my_split_campaign",
     split_policy="split_in_time_per_run",
-    backend_options={
-        "n_workers": 2,
-        "start_method": "spawn",
-        "maxtasksperchild": 1,
-    },
     merge_after_run=True,
 )
 
@@ -135,11 +130,6 @@ def run_split_campaign(
         wait_for_result=wait_for_result,
         jobs_root_dir=jobs_root_dir,
         split_policy="split_in_time_per_run",
-        backend_options={
-            "n_workers": 2,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
         merge_after_run=wait_for_result,
         cleanup_after_run=False,
         poll_interval=0.2,

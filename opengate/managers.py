@@ -2797,7 +2797,6 @@ class Simulation(GateObject):
         wait_for_result=True,
         jobs_root_dir=None,
         split_policy="split_in_time_total",
-        backend_options=None,
         merge_after_run=True,
         cleanup_after_run=False,
         poll_interval=1.0,
@@ -2842,7 +2841,6 @@ class Simulation(GateObject):
                     jobs_root_dir=jobs_root_dir,
                     split_policy=split_policy,
                     backend="local_pool",
-                    backend_options=backend_options,
                     merge=merge_after_run,
                     cleanup=cleanup_after_run,
                 )

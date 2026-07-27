@@ -157,11 +157,6 @@ if __name__ == "__main__":
         wait_for_result=False,
         jobs_root_dir=paths.output / "async_campaign",
         split_policy="split_in_time_total",
-        backend_options={
-            "n_workers": 2,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
         merge_after_run=False,
     )
     is_ok = (
@@ -257,11 +252,6 @@ if __name__ == "__main__":
         wait_for_result=True,
         jobs_root_dir=paths.output / "merged_campaign",
         split_policy="split_in_time_total",
-        backend_options={
-            "n_workers": 2,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
         merge_after_run=True,
         cleanup_after_run=False,
         poll_interval=0.2,

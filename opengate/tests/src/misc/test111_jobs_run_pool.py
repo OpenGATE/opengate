@@ -38,11 +38,7 @@ if __name__ == "__main__":
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": 3,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=3,
     )
     is_ok = is_ok and utility.print_test(
         summary["submitted_jobs"] == 4
@@ -76,11 +72,7 @@ if __name__ == "__main__":
     summary_second = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": 3,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=3,
     )
     is_ok = is_ok and utility.print_test(
         summary_second["submitted_jobs"] == 0
@@ -98,11 +90,7 @@ if __name__ == "__main__":
         gate.jobs_run(
             split_root,
             backend="local_pool",
-            backend_options={
-                "n_workers": 3,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            number_of_workers=3,
         )
     except Exception as error:
         running_failure_detected = "allow_rerun_running=True" in str(error)
@@ -123,11 +111,7 @@ if __name__ == "__main__":
     summary_failed = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": 3,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=3,
         force_rerun_completed=True,
         allow_rerun_running=True,
     )

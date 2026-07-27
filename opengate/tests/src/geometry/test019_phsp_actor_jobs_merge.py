@@ -48,11 +48,7 @@ split_root = gate.jobs_split(
 gate.jobs_run(
     split_root,
     backend="local_pool",
-    backend_options={
-        "n_workers": 2,
-        "start_method": "spawn",
-        "maxtasksperchild": 1,
-    },
+    number_of_workers=2,
 )
 
 merge_manager = gate.jobs_merge(
@@ -207,7 +203,7 @@ def run_split_campaign(
     run_timing_intervals,
     reference_stats,
     reference_root,
-    backend_options=None,
+    number_of_workers=None,
 ):
     sim, _, _, phsp = build_phsp_actor_simulation(
         split_path.parent / f"{split_path.name}_master_input",
@@ -231,7 +227,7 @@ def run_split_campaign(
     summary = gate.jobs_run(
         split_root,
         backend=backend,
-        backend_options=backend_options,
+        number_of_workers=number_of_workers,
     )
     is_ok = (
         utility.print_test(
@@ -338,13 +334,9 @@ if __name__ == "__main__":
             run_timing_intervals=run_timing_intervals,
             reference_stats=reference_stats,
             reference_root=reference_root,
-            backend_options={
-                # Use fewer workers than jobs so the pooled backend also covers
-                # queued dispatch rather than only a trivial one-job-per-worker case.
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            # Use fewer workers than jobs so the pooled backend also covers
+            # queued dispatch rather than only a trivial one-job-per-worker case.
+            number_of_workers=2,
         )
         and is_ok
     )

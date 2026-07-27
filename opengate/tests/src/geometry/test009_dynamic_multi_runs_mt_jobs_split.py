@@ -158,11 +158,7 @@ if __name__ == "__main__":
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": number_of_angles,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=number_of_angles,
     )
     is_ok = (
         utility.print_test(
