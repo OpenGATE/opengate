@@ -9,13 +9,13 @@
 #include "GateHelpers.h"
 #include "GateVActor.h"
 
-GateActorManager *GateActorManager::fInstance = nullptr;
+std::unique_ptr<GateActorManager> GateActorManager::fInstance;
 std::vector<GateVActor *> GateActorManager::fActors;
 
 GateActorManager *GateActorManager::GetInstance() {
   if (fInstance == nullptr)
-    fInstance = new GateActorManager;
-  return fInstance;
+    fInstance.reset(new GateActorManager);
+  return fInstance.get();
 }
 
 GateActorManager::~GateActorManager() = default;
