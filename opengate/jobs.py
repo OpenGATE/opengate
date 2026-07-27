@@ -15,6 +15,7 @@ import json
 import numpy as np
 import opengate_core as g4
 
+from .coordinators import RootMergeCoordinator, StandardMergeCoordinator
 from .exception import GateJobsBackendError, GateMergeError, fatal
 from .runtiming import assert_run_timing
 from .serialization import dump_json, load_json
@@ -1851,118 +1852,6 @@ class StandardMergeContextView:
         return contributions
 
 
-class _CoordinatorOutputMergeContext:
-    """Minimal output-scoped execution context consumed by ActorOutput classes."""
-
-    def __init__(self, contributions, load_mode="rehydrated"):
-        self._contributions = list(contributions)
-        self._load_mode = load_mode
-
-    def get_contributions(self):
-        return self._contributions
-
-    def get_load_mode(self, default="rehydrated"):
-        return self._load_mode if self._load_mode is not None else default
-
-
-class StandardMergeCoordinator:
-    """Execute and finalize merge for standard non-ROOT actor outputs."""
-
-    def __init__(self):
-        self._output_groups = {}
-        self._source_infos = {}
-        self._source_simulations_by_job_index = {}
-
-    def configure_from_context(self, standard_context, target_simulation):
-        self._output_groups = {}
-        self._source_infos = {}
-        self._source_simulations_by_job_index = {}
-
-        for output_plan in standard_context.iter_output_plans():
-            actor_name = output_plan["actor_name"]
-            output_name = output_plan["output_name"]
-            actor = target_simulation.get_actor(actor_name)
-            target_output = actor.user_output.get(output_name)
-            if target_output is None:
-                raise GateMergeError(
-                    f"Cannot configure standard merge for unknown output '{output_name}' "
-                    f"on actor '{actor_name}'."
-                )
-            if target_output.is_container_output() is not True:
-                actor.warn_user(
-                    f"Skipping unmergeable actor output '{output_name}' "
-                    f"from actor '{actor_name}' during merge coordination. "
-                    "Only container-based actor outputs are currently handled "
-                    "by the jobs-merge framework."
-                )
-                continue
-            contributions = standard_context.get_contributions_for_output(
-                actor_name, output_name
-            )
-            contributions_by_job = {}
-            for contribution in contributions:
-                if contribution.get("mergeable") is not True:
-                    continue
-                job_index = contribution["job_index"]
-                contributions_by_job.setdefault(job_index, []).append(contribution)
-                self._source_infos[job_index] = standard_context.get_source_info(
-                    job_index
-                )
-            self._output_groups[(actor_name, output_name)] = {
-                "target_output": target_output,
-                "contributions_by_job": contributions_by_job,
-            }
-
-    def _get_source_simulation(self, job_index):
-        if job_index not in self._source_simulations_by_job_index:
-            source_info = self._source_infos[job_index]
-            child_simulation = create_sim_from_json(source_info["simulation_path"])
-            child_simulation.root_dir = Path(source_info["folder"])
-            child_simulation.output_dir = Path(source_info["folder"]) / "output"
-            self._source_simulations_by_job_index[job_index] = child_simulation
-        return self._source_simulations_by_job_index[job_index]
-
-    def execute_merge(self):
-        for (actor_name, output_name), group in self._output_groups.items():
-            target_output = group["target_output"]
-            for job_index, contributions in group["contributions_by_job"].items():
-                source_simulation = self._get_source_simulation(job_index)
-                source_actor = source_simulation.get_actor(actor_name)
-                source_output = source_actor.user_output[output_name]
-                try:
-                    target_output.execute_merge(
-                        source_output,
-                        context=_CoordinatorOutputMergeContext(contributions),
-                    )
-                except Exception as error:
-                    if isinstance(error, GateMergeError):
-                        raise GateMergeError(
-                            f"Failed to execute standard merge for actor output "
-                            f"'{output_name}' of actor '{actor_name}' from job_index "
-                            f"{job_index}."
-                        ) from error
-                    raise GateMergeError(
-                        f"Unexpected failure while executing standard merge for "
-                        f"actor output '{output_name}' of actor '{actor_name}' "
-                        f"from job_index {job_index}."
-                    ) from error
-
-    def finalize_merge(self):
-        for (actor_name, output_name), group in self._output_groups.items():
-            try:
-                group["target_output"].finalize_merge()
-            except Exception as error:
-                if isinstance(error, GateMergeError):
-                    raise GateMergeError(
-                        f"Failed to finalize standard merge for actor output "
-                        f"'{output_name}' of actor '{actor_name}'."
-                    ) from error
-                raise GateMergeError(
-                    f"Unexpected failure while finalizing standard merge for actor "
-                    f"output '{output_name}' of actor '{actor_name}'."
-                ) from error
-
-
 class MergeContext:
     """Campaign-wide merge planning state plus flat output inventory helpers.
 
@@ -2256,8 +2145,6 @@ class JobsMergeManager:
         return self.plan_merge().to_dict()
 
     def plan_merge(self, mode="as_configured"):
-        from .rootio import RootMergeCoordinator
-
         if self.master_simulation is None:
             self.prepare_target_simulation()
         if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
