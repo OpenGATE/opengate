@@ -144,7 +144,10 @@ def merge_phase_space_root_from_jobs_with_runid_remap(
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, None, "test009_mr_mt")
+    # Use a jobs-specific output folder so this test can run concurrently with
+    # the non-jobs multi-run test under opengate_tests without deleting its
+    # output while it is still running.
+    paths = utility.get_default_test_paths(__file__, None, "test009_mr_mt_jobs_split")
     shutil.rmtree(paths.output, ignore_errors=True)
     is_ok = True
 
@@ -159,7 +162,7 @@ if __name__ == "__main__":
         number_of_jobs=number_of_angles,
         jobs_root_dir=split_path,
         policy="split_in_time_per_run",
-    )
+    ).jobs_root_dir
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",

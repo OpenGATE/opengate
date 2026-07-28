@@ -114,7 +114,9 @@ def build_half_life_simulation(output_dir):
 def merge_stats_from_jobs(job_folders, output_path):
     merged_stats = None
     for job_folder in job_folders:
-        job_stats = utility.read_stats_file(Path(job_folder) / "stats.txt")
+        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        job_stats_path = child_simulation.get_actor("Stats").get_output_path()
+        job_stats = utility.read_stats_file(job_stats_path)
         merged_stats = (
             job_stats if merged_stats is None else sum_stats(merged_stats, job_stats)
         )
@@ -124,10 +126,16 @@ def merge_stats_from_jobs(job_folders, output_path):
     return merged_stats
 
 
-def merge_root_tree_from_jobs(job_folders, output_path, root_filename, tree_name):
+def get_child_phase_space_root_path(job_folder, actor_name):
+    child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+    return child_simulation.get_actor(actor_name).get_output_path()
+
+
+def merge_root_tree_from_jobs(job_folders, output_path, actor_name, tree_name):
     merged_branch_data = {}
     for job_folder in job_folders:
-        with uproot.open(Path(job_folder) / root_filename) as root_file:
+        root_path = get_child_phase_space_root_path(job_folder, actor_name)
+        with uproot.open(root_path) as root_file:
             branch_data = root_tree_get_branch_data(root_file[tree_name], library="ak")
             for branch_name, values in branch_data.items():
                 merged_branch_data.setdefault(branch_name, []).append(values)
@@ -142,10 +150,11 @@ def merge_root_tree_from_jobs(job_folders, output_path, root_filename, tree_name
     return output_path
 
 
-def summarize_child_global_times(job_folders, root_filename, tree_name):
+def summarize_child_global_times(job_folders, actor_name, tree_name):
     summaries = []
     for job_folder in job_folders:
-        with uproot.open(Path(job_folder) / root_filename) as root_file:
+        root_path = get_child_phase_space_root_path(job_folder, actor_name)
+        with uproot.open(root_path) as root_file:
             global_times = root_file[tree_name]["GlobalTime"].array(library="np")
         summaries.append(
             {
@@ -252,7 +261,7 @@ if __name__ == "__main__":
         number_of_jobs=5,
         jobs_root_dir=split_path,
         policy="split_in_time_total",
-    )
+    ).jobs_root_dir
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",
@@ -270,10 +279,10 @@ if __name__ == "__main__":
     job_folders = [split_root / job["folder_name"] for job in status_data["jobs"]]
 
     ion_child_summaries = summarize_child_global_times(
-        job_folders, "test013_decay_ion.root", "phsp_ion"
+        job_folders, "phsp_ion", "phsp_ion"
     )
     beta_child_summaries = summarize_child_global_times(
-        job_folders, "test013_decay_beta_plus.root", "phsp_beta"
+        job_folders, "phsp_beta", "phsp_beta"
     )
     is_ok = check_child_global_time_ordering(ion_child_summaries, sec) and is_ok
     is_ok = check_child_global_time_ordering(beta_child_summaries, sec) and is_ok
@@ -283,10 +292,10 @@ if __name__ == "__main__":
     merged_beta_root = paths.output / "merged_decay_beta_plus.root"
     merged_stats = merge_stats_from_jobs(job_folders, merged_stats_path)
     merge_root_tree_from_jobs(
-        job_folders, merged_ion_root, "test013_decay_ion.root", "phsp_ion"
+        job_folders, merged_ion_root, "phsp_ion", "phsp_ion"
     )
     merge_root_tree_from_jobs(
-        job_folders, merged_beta_root, "test013_decay_beta_plus.root", "phsp_beta"
+        job_folders, merged_beta_root, "phsp_beta", "phsp_beta"
     )
 
     is_ok = (

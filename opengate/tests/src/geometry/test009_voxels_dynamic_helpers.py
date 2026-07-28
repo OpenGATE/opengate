@@ -10,7 +10,7 @@ import numpy as np
 from opengate.actors.simulation_stats_helpers import sum_stats, write_stats
 from opengate.geometry.materials import read_voxel_materials
 from opengate.image import write_itk_image
-from opengate.jobs import get_jobs_status
+from opengate.jobs import jobs_status
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
@@ -129,7 +129,7 @@ def wait_for_completed_jobs(split_root, expected_count, timeout=180):
     deadline = time.time() + timeout
     last_statuses = []
     while time.time() < deadline:
-        status_data = get_jobs_status(split_root)
+        status_data = jobs_status(split_root)
         last_statuses = [
             job.get("execution_status") for job in status_data.get("jobs", [])
         ]

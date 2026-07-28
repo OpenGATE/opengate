@@ -231,7 +231,7 @@ if __name__ == "__main__":
         number_of_jobs=8,
         jobs_root_dir=split_path,
         policy="split_in_time_total",
-    )
+    ).jobs_root_dir
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",

@@ -33,7 +33,7 @@ if __name__ == "__main__":
         number_of_jobs=4,
         jobs_root_dir=paths.output / "pool_campaign",
         policy="split_in_time_per_run",
-    )
+    ).jobs_root_dir
 
     summary = gate.jobs_run(
         split_root,

@@ -38,12 +38,13 @@ phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
 phsp.attributes = ["GlobalTime", "EventID"]
 phsp.keep_data_per_run = True
 
-split_root = gate.jobs_split(
+jobs_split_manager = gate.jobs_split(
     simulation=sim,
     number_of_jobs=3,
     jobs_root_dir="my_split_campaign",
     policy="split_in_time_total",
 )
+split_root = jobs_split_manager.jobs_root_dir
 
 gate.jobs_run(
     split_root,
@@ -226,7 +227,7 @@ def run_split_campaign(
         number_of_jobs=3,
         jobs_root_dir=split_path,
         policy="split_in_time_total",
-    )
+    ).jobs_root_dir
     summary = gate.jobs_run(
         split_root,
         backend=backend,

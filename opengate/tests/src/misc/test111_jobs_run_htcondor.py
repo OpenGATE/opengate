@@ -23,7 +23,7 @@ if __name__ == "__main__":
         number_of_jobs=2,
         jobs_root_dir=paths.output / "htcondor_campaign",
         policy="split_in_time_per_run",
-    )
+    ).jobs_root_dir
 
     # Realistic example for manual usage against a Condor installation:
     #

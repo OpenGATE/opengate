@@ -8,7 +8,7 @@ from opengate.bin.opengate_jobs_status import (
     print_jobs_status_summary,
 )
 from opengate.geometry.materials import read_voxel_materials
-from opengate.jobs import get_jobs_status
+from opengate.jobs import jobs_status
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
@@ -41,9 +41,9 @@ def main():
         jobs_root_dir=paths.output / "basic_campaign",
         policy="split_in_time_per_run",
         overwrite_existing_job_folders=True,
-    )
+    ).jobs_root_dir
 
-    status1 = get_jobs_status(split_root_folder1)
+    status1 = jobs_status(split_root_folder1)
     is_ok = status1["number_of_jobs"] == 2
     is_ok = is_ok and status1["summary_counts"]["ready"] == 2
 
@@ -56,8 +56,7 @@ def main():
 
     manifest_file1 = split_root_folder1 / "jobs_manifest.json"
     result_manifest = runner.invoke(jobs_status_cli, [str(manifest_file1)])
-    is_ok = is_ok and (result_manifest.exit_code == 0)
-    is_ok = is_ok and ("Jobs root dir" in result_manifest.output)
+    is_ok = is_ok and (result_manifest.exit_code != 0)
 
     print("\n--- Jobs Status Summary Output (Part 1: Basic) ---")
     print_jobs_status_summary(status1, verbose=True)
@@ -132,9 +131,9 @@ def main():
         policy="split_in_time_per_run",
         link_files=True,
         overwrite_existing_job_folders=True,
-    )
+    ).jobs_root_dir
 
-    status_initial2 = get_jobs_status(split_root_folder2)
+    status_initial2 = jobs_status(split_root_folder2)
     archived_patient_image = split_root_folder2 / "job0001" / "patient-4mm.mhd"
     archived_patient_raw = split_root_folder2 / "job0001" / "patient-4mm.raw"
     is_ok2 = status_initial2["summary_counts"]["ready"] == 3
@@ -146,7 +145,7 @@ def main():
     archived_patient_raw.unlink(missing_ok=True)
     (split_root_folder2 / "job0002" / "job_metadata.json").unlink(missing_ok=True)
 
-    status_err2 = get_jobs_status(split_root_folder2)
+    status_err2 = jobs_status(split_root_folder2)
     is_ok2 = is_ok2 and status_err2["jobs"][0]["status"] == "missing_input_file"
     is_ok2 = is_ok2 and status_err2["jobs"][1]["status"] == "missing_metadata"
     is_ok2 = is_ok2 and status_err2["jobs"][2]["status"] == "ready"

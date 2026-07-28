@@ -45,7 +45,7 @@ def run_split_campaign(paths, split_path, backend, number_of_workers=None):
         number_of_jobs=3,
         jobs_root_dir=split_path,
         policy="split_in_time_total",
-    )
+    ).jobs_root_dir
     summary = gate.jobs_run(
         split_root,
         backend=backend,
@@ -66,9 +66,9 @@ def run_split_campaign(paths, split_path, backend, number_of_workers=None):
         3: [[2.0 / 3.0 * sec, 1.0 * sec]],
     }
     expected_job_images = {
-        1: [dynamic_image_paths[0]],
-        2: [dynamic_image_paths[0], dynamic_image_paths[1]],
-        3: [dynamic_image_paths[1]],
+        1: [dynamic_image_paths[0].name],
+        2: [dynamic_image_paths[0].name, dynamic_image_paths[1].name],
+        3: [dynamic_image_paths[1].name],
     }
 
     for job in manifest_jobs:
@@ -78,10 +78,16 @@ def run_split_campaign(paths, split_path, backend, number_of_workers=None):
         child_simulation = gate.create_sim_from_json(job_folder / "simulation.json")
         child_dynamic_images = get_dynamic_patient_images(child_simulation)
         expected_dynamic_images = expected_job_images[job_index]
+        child_dynamic_image_names = [path.name for path in child_dynamic_images]
+        child_dynamic_images_are_job_local = all(
+            path.parent == job_folder for path in child_dynamic_images
+        )
 
         # split_in_time_total should preserve the global active timeline. The
         # middle child bridges the two original runs and must therefore keep
-        # both dynamic image entries.
+        # both dynamic image entries. Input paths are transferred into each job
+        # folder, so the value check compares the selected image names and then
+        # verifies that the rehydrated paths are job-local.
         checks_ok = (
             utility.print_test(
                 intervals_are_close(
@@ -95,7 +101,8 @@ def run_split_campaign(paths, split_path, backend, number_of_workers=None):
         )
         checks_ok = (
             utility.print_test(
-                child_dynamic_images == expected_dynamic_images,
+                child_dynamic_image_names == expected_dynamic_images
+                and child_dynamic_images_are_job_local,
                 f"{backend} {job['folder_name']} dynamic images: {child_dynamic_images}",
             )
             and checks_ok
@@ -133,7 +140,12 @@ def run_split_campaign(paths, split_path, backend, number_of_workers=None):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test009_voxels", "test009")
+    # Use a jobs-specific output folder so this test can run concurrently with
+    # the other test009 variants under opengate_tests without deleting their
+    # campaigns or intermediate output.
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test009_voxels", "test009_jobs_split"
+    )
     is_ok = True
 
     shutil.rmtree(paths.output, ignore_errors=True)

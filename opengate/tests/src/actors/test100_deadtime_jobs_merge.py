@@ -4,7 +4,7 @@
 """Test 100 (split-run variant): shared-file multi-tree ROOT output via the local high-level API.
 
 This test exercises the recommended local split-run workflow, namely
-``sim.run(number_of_jobs=..., ...)`` returning a ``SplitRunController``.
+``sim.run(number_of_jobs=..., ...)`` returning a ``SplitRunMergeController``.
 
 Its purpose is intentionally narrow: verify that jobs merge remains correct when
 two digitizer actors write distinct ROOT trees into the same physical ROOT
@@ -140,8 +140,8 @@ def run_split_campaign(
     mode_label = "synchronous" if wait_for_result else "manual"
     is_ok = (
         utility.print_test(
-            isinstance(controller, gate.SplitRunController),
-            f"{mode_label} split run returns a SplitRunController",
+            isinstance(controller, gate.SplitRunMergeController),
+            f"{mode_label} split run returns a SplitRunMergeController",
         )
         and is_ok
     )

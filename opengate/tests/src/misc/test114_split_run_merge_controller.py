@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Exercise the local high-level split-run API based on SplitRunController.
+"""Exercise the local high-level split-run-merge API based on SplitRunMergeController.
 
 This test focuses on API consistency rather than physics depth. It checks that:
 
 1. ``sim.run(number_of_jobs=1)`` stays on the normal simulation path and does
    not return a split-run controller.
 2. ``sim.run(number_of_jobs>1, wait_for_result=False)`` returns a
-   ``SplitRunController`` after split and submission, and the caller can take
+   ``SplitRunMergeController`` after split and submission, and the caller can take
    over manually via ``wait()``, ``merge()``, and ``clean()``.
 3. ``sim.run(number_of_jobs>1, wait_for_result=True, merge_after_run=True)``
    drives the controller up to the merged stage and still returns that same
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     # ------------------------------------------------------------------
     # 1) Degenerate managed case: number_of_jobs=1 should map to the normal
-    # subprocess path, not to SplitRunController.
+    # subprocess path, not to SplitRunMergeController.
     # ------------------------------------------------------------------
     single_job_sim = build_simple_split_run_simulation(
         paths.output / "single_job_output",
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     )
 
     # ------------------------------------------------------------------
-    # 2) Asynchronous split run: sim.run(...) returns a SplitRunController
+    # 2) Asynchronous split run: sim.run(...) returns a SplitRunMergeController
     # after split and submission, then the caller explicitly continues with
     # wait(), merge(), and clean().
     # ------------------------------------------------------------------
@@ -161,8 +161,8 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
-            isinstance(async_controller, gate.SplitRunController),
-            "sim.run(number_of_jobs>1) returns a SplitRunController",
+            isinstance(async_controller, gate.SplitRunMergeController),
+            "sim.run(number_of_jobs>1) returns a SplitRunMergeController",
         )
         and is_ok
     )
@@ -239,7 +239,7 @@ if __name__ == "__main__":
 
     # ------------------------------------------------------------------
     # 3) Synchronous split run with automatic merge: sim.run(...) should
-    # return the same SplitRunController, already advanced to the merged
+    # return the same SplitRunMergeController, already advanced to the merged
     # stage, so the user can continue inspection or cleanup manually.
     # ------------------------------------------------------------------
     merged_sim = build_simple_split_run_simulation(
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
-            isinstance(merged_controller, gate.SplitRunController)
+            isinstance(merged_controller, gate.SplitRunMergeController)
             and merged_controller.stage == "merged",
             f"Synchronous split run returns a merged controller: stage={merged_controller.stage}",
         )

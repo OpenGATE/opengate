@@ -489,7 +489,7 @@ if __name__ == "__main__":
         number_of_jobs=3,
         jobs_root_dir=split_root,
         policy="split_in_time_total",
-    )
+    ).jobs_root_dir
 
     merge_manager = gate.jobs_merge(split_root, execute=False)
     merge_context = merge_manager.plan_merge()
@@ -954,7 +954,7 @@ if __name__ == "__main__":
         number_of_jobs=3,
         jobs_root_dir=broken_split_root,
         policy="split_in_time_total",
-    )
+    ).jobs_root_dir
     broken_run_summary = gate.jobs_run(broken_split_root, backend="local_sequential")
     print(broken_run_summary)
     wait_until_jobs_completed(broken_split_root)
@@ -979,14 +979,20 @@ if __name__ == "__main__":
         jobs_root_dir=paths.output / "merge_context_split_broken_stats",
         policy="split_in_time_total",
         overwrite_existing_job_folders=True,
-    )
+    ).jobs_root_dir
 
     broken_stats_run_summary = gate.jobs_run(
         broken_stats_split_root, backend="local_sequential"
     )
     print(broken_stats_run_summary)
     wait_until_jobs_completed(broken_stats_split_root)
-    broken_stats_job_path = broken_stats_split_root / "job0001" / "stats-run0.json"
+    broken_stats_job_sim = gate.create_sim_from_json(
+        broken_stats_split_root / "job0001" / "simulation.json"
+    )
+    broken_stats_job_path = (
+        broken_stats_job_sim.get_actor("Stats")
+        .user_output.stats.get_output_path(which=0)
+    )
     # Check missing-JSON failure handling at the lightweight stats-output level.
     is_ok = (
         run_missing_stats_probe(broken_stats_split_root, broken_stats_job_path)
@@ -1006,7 +1012,7 @@ if __name__ == "__main__":
         jobs_root_dir=paths.output / "merge_context_split_identity_mismatch",
         policy="split_in_time_total",
         overwrite_existing_job_folders=True,
-    )
+    ).jobs_root_dir
     # Check that a corrupted child parent/master simulation ID is detected
     # before merge planning can proceed.
     is_ok = run_identity_mismatch_probe(identity_split_root) and is_ok

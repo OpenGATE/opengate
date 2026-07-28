@@ -25,7 +25,7 @@ import opengate as gate
 sim = gate.Simulation()
 # ... configure source and PhaseSpaceActor ...
 
-controller = gate.SplitRunController(
+controller = gate.SplitRunMergeController(
     simulation=sim,
     jobs_root_dir="my_split_campaign",
     split_policy="split_in_time_total",
@@ -389,7 +389,7 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
     # the split product and merge plan between stages. Ordinary user code would
     # usually just call ``sim.run(number_of_jobs=..., ...)`` and let that
     # construct and drive the controller internally.
-    controller = gate.SplitRunController(
+    controller = gate.SplitRunMergeController(
         simulation=sim,
         jobs_root_dir=split_root,
         split_policy="split_in_time_total",
