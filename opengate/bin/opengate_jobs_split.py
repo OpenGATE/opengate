@@ -53,8 +53,12 @@ def go(
     link_files,
     overwrite_existing_job_folders,
 ):
-    """Split the simulation found in CAMPAIGN_DIR into child job folders."""
-    jobs_root_dir = jobs_split(
+    """Split the simulation found in CAMPAIGN_DIR into child job folders.
+
+    The Python API returns a JobsSplitManager. The command-line tool prints the
+    campaign folder path so shell workflows can pass it to later commands.
+    """
+    jobs_split_manager = jobs_split(
         simulation_folder=Path(campaign_dir),
         simulation_file=simulation_file,
         jobs_root_dir=Path(campaign_dir),
@@ -64,7 +68,7 @@ def go(
         overwrite_existing_job_folders=overwrite_existing_job_folders,
         write_resolved_simulation=True,
     )
-    click.echo(str(jobs_root_dir))
+    click.echo(str(jobs_split_manager.jobs_root_dir))
 
 
 if __name__ == "__main__":

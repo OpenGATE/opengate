@@ -4,6 +4,7 @@ import json
 import os
 import random
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -222,6 +223,57 @@ def select_tests_by_id_or_random(files_to_run, start_id, end_id, random_tests, s
     return files_to_run
 
 
+def select_tests_by_explicit_paths(files_to_run, requested_tests, path_tests_src):
+    """Select explicit tests while preserving dashboard-relative path keys.
+
+    ``requested_tests`` entries may be relative to ``tests/src`` or absolute
+    paths below ``tests/src``. The returned paths always use the same relative
+    representation as ``discover_all_tests()``.
+    """
+
+    path_tests_src = Path(path_tests_src).resolve()
+    available = set(files_to_run)
+    selected = []
+    missing = []
+    outside = []
+
+    for requested_test in requested_tests:
+        requested_path = Path(requested_test)
+        if requested_path.is_absolute():
+            absolute_path = requested_path.resolve()
+        else:
+            candidate = (path_tests_src / requested_path).resolve()
+            if candidate.exists():
+                absolute_path = candidate
+            else:
+                absolute_path = requested_path.resolve()
+
+        try:
+            relative_path = absolute_path.relative_to(path_tests_src)
+        except ValueError:
+            outside.append(str(requested_test))
+            continue
+
+        normalized = relative_path.as_posix()
+        if normalized not in available:
+            missing.append(normalized)
+            continue
+        if normalized not in selected:
+            selected.append(normalized)
+
+    if outside:
+        fatal(
+            "Explicit test paths must point inside the OpenGATE tests/src folder. "
+            f"Invalid entries: {', '.join(outside)}"
+        )
+    if missing:
+        fatal(
+            "Explicit test paths were not found among available tests: "
+            f"{', '.join(missing)}"
+        )
+    return selected
+
+
 # --- Dependency Graph Management ---
 
 
@@ -284,7 +336,7 @@ def resolve_dependencies(files_to_run, path_tests_src):
 def run_one_test_case(f, processes_run, path_tests_src):
     start_time = time.time()
     print(f"Running: {f:<46}  ", end="")
-    cmd = f"python {path_tests_src / f}"
+    cmd = f"{shlex.quote(sys.executable)} {shlex.quote(str(path_tests_src / f))}"
     log = str(path_tests_src.parent / "log" / os.path.basename(f)) + ".log"
 
     os.makedirs(os.path.dirname(log), exist_ok=True)
@@ -318,7 +370,7 @@ def run_one_test_case(f, processes_run, path_tests_src):
 def run_one_test_case_mp(f):
     path_tests_src = return_tests_path()
     print(f"Running: {f:<46}  ", end="")
-    cmd = f"python {path_tests_src / f}"
+    cmd = f"{shlex.quote(sys.executable)} {shlex.quote(str(path_tests_src / f))}"
     log = str(path_tests_src.parent / "log" / Path(os.path.basename(f)).stem) + ".log"
 
     start_time = time.time()
