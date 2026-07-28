@@ -1,16 +1,35 @@
 #!/usr/bin/env python3
 
+"""Test split-job configuration materialization without executing Geant4.
+
+This test focuses on three aspects of job splitting:
+
+1. Split-policy structure:
+   child run timing intervals, original-run mapping, dynamic-parameter
+   subsetting, and ``source.n`` redistribution.
+2. Input-file archiving:
+   copied versus linked job-local inputs, including MetaImage ``.mhd/.raw``
+   pairs and the current material-database workaround.
+3. Rehydration contract:
+   child ``simulation.json`` stores archived relative paths, while a rehydrated
+   child simulation exposes absolute paths anchored inside its own job folder.
+"""
+
 import json
+import os
 import shutil
+from pathlib import Path
+
 import numpy as np
 import opengate as gate
-from pathlib import Path
+
+from opengate.serialization import load_json
 from opengate.tests import utility
 
 
 def create_reference_image(output_path):
-    # The split test only needs image filenames that survive JSON round-tripping.
-    # A tiny MetaImage placeholder is enough because we never execute the simulation.
+    """Create a tiny MetaImage pair used only for JSON/path handling tests."""
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     raw_path = output_path.with_suffix(".raw")
     with open(raw_path, "wb") as raw_file:
@@ -24,29 +43,97 @@ def create_reference_image(output_path):
         image_file.write(f"ElementDataFile = {raw_path.name}\n")
 
 
-def build_simulation(output_path, run_timing_intervals, source_n):
-    sim = gate.Simulation()
-    sim.output_dir = output_path
+def make_authored_path(
+    absolute_path, simulation_root, input_path_mode, relative_reference_folder=None
+):
+    """Return the path representation authored into the simulation config."""
 
-    source_image_1_path = output_path / "dynamic_source_1.mhd"
-    source_image_2_path = output_path / "dynamic_source_2.mhd"
-    create_reference_image(source_image_1_path)
-    create_reference_image(source_image_2_path)
+    absolute_path = Path(absolute_path).absolute()
+    if input_path_mode == "absolute":
+        return absolute_path
+    if input_path_mode == "relative":
+        if relative_reference_folder is None:
+            relative_reference_folder = simulation_root
+        return Path(os.path.relpath(absolute_path, relative_reference_folder))
+    raise ValueError(f"Unknown input_path_mode '{input_path_mode}'.")
+
+
+def build_simulation(
+    simulation_root,
+    run_timing_intervals,
+    source_n,
+    material_db_source_path,
+    input_path_mode="absolute",
+):
+    """Build a tiny split-ready simulation with several archived inputs."""
+
+    simulation_root = Path(simulation_root).absolute()
+    inputs_dir = simulation_root / "inputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    sim = gate.Simulation()
+    sim.root_dir = simulation_root
+    sim.output_dir = Path("output")
+
+    dynamic_source_1_absolute = inputs_dir / "dynamic_source_1.mhd"
+    dynamic_source_2_absolute = inputs_dir / "dynamic_source_2.mhd"
+    static_volume_absolute = inputs_dir / "static_volume_input.mhd"
+    create_reference_image(dynamic_source_1_absolute)
+    create_reference_image(dynamic_source_2_absolute)
+    create_reference_image(static_volume_absolute)
+
+    material_db_absolute = inputs_dir / "test109_materials.db"
+    shutil.copy2(material_db_source_path, material_db_absolute)
+
+    # Most input-file user infos should be expressed relative to the simulation
+    # root when requested. MaterialDatabase.read_from_file(...) opens the file
+    # immediately, so its relative form must be valid from the current process
+    # working directory rather than only from sim.root_dir.
+    dynamic_source_1_authored = make_authored_path(
+        dynamic_source_1_absolute,
+        simulation_root,
+        input_path_mode,
+    )
+    dynamic_source_2_authored = make_authored_path(
+        dynamic_source_2_absolute,
+        simulation_root,
+        input_path_mode,
+    )
+    static_volume_authored = make_authored_path(
+        static_volume_absolute,
+        simulation_root,
+        input_path_mode,
+    )
+    material_db_authored = make_authored_path(
+        material_db_absolute,
+        simulation_root,
+        input_path_mode,
+        relative_reference_folder=Path.cwd(),
+    )
+
+    sim.volume_manager.add_material_database(material_db_authored)
 
     box = sim.add_volume("Box", "dynamic_box")
     box.size = [10.0, 10.0, 10.0]
     box.add_dynamic_parametrisation(translation=[[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
 
+    image_volume = sim.add_volume("Image", "static_image_volume")
+    image_volume.image = static_volume_authored
+    image_volume.voxel_materials = [[-np.inf, np.inf, "G4_AIR"]]
+
     source = sim.add_source("VoxelSource", "vox_source")
     source.particle = "gamma"
     source.n = source_n
-    source.image = str(source_image_1_path)
+    source.image = str(dynamic_source_1_authored)
     source.direction.type = "iso"
     source.energy.mono = 1.0 * gate.g4_units.MeV
-    source.add_dynamic_parametrisation(image=[source_image_1_path, source_image_2_path])
+    source.add_dynamic_parametrisation(
+        image=[dynamic_source_1_authored, dynamic_source_2_authored]
+    )
 
     sim.run_timing_intervals = run_timing_intervals
-    return sim, [source_image_1_path, source_image_2_path]
+
+    return sim
 
 
 def get_dynamic_volume_translation(child_simulation):
@@ -60,6 +147,10 @@ def get_dynamic_source_images(child_simulation):
         Path(path)
         for path in dynamic_source.dynamic_params["parametrisation_0"]["image"]
     ]
+
+
+def get_dynamic_source_image_names(child_simulation):
+    return [path.name for path in get_dynamic_source_images(child_simulation)]
 
 
 def get_source_n(child_simulation):
@@ -76,9 +167,29 @@ def load_child_simulation(job_folder):
     return gate.create_sim_from_json(job_folder / "simulation.json")
 
 
+def load_child_simulation_dictionary(job_folder):
+    with open(job_folder / "simulation.json", "r") as input_file:
+        return load_json(input_file)
+
+
 def load_job_metadata(job_folder):
     with open(job_folder / "job_metadata.json", "r") as input_file:
         return json.load(input_file)
+
+
+def get_child_json_source_entry(job_folder):
+    child_dict = load_child_simulation_dictionary(job_folder)
+    return child_dict["source_manager"]["sources"]["vox_source"]["user_info"]
+
+
+def get_child_json_static_volume_entry(job_folder):
+    child_dict = load_child_simulation_dictionary(job_folder)
+    return child_dict["volume_manager"]["volumes"]["static_image_volume"]["user_info"]
+
+
+def get_child_json_material_database_filenames(job_folder):
+    child_dict = load_child_simulation_dictionary(job_folder)
+    return child_dict["volume_manager"]["material_database_filenames"]
 
 
 def aggregate_counts_by_original_run(manifest, split_root):
@@ -95,6 +206,178 @@ def aggregate_counts_by_original_run(manifest, split_root):
     return aggregated_counts
 
 
+def assert_archived_input_files(job_folder, link_files, expected_filenames):
+    """Check that archived input files exist and use the requested mode."""
+
+    is_ok = True
+    for filename in expected_filenames:
+        path = Path(job_folder) / filename
+        exists = path.exists() or path.is_symlink()
+        is_ok = (
+            utility.print_test(
+                exists,
+                f"{Path(job_folder).name} contains archived input {filename}",
+            )
+            and is_ok
+        )
+        if exists:
+            has_expected_mode = (
+                path.is_symlink() if link_files else not path.is_symlink()
+            )
+            mode_label = "symlink" if link_files else "copied file"
+            is_ok = (
+                utility.print_test(
+                    has_expected_mode,
+                    f"{Path(job_folder).name} archived input mode for {filename}: {mode_label}",
+                )
+                and is_ok
+            )
+    return is_ok
+
+
+def assert_child_json_archived_paths(job_folder, expected_dynamic_image_names):
+    """Check the serialized child JSON stores archived relative filenames."""
+
+    source_user_info = get_child_json_source_entry(job_folder)
+    static_volume_user_info = get_child_json_static_volume_entry(job_folder)
+    material_database_filenames = get_child_json_material_database_filenames(job_folder)
+
+    source_image_ok = utility.print_test(
+        source_user_info["image"] == Path("dynamic_source_1.mhd"),
+        f"{Path(job_folder).name} child JSON source.image: {source_user_info['image']}",
+    )
+    dynamic_images_ok = utility.print_test(
+        source_user_info["dynamic_params"]["parametrisation_0"]["image"]
+        == [Path(name) for name in expected_dynamic_image_names],
+        f"{Path(job_folder).name} child JSON dynamic source images: "
+        f"{source_user_info['dynamic_params']['parametrisation_0']['image']}",
+    )
+    static_volume_ok = utility.print_test(
+        static_volume_user_info["image"] == Path("static_volume_input.mhd"),
+        f"{Path(job_folder).name} child JSON static volume image: {static_volume_user_info['image']}",
+    )
+    material_db_ok = utility.print_test(
+        material_database_filenames == [Path("test109_materials.db")],
+        f"{Path(job_folder).name} child JSON material DB filenames: {material_database_filenames}",
+    )
+    return source_image_ok and dynamic_images_ok and static_volume_ok and material_db_ok
+
+
+def assert_rehydrated_child_paths(job_folder, expected_dynamic_image_names):
+    """Check the rehydrated child simulation exposes archived absolute paths."""
+
+    child_simulation = load_child_simulation(job_folder)
+    source = child_simulation.source_manager.get_source("vox_source")
+    image_volume = child_simulation.volume_manager.get_volume("static_image_volume")
+    material_database_filenames = (
+        child_simulation.volume_manager.material_database.filenames
+    )
+
+    expected_source_image = (Path(job_folder) / "dynamic_source_1.mhd").absolute()
+    expected_dynamic_images = [
+        (Path(job_folder) / name).absolute() for name in expected_dynamic_image_names
+    ]
+    expected_static_volume_image = (
+        Path(job_folder) / "static_volume_input.mhd"
+    ).absolute()
+    expected_material_db = (Path(job_folder) / "test109_materials.db").absolute()
+
+    source_ok = utility.print_test(
+        Path(source.image) == expected_source_image,
+        f"{Path(job_folder).name} rehydrated source.image: {source.image}",
+    )
+    dynamic_images_ok = utility.print_test(
+        get_dynamic_source_images(child_simulation) == expected_dynamic_images,
+        f"{Path(job_folder).name} rehydrated dynamic source images: {get_dynamic_source_images(child_simulation)}",
+    )
+    static_volume_ok = utility.print_test(
+        Path(image_volume.image) == expected_static_volume_image,
+        f"{Path(job_folder).name} rehydrated static volume image: {image_volume.image}",
+    )
+    material_db_ok = utility.print_test(
+        len(material_database_filenames) == 1
+        and Path(material_database_filenames[0]) == expected_material_db,
+        f"{Path(job_folder).name} rehydrated material DB path: {material_database_filenames}",
+    )
+    return source_ok and dynamic_images_ok and static_volume_ok and material_db_ok
+
+
+def run_input_path_rewrite_scenario(
+    scenario_root,
+    input_path_mode,
+    link_files,
+    run_timing_intervals,
+    source_n,
+    material_db_source_path,
+):
+    """Run one split-only scenario and inspect archived and rehydrated paths."""
+
+    sim = build_simulation(
+        scenario_root / "authored_simulation",
+        run_timing_intervals,
+        source_n,
+        material_db_source_path,
+        input_path_mode=input_path_mode,
+    )
+    split_root = gate.jobs_split(
+        simulation=sim,
+        number_of_jobs=2,
+        jobs_root_dir=scenario_root / "campaign",
+        policy="split_in_time_per_run",
+        link_files=link_files,
+        overwrite_existing_job_folders=True,
+    ).jobs_root_dir
+    manifest = load_manifest(split_root)
+    expected_dynamic_image_names = {
+        1: ["dynamic_source_1.mhd"],
+        2: ["dynamic_source_2.mhd"],
+    }
+    archived_filenames_by_job = {
+        # The static source.image always points to dynamic_source_1.mhd, while
+        # the dynamic parametrisation contributes the per-run subset.
+        1: [
+            "dynamic_source_1.mhd",
+            "dynamic_source_1.raw",
+            "static_volume_input.mhd",
+            "static_volume_input.raw",
+            "test109_materials.db",
+        ],
+        2: [
+            "dynamic_source_1.mhd",
+            "dynamic_source_1.raw",
+            "dynamic_source_2.mhd",
+            "dynamic_source_2.raw",
+            "static_volume_input.mhd",
+            "static_volume_input.raw",
+            "test109_materials.db",
+        ],
+    }
+
+    is_ok = True
+    for job in manifest["jobs"]:
+        job_folder = split_root / job["folder_name"]
+        job_index = job["job_index"]
+        is_ok = (
+            assert_archived_input_files(
+                job_folder, link_files, archived_filenames_by_job[job_index]
+            )
+            and is_ok
+        )
+        is_ok = (
+            assert_child_json_archived_paths(
+                job_folder, expected_dynamic_image_names[job_index]
+            )
+            and is_ok
+        )
+        is_ok = (
+            assert_rehydrated_child_paths(
+                job_folder, expected_dynamic_image_names[job_index]
+            )
+            and is_ok
+        )
+    return is_ok
+
+
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test109")
     sec = gate.g4_units.s
@@ -102,30 +385,33 @@ if __name__ == "__main__":
 
     print(f"working folder = {paths.output}")
     print()
-    # remove previous split_campaigns
+
+    # ---------------------------------------------------------------------
+    # Section 1: split-policy structure and dynamic-parameter subsetting
+    # ---------------------------------------------------------------------
     shutil.rmtree(paths.output / "auto_split_root", ignore_errors=True)
     shutil.rmtree(paths.output / "split_campaign_total", ignore_errors=True)
 
-    # Validate the simple per-interval split policy first. Each original run is
-    # divided independently, so each child should only refer to one original run.
-    print("building a simulation (2 runs, 2 sources) ...")
-    sim_1, source_images_1 = build_simulation(
+    print("building a simulation for split_in_time_per_run ...")
+    sim_1 = build_simulation(
         paths.output / "split_in_time_per_run_input",
         [(0.0 * sec, 2.0 * sec), (2.0 * sec, 6.0 * sec)],
         [100, 200],
+        paths.data / "GateMaterials.db",
+        input_path_mode="absolute",
     )
     split_root_1 = gate.jobs_split(
         simulation=sim_1,
         number_of_jobs=4,
         jobs_root_dir=paths.output / "auto_split_root",
         policy="split_in_time_per_run",
-    )
+    ).jobs_root_dir
     manifest_1 = load_manifest(split_root_1)
-    print(f"split manifest    = {split_root_1}")
+    print(f"split manifest = {split_root_1}")
 
     utility.print_test(
         split_root_1.name == "auto_split_root",
-        f"Split root folder name is explicit and stays inside the test output directory: {split_root_1.name}",
+        f"Split root folder name stays inside the test output directory: {split_root_1.name}",
     )
     is_ok = split_root_1.name == "auto_split_root" and is_ok
 
@@ -173,11 +459,13 @@ if __name__ == "__main__":
     )
 
     utility.print_test(
-        get_dynamic_source_images(first_child_simulation) == [source_images_1[0]],
+        get_dynamic_source_image_names(first_child_simulation)
+        == ["dynamic_source_1.mhd"],
         "First child dynamic source image subset matches run 0 image",
     )
     is_ok = (
-        get_dynamic_source_images(first_child_simulation) == [source_images_1[0]]
+        get_dynamic_source_image_names(first_child_simulation)
+        == ["dynamic_source_1.mhd"]
         and is_ok
     )
 
@@ -187,32 +475,29 @@ if __name__ == "__main__":
     )
     is_ok = get_source_n(first_child_simulation) == [50] and is_ok
 
-    # Validate the total-time split policy next. The first child should span the
-    # end of original run 0 and the beginning of original run 1.
     print()
-    print()
-    print("building another simulation (2 runs, 2 sources) ...")
-    sim_2, source_images_2 = build_simulation(
+    print("building a simulation for split_in_time_total ...")
+    sim_2 = build_simulation(
         paths.output / "split_in_time_total_input",
         [(0.0 * sec, 1.0 * sec), (2.0 * sec, 5.0 * sec)],
         [10, 30],
+        paths.data / "GateMaterials.db",
+        input_path_mode="absolute",
     )
     split_root_2 = gate.jobs_split(
         simulation=sim_2,
         number_of_jobs=3,
         jobs_root_dir=paths.output / "split_campaign_total",
         policy="split_in_time_total",
-    )
+    ).jobs_root_dir
     manifest_2 = load_manifest(split_root_2)
-    print(f"split manifest  = {split_root_2}")
+    print(f"split manifest = {split_root_2}")
 
     job_1_total = load_child_simulation(split_root_2 / "job0001")
     job_2_total = load_child_simulation(split_root_2 / "job0002")
     job_3_total = load_child_simulation(split_root_2 / "job0003")
     job_1_total_metadata = load_job_metadata(split_root_2 / "job0001")
 
-    # Active simulation time is 1 s + 3 s = 4 s, therefore each of the 3 jobs
-    # should cover 4/3 s of active time.
     run_1_split_boundary_1 = (2.0 + 1.0 / 3.0) * sec
     run_1_split_boundary_2 = (2.0 + 5.0 / 3.0) * sec
     expected_job_1_intervals = [
@@ -267,18 +552,49 @@ if __name__ == "__main__":
     )
 
     utility.print_test(
-        get_dynamic_source_images(job_1_total) == source_images_2,
+        get_dynamic_source_image_names(job_1_total)
+        == ["dynamic_source_1.mhd", "dynamic_source_2.mhd"],
         "split_in_time_total first child keeps both dynamic source images",
     )
-    is_ok = get_dynamic_source_images(job_1_total) == source_images_2 and is_ok
+    is_ok = (
+        get_dynamic_source_image_names(job_1_total)
+        == ["dynamic_source_1.mhd", "dynamic_source_2.mhd"]
+        and is_ok
+    )
 
-    # The split must not lose or create source events when child source.n arrays
-    # are summed back over the original master runs.
     aggregated_counts = aggregate_counts_by_original_run(manifest_2, split_root_2)
     utility.print_test(
         aggregated_counts == {0: 10, 1: 30},
         f"split_in_time_total source.n counts aggregated by original run: {aggregated_counts}",
     )
     is_ok = aggregated_counts == {0: 10, 1: 30} and is_ok
+
+    # ---------------------------------------------------------------------
+    # Section 2: input archiving and rehydration path contract
+    # ---------------------------------------------------------------------
+    print()
+    print("checking copied/linked and absolute/relative input path rewriting ...")
+
+    rewrite_scenarios = [
+        ("copied_absolute", "absolute", False),
+        ("copied_relative", "relative", False),
+        ("linked_absolute", "absolute", True),
+        ("linked_relative", "relative", True),
+    ]
+    for scenario_name, input_path_mode, link_files in rewrite_scenarios:
+        scenario_root = paths.output / f"path_rewrite_{scenario_name}"
+        shutil.rmtree(scenario_root, ignore_errors=True)
+        scenario_ok = run_input_path_rewrite_scenario(
+            scenario_root,
+            input_path_mode=input_path_mode,
+            link_files=link_files,
+            run_timing_intervals=[(0.0 * sec, 1.0 * sec), (1.0 * sec, 2.0 * sec)],
+            source_n=[20, 40],
+            material_db_source_path=paths.data / "GateMaterials.db",
+        )
+        is_ok = utility.print_test(
+            scenario_ok,
+            f"Input path rewrite scenario {scenario_name}",
+        ) and is_ok
 
     utility.test_ok(is_ok)
