@@ -147,7 +147,9 @@ def merge_stats_from_jobs(job_folders, output_path):
 
     merged_stats = None
     for job_folder in job_folders:
-        job_stats = utility.read_stats_file(Path(job_folder) / "stats.txt")
+        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        job_stats_path = child_simulation.get_actor("Stats").get_output_path()
+        job_stats = utility.read_stats_file(job_stats_path)
         merged_stats = (
             job_stats if merged_stats is None else sum_stats(merged_stats, job_stats)
         )
@@ -166,11 +168,17 @@ def merge_images_from_jobs(job_folders, output_path):
     # this is a manual merge for testing only.
     # merging based on Actor/ActorOutput objects will be implemented soon
     # and should be used in practice
-    first_image = itk.imread(str(Path(job_folders[0]) / "test009-edep_edep.mhd"))
+    first_child_simulation = gate.create_sim_from_json(
+        Path(job_folders[0]) / "simulation.json"
+    )
+    first_image_path = first_child_simulation.get_actor("dose").edep.get_output_path()
+    first_image = itk.imread(str(first_image_path))
     merged_array = np.array(itk.array_view_from_image(first_image), copy=True)
 
     for job_folder in job_folders[1:]:
-        job_image = itk.imread(str(Path(job_folder) / "test009-edep_edep.mhd"))
+        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        job_image_path = child_simulation.get_actor("dose").edep.get_output_path()
+        job_image = itk.imread(str(job_image_path))
         merged_array += itk.array_view_from_image(job_image)
 
     merged_image = itk.image_from_array(merged_array)
