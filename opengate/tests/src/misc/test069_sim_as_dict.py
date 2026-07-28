@@ -23,7 +23,8 @@ if __name__ == "__main__":
 
     # store a json archive explicitly
     archive_filename = "simu_test069.json"
-    sim.output_dir = paths.output / "test069"
+    archive_dir = paths.output / "test069"
+    sim.output_dir = archive_dir
 
     # add a material database
     sim.volume_manager.add_material_database(
@@ -96,11 +97,13 @@ if __name__ == "__main__":
 
     # run
     sim.run()
-    sim.to_json_file(filename=archive_filename)
-    sim.archive_input_files()
+    # Be explicit about the archive directory so this test never writes the
+    # JSON or copied input files into the current working directory.
+    sim.to_json_file(directory=archive_dir, filename=archive_filename)
+    sim.archive_input_files(directory=archive_dir)
 
     # test the file content
-    fn1 = paths.output / "test069" / archive_filename
+    fn1 = archive_dir / archive_filename
     print(fn1)
 
     from opengate.serialization import load_json
