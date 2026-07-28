@@ -7,6 +7,7 @@ import weakref
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 import sys
+import warnings
 
 import opengate_core as g4
 from anytree import LoopError, RenderTree
@@ -18,14 +19,12 @@ from .base import (
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
     process_cls,
-    _get_user_info_options,
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
 from .exception import (
     GateDeprecationError,
     GateImplementationError,
-    GateMergeError,
     fatal,
     warning,
 )
@@ -43,7 +42,16 @@ from .physics import (
 )
 from .processing import dispatch_to_subprocess
 from .runtiming import assert_run_timing
-from .serialization import dump_json, dumps_json, load_json, loads_json
+from .serialization import (
+    dump_json,
+    dumps_json,
+    load_json,
+    loads_json,
+    _apply_path_modifier_recursively,
+    _collect_input_file_values_from_gate_object_dictionary,
+    _find_metaimage_payload_files,
+    _rewrite_path_against_reference,
+)
 from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.gansources import GANPairsSource, GANSource
@@ -207,34 +215,6 @@ actor_types = {
 }
 
 
-def _find_metaimage_payload_files(header_path):
-    payload_files = []
-    try:
-        with open(header_path, "r") as header_file:
-            for line in header_file:
-                if "=" not in line:
-                    continue
-                key, value = [part.strip() for part in line.split("=", 1)]
-                if key != "ElementDataFile":
-                    continue
-                if value.upper() == "LOCAL":
-                    return []
-                payload_path = Path(value)
-                if not payload_path.is_absolute():
-                    payload_path = header_path.parent / payload_path
-                if payload_path.is_file():
-                    payload_files.append(payload_path.resolve())
-                else:
-                    warning(
-                        f"MetaImage header '{header_path}' references payload file "
-                        f"'{payload_path}', but that file does not exist."
-                    )
-                break
-    except OSError as error:
-        warning(f"Unable to inspect MetaImage header '{header_path}': {error}")
-    return payload_files
-
-
 class FilterManager:
     """
     Manage all the Filters in the simulation
@@ -285,6 +265,12 @@ class FilterManager:
         return filter
 
     def add_filter_deprecated(self, filt, name=None):
+        warnings.warn(
+            "FilterManager.add_filter_deprecated() is deprecated. "
+            "Use FilterManager.add_filter() with an explicit filter object instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if isinstance(filt, str):
             if name is None:
                 fatal("You must provide a name for the filter.")
@@ -302,6 +288,12 @@ class FilterManager:
             return new_filter
 
     def create_filter_deprecated(self, filter_type, name):
+        warnings.warn(
+            "FilterManager.create_filter_deprecated() is deprecated. "
+            "Create the filter object explicitly instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
     def resolve_and_validate_config(self, context=None):
@@ -667,30 +659,6 @@ class ActorManager(GateObject):
         for actor_name, actor in self.actors.items():
             output_plans.extend(actor.plan_merge(mode=mode))
         return output_plans
-
-    def execute_merge(self, source_actor_manager, context=None):
-        if context is None:
-            raise GateMergeError("Missing actor-manager-level merge context.")
-        if not hasattr(context, "get_actor_names"):
-            raise GateMergeError(
-                "ActorManager.execute_merge() expects a SourceMergeContextView."
-            )
-
-        common_actor_names = sorted(
-            set(self.actors.keys()).intersection(source_actor_manager.actors.keys())
-        )
-        for actor_name in common_actor_names:
-            target_actor = self.get_actor(actor_name)
-            source_actor = source_actor_manager.get_actor(actor_name)
-            actor_context = context.get_actor_view(actor_name)
-            try:
-                target_actor.execute_merge(source_actor, context=actor_context)
-            except Exception as error:
-                if isinstance(error, GateMergeError):
-                    raise
-                raise GateMergeError(
-                    f"Failed to execute merge of actor '{actor_name}' between simulations."
-                ) from error
 
     def _create_actor(self, actor_type, name):
         cls = None
@@ -2305,51 +2273,35 @@ class Simulation(GateObject):
     def to_json_string(self):
         return dumps_json(self.to_dictionary())
 
-    def _rewrite_input_paths_in_dict(self, dct, base_dir, mode):
+    def _rewrite_input_paths_in_dict(self, dct, base_dir, path_mode):
         """Rewrite serialized input-file paths relative to a JSON base directory.
 
-        mode="relativize" stores input paths relative to the directory
-        containing simulation.json. mode="resolve" restores relative paths from
-        that same base directory when rehydrating a simulation from disk.
+        ``path_mode="relative"`` stores input paths relative to the directory
+        containing simulation.json. ``path_mode="absolute"`` restores them
+        against that same directory when rehydrating a simulation from disk.
         """
 
         updated_dct = copy.deepcopy(dct)
-        base_dir = Path(base_dir).resolve()
+        base_dir = Path(base_dir).absolute()
 
-        def rewrite_path(path_obj):
-            original_is_path = isinstance(path_obj, Path)
-            path_obj = Path(path_obj)
-            if mode == "relativize":
-                rewritten_path = Path(os.path.relpath(path_obj.resolve(), base_dir))
-            elif mode == "resolve":
-                if path_obj.is_absolute():
-                    rewritten_path = path_obj
-                else:
-                    rewritten_path = (base_dir / path_obj).resolve()
-            else:
-                fatal(f"Unknown path rewrite mode '{mode}'.")
-            if original_is_path:
-                return rewritten_path
-            return str(rewritten_path)
-
-        def rewrite_value(obj):
-            if isinstance(obj, (Path, str)):
-                return rewrite_path(obj)
-            if isinstance(obj, dict):
-                return {k: rewrite_value(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [rewrite_value(v) for v in obj]
-            if isinstance(obj, tuple):
-                return tuple(rewrite_value(v) for v in obj)
-            return obj
+        def rewrite_input_path(path):
+            return _rewrite_path_against_reference(path, base_dir, path_mode)
 
         for go_dict in find_all_gate_objects(updated_dct):
-            object_type = go_dict["object_type"]
-            class_module = go_dict["class_module"]
-            for ui_name, ui_value in list(go_dict["user_info"].items()):
-                options = _get_user_info_options(ui_name, object_type, class_module)
-                if options.get("is_input_file") is True:
-                    go_dict["user_info"][ui_name] = rewrite_value(ui_value)
+            _, direct_input_file_names, dynamic_input_file_names = (
+                _collect_input_file_values_from_gate_object_dictionary(go_dict)
+            )
+            for ui_name in direct_input_file_names:
+                go_dict["user_info"][ui_name] = _apply_path_modifier_recursively(
+                    go_dict["user_info"][ui_name], rewrite_input_path
+                )
+            dynamic_params = go_dict["user_info"].get("dynamic_params") or {}
+            for parametrisation in dynamic_params.values():
+                for ui_name in dynamic_input_file_names:
+                    if ui_name in parametrisation:
+                        parametrisation[ui_name] = _apply_path_modifier_recursively(
+                            parametrisation[ui_name], rewrite_input_path
+                        )
 
         # Workaround: material database files are not yet represented as proper
         # GateObjects with declarative input-file metadata, so their serialized
@@ -2359,7 +2311,7 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                rewrite_value(filename)
+                _apply_path_modifier_recursively(filename, rewrite_input_path)
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]
@@ -2372,7 +2324,7 @@ class Simulation(GateObject):
             filename = self.default_simulation_filename
         directory = self.get_root_path(directory, is_file_or_directory="d")
         d = self.to_dictionary()
-        d = self._rewrite_input_paths_in_dict(d, directory, mode="relativize")
+        d = self._rewrite_input_paths_in_dict(d, directory, path_mode="relative")
         with open(directory / filename, "w") as f:
             dump_json(d, f)
 
@@ -2413,16 +2365,17 @@ class Simulation(GateObject):
         if dct is None:
             dct = self.to_dictionary()
         input_files = []
+        root_dir = Path(self.root_dir).absolute()
         for go_dict in find_all_gate_objects(dct):
-            input_files.extend(
-                [
-                    p
-                    for p in find_paths_in_gate_object_dictionary(
-                        go_dict, only_input_files=True
-                    )
-                    if p.is_file() is True
-                ]
+            go_input_files, _, _ = _collect_input_file_values_from_gate_object_dictionary(
+                go_dict
             )
+            for input_path in go_input_files:
+                path_obj = Path(input_path)
+                if path_obj.is_absolute() is False:
+                    path_obj = (root_dir / path_obj).absolute()
+                if path_obj.is_file() is True:
+                    input_files.append(path_obj)
 
         # Workaround: material database files are not yet represented as proper
         # GateObjects with declarative input-file metadata, so they must be added
@@ -2486,30 +2439,41 @@ class Simulation(GateObject):
             return dct
 
         updated_dct = copy.deepcopy(dct)
-        archive_path_map = {Path(f).resolve(): Path(f).name for f in unique_input_files}
+        archive_path_map = {
+            Path(f).resolve(): (directory / Path(f).name).absolute()
+            for f in unique_input_files
+        }
 
-        def rewrite_archived_input_paths(obj):
-            if isinstance(obj, Path):
-                return Path(archive_path_map.get(obj.resolve(), obj.name))
-            if isinstance(obj, str):
-                return archive_path_map.get(Path(obj).resolve(), Path(obj).name)
-            if isinstance(obj, dict):
-                return {k: rewrite_archived_input_paths(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [rewrite_archived_input_paths(v) for v in obj]
-            if isinstance(obj, tuple):
-                return tuple(rewrite_archived_input_paths(v) for v in obj)
-            return obj
+        def rewrite_archived_input_path(path):
+            source_path = Path(path)
+            if source_path.is_absolute() is False:
+                source_path = (root_dir / source_path).absolute()
+            rewritten_path = archive_path_map.get(
+                source_path.resolve(), (directory / Path(path).name).absolute()
+            )
+            return _rewrite_path_against_reference(
+                rewritten_path,
+                directory,
+                path_mode="relative",
+            )
 
         for go_dict in find_all_gate_objects(updated_dct):
-            object_type = go_dict["object_type"]
-            class_module = go_dict["class_module"]
-            for ui_name, ui_value in list(go_dict["user_info"].items()):
-                options = _get_user_info_options(ui_name, object_type, class_module)
-                if options.get("is_input_file") is True:
-                    go_dict["user_info"][ui_name] = rewrite_archived_input_paths(
-                        ui_value
-                    )
+            _, direct_input_file_names, dynamic_input_file_names = (
+                _collect_input_file_values_from_gate_object_dictionary(go_dict)
+            )
+            for ui_name in direct_input_file_names:
+                go_dict["user_info"][ui_name] = _apply_path_modifier_recursively(
+                    go_dict["user_info"][ui_name],
+                    rewrite_archived_input_path,
+                )
+            dynamic_params = go_dict["user_info"].get("dynamic_params") or {}
+            for parametrisation in dynamic_params.values():
+                for ui_name in dynamic_input_file_names:
+                    if ui_name in parametrisation:
+                        parametrisation[ui_name] = _apply_path_modifier_recursively(
+                            parametrisation[ui_name],
+                            rewrite_archived_input_path,
+                        )
 
         # Workaround: material database files are not yet represented as proper
         # GateObjects with declarative input-file metadata, so their serialized
@@ -2519,7 +2483,9 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                rewrite_archived_input_paths(filename)
+                _apply_path_modifier_recursively(
+                    filename, rewrite_archived_input_path
+                )
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]
@@ -2528,9 +2494,11 @@ class Simulation(GateObject):
         return updated_dct
 
     def copy_input_files(self, directory=None, dct=None, link_files=False):
-        warning(
+        warnings.warn(
             "Simulation.copy_input_files() is deprecated. "
-            "Use Simulation.archive_input_files(...) instead."
+            "Use Simulation.archive_input_files(...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
         self.archive_input_files(directory=directory, dct=dct, link_files=link_files)
 
@@ -2541,7 +2509,7 @@ class Simulation(GateObject):
         path = Path(path).resolve()
         with open(path, "r") as f:
             d = load_json(f)
-        d = self._rewrite_input_paths_in_dict(d, path.parent, mode="resolve")
+        d = self._rewrite_input_paths_in_dict(d, path.parent, path_mode="absolute")
         self.from_dictionary(d)
         serialized_output_dir = d.get("user_info", {}).get("output_dir", Path("output"))
         self._output_dir_was_user_set = Path(serialized_output_dir) != Path(".")
@@ -2827,16 +2795,16 @@ class Simulation(GateObject):
             if number_of_jobs == 1:
                 start_new_process = True
             else:
-                from .jobs import SplitRunController
+                from .jobs import SplitRunMergeController
 
                 if start_new_process is True:
                     fatal(
                         "Simulation.run() received both start_new_process=True and "
                         "number_of_jobs>1. Split runs are already process-managed "
-                        "through SplitRunController/local_pool."
+                        "through SplitRunMergeController/local_pool."
                     )
 
-                split_run_controller = SplitRunController(
+                split_run_controller = SplitRunMergeController(
                     simulation=self,
                     jobs_root_dir=jobs_root_dir,
                     split_policy=split_policy,

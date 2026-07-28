@@ -8,6 +8,7 @@ import sys
 import time
 import traceback
 import uuid
+import copy
 from datetime import datetime
 from pathlib import Path
 import json
@@ -18,7 +19,14 @@ import opengate_core as g4
 from .coordinators import RootMergeCoordinator, StandardMergeCoordinator
 from .exception import GateJobsBackendError, GateMergeError, fatal
 from .runtiming import assert_run_timing
-from .serialization import dump_json, load_json
+from .serialization import (
+    dump_json,
+    load_json,
+    _apply_path_modifier_recursively,
+    _collect_input_file_values_from_gate_object_dictionary,
+    _find_metaimage_payload_files,
+    _rewrite_path_against_reference,
+)
 
 DEFAULT_SIMULATION_FILENAME = "simulation.json"
 DEFAULT_RESOLVED_SIMULATION_FILENAME = "simulation_resolved.json"
@@ -99,12 +107,26 @@ def package_simulation(
     return package_root
 
 
-def _clone_simulation(simulation):
-    # Clone through the JSON serializer so the child jobs are built from the same
-    # persisted representation that later jobs_run()/jobs_merge() will use.
-    cloned_simulation = type(simulation)()
-    cloned_simulation.from_json_string(simulation.to_json_string())
+def _clone_simulation_from_dictionary(simulation_type, simulation_dict):
+    # Clone through the dictionary serializer so child jobs are built from the
+    # same structural representation that is persisted in a split campaign.
+    cloned_simulation = simulation_type()
+    cloned_simulation.from_dictionary(copy.deepcopy(simulation_dict))
     return cloned_simulation
+
+
+def _write_simulation_dictionary_json(
+    simulation, simulation_dict, directory, filename=DEFAULT_SIMULATION_FILENAME
+):
+    directory = simulation.get_root_path(directory, is_file_or_directory="d")
+    updated_dict = simulation._rewrite_input_paths_in_dict(
+        simulation_dict,
+        directory,
+        path_mode="relative",
+    )
+    with open(directory / filename, "w") as output_file:
+        dump_json(updated_dict, output_file)
+    return directory / filename
 
 
 def _load_packaged_simulation(simulation_folder, simulation_file):
@@ -436,6 +458,505 @@ def _configure_child_simulation(
     return job_folder, child_metadata
 
 
+def _collect_resolved_input_files_from_simulation_dict(
+    simulation_dict, reference_root_dir
+):
+    """Collect input files from serialized config using an explicit root.
+
+    The serialized config may contain relative paths. They are resolved against
+    ``reference_root_dir``, which is the simulation context that authored those
+    paths. The returned list also includes MetaImage payload files.
+    """
+
+    input_files = []
+    reference_root_dir = Path(reference_root_dir).absolute()
+
+    def resolve_source_input_path(path, allow_cwd_fallback=False):
+        path_obj = Path(path)
+        if path_obj.is_absolute():
+            return path_obj
+        root_relative_path = (reference_root_dir / path_obj).absolute()
+        if root_relative_path.is_file() or allow_cwd_fallback is False:
+            return root_relative_path
+        return path_obj.absolute()
+
+    for go_dict in find_all_gate_objects(simulation_dict):
+        go_input_files, _, _ = _collect_input_file_values_from_gate_object_dictionary(
+            go_dict
+        )
+        for input_path in go_input_files:
+            path_obj = resolve_source_input_path(input_path)
+            if path_obj.is_file() is True:
+                input_files.append(path_obj)
+
+    # Workaround: material database files are not yet represented as proper
+    # GateObjects with declarative input-file metadata. Relative material DB
+    # paths are currently accepted by add_material_database() from the caller's
+    # working directory, so preserve that lookup as a fallback here.
+    material_database_filenames = simulation_dict.get("volume_manager", {}).get(
+        "material_database_filenames", []
+    )
+    for filename in material_database_filenames:
+        path_obj = resolve_source_input_path(filename, allow_cwd_fallback=True)
+        if path_obj.is_file() is True:
+            input_files.append(path_obj)
+
+    extra_input_files = []
+    for input_file in input_files:
+        if input_file.suffix.lower() == ".mhd":
+            extra_input_files.extend(_find_metaimage_payload_files(input_file))
+    input_files.extend(extra_input_files)
+    return input_files
+
+
+def _stage_input_files(input_files, target_directory, link_files=False):
+    """Copy or link resolved input files and return source-to-target path map."""
+
+    target_directory = Path(target_directory)
+    unique_input_files = list(dict.fromkeys(Path(f).resolve() for f in input_files))
+    input_files_by_basename = {}
+    for input_file in unique_input_files:
+        input_files_by_basename.setdefault(input_file.name, []).append(input_file)
+    basename_collisions = {
+        basename: paths
+        for basename, paths in input_files_by_basename.items()
+        if len(paths) > 1
+    }
+    if basename_collisions:
+        collision_messages = []
+        for basename, paths in basename_collisions.items():
+            collision_messages.append(
+                f"'{basename}' from: {', '.join(str(path) for path in paths)}"
+            )
+        fatal(
+            "Input-file transfer cannot continue because distinct input files "
+            "share the same basename and would collide in the target folder. "
+            "Please rename the files or adjust the simulation inputs.\n"
+            + "\n".join(collision_messages)
+        )
+
+    for input_file in unique_input_files:
+        destination = target_directory / input_file.name
+        if link_files:
+            if destination.exists() or destination.is_symlink():
+                destination.unlink()
+            relative_target = os.path.relpath(input_file, target_directory)
+            try:
+                destination.symlink_to(relative_target)
+            except OSError as error:
+                fatal(
+                    f"Failed to create symlink from '{relative_target}' to "
+                    f"'{destination}': {error}. On Windows, creating symbolic "
+                    "links requires Developer Mode or Administrator privileges. "
+                    "Use link_files=False to copy files instead."
+                )
+        else:
+            shutil.copy2(input_file, target_directory)
+
+    return {
+        Path(input_file).resolve(): (target_directory / Path(input_file).name).absolute()
+        for input_file in unique_input_files
+    }
+
+
+def _rewrite_transferred_input_paths_in_dict(
+    simulation_dict,
+    source_reference_root_dir,
+    target_directory,
+    transferred_path_map,
+):
+    """Rewrite target config paths to files staged in ``target_directory``."""
+
+    updated_dict = copy.deepcopy(simulation_dict)
+    source_reference_root_dir = Path(source_reference_root_dir).absolute()
+    target_directory = Path(target_directory).absolute()
+
+    def resolve_source_input_path(path, allow_cwd_fallback=False):
+        source_path = Path(path)
+        if source_path.is_absolute() is False:
+            root_relative_path = (source_reference_root_dir / source_path).absolute()
+            if root_relative_path.is_file() or allow_cwd_fallback is False:
+                source_path = root_relative_path
+            else:
+                source_path = source_path.absolute()
+        return source_path
+
+    def rewrite_transferred_input_path(path):
+        source_path = resolve_source_input_path(path)
+        target_path = transferred_path_map.get(
+            source_path.resolve(),
+            (target_directory / Path(path).name).absolute(),
+        )
+        return _rewrite_path_against_reference(
+            target_path,
+            target_directory,
+            path_mode="relative",
+        )
+
+    for go_dict in find_all_gate_objects(updated_dict):
+        _, direct_input_file_names, dynamic_input_file_names = (
+            _collect_input_file_values_from_gate_object_dictionary(go_dict)
+        )
+        for ui_name in direct_input_file_names:
+            go_dict["user_info"][ui_name] = _apply_path_modifier_recursively(
+                go_dict["user_info"][ui_name],
+                rewrite_transferred_input_path,
+            )
+        dynamic_params = go_dict["user_info"].get("dynamic_params") or {}
+        for parametrisation in dynamic_params.values():
+            for ui_name in dynamic_input_file_names:
+                if ui_name in parametrisation:
+                    parametrisation[ui_name] = _apply_path_modifier_recursively(
+                        parametrisation[ui_name],
+                        rewrite_transferred_input_path,
+                    )
+
+    if (
+        "volume_manager" in updated_dict
+        and "material_database_filenames" in updated_dict["volume_manager"]
+    ):
+        def rewrite_transferred_material_database_path(path):
+            source_path = resolve_source_input_path(path, allow_cwd_fallback=True)
+            target_path = transferred_path_map.get(
+                source_path.resolve(),
+                (target_directory / Path(path).name).absolute(),
+            )
+            return _rewrite_path_against_reference(
+                target_path,
+                target_directory,
+                path_mode="relative",
+            )
+
+        updated_dict["volume_manager"]["material_database_filenames"] = [
+            _apply_path_modifier_recursively(
+                filename,
+                rewrite_transferred_material_database_path,
+            )
+            for filename in updated_dict["volume_manager"][
+                "material_database_filenames"
+            ]
+        ]
+
+    return updated_dict
+
+
+def _transfer_input_files_between_simulations(
+    source_simulation_dict,
+    source_reference_root_dir,
+    target_simulation_dict,
+    target_directory,
+    link_files=False,
+):
+    """Transfer input files from one serialized simulation context to another.
+
+    This helper is intentionally asymmetric: source paths are resolved against
+    the source context, files are staged in the target folder, and the target
+    serialized config is rewritten to point to the staged files.
+    """
+
+    # The target child dict encodes the per-job subset of dynamic inputs. Use it
+    # for collection, but interpret its paths in the source simulation context.
+    source_input_files = _collect_resolved_input_files_from_simulation_dict(
+        source_simulation_dict,
+        source_reference_root_dir,
+    )
+    source_input_file_keys = {
+        Path(input_file).resolve() for input_file in source_input_files
+    }
+    input_files = _collect_resolved_input_files_from_simulation_dict(
+        target_simulation_dict,
+        source_reference_root_dir,
+    )
+    unknown_input_files = [
+        input_file
+        for input_file in input_files
+        if Path(input_file).resolve() not in source_input_file_keys
+    ]
+    if unknown_input_files:
+        fatal(
+            "Cannot transfer input files because the target simulation requests "
+            "files that are not present in the source simulation input inventory: "
+            + ", ".join(str(path) for path in unknown_input_files)
+        )
+    transferred_path_map = _stage_input_files(
+        input_files,
+        target_directory,
+        link_files=link_files,
+    )
+    return _rewrite_transferred_input_paths_in_dict(
+        target_simulation_dict,
+        source_reference_root_dir,
+        target_directory,
+        transferred_path_map,
+    )
+
+
+class JobsSplitManager:
+    """Stateful owner of the split-campaign workflow.
+
+    A split campaign is both procedural and stateful: it has ordered stages,
+    but also campaign-level state that needs to stay available across those
+    stages. This manager owns that workflow state while ``jobs_split(...)``
+    remains the public entry point.
+    """
+
+    def __init__(
+        self,
+        simulation=None,
+        simulation_folder=None,
+        simulation_file=DEFAULT_SIMULATION_FILENAME,
+        resolved_simulation_file=DEFAULT_RESOLVED_SIMULATION_FILENAME,
+        jobs_root_dir=None,
+        number_of_jobs=1,
+        policy=DEFAULT_SPLIT_POLICY,
+        link_files=False,
+        overwrite_existing_job_folders=False,
+        write_resolved_simulation=True,
+        **options,
+    ):
+        self.input_simulation = simulation
+        self.simulation_folder = simulation_folder
+        self.simulation_file = simulation_file
+
+        self.jobs_root_dir = jobs_root_dir
+        self.resolved_simulation_file = resolved_simulation_file
+        self.number_of_jobs = number_of_jobs
+        self.policy = policy
+        self.link_files = link_files
+        self.overwrite_existing_job_folders = overwrite_existing_job_folders
+        self.write_resolved_simulation = write_resolved_simulation
+        self.options = options
+
+        self.master_simulation = None
+        self.resolved_master_simulation_dict = None
+        self._simulation_path = None
+        self.job_definitions = None
+        self.source_n_assignments = None
+        self.simulation_id = None
+        self.created_at = None
+        self.jobs_manifest = None
+        self.manifest_path = None
+        self.split_summary = None
+        self._job_folders = []
+
+        self.is_prepared = False
+        self.is_planned = False
+        self.is_packaged = False
+        self.is_materialized = False
+        self.is_finalized = False
+
+    @property
+    def master_source_reference_root_dir(self):
+        if self.master_simulation is None:
+            return None
+        return Path(self.master_simulation.root_dir)
+
+    @property
+    def original_run_timing_intervals(self):
+        if self.master_simulation is None:
+            return None
+        return _copy_run_timing_intervals(self.master_simulation.run_timing_intervals)
+
+    @property
+    def job_folders(self):
+        return list(self._job_folders)
+
+    @property
+    def split_result(self):
+        if self.is_finalized is False:
+            return None
+        return {
+            "jobs_root_dir": str(self.jobs_root_dir),
+            "manifest_path": str(self.manifest_path),
+            "simulation_id": self.simulation_id,
+            "number_of_jobs": self.number_of_jobs,
+            "policy": self.policy,
+        }
+
+    def prepare_master_simulation(self):
+        if self.is_prepared is True:
+            return
+
+        if (self.input_simulation is None) == (self.simulation_folder is None):
+            fatal(
+                "jobs_split() requires exactly one of 'simulation' or "
+                "'simulation_folder'."
+            )
+
+        if self.input_simulation is None:
+            self.master_simulation, self._simulation_path = _load_packaged_simulation(
+                self.simulation_folder, self.simulation_file
+            )
+            if self.jobs_root_dir is None:
+                self.jobs_root_dir = self.master_simulation.root_dir
+        else:
+            self.master_simulation = _clone_simulation_from_dictionary(
+                type(self.input_simulation),
+                self.input_simulation.to_dictionary(),
+            )
+            self._simulation_path = None
+            if self.jobs_root_dir is None:
+                self.jobs_root_dir = self.master_simulation.root_dir
+
+        # Split authoritative, resolved configuration rather than the raw user
+        # inputs so child jobs inherit explicit timing anchors and helper actors.
+        self.master_simulation.resolve_and_validate_config(context="split_preparation")
+        self.resolved_master_simulation_dict = self.master_simulation.to_dictionary()
+        self.is_prepared = True
+
+    def plan_split(self):
+        if self.is_planned is True:
+            return
+        if self.is_prepared is False:
+            self.prepare_master_simulation()
+
+        # Build the split plan before touching the filesystem so invalid
+        # requests do not leave behind half-created split folders.
+        self.job_definitions = _generate_job_definitions(
+            self.original_run_timing_intervals,
+            self.number_of_jobs,
+            self.policy,
+        )
+        self.source_n_assignments = _compute_source_n_assignments(
+            self.master_simulation,
+            self.original_run_timing_intervals,
+            self.job_definitions,
+        )
+        self.simulation_id = uuid.uuid4().hex
+        self.created_at = datetime.now().isoformat()
+        self.is_planned = True
+
+    def package_master_campaign(self):
+        if self.is_packaged is True:
+            return
+        if self.is_planned is False:
+            self.plan_split()
+
+        self.jobs_root_dir = _prepare_jobs_root_dir(
+            self.jobs_root_dir,
+            overwrite_existing_job_folders=self.overwrite_existing_job_folders,
+        )
+
+        _write_simulation_dictionary_json(
+            self.master_simulation,
+            self.resolved_master_simulation_dict,
+            directory=self.jobs_root_dir,
+            filename=Path(self.simulation_file),
+        )
+        if self.write_resolved_simulation is True:
+            _write_simulation_dictionary_json(
+                self.master_simulation,
+                self.resolved_master_simulation_dict,
+                directory=self.jobs_root_dir,
+                filename=Path(self.resolved_simulation_file),
+            )
+        packaged_root_matches_jobs_root = (
+            self._simulation_path is not None
+            and self._simulation_path.parent.resolve() == Path(self.jobs_root_dir)
+        )
+        if packaged_root_matches_jobs_root is False:
+            self.master_simulation.archive_input_files(
+                directory=self.jobs_root_dir,
+                dct=self.resolved_master_simulation_dict,
+                link_files=self.link_files,
+            )
+
+        self.jobs_manifest = {
+            "simulation_id": self.simulation_id,
+            "created_at": self.created_at,
+            "policy": self.policy,
+            "options": self.options,
+            "number_of_jobs": self.number_of_jobs,
+            "original_run_timing_intervals": self.original_run_timing_intervals,
+            "master_simulation_filename": self.simulation_file,
+            "resolved_simulation_filename": (
+                self.resolved_simulation_file
+                if self.write_resolved_simulation is True
+                else None
+            ),
+            "prefer_resolved_simulation": bool(self.write_resolved_simulation),
+            "jobs": [],
+        }
+        self.is_packaged = True
+
+    def materialize_child_jobs(self):
+        if self.is_materialized is True:
+            return
+        if self.is_packaged is False:
+            self.package_master_campaign()
+
+        for job_definition in self.job_definitions:
+            # Each child simulation starts from the immutable resolved master
+            # representation and is then rewritten to one job's local scope.
+            child_simulation = _clone_simulation_from_dictionary(
+                type(self.master_simulation),
+                self.resolved_master_simulation_dict,
+            )
+            job_folder, child_metadata = _configure_child_simulation(
+                child_simulation,
+                job_definition,
+                self.source_n_assignments[job_definition["job_index"]],
+                self.simulation_id,
+                self.jobs_root_dir,
+            )
+            job_folder.mkdir(parents=True, exist_ok=False)
+            child_simulation_dict = child_simulation.to_dictionary()
+            updated_child_simulation_dict = _transfer_input_files_between_simulations(
+                self.resolved_master_simulation_dict,
+                self.master_source_reference_root_dir,
+                child_simulation_dict,
+                job_folder,
+                link_files=self.link_files,
+            )
+            with open(job_folder / JOB_SIMULATION_FILENAME, "w") as output_file:
+                dump_json(updated_child_simulation_dict, output_file)
+            with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
+                dump_json(child_metadata, output_file)
+            self.jobs_manifest["jobs"].append(
+                {
+                    "job_index": job_definition["job_index"],
+                    "job_id": child_metadata["job_id"],
+                    "folder_name": job_definition["folder_name"],
+                    "metadata_filename": JOB_METADATA_FILENAME,
+                }
+            )
+            self._job_folders.append(job_folder)
+
+        self.is_materialized = True
+
+    def write_manifest(self):
+        if self.is_finalized is True:
+            return
+        if self.is_materialized is False:
+            self.materialize_child_jobs()
+
+        self.manifest_path = Path(self.jobs_root_dir) / JOBS_MANIFEST_FILENAME
+        with open(self.manifest_path, "w") as output_file:
+            dump_json(self.jobs_manifest, output_file)
+        self.split_summary = _build_jobs_split_summary_from_manifest(
+            self.manifest_path, self.jobs_manifest
+        )
+        self.is_finalized = True
+
+    def split(self):
+        self.prepare_master_simulation()
+        self.plan_split()
+        self.package_master_campaign()
+        self.materialize_child_jobs()
+        self.write_manifest()
+        return self
+
+    def format_summary(self):
+        if self.is_finalized is False:
+            self.write_manifest()
+        return format_jobs_split_summary(self.split_summary)
+
+    def print_summary(self):
+        if self.is_finalized is False:
+            self.write_manifest()
+        return print_jobs_split_summary(self.split_summary)
+
+
 def jobs_split(
     simulation=None,
     simulation_folder=None,
@@ -449,114 +970,21 @@ def jobs_split(
     write_resolved_simulation=True,
     **options,
 ):
-    if (simulation is None) == (simulation_folder is None):
-        fatal(
-            "jobs_split() requires exactly one of 'simulation' or "
-            "'simulation_folder'."
-        )
-
-    if simulation is None:
-        simulation, simulation_path = _load_packaged_simulation(
-            simulation_folder, simulation_file
-        )
-        if jobs_root_dir is None:
-            jobs_root_dir = simulation.root_dir
-    else:
-        simulation_path = None
-        if jobs_root_dir is None:
-            jobs_root_dir = simulation.root_dir
-
-    # Split authoritative, resolved configuration rather than the raw user
-    # inputs so child jobs inherit explicit timing anchors and helper actors.
-    simulation.resolve_and_validate_config(context="split_preparation")
-
-    original_run_timing_intervals = _copy_run_timing_intervals(
-        simulation.run_timing_intervals
-    )
-
-    # Build the split plan before touching the filesystem so invalid requests do
-    # not leave behind half-created split folders.
-    job_definitions = _generate_job_definitions(
-        original_run_timing_intervals, number_of_jobs, policy
-    )
-    source_n_assignments = _compute_source_n_assignments(
-        simulation, original_run_timing_intervals, job_definitions
-    )
-    jobs_root_dir = _prepare_jobs_root_dir(
-        jobs_root_dir,
+    jobs_split_manager = JobsSplitManager(
+        simulation=simulation,
+        simulation_folder=simulation_folder,
+        simulation_file=simulation_file,
+        resolved_simulation_file=resolved_simulation_file,
+        jobs_root_dir=jobs_root_dir,
+        number_of_jobs=number_of_jobs,
+        policy=policy,
+        link_files=link_files,
         overwrite_existing_job_folders=overwrite_existing_job_folders,
+        write_resolved_simulation=write_resolved_simulation,
+        **options,
     )
-    simulation_id = uuid.uuid4().hex
-    created_at = datetime.now().isoformat()
-
-    simulation.write_simulation_json(
-        directory=jobs_root_dir,
-        filename=Path(simulation_file),
-    )
-    if write_resolved_simulation is True:
-        simulation.write_resolved_simulation_json(
-            directory=jobs_root_dir,
-            filename=Path(resolved_simulation_file),
-            context="split_preparation",
-        )
-    packaged_root_matches_jobs_root = (
-        simulation_path is not None
-        and simulation_path.parent.resolve() == jobs_root_dir
-    )
-    if packaged_root_matches_jobs_root is False:
-        simulation.archive_input_files(directory=jobs_root_dir, link_files=link_files)
-
-    jobs_manifest = {
-        "simulation_id": simulation_id,
-        "created_at": created_at,
-        "policy": policy,
-        "options": options,
-        "number_of_jobs": number_of_jobs,
-        "original_run_timing_intervals": original_run_timing_intervals,
-        "master_simulation_filename": simulation_file,
-        "resolved_simulation_filename": (
-            resolved_simulation_file if write_resolved_simulation is True else None
-        ),
-        "prefer_resolved_simulation": bool(write_resolved_simulation),
-        "jobs": [],
-    }
-
-    for job_definition in job_definitions:
-        # Each child simulation is materialized from the master serializer and
-        # then rewritten to the local timing structure of exactly one job.
-        child_simulation = _clone_simulation(simulation)
-        job_folder, child_metadata = _configure_child_simulation(
-            child_simulation,
-            job_definition,
-            source_n_assignments[job_definition["job_index"]],
-            simulation_id,
-            jobs_root_dir,
-        )
-        job_folder.mkdir(parents=True, exist_ok=False)
-        child_simulation_dict = child_simulation.to_dictionary()
-        updated_child_simulation_dict = child_simulation.archive_input_files(
-            directory=job_folder,
-            dct=child_simulation_dict,
-            link_files=link_files,
-            update_input_paths_in_dict=True,
-        )
-        with open(job_folder / JOB_SIMULATION_FILENAME, "w") as output_file:
-            dump_json(updated_child_simulation_dict, output_file)
-        with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
-            dump_json(child_metadata, output_file)
-        jobs_manifest["jobs"].append(
-            {
-                "job_index": job_definition["job_index"],
-                "job_id": child_metadata["job_id"],
-                "folder_name": job_definition["folder_name"],
-                "metadata_filename": JOB_METADATA_FILENAME,
-            }
-        )
-
-    with open(jobs_root_dir / JOBS_MANIFEST_FILENAME, "w") as output_file:
-        dump_json(jobs_manifest, output_file)
-
-    return jobs_root_dir
+    jobs_split_manager.split()
+    return jobs_split_manager
 
 
 def _now_isoformat():
@@ -636,42 +1064,94 @@ def _format_original_run_indices(original_run_indices):
     return "[" + ", ".join(str(run_index) for run_index in unique_indices) + "]"
 
 
-def format_jobs_split_summary(manifest_or_dir_path):
-    manifest_path, manifest = _load_jobs_manifest(manifest_or_dir_path)
+def _build_jobs_split_summary_from_manifest(manifest_path, manifest):
     jobs_root_dir = manifest_path.parent
     master_simulation_filename = manifest.get(
         "master_simulation_filename", MASTER_SIMULATION_FILENAME
     )
     resolved_simulation_filename = manifest.get("resolved_simulation_filename")
-    lines = [
-        "Jobs split summary:",
-        f"- jobs root directory: {jobs_root_dir}",
-        f"| simulation: {jobs_root_dir / master_simulation_filename}",
-        f"| resolved simulation: {jobs_root_dir / resolved_simulation_filename if resolved_simulation_filename is not None else 'None'}",
-        f"| simulation id: {manifest.get('simulation_id', 'Unknown')}",
-        f"| split policy: {manifest.get('policy', 'Unknown')}",
-        f"| prefer resolved simulation: {manifest.get('prefer_resolved_simulation', False)}",
-        f"| original run timing intervals: {_format_timing_intervals(manifest.get('original_run_timing_intervals', []))}",
-        "| jobs:",
-    ]
+    resolved_simulation_path = (
+        None
+        if resolved_simulation_filename is None
+        else str(jobs_root_dir / resolved_simulation_filename)
+    )
+    jobs = []
     for job_item in manifest.get("jobs", []):
         job_folder = jobs_root_dir / job_item["folder_name"]
         metadata = _load_job_metadata(job_folder)
+        jobs.append(
+            {
+                "job_index": job_item.get("job_index"),
+                "job_id": job_item.get("job_id"),
+                "folder_name": job_item["folder_name"],
+                "folder": str(job_folder),
+                "metadata_filename": job_item.get(
+                    "metadata_filename", JOB_METADATA_FILENAME
+                ),
+                "original_run_indices": metadata.get("original_run_indices", []),
+                "run_timing_intervals": metadata.get("run_timing_intervals", []),
+            }
+        )
+    return {
+        "jobs_root_dir": str(jobs_root_dir),
+        "manifest_path": str(manifest_path),
+        "simulation_path": str(jobs_root_dir / master_simulation_filename),
+        "resolved_simulation_path": resolved_simulation_path,
+        "simulation_id": manifest.get("simulation_id", "Unknown"),
+        "created_at": manifest.get("created_at", "Unknown"),
+        "policy": manifest.get("policy", "Unknown"),
+        "options": manifest.get("options", {}),
+        "number_of_jobs": manifest.get("number_of_jobs", len(jobs)),
+        "prefer_resolved_simulation": manifest.get(
+            "prefer_resolved_simulation", False
+        ),
+        "original_run_timing_intervals": manifest.get(
+            "original_run_timing_intervals", []
+        ),
+        "jobs": jobs,
+    }
+
+
+def build_jobs_split_summary(manifest_or_dir_path):
+    manifest_path, manifest = _load_jobs_manifest(manifest_or_dir_path)
+    return _build_jobs_split_summary_from_manifest(manifest_path, manifest)
+
+
+def _as_jobs_split_summary(summary_or_manifest_path):
+    if isinstance(summary_or_manifest_path, dict):
+        return summary_or_manifest_path
+    return build_jobs_split_summary(summary_or_manifest_path)
+
+
+def format_jobs_split_summary(summary_or_manifest_path):
+    summary = _as_jobs_split_summary(summary_or_manifest_path)
+    lines = [
+        "Jobs split summary:",
+        f"- jobs root directory: {summary['jobs_root_dir']}",
+        f"| simulation: {summary['simulation_path']}",
+        f"| resolved simulation: {summary['resolved_simulation_path'] if summary['resolved_simulation_path'] is not None else 'None'}",
+        f"| simulation id: {summary['simulation_id']}",
+        f"| split policy: {summary['policy']}",
+        f"| prefer resolved simulation: {summary['prefer_resolved_simulation']}",
+        f"| original run timing intervals: {_format_timing_intervals(summary['original_run_timing_intervals'])}",
+        "| jobs:",
+    ]
+    for job in summary["jobs"]:
         lines.extend(
             [
-                f"| - {job_item['folder_name']}",
-                f"|   | folder: {job_folder}",
-                f"|   | original runs: {_format_original_run_indices(metadata.get('original_run_indices', []))}",
-                f"|   | local timing intervals: {_format_timing_intervals(metadata.get('run_timing_intervals', []))}",
+                f"| - {job['folder_name']}",
+                f"|   | folder: {job['folder']}",
+                f"|   | original runs: {_format_original_run_indices(job['original_run_indices'])}",
+                f"|   | local timing intervals: {_format_timing_intervals(job['run_timing_intervals'])}",
             ]
         )
     return "\n".join(lines)
 
 
-def print_jobs_split_summary(manifest_or_dir_path):
-    summary = format_jobs_split_summary(manifest_or_dir_path)
-    print(summary)
-    return summary
+def print_jobs_split_summary(summary_or_manifest_path):
+    summary_text = format_jobs_split_summary(summary_or_manifest_path)
+    print(summary_text)
+    return summary_text
 
 
 def _get_jobs_backend_status_path(split_root_folder):
@@ -1443,7 +1923,7 @@ def jobs_run(
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
 
-class SplitRunController:
+class SplitRunMergeController:
     """Local orchestration handle for split-run-merge workflows.
 
     The controller is an API-layer wrapper around the functional split/run/merge
@@ -1479,6 +1959,7 @@ class SplitRunController:
             "clean_result": None,
             "error": None,
         }
+        self.jobs_split_manager = None
         self.merge_manager = None
 
     @property
@@ -1546,19 +2027,15 @@ class SplitRunController:
 
     def split(self, number_of_jobs, **split_options):
         try:
-            self._jobs_root_dir = jobs_split(
+            self.jobs_split_manager = jobs_split(
                 simulation=self.simulation,
                 jobs_root_dir=self._jobs_root_dir,
                 number_of_jobs=number_of_jobs,
                 policy=self.split_policy,
                 **split_options,
             )
-            self._status["split_result"] = {
-                "jobs_root_dir": str(self._jobs_root_dir),
-                "manifest_path": str(self.manifest_path),
-                "number_of_jobs": number_of_jobs,
-                "policy": self.split_policy,
-            }
+            self._jobs_root_dir = self.jobs_split_manager.jobs_root_dir
+            self._status["split_result"] = self.jobs_split_manager.split_result
             self._stage = "split"
             self.refresh()
             return self._status["split_result"]
@@ -1578,7 +2055,7 @@ class SplitRunController:
         jobs.
         """
         if self._jobs_root_dir is None:
-            fatal("SplitRunController.run() requires split() to be called first.")
+            fatal("SplitRunMergeController.run() requires split() to be called first.")
         try:
             run_options = dict(run_options)
             run_options.setdefault("backend", self.backend)
@@ -1599,7 +2076,7 @@ class SplitRunController:
 
     def wait(self, poll_interval=1.0, timeout=None):
         if self._jobs_root_dir is None:
-            fatal("SplitRunController.wait() requires split() to be called first.")
+            fatal("SplitRunMergeController.wait() requires split() to be called first.")
         start_time = time.perf_counter()
         while True:
             self.refresh()
@@ -1615,7 +2092,7 @@ class SplitRunController:
 
     def merge(self, **merge_options):
         if self._jobs_root_dir is None:
-            fatal("SplitRunController.merge() requires split() to be called first.")
+            fatal("SplitRunMergeController.merge() requires split() to be called first.")
         try:
             self.merge_manager = jobs_merge(
                 self._jobs_root_dir,
@@ -1633,7 +2110,7 @@ class SplitRunController:
 
     def clean(self, **clean_options):
         if self._jobs_root_dir is None:
-            fatal("SplitRunController.clean() requires split() to be called first.")
+            fatal("SplitRunMergeController.clean() requires split() to be called first.")
         try:
             self._status["clean_result"] = jobs_clean_split(
                 self._jobs_root_dir, **clean_options
@@ -2580,30 +3057,6 @@ from .base import (
 from .managers import create_sim_from_json
 
 
-def _find_metaimage_payload_paths(header_path):
-    payload_paths = []
-    if not header_path.exists():
-        return payload_paths
-    try:
-        with open(header_path, "r") as header_file:
-            for line in header_file:
-                if "=" not in line:
-                    continue
-                key, value = [part.strip() for part in line.split("=", 1)]
-                if key != "ElementDataFile":
-                    continue
-                if value.upper() == "LOCAL":
-                    return []
-                payload_path = Path(value)
-                if not payload_path.is_absolute():
-                    payload_path = header_path.parent / payload_path
-                payload_paths.append(payload_path)
-                break
-    except OSError:
-        pass
-    return payload_paths
-
-
 def _get_simulation_input_files_info(simulation):
     input_files_info = []
     dct = simulation.to_dictionary()
@@ -2629,7 +3082,9 @@ def _get_simulation_input_files_info(simulation):
                     )
                     path_obj = Path(p)
                     if path_obj.suffix.lower() == ".mhd":
-                        for payload in _find_metaimage_payload_paths(path_obj):
+                        for payload in _find_metaimage_payload_files(
+                            path_obj, require_existing=False
+                        ):
                             input_files_info.append(
                                 {
                                     "object_name": obj_name,
@@ -2862,8 +3317,3 @@ def jobs_status(jobs_root_dir):
         )
 
     return status_data
-
-
-def get_jobs_status(jobs_root_dir):
-    """Backward-compatible alias kept temporarily during the jobs API refactor."""
-    return jobs_status(jobs_root_dir)

@@ -766,6 +766,28 @@ class DynamicGateObject(GateObject):
             and self.inherited_user_info_defaults[k][1]["dynamic"] is True
         ]
 
+    @classmethod
+    def get_dynamic_input_file_user_info_names(cls):
+        """Return dynamic user-info keys that represent file-backed inputs.
+
+        Contract:
+        - This is a class-level semantic mapper based purely on
+          ``inherited_user_info_defaults``.
+        - It returns the dynamic user-info keys whose definitions are marked
+          both ``dynamic=True`` and ``is_input_file=True``.
+        - It does not inspect instance state such as ``dynamic_params`` and
+          does not say whether a particular object has populated those keys.
+
+        Higher-level callers should intersect this class-level set with the
+        keys actually present in a serialized or live dynamic parametrisation.
+        """
+
+        return {
+            name
+            for name, (_, options) in cls.inherited_user_info_defaults.items()
+            if options.get("dynamic") is True and options.get("is_input_file") is True
+        }
+
     @requires_fatal("simulation")
     def process_dynamic_parametrisation(self, params):
         # create a dictionary to store params which to not correspond to dynamic user info
