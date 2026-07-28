@@ -91,7 +91,9 @@ def check_child_phase_space_time_medians(job_folders, tolerance=0.05):
         with open(job_folder / "job_metadata.json", "r") as input_file:
             job_metadata = json.load(input_file)
         expected_mid_time = _contiguous_midpoint(job_metadata["run_timing_intervals"])
-        with uproot.open(job_folder / "test019_phsp_actor.root") as root_file:
+        child_simulation = gate.create_sim_from_json(job_folder / "simulation.json")
+        child_root_path = child_simulation.get_actor("PhaseSpace").get_output_path()
+        with uproot.open(child_root_path) as root_file:
             global_time = root_file["PhaseSpace"]["GlobalTime"].array(library="np")
         median_time = float(np.median(global_time))
         is_ok = (
@@ -123,7 +125,8 @@ def check_child_root_runid_injection(split_root, status_data):
         job_folder = split_root / job["folder_name"]
         child_simulation = gate.create_sim_from_json(job_folder / "simulation.json")
         child_phsp = child_simulation.get_actor("PhaseSpace")
-        with uproot.open(job_folder / "test019_phsp_actor.root") as root_file:
+        child_root_path = child_phsp.get_output_path()
+        with uproot.open(child_root_path) as root_file:
             branch_names = sorted(root_file["PhaseSpace"].keys())
         is_ok = (
             utility.print_test(
