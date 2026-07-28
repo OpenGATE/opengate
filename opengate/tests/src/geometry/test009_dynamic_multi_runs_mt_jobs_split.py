@@ -115,7 +115,9 @@ def merge_phase_space_root_from_jobs_with_runid_remap(
             )
         original_run_index = original_run_indices[0]
 
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         child_root_path = child_simulation.get_actor("phsp2").get_output_path()
 
         # Child output lives under the child simulation's output_dir. Resolve

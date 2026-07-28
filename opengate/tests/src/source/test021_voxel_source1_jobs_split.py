@@ -93,7 +93,9 @@ def build_voxel_source_simulation(paths, output_dir, write_dose_to_disk):
 def merge_stats_from_jobs(job_folders, output_path):
     merged_stats = None
     for job_folder in job_folders:
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         job_stats_path = child_simulation.get_actor("Stats").get_output_path()
         job_stats = utility.read_stats_file(job_stats_path)
         merged_stats = (
@@ -110,10 +112,9 @@ def merge_images_from_jobs(job_folders, output_path):
         child_simulation = gate.create_sim_from_json(
             Path(job_folder) / "simulation.json"
         )
-        return (
-            child_simulation.get_actor("dose")
-            .user_output.edep_with_uncertainty.get_output_path(item=0)
-        )
+        return child_simulation.get_actor(
+            "dose"
+        ).user_output.edep_with_uncertainty.get_output_path(item=0)
 
     first_image = itk.imread(str(get_job_edep_path(job_folders[0])))
     merged_array = itk.array_view_from_image(first_image).copy()

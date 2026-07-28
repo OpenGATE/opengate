@@ -156,7 +156,9 @@ def _rewrite_path_against_reference(path, reference_folder, path_mode):
 
     if path_mode == "relative":
         rewritten_path = Path(
-            os.path.relpath(os.path.abspath(path_obj), os.path.abspath(reference_folder))
+            os.path.relpath(
+                os.path.abspath(path_obj), os.path.abspath(reference_folder)
+            )
         )
     elif path_mode == "absolute":
         if path_obj.is_absolute():
@@ -232,9 +234,7 @@ def _collect_input_file_values_from_gate_object_dictionary(go_dict):
 
     go_cls = _get_gate_object_class_from_dictionary(go_dict)
     if issubclass(go_cls, DynamicGateObject):
-        class_dynamic_input_file_names = (
-            go_cls.get_dynamic_input_file_user_info_names()
-        )
+        class_dynamic_input_file_names = go_cls.get_dynamic_input_file_user_info_names()
     else:
         class_dynamic_input_file_names = set()
 

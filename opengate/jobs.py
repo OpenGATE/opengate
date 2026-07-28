@@ -554,7 +554,9 @@ def _stage_input_files(input_files, target_directory, link_files=False):
             shutil.copy2(input_file, target_directory)
 
     return {
-        Path(input_file).resolve(): (target_directory / Path(input_file).name).absolute()
+        Path(input_file)
+        .resolve(): (target_directory / Path(input_file).name)
+        .absolute()
         for input_file in unique_input_files
     }
 
@@ -615,6 +617,7 @@ def _rewrite_transferred_input_paths_in_dict(
         "volume_manager" in updated_dict
         and "material_database_filenames" in updated_dict["volume_manager"]
     ):
+
         def rewrite_transferred_material_database_path(path):
             source_path = resolve_source_input_path(path, allow_cwd_fallback=True)
             target_path = transferred_path_map.get(
@@ -1102,9 +1105,7 @@ def _build_jobs_split_summary_from_manifest(manifest_path, manifest):
         "policy": manifest.get("policy", "Unknown"),
         "options": manifest.get("options", {}),
         "number_of_jobs": manifest.get("number_of_jobs", len(jobs)),
-        "prefer_resolved_simulation": manifest.get(
-            "prefer_resolved_simulation", False
-        ),
+        "prefer_resolved_simulation": manifest.get("prefer_resolved_simulation", False),
         "original_run_timing_intervals": manifest.get(
             "original_run_timing_intervals", []
         ),
@@ -2092,7 +2093,9 @@ class SplitRunMergeController:
 
     def merge(self, **merge_options):
         if self._jobs_root_dir is None:
-            fatal("SplitRunMergeController.merge() requires split() to be called first.")
+            fatal(
+                "SplitRunMergeController.merge() requires split() to be called first."
+            )
         try:
             self.merge_manager = jobs_merge(
                 self._jobs_root_dir,
@@ -2110,7 +2113,9 @@ class SplitRunMergeController:
 
     def clean(self, **clean_options):
         if self._jobs_root_dir is None:
-            fatal("SplitRunMergeController.clean() requires split() to be called first.")
+            fatal(
+                "SplitRunMergeController.clean() requires split() to be called first."
+            )
         try:
             self._status["clean_result"] = jobs_clean_split(
                 self._jobs_root_dir, **clean_options

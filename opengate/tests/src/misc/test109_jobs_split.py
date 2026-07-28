@@ -592,9 +592,12 @@ if __name__ == "__main__":
             source_n=[20, 40],
             material_db_source_path=paths.data / "GateMaterials.db",
         )
-        is_ok = utility.print_test(
-            scenario_ok,
-            f"Input path rewrite scenario {scenario_name}",
-        ) and is_ok
+        is_ok = (
+            utility.print_test(
+                scenario_ok,
+                f"Input path rewrite scenario {scenario_name}",
+            )
+            and is_ok
+        )
 
     utility.test_ok(is_ok)

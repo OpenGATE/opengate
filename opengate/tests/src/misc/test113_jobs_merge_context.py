@@ -989,10 +989,9 @@ if __name__ == "__main__":
     broken_stats_job_sim = gate.create_sim_from_json(
         broken_stats_split_root / "job0001" / "simulation.json"
     )
-    broken_stats_job_path = (
-        broken_stats_job_sim.get_actor("Stats")
-        .user_output.stats.get_output_path(which=0)
-    )
+    broken_stats_job_path = broken_stats_job_sim.get_actor(
+        "Stats"
+    ).user_output.stats.get_output_path(which=0)
     # Check missing-JSON failure handling at the lightweight stats-output level.
     is_ok = (
         run_missing_stats_probe(broken_stats_split_root, broken_stats_job_path)

@@ -106,7 +106,9 @@ def merge_stats_from_jobs(job_folders, output_path):
     merged_stats = None
     original_run_indices = set()
     for job_folder in job_folders:
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         job_stats_path = child_simulation.get_actor("Stats").get_output_path()
         job_stats = utility.read_stats_file(job_stats_path)
         merged_stats = (
@@ -130,7 +132,9 @@ def merge_phase_space_root_from_jobs(
 ):
     merged_branch_data = {}
     for job_folder in job_folders:
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         child_root_path = child_simulation.get_actor("PhaseSpace").get_output_path()
         with uproot.open(child_root_path) as root_file:
             tree = root_file[tree_name]
@@ -163,7 +167,9 @@ def check_child_phase_space_time_medians(job_folders, tolerance=0.05):
         expected_mid_time = _single_interval_midpoint(
             job_metadata["run_timing_intervals"]
         )
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         child_root_path = child_simulation.get_actor("PhaseSpace").get_output_path()
         with uproot.open(child_root_path) as root_file:
             global_time = root_file["PhaseSpace"]["GlobalTime"].array(library="np")

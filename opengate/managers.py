@@ -2367,8 +2367,8 @@ class Simulation(GateObject):
         input_files = []
         root_dir = Path(self.root_dir).absolute()
         for go_dict in find_all_gate_objects(dct):
-            go_input_files, _, _ = _collect_input_file_values_from_gate_object_dictionary(
-                go_dict
+            go_input_files, _, _ = (
+                _collect_input_file_values_from_gate_object_dictionary(go_dict)
             )
             for input_path in go_input_files:
                 path_obj = Path(input_path)
@@ -2483,9 +2483,7 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                _apply_path_modifier_recursively(
-                    filename, rewrite_archived_input_path
-                )
+                _apply_path_modifier_recursively(filename, rewrite_archived_input_path)
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]

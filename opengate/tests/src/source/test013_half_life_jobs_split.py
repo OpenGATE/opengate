@@ -114,7 +114,9 @@ def build_half_life_simulation(output_dir):
 def merge_stats_from_jobs(job_folders, output_path):
     merged_stats = None
     for job_folder in job_folders:
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         job_stats_path = child_simulation.get_actor("Stats").get_output_path()
         job_stats = utility.read_stats_file(job_stats_path)
         merged_stats = (
@@ -291,12 +293,8 @@ if __name__ == "__main__":
     merged_ion_root = paths.output / "merged_decay_ion.root"
     merged_beta_root = paths.output / "merged_decay_beta_plus.root"
     merged_stats = merge_stats_from_jobs(job_folders, merged_stats_path)
-    merge_root_tree_from_jobs(
-        job_folders, merged_ion_root, "phsp_ion", "phsp_ion"
-    )
-    merge_root_tree_from_jobs(
-        job_folders, merged_beta_root, "phsp_beta", "phsp_beta"
-    )
+    merge_root_tree_from_jobs(job_folders, merged_ion_root, "phsp_ion", "phsp_ion")
+    merge_root_tree_from_jobs(job_folders, merged_beta_root, "phsp_beta", "phsp_beta")
 
     is_ok = (
         utility.assert_stats_json(

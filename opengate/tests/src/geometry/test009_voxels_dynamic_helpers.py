@@ -147,7 +147,9 @@ def merge_stats_from_jobs(job_folders, output_path):
 
     merged_stats = None
     for job_folder in job_folders:
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         job_stats_path = child_simulation.get_actor("Stats").get_output_path()
         job_stats = utility.read_stats_file(job_stats_path)
         merged_stats = (
@@ -176,7 +178,9 @@ def merge_images_from_jobs(job_folders, output_path):
     merged_array = np.array(itk.array_view_from_image(first_image), copy=True)
 
     for job_folder in job_folders[1:]:
-        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
         job_image_path = child_simulation.get_actor("dose").edep.get_output_path()
         job_image = itk.imread(str(job_image_path))
         merged_array += itk.array_view_from_image(job_image)
