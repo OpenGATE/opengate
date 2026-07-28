@@ -48,7 +48,7 @@ the same script, use ``merge_after_run=True`` together with
    # At this point, the merged output is already available in sim.output_dir
    # and the live simulation object can be used for postprocessing.
 
-In the example, ``controller`` is a ``SplitRunController`` object that can be inspected - see below. It is always return by ``sim.run(...)`` when the simulation is run in multiple jobs.
+In the example, ``controller`` is a ``SplitRunMergeController`` object that can be inspected. It is always returned by ``sim.run(...)`` when the simulation is run in multiple jobs.
 
 Local pooled execution always uses one spawned worker process per child job.
 
@@ -81,7 +81,6 @@ The first script can launch the split jobs and stop after execution:
 
    print(controller.stage)         # typically "submitted"
    print(controller.jobs_root_dir) # folder containing simulation.json and job0001, job0002, ...
-   controller.merge_manager.print_merge_summary()
 
 Later, another script can re-use the campaign folder and merge the finished
 jobs:
@@ -100,6 +99,37 @@ jobs:
 In this scenario, merging recreates a simulation from the files in the
 campaign folder and writes merged output to the configured output directory of
 that simulation.
+
+Low-level split, run, and merge
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The lower-level functions can also be called explicitly. ``jobs_split(...)``
+returns a ``JobsSplitManager`` object; use ``jobs_split_manager.jobs_root_dir`` when
+passing the campaign folder to the next stage.
+
+.. code-block:: python
+
+   import opengate as gate
+
+   sim = gate.Simulation()
+   sim.output_dir = "output"
+
+   # ... configure geometry, physics, sources, and actors ...
+
+   jobs_split_manager = gate.jobs_split(
+       simulation=sim,
+       jobs_root_dir="campaign",
+       number_of_jobs=4,
+       policy="split_in_time_total",
+   )
+
+   run_summary = gate.jobs_run(
+       jobs_split_manager.jobs_root_dir,
+       backend="local_pool",
+   )
+
+   merge_manager = gate.jobs_merge(jobs_split_manager.jobs_root_dir)
+   merged_sim = merge_manager.master_simulation
 
 
 Split policies
