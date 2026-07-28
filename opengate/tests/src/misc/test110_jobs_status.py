@@ -135,13 +135,15 @@ def main():
     )
 
     status_initial2 = get_jobs_status(split_root_folder2)
+    archived_patient_image = split_root_folder2 / "job0001" / "patient-4mm.mhd"
+    archived_patient_raw = split_root_folder2 / "job0001" / "patient-4mm.raw"
     is_ok2 = status_initial2["summary_counts"]["ready"] == 3
-    is_ok2 = (
-        is_ok2 and (split_root_folder2 / "job0001" / "patient-4mm.mhd").is_symlink()
-    )
+    is_ok2 = is_ok2 and archived_patient_image.is_symlink()
 
-    # Remove files in split folders to simulate errors
-    (split_root_folder2 / "job0001" / "patient-4mm.raw").unlink(missing_ok=True)
+    # Remove archived child inputs from the structural job folder layout. The
+    # linked child simulation may rehydrate its input path back to the original
+    # source location, so the test must target the campaign-local symlink here.
+    archived_patient_raw.unlink(missing_ok=True)
     (split_root_folder2 / "job0002" / "job_metadata.json").unlink(missing_ok=True)
 
     status_err2 = get_jobs_status(split_root_folder2)
