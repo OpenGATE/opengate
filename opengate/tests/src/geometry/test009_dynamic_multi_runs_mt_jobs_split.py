@@ -101,7 +101,6 @@ def build_dynamic_multi_run_simulation(output_dir):
 def merge_phase_space_root_from_jobs_with_runid_remap(
     job_folders,
     output_path,
-    root_filename="b.root",
     tree_name="phsp2",
 ):
     merged_branch_data = {}
@@ -116,7 +115,13 @@ def merge_phase_space_root_from_jobs_with_runid_remap(
             )
         original_run_index = original_run_indices[0]
 
-        with uproot.open(Path(job_folder) / root_filename) as root_file:
+        child_simulation = gate.create_sim_from_json(Path(job_folder) / "simulation.json")
+        child_root_path = child_simulation.get_actor("phsp2").get_output_path()
+
+        # Child output lives under the child simulation's output_dir. Resolve
+        # the ROOT file through the rehydrated actor output rather than assuming
+        # it sits directly under job000X.
+        with uproot.open(child_root_path) as root_file:
             tree = root_file[tree_name]
             branch_data = root_tree_get_branch_data(tree, library="ak")
 
@@ -188,7 +193,6 @@ if __name__ == "__main__":
     merge_phase_space_root_from_jobs_with_runid_remap(
         job_folders,
         merged_root,
-        root_filename="b.root",
         tree_name="phsp2",
     )
 
