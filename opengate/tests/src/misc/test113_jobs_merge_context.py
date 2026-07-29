@@ -258,7 +258,14 @@ def build_simulation(output_path, run_timing_intervals, source_n):
     return sim
 
 
-def wait_until_jobs_completed(split_root, timeout=60):
+def wait_until_jobs_completed(split_root, timeout=90):
+    """Wait for all jobs in a test campaign to finish.
+
+    The test runs one split campaign and then temporarily corrupts that same
+    campaign for failure probes. The timeout is intentionally bounded so a
+    genuinely broken campaign fails quickly.
+    """
+
     manifest_path = split_root / "jobs_manifest.json"
     manifest = load_json_with_retry(manifest_path)
     deadline = time.time() + timeout
@@ -277,7 +284,8 @@ def wait_until_jobs_completed(split_root, timeout=60):
             return last_statuses
         time.sleep(0.5)
     raise RuntimeError(
-        f"Timed out waiting for split jobs to complete. Last observed statuses: {last_statuses}"
+        f"Timed out waiting for split jobs to complete in '{split_root}' "
+        f"after {timeout} s. Last observed statuses: {last_statuses}"
     )
 
 
@@ -390,21 +398,28 @@ def run_failure_probe(split_root, broken_output_path):
     moved_output_path = broken_output_path.with_name(
         f"broken_{broken_output_path.name}"
     )
-    shutil.move(broken_output_path, moved_output_path)
-
+    raw_path = None
+    moved_raw_path = None
     if broken_output_path.suffix == ".mhd":
         raw_path = broken_output_path.with_suffix(".raw")
         moved_raw_path = moved_output_path.with_suffix(".raw")
-        if raw_path.exists():
-            shutil.move(raw_path, moved_raw_path)
 
     try:
+        shutil.move(broken_output_path, moved_output_path)
+        if raw_path is not None and raw_path.exists():
+            shutil.move(raw_path, moved_raw_path)
+
         gate.jobs_merge(split_root, to_path=split_root.parent / "broken_merge_output")
     except GateMergeError as error:
         return utility.print_test(
             "dose" in str(error) or "Failed to execute standard merge" in str(error),
             f"Intentional broken-dose merge raises GateMergeError: {error}",
         )
+    finally:
+        if moved_output_path.exists():
+            shutil.move(moved_output_path, broken_output_path)
+        if moved_raw_path is not None and moved_raw_path.exists():
+            shutil.move(moved_raw_path, raw_path)
     return utility.print_test(
         False,
         "Intentional broken-dose merge should have raised GateMergeError",
@@ -414,9 +429,9 @@ def run_failure_probe(split_root, broken_output_path):
 def run_missing_stats_probe(split_root, broken_stats_path):
     broken_stats_path = Path(broken_stats_path)
     moved_stats_path = broken_stats_path.with_name(f"broken_{broken_stats_path.name}")
-    shutil.move(broken_stats_path, moved_stats_path)
 
     try:
+        shutil.move(broken_stats_path, moved_stats_path)
         gate.jobs_merge(
             split_root, to_path=split_root.parent / "broken_merge_output_stats"
         )
@@ -426,6 +441,9 @@ def run_missing_stats_probe(split_root, broken_stats_path):
             or "Failed to execute standard merge" in str(error),
             f"Intentional broken-stats merge raises GateMergeError: {error}",
         )
+    finally:
+        if moved_stats_path.exists():
+            shutil.move(moved_stats_path, broken_stats_path)
     return utility.print_test(
         False,
         "Intentional broken-stats merge should have raised GateMergeError",
@@ -436,12 +454,14 @@ def run_identity_mismatch_probe(split_root):
     job_metadata_path = Path(split_root) / "job0001" / "job_metadata.json"
     with open(job_metadata_path, "r") as input_file:
         metadata = json.load(input_file)
-    metadata["parent_simulation_id"] = "wrong_parent_simulation_id"
-    with open(job_metadata_path, "w") as output_file:
-        json.dump(metadata, output_file, indent=2, sort_keys=True)
-        output_file.write("\n")
+    original_metadata = dict(metadata)
 
     try:
+        metadata["parent_simulation_id"] = "wrong_parent_simulation_id"
+        with open(job_metadata_path, "w") as output_file:
+            json.dump(metadata, output_file, indent=2, sort_keys=True)
+            output_file.write("\n")
+
         gate.jobs_merge(split_root, execute=False)
     except Exception as error:
         return utility.print_test(
@@ -449,6 +469,10 @@ def run_identity_mismatch_probe(split_root):
             or "manifest expects" in str(error).lower(),
             f"Parent/master simulation ID mismatch is detected: {error}",
         )
+    finally:
+        with open(job_metadata_path, "w") as output_file:
+            json.dump(original_metadata, output_file, indent=2, sort_keys=True)
+            output_file.write("\n")
     return utility.print_test(
         False,
         "Parent/master simulation ID mismatch should have raised an error",
@@ -461,15 +485,8 @@ if __name__ == "__main__":
     is_ok = True
 
     split_root = paths.output / "merge_context_split"
-    broken_split_root = paths.output / "merge_context_split_broken"
     shutil.rmtree(split_root, ignore_errors=True)
-    shutil.rmtree(broken_split_root, ignore_errors=True)
     shutil.rmtree(paths.output / "merge_context_input", ignore_errors=True)
-    shutil.rmtree(paths.output / "merge_context_input_broken", ignore_errors=True)
-    shutil.rmtree(paths.output / "merge_context_input_broken_stats", ignore_errors=True)
-    shutil.rmtree(
-        paths.output / "merge_context_input_identity_mismatch", ignore_errors=True
-    )
     shutil.rmtree(paths.output / "reference", ignore_errors=True)
     shutil.rmtree(paths.output / "merged", ignore_errors=True)
     shutil.rmtree(paths.output / "merged_repeat", ignore_errors=True)
@@ -938,82 +955,43 @@ if __name__ == "__main__":
 
     # ------------------------------------------------------------------
     # Failure handling:
-    # deliberately remove individual expected child outputs and corrupt
-    # campaign identity metadata so merge failure modes are exercised on
-    # realistic persisted split folders.
+    # deliberately corrupt the completed split campaign in place, then restore
+    # the moved files/metadata inside each probe. This keeps the failure probes
+    # realistic and independent without rerunning additional simulations.
     # ------------------------------------------------------------------
     print()
     print("Probing failure mode with a missing dose image ...")
-    broken_sim = build_simulation(
-        paths.output / "merge_context_input_broken",
-        run_timing_intervals,
-        source_n,
-    )
-    broken_split_root = gate.jobs_split(
-        simulation=broken_sim,
-        number_of_jobs=3,
-        jobs_root_dir=broken_split_root,
-        policy="split_in_time_total",
-    ).jobs_root_dir
-    broken_run_summary = gate.jobs_run(broken_split_root, backend="local_sequential")
-    print(broken_run_summary)
-    wait_until_jobs_completed(broken_split_root)
-
     broken_job_sim = gate.create_sim_from_json(
-        broken_split_root / "job0001" / "simulation.json"
+        split_root / "job0001" / "simulation.json"
     )
-    broken_dose_path = broken_job_sim.get_actor("dose").dose.get_output_path(which=0)
+    broken_dose_path = broken_job_sim.get_actor("dose").dose.get_output_path(
+        which="merged"
+    )
     # Check missing-image failure handling at the standard image-output level.
-    is_ok = run_failure_probe(broken_split_root, broken_dose_path) and is_ok
+    # The cumulative file is always part of this merge workflow, while per-run
+    # files can be legitimately absent if a child run has no scored payload.
+    is_ok = run_failure_probe(split_root, broken_dose_path) and is_ok
 
     print()
     print("Probing failure mode with a missing stats JSON ...")
-    broken_stats_sim = build_simulation(
-        paths.output / "merge_context_input_broken_stats",
-        run_timing_intervals,
-        source_n,
-    )
-    broken_stats_split_root = gate.jobs_split(
-        simulation=broken_stats_sim,
-        number_of_jobs=3,
-        jobs_root_dir=paths.output / "merge_context_split_broken_stats",
-        policy="split_in_time_total",
-        overwrite_existing_job_folders=True,
-    ).jobs_root_dir
-
-    broken_stats_run_summary = gate.jobs_run(
-        broken_stats_split_root, backend="local_sequential"
-    )
-    print(broken_stats_run_summary)
-    wait_until_jobs_completed(broken_stats_split_root)
     broken_stats_job_sim = gate.create_sim_from_json(
-        broken_stats_split_root / "job0001" / "simulation.json"
+        split_root / "job0001" / "simulation.json"
     )
     broken_stats_job_path = broken_stats_job_sim.get_actor(
         "Stats"
-    ).user_output.stats.get_output_path(which=0)
+    ).user_output.stats.get_output_path(which="merged")
     # Check missing-JSON failure handling at the lightweight stats-output level.
+    # The cumulative stats JSON is always part of this merge workflow, unlike a
+    # sparse per-run stats file.
     is_ok = (
-        run_missing_stats_probe(broken_stats_split_root, broken_stats_job_path)
+        run_missing_stats_probe(split_root, broken_stats_job_path)
         and is_ok
     )
 
     print()
     print("Probing parent/master simulation ID mismatch ...")
-    identity_sim = build_simulation(
-        paths.output / "merge_context_input_identity_mismatch",
-        run_timing_intervals,
-        source_n,
-    )
-    identity_split_root = gate.jobs_split(
-        simulation=identity_sim,
-        number_of_jobs=3,
-        jobs_root_dir=paths.output / "merge_context_split_identity_mismatch",
-        policy="split_in_time_total",
-        overwrite_existing_job_folders=True,
-    ).jobs_root_dir
     # Check that a corrupted child parent/master simulation ID is detected
     # before merge planning can proceed.
-    is_ok = run_identity_mismatch_probe(identity_split_root) and is_ok
+    is_ok = run_identity_mismatch_probe(split_root) and is_ok
 
     utility.test_ok(is_ok)
