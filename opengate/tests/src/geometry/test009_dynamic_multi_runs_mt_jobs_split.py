@@ -201,7 +201,10 @@ if __name__ == "__main__":
         tree_name="phsp2",
     )
 
-    ref_root = paths.output_ref / "b.root"
+    # The jobs variant validates against the same non-split reference ROOT file
+    # as test009_dynamic_multi_runs_mt.py. It must not depend on that test being
+    # executed first; the reference file is part of the test data.
+    ref_root = paths.data / "output_ref" / "test009_mr_mt" / "b.root"
     is_ok = (
         utility.compare_root3(
             ref_root,
