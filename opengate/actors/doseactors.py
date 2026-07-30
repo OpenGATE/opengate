@@ -712,8 +712,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
-        # FIXME: should check if uncertainty goal is reached (return value: 0),
-        # but the current mechanism is quite hacky and it is therefore temporarily not in use!
         return 0
 
     def EndSimulationAction(self):
