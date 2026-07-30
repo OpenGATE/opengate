@@ -2,6 +2,7 @@ from PIL import DcxImagePlugin
 import copy
 import io
 import os
+import random
 import shutil
 import weakref
 from pathlib import Path
@@ -2004,6 +2005,13 @@ class Simulation(GateObject):
                 "Setting a specific value will make subsequent simulation runs to produce identical results."
             },
         ),
+        "current_random_seed": (
+            None,
+            {
+                "doc": "Concrete integer seed resolved from random_seed for the current configuration or most recent run.",
+                "read_only": True,
+            },
+        ),
         "run_timing_intervals": (
             [[0 * g4_units.second, 1 * g4_units.second]],
             {
@@ -2144,9 +2152,6 @@ class Simulation(GateObject):
         self.user_hook_after_run = None
         self.user_hook_log = None
 
-        # read-only info
-        self._current_random_seed = None
-
         self.expected_number_of_events = None
         self._merge_coordinators = []
 
@@ -2215,10 +2220,6 @@ class Simulation(GateObject):
     @property
     def world(self):
         return self.volume_manager.world_volume
-
-    @property
-    def current_random_seed(self):
-        return self._current_random_seed
 
     @property
     def warnings(self):
@@ -2351,7 +2352,11 @@ class Simulation(GateObject):
         if filename is None:
             filename = self.default_resolved_simulation_filename
         self.resolve_and_validate_config(context=context)
-        self.to_json_file(directory=directory, filename=filename)
+        directory = self.get_root_path(directory, is_file_or_directory="d")
+        d = self._get_resolved_simulation_dictionary()
+        d = self._rewrite_input_paths_in_dict(d, directory, path_mode="relative")
+        with open(directory / filename, "w") as f:
+            dump_json(d, f)
         return self.get_root_path(directory, is_file_or_directory="d") / filename
 
     def archive_input_files(
@@ -2726,6 +2731,14 @@ class Simulation(GateObject):
         # negotiation before runtime initialization. It may tie managers and
         # actors together, but it must not create any Geant4 objects yet.
         assert_run_timing(self.run_timing_intervals)
+        # Resolve the user-facing seed specification into the concrete seed for
+        # this resolved configuration. Ordinary runs consume it directly, while
+        # split preparation freezes it into the campaign before deriving one
+        # deterministic child seed per job.
+        if self.random_seed == "auto":
+            self.user_info["current_random_seed"] = random.randrange(sys.maxsize)
+        else:
+            self.user_info["current_random_seed"] = int(self.random_seed)
         if self._output_dir_was_user_set is False and Path(self.output_dir) == Path(
             "."
         ):
@@ -2862,7 +2875,7 @@ class Simulation(GateObject):
 
         # store the hook log
         self.user_hook_log = output.user_hook_log
-        self._current_random_seed = output.current_random_seed
+        self.user_info["current_random_seed"] = output.current_random_seed
 
         # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
         if self.volume_manager.material_database is None:

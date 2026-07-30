@@ -9,7 +9,6 @@ import time
 import traceback
 import uuid
 import copy
-import random
 from datetime import datetime
 from pathlib import Path
 import json
@@ -188,16 +187,6 @@ def _prepare_jobs_root_dir(jobs_root_dir, overwrite_existing_job_folders=False):
 
 def _copy_run_timing_intervals(run_timing_intervals):
     return [[interval[0], interval[1]] for interval in run_timing_intervals]
-
-
-def _resolve_split_campaign_random_seed(simulation):
-    """Freeze ``random_seed='auto'`` once for a reproducible split campaign."""
-
-    if simulation.random_seed == "auto":
-        simulation.random_seed = random.randrange(sys.maxsize)
-    else:
-        simulation.random_seed = int(simulation.random_seed)
-    return simulation.random_seed
 
 
 def _create_job_definition(job_index, run_timing_intervals, original_run_indices):
@@ -934,7 +923,6 @@ class JobsSplitManager:
         # deterministic, distinct seed while the resolved master JSON remains
         # reproducible. Geant4 then derives thread/event streams internally from
         # each child's master seed.
-        _resolve_split_campaign_random_seed(self.master_simulation)
         self.resolved_master_simulation_dict = self.master_simulation.to_dictionary()
         self.is_prepared = True
 
@@ -1032,7 +1020,7 @@ class JobsSplitManager:
                 self.source_n_assignments[job_definition["job_index"]],
                 self.simulation_id,
                 self.jobs_root_dir,
-                self.master_simulation.random_seed,
+                self.master_simulation.current_random_seed,
                 self.number_of_jobs,
             )
             job_folder.mkdir(parents=True, exist_ok=False)

@@ -516,9 +516,10 @@ if __name__ == "__main__":
     job_3_total = load_child_simulation(split_root_2 / "job0003")
     job_1_total_metadata = load_job_metadata(split_root_2 / "job0001")
 
-    resolved_master_seed_2 = resolved_master_2["user_info"]["random_seed"]
+    resolved_master_seed_2 = resolved_master_2["user_info"]["current_random_seed"]
     utility.print_test(
         isinstance(resolved_master_seed_2, int)
+        and resolved_master_2["user_info"]["random_seed"] == "auto"
         and job_1_total.random_seed == resolved_master_seed_2 + 1
         and job_2_total.random_seed == resolved_master_seed_2 + 2
         and job_3_total.random_seed == resolved_master_seed_2 + 3,
@@ -528,6 +529,7 @@ if __name__ == "__main__":
     )
     is_ok = (
         isinstance(resolved_master_seed_2, int)
+        and resolved_master_2["user_info"]["random_seed"] == "auto"
         and job_1_total.random_seed == resolved_master_seed_2 + 1
         and job_2_total.random_seed == resolved_master_seed_2 + 2
         and job_3_total.random_seed == resolved_master_seed_2 + 3

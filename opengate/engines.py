@@ -1,5 +1,4 @@
 import time
-import random
 import sys
 import os
 import weakref
@@ -1674,10 +1673,13 @@ class SimulationEngine(GateSingletonFatal):
 
         # set the random engine
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        if self.simulation.random_seed == "auto":
-            self.current_random_seed = random.randrange(sys.maxsize)
-        else:
-            self.current_random_seed = self.simulation.random_seed
+        self.current_random_seed = self.simulation.current_random_seed
+        if self.current_random_seed is None:
+            fatal(
+                "Simulation.current_random_seed is not resolved. "
+                "resolve_and_validate_config() should assign a concrete seed "
+                "before SimulationEngine.initialize_random_engine() is called."
+            )
 
         # if windows, the long are 4 bytes instead of 8 bytes for python and unix system
         if os.name == "nt":
