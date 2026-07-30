@@ -9,6 +9,7 @@ import time
 import traceback
 import uuid
 import copy
+import random
 from datetime import datetime
 from pathlib import Path
 import json
@@ -181,6 +182,16 @@ def _prepare_jobs_root_dir(jobs_root_dir, overwrite_existing_job_folders=False):
 
 def _copy_run_timing_intervals(run_timing_intervals):
     return [[interval[0], interval[1]] for interval in run_timing_intervals]
+
+
+def _resolve_split_campaign_random_seed(simulation):
+    """Freeze ``random_seed='auto'`` once for a reproducible split campaign."""
+
+    if simulation.random_seed == "auto":
+        simulation.random_seed = random.randrange(sys.maxsize)
+    else:
+        simulation.random_seed = int(simulation.random_seed)
+    return simulation.random_seed
 
 
 def _create_job_definition(job_index, run_timing_intervals, original_run_indices):
@@ -420,6 +431,7 @@ def _configure_child_simulation(
     source_n_assignments,
     parent_simulation_id,
     jobs_root_dir,
+    parent_random_seed,
     number_of_jobs,
 ):
     from .sources.phspsources import PhaseSpaceSource
@@ -429,6 +441,9 @@ def _configure_child_simulation(
     child_simulation.output_dir = job_folder / "output"
     child_simulation.run_timing_intervals = _copy_run_timing_intervals(
         job_definition["run_timing_intervals"]
+    )
+    child_simulation.random_seed = (
+        parent_random_seed + job_definition["job_index"]
     )
 
     # Dynamic objects are defined against the master run ordering. Rewrite them
@@ -458,11 +473,9 @@ def _configure_child_simulation(
             # sequence, matching the existing MT limitation without adding a
             # stronger guarantee that phase-space entries cannot overlap.
             n_threads = child_simulation.number_of_threads
-            number_of_events_per_job_block = (
-                PhaseSpaceSource.get_number_of_events_per_lane(
-                    parent_source_n,
-                    number_of_jobs * n_threads,
-                )
+            number_of_events_per_job_block = PhaseSpaceSource.get_number_of_events_per_lane(
+                parent_source_n,
+                number_of_jobs * n_threads,
             )
             job_offset = (
                 (job_definition["job_index"] - 1) * number_of_events_per_job_block
@@ -832,6 +845,11 @@ class JobsSplitManager:
         # Split authoritative, resolved configuration rather than the raw user
         # inputs so child jobs inherit explicit timing anchors and helper actors.
         self.master_simulation.resolve_and_validate_config(context="split_preparation")
+        # A split campaign needs a concrete seed so every child can receive a
+        # deterministic, distinct seed while the resolved master JSON remains
+        # reproducible. Geant4 then derives thread/event streams internally from
+        # each child's master seed.
+        _resolve_split_campaign_random_seed(self.master_simulation)
         self.resolved_master_simulation_dict = self.master_simulation.to_dictionary()
         self.is_prepared = True
 
@@ -929,6 +947,7 @@ class JobsSplitManager:
                 self.source_n_assignments[job_definition["job_index"]],
                 self.simulation_id,
                 self.jobs_root_dir,
+                self.master_simulation.random_seed,
                 self.number_of_jobs,
             )
             job_folder.mkdir(parents=True, exist_ok=False)
