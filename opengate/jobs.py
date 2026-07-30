@@ -420,7 +420,10 @@ def _configure_child_simulation(
     source_n_assignments,
     parent_simulation_id,
     jobs_root_dir,
+    number_of_jobs,
 ):
+    from .sources.phspsources import PhaseSpaceSource
+
     job_folder = jobs_root_dir / job_definition["folder_name"]
     child_simulation.root_dir = job_folder
     child_simulation.output_dir = job_folder / "output"
@@ -443,7 +446,32 @@ def _configure_child_simulation(
     # directly executable later without extra split-time logic.
     for source_name, assigned_counts in source_n_assignments.items():
         child_source = child_simulation.source_manager.get_source(source_name)
+        parent_source_n = child_source.n
         child_source.n = assigned_counts
+
+        if (
+            isinstance(child_source, PhaseSpaceSource)
+            and child_source.entry_start is None
+        ):
+            # PhaseSpaceSource owns the thread-lane layout. The split layer only
+            # shifts each child to a different block of the same global lane
+            # sequence, matching the existing MT limitation without adding a
+            # stronger guarantee that phase-space entries cannot overlap.
+            n_threads = child_simulation.number_of_threads
+            number_of_events_per_job_block = (
+                PhaseSpaceSource.get_number_of_events_per_lane(
+                    parent_source_n,
+                    number_of_jobs * n_threads,
+                )
+            )
+            job_offset = (
+                (job_definition["job_index"] - 1) * number_of_events_per_job_block
+            )
+            child_source.entry_start = PhaseSpaceSource.generate_entry_start_list(
+                number_of_events_per_job_block,
+                n_threads,
+                offset=job_offset,
+            )
 
     child_metadata = {
         "job_id": job_definition["job_id"],
@@ -901,6 +929,7 @@ class JobsSplitManager:
                 self.source_n_assignments[job_definition["job_index"]],
                 self.simulation_id,
                 self.jobs_root_dir,
+                self.number_of_jobs,
             )
             job_folder.mkdir(parents=True, exist_ok=False)
             child_simulation_dict = child_simulation.to_dictionary()

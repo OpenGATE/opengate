@@ -286,6 +286,39 @@ class PhaseSpaceSource(SourceBase):
     primary_PDGCode: int
     verbose: bool
 
+    @staticmethod
+    def _as_total_number_of_events(source_n):
+        """Return the total event count represented by scalar or per-run ``source.n``."""
+        counts = np.asarray(source_n, dtype=float)
+        if counts.shape == ():
+            return int(counts)
+        return int(np.sum(counts))
+
+    @classmethod
+    def get_number_of_events_per_lane(cls, source_n, number_of_lanes):
+        """Return the entry spacing used to distribute PHSP reads over lanes."""
+        total_number_of_events = cls._as_total_number_of_events(source_n)
+        return int(np.ceil(total_number_of_events / number_of_lanes)) + 1
+
+    @classmethod
+    def generate_entry_start_list(
+        cls,
+        number_of_events_to_be_split,
+        n_threads,
+        offset=0,
+    ):
+        """Generate per-thread phase-space entry starts.
+
+        ``n_threads`` controls the length of the returned list. ``offset`` and
+        ``step`` are entry-space quantities, so callers that coordinate multiple
+        simulations can inject their own campaign-level layout while this method
+        keeps the thread-local list construction in the source.
+        """
+        number_of_events_per_split = cls.get_number_of_events_per_lane(
+            number_of_events_to_be_split, n_threads
+        )
+        return [int(offset + i * number_of_events_per_split) for i in range(n_threads)]
+
     user_info_defaults = {
         "phsp_file": (
             None,
@@ -506,8 +539,7 @@ class PhaseSpaceSource(SourceBase):
                 self.entry_start = 0
             else:
                 n_threads = self.simulation.number_of_threads
-                step = np.ceil(self.n / n_threads) + 1
-                self.entry_start = [i * step for i in range(n_threads)]
+                self.entry_start = self.generate_entry_start_list(self.n, n_threads)
 
         # check user info
         if self.position_key_x is None:
