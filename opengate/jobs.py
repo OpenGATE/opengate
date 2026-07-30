@@ -18,7 +18,13 @@ import numpy as np
 import opengate_core as g4
 
 from .coordinators import RootMergeCoordinator, StandardMergeCoordinator
-from .exception import GateJobsBackendError, GateMergeError, GateSplitError, fatal, warning
+from .exception import (
+    GateJobsBackendError,
+    GateMergeError,
+    GateSplitError,
+    fatal,
+    warning,
+)
 from .runtiming import assert_run_timing
 from .serialization import (
     dump_json,
@@ -442,9 +448,7 @@ def _configure_child_simulation(
     child_simulation.run_timing_intervals = _copy_run_timing_intervals(
         job_definition["run_timing_intervals"]
     )
-    child_simulation.random_seed = (
-        parent_random_seed + job_definition["job_index"]
-    )
+    child_simulation.random_seed = parent_random_seed + job_definition["job_index"]
 
     # Dynamic objects are defined against the master run ordering. Rewrite them
     # to the local run ordering of this child simulation.
@@ -473,13 +477,15 @@ def _configure_child_simulation(
             # sequence, matching the existing MT limitation without adding a
             # stronger guarantee that phase-space entries cannot overlap.
             n_threads = child_simulation.number_of_threads
-            number_of_events_per_job_block = PhaseSpaceSource.get_number_of_events_per_lane(
-                parent_source_n,
-                number_of_jobs * n_threads,
+            number_of_events_per_job_block = (
+                PhaseSpaceSource.get_number_of_events_per_lane(
+                    parent_source_n,
+                    number_of_jobs * n_threads,
+                )
             )
             job_offset = (
-                (job_definition["job_index"] - 1) * number_of_events_per_job_block
-            )
+                job_definition["job_index"] - 1
+            ) * number_of_events_per_job_block
             child_source.entry_start = PhaseSpaceSource.generate_entry_start_list(
                 number_of_events_per_job_block,
                 n_threads,
@@ -834,7 +840,7 @@ class JobsSplitManager:
                         f"The simulation contains a {actor.type_name} named '{actor_name}', "
                         f"but the split is not in time. The {actor.type_name} will produce unreliable results. "
                     )
-                else: 
+                else:
                     warning(
                         f"The simulation contains a {actor.type_name} named '{actor_name}'. "
                         "True conincidences around the transition between time intervals might remain undetected"

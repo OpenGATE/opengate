@@ -983,10 +983,7 @@ if __name__ == "__main__":
     # Check missing-JSON failure handling at the lightweight stats-output level.
     # The cumulative stats JSON is always part of this merge workflow, unlike a
     # sparse per-run stats file.
-    is_ok = (
-        run_missing_stats_probe(split_root, broken_stats_job_path)
-        and is_ok
-    )
+    is_ok = run_missing_stats_probe(split_root, broken_stats_job_path) and is_ok
 
     print()
     print("Probing parent/master simulation ID mismatch ...")

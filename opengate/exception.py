@@ -33,6 +33,7 @@ class GateJobsBackendError(Exception):
 class GateSplitError(Exception):
     """Raise this when a simulation merge operation fails."""
 
+
 class GateMergeError(Exception):
     """Raise this when a simulation merge operation fails."""
 
