@@ -825,7 +825,16 @@ class JobsSplitManager:
 
     def _validate_split_compatibility(self):
         from .actors.doseactors import DoseActor
-        from .actors.digitizers import CoincidenceSorterActor
+        from .actors.digitizers import (
+            CoincidenceSorterActor,
+            DigitizerDeadTimeActor,
+            DigitizerPileupActor,
+        )
+
+        is_time_split = self.policy in (
+            "split_in_time_per_run",
+            "split_in_time_total",
+        )
 
         for actor_name, actor in self.master_simulation.actor_manager.actors.items():
             if isinstance(actor, DoseActor) and actor.uncertainty_goal is not None:
@@ -834,18 +843,35 @@ class JobsSplitManager:
                     f"{actor_name}.uncertainty_goal is not None. This is currently "
                     "not supported in job splitting."
                 )
+
             if isinstance(actor, CoincidenceSorterActor):
-                if self.policy not in ("split_in_time_per_run", "split_in_time_total"):
+                if not is_time_split:
                     warning(
                         f"The simulation contains a {actor.type_name} named '{actor_name}', "
-                        f"but the split is not in time. The {actor.type_name} will produce unreliable results. "
+                        "but the split is not in time. The actor will produce "
+                        "unreliable results."
                     )
                 else:
                     warning(
                         f"The simulation contains a {actor.type_name} named '{actor_name}'. "
-                        "True conincidences around the transition between time intervals might remain undetected"
-                        "because they are processed per-job. If you can not tolerate this, "
-                        "run the offline coincidence sorter on the merged data. "
+                        "True coincidences around time-interval boundaries might remain "
+                        "undetected because they are processed per job. If you cannot "
+                        "tolerate this, run the offline coincidence sorter on the merged data."
+                    )
+
+            if isinstance(actor, (DigitizerDeadTimeActor, DigitizerPileupActor)):
+                if not is_time_split:
+                    warning(
+                        f"The simulation contains a {actor.type_name} named '{actor_name}', "
+                        "but the split is not in time. The actor will produce "
+                        "unreliable results."
+                    )
+                else:
+                    warning(
+                        f"The simulation contains a {actor.type_name} named '{actor_name}'. "
+                        "Events around time-interval boundaries might be treated "
+                        "incorrectly because they are processed per job. Double-check "
+                        "the merged output."
                     )
 
     def prepare_master_simulation(self):
