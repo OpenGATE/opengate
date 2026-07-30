@@ -61,6 +61,26 @@ class DeprecationError(RuntimeError):
     pass
 
 
+def derived_data_item(*, depends_on):
+    """Declare a property as a derived data item backed by primary items.
+
+    The decorator stores dependency metadata on the property's getter so a
+    small class-processing pass at module import time can collect inherited
+    derived items and resolve which primary items must be persisted to
+    reconstruct them later.
+    """
+
+    depends_on = tuple(depends_on)
+
+    def decorator(func):
+        func._gate_is_derived_data_item = True
+        func._gate_derived_item_name = func.__name__
+        func._gate_depends_on = depends_on
+        return property(func)
+
+    return decorator
+
+
 def _raise_pre_interface_convenience_deprecation(container_cls_name, shortcut_name):
     raise DeprecationError(
         f"The convenience shortcut '{shortcut_name}' on container class "
@@ -1388,6 +1408,7 @@ class DataItemContainer(DataContainer):
     # Inherited values from a base container are valid and intentional.
     primary_item_identifiers = None
     derived_item_identifiers = ()
+    _derived_data_item_descriptors = {}
 
     def __init__(self, *args, data=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1420,7 +1441,7 @@ class DataItemContainer(DataContainer):
 
     @classmethod
     def get_derived_item_identifiers(cls):
-        return list(cls.derived_item_identifiers)
+        return list(getattr(cls, "derived_item_identifiers", ()))
 
     @classmethod
     def get_item_identifiers(cls):
@@ -1436,20 +1457,23 @@ class DataItemContainer(DataContainer):
 
     @classmethod
     def get_primary_item_identifiers_required_by_items(cls, item_identifiers):
-        """Map requested items to the primary items needed to reconstruct them.
-
-        The default contract is simple: primary items depend only on themselves,
-        and derived items do not add hidden primary dependencies unless a
-        specialized container class overrides this method.
-        """
+        """Map requested items to the primary items needed to reconstruct them."""
         requested_identifiers = {
             cls.normalize_item_identifier(item_identifier)
             for item_identifier in item_identifiers
         }
+        required_primary_identifiers = set()
+        for item_identifier in requested_identifiers:
+            if item_identifier in cls.get_primary_item_identifiers():
+                required_primary_identifiers.add(item_identifier)
+            else:
+                descriptor = cls._derived_data_item_descriptors.get(item_identifier)
+                if descriptor is not None:
+                    required_primary_identifiers.update(descriptor["depends_on"])
         return [
             item_identifier
             for item_identifier in cls.get_primary_item_identifiers()
-            if item_identifier in requested_identifiers
+            if item_identifier in required_primary_identifiers
         ]
 
     @classmethod
@@ -1928,31 +1952,6 @@ class SingleItkImageWithVariance(ImageDataItemContainerMixin, DataItemContainer)
     #         ),
     #     }
     # )
-    derived_item_identifiers = ("variance", "std", "uncertainty")
-
-    @classmethod
-    def get_primary_item_identifiers_required_by_items(cls, item_identifiers):
-        requested_identifiers = {
-            cls.normalize_item_identifier(item_identifier)
-            for item_identifier in item_identifiers
-        }
-        required_primary_identifiers = set(
-            super().get_primary_item_identifiers_required_by_items(requested_identifiers)
-        )
-        if any(
-            item_identifier in cls.get_derived_item_identifiers()
-            for item_identifier in requested_identifiers
-        ):
-            # Variance, std, and relative uncertainty are reconstructed from the
-            # linear and squared images rather than merged directly from their
-            # already-derived output files.
-            required_primary_identifiers.update((0, 1))
-        return [
-            item_identifier
-            for item_identifier in cls.get_primary_item_identifiers()
-            if item_identifier in required_primary_identifiers
-        ]
-
     def get_variance_or_uncertainty(self, which_quantity):
         try:
             number_of_samples = self.data[0].number_of_samples
@@ -1992,15 +1991,15 @@ class SingleItkImageWithVariance(ImageDataItemContainerMixin, DataItemContainer)
             fatal(str(e))
         return self._data_item_classes[0](data=output_image)
 
-    @property
+    @derived_data_item(depends_on=(0, 1))
     def variance(self):
         return self.get_variance_or_uncertainty("variance")
 
-    @property
+    @derived_data_item(depends_on=(0, 1))
     def std(self):
         return self.get_variance_or_uncertainty("std")
 
-    @property
+    @derived_data_item(depends_on=(0, 1))
     def uncertainty(self):
         return self.get_variance_or_uncertainty("uncertainty")
 
@@ -2025,9 +2024,7 @@ class QuotientItkImage(ImageDataItemContainerMixin, DataItemContainer):
     #     }
     # )
 
-    derived_item_identifiers = ("quotient",)
-
-    @property
+    @derived_data_item(depends_on=(0, 1))
     def quotient(self):
         return self.data[0] / self.data[1]
 
@@ -2105,3 +2102,94 @@ available_data_container_classes = {
     "SingleItkImageWithVariance": SingleItkImageWithVariance,
     "SingleRootTree": SingleRootTree,
 }
+
+
+def _get_derived_data_item_descriptor_from_attribute(attribute):
+    if not isinstance(attribute, property):
+        return None
+    getter = attribute.fget
+    if getter is None or not getattr(getter, "_gate_is_derived_data_item", False):
+        return None
+    return {
+        "name": getter._gate_derived_item_name,
+        "depends_on": tuple(getter._gate_depends_on),
+        "property_name": getter.__name__,
+    }
+
+
+def _process_data_item_container_class(cls):
+    """Collect inherited derived-data-item metadata for one container class."""
+
+    derived_data_item_descriptors = OrderedDict()
+    manual_derived_item_identifiers = []
+
+    for candidate_class in reversed(cls.mro()):
+        if not issubclass(candidate_class, DataItemContainer):
+            continue
+        if candidate_class is DataItemContainer:
+            continue
+
+        decorated_descriptors_in_this_class = [
+            descriptor
+            for descriptor in (
+                _get_derived_data_item_descriptor_from_attribute(attribute)
+                for attribute in candidate_class.__dict__.values()
+            )
+            if descriptor is not None
+        ]
+
+        if (
+            "derived_item_identifiers" in candidate_class.__dict__
+            and len(decorated_descriptors_in_this_class) == 0
+            and len(candidate_class.__dict__.get("_derived_data_item_descriptors", {}))
+            == 0
+        ):
+            declared = list(candidate_class.__dict__["derived_item_identifiers"])
+            if len(declared) > 0:
+                manual_derived_item_identifiers.extend(declared)
+
+        for descriptor in decorated_descriptors_in_this_class:
+            derived_data_item_descriptors[descriptor["name"]] = descriptor
+
+    if len(manual_derived_item_identifiers) > 0 and len(derived_data_item_descriptors) > 0:
+        raise GateImplementationError(
+            f"Data item container class {cls.__name__} mixes manual "
+            f"'derived_item_identifiers' with @derived_data_item declarations. "
+            f"Use one source of truth only."
+        )
+
+    if len(derived_data_item_descriptors) > 0:
+        primary_item_identifiers = set(cls.get_primary_item_identifiers())
+        for descriptor in derived_data_item_descriptors.values():
+            invalid_dependencies = [
+                item_identifier
+                for item_identifier in descriptor["depends_on"]
+                if item_identifier not in primary_item_identifiers
+            ]
+            if len(invalid_dependencies) > 0:
+                raise GateImplementationError(
+                    f"Derived data item '{descriptor['name']}' of container class "
+                    f"{cls.__name__} depends on invalid primary item identifiers "
+                    f"{invalid_dependencies}. Valid primary item identifiers are "
+                    f"{cls.get_primary_item_identifiers()}."
+                )
+
+    cls._derived_data_item_descriptors = dict(derived_data_item_descriptors)
+    cls.derived_item_identifiers = tuple(derived_data_item_descriptors.keys())
+    return cls
+
+
+def _process_data_item_container_classes_in_module():
+    """Finalize derived-data-item metadata after all container classes exist."""
+
+    for candidate in globals().values():
+        if not isinstance(candidate, type):
+            continue
+        if not issubclass(candidate, DataItemContainer):
+            continue
+        if candidate is DataItemContainer:
+            continue
+        _process_data_item_container_class(candidate)
+
+
+_process_data_item_container_classes_in_module()
