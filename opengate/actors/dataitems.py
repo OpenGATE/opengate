@@ -40,6 +40,7 @@ from ..exception import fatal, warning, GateImplementationError
 from ..serialization import dump_json
 from ..utility import ensure_filename_is_str, calculate_variance
 from ..utility import g4_best_unit_tuple, g4_units
+from ..utility import insert_suffix_before_extension
 from ..image import (
     sum_itk_images,
     divide_itk_images,
@@ -208,6 +209,20 @@ class SampleCountingDataItemMixin:
     @number_of_samples.setter
     def number_of_samples(self, value):
         self._number_of_samples = int(value)
+
+
+def _get_sample_count_metadata_path(path):
+    """Return the sidecar path used to persist sample counts for image items.
+
+    Split-job merge may rehydrate image-based outputs from disk before derived
+    quantities such as uncertainty are reconstructed. The corresponding primary
+    images therefore need their ``number_of_samples`` value to survive the
+    write/load round-trip.
+    """
+
+    return Path(insert_suffix_before_extension(Path(path), "samples")).with_suffix(
+        Path(path).suffix + ".json"
+    )
 
 
 class MeanValueDataItemMixin:
@@ -1299,9 +1314,24 @@ class ItkImageDataItem(SampleCountingDataItemMixin, DataItem):
 
     def write(self, path):
         write_itk_image(self.data, ensure_filename_is_str(path))
+        metadata_path = _get_sample_count_metadata_path(path)
+        with open(metadata_path, "w") as metadata_file:
+            json.dump({"number_of_samples": int(self.number_of_samples)}, metadata_file)
 
     def load(self, path, **kwargs):
         self.set_data(itk.imread(str(path)))
+        metadata_path = _get_sample_count_metadata_path(path)
+        if metadata_path.exists():
+            with open(metadata_path, "r") as metadata_file:
+                metadata = json.load(metadata_file)
+            try:
+                self.number_of_samples = int(metadata["number_of_samples"])
+            except (KeyError, TypeError, ValueError):
+                warning(
+                    f"Could not restore number_of_samples from metadata file "
+                    f"'{metadata_path}'. Falling back to the default value "
+                    f"{self.number_of_samples}."
+                )
 
 
 class MeanItkImageDataItem(MeanValueDataItemMixin, ItkImageDataItem):
@@ -1403,6 +1433,24 @@ class DataItemContainer(DataContainer):
                 f"item identifiers: {item_identifiers}"
             )
         return item_identifiers
+
+    @classmethod
+    def get_primary_item_identifiers_required_by_items(cls, item_identifiers):
+        """Map requested items to the primary items needed to reconstruct them.
+
+        The default contract is simple: primary items depend only on themselves,
+        and derived items do not add hidden primary dependencies unless a
+        specialized container class overrides this method.
+        """
+        requested_identifiers = {
+            cls.normalize_item_identifier(item_identifier)
+            for item_identifier in item_identifiers
+        }
+        return [
+            item_identifier
+            for item_identifier in cls.get_primary_item_identifiers()
+            if item_identifier in requested_identifiers
+        ]
 
     @classmethod
     def validate_item_identifier(cls, item):
@@ -1881,6 +1929,29 @@ class SingleItkImageWithVariance(ImageDataItemContainerMixin, DataItemContainer)
     #     }
     # )
     derived_item_identifiers = ("variance", "std", "uncertainty")
+
+    @classmethod
+    def get_primary_item_identifiers_required_by_items(cls, item_identifiers):
+        requested_identifiers = {
+            cls.normalize_item_identifier(item_identifier)
+            for item_identifier in item_identifiers
+        }
+        required_primary_identifiers = set(
+            super().get_primary_item_identifiers_required_by_items(requested_identifiers)
+        )
+        if any(
+            item_identifier in cls.get_derived_item_identifiers()
+            for item_identifier in requested_identifiers
+        ):
+            # Variance, std, and relative uncertainty are reconstructed from the
+            # linear and squared images rather than merged directly from their
+            # already-derived output files.
+            required_primary_identifiers.update((0, 1))
+        return [
+            item_identifier
+            for item_identifier in cls.get_primary_item_identifiers()
+            if item_identifier in required_primary_identifiers
+        ]
 
     def get_variance_or_uncertainty(self, which_quantity):
         try:

@@ -461,6 +461,33 @@ def _configure_child_simulation(
             job_definition["original_run_indices"]
         )
 
+    # Split-job merge rehydrates child simulations from disk later on. Derived
+    # outputs such as edep_uncertainty can be written in an ordinary run
+    # without persisting their hidden primary dependencies because those
+    # dependencies are still alive in memory at end-of-simulation time.
+    # During split-job merge this is no longer true: if a derived item is meant
+    # to be merged from rehydrated child output, the child must also persist the
+    # primary items needed to reconstruct it. This child-only rewrite keeps the
+    # serialized job self-consistent for later merge. 
+    for actor in child_simulation.actor_manager.actors.values():
+        for output in actor.user_output.values():
+            if output.is_container_output() is not True:
+                continue
+            requested_item_identifiers = [
+                item_identifier
+                for item_identifier in output.data_container_class.get_item_identifiers()
+                if output.get_active(item=item_identifier)
+                and output.get_write_to_disk(item=item_identifier)
+            ]
+            required_primary_item_identifiers = (
+                output.data_container_class.get_primary_item_identifiers_required_by_items(
+                    requested_item_identifiers
+                )
+            )
+            for item_identifier in required_primary_item_identifiers:
+                output.set_active(True, item=item_identifier)
+                output.set_write_to_disk(True, item=item_identifier)
+
     # Rewrite source.n to match the child's local runs so the serialized child is
     # directly executable later without extra split-time logic.
     for source_name, assigned_counts in source_n_assignments.items():
