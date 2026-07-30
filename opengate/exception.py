@@ -30,6 +30,9 @@ class GateJobsBackendError(Exception):
     """Raise this when a split-job execution backend fails or rejects its options."""
 
 
+class GateSplitError(Exception):
+    """Raise this when a simulation merge operation fails."""
+
 class GateMergeError(Exception):
     """Raise this when a simulation merge operation fails."""
 

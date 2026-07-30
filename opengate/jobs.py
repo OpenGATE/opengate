@@ -18,7 +18,7 @@ import numpy as np
 import opengate_core as g4
 
 from .coordinators import RootMergeCoordinator, StandardMergeCoordinator
-from .exception import GateJobsBackendError, GateMergeError, fatal
+from .exception import GateJobsBackendError, GateMergeError, GateSplitError, fatal
 from .runtiming import assert_run_timing
 from .serialization import (
     dump_json,
@@ -817,6 +817,17 @@ class JobsSplitManager:
             "policy": self.policy,
         }
 
+    def _validate_split_compatibility(self):
+        from .actors.doseactors import DoseActor
+
+        for actor_name, actor in self.master_simulation.actor_manager.actors.items():
+            if isinstance(actor, DoseActor) and actor.uncertainty_goal is not None:
+                raise GateSplitError(
+                    f"Cannot split the {actor.type_name} named '{actor_name}' because "
+                    f"{actor_name}.uncertainty_goal is not None. This is currently "
+                    "not supported in job splitting."
+                )
+
     def prepare_master_simulation(self):
         if self.is_prepared is True:
             return
@@ -845,6 +856,7 @@ class JobsSplitManager:
         # Split authoritative, resolved configuration rather than the raw user
         # inputs so child jobs inherit explicit timing anchors and helper actors.
         self.master_simulation.resolve_and_validate_config(context="split_preparation")
+        self._validate_split_compatibility()
         # A split campaign needs a concrete seed so every child can receive a
         # deterministic, distinct seed while the resolved master JSON remains
         # reproducible. Geant4 then derives thread/event streams internally from
