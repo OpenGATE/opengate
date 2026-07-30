@@ -8,11 +8,16 @@ import opengate_core as g4
 from box import Box
 
 from ..base import GateObject, process_cls
-from ..exception import GateImplementationError, GateMergeError, fatal, warning
+from ..exception import (
+    GateDeprecationError,
+    GateImplementationError,
+    GateMergeError,
+    fatal,
+    warning,
+)
 from ..image import create_3d_image_of_histogram
 from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from .dataitems import (
-    DeprecationError,
     QuotientItkImage,
     QuotientMeanItkImage,
     SingleRootTree,
@@ -782,7 +787,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @property
     def write_to_disk(self):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "write_to_disk",
                 f"my_actor.user_output['{self.name}'].set_write_to_disk(VALUE, item=...)",
@@ -792,7 +797,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @write_to_disk.setter
     def write_to_disk(self, value):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "write_to_disk",
                 f"my_actor.user_output['{self.name}'].set_write_to_disk(VALUE, item=...)",
@@ -802,7 +807,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @property
     def output_filename(self):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "output_filename",
                 f"my_actor.user_output['{self.name}'].set_output_filename(VALUE, item=...)",
@@ -812,7 +817,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @output_filename.setter
     def output_filename(self, value):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "output_filename",
                 f"my_actor.user_output['{self.name}'].set_output_filename(VALUE, item=...)",
@@ -822,7 +827,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @property
     def active(self):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "active",
                 f"my_actor.user_output['{self.name}'].set_active(VALUE, item=...)",
@@ -832,7 +837,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @active.setter
     def active(self, value):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "active",
                 f"my_actor.user_output['{self.name}'].set_active(VALUE, item=...)",
@@ -842,7 +847,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @property
     def suffix(self):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "suffix",
                 f"my_actor.user_output['{self.name}'].set_item_suffix(VALUE, item=...)",
@@ -852,7 +857,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @suffix.setter
     def suffix(self, value):
-        raise DeprecationError(
+        raise GateDeprecationError(
             self._format_raw_output_deprecation_message(
                 "suffix",
                 f"my_actor.user_output['{self.name}'].set_item_suffix(VALUE, item=...)",
@@ -1141,7 +1146,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             self.data_per_run[run_index] = data_container
 
     def store_meta_data(self, which, **meta_data):
-        raise DeprecationError(
+        raise GateDeprecationError(
             "ActorOutputUsingDataItemContainer.store_meta_data() is temporarily "
             "disabled on purpose. Origin: sample counting is being moved away "
             "from the generic meta_data dictionary toward explicit data-item "

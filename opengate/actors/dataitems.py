@@ -36,7 +36,12 @@ from pathlib import Path
 from collections import OrderedDict
 from box import Box
 
-from ..exception import fatal, warning, GateImplementationError
+from ..exception import (
+    fatal,
+    warning,
+    GateImplementationError,
+    GateDeprecationError,
+)
 from ..serialization import dump_json
 from ..utility import ensure_filename_is_str, calculate_variance
 from ..utility import g4_best_unit_tuple, g4_units
@@ -55,10 +60,6 @@ from ..image import (
 )
 from ..rootio import RootMergeFileWriter
 from ..contrib.root_helpers import root_write_tree
-
-
-class DeprecationError(RuntimeError):
-    pass
 
 
 def derived_data_item(*, depends_on):
@@ -82,7 +83,7 @@ def derived_data_item(*, depends_on):
 
 
 def _raise_pre_interface_convenience_deprecation(container_cls_name, shortcut_name):
-    raise DeprecationError(
+    raise GateDeprecationError(
         f"The convenience shortcut '{shortcut_name}' on container class "
         f"'{container_cls_name}' is temporarily disabled on purpose. "
         f"Origin: this shortcut stems from the pre-interface actor-output era, "
