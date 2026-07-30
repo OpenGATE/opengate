@@ -23,6 +23,7 @@ from pathlib import Path
 import numpy as np
 import opengate as gate
 
+from opengate.jobs import DEFAULT_RESOLVED_SIMULATION_FILENAME
 from opengate.serialization import load_json
 from opengate.tests import utility
 
@@ -400,6 +401,7 @@ if __name__ == "__main__":
         paths.data / "GateMaterials.db",
         input_path_mode="absolute",
     )
+    sim_1.random_seed = 123456
     split_root_1 = gate.jobs_split(
         simulation=sim_1,
         number_of_jobs=4,
@@ -430,6 +432,7 @@ if __name__ == "__main__":
     first_job_folder = split_root_1 / "job0001"
     first_job_metadata = load_job_metadata(first_job_folder)
     first_child_simulation = load_child_simulation(first_job_folder)
+    fourth_child_simulation = load_child_simulation(split_root_1 / "job0004")
 
     utility.print_test(
         first_job_metadata["parent_simulation_id"] == manifest_1["simulation_id"],
@@ -437,6 +440,19 @@ if __name__ == "__main__":
     )
     is_ok = (
         first_job_metadata["parent_simulation_id"] == manifest_1["simulation_id"]
+        and is_ok
+    )
+
+    utility.print_test(
+        first_child_simulation.random_seed == 123457
+        and fourth_child_simulation.random_seed == 123460,
+        f"Integer master seed is offset by job index: "
+        f"job0001={first_child_simulation.random_seed}, "
+        f"job0004={fourth_child_simulation.random_seed}",
+    )
+    is_ok = (
+        first_child_simulation.random_seed == 123457
+        and fourth_child_simulation.random_seed == 123460
         and is_ok
     )
 
@@ -493,10 +509,30 @@ if __name__ == "__main__":
     manifest_2 = load_manifest(split_root_2)
     print(f"split manifest = {split_root_2}")
 
+    with open(split_root_2 / DEFAULT_RESOLVED_SIMULATION_FILENAME, "r") as input_file:
+        resolved_master_2 = load_json(input_file)
     job_1_total = load_child_simulation(split_root_2 / "job0001")
     job_2_total = load_child_simulation(split_root_2 / "job0002")
     job_3_total = load_child_simulation(split_root_2 / "job0003")
     job_1_total_metadata = load_job_metadata(split_root_2 / "job0001")
+
+    resolved_master_seed_2 = resolved_master_2["user_info"]["random_seed"]
+    utility.print_test(
+        isinstance(resolved_master_seed_2, int)
+        and job_1_total.random_seed == resolved_master_seed_2 + 1
+        and job_2_total.random_seed == resolved_master_seed_2 + 2
+        and job_3_total.random_seed == resolved_master_seed_2 + 3,
+        f"Auto master seed is resolved once and offset by job index: "
+        f"master={resolved_master_seed_2}, "
+        f"jobs={[job_1_total.random_seed, job_2_total.random_seed, job_3_total.random_seed]}",
+    )
+    is_ok = (
+        isinstance(resolved_master_seed_2, int)
+        and job_1_total.random_seed == resolved_master_seed_2 + 1
+        and job_2_total.random_seed == resolved_master_seed_2 + 2
+        and job_3_total.random_seed == resolved_master_seed_2 + 3
+        and is_ok
+    )
 
     run_1_split_boundary_1 = (2.0 + 1.0 / 3.0) * sec
     run_1_split_boundary_2 = (2.0 + 5.0 / 3.0) * sec
