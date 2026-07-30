@@ -14,8 +14,16 @@ This test focuses on API consistency rather than physics depth. It checks that:
 
 The simulation setup is intentionally simple: one water box, one low-energy
 isotropic gamma source at the center, a statistics actor, and a single-voxel
-dose actor. This is enough to exercise split, local pool execution, and merge
-without making the test about output physics details.
+dose actor with edep uncertainty enabled. This is enough to exercise split,
+local pool execution, and merge without making the test about output physics
+details.
+
+The test also checks the write-to-disk contract of the uncertainty-backed dose
+output. In a normal local run, only the user-facing uncertainty image is meant
+to appear on disk. In split runs, child jobs must additionally write the hidden
+``edep_squared`` image so the merge stage can reconstruct uncertainty after
+rehydration, while the merged master output should again expose only the
+user-facing files.
 """
 
 import shutil
@@ -24,6 +32,7 @@ import itk
 import numpy as np
 import opengate as gate
 from opengate.tests import utility
+from opengate.utility import insert_suffix_before_extension
 
 
 def build_simple_split_run_simulation(output_path, run_timing_intervals, source_n):
@@ -58,7 +67,8 @@ def build_simple_split_run_simulation(output_path, run_timing_intervals, source_
 
     # Keep the statistics actor per-run so the split campaign must preserve the
     # original run structure. The dose actor adds a simple standard image output
-    # that will be merged back into the live simulation.
+    # plus a scalar uncertainty output that will be merged back into the live
+    # simulation.
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.output_filename = "stats.json"
     stats.keep_data_per_run = True
@@ -69,6 +79,10 @@ def build_simple_split_run_simulation(output_path, run_timing_intervals, source_
     dose.spacing = [20.0 * cm, 20.0 * cm, 20.0 * cm]
     dose.edep.output_filename = "edep.mhd"
     dose.edep.keep_data_per_run = False
+    dose.edep_squared.write_to_disk = False
+    dose.edep_uncertainty.active = True
+    dose.edep_uncertainty.output_filename = "edep_uncertainty.mhd"
+    dose.edep_uncertainty.keep_data_per_run = False
 
     sim.run_timing_intervals = run_timing_intervals
     return sim
@@ -84,6 +98,20 @@ def read_single_voxel_value_from_image(image):
 
 def read_single_voxel_value(path):
     return read_single_voxel_value_from_image_np(itk.imread(str(path)))
+
+
+def get_squared_output_path_from_dose_path(dose_output_path):
+    return insert_suffix_before_extension(dose_output_path, "edep_squared")
+
+
+def get_child_squared_output_paths(job_folders):
+    child_squared_paths = []
+    for job_folder in job_folders:
+        child_simulation = gate.create_sim_from_json(job_folder / "simulation.json")
+        child_squared_paths.append(
+            child_simulation.get_actor("dose").edep_squared.get_output_path()
+        )
+    return child_squared_paths
 
 
 if __name__ == "__main__":
@@ -111,6 +139,10 @@ if __name__ == "__main__":
     single_job_stats_path = single_job_stats_actor.get_output_path()
     single_job_dose_actor = single_job_sim.get_actor("dose")
     single_job_dose_path = single_job_dose_actor.edep.get_output_path()
+    single_job_uncertainty_path = single_job_dose_actor.edep_uncertainty.get_output_path()
+    single_job_squared_path = get_squared_output_path_from_dose_path(
+        single_job_dose_path
+    )
 
     is_ok = (
         utility.print_test(
@@ -121,9 +153,20 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
-            single_job_stats_path.exists() and single_job_dose_path.exists(),
+            single_job_stats_path.exists()
+            and single_job_dose_path.exists()
+            and single_job_uncertainty_path.exists(),
             "number_of_jobs=1 still produces ordinary simulation output at the actor-resolved output paths: "
-            f"{single_job_stats_path} and {single_job_dose_path}",
+            f"{single_job_stats_path}, {single_job_dose_path}, and {single_job_uncertainty_path}",
+        )
+        and is_ok
+    )
+    # In a normal local run, the hidden squared image stays internal and should
+    # not be written to the user-facing output folder.
+    is_ok = (
+        utility.print_test(
+            not single_job_squared_path.exists(),
+            "number_of_jobs=1 keeps the hidden edep_squared image off disk in the normal output folder",
         )
         and is_ok
     )
@@ -131,13 +174,24 @@ if __name__ == "__main__":
     single_job_dose_value_live_actor = read_single_voxel_value_from_image_np(
         single_job_dose_actor.edep.image
     )
+    single_job_uncertainty_value_live_actor = read_single_voxel_value_from_image_np(
+        single_job_dose_actor.edep_uncertainty.image
+    )
     print(f"Single job dose value from live actor: {single_job_dose_value_live_actor}")
 
     single_job_dose_value = read_single_voxel_value(single_job_dose_path)
+    single_job_uncertainty_value = read_single_voxel_value(single_job_uncertainty_path)
     is_ok = (
         utility.print_test(
             True,
             f"number_of_jobs=1 dose voxel value: {single_job_dose_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            True,
+            f"number_of_jobs=1 edep uncertainty voxel value: {single_job_uncertainty_value}",
         )
         and is_ok
     )
@@ -197,6 +251,8 @@ if __name__ == "__main__":
     async_controller.merge()
     async_stats_path = async_sim.get_actor("Stats").get_output_path()
     async_dose_path = async_sim.get_actor("dose").edep.get_output_path()
+    async_uncertainty_path = async_sim.get_actor("dose").edep_uncertainty.get_output_path()
+    async_squared_path = get_squared_output_path_from_dose_path(async_dose_path)
     is_ok = (
         utility.print_test(
             async_controller.stage == "merged",
@@ -206,16 +262,47 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
-            async_stats_path.exists() and async_dose_path.exists(),
+            async_stats_path.exists()
+            and async_dose_path.exists()
+            and async_uncertainty_path.exists(),
             "Manual controller.merge() writes merged output at the live actor-resolved output paths",
         )
         and is_ok
     )
+    # Child jobs must persist the hidden squared image so the merge stage can
+    # reconstruct uncertainty from rehydrated output.
+    async_child_squared_paths = get_child_squared_output_paths(
+        async_controller.jobs_split_manager.job_folders
+    )
+    is_ok = (
+        utility.print_test(
+            all(path.exists() for path in async_child_squared_paths),
+            "Async split child jobs write the hidden edep_squared image to support uncertainty merge after rehydration",
+        )
+        and is_ok
+    )
+    # The merged master output should again expose only the user-facing files.
+    is_ok = (
+        utility.print_test(
+            not async_squared_path.exists(),
+            "Async merged master output keeps the hidden edep_squared image off disk",
+        )
+        and is_ok
+    )
     async_merged_dose_value = read_single_voxel_value(async_dose_path)
+    async_merged_uncertainty_value = read_single_voxel_value(async_uncertainty_path)
     is_ok = (
         utility.print_test(
             async_merged_dose_value > 0,
             f"Async split-run merged dose voxel value: {async_merged_dose_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            async_merged_uncertainty_value > 0,
+            "Async split-run merged edep uncertainty voxel value: "
+            f"{async_merged_uncertainty_value}",
         )
         and is_ok
     )
@@ -277,13 +364,42 @@ if __name__ == "__main__":
     # Compare the actual merged dose values across all three execution paths.
     # This makes the test robust against setup changes: if one path gives zero
     # while the others do not, we see it immediately in the printed values.
-    sync_merged_dose_value = read_single_voxel_value(
-        merged_sim.get_actor("dose").edep.get_output_path()
-    )
+    sync_dose_path = merged_sim.get_actor("dose").edep.get_output_path()
+    sync_uncertainty_path = merged_sim.get_actor("dose").edep_uncertainty.get_output_path()
+    sync_squared_path = get_squared_output_path_from_dose_path(sync_dose_path)
+    sync_merged_dose_value = read_single_voxel_value(sync_dose_path)
+    sync_merged_uncertainty_value = read_single_voxel_value(sync_uncertainty_path)
     is_ok = (
         utility.print_test(
             sync_merged_dose_value > 0,
             f"Synchronous split-run merged dose voxel value: {sync_merged_dose_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            sync_merged_uncertainty_value > 0,
+            "Synchronous split-run merged edep uncertainty voxel value: "
+            f"{sync_merged_uncertainty_value}",
+        )
+        and is_ok
+    )
+    # The same split-only persistence rule should hold when sim.run() waits
+    # and merges automatically before returning the controller.
+    sync_child_squared_paths = get_child_squared_output_paths(
+        merged_controller.jobs_split_manager.job_folders
+    )
+    is_ok = (
+        utility.print_test(
+            all(path.exists() for path in sync_child_squared_paths),
+            "Synchronous split child jobs write the hidden edep_squared image to support uncertainty merge after rehydration",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            not sync_squared_path.exists(),
+            "Synchronous merged master output keeps the hidden edep_squared image off disk",
         )
         and is_ok
     )
@@ -303,6 +419,19 @@ if __name__ == "__main__":
     is_ok = (
         utility.print_test(
             np.isclose(
+                single_job_uncertainty_value,
+                single_job_uncertainty_value_live_actor,
+                rtol=0.05,
+                atol=0.0,
+            ),
+            "Normal single job edep uncertainty from disk is close to the normal single-job uncertainty from live actor: "
+            f"{single_job_uncertainty_value} vs {single_job_uncertainty_value_live_actor}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            np.isclose(
                 single_job_dose_value,
                 async_merged_dose_value,
                 rtol=0.05,
@@ -316,6 +445,19 @@ if __name__ == "__main__":
     is_ok = (
         utility.print_test(
             np.isclose(
+                single_job_uncertainty_value,
+                async_merged_uncertainty_value,
+                rtol=0.15,
+                atol=0.0,
+            ),
+            "Async split-run merged edep uncertainty is close to the normal single-job uncertainty: "
+            f"{single_job_uncertainty_value} vs {async_merged_uncertainty_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            np.isclose(
                 single_job_dose_value,
                 sync_merged_dose_value,
                 rtol=0.05,
@@ -323,6 +465,19 @@ if __name__ == "__main__":
             ),
             "Synchronous split-run merged dose is close to the normal single-job dose:"
             f"{single_job_dose_value} vs {sync_merged_dose_value}",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            np.isclose(
+                single_job_uncertainty_value,
+                sync_merged_uncertainty_value,
+                rtol=0.15,
+                atol=0.0,
+            ),
+            "Synchronous split-run merged edep uncertainty is close to the normal single-job uncertainty: "
+            f"{single_job_uncertainty_value} vs {sync_merged_uncertainty_value}",
         )
         and is_ok
     )
