@@ -18,7 +18,7 @@ import numpy as np
 import opengate_core as g4
 
 from .coordinators import RootMergeCoordinator, StandardMergeCoordinator
-from .exception import GateJobsBackendError, GateMergeError, GateSplitError, fatal
+from .exception import GateJobsBackendError, GateMergeError, GateSplitError, fatal, warning
 from .runtiming import assert_run_timing
 from .serialization import (
     dump_json,
@@ -819,6 +819,7 @@ class JobsSplitManager:
 
     def _validate_split_compatibility(self):
         from .actors.doseactors import DoseActor
+        from .actors.digitizers import CoincidenceSorterActor
 
         for actor_name, actor in self.master_simulation.actor_manager.actors.items():
             if isinstance(actor, DoseActor) and actor.uncertainty_goal is not None:
@@ -827,6 +828,19 @@ class JobsSplitManager:
                     f"{actor_name}.uncertainty_goal is not None. This is currently "
                     "not supported in job splitting."
                 )
+            if isinstance(actor, CoincidenceSorterActor):
+                if self.policy not in ("split_in_time_per_run", "split_in_time_total"):
+                    warning(
+                        f"The simulation contains a {actor.type_name} named '{actor_name}', "
+                        f"but the split is not in time. The {actor.type_name} will produce unreliable results. "
+                    )
+                else: 
+                    warning(
+                        f"The simulation contains a {actor.type_name} named '{actor_name}'. "
+                        "True conincidences around the transition between time intervals might remain undetected"
+                        "because they are processed per-job. If you can not tolerate this, "
+                        "run the offline coincidence sorter on the merged data. "
+                    )
 
     def prepare_master_simulation(self):
         if self.is_prepared is True:
