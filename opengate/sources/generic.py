@@ -492,9 +492,9 @@ class GenericSource(SourceBase):
                 g4_source.SetProbabilityCDF(cdf)
 
         self.initialize_start_end_time(run_timing_intervals)
-        self.check_ui_activity(self.user_info)
-        self.update_tac_activity(g4_source)
-        g4_source.InitializeUserInfo(self.user_info)
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        self.update_tac_activity(g4_source, runtime_user_info)
+        g4_source.InitializeUserInfo(runtime_user_info)
         # warning for non-used ?
 
     def check_confine(self, ui):
@@ -531,10 +531,15 @@ class GenericSource(SourceBase):
         self.start_time = self.tac_times[0]
         self.activity = self.tac_activities[0]
 
-    def update_tac_activity(self, g4_source):
+    def update_tac_activity(self, g4_source, runtime_user_info=None):
         if self.tac_times is None and self.tac_activities is None:
             return
-        g4_source.SetTAC(self.tac_times, self.tac_activities)
+        tac_activities = (
+            runtime_user_info.tac_activities
+            if runtime_user_info is not None
+            else self.tac_activities
+        )
+        g4_source.SetTAC(self.tac_times, tac_activities)
 
     def can_predict_number_of_events(self):
         aa = self.direction.angular_acceptance

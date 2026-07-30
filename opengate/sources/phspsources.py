@@ -287,17 +287,19 @@ class PhaseSpaceSource(SourceBase):
     verbose: bool
 
     @staticmethod
-    def _as_total_number_of_events(source_n):
-        """Return the total event count represented by scalar or per-run ``source.n``."""
-        counts = np.asarray(source_n, dtype=float)
+    def _as_total_number_of_events(number_of_primaries):
+        """Return the total event count represented by scalar or per-run primaries."""
+        counts = np.asarray(number_of_primaries, dtype=float)
         if counts.shape == ():
             return int(counts)
         return int(np.sum(counts))
 
     @classmethod
-    def get_number_of_events_per_lane(cls, source_n, number_of_lanes):
+    def get_number_of_events_per_lane(cls, number_of_primaries, number_of_lanes):
         """Return the entry spacing used to distribute PHSP reads over lanes."""
-        total_number_of_events = cls._as_total_number_of_events(source_n)
+        total_number_of_events = cls._as_total_number_of_events(
+            number_of_primaries
+        )
         return int(np.ceil(total_number_of_events / number_of_lanes)) + 1
 
     @classmethod
@@ -539,7 +541,9 @@ class PhaseSpaceSource(SourceBase):
                 self.entry_start = 0
             else:
                 n_threads = self.simulation.number_of_threads
-                self.entry_start = self.generate_entry_start_list(self.n, n_threads)
+                self.entry_start = self.generate_entry_start_list(
+                    self.number_of_primaries, n_threads
+                )
 
         # check user info
         if self.position_key_x is None:
@@ -558,8 +562,8 @@ class PhaseSpaceSource(SourceBase):
 
         # Initialize base start/end times and check activity on the python side
         self.initialize_start_end_time(run_timing_intervals)
-        self.check_ui_activity(self.user_info)
-        g4_source.InitializeUserInfo(self.user_info)
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        g4_source.InitializeUserInfo(runtime_user_info)
 
         # initialize the generator (read the phsp file)
         self.particle_generators[tid].initialize(self)

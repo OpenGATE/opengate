@@ -23,7 +23,7 @@ GateTemplateSource::~GateTemplateSource() {
 void GateTemplateSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   // get user info about activity or nb of events
-  fN = DictGetInt(user_info, "n");
+  fN = DictGetInt(user_info, "number_of_primaries");
   fFloatValue = DictGetDouble(user_info, "float_value");
   fVectorValue = DictGetVecDouble(user_info, "vector_value");
   // Check parameters

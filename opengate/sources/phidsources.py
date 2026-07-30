@@ -174,7 +174,10 @@ def update_sub_source_tac_activity(sub_source, g4_source, tac_times, tac_activit
         # IMPORTANT : activities must be x by total here
         # (not before, because it can be called several times in MT mode)
         if g4_source is not None:
-            g4_source.SetTAC(tac_times, np.array(tac_activities) * total)
+            tac_values = np.array(tac_activities) * total
+            if sub_source.simulation.multithreaded:
+                tac_values = tac_values / int(sub_source.simulation.number_of_threads)
+            g4_source.SetTAC(tac_times, tac_values)
 
     if sub_source.verbose:
         print(
@@ -779,7 +782,7 @@ def phid_build_one_sub_source(stype, source, daughter, ene, w, first_nuclide):
     s.energy.spectrum_weights = w
     s.energy.spectrum_energies = ene
     s.activity = source.activity
-    s.n = source.n
+    s.number_of_primaries = source.number_of_primaries
 
     # prepare times and activities that will be set during initialisation
     s.tac_from_decay_parameters = {

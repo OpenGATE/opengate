@@ -429,7 +429,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
 
   // Sometimes (rarely), there is no active source,
   // so we create a fake geantino particle
-  // It may happen when the number of primary is fixed (with source.n = XX)
+  // It may happen when the number of primaries is fixed
   // and several runs are used.
   if (l.fNextActiveSource == nullptr) {
     auto *particle_table = G4ParticleTable::GetParticleTable();

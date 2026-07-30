@@ -336,12 +336,12 @@ def _generate_job_definitions(run_timing_intervals, number_of_jobs, policy):
     )
 
 
-def _compute_source_n_assignments(
+def _compute_source_primaries_assignments(
     simulation, original_run_timing_intervals, job_definitions
 ):
     # Keep the child simulations self-consistent for later execution by rewriting
-    # per-run source.n arrays to the local runs of each job.
-    source_n_assignments = {
+    # per-run source.number_of_primaries arrays to the local runs of each job.
+    source_primaries_assignments = {
         job_definition["job_index"]: {} for job_definition in job_definitions
     }
     job_segments_by_original_run_index = {
@@ -365,12 +365,12 @@ def _compute_source_n_assignments(
         if source.activity > 0:
             continue
 
-        counts = np.asarray(source.n, dtype=int)
+        counts = np.asarray(source.number_of_primaries, dtype=int)
         if len(counts.shape) == 0:
             counts = np.asarray([int(counts)], dtype=int)
         if len(counts) != len(original_run_timing_intervals):
             fatal(
-                f"Source '{source.name}' defines n={list(counts)}, but the simulation has "
+                f"Source '{source.name}' defines number_of_primaries={list(counts)}, but the simulation has "
                 f"{len(original_run_timing_intervals)} run timing intervals."
             )
 
@@ -415,15 +415,15 @@ def _compute_source_n_assignments(
                 ] = allocated_count
 
         for job_index, assigned_counts in assignments_by_job.items():
-            source_n_assignments[job_index][source.name] = assigned_counts
+            source_primaries_assignments[job_index][source.name] = assigned_counts
 
-    return source_n_assignments
+    return source_primaries_assignments
 
 
 def _configure_child_simulation(
     child_simulation,
     job_definition,
-    source_n_assignments,
+    source_primaries_assignments,
     parent_simulation_id,
     jobs_root_dir,
     parent_random_seed,
@@ -477,12 +477,12 @@ def _configure_child_simulation(
                 output.set_active(True, item=item_identifier)
                 output.set_write_to_disk(True, item=item_identifier)
 
-    # Rewrite source.n to match the child's local runs so the serialized child is
+    # Rewrite source.number_of_primaries to match the child's local runs so the serialized child is
     # directly executable later without extra split-time logic.
-    for source_name, assigned_counts in source_n_assignments.items():
+    for source_name, assigned_counts in source_primaries_assignments.items():
         child_source = child_simulation.source_manager.get_source(source_name)
-        parent_source_n = child_source.n
-        child_source.n = assigned_counts
+        parent_source_number_of_primaries = child_source.number_of_primaries
+        child_source.number_of_primaries = assigned_counts
 
         if (
             isinstance(child_source, PhaseSpaceSource)
@@ -493,11 +493,9 @@ def _configure_child_simulation(
             # sequence, matching the existing MT limitation without adding a
             # stronger guarantee that phase-space entries cannot overlap.
             n_threads = child_simulation.number_of_threads
-            number_of_events_per_job_block = (
-                PhaseSpaceSource.get_number_of_events_per_lane(
-                    parent_source_n,
-                    number_of_jobs * n_threads,
-                )
+            number_of_events_per_job_block = PhaseSpaceSource.get_number_of_events_per_lane(
+                parent_source_number_of_primaries,
+                number_of_jobs * n_threads,
             )
             job_offset = (
                 job_definition["job_index"] - 1
@@ -797,7 +795,7 @@ class JobsSplitManager:
         self.resolved_master_simulation_dict = None
         self._simulation_path = None
         self.job_definitions = None
-        self.source_n_assignments = None
+        self.source_primaries_assignments = None
         self.simulation_id = None
         self.created_at = None
         self.jobs_manifest = None
@@ -919,6 +917,7 @@ class JobsSplitManager:
         # inputs so child jobs inherit explicit timing anchors and helper actors.
         self.master_simulation.resolve_and_validate_config(context="split_preparation")
         self._validate_split_compatibility()
+        self.master_simulation.warn_if_activity_based_sources_present(context="split")
         # A split campaign needs a concrete seed so every child can receive a
         # deterministic, distinct seed while the resolved master JSON remains
         # reproducible. Geant4 then derives thread/event streams internally from
@@ -939,7 +938,7 @@ class JobsSplitManager:
             self.number_of_jobs,
             self.policy,
         )
-        self.source_n_assignments = _compute_source_n_assignments(
+        self.source_primaries_assignments = _compute_source_primaries_assignments(
             self.master_simulation,
             self.original_run_timing_intervals,
             self.job_definitions,
@@ -1017,7 +1016,7 @@ class JobsSplitManager:
             job_folder, child_metadata = _configure_child_simulation(
                 child_simulation,
                 job_definition,
-                self.source_n_assignments[job_definition["job_index"]],
+                self.source_primaries_assignments[job_definition["job_index"]],
                 self.simulation_id,
                 self.jobs_root_dir,
                 self.master_simulation.current_random_seed,

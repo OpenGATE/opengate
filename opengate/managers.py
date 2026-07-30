@@ -2726,6 +2726,45 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
+    def _is_split_child_simulation_context(self):
+        try:
+            return (self.root_dir / "job_metadata.json").exists()
+        except Exception:
+            return False
+
+    def _get_activity_based_source_names(self):
+        source_names = []
+        for source in self.source_manager.sources.values():
+            try:
+                if source.activity is not None and float(source.activity) > 0:
+                    source_names.append(source.name)
+            except Exception:
+                continue
+        return source_names
+
+    def warn_if_activity_based_sources_present(self, context):
+        activity_source_names = self._get_activity_based_source_names()
+        if len(activity_source_names) == 0:
+            return
+
+        names = ", ".join(activity_source_names)
+        if context == "run":
+            self.warn_user(
+                "Activity-based sources detected in this simulation "
+                f"({names}). OpenGATE now interprets source.activity as the "
+                "total source activity and scales it internally for "
+                "multithreaded runs. Do not divide activity manually by the "
+                "number of threads."
+            )
+        elif context == "split":
+            self.warn_user(
+                "Activity-based sources detected in this split campaign "
+                f"({names}). Child jobs preserve source.activity over their "
+                "local time intervals, so the number of events contributed by "
+                "each job remains stochastic. Do not assume equal statistical "
+                "weight across jobs."
+            )
+
     def resolve_and_validate_config(self, context=None):
         # Keep this phase limited to Python-side configuration resolution and
         # negotiation before runtime initialization. It may tie managers and
@@ -2830,6 +2869,9 @@ class Simulation(GateObject):
                     timeout=timeout,
                 )
                 return split_run_controller
+
+        if self._is_split_child_simulation_context() is False:
+            self.warn_if_activity_based_sources_present(context="run")
 
         # prepare the subprocess
         if start_new_process is True:

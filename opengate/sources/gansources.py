@@ -949,7 +949,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
     def generate_condition(self, n):
         fatal(
             f'Error: to use GANSourceConditionalGenerator,  you must provide a function "f" '
-            f'that take a single int "n" as input and generate n condition samples. '
+            f'that take a single int "number_of_primaries" as input and generate that many condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
         )
         return None
@@ -1031,7 +1031,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
     def generate_condition(self, n):
         fatal(
             f'Error: to use GANSourceConditionalPairsGenerator,  you must provide a function "f" '
-            f'that take a single int "n" as input and generate n condition samples. '
+            f'that take a single int "number_of_primaries" as input and generate that many condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
         )
         return None

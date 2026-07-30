@@ -193,10 +193,7 @@ class SourceEngine(EngineBase):
         )
 
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
-        self.expected_number_of_events = (
-            ms.GetExpectedNumberOfEvents()
-            * self.simulation_engine.simulation.number_of_threads
-        )
+        self.expected_number_of_events = ms.GetExpectedNumberOfEvents()
         # set the flag for user event info
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
@@ -210,6 +207,16 @@ class SourceEngine(EngineBase):
 
     def start(self):
         sim = self.simulation_engine.simulation
+
+        if sim.multithreaded and len(self.g4_thread_source_managers) > 0:
+            self.expected_number_of_events = sum(
+                manager.GetExpectedNumberOfEvents()
+                for manager in self.g4_thread_source_managers
+            )
+        elif self.g4_master_source_manager is not None:
+            self.expected_number_of_events = (
+                self.g4_master_source_manager.GetExpectedNumberOfEvents()
+            )
 
         if sim.progress_hook:
             interval = float(
