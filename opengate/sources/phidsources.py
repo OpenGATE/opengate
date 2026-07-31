@@ -113,8 +113,9 @@ class PhotonFromIonDecaySource(GenericSource):
                 sub_source, g4_src, tac_times, tac_activities
             )
 
-            # check
-            self.check_ui_activity(sub_source)
+            # Ensure each resolved sub-source is validated against the global
+            # campaign timing before it is registered on the source manager.
+            sub_source.resolve_and_validate_config(self.run_timing_intervals)
             self.check_confine(sub_source)
 
             # Initialize the thread-local C++ source instance

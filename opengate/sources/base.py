@@ -197,32 +197,47 @@ class SourceBase(DynamicGateObject):
 
     def build_runtime_user_info_for_g4_source(self, g4_source):
         runtime_user_info = copy.deepcopy(self.user_info)
-        self.check_ui_activity(runtime_user_info)
 
-        if not self.simulation.multithreaded:
-            return runtime_user_info
+        if self.simulation.multithreaded:
+            number_of_threads = int(self.simulation.number_of_threads)
+            thread_index = self._get_runtime_thread_index(g4_source)
 
-        number_of_threads = int(self.simulation.number_of_threads)
-        thread_index = self._get_runtime_thread_index(g4_source)
+            if np.any(runtime_user_info.number_of_primaries > 0):
+                runtime_user_info.number_of_primaries = self._scale_counts_for_thread(
+                    runtime_user_info.number_of_primaries,
+                    thread_index,
+                    number_of_threads,
+                )
+            if runtime_user_info.activity > 0:
+                runtime_user_info.activity = (
+                    runtime_user_info.activity / number_of_threads
+                )
+            if (
+                hasattr(runtime_user_info, "tac_activities")
+                and runtime_user_info.tac_activities is not None
+            ):
+                runtime_user_info.tac_activities = (
+                    np.asarray(runtime_user_info.tac_activities, dtype=float)
+                    / number_of_threads
+                )
 
-        if np.any(runtime_user_info.number_of_primaries > 0):
-            runtime_user_info.number_of_primaries = self._scale_counts_for_thread(
-                runtime_user_info.number_of_primaries,
-                thread_index,
-                number_of_threads,
-            )
-        if runtime_user_info.activity > 0:
-            runtime_user_info.activity = runtime_user_info.activity / number_of_threads
+        # C++ source initializers expect ordinary Python containers here.
+        # Keep the numpy-based normalization internal to Python and hand off
+        # plain lists once runtime scaling is complete.
+        runtime_user_info.number_of_primaries = np.asarray(
+            runtime_user_info.number_of_primaries, dtype=int
+        ).tolist()
         if (
             hasattr(runtime_user_info, "tac_activities")
             and runtime_user_info.tac_activities is not None
         ):
-            runtime_user_info.tac_activities = (
-                np.asarray(runtime_user_info.tac_activities, dtype=float)
-                / number_of_threads
-            )
+            runtime_user_info.tac_activities = np.asarray(
+                runtime_user_info.tac_activities, dtype=float
+            ).tolist()
 
-        return runtime_user_info
+        if hasattr(runtime_user_info, "to_dict"):
+            return runtime_user_info.to_dict()
+        return dict(runtime_user_info)
 
     def gather_outputs(self, thread_sources):
         pass
@@ -238,40 +253,34 @@ class SourceBase(DynamicGateObject):
 
     def resolve_and_validate_config(self, run_timing_intervals, context=None):
         self.resolve_and_validate_timing(run_timing_intervals)
-        self.check_ui_activity(self.user_info)
-
-    def check_ui_activity(self, ui):
-        # FIXME: This should rather be a function than a method
-        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
-        # FIXME: this method validates and also rewrites user_info according to
-        # run_timing_intervals. That behavior is part of configuration
-        # resolution and should probably be moved into
-        # resolve_and_validate_config().
-        # Old fix_me do not knwo if it's still valid
-        if np.array([ui.number_of_primaries]).shape == (1,):
-            ui.number_of_primaries = np.array([ui.number_of_primaries], dtype=int)
+        if np.array([self.user_info.number_of_primaries]).shape == (1,):
+            self.user_info.number_of_primaries = np.array(
+                [self.user_info.number_of_primaries], dtype=int
+            )
         else:
-            ui.number_of_primaries = np.array(ui.number_of_primaries, dtype=int)
-        if (ui.activity == 0) and (
-            len(ui.number_of_primaries) != len(self.run_timing_intervals)
+            self.user_info.number_of_primaries = np.array(
+                self.user_info.number_of_primaries, dtype=int
+            )
+        if (self.user_info.activity == 0) and (
+            len(self.user_info.number_of_primaries) != len(self.run_timing_intervals)
         ):
             fatal(
                 "source.number_of_primaries and run_timing_intervals do not have the same length."
             )
-        if np.any(ui.number_of_primaries > 0) and ui.activity > 0:
+        if np.any(self.user_info.number_of_primaries > 0) and self.user_info.activity > 0:
             fatal(
                 "Cannot use both the two parameters 'number_of_primaries' and 'activity' at the same time. "
             )
-        if np.all(ui.number_of_primaries == 0) and ui.activity == 0:
+        if np.all(self.user_info.number_of_primaries == 0) and self.user_info.activity == 0:
             fatal(
                 "You must set one of the two parameters 'number_of_primaries' or 'activity'."
             )
-        if ui.activity > 0:
-            ui.number_of_primaries = np.array(
+        if self.user_info.activity > 0:
+            self.user_info.number_of_primaries = np.array(
                 np.zeros(len(self.run_timing_intervals), dtype=int)
             )
-        if np.any(ui.number_of_primaries > 0):
-            ui.activity = 0
+        if np.any(self.user_info.number_of_primaries > 0):
+            self.user_info.activity = 0
 
 
 class DebugSource(SourceBase):
