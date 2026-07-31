@@ -60,8 +60,8 @@ em_calc.is_ion = True
 # em_calc.particle_name = 'GenericIon'
 em_calc.ion_params = "1 1"
 em_calc.material = "G4_WATER"
-# em_calc.nominal_energies = list(np.logspace(np.log10(1e-3), np.log10(1e3), 1000))
-em_calc.nominal_energies = [10, 1e2, 1e3]
+# em_calc.number_of_primariesominal_energies = list(np.logspace(np.log10(1e-3), np.log10(1e3), 1000))
+em_calc.number_of_primariesominal_energies = [10, 1e2, 1e3]
 em_calc.savefile_path = paths.output / "dedx_table_H.txt"
 
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")

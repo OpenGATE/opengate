@@ -6,7 +6,7 @@ import itk
 import numpy as np
 
 import opengate as gate
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 from opengate.tests import utility
 
 if __name__ == "__main__":

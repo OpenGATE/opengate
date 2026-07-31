@@ -24,13 +24,13 @@ def main():
 
     source1 = sim.add_source("GenericSource", "source")
     source1.particle = "gamma"
-    source1.n = [1e6 / sim.number_of_threads, 1e6 / sim.number_of_threads]
+    source1.number_of_primaries = [1e6, 1e6]
     source1.direction.type = "iso"
     source1.energy.mono = 1.0 * gate.g4_units.MeV
 
     source2 = sim.add_source("GenericSource", "source2")
     source2.particle = "gamma"
-    source2.activity = 1e6 * gate.g4_units.Bq / sim.number_of_threads
+    source2.activity = 1e6 * gate.g4_units.Bq
     source2.direction.type = "iso"
     source2.energy.mono = 1.0 * gate.g4_units.MeV
 

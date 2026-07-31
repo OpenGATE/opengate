@@ -51,7 +51,7 @@ if __name__ == "__main__":
     s1.energy.mono = 140 * keV
 
     # create a decay TAC bw 2 and 5 sec
-    starting_activity = 100 * kBq / sim.number_of_threads
+    starting_activity = 100 * kBq
     half_life = 2 * sec
     times = np.linspace(1, 6, num=500, endpoint=True) * sec
     decay = np.log(2) / half_life

@@ -21,7 +21,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
         subdir = os.path.dirname(__file__)
         os.system(f"python {str(paths.current / subdir / dependency)}")
 
-    ns = gate.g4_units.nanosecond
+    ns = gate.g4_units.number_of_primariesanosecond
     mm = gate.g4_units.mm
 
     # Run coincidence sorting, returning concidences as a pandas DataFrame

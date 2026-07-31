@@ -47,7 +47,7 @@ def is_test_ok(phsp_1, phsp_2):
 def add_source(sim, plan_to_attach):
     source = sim.add_source("GenericSource", "GenSource")
     source.particle = "gamma"
-    source.n = 10000
+    source.number_of_primaries = 10000
     source.position.type = "disc"
     radius = plan_to_attach.rmax
     source.position.radius = radius
@@ -61,7 +61,7 @@ def add_source(sim, plan_to_attach):
 def add_source_2(sim, plan_to_attach):
     source = sim.add_source("GenericSource", "GenSource")
     source.particle = "gamma"
-    source.n = 10000
+    source.number_of_primaries = 10000
     source.position.type = "disc"
     radius = plan_to_attach.rmax
     source.position.radius = radius
@@ -81,7 +81,7 @@ def add_phsp_source(sim, plan_to_attach):
     source.global_flag = True
     source.particle = "gamma"
     source.batch_size = 50000
-    source.n = 10000
+    source.number_of_primaries = 10000
     source.verbose = False
     source.attached_to = plan_to_attach.name
     return source

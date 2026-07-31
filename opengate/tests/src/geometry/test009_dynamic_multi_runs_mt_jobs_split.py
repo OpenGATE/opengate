@@ -45,7 +45,7 @@ def build_dynamic_multi_run_simulation(output_dir):
     source = sim.add_source("GenericSource", "src")
     source.attached_to = "world"
     source.particle = "gamma"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     source.position.type = "point"
     source.direction.type = "iso"
     source.energy.type = "spectrum_discrete"

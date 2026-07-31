@@ -83,7 +83,7 @@ if __name__ == "__main__":
     dose.edep_squared.active = True
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
-    dose.output_filename = "test.nii.gz"
+    dose.output_filename = "test.number_of_primariesii.gz"
     dose.edep.keep_data_per_run = True
 
     # add stat actor

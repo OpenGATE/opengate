@@ -9,7 +9,7 @@ import os
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 import gatetools.phsp as phsp
 from opengate.tests import utility
 
@@ -56,7 +56,7 @@ def create_simulation(sim, paths, colli="lehr", version=""):
     sim.check_volumes_overlap = True
     sim.random_seed = 4123456
     # ac = 1e6 * BqmL
-    ac = 3e3 * BqmL / sim.number_of_threads
+    ac = 3e3 * BqmL
     sim.visu = False
     # sim.running_verbose_level = gate.EVENT
     # sim.g4_verbose = True
@@ -243,7 +243,7 @@ def analyze_results(sim, paths, all_cond):
         "EventDirection_Y",
         "EventDirection_Z",
     ]
-    phsp.save_npy(paths.output / "test038_gan_phsp_cond.npy", all_cond, keys)
+    phsp.save_npy(paths.output / "test038_gan_phsp_cond.number_of_primariespy", all_cond, keys)
 
     # ----------------------------------------------------------------------------------------------
     # compare conditional
@@ -260,7 +260,7 @@ def analyze_results(sim, paths, all_cond):
     hits1 = hits1[branch]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
-    root_gan = paths.output / "test038_gan_phsp_cond.npy"
+    root_gan = paths.output / "test038_gan_phsp_cond.number_of_primariespy"
     hits2, hits2_keys, hits2_n = phsp.load(root_gan)
     tols = [10.0] * len(keys)
     tols[keys.index("EventPosition_X")] = 0.3

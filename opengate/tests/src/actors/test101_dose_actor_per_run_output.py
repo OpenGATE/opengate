@@ -59,7 +59,7 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "source")
     source.particle = "proton"
     source.energy.mono = 20 * MeV
-    source.n = [1000, 3000, 5000]
+    source.number_of_primaries = [1000, 3000, 5000]
     source.position.type = "disc"
     source.position.radius = 1 * nm
     source.position.translation = [0, 0, -9 * cm]

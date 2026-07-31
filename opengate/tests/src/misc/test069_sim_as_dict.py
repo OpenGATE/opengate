@@ -93,7 +93,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -80 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 10
+    source.number_of_primaries = 10
 
     # run
     sim.run()

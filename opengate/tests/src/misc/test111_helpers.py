@@ -25,7 +25,7 @@ def build_simple_simulation(output_path):
 
     source = sim.add_source("GenericSource", "source")
     source.particle = "gamma"
-    source.n = [20, 30]
+    source.number_of_primaries = [20, 30]
     source.direction.type = "iso"
     source.energy.mono = 1.0 * gate.g4_units.MeV
 

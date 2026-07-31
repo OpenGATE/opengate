@@ -43,7 +43,7 @@ def run_simulation(stopping_or_production: str, x_source=0.0):
     sim.number_of_threads = 8
     sim.output_dir = paths.output
 
-    numPartSimTest = 4e2 / sim.number_of_threads
+    numPartSimTest = 4e2
     numPartSimRef = 1e5
 
     # units
@@ -88,7 +88,7 @@ def run_simulation(stopping_or_production: str, x_source=0.0):
     source.position.translation = [x_source, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = numPartSimTest
+    source.number_of_primaries = numPartSimTest
 
     size = [100, 1, 1]
     spacing = [1.0 * mm, 60.0 * mm, 60.0 * mm]

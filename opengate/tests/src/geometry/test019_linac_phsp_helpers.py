@@ -65,7 +65,7 @@ def init_test019(nt, version):
     source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, -1]
-    source.activity = 5000 * Bq / sim.number_of_threads
+    source.activity = 5000 * Bq
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -222,8 +222,8 @@ def create_simu_test019_phsp_source(sim, version):
     source.particle = "gamma"
     source.particle = ""
     source.PDGCode_key = "PDGCode"
-    source.n = 20000 / sim.number_of_threads
-    source.batch_size = source.n
+    source.number_of_primaries = 20000
+    source.batch_size = source.number_of_primaries
     source.verbose = False
     source.verbose_batch = True
 
@@ -236,8 +236,8 @@ def create_simu_test019_phsp_source(sim, version):
     source.global_flag = True
     source.particle = None
     source.PDGCode_key = "PDGCode"
-    source.n = 20000 / sim.number_of_threads
-    source.batch_size = source.n
+    source.number_of_primaries = 20000
+    source.batch_size = source.number_of_primaries
     source.verbose = False
     source.verbose_batch = True
 

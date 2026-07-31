@@ -4,7 +4,7 @@
 import uproot
 import matplotlib.pyplot as plt
 import opengate as gate
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 from opengate.actors.filters import GateFilterBuilder
 from opengate.tests import utility
 

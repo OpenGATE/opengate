@@ -86,7 +86,7 @@ def build_tac_activity_simulation(output_dir):
     source.direction.type = "iso"
     source.energy.mono = 140 * keV
 
-    starting_activity = 100 * kBq / sim.number_of_threads
+    starting_activity = 100 * kBq
     half_life = 2 * sec
     times = np.linspace(1, 6, num=500, endpoint=True) * sec
     decay = np.log(2) / half_life

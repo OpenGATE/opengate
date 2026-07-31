@@ -47,7 +47,7 @@ def run_simulation(
     source.position.translation = [0, 0, -5 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 100000
+    source.number_of_primaries = 100000
 
     aux = sim.activate_auxiliary_attribute(
         "InteractionCounterAttribute",
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     mean_thin = np.mean(counts_thin)
     mean_thick = np.mean(counts_thick)
-    ratio = mean_thick / mean_thin if mean_thin > 0 else np.nan
+    ratio = mean_thick / mean_thin if mean_thin > 0 else np.number_of_primariesan
     mean_step_limited = np.mean(counts_step_limited)
     mean_step_unlimited = np.mean(counts_step_unlimited)
 

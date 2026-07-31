@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 from opengate.tests import utility
 from opengate.actors.filters import GateFilterBuilder
 
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.random_seed = 1386
     sim.output_dir = paths.output
-    ac = 5e3 * BqmL / sim.number_of_threads
+    ac = 5e3 * BqmL
     sim.visu = False
     sim.visu_type = "vrml"
     colli_flag = not sim.visu

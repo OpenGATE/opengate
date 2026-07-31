@@ -67,7 +67,7 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "non_confined_src")
     source.attached_to = "stuff"
     source.particle = "gamma"
-    source.activity = activity / sim.number_of_threads
+    source.activity = activity
     source.position.type = "box"
     source.position.size = [5 * cm, 5 * cm, 5 * cm]
     source.direction.type = "momentum"
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "confined_src")
     source.attached_to = "stuff"
     source.particle = "gamma"
-    source.activity = activity / sim.number_of_threads
+    source.activity = activity
     source.position.type = "box"
     source.position.size = sim.volume_manager.volumes[
         source.attached_to

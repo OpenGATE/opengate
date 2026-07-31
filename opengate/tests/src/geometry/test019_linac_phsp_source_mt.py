@@ -14,14 +14,14 @@ if __name__ == "__main__":
     sim.number_of_threads = nt = 2
 
     sl = sim.get_source_user_info("phsp_source_local")
-    sl.n /= nt
-    sl.entry_start = [sl.n * p for p in range(nt)]
-    sl.batch_size = sl.n
+    sl.number_of_primaries /= nt
+    sl.entry_start = [sl.number_of_primaries * p for p in range(nt)]
+    sl.batch_size = sl.number_of_primaries
 
     sg = sim.get_source_user_info("phsp_source_global")
-    sg.n /= nt
-    sg.entry_start = [sl.n * p for p in range(nt)]
-    sg.batch_size = sg.n
+    sg.number_of_primaries /= nt
+    sg.entry_start = [sl.number_of_primaries * p for p in range(nt)]
+    sg.batch_size = sg.number_of_primaries
 
     print("source entry start", sl.entry_start)
     print("source entry start", sg.entry_start)

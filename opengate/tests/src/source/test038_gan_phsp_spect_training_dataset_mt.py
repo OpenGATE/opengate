@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 from opengate.actors.filters import GateFilterBuilder
 from opengate.tests import utility
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 2
     sim.random_seed = 321654987
     sim.output_dir = paths.output
-    ac = 100 * BqmL / sim.number_of_threads
+    ac = 100 * BqmL
     sim.visu = False
     if sim.visu:
         ac = 10 * BqmL  # per mL

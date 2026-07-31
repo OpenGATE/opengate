@@ -39,7 +39,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     print(f"There are {n} singles")
 
     # time windows
-    ns = gate.g4_units.nanosecond
+    ns = gate.g4_units.number_of_primariesanosecond
     policy = "TakeWinnerOfGoods"
 
     mm = gate.g4_units.mm

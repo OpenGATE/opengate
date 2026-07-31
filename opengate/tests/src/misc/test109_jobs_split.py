@@ -6,7 +6,7 @@ This test focuses on three aspects of job splitting:
 
 1. Split-policy structure:
    child run timing intervals, original-run mapping, dynamic-parameter
-   subsetting, and ``source.n`` redistribution.
+   subsetting, and ``source.number_of_primaries`` redistribution.
 2. Input-file archiving:
    copied versus linked job-local inputs, including MetaImage ``.mhd/.raw``
    pairs and the current material-database workaround.
@@ -124,7 +124,7 @@ def build_simulation(
 
     source = sim.add_source("VoxelSource", "vox_source")
     source.particle = "gamma"
-    source.n = source_n
+    source.number_of_primaries = source_n
     source.image = str(dynamic_source_1_authored)
     source.direction.type = "iso"
     source.energy.mono = 1.0 * gate.g4_units.MeV
@@ -156,7 +156,7 @@ def get_dynamic_source_image_names(child_simulation):
 
 def get_source_n(child_simulation):
     dynamic_source = child_simulation.source_manager.get_source("vox_source")
-    return list(dynamic_source.n)
+    return list(dynamic_source.number_of_primaries)
 
 
 def load_manifest(split_root):
@@ -487,7 +487,7 @@ if __name__ == "__main__":
 
     utility.print_test(
         get_source_n(first_child_simulation) == [50],
-        f"First child split_in_time_per_run source.n values: {get_source_n(first_child_simulation)}",
+        f"First child split_in_time_per_run source.number_of_primaries values: {get_source_n(first_child_simulation)}",
     )
     is_ok = get_source_n(first_child_simulation) == [50] and is_ok
 
@@ -603,7 +603,7 @@ if __name__ == "__main__":
     aggregated_counts = aggregate_counts_by_original_run(manifest_2, split_root_2)
     utility.print_test(
         aggregated_counts == {0: 10, 1: 30},
-        f"split_in_time_total source.n counts aggregated by original run: {aggregated_counts}",
+        f"split_in_time_total source.number_of_primaries counts aggregated by original run: {aggregated_counts}",
     )
     is_ok = aggregated_counts == {0: 10, 1: 30} and is_ok
 

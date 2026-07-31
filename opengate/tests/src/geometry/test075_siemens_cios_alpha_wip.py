@@ -21,7 +21,7 @@ original_arange = np.arange
 def patched_arange(*args, **kwargs):
     # Helper to force conversion to scalar even if it's a 1-element array
     def force_scalar(x):
-        if isinstance(x, (np.ndarray, list)):
+        if isinstance(x, (np.number_of_primariesdarray, list)):
             return np.asarray(x).item(0) if np.size(x) > 0 else x
         return x
 
@@ -70,9 +70,9 @@ if __name__ == "__main__":
     carm.translation = [0 * cm, 0 * cm, 0 * cm]
     carm.collimation = [25 * mm, 25 * mm]
 
-    carm.source.n = 1e6
+    carm.source.number_of_primaries = 1e6
     if sim.visu:
-        carm.source.n = 1000
+        carm.source.number_of_primaries = 1000
 
     # aluminum table
     table = sim.add_volume("Box", "aluminum_table")

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 import gatetools as gt
 import itk
 import opengate.contrib.pet.philipsvereos as pet_vereos
@@ -22,7 +22,7 @@ def create_pet_simulation(sim, param):
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     # sim.random_seed = 123456
-    param.ac = param.activity_Bqml * BqmL / sim.number_of_threads
+    param.ac = param.activity_Bqml * BqmL
     if sim.visu:
         param.ac = 1 * BqmL
         sim.number_of_threads = 1

@@ -205,8 +205,8 @@ def plot_img_axis(ax, img, label, axis="z"):
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = sitk.GetArrayViewFromImage(img)
-    y = np.nansum(data, 2)
-    y = np.nansum(y, 1)
+    y = np.number_of_primariesansum(data, 2)
+    y = np.number_of_primariesansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -216,8 +216,8 @@ def plot_img_z(ax, img, label):
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = sitk.GetArrayViewFromImage(img)
-    y = np.nansum(data, 2)
-    y = np.nansum(y, 0)
+    y = np.number_of_primariesansum(data, 2)
+    y = np.number_of_primariesansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -227,8 +227,8 @@ def plot_img_y(ax, img, label):
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = sitk.GetArrayViewFromImage(img)
-    y = np.nansum(data, 1)
-    y = np.nansum(y, 0)
+    y = np.number_of_primariesansum(data, 1)
+    y = np.number_of_primariesansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -1210,7 +1210,7 @@ def gaussian_fit(positionVec, dose):
     except RuntimeError as e:
         print(f"Scipy curve fit probably failed : {e}")
         parameters = np.empty(3)
-        parameters[:] = np.nan
+        parameters[:] = np.number_of_primariesan
 
     fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
@@ -1622,10 +1622,10 @@ def compare_dose_at_points(
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x, p=p: abs(x - p))
-        d1_p = doseV1[np.nonzero(x1 == cp1)]
+        d1_p = doseV1[np.number_of_primariesonzero(x1 == cp1)]
 
         cp2 = min(x2, key=lambda x, p=p: abs(x - p))
-        d2_p = doseV2[np.nonzero(x2 == cp2)]
+        d2_p = doseV2[np.number_of_primariesonzero(x2 == cp2)]
 
         s1 += d1_p
         s2 += d2_p
@@ -1787,7 +1787,7 @@ def root_compare_param(keys, fig):
     p.tols = [1.0] * len(keys)
     p.fig = fig
     p.hits_tol = 6
-    p.nb_bins = 300
+    p.number_of_primariesb_bins = 300
     return p
 
 
@@ -1866,7 +1866,7 @@ def compare_trees4(p1, p2, param):
             b2 = b2[b2 < p2.maxs[i]]
         is_ok = (
             compare_branches_values(
-                b1, b2, p1.the_keys[i], p2.the_keys[i], param.tols[i], a, param.nb_bins
+                b1, b2, p1.the_keys[i], p2.the_keys[i], param.tols[i], a, param.number_of_primariesb_bins
             )
             and is_ok
         )
@@ -2131,7 +2131,7 @@ def add_border(ax, border_color, border_width):
 def plot_compare_slice_profile(ref_names, test_names, options, stepped_line=False):
     # options
     scaling = options.scaling
-    n_slice = options.n_slice
+    n_slice = options.number_of_primaries_slice
     ww = options.window_width
     wl = options.window_level
     c = options.crop_center

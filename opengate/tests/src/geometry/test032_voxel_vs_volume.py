@@ -3,7 +3,7 @@
 
 from scipy.spatial.transform import Rotation
 import opengate as gate
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 from opengate.utility import read_json_file
 from opengate.tests import utility
 

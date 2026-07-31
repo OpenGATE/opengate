@@ -60,7 +60,7 @@ def build_simple_split_run_simulation(output_path, run_timing_intervals, source_
     source.attached_to = waterbox
     source.particle = "proton"
     source.energy.mono = 70 * MeV
-    source.n = source_n
+    source.number_of_primaries = source_n
     source.position.type = "point"
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"

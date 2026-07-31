@@ -157,8 +157,8 @@ if __name__ == "__main__":
         # Extract internal actor statistics
         split_info = bias.user_output["info"].split_info
 
-        nb_splits = split_info.nb_compt_splits
-        nb_tracks = split_info.nb_compt_tracks
+        nb_splits = split_info.number_of_primariesb_compt_splits
+        nb_tracks = split_info.number_of_primariesb_compt_tracks
 
         print(f"Recorded Compton Splits: {nb_splits}")
         print(f"Generated Secondary Tracks: {nb_tracks}")

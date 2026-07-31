@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test015")
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     iec_phantom = gate_iec.add_iec_phantom(sim)
 
     # add sources for all central cylinder
-    a = 20 * BqmL / sim.number_of_threads
+    a = 20 * BqmL
     """bg1 = gate_iec.add_central_cylinder_source(
         sim, iec_phantom.name, "bg1", a * 5, verbose=True
     )

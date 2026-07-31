@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # source and physics
     stats = test_add_physics_and_stats(sim, "pet")
-    activity = 1000 * Bq / sim.number_of_threads
+    activity = 1000 * Bq
     test_add_b2b_source(sim, activity)
 
     # Save volumes
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         is_inside = (np.abs(tpos) <= half_size).all()
         # distance be local_position and tpos
         if not is_inside:
-            d = np.linalg.norm(local_positions[i] - tpos)
+            d = np.linalg.number_of_primariesorm(local_positions[i] - tpos)
             if d > 1e-8:
                 is_ok = False
                 print(

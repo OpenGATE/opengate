@@ -90,7 +90,7 @@ if __name__ == "__main__":
     source.position.translation = source.position.translation / 2.0
     print(f"translation {source.position.translation}")
     source.particle = "alpha"
-    source.activity = activity_bq * Bq / sim.number_of_threads
+    source.activity = activity_bq * Bq
     source.compute_directions = True
     source.pth_filename = paths.data / "train_gaga_v001_GP_0GP_10_60000.pth"
     source.position_keys = ["PrePosition_X", "PrePosition_Y", "PrePosition_Z"]

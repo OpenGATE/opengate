@@ -51,7 +51,7 @@ if __name__ == "__main__":
     source.direction.type = "focused"
     source.direction.focus_point = [0 * cm, 0 * cm, -25 * cm]
     source.direction.momentum = [0, 0, -1]
-    source.n = 50000 / sim.number_of_threads
+    source.number_of_primaries = 50000
 
     # add a stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

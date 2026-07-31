@@ -66,7 +66,7 @@ def build_phsp_actor_simulation(
     if (source_n is None) == (source_activity is None):
         raise ValueError("Provide exactly one of source_n or source_activity.")
     if source_n is not None:
-        source.n = source_n
+        source.number_of_primaries = source_n
     if source_activity is not None:
         source.activity = (
             source_activity * Bq

@@ -63,7 +63,7 @@ if __name__ == "__main__":
     source = sim.add_source("VoxelSource", "vox_source")
     source.attached_to = ct.name
     source.particle = "alpha"
-    source.activity = 20000 * Bq / sim.number_of_threads
+    source.activity = 20000 * Bq
     source.image = str(paths.data / "five_pixels_anisotrop.mhd")
     source.direction.type = "iso"
     source.position.translation = gate.image.get_translation_between_images_center(
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     src = itk.imread(source.image)
     p = []
     arr = itk.array_view_from_image(src)
-    for [i, j, k], flow in np.ndenumerate(src):
+    for [i, j, k], flow in np.number_of_primariesdenumerate(src):
         if arr[i, j, k] > 0:
             p.append([k, j, i])
     # convert into dose coord system

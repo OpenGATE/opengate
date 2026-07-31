@@ -167,7 +167,7 @@ def create_test_phs(
     source.position.translation = [0 * cm, 0 * cm, -0.1 * cm]
     source.energy.type = "mono"
     source.energy.mono = 150 * MeV
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
 
     sim.run(start_new_process=True)
 
@@ -254,7 +254,7 @@ def create_phs_without_source(
     # source.global_flag = True
     # source.particle = particle
     # source.batch_size = 3000
-    # source.n = number_of_particles / sim.number_of_threads
+    # source.number_of_primaries = number_of_particles
     # # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
     # output = sim.run()
@@ -284,7 +284,7 @@ def test_source_name(
     source.global_flag = True
     source.particle = particle
     source.batch_size = 3000
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
     source.verbose = False
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
@@ -311,7 +311,7 @@ def test_source_particle_info_from_phs(
     source.direction_key = "PreDirectionLocal"
     source.global_flag = True
     source.batch_size = 3000
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
     sim.run()
@@ -337,7 +337,7 @@ def test_source_translation(
     source.global_flag = True
     source.particle = "proton"
     source.batch_size = 3000
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
     source.translate_position = True
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
     print(source)
@@ -365,7 +365,7 @@ def test_source_rotation(
     source.global_flag = True
     source.particle = "proton"
     source.batch_size = 3000
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
     source.verbose = False
     # source.translate_position = True
     # source.position.translation = [3 * cm, 1 * cm, 0 * cm]
@@ -395,7 +395,7 @@ def test_source_until_primary(
     source.global_flag = True
     source.particle = ""
     source.batch_size = 3000
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
     source.generate_until_next_primary = True
     source.primary_lower_energy_threshold = 90.0 * MeV
     source.primary_PDGCode = 2212

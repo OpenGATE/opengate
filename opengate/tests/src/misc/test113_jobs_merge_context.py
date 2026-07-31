@@ -214,7 +214,7 @@ def build_simulation(output_path, run_timing_intervals, source_n):
     # phase-space actor records a stream dominated by one scored step per
     # primary. This makes the EventID remap check meaningful in this test.
     source.energy.mono = 10 * keV
-    source.n = source_n
+    source.number_of_primaries = source_n
     source.position.type = "disc"
     source.position.radius = 1.0 * nm
     source.position.translation = [0, 0, -9.0 * cm]

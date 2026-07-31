@@ -40,8 +40,8 @@ if __name__ == "__main__":
 
     # check if exists and NOT empty
     hits = uproot.open(ta2.get_output_path_string())["PhaseSpace"]
-    is_ok2 = source.n - 10 < hits.num_entries < source.n + 10
-    utility.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
+    is_ok2 = source.number_of_primaries - 10 < hits.num_entries < source.number_of_primaries + 10
+    utility.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.number_of_primaries}")
     print()
 
     is_ok = is_ok and is_ok2

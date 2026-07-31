@@ -17,7 +17,7 @@ m = gate.g4_units.m
 Bq = gate.g4_units.Bq
 MeV = gate.g4_units.MeV
 sec = gate.g4_units.second
-ns = gate.g4_units.nanosecond
+ns = gate.g4_units.number_of_primariesanosecond
 deg = gate.g4_units.degree
 
 
@@ -63,8 +63,8 @@ def create_simu(material):
     source.position.translation = [0, 0, -100 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    # source.n = 100000
-    source.n = 10000
+    # source.number_of_primaries = 100000
+    source.number_of_primaries = 10000
 
     # stats
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

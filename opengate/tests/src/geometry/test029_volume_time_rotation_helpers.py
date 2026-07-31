@@ -3,7 +3,7 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
-import opengate.contrib.phantoms.nemaiec as gate_iec
+import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
 from scipy.spatial.transform import Rotation
 
 
@@ -40,7 +40,7 @@ def create_simulation(sim, aa_flag, paths, version):
     gate_iec.add_iec_phantom(sim)
 
     # two sources (no background yet)
-    activity_concentration = 5000 * BqmL / sim.number_of_threads
+    activity_concentration = 5000 * BqmL
     ac = activity_concentration
     sources = gate_iec.add_spheres_sources(
         sim,

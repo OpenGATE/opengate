@@ -85,7 +85,7 @@ def vec_equal(a, b, tol=0.01) -> bool:
     return all(abs(x - y) <= tol for x, y in zip(a, b))
 
 
-def get_single_isocenter(rtplan_path: Path, tol: float = 0.01) -> np.ndarray:
+def get_single_isocenter(rtplan_path: Path, tol: float = 0.01) -> np.number_of_primariesdarray:
     ds = pydicom.dcmread(str(rtplan_path), force=True)
 
     if not hasattr(ds, "BeamSequence"):
@@ -121,7 +121,7 @@ def get_single_isocenter(rtplan_path: Path, tol: float = 0.01) -> np.ndarray:
     if iso_ref is None:
         raise ValueError("Aucun isocentre trouvé dans le RT Plan.")
 
-    return iso_ref  # numpy.ndarray [x, y, z] en mm
+    return iso_ref  # numpy.number_of_primariesdarray [x, y, z] en mm
 
 
 def estimate_nb_of_event(dicom_file, median_nb_part):

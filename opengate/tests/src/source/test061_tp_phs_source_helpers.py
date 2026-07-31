@@ -104,7 +104,7 @@ def create_test_phsp(
     source.position.translation = [0 * cm, 0 * cm, -0.1 * cm]
     source.energy.type = "mono"
     source.energy.mono = 150 * MeV
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
 
     sim.run()
     output = sim.output
@@ -183,7 +183,7 @@ def create_phsp_without_source(
     # source.global_flag = True
     # source.particle = particle
     # source.batch_size = 3000
-    # source.n = number_of_particles / ui.number_of_threads
+    # source.number_of_primaries = number_of_particles
     # # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
     # output = sim.run()

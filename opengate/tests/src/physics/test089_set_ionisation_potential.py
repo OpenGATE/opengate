@@ -57,7 +57,7 @@ def simuation_IDD(test_material):
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
     # print(dir(source.energy))
-    source.n = 1e3
+    source.number_of_primaries = 1e3
     # source.activity = 100 * kBq
 
     size = [500, 1, 1]

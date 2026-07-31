@@ -29,7 +29,7 @@ def main():
 
     source1 = sim1.add_source("GenericSource", "source")
     source1.particle = "gamma"
-    source1.n = [100, 50]
+    source1.number_of_primaries = [100, 50]
     source1.direction.type = "iso"
     source1.energy.mono = 1.0 * gate.g4_units.MeV
 

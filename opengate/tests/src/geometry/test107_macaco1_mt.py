@@ -130,7 +130,7 @@ def write_singles_root(path: Path, df: pd.DataFrame) -> Path:
 
 def extract_sorted_coincidences(
     coincidences: pd.DataFrame,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.number_of_primariesdarray, np.number_of_primariesdarray, np.number_of_primariesdarray, np.number_of_primariesdarray, np.number_of_primariesdarray]:
     labels1 = coincidences["PreStepUniqueVolumeID1"].astype(str).str.lower()
     is_scatt1 = labels1.str.contains("scatt")
     scatt_pos = np.column_stack(
@@ -187,41 +187,41 @@ def pairs_from_coincident_singles(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def compute_theta_c(e_scatt: np.ndarray, e0: np.ndarray) -> np.ndarray:
+def compute_theta_c(e_scatt: np.number_of_primariesdarray, e0: np.number_of_primariesdarray) -> np.number_of_primariesdarray:
     e_scattered = e0 - e_scatt
     valid = (e0 > 0.0) & (e_scattered > 0.0)
-    cos_theta = np.full_like(e0, np.nan, dtype=float)
+    cos_theta = np.full_like(e0, np.number_of_primariesan, dtype=float)
     cos_theta[valid] = 1.0 - (
         ME_C2_KEV * e_scatt[valid] / (e_scattered[valid] * e0[valid])
     )
     in_range = (cos_theta >= -1.0) & (cos_theta <= 1.0)
-    cos_theta = np.where(in_range, cos_theta, np.nan)
+    cos_theta = np.where(in_range, cos_theta, np.number_of_primariesan)
     return np.arccos(cos_theta)
 
 
 def compute_theta_g(
-    scatter_pos: np.ndarray, absorber_pos: np.ndarray, source_pos: np.ndarray
-) -> np.ndarray:
+    scatter_pos: np.number_of_primariesdarray, absorber_pos: np.number_of_primariesdarray, source_pos: np.number_of_primariesdarray
+) -> np.number_of_primariesdarray:
     incoming = scatter_pos - source_pos
     outgoing = absorber_pos - scatter_pos
-    incoming_norm = np.linalg.norm(incoming, axis=1)
-    outgoing_norm = np.linalg.norm(outgoing, axis=1)
+    incoming_norm = np.linalg.number_of_primariesorm(incoming, axis=1)
+    outgoing_norm = np.linalg.number_of_primariesorm(outgoing, axis=1)
     valid = (incoming_norm > 0.0) & (outgoing_norm > 0.0)
-    cos_theta = np.full(incoming_norm.shape, np.nan, dtype=float)
+    cos_theta = np.full(incoming_norm.shape, np.number_of_primariesan, dtype=float)
     dot = np.einsum("ij,ij->i", incoming, outgoing)
     cos_theta[valid] = dot[valid] / (incoming_norm[valid] * outgoing_norm[valid])
     in_range = (cos_theta >= -1.0) & (cos_theta <= 1.0)
-    cos_theta = np.where(in_range, cos_theta, np.nan)
+    cos_theta = np.where(in_range, cos_theta, np.number_of_primariesan)
     return np.arccos(cos_theta)
 
 
 def compute_arm(
-    scatter_pos: np.ndarray,
-    absorber_pos: np.ndarray,
-    e_scatt: np.ndarray,
-    e_abs: np.ndarray,
-    source_pos: np.ndarray,
-) -> np.ndarray:
+    scatter_pos: np.number_of_primariesdarray,
+    absorber_pos: np.number_of_primariesdarray,
+    e_scatt: np.number_of_primariesdarray,
+    e_abs: np.number_of_primariesdarray,
+    source_pos: np.number_of_primariesdarray,
+) -> np.number_of_primariesdarray:
     e0 = np.where(e_scatt + e_abs < 600.0, 511.0, 1275.0)
     theta_c = compute_theta_c(e_scatt, e0)
     theta_g = compute_theta_g(scatter_pos, absorber_pos, source_pos)
@@ -229,7 +229,7 @@ def compute_arm(
     return (theta_g - theta_c)[valid]
 
 
-def normalize_hist_counts(counts: np.ndarray, edges: np.ndarray) -> np.ndarray:
+def normalize_hist_counts(counts: np.number_of_primariesdarray, edges: np.number_of_primariesdarray) -> np.number_of_primariesdarray:
     total = float(np.sum(counts))
     if total <= 0:
         return np.zeros_like(counts, dtype=float)
@@ -238,8 +238,8 @@ def normalize_hist_counts(counts: np.ndarray, edges: np.ndarray) -> np.ndarray:
 
 
 def rebin_hist(
-    counts: np.ndarray, edges: np.ndarray, factor: int
-) -> tuple[np.ndarray, np.ndarray]:
+    counts: np.number_of_primariesdarray, edges: np.number_of_primariesdarray, factor: int
+) -> tuple[np.number_of_primariesdarray, np.number_of_primariesdarray]:
     if factor <= 1:
         return counts, edges
     n = (len(counts) // factor) * factor
@@ -249,15 +249,15 @@ def rebin_hist(
 
 
 def lorentzian(
-    x: np.ndarray, amp: float, x0: float, gamma: float, offset: float
-) -> np.ndarray:
+    x: np.number_of_primariesdarray, amp: float, x0: float, gamma: float, offset: float
+) -> np.number_of_primariesdarray:
     half_gamma = 0.5 * gamma
     return amp * half_gamma**2 / ((x - x0) ** 2 + half_gamma**2) + offset
 
 
 def fit_lorentzian(
-    x: np.ndarray, y: np.ndarray
-) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
+    x: np.number_of_primariesdarray, y: np.number_of_primariesdarray
+) -> tuple[np.number_of_primariesdarray, np.number_of_primariesdarray] | tuple[None, None]:
     if curve_fit is None or np.count_nonzero(y) < 2:
         return None, None
     amp0 = float(np.max(y))
@@ -292,7 +292,7 @@ def fit_lorentzian(
 
 def load_experimental_arm_histograms(
     path: Path,
-) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+) -> dict[str, tuple[np.number_of_primariesdarray, np.number_of_primariesdarray]]:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Experimental ROOT file not found: {path}")
@@ -301,7 +301,7 @@ def load_experimental_arm_histograms(
         "511": "AngularUncertaintyReal511",
         "1275": "AngularUncertaintyReal1275",
     }
-    histograms: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    histograms: dict[str, tuple[np.number_of_primariesdarray, np.number_of_primariesdarray]] = {}
     with uproot.open(path) as f:
         for key, name in mapping.items():
             if name not in f:
@@ -319,9 +319,9 @@ def load_experimental_arm_histograms(
 
 def plot_arm_overlay(
     label: str,
-    exp_centers: np.ndarray,
-    exp_counts: np.ndarray,
-    sim_arm: np.ndarray,
+    exp_centers: np.number_of_primariesdarray,
+    exp_counts: np.number_of_primariesdarray,
+    sim_arm: np.number_of_primariesdarray,
     out_dir: Path,
     *,
     sim_bin_factor: int = 1,
