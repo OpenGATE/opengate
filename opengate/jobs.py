@@ -149,20 +149,20 @@ def _load_packaged_simulation(simulation_folder, simulation_file):
     return simulation, simulation_path
 
 
-def _prepare_jobs_root_dir(jobs_root_dir, overwrite_existing_job_folders=False):
-    jobs_root_dir = Path(jobs_root_dir).resolve()
-    if jobs_root_dir.exists():
-        if jobs_root_dir.is_dir() is False:
+def _prepare_campaign_dir(campaign_dir, overwrite_existing_job_folders=False):
+    campaign_dir = Path(campaign_dir).resolve()
+    if campaign_dir.exists():
+        if campaign_dir.is_dir() is False:
             fatal(
-                f"Cannot use jobs_root_dir '{jobs_root_dir}' because it is not a directory."
+                f"Cannot use campaign_dir '{campaign_dir}' because it is not a directory."
             )
     else:
-        jobs_root_dir.mkdir(parents=True, exist_ok=False)
+        campaign_dir.mkdir(parents=True, exist_ok=False)
 
-    existing_job_folders = sorted(jobs_root_dir.glob("job[0-9][0-9][0-9][0-9]"))
+    existing_job_folders = sorted(campaign_dir.glob("job[0-9][0-9][0-9][0-9]"))
     jobs_sidecar_files = [
-        jobs_root_dir / JOBS_MANIFEST_FILENAME,
-        jobs_root_dir / JOBS_BACKEND_STATUS_FILENAME,
+        campaign_dir / JOBS_MANIFEST_FILENAME,
+        campaign_dir / JOBS_BACKEND_STATUS_FILENAME,
     ]
     existing_jobs_sidecar_files = [p for p in jobs_sidecar_files if p.exists()]
 
@@ -172,7 +172,7 @@ def _prepare_jobs_root_dir(jobs_root_dir, overwrite_existing_job_folders=False):
         blocking_entries = [str(p.name) for p in existing_job_folders]
         blocking_entries.extend(str(p.name) for p in existing_jobs_sidecar_files)
         fatal(
-            f"jobs_root_dir '{jobs_root_dir}' already contains split-job artifacts: "
+            f"campaign_dir '{campaign_dir}' already contains split-job artifacts: "
             f"{blocking_entries}. Set overwrite_existing_job_folders=True to replace them."
         )
 
@@ -182,7 +182,7 @@ def _prepare_jobs_root_dir(jobs_root_dir, overwrite_existing_job_folders=False):
         for sidecar_file in existing_jobs_sidecar_files:
             sidecar_file.unlink()
 
-    return jobs_root_dir
+    return campaign_dir
 
 
 def _copy_run_timing_intervals(run_timing_intervals):
@@ -425,14 +425,14 @@ def _configure_child_simulation(
     job_definition,
     source_primaries_assignments,
     parent_simulation_id,
-    jobs_root_dir,
+    campaign_dir,
     parent_random_seed,
     number_of_jobs,
 ):
     from .sources.phspsources import PhaseSpaceSource
 
-    job_folder = jobs_root_dir / job_definition["folder_name"]
-    child_simulation.root_dir = job_folder
+    job_folder = campaign_dir / job_definition["folder_name"]
+    child_simulation.simulation_dir = job_folder
     child_simulation.output_dir = job_folder / "output"
     child_simulation.run_timing_intervals = _copy_run_timing_intervals(
         job_definition["run_timing_intervals"]
@@ -770,7 +770,7 @@ class JobsSplitManager:
         simulation_folder=None,
         simulation_file=DEFAULT_SIMULATION_FILENAME,
         resolved_simulation_file=DEFAULT_RESOLVED_SIMULATION_FILENAME,
-        jobs_root_dir=None,
+        campaign_dir=None,
         number_of_jobs=1,
         policy=DEFAULT_SPLIT_POLICY,
         link_files=False,
@@ -782,7 +782,7 @@ class JobsSplitManager:
         self.simulation_folder = simulation_folder
         self.simulation_file = simulation_file
 
-        self.jobs_root_dir = jobs_root_dir
+        self.campaign_dir = campaign_dir
         self.resolved_simulation_file = resolved_simulation_file
         self.number_of_jobs = number_of_jobs
         self.policy = policy
@@ -810,10 +810,10 @@ class JobsSplitManager:
         self.is_finalized = False
 
     @property
-    def master_source_reference_root_dir(self):
+    def master_source_reference_simulation_dir(self):
         if self.master_simulation is None:
             return None
-        return Path(self.master_simulation.root_dir)
+        return Path(self.master_simulation.simulation_dir)
 
     @property
     def original_run_timing_intervals(self):
@@ -830,7 +830,7 @@ class JobsSplitManager:
         if self.is_finalized is False:
             return None
         return {
-            "jobs_root_dir": str(self.jobs_root_dir),
+            "campaign_dir": str(self.campaign_dir),
             "manifest_path": str(self.manifest_path),
             "simulation_id": self.simulation_id,
             "number_of_jobs": self.number_of_jobs,
@@ -902,16 +902,16 @@ class JobsSplitManager:
             self.master_simulation, self._simulation_path = _load_packaged_simulation(
                 self.simulation_folder, self.simulation_file
             )
-            if self.jobs_root_dir is None:
-                self.jobs_root_dir = self.master_simulation.root_dir
+            if self.campaign_dir is None:
+                self.campaign_dir = self.master_simulation.simulation_dir
         else:
             self.master_simulation = _clone_simulation_from_dictionary(
                 type(self.input_simulation),
                 self.input_simulation.to_dictionary(),
             )
             self._simulation_path = None
-            if self.jobs_root_dir is None:
-                self.jobs_root_dir = self.master_simulation.root_dir
+            if self.campaign_dir is None:
+                self.campaign_dir = self.master_simulation.simulation_dir
 
         # Split authoritative, resolved configuration rather than the raw user
         # inputs so child jobs inherit explicit timing anchors and helper actors.
@@ -953,31 +953,31 @@ class JobsSplitManager:
         if self.is_planned is False:
             self.plan_split()
 
-        self.jobs_root_dir = _prepare_jobs_root_dir(
-            self.jobs_root_dir,
+        self.campaign_dir = _prepare_campaign_dir(
+            self.campaign_dir,
             overwrite_existing_job_folders=self.overwrite_existing_job_folders,
         )
 
         _write_simulation_dictionary_json(
             self.master_simulation,
             self.resolved_master_simulation_dict,
-            directory=self.jobs_root_dir,
+            directory=self.campaign_dir,
             filename=Path(self.simulation_file),
         )
         if self.write_resolved_simulation is True:
             _write_simulation_dictionary_json(
                 self.master_simulation,
                 self.resolved_master_simulation_dict,
-                directory=self.jobs_root_dir,
+                directory=self.campaign_dir,
                 filename=Path(self.resolved_simulation_file),
             )
-        packaged_root_matches_jobs_root = (
+        packaged_root_matches_campaign_dir = (
             self._simulation_path is not None
-            and self._simulation_path.parent.resolve() == Path(self.jobs_root_dir)
+            and self._simulation_path.parent.resolve() == Path(self.campaign_dir)
         )
-        if packaged_root_matches_jobs_root is False:
+        if packaged_root_matches_campaign_dir is False:
             self.master_simulation.archive_input_files(
-                directory=self.jobs_root_dir,
+                directory=self.campaign_dir,
                 dct=self.resolved_master_simulation_dict,
                 link_files=self.link_files,
             )
@@ -1018,7 +1018,7 @@ class JobsSplitManager:
                 job_definition,
                 self.source_primaries_assignments[job_definition["job_index"]],
                 self.simulation_id,
-                self.jobs_root_dir,
+                self.campaign_dir,
                 self.master_simulation.current_random_seed,
                 self.number_of_jobs,
             )
@@ -1026,7 +1026,7 @@ class JobsSplitManager:
             child_simulation_dict = child_simulation.to_dictionary()
             updated_child_simulation_dict = _transfer_input_files_between_simulations(
                 self.resolved_master_simulation_dict,
-                self.master_source_reference_root_dir,
+                self.master_source_reference_simulation_dir,
                 child_simulation_dict,
                 job_folder,
                 link_files=self.link_files,
@@ -1053,7 +1053,7 @@ class JobsSplitManager:
         if self.is_materialized is False:
             self.materialize_child_jobs()
 
-        self.manifest_path = Path(self.jobs_root_dir) / JOBS_MANIFEST_FILENAME
+        self.manifest_path = Path(self.campaign_dir) / JOBS_MANIFEST_FILENAME
         with open(self.manifest_path, "w") as output_file:
             dump_json(self.jobs_manifest, output_file)
         self.split_summary = _build_jobs_split_summary_from_manifest(
@@ -1085,7 +1085,7 @@ def jobs_split(
     simulation_folder=None,
     simulation_file=DEFAULT_SIMULATION_FILENAME,
     resolved_simulation_file=DEFAULT_RESOLVED_SIMULATION_FILENAME,
-    jobs_root_dir=None,
+    campaign_dir=None,
     number_of_jobs=1,
     policy=DEFAULT_SPLIT_POLICY,
     link_files=False,
@@ -1098,7 +1098,7 @@ def jobs_split(
         simulation_folder=simulation_folder,
         simulation_file=simulation_file,
         resolved_simulation_file=resolved_simulation_file,
-        jobs_root_dir=jobs_root_dir,
+        campaign_dir=campaign_dir,
         number_of_jobs=number_of_jobs,
         policy=policy,
         link_files=link_files,
@@ -1188,7 +1188,7 @@ def _format_original_run_indices(original_run_indices):
 
 
 def _build_jobs_split_summary_from_manifest(manifest_path, manifest):
-    jobs_root_dir = manifest_path.parent
+    campaign_dir = manifest_path.parent
     master_simulation_filename = manifest.get(
         "master_simulation_filename", MASTER_SIMULATION_FILENAME
     )
@@ -1196,11 +1196,11 @@ def _build_jobs_split_summary_from_manifest(manifest_path, manifest):
     resolved_simulation_path = (
         None
         if resolved_simulation_filename is None
-        else str(jobs_root_dir / resolved_simulation_filename)
+        else str(campaign_dir / resolved_simulation_filename)
     )
     jobs = []
     for job_item in manifest.get("jobs", []):
-        job_folder = jobs_root_dir / job_item["folder_name"]
+        job_folder = campaign_dir / job_item["folder_name"]
         metadata = _load_job_metadata(job_folder)
         jobs.append(
             {
@@ -1216,9 +1216,9 @@ def _build_jobs_split_summary_from_manifest(manifest_path, manifest):
             }
         )
     return {
-        "jobs_root_dir": str(jobs_root_dir),
+        "campaign_dir": str(campaign_dir),
         "manifest_path": str(manifest_path),
-        "simulation_path": str(jobs_root_dir / master_simulation_filename),
+        "simulation_path": str(campaign_dir / master_simulation_filename),
         "resolved_simulation_path": resolved_simulation_path,
         "simulation_id": manifest.get("simulation_id", "Unknown"),
         "created_at": manifest.get("created_at", "Unknown"),
@@ -1248,7 +1248,7 @@ def format_jobs_split_summary(summary_or_manifest_path):
     summary = _as_jobs_split_summary(summary_or_manifest_path)
     lines = [
         "Jobs split summary:",
-        f"- jobs root directory: {summary['jobs_root_dir']}",
+        f"- campaign directory: {summary['campaign_dir']}",
         f"| simulation: {summary['simulation_path']}",
         f"| resolved simulation: {summary['resolved_simulation_path'] if summary['resolved_simulation_path'] is not None else 'None'}",
         f"| simulation id: {summary['simulation_id']}",
@@ -1389,7 +1389,7 @@ def _run_job_folder(job_folder, backend, start_new_process):
             "simulation_filename", JOB_SIMULATION_FILENAME
         )
         sim = create_sim_from_json(simulation_path)
-        sim.root_dir = job_folder
+        sim.simulation_dir = job_folder
         sim.output_dir = job_folder / "output"
         sim.run(start_new_process=start_new_process)
 
@@ -1942,7 +1942,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "jobs_root_dir": str(split_root_folder),
+            "campaign_dir": str(split_root_folder),
             "submitted_jobs": 0,
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
@@ -1958,7 +1958,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "jobs_root_dir": str(split_root_folder),
+            "campaign_dir": str(split_root_folder),
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
@@ -1975,7 +1975,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "jobs_root_dir": str(split_root_folder),
+            "campaign_dir": str(split_root_folder),
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
@@ -2032,7 +2032,7 @@ def jobs_run(
         return {
             "backend": backend,
             "manifest_path": str(manifest_path),
-            "jobs_root_dir": str(split_root_folder),
+            "campaign_dir": str(split_root_folder),
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": campaign_process.pid,
@@ -2056,15 +2056,15 @@ class SplitRunMergeController:
     def __init__(
         self,
         simulation,
-        jobs_root_dir=None,
+        campaign_dir=None,
         split_policy="split_in_time_total",
         backend="local_pool",
         merge=True,
         cleanup=False,
     ):
         self.simulation = simulation
-        self._jobs_root_dir = (
-            None if jobs_root_dir is None else Path(jobs_root_dir).resolve()
+        self._campaign_dir = (
+            None if campaign_dir is None else Path(campaign_dir).resolve()
         )
         self.split_policy = split_policy
         self.backend = backend
@@ -2092,14 +2092,14 @@ class SplitRunMergeController:
         return self._status
 
     @property
-    def jobs_root_dir(self):
-        return self._jobs_root_dir
+    def campaign_dir(self):
+        return self._campaign_dir
 
     @property
     def manifest_path(self):
-        if self._jobs_root_dir is None:
+        if self._campaign_dir is None:
             return None
-        return self._jobs_root_dir / JOBS_MANIFEST_FILENAME
+        return self._campaign_dir / JOBS_MANIFEST_FILENAME
 
     def _set_error(self, error):
         self._status["error"] = f"{type(error).__name__}: {error}"
@@ -2133,8 +2133,8 @@ class SplitRunMergeController:
         return "initialized"
 
     def refresh(self):
-        if self._jobs_root_dir is not None and self.manifest_path.exists():
-            self._status["jobs_status"] = jobs_status(self._jobs_root_dir)
+        if self._campaign_dir is not None and self.manifest_path.exists():
+            self._status["jobs_status"] = jobs_status(self._campaign_dir)
         self._stage = self._derive_stage_from_status()
         return self._status
 
@@ -2150,12 +2150,12 @@ class SplitRunMergeController:
         try:
             self.jobs_split_manager = jobs_split(
                 simulation=self.simulation,
-                jobs_root_dir=self._jobs_root_dir,
+                campaign_dir=self._campaign_dir,
                 number_of_jobs=number_of_jobs,
                 policy=self.split_policy,
                 **split_options,
             )
-            self._jobs_root_dir = self.jobs_split_manager.jobs_root_dir
+            self._campaign_dir = self.jobs_split_manager.campaign_dir
             self._status["split_result"] = self.jobs_split_manager.split_result
             self._stage = "split"
             self.refresh()
@@ -2175,7 +2175,7 @@ class SplitRunMergeController:
         ``number_of_workers`` should therefore be equal to the number of split
         jobs.
         """
-        if self._jobs_root_dir is None:
+        if self._campaign_dir is None:
             fatal("SplitRunMergeController.run() requires split() to be called first.")
         try:
             run_options = dict(run_options)
@@ -2187,7 +2187,7 @@ class SplitRunMergeController:
                 run_options["number_of_workers"] = self._status["split_result"][
                     "number_of_jobs"
                 ]
-            self._status["run_result"] = jobs_run(self._jobs_root_dir, **run_options)
+            self._status["run_result"] = jobs_run(self._campaign_dir, **run_options)
             self._stage = "submitted"
             self.refresh()
             return self._status["run_result"]
@@ -2196,7 +2196,7 @@ class SplitRunMergeController:
             raise
 
     def wait(self, poll_interval=1.0, timeout=None):
-        if self._jobs_root_dir is None:
+        if self._campaign_dir is None:
             fatal("SplitRunMergeController.wait() requires split() to be called first.")
         start_time = time.perf_counter()
         while True:
@@ -2205,20 +2205,20 @@ class SplitRunMergeController:
                 return self._status
             if timeout is not None and (time.perf_counter() - start_time) > timeout:
                 error = GateJobsBackendError(
-                    f"Timed out while waiting for split jobs in '{self._jobs_root_dir}'."
+                    f"Timed out while waiting for split jobs in '{self._campaign_dir}'."
                 )
                 self._set_error(error)
                 raise error
             time.sleep(poll_interval)
 
     def merge(self, **merge_options):
-        if self._jobs_root_dir is None:
+        if self._campaign_dir is None:
             fatal(
                 "SplitRunMergeController.merge() requires split() to be called first."
             )
         try:
             self.merge_manager = jobs_merge(
-                self._jobs_root_dir,
+                self._campaign_dir,
                 target_simulation=self.simulation,
                 execute=True,
                 **merge_options,
@@ -2232,13 +2232,13 @@ class SplitRunMergeController:
             raise
 
     def clean(self, **clean_options):
-        if self._jobs_root_dir is None:
+        if self._campaign_dir is None:
             fatal(
                 "SplitRunMergeController.clean() requires split() to be called first."
             )
         try:
             self._status["clean_result"] = jobs_clean_split(
-                self._jobs_root_dir, **clean_options
+                self._campaign_dir, **clean_options
             )
             self._stage = "cleaned"
             self.refresh()
@@ -2605,7 +2605,7 @@ class JobsMergeManager:
         **options,
     ):
         self.manifest_path, self.manifest = _load_jobs_manifest(split_path)
-        self.jobs_root_dir = self.manifest_path.parent
+        self.campaign_dir = self.manifest_path.parent
         self.output_dir_override = (
             None if output_dir_override is None else Path(output_dir_override).resolve()
         )
@@ -2739,7 +2739,7 @@ class JobsMergeManager:
         if job_id not in self.child_simulations_by_job_id:
             source = self._get_leaf_source(job_id)
             child_simulation = create_sim_from_json(source["simulation_path"])
-            child_simulation.root_dir = source["folder"]
+            child_simulation.simulation_dir = source["folder"]
             child_simulation.output_dir = Path(source["folder"]) / "output"
             self.child_simulations_by_job_id[job_id] = child_simulation
         return self.child_simulations_by_job_id[job_id]
@@ -2766,7 +2766,7 @@ class JobsMergeManager:
         informative.update(
             {
                 "target_simulation_id": self.manifest.get("simulation_id"),
-                "jobs_root_dir": str(self.jobs_root_dir),
+                "campaign_dir": str(self.campaign_dir),
                 "manifest_path": str(self.manifest_path),
                 "original_run_timing_intervals": _copy_run_timing_intervals(
                     self.manifest.get("original_run_timing_intervals", [])
@@ -2794,7 +2794,7 @@ class JobsMergeManager:
                 },
             )
             child_simulation = create_sim_from_json(source["simulation_path"])
-            child_simulation.root_dir = source["folder"]
+            child_simulation.simulation_dir = source["folder"]
             child_simulation.output_dir = Path(source["folder"]) / "output"
             output_plans = child_simulation.plan_merge(mode=mode)
             for output_plan in output_plans:
@@ -2849,7 +2849,7 @@ class JobsMergeManager:
         )
         return {
             "manifest_path": str(self.manifest_path),
-            "jobs_root_dir": str(self.jobs_root_dir),
+            "campaign_dir": str(self.campaign_dir),
             "master_simulation_id": self.manifest.get("simulation_id"),
             "target_output_dir": str(merged_output_dir),
             "master_simulation_path": str(self.get_master_simulation_paths()[0]),
@@ -2916,7 +2916,7 @@ class JobsMergeManager:
         )
         lines = [
             "Jobs merge summary:",
-            f"- jobs root directory: {self.jobs_root_dir}",
+            f"- campaign directory: {self.campaign_dir}",
             f"| master simulation: {self.get_master_simulation_paths()[0]}",
             f"| resolved simulation: {self.get_master_simulation_paths()[1] if self.get_master_simulation_paths()[1] is not None else 'None'}",
             f"| target output directory: {merged_output_dir}",
@@ -3024,7 +3024,7 @@ class JobsMergeManager:
         self._merge_finalized = True
         self._merge_result = {
             "manifest_path": str(self.manifest_path),
-            "jobs_root_dir": str(self.jobs_root_dir),
+            "campaign_dir": str(self.campaign_dir),
             "master_simulation_id": self.manifest.get("simulation_id"),
             "target_output_dir": str(self.master_simulation.output_dir),
             "master_simulation_path": str(self.get_master_simulation_paths()[0]),
@@ -3083,7 +3083,7 @@ def jobs_merge(
 
 
 def jobs_clean_split(
-    jobs_root_dir,
+    campaign_dir,
     remove_job_folders=True,
     remove_backend_status=True,
     remove_execution_status=True,
@@ -3097,27 +3097,27 @@ def jobs_clean_split(
     keep the top-level output directory, and remove the per-job execution
     folders plus transient status sidecars.
     """
-    manifest_path, manifest = _load_jobs_manifest(jobs_root_dir)
-    jobs_root_dir = manifest_path.parent
+    manifest_path, manifest = _load_jobs_manifest(campaign_dir)
+    campaign_dir = manifest_path.parent
 
     removed_paths = []
 
     if remove_job_folders:
         for job_item in manifest.get("jobs", []):
-            job_folder = jobs_root_dir / job_item["folder_name"]
+            job_folder = campaign_dir / job_item["folder_name"]
             if job_folder.exists():
                 shutil.rmtree(job_folder)
                 removed_paths.append(str(job_folder))
     elif remove_execution_status:
         for job_item in manifest.get("jobs", []):
-            job_folder = jobs_root_dir / job_item["folder_name"]
+            job_folder = campaign_dir / job_item["folder_name"]
             execution_status_path = job_folder / JOB_EXECUTION_STATUS_FILENAME
             if execution_status_path.exists():
                 execution_status_path.unlink()
                 removed_paths.append(str(execution_status_path))
 
     if remove_backend_status:
-        backend_status_path = jobs_root_dir / JOBS_BACKEND_STATUS_FILENAME
+        backend_status_path = campaign_dir / JOBS_BACKEND_STATUS_FILENAME
         if backend_status_path.exists():
             backend_status_path.unlink()
             removed_paths.append(str(backend_status_path))
@@ -3130,13 +3130,13 @@ def jobs_clean_split(
     if remove_resolved_simulation:
         resolved_simulation_filename = manifest.get("resolved_simulation_filename")
         if resolved_simulation_filename is not None:
-            resolved_simulation_path = jobs_root_dir / resolved_simulation_filename
+            resolved_simulation_path = campaign_dir / resolved_simulation_filename
             if resolved_simulation_path.exists():
                 resolved_simulation_path.unlink()
                 removed_paths.append(str(resolved_simulation_path))
 
     return {
-        "jobs_root_dir": str(jobs_root_dir),
+        "campaign_dir": str(campaign_dir),
         "removed_paths": removed_paths,
         "remove_job_folders": bool(remove_job_folders),
         "remove_backend_status": bool(remove_backend_status),
@@ -3251,8 +3251,8 @@ def _format_bytes(size_bytes):
         return f"{val:.1f} GB"
 
 
-def jobs_status(jobs_root_dir):
-    path = Path(jobs_root_dir).resolve()
+def jobs_status(campaign_dir):
+    path = Path(campaign_dir).resolve()
     if path.is_dir() is False:
         fatal(
             f"jobs_status() expects the campaign folder as input, but received '{path}'."
@@ -3287,7 +3287,7 @@ def jobs_status(jobs_root_dir):
 
     status_data = {
         "manifest_path": str(manifest_path),
-        "jobs_root_dir": str(split_root_folder),
+        "campaign_dir": str(split_root_folder),
         "simulation_id": manifest.get("simulation_id", "Unknown"),
         "created_at": manifest.get("created_at", "Unknown"),
         "policy": manifest.get("policy", "Unknown"),

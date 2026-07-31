@@ -21,9 +21,9 @@ if __name__ == "__main__":
     split_root = gate.jobs_split(
         simulation=sim,
         number_of_jobs=2,
-        jobs_root_dir=paths.output / "htcondor_campaign",
+        campaign_dir=paths.output / "htcondor_campaign",
         policy="split_in_time_per_run",
-    ).jobs_root_dir
+    ).campaign_dir
 
     # Realistic example for manual usage against a Condor installation:
     #

@@ -1792,7 +1792,7 @@ def _setter_hook_progress_hook(simulation, value):
     return value
 
 
-def _setter_hook_root_dir(simulation, value):
+def _setter_hook_simulation_dir(simulation, value):
     return Path(value)
 
 
@@ -1835,7 +1835,7 @@ class Simulation(GateObject):
     random_engine: str
     random_seed: Union[str, int]
     run_timing_intervals: List[List[float]]
-    root_dir: Path
+    simulation_dir: Path
     output_dir: Path
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
@@ -2018,13 +2018,13 @@ class Simulation(GateObject):
                 "doc": "A list of timing intervals provided as 2-element lists of begin and end values"
             },
         ),
-        "root_dir": (
+        "simulation_dir": (
             Path("."),
             {
                 "doc": "Structural root directory of the simulation. "
                 "This folder contains simulation.json, archived input files, "
                 "and, for split campaigns, the job000X subfolders.",
-                "setter_hook": _setter_hook_root_dir,
+                "setter_hook": _setter_hook_simulation_dir,
                 "required_type": Path,
             },
         ),
@@ -2033,7 +2033,7 @@ class Simulation(GateObject):
             {
                 "doc": "Directory to which any output is written, "
                 "unless an absolute path is provided for a specific output. "
-                "If relative, it is resolved relative to the simulation's root_dir.",
+                "If relative, it is resolved relative to the simulation's simulation_dir.",
                 "setter_hook": _setter_hook_output_dir,
                 "required_type": Path,
             },
@@ -2370,7 +2370,7 @@ class Simulation(GateObject):
         if dct is None:
             dct = self.to_dictionary()
         input_files = []
-        root_dir = Path(self.root_dir).absolute()
+        simulation_dir = Path(self.simulation_dir).absolute()
         for go_dict in find_all_gate_objects(dct):
             go_input_files, _, _ = (
                 _collect_input_file_values_from_gate_object_dictionary(go_dict)
@@ -2378,7 +2378,7 @@ class Simulation(GateObject):
             for input_path in go_input_files:
                 path_obj = Path(input_path)
                 if path_obj.is_absolute() is False:
-                    path_obj = (root_dir / path_obj).absolute()
+                    path_obj = (simulation_dir / path_obj).absolute()
                 if path_obj.is_file() is True:
                     input_files.append(path_obj)
 
@@ -2452,7 +2452,7 @@ class Simulation(GateObject):
         def rewrite_archived_input_path(path):
             source_path = Path(path)
             if source_path.is_absolute() is False:
-                source_path = (root_dir / source_path).absolute()
+                source_path = (simulation_dir / source_path).absolute()
             rewritten_path = archive_path_map.get(
                 source_path.resolve(), (directory / Path(path).name).absolute()
             )
@@ -2516,18 +2516,18 @@ class Simulation(GateObject):
         self.from_dictionary(d)
         serialized_output_dir = d.get("user_info", {}).get("output_dir", Path("output"))
         self._output_dir_was_user_set = Path(serialized_output_dir) != Path(".")
-        if Path(self.root_dir).is_absolute():
-            self.root_dir = Path(self.root_dir)
+        if Path(self.simulation_dir).is_absolute():
+            self.simulation_dir = Path(self.simulation_dir)
         else:
-            self.root_dir = (path.parent / self.root_dir).resolve()
+            self.simulation_dir = (path.parent / self.simulation_dir).resolve()
 
     def get_root_path(self, path=None, is_file_or_directory="file", suffix=None):
         if path is None:
-            p_out = Path(self.root_dir)
+            p_out = Path(self.simulation_dir)
         else:
             p = Path(path)
             if not p.is_absolute():
-                p_out = Path(self.root_dir) / p
+                p_out = Path(self.simulation_dir) / p
             else:
                 p_out = p
 
@@ -2549,7 +2549,7 @@ class Simulation(GateObject):
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
         output_root_dir = Path(self.output_dir)
         if not output_root_dir.is_absolute():
-            output_root_dir = (Path(self.root_dir) / output_root_dir).resolve()
+            output_root_dir = (Path(self.simulation_dir) / output_root_dir).resolve()
 
         if path is None:
             # no input -> return global output directory
@@ -2728,7 +2728,7 @@ class Simulation(GateObject):
 
     def _is_split_child_simulation_context(self):
         try:
-            return (self.root_dir / "job_metadata.json").exists()
+            return (self.simulation_dir / "job_metadata.json").exists()
         except Exception:
             return False
 
@@ -2820,7 +2820,7 @@ class Simulation(GateObject):
         start_new_process=False,
         number_of_jobs=None,
         wait_for_result=True,
-        jobs_root_dir=None,
+        campaign_dir=None,
         split_policy="split_in_time_total",
         merge_after_run=True,
         cleanup_after_run=False,
@@ -2863,7 +2863,7 @@ class Simulation(GateObject):
 
                 split_run_controller = SplitRunMergeController(
                     simulation=self,
-                    jobs_root_dir=jobs_root_dir,
+                    campaign_dir=campaign_dir,
                     split_policy=split_policy,
                     backend="local_pool",
                     merge=merge_after_run,

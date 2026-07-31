@@ -31,9 +31,9 @@ if __name__ == "__main__":
     split_root = gate.jobs_split(
         simulation=sim,
         number_of_jobs=4,
-        jobs_root_dir=paths.output / "pool_campaign",
+        campaign_dir=paths.output / "pool_campaign",
         policy="split_in_time_per_run",
-    ).jobs_root_dir
+    ).campaign_dir
 
     summary = gate.jobs_run(
         split_root,

@@ -72,7 +72,7 @@ class StandardMergeCoordinator:
 
             source_info = self._source_infos[job_index]
             child_simulation = create_sim_from_json(source_info["simulation_path"])
-            child_simulation.root_dir = Path(source_info["folder"])
+            child_simulation.simulation_dir = Path(source_info["folder"])
             child_simulation.output_dir = Path(source_info["folder"]) / "output"
             self._source_simulations_by_job_index[job_index] = child_simulation
         return self._source_simulations_by_job_index[job_index]
@@ -173,7 +173,7 @@ class RootMergeCoordinator:
 
             source_info = self._source_infos[job_index]
             child_simulation = create_sim_from_json(source_info["simulation_path"])
-            child_simulation.root_dir = Path(source_info["folder"])
+            child_simulation.simulation_dir = Path(source_info["folder"])
             child_simulation.output_dir = Path(source_info["folder"]) / "output"
             self._source_simulations_by_job_index[job_index] = child_simulation
         return self._source_simulations_by_job_index[job_index]

@@ -31,10 +31,10 @@ sim = gate.Simulation()
 jobs_split_manager = gate.jobs_split(
     simulation=sim,
     number_of_jobs=3,
-    jobs_root_dir="my_split_campaign",
+    campaign_dir="my_split_campaign",
     policy="split_in_time_total",
 )
-split_root = jobs_split_manager.jobs_root_dir
+split_root = jobs_split_manager.campaign_dir
 
 gate.jobs_run(
     split_root,
@@ -81,9 +81,9 @@ def run_split_campaign(paths, split_path, merge_path, backend, number_of_workers
     split_root = gate.jobs_split(
         simulation=sim,
         number_of_jobs=3,
-        jobs_root_dir=split_path,
+        campaign_dir=split_path,
         policy="split_in_time_total",
-    ).jobs_root_dir
+    ).campaign_dir
     gate.print_jobs_split_summary(split_path)
     summary = gate.jobs_run(
         split_root,

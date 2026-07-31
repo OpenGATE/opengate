@@ -25,7 +25,7 @@ def format_timing_intervals(intervals):
 def print_jobs_status_summary(status_data, verbose=False):
     intervals = status_data.get("original_run_timing_intervals", [])
     print(f" Manifest file:      {status_data['manifest_path']}")
-    print(f" Jobs root dir:      {status_data['jobs_root_dir']}")
+    print(f" Campaign dir:       {status_data['campaign_dir']}")
     print(f" Simulation ID:      {status_data['simulation_id']}")
     print(f" Created at:         {status_data['created_at']}")
     print(f" Split policy:       {status_data['policy']}")

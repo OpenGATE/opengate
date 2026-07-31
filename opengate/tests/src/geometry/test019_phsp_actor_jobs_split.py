@@ -43,9 +43,9 @@ def run_split_campaign(
     split_root = gate.jobs_split(
         simulation=sim,
         number_of_jobs=3,
-        jobs_root_dir=split_path,
+        campaign_dir=split_path,
         policy="split_in_time_total",
-    ).jobs_root_dir
+    ).campaign_dir
     summary = gate.jobs_run(
         split_root,
         backend=backend,

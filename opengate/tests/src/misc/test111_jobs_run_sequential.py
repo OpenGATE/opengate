@@ -24,9 +24,9 @@ if __name__ == "__main__":
     split_root = gate.jobs_split(
         simulation=sim,
         number_of_jobs=2,
-        jobs_root_dir=paths.output / "sequential_campaign",
+        campaign_dir=paths.output / "sequential_campaign",
         policy="split_in_time_per_run",
-    ).jobs_root_dir
+    ).campaign_dir
 
     summary = gate.jobs_run(split_root, backend="local_sequential")
     is_ok = is_ok and utility.print_test(

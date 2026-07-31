@@ -76,11 +76,11 @@ The first script can launch the split jobs and stop after execution:
        number_of_jobs=4,
        wait_for_result=False,
        merge_after_run=False,
-       jobs_root_dir="campaign",
+       campaign_dir="campaign",
    )
 
    print(controller.stage)         # typically "submitted"
-   print(controller.jobs_root_dir) # folder containing simulation.json and job0001, job0002, ...
+   print(controller.campaign_dir) # folder containing simulation.json and job0001, job0002, ...
 
 Later, another script can re-use the campaign folder and merge the finished
 jobs:
@@ -104,7 +104,7 @@ Low-level split, run, and merge
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The lower-level functions can also be called explicitly. ``jobs_split(...)``
-returns a ``JobsSplitManager`` object; use ``jobs_split_manager.jobs_root_dir`` when
+returns a ``JobsSplitManager`` object; use ``jobs_split_manager.campaign_dir`` when
 passing the campaign folder to the next stage.
 
 .. code-block:: python
@@ -118,17 +118,17 @@ passing the campaign folder to the next stage.
 
    jobs_split_manager = gate.jobs_split(
        simulation=sim,
-       jobs_root_dir="campaign",
+       campaign_dir="campaign",
        number_of_jobs=4,
        policy="split_in_time_total",
    )
 
    run_summary = gate.jobs_run(
-       jobs_split_manager.jobs_root_dir,
+       jobs_split_manager.campaign_dir,
        backend="local_pool",
    )
 
-   merge_manager = gate.jobs_merge(jobs_split_manager.jobs_root_dir)
+   merge_manager = gate.jobs_merge(jobs_split_manager.campaign_dir)
    merged_sim = merge_manager.master_simulation
 
 

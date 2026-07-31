@@ -38,10 +38,10 @@ def main():
     split_root_folder1 = gate.jobs_split(
         simulation=sim1,
         number_of_jobs=2,
-        jobs_root_dir=paths.output / "basic_campaign",
+        campaign_dir=paths.output / "basic_campaign",
         policy="split_in_time_per_run",
         overwrite_existing_job_folders=True,
-    ).jobs_root_dir
+    ).campaign_dir
 
     status1 = jobs_status(split_root_folder1)
     is_ok = status1["number_of_jobs"] == 2
@@ -127,11 +127,11 @@ def main():
     split_root_folder2 = gate.jobs_split(
         simulation=sim2,
         number_of_jobs=3,
-        jobs_root_dir=paths.output / "complex_campaign",
+        campaign_dir=paths.output / "complex_campaign",
         policy="split_in_time_per_run",
         link_files=True,
         overwrite_existing_job_folders=True,
-    ).jobs_root_dir
+    ).campaign_dir
 
     status_initial2 = jobs_status(split_root_folder2)
     archived_patient_image = split_root_folder2 / "job0001" / "patient-4mm.mhd"

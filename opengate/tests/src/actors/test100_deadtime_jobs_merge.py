@@ -32,7 +32,7 @@ sim = gate.Simulation()
 controller = sim.run(
     number_of_jobs=2,
     wait_for_result=True,
-    jobs_root_dir="my_split_campaign",
+    campaign_dir="my_split_campaign",
     split_policy="split_in_time_per_run",
     merge_after_run=True,
 )
@@ -116,7 +116,7 @@ def create_split_run_simulation(output_dir):
 
 def run_split_campaign(
     output_dir,
-    jobs_root_dir,
+    campaign_dir,
     wait_for_result,
     reference_stats,
     reference_root,
@@ -128,7 +128,7 @@ def run_split_campaign(
     controller = sim.run(
         number_of_jobs=2,
         wait_for_result=wait_for_result,
-        jobs_root_dir=jobs_root_dir,
+        campaign_dir=campaign_dir,
         split_policy="split_in_time_per_run",
         merge_after_run=wait_for_result,
         cleanup_after_run=False,

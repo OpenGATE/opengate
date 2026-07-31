@@ -27,7 +27,7 @@ sim = gate.Simulation()
 
 controller = gate.SplitRunMergeController(
     simulation=sim,
-    jobs_root_dir="my_split_campaign",
+    campaign_dir="my_split_campaign",
     split_policy="split_in_time_total",
     backend="local_pool",
 )
@@ -391,7 +391,7 @@ def run_case(paths, case_name, keep_data_per_run, expect_runid, expect_eventid):
     # construct and drive the controller internally.
     controller = gate.SplitRunMergeController(
         simulation=sim,
-        jobs_root_dir=split_root,
+        campaign_dir=split_root,
         split_policy="split_in_time_total",
         backend="local_pool",
     )

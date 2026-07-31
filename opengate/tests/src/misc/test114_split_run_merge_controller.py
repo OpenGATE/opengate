@@ -209,7 +209,7 @@ if __name__ == "__main__":
     async_controller = async_sim.run(
         number_of_jobs=3,
         wait_for_result=False,
-        jobs_root_dir=paths.output / "async_campaign",
+        campaign_dir=paths.output / "async_campaign",
         split_policy="split_in_time_total",
         merge_after_run=False,
     )
@@ -229,9 +229,9 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
-            async_controller.jobs_root_dir
+            async_controller.campaign_dir
             == (paths.output / "async_campaign").resolve(),
-            f"Controller keeps track of the jobs root directory: {async_controller.jobs_root_dir}",
+            f"Controller keeps track of the campaign directory: {async_controller.campaign_dir}",
         )
         and is_ok
     )
@@ -337,7 +337,7 @@ if __name__ == "__main__":
     merged_controller = merged_sim.run(
         number_of_jobs=3,
         wait_for_result=True,
-        jobs_root_dir=paths.output / "merged_campaign",
+        campaign_dir=paths.output / "merged_campaign",
         split_policy="split_in_time_total",
         merge_after_run=True,
         cleanup_after_run=False,

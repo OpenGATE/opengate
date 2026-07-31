@@ -504,9 +504,9 @@ if __name__ == "__main__":
     split_root = gate.jobs_split(
         simulation=sim,
         number_of_jobs=3,
-        jobs_root_dir=split_root,
+        campaign_dir=split_root,
         policy="split_in_time_total",
-    ).jobs_root_dir
+    ).campaign_dir
 
     merge_manager = gate.jobs_merge(split_root, execute=False)
     merge_context = merge_manager.plan_merge()

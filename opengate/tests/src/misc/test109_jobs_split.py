@@ -73,7 +73,7 @@ def build_simulation(
     inputs_dir.mkdir(parents=True, exist_ok=True)
 
     sim = gate.Simulation()
-    sim.root_dir = simulation_root
+    sim.simulation_dir = simulation_root
     sim.output_dir = Path("output")
 
     dynamic_source_1_absolute = inputs_dir / "dynamic_source_1.mhd"
@@ -89,7 +89,7 @@ def build_simulation(
     # Most input-file user infos should be expressed relative to the simulation
     # root when requested. MaterialDatabase.read_from_file(...) opens the file
     # immediately, so its relative form must be valid from the current process
-    # working directory rather than only from sim.root_dir.
+    # working directory rather than only from sim.simulation_dir.
     dynamic_source_1_authored = make_authored_path(
         dynamic_source_1_absolute,
         simulation_root,
@@ -323,11 +323,11 @@ def run_input_path_rewrite_scenario(
     split_root = gate.jobs_split(
         simulation=sim,
         number_of_jobs=2,
-        jobs_root_dir=scenario_root / "campaign",
+        campaign_dir=scenario_root / "campaign",
         policy="split_in_time_per_run",
         link_files=link_files,
         overwrite_existing_job_folders=True,
-    ).jobs_root_dir
+    ).campaign_dir
     manifest = load_manifest(split_root)
     expected_dynamic_image_names = {
         1: ["dynamic_source_1.mhd"],
@@ -405,9 +405,9 @@ if __name__ == "__main__":
     split_root_1 = gate.jobs_split(
         simulation=sim_1,
         number_of_jobs=4,
-        jobs_root_dir=paths.output / "auto_split_root",
+        campaign_dir=paths.output / "auto_split_root",
         policy="split_in_time_per_run",
-    ).jobs_root_dir
+    ).campaign_dir
     manifest_1 = load_manifest(split_root_1)
     print(f"split manifest = {split_root_1}")
 
@@ -503,9 +503,9 @@ if __name__ == "__main__":
     split_root_2 = gate.jobs_split(
         simulation=sim_2,
         number_of_jobs=3,
-        jobs_root_dir=paths.output / "split_campaign_total",
+        campaign_dir=paths.output / "split_campaign_total",
         policy="split_in_time_total",
-    ).jobs_root_dir
+    ).campaign_dir
     manifest_2 = load_manifest(split_root_2)
     print(f"split manifest = {split_root_2}")
 

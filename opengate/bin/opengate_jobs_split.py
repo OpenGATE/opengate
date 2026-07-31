@@ -61,14 +61,14 @@ def go(
     jobs_split_manager = jobs_split(
         simulation_folder=Path(campaign_dir),
         simulation_file=simulation_file,
-        jobs_root_dir=Path(campaign_dir),
+        campaign_dir=Path(campaign_dir),
         number_of_jobs=number_of_jobs,
         policy=policy,
         link_files=link_files,
         overwrite_existing_job_folders=overwrite_existing_job_folders,
         write_resolved_simulation=True,
     )
-    click.echo(str(jobs_split_manager.jobs_root_dir))
+    click.echo(str(jobs_split_manager.campaign_dir))
 
 
 if __name__ == "__main__":
