@@ -2742,27 +2742,34 @@ class Simulation(GateObject):
                 continue
         return source_names
 
-    def warn_if_activity_based_sources_present(self, context):
+    def warn_if_multithreaded_activity_sources_present(self):
         activity_source_names = self._get_activity_based_source_names()
         if len(activity_source_names) == 0:
             return
 
         names = ", ".join(activity_source_names)
-        if context == "run":
+        if self.number_of_threads > 1:
             self.warn_user(
-                "Activity-based sources detected in this simulation "
-                f"({names}). OpenGATE now interprets source.activity as the "
-                "total source activity and scales it internally for "
-                "multithreaded runs. Do not divide activity manually by the "
-                "number of threads."
-            )
-        elif context == "split":
-            self.warn_user(
-                "Activity-based sources detected in this split campaign "
-                f"({names}). Child jobs preserve source.activity over their "
-                "local time intervals, so the number of events contributed by "
-                "each job remains stochastic. Do not assume equal statistical "
-                "weight across jobs."
+                "\n"
+                "===+++===+++===+++===+++===+++===+++===+++===+++===\n"
+                "===+++===+++ MULTITHREAD WARNING +++===+++===+++===\n"
+                "===+++===+++===+++===+++===+++===+++===+++===+++===\n"
+                "\n"
+                "The definition of source.activity has changed!"
+                "\n"
+                "OpenGATE now interprets source.activity as the "
+                "total source activity "
+                "\n"
+                "and scales it internally for multithreaded runs. "
+                "\n"
+                "Do NOT divide activity manually by the "
+                "number of threads!"
+                "\n"
+                "Activity-based sources detected in this simulation: "
+                f"{names}."
+                "\n"
+                "===+++===+++===+++===+++===+++===+++===+++===+++===\n"
+                "\n"
             )
 
     def resolve_and_validate_config(self, context=None):
@@ -2871,7 +2878,7 @@ class Simulation(GateObject):
                 return split_run_controller
 
         if self._is_split_child_simulation_context() is False:
-            self.warn_if_activity_based_sources_present(context="run")
+            self.warn_if_multithreaded_activity_sources_present()
 
         # prepare the subprocess
         if start_new_process is True:

@@ -917,7 +917,7 @@ class JobsSplitManager:
         # inputs so child jobs inherit explicit timing anchors and helper actors.
         self.master_simulation.resolve_and_validate_config(context="split_preparation")
         self._validate_split_compatibility()
-        self.master_simulation.warn_if_activity_based_sources_present(context="split")
+        self.master_simulation.warn_if_multithreaded_activity_sources_present()
         # A split campaign needs a concrete seed so every child can receive a
         # deterministic, distinct seed while the resolved master JSON remains
         # reproducible. Geant4 then derives thread/event streams internally from
