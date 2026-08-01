@@ -422,9 +422,7 @@ class GANSource(GenericSource):
             self.generator = GANSourceDefaultGenerator(self.user_info)
             return
 
-        # FIXME: I changed this line because the second arg 'self' seemed wrong to me. Check!
         vcg = VoxelizedSourceConditionGenerator(self.cond_image)
-        # vcg = VoxelizedSourceConditionGenerator(self.cond_image, self)
         vcg.compute_directions = self.compute_directions
         self.generator = GANSourceConditionalGenerator(
             self.user_info, vcg.generate_condition

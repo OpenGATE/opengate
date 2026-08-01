@@ -196,7 +196,10 @@ class SourceBase(DynamicGateObject):
         return counts_per_thread + extra
 
     def build_runtime_user_info_for_g4_source(self, g4_source):
-        runtime_user_info = copy.deepcopy(self.user_info)
+        # Build a runtime-facing top-level copy without deep-copying Python-side
+        # helper objects stored in user_info, e.g. GAN generators. The runtime
+        # adapter only rewrites a small set of top-level source parameters.
+        runtime_user_info = self.user_info.copy()
 
         if self.simulation.multithreaded:
             number_of_threads = int(self.simulation.number_of_threads)
