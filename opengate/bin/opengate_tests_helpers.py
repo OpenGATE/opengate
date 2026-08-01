@@ -4,7 +4,6 @@ import json
 import os
 import random
 import re
-import shlex
 import subprocess
 import sys
 import time
@@ -336,7 +335,11 @@ def resolve_dependencies(files_to_run, path_tests_src):
 def run_one_test_case(f, processes_run, path_tests_src):
     start_time = time.time()
     print(f"Running: {f:<46}  ", end="")
-    cmd = f"{shlex.quote(sys.executable)} {shlex.quote(str(path_tests_src / f))}"
+    # FIXME: The launcher currently uses the master-style shell command for
+    # broad platform compatibility. Revisit a sys.executable-based variant in a
+    # dedicated follow-up, but implement it without POSIX shell quoting so the
+    # Windows test runner stays functional.
+    cmd = f"python {path_tests_src / f}"
     log = str(path_tests_src.parent / "log" / os.path.basename(f)) + ".log"
 
     os.makedirs(os.path.dirname(log), exist_ok=True)
@@ -370,7 +373,10 @@ def run_one_test_case(f, processes_run, path_tests_src):
 def run_one_test_case_mp(f):
     path_tests_src = return_tests_path()
     print(f"Running: {f:<46}  ", end="")
-    cmd = f"{shlex.quote(sys.executable)} {shlex.quote(str(path_tests_src / f))}"
+    # FIXME: Keep the launcher aligned with the master-style command for now.
+    # A future interpreter-consistent rewrite should avoid shell=True/string
+    # quoting pitfalls on Windows.
+    cmd = f"python {path_tests_src / f}"
     log = str(path_tests_src.parent / "log" / Path(os.path.basename(f)).stem) + ".log"
 
     start_time = time.time()
