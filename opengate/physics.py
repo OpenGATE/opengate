@@ -601,7 +601,6 @@ class Region(GateObject):
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
-<<<<<<< HEAD
     def resolve_and_validate_config(self, context=None):
         if len(self.root_logical_volumes) == 0:
             fatal(
