@@ -602,6 +602,12 @@ class Region(GateObject):
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
     def resolve_and_validate_config(self):
+        if len(self.root_logical_volumes) == 0:
+            fatal(
+                f"Region '{self.name}' exists in the PhysicsManager but is not "
+                f"associated with any root logical volume. Associate at least one "
+                f"volume with region.associate_volume(...) or remove the region."
+            )
         # Resolve associated volumes early against the simulation-side volume
         # registry so invalid region-volume links fail during config handling
         # rather than later during runmanager initialization. These are the same
@@ -616,20 +622,25 @@ class Region(GateObject):
                 s += f"{pname}: {cut}\n"
         return s
 
-    @requires_fatal("physics_engine")
-    def initialize_during_runmanager(self):
-        """Create and attach the G4Region during geometry construction."""
-        # This runs from VolumeEngine.Construct(), i.e. after logical volumes
-        # exist but still early enough for Geant4 physics construction to see
-        # the region-based EM configuration.
-        self.initialize_g4_region()
+    def initialize_root_logical_volume(self, volume):
+        if volume.g4_logical_volume is None:
+            fatal(
+                f"Cannot attach region '{self.name}' to volume "
+                f"'{getattr(volume, 'name', volume)}' because its "
+                f"G4LogicalVolume is not available yet."
+            )
+
+        if self.g4_region is None:
+            rs = g4.G4RegionStore.GetInstance()
+            self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
+        self.g4_region.AddRootLogicalVolume(volume.g4_logical_volume, True)
+        volume.g4_logical_volume.SetRegion(self.g4_region)
 
     @requires_fatal("physics_engine")
     def initialize_after_runmanager(self):
         """Finalize region-related G4 objects after G4RunManager.Initialize()."""
         self.initialize_g4_production_cuts()
         self.initialize_g4_user_limits()
-        self.initialize_g4_region()
 
     # Resolve region-attached volume names into Python volume objects during
     # the config phase. Their G4 counterparts are created later during geometry
@@ -640,30 +651,18 @@ class Region(GateObject):
                 self.simulation.volume_manager.get_volume(vname)
             )
 
-    def initialize_g4_region(self):
-        if self._g4_region_initialized is not True:
-            rs = g4.G4RegionStore.GetInstance()
-            self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
-
-            for vol in self.root_logical_volumes.values():
-                self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
-                vol.g4_logical_volume.SetRegion(self.g4_region)
-
-            self._g4_region_initialized = True
-
-        if self.g4_user_limits is not None:
-            self.g4_region.SetUserLimits(self.g4_user_limits)
-
-        if self.g4_production_cuts is not None:
-            self.g4_region.SetProductionCuts(self.g4_production_cuts)
-
     def initialize_g4_production_cuts(self):
+        if self.g4_region is None:
+            fatal(
+                f"Unable to initialize production cuts in region {self.name}."
+                "The associated G4Region object is missing. "
+            )
+
         self.user_info = Box(self.user_info)
 
         if self._g4_production_cuts_initialized is True:
             return
-        if self.g4_production_cuts is None:
-            self.g4_production_cuts = g4.G4ProductionCuts()
+        self.g4_production_cuts = g4.G4ProductionCuts()
 
         # 'all' overrides individual cuts per particle
         try:
@@ -694,9 +693,16 @@ class Region(GateObject):
                     )
                     self.g4_production_cuts.SetProductionCut(global_cut, g4_pname)
 
+        self.g4_region.SetProductionCuts(self.g4_production_cuts)
         self._g4_production_cuts_initialized = True
 
     def initialize_g4_user_limits(self):
+        if self.g4_region is None:
+            fatal(
+                f"Unable to initialize user limits in region {self.name}."
+                "The associated G4Region object is missing. "
+            )
+
         if self._g4_user_limits_initialized is True:
             return
 
@@ -743,6 +749,7 @@ class Region(GateObject):
                 self.user_info["user_limits"]["min_range"]
             )
 
+        self.g4_region.SetUserLimits(self.g4_user_limits)
         self._g4_user_limits_initialized = True
 
     def initialize_em_switches(self):
