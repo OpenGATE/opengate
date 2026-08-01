@@ -37,7 +37,7 @@ if __name__ == "__main__":
     print(f"There are {n} singles")
 
     # time windows
-    ns = gate.g4_units.number_of_primariesanosecond
+    ns = gate.g4_units.nanosecond
     mm = gate.g4_units.mm
 
     policy = "TakeAllGoods"

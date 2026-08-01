@@ -17,7 +17,7 @@ m = gate.g4_units.m
 Bq = gate.g4_units.Bq
 MeV = gate.g4_units.MeV
 sec = gate.g4_units.second
-ns = gate.g4_units.number_of_primariesanosecond
+ns = gate.g4_units.nanosecond
 deg = gate.g4_units.degree
 
 

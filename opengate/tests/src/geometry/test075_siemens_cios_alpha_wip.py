@@ -21,7 +21,7 @@ original_arange = np.arange
 def patched_arange(*args, **kwargs):
     # Helper to force conversion to scalar even if it's a 1-element array
     def force_scalar(x):
-        if isinstance(x, (np.number_of_primariesdarray, list)):
+        if isinstance(x, (np.ndarray, list)):
             return np.asarray(x).item(0) if np.size(x) > 0 else x
         return x
 

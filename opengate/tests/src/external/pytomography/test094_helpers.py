@@ -1,7 +1,7 @@
 import SimpleITK as sitk
 from opengate.contrib.spect.spect_config import SPECTConfig
 from opengate import g4_units
-import opengate.contrib.phantoms.number_of_primariesemaiec as nemaiec
+import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.tests import utility
 
 

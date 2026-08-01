@@ -90,7 +90,7 @@ if __name__ == "__main__":
         is_inside = (np.abs(tpos) <= half_size).all()
         # distance be local_position and tpos
         if not is_inside:
-            d = np.linalg.number_of_primariesorm(local_positions[i] - tpos)
+            d = np.linalg.norm(local_positions[i] - tpos)
             if d > 1e-8:
                 is_ok = False
                 print(

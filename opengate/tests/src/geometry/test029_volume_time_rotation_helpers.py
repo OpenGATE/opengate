@@ -3,7 +3,7 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
-import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from scipy.spatial.transform import Rotation
 
 

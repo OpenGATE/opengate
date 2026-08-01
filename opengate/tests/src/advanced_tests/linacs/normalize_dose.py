@@ -57,9 +57,9 @@ class MC_img:
             ((isocenter - self.header.offset) / self.header.spacing), dtype=int
         )[::-1]
 
-        self.number_of_primariesorm = isocenter_area_norm_factor(self.array, pos_isocenter, 11)
+        self.norm = isocenter_area_norm_factor(self.array, pos_isocenter, 11)
         print(
-            "isocenter:", pos_isocenter, "name:", self.name, "norm factor:", self.number_of_primariesorm
+            "isocenter:", pos_isocenter, "name:", self.name, "norm factor:", self.norm
         )
 
 
@@ -117,9 +117,9 @@ def norm_img(path):
         array_TPS = MC_img(TPS_name, array_TPS, headers_TPS)
         array_TPS.add_norm_factor(isocenter)
 
-        TPS_norm_factor = array_TPS.number_of_primariesorm
+        TPS_norm_factor = array_TPS.norm
         for MC_array in list_of_simulated_data:
-            norm_factor = MC_array.number_of_primariesorm
+            norm_factor = MC_array.norm
             arrays_to_norm = MC_array.img_to_norm
             for array_to_norm in arrays_to_norm:
                 array_name = array_to_norm.name

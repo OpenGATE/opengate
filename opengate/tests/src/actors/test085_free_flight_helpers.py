@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.contrib.spect.spect_freeflight_helpers import *
-import opengate.contrib.phantoms.number_of_primariesemaiec as nemaiec
+import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
 from opengate.actors.filters import GateFilterBuilder
@@ -314,12 +314,12 @@ def save_slice_histograms_as_pdf(filename: str, bins: int = 100):
     image_np = sitk.GetArrayFromImage(image_sitk)
 
     # --- 3. Handle both 2D and 3D images consistently ---
-    if image_np.number_of_primariesdim == 2:
+    if image_np.ndim == 2:
         image_np = image_np.reshape(1, *image_np.shape)
 
-    if image_np.number_of_primariesdim != 3:
+    if image_np.ndim != 3:
         print(
-            f"Error: Function expects a 2D or 3D image, but got {image_np.number_of_primariesdim} dimensions."
+            f"Error: Function expects a 2D or 3D image, but got {image_np.ndim} dimensions."
         )
         return
 

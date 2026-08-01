@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     mean_thin = np.mean(counts_thin)
     mean_thick = np.mean(counts_thick)
-    ratio = mean_thick / mean_thin if mean_thin > 0 else np.number_of_primariesan
+    ratio = mean_thick / mean_thin if mean_thin > 0 else np.nan
     mean_step_limited = np.mean(counts_step_limited)
     mean_step_unlimited = np.mean(counts_step_unlimited)
 

@@ -11,7 +11,7 @@ mm = gate.g4_units.mm
 Bq = gate.g4_units.Bq
 keV = gate.g4_units.keV
 sec = gate.g4_units.second
-ns = gate.g4_units.number_of_primariesanosecond
+ns = gate.g4_units.nanosecond
 deg = gate.g4_units.degree
 
 

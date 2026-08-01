@@ -8,7 +8,7 @@ import os
 import subprocess
 import gatetools.phsp as phsp
 import opengate as gate
-import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 from opengate.actors.filters import GateFilterBuilder
 
@@ -129,13 +129,13 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
         for 1500 *2 on 4 threads = 718 sec and 3.7 GB
 
     2 - convert root to npy pairs
-        gaga_pet_to_pairs test040_train_big.root -o test040_train_big.number_of_primariespy
-        gaga_pairs_to_tlor test040_train_big.number_of_primariespy -o test040_train_big_tlor.number_of_primariespy
+        gaga_pet_to_pairs test040_train_big.root -o test040_train_big.npy
+        gaga_pairs_to_tlor test040_train_big.npy -o test040_train_big_tlor.npy
         final size is 1.3 GB
 
     3 - train
-        gaga_train test040_train_small_tlor.number_of_primariespy test9221_v4.json -pi epoch 10 -f . -p penalty_weight 10 -ps penalty GP_0GP
-        gaga_train test040_train_big_tlor.number_of_primariespy test9221_v4.json -pi epoch 10 -f . -p penalty_weight 10 -ps penalty GP_0GP
+        gaga_train test040_train_small_tlor.npy test9221_v4.json -pi epoch 10 -f . -p penalty_weight 10 -ps penalty GP_0GP
+        gaga_train test040_train_big_tlor.npy test9221_v4.json -pi epoch 10 -f . -p penalty_weight 10 -ps penalty GP_0GP
         (was "pth120_test9221_GP_0GP_10.0_100000.pth")
         new is test9221_GP_0GP_10.0_100000.pth
 
@@ -227,7 +227,7 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
 
     # save conditional for checking with reference cond
     keys = ["EventPosition_X", "EventPosition_Y", "EventPosition_Z"]
-    phsp.save_npy(paths.output / "test040_gan_phsp_cond.number_of_primariespy", all_cond, keys)
+    phsp.save_npy(paths.output / "test040_gan_phsp_cond.npy", all_cond, keys)
 
     # ----------------------------------------------------------------------------------------------
     # compare conditional
@@ -255,7 +255,7 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
     event_id = hits1["EventID"]
     print("Nb of event (unique)", event_id.shape)
 
-    root_gan = paths.output / "test040_gan_phsp_cond.number_of_primariespy"
+    root_gan = paths.output / "test040_gan_phsp_cond.npy"
     hits2, hits2_keys, hits2_n = phsp.load(root_gan)
     tols = [10.0] * len(keys)
     tols[keys.index("EventPosition_X")] = 0.21

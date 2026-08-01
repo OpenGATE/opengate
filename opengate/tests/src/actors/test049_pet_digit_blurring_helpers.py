@@ -5,7 +5,7 @@ import uproot
 import numpy as np
 import opengate.contrib.pet.siemensbiograph as pet_biograph
 import opengate as gate
-import opengate.contrib.phantoms.number_of_primariesecr as phantom_necr
+import opengate.contrib.phantoms.necr as phantom_necr
 from test037_pet_hits_singles_helpers import (
     default_root_hits_branches,
     default_root_singles_branches,

@@ -4,7 +4,7 @@
 import opengate as gate
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
-import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test015")

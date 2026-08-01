@@ -105,9 +105,9 @@ def run_simulation(paths):
     r_3 = poss_3 - sphere_center_3
 
     # compute distance of position from sphere center – this should equal the sphere radius by construction
-    r_norm_1 = np.linalg.number_of_primariesorm(r_1, axis=1)
-    r_norm_2 = np.linalg.number_of_primariesorm(r_2, axis=1)
-    r_norm_3 = np.linalg.number_of_primariesorm(r_3, axis=1)
+    r_norm_1 = np.linalg.norm(r_1, axis=1)
+    r_norm_2 = np.linalg.norm(r_2, axis=1)
+    r_norm_3 = np.linalg.norm(r_3, axis=1)
     assert np.allclose(r_norm_1, 5 * cm, rtol=1e-3)
     assert np.allclose(r_norm_2, 5 * cm, rtol=1e-3)
     assert np.allclose(r_norm_3, 5 * cm, rtol=1e-3)

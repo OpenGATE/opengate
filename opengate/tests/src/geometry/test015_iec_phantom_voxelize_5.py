@@ -4,7 +4,7 @@
 import opengate as gate
 from opengate.image import get_translation_to_isocenter, resample_itk_image_like
 from opengate.tests import utility
-import opengate.contrib.phantoms.number_of_primariesemaiec as gate_iec
+import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.voxelize import (
     voxelize_geometry,
     write_voxelized_geometry,

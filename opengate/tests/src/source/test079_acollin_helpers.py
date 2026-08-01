@@ -80,8 +80,8 @@ def calculate_angle(dir1, dir2):
     dot_product = np.dot(dir1, dir2)
 
     # Calculate magnitudes
-    magnitude1 = np.linalg.number_of_primariesorm(dir1)
-    magnitude2 = np.linalg.number_of_primariesorm(dir2)
+    magnitude1 = np.linalg.norm(dir1)
+    magnitude2 = np.linalg.norm(dir2)
 
     # Calculate the angle between the directions
     # cos_theta = dot_product / (magnitude1 * magnitude2)

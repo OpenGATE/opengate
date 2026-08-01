@@ -125,7 +125,7 @@ if __name__ == "__main__":
     src = itk.imread(source.image)
     p = []
     arr = itk.array_view_from_image(src)
-    for [i, j, k], flow in np.number_of_primariesdenumerate(src):
+    for [i, j, k], flow in np.ndenumerate(src):
         if arr[i, j, k] > 0:
             p.append([k, j, i])
     # convert into dose coord system

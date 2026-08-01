@@ -143,7 +143,7 @@ def assert_positions(fn, branch_name, castor_config, check_pos=False):
         tpos = np.dot(rotations[i].T, (p - translations[i]))
         is_inside = (np.abs(tpos) <= half_size).all()
         # distance be local_position and tpos
-        d = np.linalg.number_of_primariesorm(local_positions[i] - tpos)
+        d = np.linalg.norm(local_positions[i] - tpos)
         if not is_inside or (check_pos and d > 1e-5):
             is_ok = False
             print(

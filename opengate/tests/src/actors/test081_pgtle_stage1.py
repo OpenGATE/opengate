@@ -13,16 +13,16 @@ from opengate.tests import utility
 def compute_hist_mean(paths, method, particle, distrib):
     if method == "tle":
         if distrib == "energy":
-            filename = "stage1_vpg_tle" "_" + particle + "_pge.number_of_primariesii.gz"
+            filename = "stage1_vpg_tle" "_" + particle + "_pge.nii.gz"
         elif distrib == "tof":
-            filename = "stage1_vpg_tle_" + particle + "_tof.number_of_primariesii.gz"
+            filename = "stage1_vpg_tle_" + particle + "_tof.nii.gz"
         else:
             return 0
     elif method == "analog":
         if distrib == "energy":
-            filename = "stage1_vpg_analog_" + particle + "_e.number_of_primariesii.gz"
+            filename = "stage1_vpg_analog_" + particle + "_e.nii.gz"
         elif distrib == "tof":
-            filename = "stage1_vpg_analog_" + particle + "_tof.number_of_primariesii.gz"
+            filename = "stage1_vpg_analog_" + particle + "_tof.nii.gz"
         else:
             return 0
     else:
@@ -140,7 +140,7 @@ def gamma_mat(
 
     # dump material DB
     # itk_output = itk.image_from_array(Gamma)
-    # itk.imwrite(itk_output, paths.output / f"{name}.number_of_primariesii.gz")
+    # itk.imwrite(itk_output, paths.output / f"{name}.nii.gz")
 
     return Gamma
 
@@ -216,7 +216,7 @@ if __name__ == "__main__":
         sim, materials, paths.output / "database.db"
     )
 
-    ct.dump_label_image = paths.output / f"labels.number_of_primariesii.gz"
+    ct.dump_label_image = paths.output / f"labels.nii.gz"
     ct.mother = "world"
     ct.load_input_image()
 
@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpg_tle")
     vpg_tle.attached_to = vol_name
-    vpg_tle.output_filename = f"{file_name}_tle.number_of_primariesii.gz"
+    vpg_tle.output_filename = f"{file_name}_tle.nii.gz"
     vpg_tle.size = [13, 13, 19]  # the same size than ct image is stronly adviced
     vpg_tle.spacing = [
         40,
@@ -265,16 +265,16 @@ if __name__ == "__main__":
     vpg_tle.energyrange = 200 * MeV
     # vpg_tle.energyrange = Erange * MeV
     vpg_tle.prot_E.active = True
-    vpg_tle.number_of_primarieseutr_E.active = True
+    vpg_tle.neutr_E.active = True
     vpg_tle.prot_tof.active = True
-    vpg_tle.number_of_primarieseutr_tof.active = True
+    vpg_tle.neutr_tof.active = True
     vpg_tle.weight = True  # True to obtain weighted time spectra
     vpg_tle.vect_p = vect_p
     vpg_tle.vect_n = vect_n
 
     vpg_analog = sim.add_actor("VoxelizedPromptGammaAnalogActor", "vpg_analog")
     vpg_analog.attached_to = vol_name
-    vpg_analog.output_filename = f"{file_name}_analog.number_of_primariesii.gz"
+    vpg_analog.output_filename = f"{file_name}_analog.nii.gz"
     vpg_analog.size = [13, 13, 19]  # the same size than ct image is stronly adviced
     vpg_analog.spacing = [
         40,
@@ -286,9 +286,9 @@ if __name__ == "__main__":
     vpg_analog.energybins = 250
     vpg_analog.energyrange = 10 * MeV
     vpg_analog.prot_E.active = True
-    vpg_analog.number_of_primarieseutr_E.active = True
+    vpg_analog.neutr_E.active = True
     vpg_analog.prot_tof.active = True
-    vpg_analog.number_of_primarieseutr_tof.active = True
+    vpg_analog.neutr_tof.active = True
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     # SECOND STEP : compute the material Gamma for each materials present in the ct and store it in a list
 
     neutr = True  # to skip step if neutron are not taking into account
-    if vpg_tle.number_of_primarieseutr_E.active:
+    if vpg_tle.neutr_E.active:
         neutr = True
     gamma_neutron = {}
     gamma_proton = {}
@@ -334,11 +334,11 @@ if __name__ == "__main__":
         axis=1
     )  # LOOKHERE :: should find a better way to build the index list
 
-    img_p = itk.imread(paths.output / f"{file_name}_tle_prot_e.number_of_primariesii.gz")
+    img_p = itk.imread(paths.output / f"{file_name}_tle_prot_e.nii.gz")
     array_p = itk.array_from_image(img_p)
 
     if neutr:
-        img_n = itk.imread(paths.output / f"{file_name}_tle_neutr_e.number_of_primariesii.gz")
+        img_n = itk.imread(paths.output / f"{file_name}_tle_neutr_e.nii.gz")
         array_n = itk.array_from_image(img_n)
 
     # Initialize the treated array for proton, neutron, and proton + neutron
@@ -395,11 +395,11 @@ if __name__ == "__main__":
     # Create a new ITK image from the treated array
     itk_output = itk.image_from_array(treated_array_p)
     itk_output.CopyInformation(img_p)
-    itk.imwrite(itk_output, paths.output / f"{file_name}_tle_prot_pge.number_of_primariesii.gz")
+    itk.imwrite(itk_output, paths.output / f"{file_name}_tle_prot_pge.nii.gz")
     if neutr:
         itk_output = itk.image_from_array(treated_array_n)
         itk_output.CopyInformation(img_n)
-        itk.imwrite(itk_output, paths.output / f"{file_name}_tle_neutr_pge.number_of_primariesii.gz")
+        itk.imwrite(itk_output, paths.output / f"{file_name}_tle_neutr_pge.nii.gz")
 
     is_ok = True
     # tests (neutron, proton) x (E,tof)

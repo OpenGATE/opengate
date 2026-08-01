@@ -113,7 +113,7 @@ if __name__ == "__main__":
         vertex_splitting_actor.angular_acceptance.skip_policy = "SkipEvents"
         vertex_splitting_actor.angular_acceptance.max_rejection = 100000000
         vertex_splitting_actor.batch_size = 100
-        vertex_splitting_actor.number_of_primariesb_of_max_batch_per_event = 500
+        vertex_splitting_actor.nb_of_max_batch_per_event = 500
 
     ####### gamma source ###########
     source = sim.add_source("GenericSource", "source1")
