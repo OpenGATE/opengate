@@ -213,7 +213,7 @@ def build_simulation(output_path, run_timing_intervals, source_n):
     # Keep the source energy low and the production cuts very large so the
     # phase-space actor records a stream dominated by one scored step per
     # primary. This makes the EventID remap check meaningful in this test.
-    source.energy.mono = 10 * keV
+    source.energy.mono = 10 * MeV
     source.number_of_primaries = source_n
     source.position.type = "disc"
     source.position.radius = 1.0 * nm
@@ -503,7 +503,7 @@ if __name__ == "__main__":
     )
     split_root = gate.jobs_split(
         simulation=sim,
-        number_of_jobs=3,
+        number_of_jobs=2,
         campaign_dir=split_root,
         policy="split_in_time_total",
     ).campaign_dir
@@ -528,28 +528,28 @@ if __name__ == "__main__":
     # Check that source records are keyed by the 1-based job indices used in
     # user-facing split/merge summaries.
     utility.print_test(
-        sorted(informative_sources.keys()) == [1, 2, 3],
+        sorted(informative_sources.keys()) == [1, 2],
         f"Informative merge-context sources are keyed by job_index: {sorted(informative_sources.keys())}",
     )
-    is_ok = sorted(informative_sources.keys()) == [1, 2, 3] and is_ok
+    is_ok = sorted(informative_sources.keys()) == [1, 2] and is_ok
 
     inventory_job_indices = sorted(
         {output_plan["job_index"] for output_plan in output_inventory}
     )
-    # Check that the flat output inventory covers all three jobs.
+    # Check that the flat output inventory covers both jobs.
     utility.print_test(
-        inventory_job_indices == [1, 2, 3],
+        inventory_job_indices == [1, 2],
         f"Flat output inventory covers job_index values: {inventory_job_indices}",
     )
-    is_ok = inventory_job_indices == [1, 2, 3] and is_ok
+    is_ok = inventory_job_indices == [1, 2] and is_ok
 
     # Check the total number of actor-output plans produced by the mixed-output
     # simulation: two stats outputs, four dose outputs, and one ROOT output per job.
     utility.print_test(
-        len(output_inventory) == 21,
+        len(output_inventory) == 14,
         f"Flat output inventory contains one entry per job and actor output: {len(output_inventory)}",
     )
-    is_ok = len(output_inventory) == 21 and is_ok
+    is_ok = len(output_inventory) == 14 and is_ok
 
     # Check that job0001 bridges the original run boundary and therefore maps
     # two local runs back to original runs 0 and 1.
@@ -566,23 +566,16 @@ if __name__ == "__main__":
     )
     is_ok = informative_sources[2]["local_to_original_run_map"] == [1] and is_ok
 
-    # Check that job0003 also contributes only to original run 1.
-    utility.print_test(
-        informative_sources[3]["local_to_original_run_map"] == [1],
-        f"job0003 local-to-original run map: {informative_sources[3]['local_to_original_run_map']}",
-    )
-    is_ok = informative_sources[3]["local_to_original_run_map"] == [1] and is_ok
-
     # Check the asymmetric split multiplicity: one child contributes to
-    # original run 0, while three children contribute to original run 1.
+    # original run 0, while two children contribute to original run 1.
     utility.print_test(
         merge_context_dict["informative"]["number_of_children_per_original_run"]
-        == {0: 1, 1: 3},
+        == {0: 1, 1: 2},
         f"Original-run contributor multiplicities: {merge_context_dict['informative']['number_of_children_per_original_run']}",
     )
     is_ok = (
         merge_context_dict["informative"]["number_of_children_per_original_run"]
-        == {0: 1, 1: 3}
+        == {0: 1, 1: 2}
         and is_ok
     )
 

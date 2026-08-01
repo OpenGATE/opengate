@@ -54,7 +54,8 @@ if __name__ == "__main__":
     print(stat)
     print(debug_source)
 
-    print(f"Simulation json saved in {sim.output_dir / archive_filename}")
+    json_path = sim.get_root_path(archive_filename)
+    print(f"Simulation json saved in {json_path}")
 
     # assertions to verify MT execution and output recovery
     assert stat.counts.events == debug_source.number_of_primaries
@@ -67,7 +68,6 @@ if __name__ == "__main__":
     assert debug_source.debug_value == debug_source.number_of_primaries
 
     # check simulation json source_manager entry
-    json_path = sim.output_dir / archive_filename
     assert json_path.exists()
 
     from opengate.serialization import load_json
