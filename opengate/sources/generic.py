@@ -535,7 +535,7 @@ class GenericSource(SourceBase):
         if self.tac_times is None and self.tac_activities is None:
             return
         tac_activities = (
-            runtime_user_info.tac_activities
+            runtime_user_info["tac_activities"]
             if runtime_user_info is not None
             else self.tac_activities
         )
