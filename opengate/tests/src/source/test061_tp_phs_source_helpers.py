@@ -106,7 +106,7 @@ def create_test_phsp(
     source.energy.mono = 150 * MeV
     source.number_of_primaries = number_of_particles
 
-    sim.run()
+    sim.run(start_new_process=True)
     output = sim.output
 
 
@@ -223,7 +223,7 @@ def test_source_rotation_a(
     # depending on the rotation of the gantry, the rotation of the phase space to catch the particles is different
     plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
-    sim.run()
+    sim.run(start_new_process=True)
 
     return sim
 

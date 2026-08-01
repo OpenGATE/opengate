@@ -705,7 +705,7 @@ if __name__ == "__main__":
         run_timing_intervals,
         source_n,
     )
-    reference_sim.run()
+    reference_sim.run(start_new_process=True)
 
     print("Running split jobs sequentially ...")
     run_summary = gate.jobs_run(

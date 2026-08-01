@@ -288,7 +288,7 @@ def test_source_name(
     source.verbose = False
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
-    sim.run()
+    sim.run(start_new_process=True)
 
 
 def test_source_particle_info_from_phs(
@@ -314,7 +314,7 @@ def test_source_particle_info_from_phs(
     source.number_of_primaries = number_of_particles
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
-    sim.run()
+    sim.run(start_new_process=True)
 
 
 def test_source_translation(
@@ -342,7 +342,7 @@ def test_source_translation(
     source.position.translation = [3 * cm, 0 * cm, 0 * cm]
     print(source)
 
-    sim.run()
+    sim.run(start_new_process=True)
 
 
 def test_source_rotation(
@@ -375,7 +375,7 @@ def test_source_rotation(
     source.position.rotation = rotation.as_matrix()
     print(source)
 
-    sim.run()
+    sim.run(start_new_process=True)
 
 
 def test_source_until_primary(
@@ -401,7 +401,7 @@ def test_source_until_primary(
     source.primary_PDGCode = 2212
     print(source)
 
-    sim.run()
+    sim.run(start_new_process=True)
 
 
 def get_first_entry_of_key(

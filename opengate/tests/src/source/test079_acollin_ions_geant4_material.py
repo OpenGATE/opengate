@@ -75,7 +75,7 @@ if __name__ == "__main__":
     print(f"set MeanEnergyPerIonPair to {ionisation.GetMeanEnergyPerIonPair() / eV} eV")
 
     # go
-    sim.run()
+    sim.run(start_new_process=True)
 
     # test: no mean energy, should be mostly colinear
     gamma_pairs = read_gamma_pairs(root_filename)
