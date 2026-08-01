@@ -421,9 +421,9 @@ class PhysicsEngine(EngineBase):
         for region in self.physics_manager.regions.values():
             region.initialize_after_runmanager()
 
-    def initialize_regions_for_volume(self, volume): 
+    def initialize_regions_for_volume(self, volume):
         region = self.physics_manager.find_region(volume.name)
-        if region is not None: 
+        if region is not None:
             region.initialize_root_logical_volume(volume)
 
     def initialize_global_cuts(self):

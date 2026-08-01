@@ -622,8 +622,8 @@ class Region(GateObject):
                 s += f"{pname}: {cut}\n"
         return s
 
-    def initialize_root_logical_volume(self, volume): 
-        if volume.g4_logical_volume is None: 
+    def initialize_root_logical_volume(self, volume):
+        if volume.g4_logical_volume is None:
             fatal(
                 f"Cannot attach region '{self.name}' to volume "
                 f"'{getattr(volume, 'name', volume)}' because its "
@@ -652,9 +652,11 @@ class Region(GateObject):
             )
 
     def initialize_g4_production_cuts(self):
-        if self.g4_region is None: 
-            fatal(f"Unable to initialize production cuts in region {self.name}."
-                  "The associated G4Region object is missing. ")
+        if self.g4_region is None:
+            fatal(
+                f"Unable to initialize production cuts in region {self.name}."
+                "The associated G4Region object is missing. "
+            )
 
         self.user_info = Box(self.user_info)
 
@@ -695,9 +697,11 @@ class Region(GateObject):
         self._g4_production_cuts_initialized = True
 
     def initialize_g4_user_limits(self):
-        if self.g4_region is None: 
-            fatal(f"Unable to initialize user limits in region {self.name}."
-                  "The associated G4Region object is missing. ")
+        if self.g4_region is None:
+            fatal(
+                f"Unable to initialize user limits in region {self.name}."
+                "The associated G4Region object is missing. "
+            )
 
         if self._g4_user_limits_initialized is True:
             return
