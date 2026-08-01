@@ -770,6 +770,7 @@ def phid_build_one_sub_source(stype, source, daughter, ene, w, first_nuclide):
     source.log += f" {len(ene)} gammas, with total weights = {np.sum(w) * 100:.2f}%\n"
     name = f"{source.name}__{stype}_of_{daughter.nuclide.nuclide}"
     s = PhotonFromIonDecaySource(name=name)
+    s.simulation = source.simulation
     s.is_a_sub_source = True
     s.sub_sources = []
     s.position = copy.deepcopy(source.position)
