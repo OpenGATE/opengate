@@ -708,7 +708,11 @@ if __name__ == "__main__":
     reference_sim.run()
 
     print("Running split jobs sequentially ...")
-    run_summary = gate.jobs_run(split_root, backend="local_sequential")
+    run_summary = gate.jobs_run(
+        split_root,
+        backend="local_sequential",
+        detach=False,
+    )
     print(run_summary)
     wait_until_jobs_completed(split_root)
 

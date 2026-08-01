@@ -1873,14 +1873,17 @@ def jobs_run(
     number_of_workers=None,
     force_rerun_completed=False,
     allow_rerun_running=False,
+    detach=True,
 ):
     """Launch a split-jobs campaign from a split root folder or manifest path.
 
-    Local execution backends launch the whole campaign in a separate
+    Local execution backends normally launch the whole campaign in a separate
     orchestration process so this function can return immediately while the
-    selected job folders keep running in the background. External scheduler
-    backends submit synchronously instead, so submission errors are reported
-    directly to the caller while the actual job execution remains asynchronous.
+    selected job folders keep running in the background. With ``detach=False``,
+    local execution instead keeps the campaign attached to the current process.
+    External scheduler backends submit synchronously instead, so submission
+    errors are reported directly to the caller while the actual job execution
+    remains asynchronous.
 
     For the ``local_pool`` backend, ``number_of_workers`` controls how many
     child simulations can run concurrently. If fewer workers than jobs are
@@ -1949,6 +1952,10 @@ def jobs_run(
         }
 
     if backend == "htcondor":
+        if detach is False:
+            raise GateJobsBackendError(
+                "detach=False is only supported for local jobs backends."
+            )
         submission_summary = _submit_job_folders_to_htcondor(
             split_root_folder,
             selected_job_folders,
@@ -1966,6 +1973,10 @@ def jobs_run(
         }
 
     if backend == "slurm":
+        if detach is False:
+            raise GateJobsBackendError(
+                "detach=False is only supported for local jobs backends."
+            )
         submission_summary = _submit_job_folders_to_slurm(
             split_root_folder,
             selected_job_folders,
@@ -2001,6 +2012,43 @@ def jobs_run(
         if backend == "local_pool":
             backend_options = {
                 "n_workers": number_of_workers,
+            }
+
+        if detach is False:
+            submitted_at = _now_isoformat()
+            _write_jobs_backend_status(
+                split_root_folder,
+                backend=backend,
+                status="submitted",
+                submitted_jobs=len(selected_job_folders),
+                skipped_completed_jobs=len(skipped_completed_jobs),
+                submitted_at=submitted_at,
+                campaign_process_pid=None,
+            )
+            _run_jobs_campaign(
+                [str(job_folder) for job_folder in selected_job_folders],
+                backend,
+                backend_options,
+            )
+            _write_jobs_backend_status(
+                split_root_folder,
+                backend=backend,
+                status="completed",
+                submitted_jobs=len(selected_job_folders),
+                skipped_completed_jobs=len(skipped_completed_jobs),
+                submitted_at=submitted_at,
+                campaign_process_pid=None,
+            )
+            return {
+                "backend": backend,
+                "manifest_path": str(manifest_path),
+                "campaign_dir": str(split_root_folder),
+                "submitted_jobs": len(selected_job_folders),
+                "skipped_completed_jobs": len(skipped_completed_jobs),
+                "campaign_process_pid": None,
+                "backend_status_path": str(
+                    _get_jobs_backend_status_path(split_root_folder)
+                ),
             }
 
         launcher_context = multiprocessing.get_context(

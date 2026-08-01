@@ -28,18 +28,22 @@ if __name__ == "__main__":
         policy="split_in_time_per_run",
     ).campaign_dir
 
-    summary = gate.jobs_run(split_root, backend="local_sequential")
+    summary = gate.jobs_run(
+        split_root,
+        backend="local_sequential",
+        detach=False,
+    )
     is_ok = is_ok and utility.print_test(
         summary["submitted_jobs"] == 2
         and summary["skipped_completed_jobs"] == 0
-        and summary["campaign_process_pid"] is not None,
+        and summary["campaign_process_pid"] is None,
         f"local_sequential submission summary: {summary}",
     )
     backend_status = load_backend_status(split_root)
     is_ok = is_ok and utility.print_test(
         backend_status is not None
         and backend_status["backend"] == "local_sequential"
-        and backend_status["status"] == "submitted"
+        and backend_status["status"] == "completed"
         and backend_status["submitted_jobs"] == 2
         and backend_status["campaign_process_pid"] == summary["campaign_process_pid"],
         f"local backend status: {backend_status}",
@@ -57,7 +61,11 @@ if __name__ == "__main__":
             f"local_sequential execution status for {job['folder_name']}: {status}",
         )
 
-    summary_second = gate.jobs_run(split_root, backend="local_sequential")
+    summary_second = gate.jobs_run(
+        split_root,
+        backend="local_sequential",
+        detach=False,
+    )
     is_ok = is_ok and utility.print_test(
         summary_second["submitted_jobs"] == 0
         and summary_second["skipped_completed_jobs"] == 2
@@ -85,6 +93,7 @@ if __name__ == "__main__":
         split_root,
         backend="local_sequential",
         allow_rerun_running=True,
+        detach=False,
     )
     is_ok = is_ok and utility.print_test(
         summary_restart["submitted_jobs"] == 1
