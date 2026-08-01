@@ -421,6 +421,11 @@ class PhysicsEngine(EngineBase):
         for region in self.physics_manager.regions.values():
             region.initialize_after_runmanager()
 
+    def initialize_regions_for_volume(self, volume): 
+        region = self.physics_manager.find_region(volume.name)
+        if region is not None: 
+            region.initialize_root_logical_volume(volume)
+
     def initialize_global_cuts(self):
         ui = self.physics_manager.user_info
 
@@ -1094,11 +1099,11 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
         G4 overloaded.
         Override the Construct method from G4VUserParallelWorld
         """
-
         # Construct all volumes within this world along the tree hierarchy
         # The world volume of this world is the first item
         for volume in PreOrderIter(self.parallel_world_volume):
             volume.construct()
+            self.simulation_engine.physics_engine.initialize_regions_for_volume(volume)
 
     def ConstructSD(self):
         self.simulation_engine.actor_engine.register_sensitive_detectors(
@@ -1157,22 +1162,13 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         G4 overloaded.
         Override the Construct method from G4VUserDetectorConstruction
         """
-
-        # # build the materials
-        # # FIXME: should go into initialize method
-        # self.simulation_engine.simulation.volume_manager.material_database.initialize()
-
         # Construct all volumes within the mass world along the tree hierarchy
         # The world volume is the first item
 
         self.volume_manager.update_volume_tree()
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
-
-        for (
-            region
-        ) in self.simulation_engine.simulation.physics_manager.regions.values():
-            region.initialize_during_runmanager()
+            self.simulation_engine.physics_engine.initialize_regions_for_volume(volume)
 
         # return the (main) world physical volume
         self._is_constructed = True

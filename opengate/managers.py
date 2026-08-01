@@ -941,6 +941,9 @@ class PhysicsManager(GateObject):
         except AttributeError:
             fatal(f"Expected a volume name or a volume object, but received: {volume}")
 
+    def find_region(self, volume_name): 
+        return self.volumes_regions_lut.get(volume_name, None)
+
     def find_or_create_region(self, volume_name):
         if volume_name == self.simulation.world.name:
             region_name = "DefaultRegionForTheWorld"
@@ -1114,6 +1117,8 @@ class PhysicsManager(GateObject):
         for region in self.regions.values():
             region.resolve_and_validate_config()
 
+        if len(set(r.name for r in self.regions.values()).difference(set(r.name for r in self.volumes_regions_lut.values()))) > 0: 
+            fatal("The PhysicsManager has regions not represented in the volumes_regions_lut. ")
 
 def _setter_hook_chemistry_list_name(self, chemistry_list_name):
     if chemistry_list_name is None:
