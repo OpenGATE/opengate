@@ -127,11 +127,7 @@ def test022_half_life(n_threads=1):
     start_time2 = sim.run_timing_intervals[1][0] / sec
     end_time2 = sim.run_timing_intervals[1][1] / sec
     # number of elements is around activity times the duration
-    m_ref = (
-        source2.activity
-        / Bq
-        * (end_time - start_time + end_time2 - start_time2)
-    )
+    m_ref = source2.activity / Bq * (end_time - start_time + end_time2 - start_time2)
     diff = abs(m - m_ref) / m_ref
     b = diff < tol
     diff *= 100

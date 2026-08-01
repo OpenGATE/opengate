@@ -270,11 +270,17 @@ class SourceBase(DynamicGateObject):
             fatal(
                 "source.number_of_primaries and run_timing_intervals do not have the same length."
             )
-        if np.any(self.user_info.number_of_primaries > 0) and self.user_info.activity > 0:
+        if (
+            np.any(self.user_info.number_of_primaries > 0)
+            and self.user_info.activity > 0
+        ):
             fatal(
                 "Cannot use both the two parameters 'number_of_primaries' and 'activity' at the same time. "
             )
-        if np.all(self.user_info.number_of_primaries == 0) and self.user_info.activity == 0:
+        if (
+            np.all(self.user_info.number_of_primaries == 0)
+            and self.user_info.activity == 0
+        ):
             fatal(
                 "You must set one of the two parameters 'number_of_primaries' or 'activity'."
             )

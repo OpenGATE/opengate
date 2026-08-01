@@ -11,9 +11,7 @@
 #include <G4ParticleTable.hh>
 #include <G4UnitsTable.hh>
 
-GateTemplateSource::GateTemplateSource() : GateVSource() {
-  fFloatValue = 0;
-}
+GateTemplateSource::GateTemplateSource() : GateVSource() { fFloatValue = 0; }
 
 GateTemplateSource::~GateTemplateSource() {
   // nothing

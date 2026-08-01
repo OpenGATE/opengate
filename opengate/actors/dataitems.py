@@ -2152,7 +2152,10 @@ def _process_data_item_container_class(cls):
         for descriptor in decorated_descriptors_in_this_class:
             derived_data_item_descriptors[descriptor["name"]] = descriptor
 
-    if len(manual_derived_item_identifiers) > 0 and len(derived_data_item_descriptors) > 0:
+    if (
+        len(manual_derived_item_identifiers) > 0
+        and len(derived_data_item_descriptors) > 0
+    ):
         raise GateImplementationError(
             f"Data item container class {cls.__name__} mixes manual "
             f"'derived_item_identifiers' with @derived_data_item declarations. "

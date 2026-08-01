@@ -230,7 +230,9 @@ if __name__ == "__main__":
                 type=type,
                 process=process,
             )
-            std_dev_phsp = std_dev_img_calculation(source.number_of_primaries, img_phsp, img_squared_phsp)
+            std_dev_phsp = std_dev_img_calculation(
+                source.number_of_primaries, img_phsp, img_squared_phsp
+            )
             # img_uncertainty_phsp = np.divide(
             #     std_dev_phsp,
             #     (img_phsp / source.number_of_primaries),

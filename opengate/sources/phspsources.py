@@ -297,9 +297,7 @@ class PhaseSpaceSource(SourceBase):
     @classmethod
     def get_number_of_events_per_lane(cls, number_of_primaries, number_of_lanes):
         """Return the entry spacing used to distribute PHSP reads over lanes."""
-        total_number_of_events = cls._as_total_number_of_events(
-            number_of_primaries
-        )
+        total_number_of_events = cls._as_total_number_of_events(number_of_primaries)
         return int(np.ceil(total_number_of_events / number_of_lanes)) + 1
 
     @classmethod

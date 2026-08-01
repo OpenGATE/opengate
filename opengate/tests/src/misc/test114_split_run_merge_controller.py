@@ -139,7 +139,9 @@ if __name__ == "__main__":
     single_job_stats_path = single_job_stats_actor.get_output_path()
     single_job_dose_actor = single_job_sim.get_actor("dose")
     single_job_dose_path = single_job_dose_actor.edep.get_output_path()
-    single_job_uncertainty_path = single_job_dose_actor.edep_uncertainty.get_output_path()
+    single_job_uncertainty_path = (
+        single_job_dose_actor.edep_uncertainty.get_output_path()
+    )
     single_job_squared_path = get_squared_output_path_from_dose_path(
         single_job_dose_path
     )
@@ -251,7 +253,9 @@ if __name__ == "__main__":
     async_controller.merge()
     async_stats_path = async_sim.get_actor("Stats").get_output_path()
     async_dose_path = async_sim.get_actor("dose").edep.get_output_path()
-    async_uncertainty_path = async_sim.get_actor("dose").edep_uncertainty.get_output_path()
+    async_uncertainty_path = async_sim.get_actor(
+        "dose"
+    ).edep_uncertainty.get_output_path()
     async_squared_path = get_squared_output_path_from_dose_path(async_dose_path)
     is_ok = (
         utility.print_test(
@@ -365,7 +369,9 @@ if __name__ == "__main__":
     # This makes the test robust against setup changes: if one path gives zero
     # while the others do not, we see it immediately in the printed values.
     sync_dose_path = merged_sim.get_actor("dose").edep.get_output_path()
-    sync_uncertainty_path = merged_sim.get_actor("dose").edep_uncertainty.get_output_path()
+    sync_uncertainty_path = merged_sim.get_actor(
+        "dose"
+    ).edep_uncertainty.get_output_path()
     sync_squared_path = get_squared_output_path_from_dose_path(sync_dose_path)
     sync_merged_dose_value = read_single_voxel_value(sync_dose_path)
     sync_merged_uncertainty_value = read_single_voxel_value(sync_uncertainty_path)
