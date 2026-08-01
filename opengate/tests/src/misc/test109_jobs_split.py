@@ -55,7 +55,14 @@ def make_authored_path(
     if input_path_mode == "relative":
         if relative_reference_folder is None:
             relative_reference_folder = simulation_root
-        return Path(os.path.relpath(absolute_path, relative_reference_folder))
+        try:
+            return Path(os.path.relpath(absolute_path, relative_reference_folder))
+        except ValueError:
+            # Windows cannot express a relative path across drive letters.
+            # For the material-database workaround in this test, author the
+            # master simulation with an absolute path in that case and let the
+            # split workflow archive/rewrite it for the child jobs as usual.
+            return absolute_path
     raise ValueError(f"Unknown input_path_mode '{input_path_mode}'.")
 
 

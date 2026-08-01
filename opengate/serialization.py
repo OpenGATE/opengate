@@ -143,11 +143,13 @@ def _rewrite_path_against_reference(path, reference_folder, path_mode):
     - It must not dereference symlinks when producing absolute paths.
     - It preserves the input type: ``Path`` stays ``Path``, ``str`` stays ``str``.
 
-    ``path_mode="relative"`` expresses the path relative to
-    ``reference_folder``. ``path_mode="absolute"`` expresses the same path as
-    an absolute path anchored at ``reference_folder`` if needed, but preserves
-    any symlink path components instead of collapsing them to their physical
-    target location.
+    ``path_mode="relative"`` prefers a path relative to ``reference_folder``.
+    On platforms where no relative representation exists for the two paths
+    (for example across drive letters on Windows), it falls back to a valid
+    absolute path instead of failing. ``path_mode="absolute"`` expresses the
+    same path as an absolute path anchored at ``reference_folder`` if needed,
+    but preserves any symlink path components instead of collapsing them to
+    their physical target location.
     """
 
     original_is_path = isinstance(path, Path)
@@ -155,11 +157,17 @@ def _rewrite_path_against_reference(path, reference_folder, path_mode):
     reference_folder = Path(reference_folder)
 
     if path_mode == "relative":
-        rewritten_path = Path(
-            os.path.relpath(
-                os.path.abspath(path_obj), os.path.abspath(reference_folder)
+        try:
+            rewritten_path = Path(
+                os.path.relpath(
+                    os.path.abspath(path_obj), os.path.abspath(reference_folder)
+                )
             )
-        )
+        except ValueError:
+            # Windows cannot express a relative path across drive letters.
+            # In that case, preserve a valid absolute authored path rather than
+            # failing serialization of the whole simulation.
+            rewritten_path = Path(os.path.abspath(path_obj))
     elif path_mode == "absolute":
         if path_obj.is_absolute():
             rewritten_path = Path(os.path.abspath(path_obj))
