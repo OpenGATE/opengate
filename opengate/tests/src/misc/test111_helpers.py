@@ -139,8 +139,8 @@ def wait_until_execution_status(
             return statuses
         time.sleep(0.5)
     job_snapshots, backend_snapshot = _print_execution_status_snapshot(
-        split_root, manifest
-        ,
+        split_root,
+        manifest,
         (
             f"Execution status timed out while waiting for "
             f"'{expected_status}' on {expected_count} job(s):"
@@ -179,8 +179,8 @@ def wait_until_execution_counts(split_root, expected_counts, timeout=60):
             return statuses
         time.sleep(0.5)
     job_snapshots, backend_snapshot = _print_execution_status_snapshot(
-        split_root, manifest
-        ,
+        split_root,
+        manifest,
         f"Execution counts timed out while waiting for {expected_counts}:",
     )
     raise RuntimeError(
