@@ -68,11 +68,58 @@ def write_execution_status(job_folder, status_data):
             temporary_status_path.unlink()
 
 
+def _format_execution_status_snapshot(split_root, manifest):
+    job_snapshots = []
+    for job in manifest["jobs"]:
+        job_folder = Path(split_root) / job["folder_name"]
+        status = load_execution_status(job_folder)
+        if status is None:
+            job_snapshots.append(f"{job['folder_name']}: <missing>")
+            continue
+        job_snapshots.append(
+            (
+                f"{job['folder_name']}: "
+                f"status={status.get('status')} "
+                f"submitted_at={status.get('submitted_at')} "
+                f"started_at={status.get('started_at')} "
+                f"finished_at={status.get('finished_at')} "
+                f"updated_at={status.get('updated_at')}"
+            )
+        )
+
+    backend_status = load_backend_status(split_root)
+    if backend_status is None:
+        backend_snapshot = "<missing>"
+    else:
+        backend_snapshot = (
+            f"backend={backend_status.get('backend')} "
+            f"status={backend_status.get('status')} "
+            f"submitted_jobs={backend_status.get('submitted_jobs')} "
+            f"skipped_completed_jobs={backend_status.get('skipped_completed_jobs')} "
+            f"campaign_process_pid={backend_status.get('campaign_process_pid')} "
+            f"updated_at={backend_status.get('updated_at')}"
+        )
+
+    return job_snapshots, backend_snapshot
+
+
+def _print_execution_status_snapshot(split_root, manifest, header):
+    job_snapshots, backend_snapshot = _format_execution_status_snapshot(
+        split_root, manifest
+    )
+    print(header)
+    print(f"  Backend status: {backend_snapshot}")
+    for job_snapshot in job_snapshots:
+        print(f"  {job_snapshot}")
+    return job_snapshots, backend_snapshot
+
+
 def wait_until_execution_status(
     split_root, expected_status, expected_count, timeout=60
 ):
     manifest = load_manifest(split_root)
     deadline = time.time() + timeout
+    statuses = []
     while time.time() < deadline:
         statuses = []
         for job in manifest["jobs"]:
@@ -81,17 +128,36 @@ def wait_until_execution_status(
             if status is not None:
                 statuses.append(status.get("status"))
         if statuses.count(expected_status) == expected_count:
+            _print_execution_status_snapshot(
+                split_root,
+                manifest,
+                (
+                    f"Execution status reached '{expected_status}' for "
+                    f"{expected_count} job(s):"
+                ),
+            )
             return statuses
         time.sleep(0.5)
+    job_snapshots, backend_snapshot = _print_execution_status_snapshot(
+        split_root, manifest
+        ,
+        (
+            f"Execution status timed out while waiting for "
+            f"'{expected_status}' on {expected_count} job(s):"
+        ),
+    )
     raise RuntimeError(
         f"Timed out waiting for {expected_count} jobs to reach status '{expected_status}'. "
-        f"Observed statuses: {statuses}"
+        f"Observed statuses: {statuses}. "
+        f"Backend status: {backend_snapshot}. "
+        f"Per-job snapshots: {job_snapshots}"
     )
 
 
 def wait_until_execution_counts(split_root, expected_counts, timeout=60):
     manifest = load_manifest(split_root)
     deadline = time.time() + timeout
+    statuses = []
     while time.time() < deadline:
         statuses = []
         for job in manifest["jobs"]:
@@ -105,9 +171,21 @@ def wait_until_execution_counts(split_root, expected_counts, timeout=60):
                 counts_ok = False
                 break
         if counts_ok:
+            _print_execution_status_snapshot(
+                split_root,
+                manifest,
+                f"Execution counts reached {expected_counts}:",
+            )
             return statuses
         time.sleep(0.5)
+    job_snapshots, backend_snapshot = _print_execution_status_snapshot(
+        split_root, manifest
+        ,
+        f"Execution counts timed out while waiting for {expected_counts}:",
+    )
     raise RuntimeError(
         f"Timed out waiting for execution counts {expected_counts}. "
-        f"Observed statuses: {statuses}"
+        f"Observed statuses: {statuses}. "
+        f"Backend status: {backend_snapshot}. "
+        f"Per-job snapshots: {job_snapshots}"
     )
