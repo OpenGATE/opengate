@@ -66,7 +66,7 @@ if __name__ == "__main__":
     phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
 
     # go
-    sim.run()
+    sim.run(start_new_process=True)
 
     # redo test changing the MeanEnergyPerIonPair
     root_filename = phsp.output_filename
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     print(f"set MeanEnergyPerIonPair to {ionisation.GetMeanEnergyPerIonPair() / eV} eV")
 
     # go
-    sim.run(start_new_process=True)
+    sim.run()
 
     # test: no mean energy, should be mostly colinear
     gamma_pairs = read_gamma_pairs(root_filename)
