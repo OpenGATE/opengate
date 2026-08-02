@@ -64,13 +64,16 @@ if __name__ == "__main__":
     phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
 
     # go
-    sim.run(start_new_process=True)
+    sim.run()
 
     # redo test changing the MeanEnergyPerIonPair
     root_filename = phsp.output_filename
     phsp.output_filename = (
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
+    # FIXME: This direct Geant4 ionisation mutation relies on a live runtime
+    # object, so the follow-up simulation cannot be dispatched with
+    # start_new_process=True.
     ionisation.SetMeanEnergyPerIonPair(mean_energy)
     print(f"set MeanEnergyPerIonPair to {ionisation.GetMeanEnergyPerIonPair() / eV} eV")
 
