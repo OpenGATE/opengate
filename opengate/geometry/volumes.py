@@ -1341,7 +1341,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 # Added TetrahedralMesh volume support.
 #
 # This generic geometry class delegates MRCP-specific parsing to
-# opengate.contrib.phantoms.mrcp_utils and mesh construction to opengate_core.
+# opengate.contrib.mrcp.mrcp_utils and mesh construction to opengate_core.
 # -----------------------------------------------------------------------------
 class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
     """OpenGATE volume backed by a parameterised Geant4 tetrahedral mesh.
@@ -1365,7 +1365,7 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
 
         # Import locally to avoid coupling the generic geometry module to the
         # contrib package during OpenGATE module initialization.
-        from opengate.contrib.phantoms import mrcp_utils
+        from opengate.contrib.mrcp import mrcp_utils
 
         material_definitions, region_to_name = (
             mrcp_utils.parse_mrcp_material_file(self.material_file)
