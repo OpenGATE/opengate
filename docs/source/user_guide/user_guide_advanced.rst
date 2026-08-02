@@ -128,8 +128,8 @@ Geant4 default material
     # Set the value of MeanEnergyPerIonPair to the desired value. Here, we use the recommended 5.0 eV.
     ionisation.SetMeanEnergyPerIonPair(5.0 * eV)
 
-.. important:: 
-    
+.. important::
+
     This direct adaptation of the ionisation relies on a live runtime Geant4 object, so the simulation cannot be dispatched with start_new_process=True.
 
 
