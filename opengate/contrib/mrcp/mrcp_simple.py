@@ -25,11 +25,11 @@ sim.visu_type = "qt"
 phantom = sim.add_volume("TetrahedralMesh", "phantom_tetmesh")
 phantom.mother = "world"
 phantom.material = "G4_Galactic"
-phantom.node_file = str(data_dir / "MRCP_AF_heart_lung.node")
-phantom.ele_file = str(data_dir / "MRCP_AF_heart_lung.ele")
-phantom.material_file = str(data_dir / "MRCP_AF_heart_lung.material")
+phantom.node_file = str(data_dir / "sample.node")
+phantom.ele_file = str(data_dir / "sample.ele")
+phantom.material_file = str(data_dir / "sample.material")
 # Assign visualization colors to the material/organ indices.
-phantom.color_file = str(data_dir / "colour.dat")
+phantom.color_file = str(data_dir / "sample_colour.dat")
 
 # Use vacuum for any tetrahedron whose material index is not defined.
 phantom.default_material = "G4_Galactic"

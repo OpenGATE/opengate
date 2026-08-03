@@ -49,6 +49,11 @@ struct NodeTable {
   int n_points{0};
 };
 
+struct IndexedNodeRec {
+  int id{0};
+  NodeRec node;
+};
+
 struct EleRec {
   int id{0};
   int n1{0}, n2{0}, n3{0}, n4{0};
@@ -88,8 +93,10 @@ static NodeTable read_node_file(const std::string &path,
   if (n_points <= 0 || dim < 3)
     throw std::runtime_error("Unexpected .node header values in: " + path);
 
-  std::vector<NodeRec> nodes(static_cast<size_t>(n_points));  // stored 0..N-1
-  int read_count = 0;
+  // Read all indexed records first. The index base must be known before a
+  // record can be placed safely in the zero-based storage vector.
+  std::vector<IndexedNodeRec> indexed_nodes;
+  indexed_nodes.reserve(static_cast<size_t>(n_points));
   int min_idx = std::numeric_limits<int>::max();
   int max_idx = std::numeric_limits<int>::min();
 
@@ -106,39 +113,42 @@ static NodeTable read_node_file(const std::string &path,
     min_idx = std::min(min_idx, idx);
     max_idx = std::max(max_idx, idx);
 
-    // We'll temporarily store using a 0-based slot; decide base after first pass heuristics.
-    // For now, store only if idx is in a plausible range for either convention.
-    if (0 <= idx && idx < n_points) {
-      nodes[static_cast<size_t>(idx)] =
-          NodeRec{x * input_length_unit, y * input_length_unit,
-                  z * input_length_unit};
-      read_count++;
-    } else if (1 <= idx && idx <= n_points) {
-      nodes[static_cast<size_t>(idx - 1)] =
-          NodeRec{x * input_length_unit, y * input_length_unit,
-                  z * input_length_unit};
-      read_count++;
-    }
+    indexed_nodes.push_back(
+        IndexedNodeRec{idx, NodeRec{x * input_length_unit,
+                                    y * input_length_unit,
+                                    z * input_length_unit}});
   }
 
-  if (read_count == 0)
-    throw std::runtime_error("No nodes were read from: " + path);
+  if (indexed_nodes.size() != static_cast<size_t>(n_points))
+    throw std::runtime_error(
+        "Node count does not match .node header in: " + path);
+
+  int index_base = 0;
+  if (min_idx == 0 && max_idx == n_points - 1) {
+    index_base = 0;
+  } else if (min_idx == 1 && max_idx == n_points) {
+    index_base = 1;
+  } else {
+    throw std::runtime_error(
+        "Node indices must span either 0..N-1 or 1..N in: " + path);
+  }
+
+  std::vector<NodeRec> nodes(static_cast<size_t>(n_points));
+  std::vector<bool> assigned(static_cast<size_t>(n_points), false);
+  for (const auto &record : indexed_nodes) {
+    const int slot = record.id - index_base;
+    if (slot < 0 || slot >= n_points)
+      throw std::runtime_error("Node index out of range in: " + path);
+    if (assigned[static_cast<size_t>(slot)])
+      throw std::runtime_error("Duplicate node index in: " + path);
+    nodes[static_cast<size_t>(slot)] = record.node;
+    assigned[static_cast<size_t>(slot)] = true;
+  }
 
   NodeTable t;
   t.nodes = std::move(nodes);
+  t.index_base = index_base;
   t.n_points = n_points;
-
-  // Determine index base from observed min/max.
-  // Typical TetGen: either 0..N-1 or 1..N.
-  if (min_idx == 0 && max_idx == n_points - 1) {
-    t.index_base = 0;
-  } else if (min_idx == 1 && max_idx == n_points) {
-    t.index_base = 1;
-  } else {
-    // Mixed or unusual; pick base by whether 0 appears.
-    t.index_base = (min_idx == 0) ? 0 : 1;
-  }
-
   return t;
 }
 
