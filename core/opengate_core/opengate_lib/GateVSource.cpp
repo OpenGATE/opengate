@@ -35,9 +35,9 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
 
   // get user info about activity or nb of events
-  fVectorOfMaxN = DictGetVecInt(user_info, "n");
+  fVectorOfMaxN = DictGetVecInt(user_info, "number_of_primaries");
   fMaxN = fVectorOfMaxN[0];
-  // fMaxN= DictGetInt(user_info, "n");
+  // fMaxN = DictGetInt(user_info, "number_of_primaries");
   fActivity = DictGetDouble(user_info, "activity");
   fInitialActivity = fActivity;
 

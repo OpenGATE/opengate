@@ -2,11 +2,13 @@ from PIL import DcxImagePlugin
 import copy
 import io
 import os
+import random
 import shutil
 import weakref
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 import sys
+import warnings
 
 import opengate_core as g4
 from anytree import LoopError, RenderTree
@@ -18,11 +20,15 @@ from .base import (
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
     process_cls,
-    _get_user_info_options,
 )
 from .definitions import __world_name__
 from .engines import SimulationEngine
-from .exception import GateDeprecationError, GateImplementationError, fatal, warning
+from .exception import (
+    GateDeprecationError,
+    GateImplementationError,
+    fatal,
+    warning,
+)
 from .geometry.fields import FieldBase, field_types
 from .geometry.materials import MaterialDatabase
 from .logger import *
@@ -37,7 +43,16 @@ from .physics import (
 )
 from .processing import dispatch_to_subprocess
 from .runtiming import assert_run_timing
-from .serialization import dump_json, dumps_json, load_json, loads_json
+from .serialization import (
+    dump_json,
+    dumps_json,
+    load_json,
+    loads_json,
+    _apply_path_modifier_recursively,
+    _collect_input_file_values_from_gate_object_dictionary,
+    _find_metaimage_payload_files,
+    _rewrite_path_against_reference,
+)
 from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.gansources import GANPairsSource, GANSource
@@ -201,34 +216,6 @@ actor_types = {
 }
 
 
-def _find_metaimage_payload_files(header_path):
-    payload_files = []
-    try:
-        with open(header_path, "r") as header_file:
-            for line in header_file:
-                if "=" not in line:
-                    continue
-                key, value = [part.strip() for part in line.split("=", 1)]
-                if key != "ElementDataFile":
-                    continue
-                if value.upper() == "LOCAL":
-                    return []
-                payload_path = Path(value)
-                if not payload_path.is_absolute():
-                    payload_path = header_path.parent / payload_path
-                if payload_path.is_file():
-                    payload_files.append(payload_path.resolve())
-                else:
-                    warning(
-                        f"MetaImage header '{header_path}' references payload file "
-                        f"'{payload_path}', but that file does not exist."
-                    )
-                break
-    except OSError as error:
-        warning(f"Unable to inspect MetaImage header '{header_path}': {error}")
-    return payload_files
-
-
 class FilterManager:
     """
     Manage all the Filters in the simulation
@@ -279,6 +266,12 @@ class FilterManager:
         return filter
 
     def add_filter_deprecated(self, filt, name=None):
+        warnings.warn(
+            "FilterManager.add_filter_deprecated() is deprecated. "
+            "Use FilterManager.add_filter() with an explicit filter object instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if isinstance(filt, str):
             if name is None:
                 fatal("You must provide a name for the filter.")
@@ -296,11 +289,17 @@ class FilterManager:
             return new_filter
 
     def create_filter_deprecated(self, filter_type, name):
+        warnings.warn(
+            "FilterManager.create_filter_deprecated() is deprecated. "
+            "Create the filter object explicitly instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         for filter_obj in self.filters.values():
-            filter_obj.resolve_and_validate_config()
+            filter_obj.resolve_and_validate_config(context=context)
 
 
 class SourceManager(GateObject):
@@ -418,12 +417,14 @@ class SourceManager(GateObject):
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         for source in self.sources.values():
             # Resolve each source against the master simulation timing now so
             # split jobs inherit explicit global timing anchors and normalized
             # source configuration.
-            source.resolve_and_validate_config(self.simulation.run_timing_intervals)
+            source.resolve_and_validate_config(
+                self.simulation.run_timing_intervals, context=context
+            )
 
         dynamic_sources = self.dynamic_sources
         for source in dynamic_sources:
@@ -496,9 +497,51 @@ class ActorManager(GateObject):
     def reset(self):
         self.__init__(simulation=self.simulation)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         for actor in self.sorted_actors:
-            actor.resolve_and_validate_config()
+            actor.resolve_and_validate_config(context=context)
+
+    def compare_with(self, other, mode="merge_target_compatibility"):
+        """Compare this actor manager against another one and report differences.
+
+        The first implementation is intentionally conservative and focuses on the
+        structure needed by split-job merge: actor names and actor-output names.
+        Deeper semantic comparisons can be added later in the respective actor
+        classes without changing the merge-manager entry point.
+        """
+        differences = []
+
+        if not isinstance(other, ActorManager):
+            return [
+                f"Object type mismatch: expected ActorManager, received {type(other).__name__}."
+            ]
+
+        self_actor_names = set(self.actors.keys())
+        other_actor_names = set(other.actors.keys())
+        if self_actor_names != other_actor_names:
+            missing_in_self = sorted(other_actor_names - self_actor_names)
+            missing_in_other = sorted(self_actor_names - other_actor_names)
+            if missing_in_self:
+                differences.append(
+                    "Missing actors in target simulation: " f"{missing_in_self}."
+                )
+            if missing_in_other:
+                differences.append(
+                    "Extra actors in target simulation: " f"{missing_in_other}."
+                )
+
+        for actor_name in sorted(self_actor_names.intersection(other_actor_names)):
+            actor_differences = self.actors[actor_name].compare_with(
+                other.actors[actor_name], mode=mode
+            )
+            differences.extend(
+                [
+                    f"Actor '{actor_name}': {difference}"
+                    for difference in actor_differences
+                ]
+            )
+
+        return differences
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -611,6 +654,12 @@ class ActorManager(GateObject):
 
     def remove_actor(self, name):
         self.actors.pop(name)
+
+    def plan_merge(self, mode="as_configured"):
+        output_plans = []
+        for actor_name, actor in self.actors.items():
+            output_plans.extend(actor.plan_merge(mode=mode))
+        return output_plans
 
     def _create_actor(self, actor_type, name):
         cls = None
@@ -1075,7 +1124,7 @@ class PhysicsManager(GateObject):
         #         )
         #     self.user_info.user_limits_particles[pn] = True
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
@@ -1115,7 +1164,7 @@ class PhysicsManager(GateObject):
         # volume registry during config handling so invalid references fail
         # early, before any Geant4 initialization begins.
         for region in self.regions.values():
-            region.resolve_and_validate_config()
+            region.resolve_and_validate_config(context=context)
 
         if (
             len(
@@ -1467,6 +1516,18 @@ class VolumeManager(GateObject):
         # Workaround: material database files are still managed outside the
         # GateObject tree, so their filenames must be serialized explicitly.
         d["material_database_filenames"] = list(self.material_database.filenames)
+        # Workaround: custom materials added programmatically are not yet
+        # represented by a dedicated GateObject/manager either, so persist
+        # their constructor arguments explicitly until the material handling is
+        # refactored into a proper config object model.
+        d["material_database_new_materials_nb_atoms"] = {
+            name: list(args)
+            for name, args in self.material_database.new_materials_nb_atoms.items()
+        }
+        d["material_database_new_materials_weights"] = {
+            name: list(args)
+            for name, args in self.material_database.new_materials_weights.items()
+        }
         return d
 
     def from_dictionary(self, d):
@@ -1476,6 +1537,13 @@ class VolumeManager(GateObject):
         # state is not yet represented by a dedicated GateObject/manager.
         for filename in d.get("material_database_filenames", []):
             self.add_material_database(filename)
+        # Workaround: restore custom programmatically-added materials
+        # explicitly for split/reload workflows until material handling is
+        # refactored into a proper config object model.
+        for args in d.get("material_database_new_materials_nb_atoms", {}).values():
+            self.material_database.add_material_nb_atoms(*args)
+        for args in d.get("material_database_new_materials_weights", {}).values():
+            self.material_database.add_material_weights(*args)
         # Restore fields before volumes so that volume references are valid
         for k, v in d.get("fields", {}).items():
             field_type = v["object_type"]
@@ -1524,7 +1592,7 @@ class VolumeManager(GateObject):
     def dynamic_volumes(self):
         return [vol for vol in self.volumes.values() if vol.is_dynamic]
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         # Resolve the volume tree explicitly during the configuration phase so
         # invalid mother references and tree loops fail early instead of only
         # when some later property access triggers a lazy update.
@@ -1724,6 +1792,16 @@ def _setter_hook_progress_hook(simulation, value):
     return value
 
 
+def _setter_hook_simulation_dir(simulation, value):
+    return Path(value)
+
+
+def _setter_hook_output_dir(simulation, value):
+    if hasattr(simulation, "_output_dir_was_user_set"):
+        simulation._output_dir_was_user_set = True
+    return Path(value)
+
+
 class Simulation(GateObject):
     """
     Main class that store a simulation.
@@ -1757,6 +1835,7 @@ class Simulation(GateObject):
     random_engine: str
     random_seed: Union[str, int]
     run_timing_intervals: List[List[float]]
+    simulation_dir: Path
     output_dir: Path
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
@@ -1766,6 +1845,9 @@ class Simulation(GateObject):
     progress_hook_interval: Optional[float]
     dyn_geom_open_close: bool
     dyn_geom_optimise: bool
+
+    default_simulation_filename = Path("simulation.json")
+    default_resolved_simulation_filename = Path("simulation_resolved.json")
 
     user_info_defaults = {
         "verbose_level": (
@@ -1923,17 +2005,37 @@ class Simulation(GateObject):
                 "Setting a specific value will make subsequent simulation runs to produce identical results."
             },
         ),
+        "current_random_seed": (
+            None,
+            {
+                "doc": "Concrete integer seed resolved from random_seed for the current configuration or most recent run.",
+                "read_only": True,
+            },
+        ),
         "run_timing_intervals": (
             [[0 * g4_units.second, 1 * g4_units.second]],
             {
                 "doc": "A list of timing intervals provided as 2-element lists of begin and end values"
             },
         ),
+        "simulation_dir": (
+            Path("."),
+            {
+                "doc": "Structural root directory of the simulation. "
+                "This folder contains simulation.json, archived input files, "
+                "and, for split campaigns, the job000X subfolders.",
+                "setter_hook": _setter_hook_simulation_dir,
+                "required_type": Path,
+            },
+        ),
         "output_dir": (
-            ".",
+            Path("output"),
             {
                 "doc": "Directory to which any output is written, "
-                "unless an absolute path is provided for a specific output."
+                "unless an absolute path is provided for a specific output. "
+                "If relative, it is resolved relative to the simulation's simulation_dir.",
+                "setter_hook": _setter_hook_output_dir,
+                "required_type": Path,
             },
         ),
         "store_json_archive": (
@@ -2026,6 +2128,7 @@ class Simulation(GateObject):
         self.log_handler_id = -1
         self.log_output = ""
         _setter_hook_verbose_level(self, INFO)
+        self._output_dir_was_user_set = "output_dir" in kwargs
 
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
@@ -2049,10 +2152,8 @@ class Simulation(GateObject):
         self.user_hook_after_run = None
         self.user_hook_log = None
 
-        # read-only info
-        self._current_random_seed = None
-
         self.expected_number_of_events = None
+        self._merge_coordinators = []
 
     def __setstate__(self, state):
         super().__setstate__(state)
@@ -2069,6 +2170,40 @@ class Simulation(GateObject):
             f"Actors         : {self.actor_manager}"
         )
         return s
+
+    def compare_with(self, other, mode="merge_target_compatibility"):
+        """Compare this simulation against another one and report differences.
+
+        The current scaffold supports the merge-target compatibility check used
+        by split-job merging. It deliberately compares only the structural
+        elements the merge workflow currently depends on.
+        """
+        differences = []
+
+        if not isinstance(other, Simulation):
+            return [
+                f"Object type mismatch: expected Simulation, received {type(other).__name__}."
+            ]
+
+        if mode == "merge_target_compatibility":
+            self_run_timing_intervals = [
+                [interval[0], interval[1]] for interval in self.run_timing_intervals
+            ]
+            other_run_timing_intervals = [
+                [interval[0], interval[1]] for interval in other.run_timing_intervals
+            ]
+            if self_run_timing_intervals != other_run_timing_intervals:
+                differences.append(
+                    "run_timing_intervals differ: "
+                    f"target={self_run_timing_intervals}, "
+                    f"reference={other_run_timing_intervals}."
+                )
+
+        actor_differences = self.actor_manager.compare_with(
+            other.actor_manager, mode=mode
+        )
+        differences.extend(actor_differences)
+        return differences
 
     @property
     def output(self):
@@ -2087,10 +2222,6 @@ class Simulation(GateObject):
         return self.volume_manager.world_volume
 
     @property
-    def current_random_seed(self):
-        return self._current_random_seed
-
-    @property
     def warnings(self):
         return self._user_warnings
 
@@ -2102,6 +2233,15 @@ class Simulation(GateObject):
         # as required by the base class implementation of warn_user()
         self._user_warnings.append(message)
         super().warn_user(message)
+
+    def set_merge_coordinators(self, merge_coordinators):
+        self._merge_coordinators = list(merge_coordinators)
+
+    def add_merge_coordinator(self, merge_coordinator):
+        self._merge_coordinators.append(merge_coordinator)
+
+    def has_merge_coordinators(self):
+        return len(self._merge_coordinators) > 0
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -2134,51 +2274,35 @@ class Simulation(GateObject):
     def to_json_string(self):
         return dumps_json(self.to_dictionary())
 
-    def _rewrite_input_paths_in_dict(self, dct, base_dir, mode):
+    def _rewrite_input_paths_in_dict(self, dct, base_dir, path_mode):
         """Rewrite serialized input-file paths relative to a JSON base directory.
 
-        mode="relativize" stores input paths relative to the directory
-        containing simulation.json. mode="resolve" restores relative paths from
-        that same base directory when rehydrating a simulation from disk.
+        ``path_mode="relative"`` stores input paths relative to the directory
+        containing simulation.json. ``path_mode="absolute"`` restores them
+        against that same directory when rehydrating a simulation from disk.
         """
 
         updated_dct = copy.deepcopy(dct)
-        base_dir = Path(base_dir).resolve()
+        base_dir = Path(base_dir).absolute()
 
-        def rewrite_path(path_obj):
-            original_is_path = isinstance(path_obj, Path)
-            path_obj = Path(path_obj)
-            if mode == "relativize":
-                rewritten_path = Path(os.path.relpath(path_obj.resolve(), base_dir))
-            elif mode == "resolve":
-                if path_obj.is_absolute():
-                    rewritten_path = path_obj
-                else:
-                    rewritten_path = (base_dir / path_obj).resolve()
-            else:
-                fatal(f"Unknown path rewrite mode '{mode}'.")
-            if original_is_path:
-                return rewritten_path
-            return str(rewritten_path)
-
-        def rewrite_value(obj):
-            if isinstance(obj, (Path, str)):
-                return rewrite_path(obj)
-            if isinstance(obj, dict):
-                return {k: rewrite_value(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [rewrite_value(v) for v in obj]
-            if isinstance(obj, tuple):
-                return tuple(rewrite_value(v) for v in obj)
-            return obj
+        def rewrite_input_path(path):
+            return _rewrite_path_against_reference(path, base_dir, path_mode)
 
         for go_dict in find_all_gate_objects(updated_dct):
-            object_type = go_dict["object_type"]
-            class_module = go_dict["class_module"]
-            for ui_name, ui_value in list(go_dict["user_info"].items()):
-                options = _get_user_info_options(ui_name, object_type, class_module)
-                if options.get("is_input_file") is True:
-                    go_dict["user_info"][ui_name] = rewrite_value(ui_value)
+            _, direct_input_file_names, dynamic_input_file_names = (
+                _collect_input_file_values_from_gate_object_dictionary(go_dict)
+            )
+            for ui_name in direct_input_file_names:
+                go_dict["user_info"][ui_name] = _apply_path_modifier_recursively(
+                    go_dict["user_info"][ui_name], rewrite_input_path
+                )
+            dynamic_params = go_dict["user_info"].get("dynamic_params") or {}
+            for parametrisation in dynamic_params.values():
+                for ui_name in dynamic_input_file_names:
+                    if ui_name in parametrisation:
+                        parametrisation[ui_name] = _apply_path_modifier_recursively(
+                            parametrisation[ui_name], rewrite_input_path
+                        )
 
         # Workaround: material database files are not yet represented as proper
         # GateObjects with declarative input-file metadata, so their serialized
@@ -2188,7 +2312,7 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                rewrite_value(filename)
+                _apply_path_modifier_recursively(filename, rewrite_input_path)
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]
@@ -2198,12 +2322,42 @@ class Simulation(GateObject):
 
     def to_json_file(self, directory=None, filename=None):
         if filename is None:
-            filename = Path("simulation.json")
-        directory = self.get_output_path(directory, is_file_or_directory="d")
+            filename = self.default_simulation_filename
+        directory = self.get_root_path(directory, is_file_or_directory="d")
         d = self.to_dictionary()
-        d = self._rewrite_input_paths_in_dict(d, directory, mode="relativize")
+        d = self._rewrite_input_paths_in_dict(d, directory, path_mode="relative")
         with open(directory / filename, "w") as f:
             dump_json(d, f)
+
+    def write_simulation_json(self, directory=None, filename=None):
+        """Write the authored simulation configuration under the structural root.
+
+        This persists the current user-facing configuration without implying
+        that resolve_and_validate_config() has been run beforehand.
+        """
+        if filename is None:
+            filename = self.default_simulation_filename
+        self.to_json_file(directory=directory, filename=filename)
+        return self.get_root_path(directory, is_file_or_directory="d") / filename
+
+    def write_resolved_simulation_json(
+        self, directory=None, filename=None, context=None
+    ):
+        """Write the resolved simulation configuration under the structural root.
+
+        Note: resolve_and_validate_config() is intentionally allowed to mutate
+        the simulation configuration. This method makes that resolved state
+        explicit on disk instead of overwriting the authored simulation.json.
+        """
+        if filename is None:
+            filename = self.default_resolved_simulation_filename
+        self.resolve_and_validate_config(context=context)
+        directory = self.get_root_path(directory, is_file_or_directory="d")
+        d = self._get_resolved_simulation_dictionary()
+        d = self._rewrite_input_paths_in_dict(d, directory, path_mode="relative")
+        with open(directory / filename, "w") as f:
+            dump_json(d, f)
+        return self.get_root_path(directory, is_file_or_directory="d") / filename
 
     def archive_input_files(
         self,
@@ -2212,20 +2366,21 @@ class Simulation(GateObject):
         link_files=False,
         update_input_paths_in_dict=False,
     ):
-        directory = self.get_output_path(directory, is_file_or_directory="d")
+        directory = self.get_root_path(directory, is_file_or_directory="d")
         if dct is None:
             dct = self.to_dictionary()
         input_files = []
+        simulation_dir = Path(self.simulation_dir).absolute()
         for go_dict in find_all_gate_objects(dct):
-            input_files.extend(
-                [
-                    p
-                    for p in find_paths_in_gate_object_dictionary(
-                        go_dict, only_input_files=True
-                    )
-                    if p.is_file() is True
-                ]
+            go_input_files, _, _ = (
+                _collect_input_file_values_from_gate_object_dictionary(go_dict)
             )
+            for input_path in go_input_files:
+                path_obj = Path(input_path)
+                if path_obj.is_absolute() is False:
+                    path_obj = (simulation_dir / path_obj).absolute()
+                if path_obj.is_file() is True:
+                    input_files.append(path_obj)
 
         # Workaround: material database files are not yet represented as proper
         # GateObjects with declarative input-file metadata, so they must be added
@@ -2289,30 +2444,41 @@ class Simulation(GateObject):
             return dct
 
         updated_dct = copy.deepcopy(dct)
-        archive_path_map = {Path(f).resolve(): Path(f).name for f in unique_input_files}
+        archive_path_map = {
+            Path(f).resolve(): (directory / Path(f).name).absolute()
+            for f in unique_input_files
+        }
 
-        def rewrite_archived_input_paths(obj):
-            if isinstance(obj, Path):
-                return Path(archive_path_map.get(obj.resolve(), obj.name))
-            if isinstance(obj, str):
-                return archive_path_map.get(Path(obj).resolve(), Path(obj).name)
-            if isinstance(obj, dict):
-                return {k: rewrite_archived_input_paths(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [rewrite_archived_input_paths(v) for v in obj]
-            if isinstance(obj, tuple):
-                return tuple(rewrite_archived_input_paths(v) for v in obj)
-            return obj
+        def rewrite_archived_input_path(path):
+            source_path = Path(path)
+            if source_path.is_absolute() is False:
+                source_path = (simulation_dir / source_path).absolute()
+            rewritten_path = archive_path_map.get(
+                source_path.resolve(), (directory / Path(path).name).absolute()
+            )
+            return _rewrite_path_against_reference(
+                rewritten_path,
+                directory,
+                path_mode="relative",
+            )
 
         for go_dict in find_all_gate_objects(updated_dct):
-            object_type = go_dict["object_type"]
-            class_module = go_dict["class_module"]
-            for ui_name, ui_value in list(go_dict["user_info"].items()):
-                options = _get_user_info_options(ui_name, object_type, class_module)
-                if options.get("is_input_file") is True:
-                    go_dict["user_info"][ui_name] = rewrite_archived_input_paths(
-                        ui_value
-                    )
+            _, direct_input_file_names, dynamic_input_file_names = (
+                _collect_input_file_values_from_gate_object_dictionary(go_dict)
+            )
+            for ui_name in direct_input_file_names:
+                go_dict["user_info"][ui_name] = _apply_path_modifier_recursively(
+                    go_dict["user_info"][ui_name],
+                    rewrite_archived_input_path,
+                )
+            dynamic_params = go_dict["user_info"].get("dynamic_params") or {}
+            for parametrisation in dynamic_params.values():
+                for ui_name in dynamic_input_file_names:
+                    if ui_name in parametrisation:
+                        parametrisation[ui_name] = _apply_path_modifier_recursively(
+                            parametrisation[ui_name],
+                            rewrite_archived_input_path,
+                        )
 
         # Workaround: material database files are not yet represented as proper
         # GateObjects with declarative input-file metadata, so their serialized
@@ -2322,7 +2488,7 @@ class Simulation(GateObject):
             and "material_database_filenames" in updated_dct["volume_manager"]
         ):
             updated_dct["volume_manager"]["material_database_filenames"] = [
-                rewrite_archived_input_paths(filename)
+                _apply_path_modifier_recursively(filename, rewrite_archived_input_path)
                 for filename in updated_dct["volume_manager"][
                     "material_database_filenames"
                 ]
@@ -2331,9 +2497,11 @@ class Simulation(GateObject):
         return updated_dct
 
     def copy_input_files(self, directory=None, dct=None, link_files=False):
-        warning(
+        warnings.warn(
             "Simulation.copy_input_files() is deprecated. "
-            "Use Simulation.archive_input_files(...) instead."
+            "Use Simulation.archive_input_files(...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
         self.archive_input_files(directory=directory, dct=dct, link_files=link_files)
 
@@ -2344,19 +2512,54 @@ class Simulation(GateObject):
         path = Path(path).resolve()
         with open(path, "r") as f:
             d = load_json(f)
-        d = self._rewrite_input_paths_in_dict(d, path.parent, mode="resolve")
+        d = self._rewrite_input_paths_in_dict(d, path.parent, path_mode="absolute")
         self.from_dictionary(d)
+        serialized_output_dir = d.get("user_info", {}).get("output_dir", Path("output"))
+        self._output_dir_was_user_set = Path(serialized_output_dir) != Path(".")
+        if Path(self.simulation_dir).is_absolute():
+            self.simulation_dir = Path(self.simulation_dir)
+        else:
+            self.simulation_dir = (path.parent / self.simulation_dir).resolve()
+
+    def get_root_path(self, path=None, is_file_or_directory="file", suffix=None):
+        if path is None:
+            p_out = Path(self.simulation_dir)
+        else:
+            p = Path(path)
+            if not p.is_absolute():
+                p_out = Path(self.simulation_dir) / p
+            else:
+                p_out = p
+
+        if suffix is not None:
+            p_out = insert_suffix_before_extension(p_out, suffix)
+
+        if is_file_or_directory in ["file", "File", "f"]:
+            n = len(p_out.parts) - 1
+        elif is_file_or_directory in ["dir", "Dir", "directory", "d"]:
+            n = len(p_out.parts)
+        if len(p_out.parts) > 0 and n > 0:
+            directory = Path(p_out.parts[0])
+            for i in range(n - 1):
+                directory /= p_out.parts[i + 1]
+            ensure_directory_exists(directory)
+
+        return p_out.absolute().resolve()
 
     def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
+        output_root_dir = Path(self.output_dir)
+        if not output_root_dir.is_absolute():
+            output_root_dir = (Path(self.simulation_dir) / output_root_dir).resolve()
+
         if path is None:
             # no input -> return global output directory
-            p_out = Path(self.output_dir)
+            p_out = output_root_dir
         else:
             # make sure type is Path
             p = Path(path)
             if not p.is_absolute():
                 # prepend the global output dir if p is relative
-                p_out = self.output_dir / p
+                p_out = output_root_dir / p
             else:
                 # or just keep it
                 p_out = p
@@ -2490,6 +2693,17 @@ class Simulation(GateObject):
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
 
+    def plan_merge(self, mode="as_configured"):
+        return self.actor_manager.plan_merge(mode=mode)
+
+    def execute_merge(self):
+        for merge_coordinator in self._merge_coordinators:
+            merge_coordinator.execute_merge()
+
+    def finalize_merge(self):
+        for merge_coordinator in self._merge_coordinators:
+            merge_coordinator.finalize_merge()
+
     def find_actors(self, sub_str, case_sensitive=False):
         return self.actor_manager.find_actors(sub_str, case_sensitive)
 
@@ -2512,17 +2726,79 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
-    def resolve_and_validate_config(self):
+    def _is_split_child_simulation_context(self):
+        try:
+            return (self.simulation_dir / "job_metadata.json").exists()
+        except Exception:
+            return False
+
+    def _get_activity_based_source_names(self):
+        source_names = []
+        for source in self.source_manager.sources.values():
+            try:
+                if source.activity is not None and float(source.activity) > 0:
+                    source_names.append(source.name)
+            except Exception:
+                continue
+        return source_names
+
+    def warn_if_multithreaded_activity_sources_present(self):
+        activity_source_names = self._get_activity_based_source_names()
+        if len(activity_source_names) == 0:
+            return
+
+        names = ", ".join(activity_source_names)
+        if self.number_of_threads > 1:
+            self.warn_user(
+                "\n"
+                "===+++===+++===+++===+++===+++===+++===+++===+++===\n"
+                "===+++===+++ MULTITHREAD WARNING +++===+++===+++===\n"
+                "===+++===+++===+++===+++===+++===+++===+++===+++===\n"
+                "\n"
+                "The definition of source.activity has changed!"
+                "\n"
+                "OpenGATE now interprets source.activity as the "
+                "total source activity "
+                "\n"
+                "and scales it internally for multithreaded runs. "
+                "\n"
+                "Do NOT divide activity manually by the "
+                "number of threads!"
+                "\n"
+                "Activity-based sources detected in this simulation: "
+                f"{names}."
+                "\n"
+                "===+++===+++===+++===+++===+++===+++===+++===+++===\n"
+                "\n"
+            )
+
+    def resolve_and_validate_config(self, context=None):
         # Keep this phase limited to Python-side configuration resolution and
         # negotiation before runtime initialization. It may tie managers and
         # actors together, but it must not create any Geant4 objects yet.
         assert_run_timing(self.run_timing_intervals)
-        self.physics_manager.resolve_and_validate_config()
+        # Resolve the user-facing seed specification into the concrete seed for
+        # this resolved configuration. Ordinary runs consume it directly, while
+        # split preparation freezes it into the campaign before deriving one
+        # deterministic child seed per job.
+        if self.random_seed == "auto":
+            self.user_info["current_random_seed"] = random.randrange(sys.maxsize)
+        else:
+            self.user_info["current_random_seed"] = int(self.random_seed)
+        if self._output_dir_was_user_set is False and Path(self.output_dir) == Path(
+            "."
+        ):
+            self.warn_user(
+                "This simulation still uses the historical implicit output_dir='.'. "
+                "The recommended default is output_dir='output'. If you rely on the "
+                "current-directory behavior, please set sim.output_dir explicitly."
+            )
+        self.physics_manager.resolve_and_validate_config(context=context)
         self.initialize_source_before_g4_engine()
-        self.volume_manager.resolve_and_validate_config()
-        self.source_manager.resolve_and_validate_config()
-        self.actor_manager.resolve_and_validate_config()
-        self.filter_manager.resolve_and_validate_config()
+        self.volume_manager.resolve_and_validate_config(context=context)
+        self.source_manager.resolve_and_validate_config(context=context)
+        self.actor_manager.resolve_and_validate_config(context=context)
+        self.filter_manager.resolve_and_validate_config(context=context)
 
     def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
@@ -2539,13 +2815,70 @@ class Simulation(GateObject):
             output = se.run_engine()
         return output
 
-    def run(self, start_new_process=False):
+    def run(
+        self,
+        start_new_process=False,
+        number_of_jobs=None,
+        wait_for_result=True,
+        campaign_dir=None,
+        split_policy="split_in_time_total",
+        merge_after_run=True,
+        cleanup_after_run=False,
+        poll_interval=1.0,
+        timeout=None,
+    ):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
                 "Error, the multi-thread option is not available for Windows now. "
                 "Run the simulation with one thread."
             )
+
+        if number_of_jobs is not None:
+            try:
+                number_of_jobs = int(number_of_jobs)
+            except (TypeError, ValueError) as error:
+                fatal(
+                    f"Simulation.run(number_of_jobs=...) expects an integer or None. "
+                    f"Received: {number_of_jobs}"
+                )
+
+            if number_of_jobs < 1:
+                fatal(
+                    f"Simulation.run(number_of_jobs=...) requires number_of_jobs >= 1. "
+                    f"Received: {number_of_jobs}"
+                )
+
+            if number_of_jobs == 1:
+                start_new_process = True
+            else:
+                from .jobs import SplitRunMergeController
+
+                if start_new_process is True:
+                    fatal(
+                        "Simulation.run() received both start_new_process=True and "
+                        "number_of_jobs>1. Split runs are already process-managed "
+                        "through SplitRunMergeController/local_pool."
+                    )
+
+                split_run_controller = SplitRunMergeController(
+                    simulation=self,
+                    campaign_dir=campaign_dir,
+                    split_policy=split_policy,
+                    backend="local_pool",
+                    merge=merge_after_run,
+                    cleanup=cleanup_after_run,
+                )
+                split_run_controller.execute(
+                    number_of_jobs=number_of_jobs,
+                    wait_for_result=wait_for_result,
+                    poll_interval=poll_interval,
+                    timeout=timeout,
+                )
+                return split_run_controller
+
+        if self._is_split_child_simulation_context() is False:
+            self.warn_if_multithreaded_activity_sources_present()
 
         # prepare the subprocess
         if start_new_process is True:
@@ -2591,7 +2924,7 @@ class Simulation(GateObject):
 
         # store the hook log
         self.user_hook_log = output.user_hook_log
-        self._current_random_seed = output.current_random_seed
+        self.user_info["current_random_seed"] = output.current_random_seed
 
         # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
         if self.volume_manager.material_database is None:

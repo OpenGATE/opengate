@@ -113,8 +113,9 @@ class PhotonFromIonDecaySource(GenericSource):
                 sub_source, g4_src, tac_times, tac_activities
             )
 
-            # check
-            self.check_ui_activity(sub_source)
+            # Ensure each resolved sub-source is validated against the global
+            # campaign timing before it is registered on the source manager.
+            sub_source.resolve_and_validate_config(self.run_timing_intervals)
             self.check_confine(sub_source)
 
             # Initialize the thread-local C++ source instance
@@ -174,7 +175,10 @@ def update_sub_source_tac_activity(sub_source, g4_source, tac_times, tac_activit
         # IMPORTANT : activities must be x by total here
         # (not before, because it can be called several times in MT mode)
         if g4_source is not None:
-            g4_source.SetTAC(tac_times, np.array(tac_activities) * total)
+            tac_values = np.array(tac_activities) * total
+            if sub_source.simulation.multithreaded:
+                tac_values = tac_values / int(sub_source.simulation.number_of_threads)
+            g4_source.SetTAC(tac_times, tac_values)
 
     if sub_source.verbose:
         print(
@@ -766,6 +770,7 @@ def phid_build_one_sub_source(stype, source, daughter, ene, w, first_nuclide):
     source.log += f" {len(ene)} gammas, with total weights = {np.sum(w) * 100:.2f}%\n"
     name = f"{source.name}__{stype}_of_{daughter.nuclide.nuclide}"
     s = PhotonFromIonDecaySource(name=name)
+    s.simulation = source.simulation
     s.is_a_sub_source = True
     s.sub_sources = []
     s.position = copy.deepcopy(source.position)
@@ -779,7 +784,7 @@ def phid_build_one_sub_source(stype, source, daughter, ene, w, first_nuclide):
     s.energy.spectrum_weights = w
     s.energy.spectrum_energies = ene
     s.activity = source.activity
-    s.n = source.n
+    s.number_of_primaries = source.number_of_primaries
 
     # prepare times and activities that will be set during initialisation
     s.tac_from_decay_parameters = {

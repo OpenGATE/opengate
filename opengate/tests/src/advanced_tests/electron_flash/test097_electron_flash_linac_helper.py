@@ -34,7 +34,7 @@ def create_electron_flash_simulation(paths, passive_collimation, fantom):
     if sim.visu:
         sim.number_of_threads = 1
         number_of_total_events = 1
-    number_of_events = int(number_of_total_events / sim.number_of_threads) + 1
+    number_of_events = int(number_of_total_events) + 1
 
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 

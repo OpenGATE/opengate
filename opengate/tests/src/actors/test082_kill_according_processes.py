@@ -85,7 +85,7 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, -1]
     source.energy.type = "mono"
     source.energy.mono = 1 * MeV
-    source.n = 100000
+    source.number_of_primaries = 100000
 
     tungsten = sim.add_volume("Box", "tungsten_box")
     tungsten.size = [3 * cm, 3 * cm, 1 * cm]

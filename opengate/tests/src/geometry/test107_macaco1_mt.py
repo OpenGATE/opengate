@@ -462,7 +462,7 @@ def main():
     src = sim.add_source("GenericSource", "Na22_decay")
     src.particle = "ion 11 22"
     src.attached_to = src_holder
-    src.activity = 847e3 * Bq
+    src.activity = 3388e3 * Bq
     src.position.type = "point"
     src.direction.type = "iso"
     src.user_particle_life_time = 0

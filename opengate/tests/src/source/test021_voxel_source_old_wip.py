@@ -70,7 +70,7 @@ if __name__ == "__main__":
     """
     source = sim.add_source("GenericSource", "s_odd")
     source.particle = "alpha"
-    source.activity = 1000 * Bq / sim.number_of_threads
+    source.activity = 1000 * Bq
     source.direction.type = "iso"
     source.attached_to = "ct_odd"
     source.position.translation = [10 * mm, 10 * mm, 10 * mm]
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # source from sphere
     source = sim.add_source("GenericSource", "s_even")
     source.particle = "alpha"
-    source.activity = 1000 * Bq / sim.number_of_threads
+    source.activity = 1000 * Bq
     source.direction.type = "iso"
     source.attached_to = "ct_even"
     source.position.translation = [0 * mm, 0 * mm, 0 * mm]
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     source = sim.add_source("VoxelSource", "vox")
     source.attached_to = "ct_even"
     source.particle = "alpha"
-    source.activity = 1000 * Bq / sim.number_of_threads
+    source.activity = 1000 * Bq
     source.image = paths.data / "five_pixels.mha"
     source.direction.type = "iso"
     source.position.translation = [0 * mm, 0 * mm, 0 * mm]

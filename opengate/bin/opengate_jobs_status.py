@@ -4,7 +4,7 @@ import click
 import colored
 import opengate_core as g4
 from opengate.exception import color_error
-from opengate.jobs import get_jobs_status
+from opengate.jobs import jobs_status
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -25,10 +25,11 @@ def format_timing_intervals(intervals):
 def print_jobs_status_summary(status_data, verbose=False):
     intervals = status_data.get("original_run_timing_intervals", [])
     print(f" Manifest file:      {status_data['manifest_path']}")
-    print(f" Root directory:     {status_data['split_root_folder']}")
+    print(f" Campaign dir:       {status_data['campaign_dir']}")
     print(f" Simulation ID:      {status_data['simulation_id']}")
     print(f" Created at:         {status_data['created_at']}")
     print(f" Split policy:       {status_data['policy']}")
+    print(f" Prefer resolved:    {status_data.get('prefer_resolved_simulation', True)}")
     print(f" Number of jobs:     {status_data['number_of_jobs']}")
     print(f" Time intervals:     {format_timing_intervals(intervals)}")
     master_str = (
@@ -37,6 +38,15 @@ def print_jobs_status_summary(status_data, verbose=False):
         else colored.stylize("Missing", color_error)
     )
     print(f" Master simulation:  {master_str}")
+    print(f"   Path:             {status_data['master_simulation_path']}")
+    resolved_exists = status_data.get("resolved_simulation_exists", False)
+    resolved_path = status_data.get("resolved_simulation_path")
+    if resolved_path is not None:
+        resolved_str = (
+            "Found" if resolved_exists else colored.stylize("Missing", color_error)
+        )
+        print(f" Resolved sim:       {resolved_str}")
+        print(f"   Path:             {resolved_path}")
     master_inputs = status_data.get("master_input_files", [])
     if master_inputs:
         print(" Master input files:")
@@ -93,13 +103,13 @@ def print_jobs_status_summary(status_data, verbose=False):
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("manifest_or_dir", type=click.Path(exists=True))
+@click.argument("campaign_dir", type=click.Path(exists=True, file_okay=False))
 @click.option("-v", "--verbose", is_flag=True, help="Print verbose job metadata")
-def go(manifest_or_dir, verbose):
+def go(campaign_dir, verbose):
     """
-    Print a status summary for an OpenGATE job split campaign given a manifest file or directory.
+    Print a status summary for an OpenGATE job split campaign given its folder.
     """
-    status_data = get_jobs_status(manifest_or_dir)
+    status_data = jobs_status(campaign_dir)
     print_jobs_status_summary(status_data, verbose=verbose)
 
 

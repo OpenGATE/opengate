@@ -240,7 +240,7 @@ if __name__ == "__main__":
     source.position.type = "point"
     source.position.radius = 1 * mm
     source.position.translation = [0 * mm, -300 * mm, 0 * mm]
-    source.n = number_of_particles
+    source.number_of_primaries = number_of_particles
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 

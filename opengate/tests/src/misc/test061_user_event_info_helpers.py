@@ -33,7 +33,7 @@ def create_simulation(sim, paths, name):
     s1.position.radius = 1 * nm
     s1.position.translation = [0, 0, 0]
     s1.direction.type = "iso"
-    s1.n = 50
+    s1.number_of_primaries = 50
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")

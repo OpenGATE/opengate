@@ -45,7 +45,7 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 10 * mm
     source.direction.type = "iso"
-    source.n = 2
+    source.number_of_primaries = 2
 
     # add debug actor
     debug = sim.add_actor("DebugActor", "debug")
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     print(f"Simulation json saved in {sim.output_dir / archive_filename}")
 
     # assertions to verify MT execution and output recovery
-    assert stat.counts.events == 2 * sim.number_of_threads
+    assert stat.counts.events == 2
     assert stat.counts.runs == sim.number_of_threads
 
     is_ok = True

@@ -109,7 +109,7 @@ if __name__ == "__main__":
     # Source for box1: shoots along +Z, aligned with box1 centre
     src1 = sim.add_source("GenericSource", "src_box1")
     src1.particle = "proton"
-    src1.n = [1, 1]
+    src1.number_of_primaries = [1, 1]
     src1.energy.type = "mono"
     src1.energy.mono = KE
     src1.position.type = "point"
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     # Source for box2: shoots along +Z, aligned with box2 centre
     src2 = sim.add_source("GenericSource", "src_box2")
     src2.particle = "proton"
-    src2.n = [1, 1]
+    src2.number_of_primaries = [1, 1]
     src2.energy.type = "mono"
     src2.energy.mono = KE
     src2.position.type = "point"

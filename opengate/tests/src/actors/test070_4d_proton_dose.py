@@ -85,7 +85,7 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 10 * mm
     source.position.translation = [40 * cm, 0, 0 * cm]
-    # source.n = 10000
+    # source.number_of_primaries = 10000
     source.activity = 10000 * Bq
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]

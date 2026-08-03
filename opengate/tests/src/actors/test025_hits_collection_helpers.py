@@ -82,7 +82,7 @@ def create_simulation(nb_threads):
     source.position.translation = [0, 0, -15 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 50000 * Bq / sim.number_of_threads
+    source.activity = 50000 * Bq
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")

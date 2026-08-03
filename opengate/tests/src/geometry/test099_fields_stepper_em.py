@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
         src = sim.add_source("GenericSource", f"src_{stepper_name}")
         src.particle = "proton"
-        src.n = 1
+        src.number_of_primaries = 1
         src.energy.type = "mono"
         src.energy.mono = T
         src.position.type = "point"

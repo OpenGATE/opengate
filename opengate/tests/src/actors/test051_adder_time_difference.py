@@ -79,7 +79,7 @@ if __name__ == "__main__":
     s1.position.radius = 1 * nm
     s1.position.translation = [0, 0, 0]
     s1.direction.type = "iso"
-    s1.activity = 1e4 * Bq / sim.number_of_threads
+    s1.activity = 1e4 * Bq
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

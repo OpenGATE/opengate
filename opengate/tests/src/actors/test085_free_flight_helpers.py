@@ -57,13 +57,13 @@ def create_simulation_test085(
     deg = gate.g4_units.deg
 
     # options
-    activity = ac * BqmL / sim.number_of_threads
+    activity = ac * BqmL
     radius = 28 * cm
 
     # visu
     if sim.visu:
         sim.number_of_threads = 1
-        activity = 50 * BqmL / sim.number_of_threads
+        activity = 50 * BqmL
 
     # world
     world = sim.world

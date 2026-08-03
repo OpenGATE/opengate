@@ -63,8 +63,8 @@ def create_simu(material):
     source.position.translation = [0, 0, -100 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    # source.n = 100000
-    source.n = 10000
+    # source.number_of_primaries = 100000
+    source.number_of_primaries = 10000
 
     # stats
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

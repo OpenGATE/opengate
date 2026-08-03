@@ -20,7 +20,7 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     sim.output_dir = paths.output
 
     Ntotal = N_events
-    N_per_trhead = int(np.round(Ntotal / sim.number_of_threads))
+    N_per_trhead = int(np.round(Ntotal))
 
     # units
     cm = gate.g4_units.cm
@@ -58,7 +58,7 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = N_per_trhead
+    source.number_of_primaries = N_per_trhead
 
     # define actors:
     dose_size = [N_voxels, 1, 1]

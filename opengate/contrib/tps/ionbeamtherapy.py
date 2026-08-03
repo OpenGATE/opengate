@@ -840,7 +840,7 @@ class TreatmentPlanSource:
                 source.activity = nspot * Bq
             else:
                 # nspot = np.round(nspot)
-                source.n = nspot
+                source.number_of_primaries = nspot
 
             tot_sim_particles += nspot
 

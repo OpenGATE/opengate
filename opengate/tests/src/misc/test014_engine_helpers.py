@@ -42,7 +42,7 @@ def define_simulation(sim, paths, threads=1):
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 200000 / sim.number_of_threads
+    source.number_of_primaries = 200000
 
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True

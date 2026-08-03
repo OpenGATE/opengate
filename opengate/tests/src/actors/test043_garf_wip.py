@@ -31,8 +31,8 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
 
     # activity
-    activity = 1e6 * Bq / sim.number_of_threads
-    # activity = 1e2 * Bq / sim.number_of_threads
+    activity = 1e6 * Bq
+    # activity = 1e2 * Bq
 
     # add a material database
     sim.volume_manager.add_material_database(test43.paths.data / "GateMaterials.db")

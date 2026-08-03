@@ -80,7 +80,7 @@ def build_field_simulation(
 
     source = sim.add_source("GenericSource", "particle_source")
     source.particle = particle
-    source.n = n_particles
+    source.number_of_primaries = n_particles
     source.energy.type = "mono"
     source.energy.mono = kinetic_energy
     source.position.type = "point"

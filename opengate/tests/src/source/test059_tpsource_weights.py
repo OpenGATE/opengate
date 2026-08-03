@@ -121,7 +121,7 @@ if __name__ == "__main__":
     nSim = 80000  # particles to simulate per beam
 
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
-    tps.n = nSim
+    tps.number_of_primaries = nSim
     tps.beam_model = beamline
     tps.plan_path = ref_path / "TreatmentPlan2Spots.txt"
     tps.beam_nr = 1

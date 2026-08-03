@@ -111,7 +111,7 @@ if __name__ == "__main__":
     source = sim.add_source("VoxelSource", "vox_source")
     source.attached_to = ct.name
     source.particle = "alpha"
-    source.n = [2000, 2000]
+    source.number_of_primaries = [2000, 2000]
     source.image = str(source_image_1_path)
     source.direction.type = "iso"
     source.position.translation = gate.image.get_translation_between_images_center(

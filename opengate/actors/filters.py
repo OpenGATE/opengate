@@ -68,7 +68,7 @@ class FilterBase(GateObject):
     def __initcpp__(self):
         """Nothing to do in the base class."""
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         pass
 
     def initialize(self):
@@ -309,9 +309,9 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
     def __initcpp__(self):
         g4.GateBooleanFilter.__init__(self)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         for subfilter in self.filters:
-            subfilter.resolve_and_validate_config()
+            subfilter.resolve_and_validate_config(context=context)
 
     def from_dictionary(self, d):
         serialized_subfilters = d["user_info"].get("filters", [])
@@ -394,7 +394,7 @@ class AttributeComparisonFilter(FilterBase):
         # Create an instance of the chosen class
         return super().__new__(cls)
 
-    def resolve_and_validate_config(self):
+    def resolve_and_validate_config(self, context=None):
         if self.user_info.attribute is None:
             fatal(f"The parameter 'attribute' is required for filter '{self.name}'.")
 

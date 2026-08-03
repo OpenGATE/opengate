@@ -183,10 +183,12 @@ class Digitizer:
         if "input_digi_collection" in mod.user_info:
             mod.input_digi_collection = self.actors[index - 1].name
         first_key = next(iter(mod.user_output))
-        if module_type == "DigitizerProjectionActor":
-            mod.user_output[first_key].set_write_to_disk(False)
-        else:
-            mod.user_output[first_key].write_to_disk = False
+        # ``mod.user_output[...]`` returns the raw ActorOutput object, not the
+        # user-facing interface proxy. Disabling persistence must therefore go
+        # through the explicit setter method so the internal item config is
+        # updated, instead of creating a stray Python attribute named
+        # ``write_to_disk`` on the ActorOutput instance.
+        mod.user_output[first_key].set_write_to_disk(False)
         self.actors.append(mod)
         return mod
 
@@ -250,8 +252,8 @@ class DigitizerBase(ActorBase):
     #         )
     #     return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.authorize_repeated_volumes is True:
             return
         att = self.attached_to
@@ -275,6 +277,22 @@ class DigitizerBase(ActorBase):
 
     def initialize(self):
         ActorBase.initialize(self)
+
+    def end_simulation_action(self):
+        """Finalize digitizer outputs on the Python side.
+
+        This lower-case helper contains the reusable Python-side end-of-
+        simulation logic. Concrete ``EndSimulationAction()`` trampoline methods
+        should call their actor-specific C++ ``EndSimulationAction()`` first and
+        then forward here, either directly or via this base implementation.
+        """
+        for user_output in self.user_output.values():
+            user_output.end_of_simulation()
+
+    def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
+        self.end_simulation_action()
 
 
 class DigitizerWithRootOutput(DigitizerBase):
@@ -366,8 +384,8 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
         g4.GateDigitizerAdderActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if (
             self.policy != "EnergyWinnerPosition"
             and self.policy != "EnergyWeightedCentroidPosition"
@@ -401,7 +419,10 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
         g4.GateDigitizerAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerAdderActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringActor):
@@ -489,8 +510,8 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
 
     def initialize(self):
@@ -551,7 +572,10 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeActor):
@@ -619,8 +643,8 @@ class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeAc
         g4.GateDigitizerDeadTimeActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
 
@@ -648,7 +672,10 @@ class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeAc
         g4.GateDigitizerDeadTimeActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerDeadTimeActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor):
@@ -738,8 +765,8 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
         g4.GateDigitizerPileupActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
 
@@ -765,7 +792,10 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
         g4.GateDigitizerPileupActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerPileupActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerSpatialBlurringActor(
@@ -868,8 +898,8 @@ class DigitizerSpatialBlurringActor(
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
 
     def initialize(self):
@@ -882,7 +912,10 @@ class DigitizerSpatialBlurringActor(
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerSpatialBlurringActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerEfficiencyActor(
@@ -941,8 +974,8 @@ class DigitizerEfficiencyActor(
                 f"Efficency set to {self.efficiency}, which is not in [0;1]."
             )
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
 
     def initialize(self):
@@ -955,7 +988,10 @@ class DigitizerEfficiencyActor(
         g4.GateDigitizerEfficiencyActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerEfficiencyActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerEnergyWindowsActor(
@@ -1019,8 +1055,10 @@ class DigitizerEnergyWindowsActor(
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        DigitizerBase.EndSimulationAction(self)
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerHitsCollectionActor(
@@ -1078,8 +1116,10 @@ class DigitizerHitsCollectionActor(
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        DigitizerBase.EndSimulationAction(self)
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
@@ -1098,7 +1138,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     detector_orientation_matrix: np.ndarray
 
     user_info_defaults = {
-        # FIXME: implement a setter hook so the user can provided digitizer instances instead of their name,
+        # FIXME: implement a setter hook so the user can provide digitizer instances instead of their name,
         # like in attached_to
         "input_digi_collections": (
             ["Hits"],
@@ -1154,8 +1194,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         # for the moment, we cannot use this actor with several volumes
         m = self.attached_to
         if hasattr(m, "__len__") and not isinstance(m, str):
@@ -1295,12 +1335,19 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
         # keep the initial origin
         self.start_output_origin = list(
-            self.user_output.counts.data_per_run[0].get_image_properties()[0].origin
+            self.user_output.counts.data_per_run[0].get_image_properties().origin
         )
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
+
+        self.end_simulation_action()
+
+    def end_simulation_action(self):
+        """Transfer the projection image from C++ to Python and finalize outputs."""
 
         # retrieve the image
         self.user_output.counts.store_data(
@@ -1308,7 +1355,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         )
 
         # set its properties
-        info = self.user_output.counts.data_per_run[0].get_image_properties()[0]
+        info = self.user_output.counts.data_per_run[0].get_image_properties()
         spacing = info.spacing
         if self.origin_as_image_center:
             origin = -info.size * spacing / 2.0 + spacing / 2.0
@@ -1316,12 +1363,23 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             origin = self.start_output_origin
         origin[2] = 0
         spacing[2] = 1
-        self.user_output.counts.merged_data.SetSpacing(list(spacing))
-        self.user_output.counts.merged_data.SetOrigin(list(origin))
+        self.user_output.counts.merged_data.image.SetSpacing(list(spacing))
+        self.user_output.counts.merged_data.image.SetOrigin(list(origin))
 
+        # FIXME: DigitizerProjectionActor currently uses ``data_per_run[0]`` as
+        # temporary internal scaffolding for image properties/runtime setup and
+        # later moves the actual result into ``merged_data`` before deleting
+        # the run-0 slot. This works pragmatically but blurs the actor-output
+        # semantics: per-run slots should represent true user-facing per-run
+        # output, not internal scratch state. Revisit this actor so temporary
+        # runtime bookkeeping is structurally separate from actual output slots.
+        #
+        # Related concern: this method still writes certain outputs explicitly
+        # instead of relying purely on the generic actor-output finalization
+        # path below, which suggests the projection actor does not yet align
+        # cleanly with the standard actor-output workflow.
         # remove the image for run 0 as the result is in merged_data
         self.user_output.counts.data_per_run.pop(0)
-
         self.user_output.counts.write_data_if_requested(which="merged")
 
         # squared ?
@@ -1329,10 +1387,12 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             self.user_output.squared_counts.store_data(
                 "merged", get_py_image_from_cpp_image(self.fSquaredImage)
             )
-            self.user_output.squared_counts.merged_data.SetSpacing(list(spacing))
-            self.user_output.squared_counts.merged_data.SetOrigin(list(origin))
+            self.user_output.squared_counts.merged_data.image.SetSpacing(list(spacing))
+            self.user_output.squared_counts.merged_data.image.SetOrigin(list(origin))
             self.user_output.squared_counts.data_per_run.pop(0)
             self.user_output.squared_counts.write_data_if_requested(which="merged")
+
+        DigitizerBase.end_simulation_action(self)
 
 
 class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterActor):
@@ -1432,8 +1492,8 @@ class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterAc
         g4.GateCoincidenceSorterActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
 
@@ -1459,7 +1519,10 @@ class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterAc
         g4.GateCoincidenceSorterActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateCoincidenceSorterActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
@@ -1491,8 +1554,8 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.user_info.discretize_volume is None:
             fatal('Please, set the option "discretize_volume"')
         self.simulation.volume_manager.get_volume(self.user_info.discretize_volume)
@@ -1507,7 +1570,10 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         g4.GateDigitizerReadoutActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerReadoutActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
@@ -1557,8 +1623,8 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
 
-    def resolve_and_validate_config(self):
-        super().resolve_and_validate_config()
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if isinstance(self.steps_to_store, str):
             requested_steps = self.steps_to_store.split()
         else:
@@ -1595,13 +1661,20 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
+        g4.GatePhaseSpaceActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
+
+    def end_simulation_action(self):
+        """Capture phase-space summary counters and finalize ROOT output."""
         self.number_of_absorbed_events = self.GetNumberOfAbsorbedEvents()
         self.total_number_of_entries = self.GetTotalNumberOfEntries()
         if self.total_number_of_entries == 0:
             self.warn_user(
                 f"Empty output, no particles stored in {self.get_output_path()}"
             )
-        g4.GatePhaseSpaceActor.EndSimulationAction(self)
+        DigitizerBase.end_simulation_action(self)
 
 
 class DigiAttributeProcessDefinedStepInVolumeActor(

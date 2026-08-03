@@ -24,7 +24,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 2
     sim.output_dir = paths.output
 
-    numPartSimTest = 40000 / sim.number_of_threads
+    numPartSimTest = 40000
     numPartSimRef = 1e5
 
     # units
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
     # print(dir(source.energy))
-    source.n = numPartSimTest
+    source.number_of_primaries = numPartSimTest
     # source.activity = 100 * kBq
 
     size = [50, 1, 1]

@@ -115,7 +115,7 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
 
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
-    tps.n = 20000
+    tps.number_of_primaries = 20000
     tps.beam_model = IR2HBL
     tps.plan_path = ref_path / "PlanCentralSpot_1440MeV.txt"
     tps.beam_nr = 1

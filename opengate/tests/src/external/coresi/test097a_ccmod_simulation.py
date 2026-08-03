@@ -73,7 +73,7 @@ if __name__ == "__main__":
     source.position.radius = 0.25 * mm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.activity = 0.847 * MBq / sim.number_of_threads
+    source.activity = 0.847 * MBq
 
     # acquisition time
     if sim.visu:

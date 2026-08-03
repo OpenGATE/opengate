@@ -474,7 +474,7 @@ def add_electron_source(sim, linac_name, ekin, sx, sy):
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, -1]
     source.direction_relative_to_attached_volume = True
-    source.n = 10
+    source.number_of_primaries = 10
     return source
 
 

@@ -189,7 +189,7 @@ if __name__ == "__main__":
     nSim = 40000  # particles to simulate per beam
     print("--- Flat spots distribution ---")
     tps_flat = sim.add_source("TreatmentPlanPBSource", "flat")
-    tps_flat.n = nSim
+    tps_flat.number_of_primaries = nSim
     tps_flat.end_time = 0.5 * s
     tps_flat.flat_generation = True
     tps_flat.beam_model = beamline
@@ -201,7 +201,7 @@ if __name__ == "__main__":
 
     print("--- Proportional spots distribution ---")
     tps_non_flat = sim.add_source("TreatmentPlanPBSource", "proportional")
-    tps_non_flat.n = nSim
+    tps_non_flat.number_of_primaries = nSim
     tps_non_flat.start_time = 0.5 * s
     tps_non_flat.flat_generation = False
     tps_non_flat.beam_model = beamline

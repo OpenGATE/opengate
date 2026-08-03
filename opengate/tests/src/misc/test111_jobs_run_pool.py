@@ -29,17 +29,16 @@ if __name__ == "__main__":
 
     sim = build_simple_simulation(paths.output / "pool_input")
     split_root = gate.jobs_split(
-        sim, 4, paths.output / "pool_campaign", policy="split_in_time_per_run"
-    )
+        simulation=sim,
+        number_of_jobs=4,
+        campaign_dir=paths.output / "pool_campaign",
+        policy="split_in_time_per_run",
+    ).campaign_dir
 
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": 3,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=3,
     )
     is_ok = is_ok and utility.print_test(
         summary["submitted_jobs"] == 4
@@ -73,11 +72,7 @@ if __name__ == "__main__":
     summary_second = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": 3,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=3,
     )
     is_ok = is_ok and utility.print_test(
         summary_second["submitted_jobs"] == 0
@@ -95,18 +90,14 @@ if __name__ == "__main__":
         gate.jobs_run(
             split_root,
             backend="local_pool",
-            backend_options={
-                "n_workers": 3,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            number_of_workers=3,
         )
     except Exception as error:
-        running_failure_detected = "restart_running_jobs=True" in str(error)
+        running_failure_detected = "allow_rerun_running=True" in str(error)
 
     is_ok = is_ok and utility.print_test(
         running_failure_detected,
-        "jobs_run detects a persisted running job and asks for restart_running_jobs=True",
+        "jobs_run detects a persisted running job and asks for allow_rerun_running=True",
     )
 
     print(
@@ -120,13 +111,9 @@ if __name__ == "__main__":
     summary_failed = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": 3,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
-        force=True,
-        restart_running_jobs=True,
+        number_of_workers=3,
+        force_rerun_completed=True,
+        allow_rerun_running=True,
     )
     is_ok = is_ok and utility.print_test(
         summary_failed["submitted_jobs"] == 4

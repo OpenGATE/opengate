@@ -38,8 +38,11 @@ if __name__ == "__main__":
 
     sim = build_simple_simulation(paths.output / "slurm_input")
     split_root = gate.jobs_split(
-        sim, 2, paths.output / "slurm_campaign", policy="split_in_time_per_run"
-    )
+        simulation=sim,
+        number_of_jobs=2,
+        campaign_dir=paths.output / "slurm_campaign",
+        policy="split_in_time_per_run",
+    ).campaign_dir
 
     # Realistic example for manual usage against a Slurm installation:
     #

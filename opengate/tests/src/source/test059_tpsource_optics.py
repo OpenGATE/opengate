@@ -117,7 +117,7 @@ if __name__ == "__main__":
     ntot = beam_data_dict["msw_beam"]
     tps = sim.add_source("TreatmentPlanPBSource", "TP source")
     tps.beam_model = IR2HBL
-    tps.n = nSim
+    tps.number_of_primaries = nSim
     tps.particle = "ion 6 12"
     tps.beam_data_dict = beam_data_dict
     # add stat actor
