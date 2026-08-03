@@ -653,17 +653,28 @@ class TetrahedralMeshEnvelopeSolid(SolidBase):
         minx = miny = minz = 1e30
         maxx = maxy = maxz = -1e30
         with open(node_file, "r") as node_stream:
+            # The first non-comment line is the TetGen header
+            # (<number of points> <dimension> <attributes> <boundary markers>),
+            # not a node coordinate. Read and validate it before parsing nodes.
             for line in node_stream:
                 stripped = line.strip()
                 if not stripped or stripped.startswith("#"):
                     continue
                 parts = stripped.split()
-                if len(parts) >= 4 and parts[0].lstrip("+-").isdigit():
-                    x, y, z = float(parts[1]), float(parts[2]), float(parts[3])
-                    minx, miny, minz = min(minx, x), min(miny, y), min(minz, z)
-                    maxx, maxy, maxz = max(maxx, x), max(maxy, y), max(maxz, z)
-                    break
+                if len(parts) < 4:
+                    fatal(f"Invalid TetGen node header in {node_file}")
+                try:
+                    number_of_points = int(parts[0])
+                    dimension = int(parts[1])
+                except ValueError:
+                    fatal(f"Invalid TetGen node header in {node_file}")
+                if number_of_points <= 0 or dimension < 3:
+                    fatal(f"Invalid TetGen node header values in {node_file}")
+                break
+            else:
+                fatal(f"Cannot find TetGen node header in {node_file}")
 
+            read_count = 0
             for line in node_stream:
                 stripped = line.strip()
                 if not stripped or stripped.startswith("#"):
@@ -677,9 +688,13 @@ class TetrahedralMeshEnvelopeSolid(SolidBase):
                     continue
                 minx, miny, minz = min(minx, x), min(miny, y), min(minz, z)
                 maxx, maxy, maxz = max(maxx, x), max(maxy, y), max(maxz, z)
+                read_count += 1
 
-        if minx > 1e20:
-            fatal(f"Cannot parse node bounds from {node_file}")
+        if read_count != number_of_points:
+            fatal(
+                f"TetGen node count mismatch in {node_file}: "
+                f"header declares {number_of_points}, read {read_count}"
+            )
         return (minx, miny, minz), (maxx, maxy, maxz)
 
     def get_bbox_size_and_center_mm(self):

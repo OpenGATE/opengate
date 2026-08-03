@@ -1340,8 +1340,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 # -----------------------------------------------------------------------------
 # Added TetrahedralMesh volume support.
 #
-# This generic geometry class delegates MRCP-specific parsing to
-# opengate.contrib.mrcp.mrcp_utils and mesh construction to opengate_core.
+# MRCP-specific input parsing is kept private to this volume class, while mesh
+# construction is delegated to opengate_core.
 # -----------------------------------------------------------------------------
 class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
     """OpenGATE volume backed by a parameterised Geant4 tetrahedral mesh.
@@ -1360,18 +1360,135 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
         "verbose": (False, {"doc": "Print tetrahedral mesh construction details"}),
     }
 
+    _element_symbols = (
+        "", "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na",
+        "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti",
+        "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As",
+        "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru",
+        "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs",
+        "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy",
+        "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir",
+        "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra",
+        "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es",
+        "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds",
+        "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og",
+    )
+    _material_cache = {}
+
+    @staticmethod
+    def _parse_mrcp_material_file(material_file):
+        """Parse MRCP material blocks and their region IDs."""
+        definitions = {}
+        region_to_name = {}
+        current_name = None
+        current_density = None
+        current_fractions = {}
+
+        def flush_material():
+            nonlocal current_name, current_density, current_fractions
+            if current_name is None:
+                return
+            total = sum(current_fractions.values())
+            if current_density is None or current_density <= 0 or total <= 0:
+                fatal(f"Invalid MRCP material '{current_name}' in {material_file}")
+            definitions[current_name] = {
+                "density_g_cm3": float(current_density),
+                "zfrac": {z: fraction / total for z, fraction in current_fractions.items()},
+            }
+            current_name = None
+            current_density = None
+            current_fractions = {}
+
+        with open(material_file, "r", encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                if stripped.startswith("C"):
+                    tokens = stripped.split()
+                    flush_material()
+                    if len(tokens) >= 3:
+                        current_name = tokens[1]
+                        try:
+                            current_density = float(tokens[2])
+                        except ValueError:
+                            fatal(f"Invalid density at {material_file}:{line_number}")
+                    continue
+                if current_name is None:
+                    fatal(f"Material data before a header at {material_file}:{line_number}")
+                tokens = stripped.split()
+                if tokens[0].startswith("m") and tokens[0][1:].isdigit():
+                    region_to_name[int(tokens[0][1:])] = current_name
+                    if len(tokens) < 3:
+                        continue
+                    element_code, fraction_text = tokens[1], tokens[2]
+                elif len(tokens) >= 2:
+                    element_code, fraction_text = tokens[0], tokens[1]
+                else:
+                    fatal(f"Invalid composition at {material_file}:{line_number}")
+                try:
+                    atomic_number = int(element_code) // 1000
+                    fraction = abs(float(fraction_text))
+                except ValueError:
+                    fatal(f"Invalid composition at {material_file}:{line_number}")
+                if not 0 < atomic_number < len(TetrahedralMeshVolume._element_symbols):
+                    fatal(f"Unsupported atomic number Z={atomic_number}")
+                current_fractions[atomic_number] = current_fractions.get(atomic_number, 0.0) + fraction
+        flush_material()
+        return definitions, region_to_name
+
+    @classmethod
+    def _ensure_custom_material_from_zfrac(cls, name, density_g_cm3, zfrac):
+        """Build once and reuse a material from elemental mass fractions."""
+        if name in cls._material_cache:
+            return cls._material_cache[name]
+        if density_g_cm3 <= 0 or density_g_cm3 > 30:
+            fatal(f"Unreasonable density for '{name}': {density_g_cm3} g/cm3")
+        material = g4.G4Material(name, float(density_g_cm3) * g4_units.g_cm3,
+                                 len(zfrac), g4.kStateSolid,
+                                 293.15 * g4_units.kelvin, g4_units.atmosphere)
+        nist = g4.G4NistManager.Instance()
+        for atomic_number, fraction in sorted(zfrac.items()):
+            element = nist.FindOrBuildElement(cls._element_symbols[int(atomic_number)])
+            material.AddElement(element, float(fraction))
+        cls._material_cache[name] = material
+        return material
+
+    @staticmethod
+    def _parse_colour_dat(color_file):
+        """Parse region RGBA entries used by tetrahedral visualization."""
+        colors = {}
+        if not color_file:
+            return colors
+        if not os.path.isfile(color_file):
+            fatal(f"MRCP color file does not exist: {color_file}")
+        with open(color_file, "r", encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, start=1):
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                tokens = stripped.replace(",", " ").split()
+                if len(tokens) < 4:
+                    fatal(f"Invalid color entry at {color_file}:{line_number}")
+                try:
+                    key = int(tokens[0])
+                    rgba = [float(value) for value in tokens[1:5]]
+                except ValueError:
+                    fatal(f"Invalid color entry at {color_file}:{line_number}")
+                if len(rgba) == 3:
+                    rgba.append(1.0)
+                if any(value < 0.0 or value > 1.0 for value in rgba):
+                    fatal(f"RGBA values must be between 0 and 1 at {color_file}:{line_number}")
+                colors[key] = (rgba, rgba[3] > 0.0)
+        return colors
+
     def _build_region_dicts(self):
         """Build the region-to-material, RGBA, and visibility dictionaries."""
 
-        # Import locally to avoid coupling the generic geometry module to the
-        # contrib package during OpenGATE module initialization.
-        from opengate.contrib.mrcp import mrcp_utils
-
-        material_definitions, region_to_name = (
-            mrcp_utils.parse_mrcp_material_file(self.material_file)
+        material_definitions, region_to_name = self._parse_mrcp_material_file(
+            self.material_file
         )
-
-        colour_table = mrcp_utils.parse_colour_dat(self.color_file)
+        colour_table = self._parse_colour_dat(self.color_file)
 
         # 3) Select the regions used by this volume.
         if self.keep_regions and len(self.keep_regions) > 0:
@@ -1397,7 +1514,7 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
             definition = material_definitions[material_name]
 
             region_to_material[int(rid)] = (
-                mrcp_utils.ensure_custom_material_from_zfrac(
+                self._ensure_custom_material_from_zfrac(
                     material_name,
                     definition["density_g_cm3"],
                     definition["zfrac"],
