@@ -68,7 +68,8 @@ static inline bool is_blank(const std::string &s) {
 }
 
 
-static NodeTable read_node_file(const std::string &path) {
+static NodeTable read_node_file(const std::string &path,
+                                G4double input_length_unit) {
   std::ifstream fin(path);
   if (!fin) throw std::runtime_error("Cannot open .node file: " + path);
 
@@ -108,10 +109,14 @@ static NodeTable read_node_file(const std::string &path) {
     // We'll temporarily store using a 0-based slot; decide base after first pass heuristics.
     // For now, store only if idx is in a plausible range for either convention.
     if (0 <= idx && idx < n_points) {
-      nodes[static_cast<size_t>(idx)] = NodeRec{x, y, z};
+      nodes[static_cast<size_t>(idx)] =
+          NodeRec{x * input_length_unit, y * input_length_unit,
+                  z * input_length_unit};
       read_count++;
     } else if (1 <= idx && idx <= n_points) {
-      nodes[static_cast<size_t>(idx - 1)] = NodeRec{x, y, z};
+      nodes[static_cast<size_t>(idx - 1)] =
+          NodeRec{x * input_length_unit, y * input_length_unit,
+                  z * input_length_unit};
       read_count++;
     }
   }
@@ -287,7 +292,7 @@ static G4VPhysicalVolume *build_tetrahedral_mesh_impl(const std::string &node_pa
                                                         G4Material *default_material,
                                                         const std::string &pv_name,
                                                         G4bool check_overlaps,
-                                                        G4double scale);
+                                                        G4double node_coordinate_unit);
 
 // --------------------------------------------------------------------------------------
 // Material resolver for compat API
@@ -318,7 +323,27 @@ G4VPhysicalVolume *build_tetrahedral_mesh_from_tetgen(const std::string &node_pa
                                                G4double scale) {
   return build_tetrahedral_mesh_impl(node_path, ele_path, mother_lv, region_to_material,
                                        region_to_colour, region_visible,
-                                       default_material, pv_name, check_overlaps, scale);
+                                       default_material, pv_name, check_overlaps,
+                                       scale * mm);
+}
+
+// --------------------------------------------------------------------------------------
+// MRCP API wrapper (MRCP .node coordinates are stored in centimetres)
+// --------------------------------------------------------------------------------------
+G4VPhysicalVolume *build_mrcp_tetrahedral_mesh_from_tetgen(
+    const std::string &node_path,
+    const std::string &ele_path,
+    G4LogicalVolume *mother_lv,
+    const std::map<int, G4Material *> &region_to_material,
+    const std::unordered_map<int, G4Colour> &region_to_colour,
+    const std::unordered_map<int, bool> &region_visible,
+    G4Material *default_material,
+    const std::string &pv_name,
+    G4bool check_overlaps) {
+  // Convert MRCP coordinates to Geant4 internal length units while parsing.
+  return build_tetrahedral_mesh_impl(
+      node_path, ele_path, mother_lv, region_to_material, region_to_colour,
+      region_visible, default_material, pv_name, check_overlaps, cm);
 }
 
 // --------------------------------------------------------------------------------------
@@ -341,7 +366,8 @@ G4VPhysicalVolume *build_tetrahedral_mesh_from_tetgen_material_names(
 
   return build_tetrahedral_mesh_impl(node_path, ele_path, mother_lv, region_to_material_ptr,
                                        /*region_to_colour=*/{}, /*region_visible=*/{},
-                                       /*default_material=*/nullptr, pv_name, check_overlaps, scale);
+                                       /*default_material=*/nullptr, pv_name,
+                                       check_overlaps, scale * mm);
 }
 
 // --------------------------------------------------------------------------------------
@@ -356,7 +382,7 @@ static G4VPhysicalVolume *build_tetrahedral_mesh_impl(const std::string &node_pa
                                                         G4Material *default_material,
                                                         const std::string &pv_name,
                                                         G4bool check_overlaps,
-                                                        G4double scale) {
+                                                        G4double node_coordinate_unit) {
   if (mother_lv == nullptr) throw std::runtime_error("mother_lv is null");
 
   if (default_material == nullptr) {
@@ -365,7 +391,7 @@ static G4VPhysicalVolume *build_tetrahedral_mesh_impl(const std::string &node_pa
       throw std::runtime_error("Cannot build default material G4_AIR");
   }
 
-  const auto node_table = read_node_file(node_path);
+  const auto node_table = read_node_file(node_path, node_coordinate_unit);
   const auto elems = read_ele_file(ele_path);
 
   // Keep tetrahedra centered inside the already-centered mother container LV.
@@ -386,9 +412,9 @@ static G4VPhysicalVolume *build_tetrahedral_mesh_impl(const std::string &node_pa
     max_y = std::max(max_y, n.y);
     max_z = std::max(max_z, n.z);
   }
-  const G4ThreeVector mesh_center(0.5 * (min_x + max_x) * scale * mm,
-                                  0.5 * (min_y + max_y) * scale * mm,
-                                  0.5 * (min_z + max_z) * scale * mm);
+  const G4ThreeVector mesh_center(0.5 * (min_x + max_x),
+                                  0.5 * (min_y + max_y),
+                                  0.5 * (min_z + max_z));
 
   std::vector<G4Tet *> solids;
   solids.reserve(elems.size());
@@ -431,10 +457,10 @@ auto node_at = [&](int id) -> const NodeRec & {
     const auto &c = node_at(e.n3);
     const auto &d = node_at(e.n4);
 
-    const G4ThreeVector p1(a.x * scale * mm, a.y * scale * mm, a.z * scale * mm);
-    const G4ThreeVector p2(b.x * scale * mm, b.y * scale * mm, b.z * scale * mm);
-    const G4ThreeVector p3(c.x * scale * mm, c.y * scale * mm, c.z * scale * mm);
-    const G4ThreeVector p4(d.x * scale * mm, d.y * scale * mm, d.z * scale * mm);
+    const G4ThreeVector p1(a.x, a.y, a.z);
+    const G4ThreeVector p2(b.x, b.y, b.z);
+    const G4ThreeVector p3(c.x, c.y, c.z);
+    const G4ThreeVector p4(d.x, d.y, d.z);
 
     const auto solid_name = pv_name + std::string("_tet_") + std::to_string(e.id);
     solids.push_back(new G4Tet(solid_name,

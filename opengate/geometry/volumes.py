@@ -1459,7 +1459,7 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
                 f"default_material={default_material.GetName()}"
             )
 
-        g4.build_tetrahedral_mesh_from_tetgen(
+        g4.build_mrcp_tetrahedral_mesh_from_tetgen(
             self.node_file,
             self.ele_file,
             self.g4_logical_volume,  # The empty envelope logical volume.
@@ -1469,7 +1469,6 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
             default_material,
             self.pv_name,
             bool(self.check_overlaps),
-            float(self.scale),
         )
 
         self._is_constructed = True

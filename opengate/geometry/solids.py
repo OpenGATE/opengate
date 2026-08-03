@@ -643,7 +643,6 @@ class TetrahedralMeshEnvelopeSolid(SolidBase):
         "ele_file": ("", {"doc": "TetGen .ele file", "is_input_file": True}),
         "material_file": ("", {"doc": "TetGen .material file", "is_input_file": True}),
         "color_file": ("", {"doc": "colour.dat", "is_input_file": True}),
-        "scale": (1.0, {"doc": "Scale factor for node coordinates"}),
         "container_margin_mm": (20.0, {"doc": "Extra margin around node bounds (mm)"}),
     }
 
@@ -684,18 +683,20 @@ class TetrahedralMeshEnvelopeSolid(SolidBase):
         return (minx, miny, minz), (maxx, maxy, maxz)
 
     def get_bbox_size_and_center_mm(self):
-        """Calculate the scaled envelope size and mesh center in millimetres."""
+        """Calculate the MRCP envelope size and mesh center in millimetres."""
 
         (minx, miny, minz), (maxx, maxy, maxz) = self._read_node_bounds(
             self.node_file
         )
-        sc = float(self.scale)
-        cx = 0.5 * (minx + maxx) * sc
-        cy = 0.5 * (miny + maxy) * sc
-        cz = 0.5 * (minz + maxz) * sc
-        sx = (maxx - minx) * sc + 2.0 * float(self.container_margin_mm)
-        sy = (maxy - miny) * sc + 2.0 * float(self.container_margin_mm)
-        sz = (maxz - minz) * sc + 2.0 * float(self.container_margin_mm)
+        # MRCP .node coordinates are centimetres. The envelope is expressed
+        # in millimetres to match the C++ reader's use of Geant4's `cm` unit.
+        cm_in_mm = g4_units.cm / g4_units.mm
+        cx = 0.5 * (minx + maxx) * cm_in_mm
+        cy = 0.5 * (miny + maxy) * cm_in_mm
+        cz = 0.5 * (minz + maxz) * cm_in_mm
+        sx = (maxx - minx) * cm_in_mm + 2.0 * float(self.container_margin_mm)
+        sy = (maxy - miny) * cm_in_mm + 2.0 * float(self.container_margin_mm)
+        sz = (maxz - minz) * cm_in_mm + 2.0 * float(self.container_margin_mm)
         return (sx, sy, sz), (cx, cy, cz)
 
     def build_solid(self):
