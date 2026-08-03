@@ -24,7 +24,6 @@ class MRCPPhantomInfo:
     node_bounds: Tuple[Tuple[float, float, float], Tuple[float, float, float]]
     ele_file_used: Path
     work_dir: Path
-    scale: float
     container_margin_mm: float
     use_filtered_geometry: bool = False
 
@@ -73,7 +72,6 @@ def add_mrcp_phantom(
     vis_hide_keywords: Iterable[str] = (),
     vis_only_keywords: Iterable[str] = (),
     work_dir: str | Path = "output_g4tet_mrcp",
-    scale: float = 10.0,
     phantom_z_mm: float = 0.0,
     container_margin_mm: float = 0.0,
     check_overlaps: bool = False,
@@ -112,6 +110,7 @@ def add_mrcp_phantom(
 
     units = h.define_units()
     mm = units["mm"]
+    cm = units["cm"]
 
     data_dir = _as_path(data_path)
     work_path = Path(work_dir)
@@ -156,9 +155,9 @@ def add_mrcp_phantom(
     center_y = 0.5 * (gminy + gmaxy)
     center_z = 0.5 * (gminz + gmaxz)
     world_center_tr = [
-        center_x * mm,
-        center_y * mm,
-        (center_z + float(phantom_z_mm)) * mm,
+        center_x * cm,
+        center_y * cm,
+        center_z * cm + float(phantom_z_mm) * mm,
     ]
 
     color_file_to_use = h.resolve_visual_color_file(
@@ -178,7 +177,6 @@ def add_mrcp_phantom(
     phantom.ele_file = str(ele_use)
     phantom.material_file = str(material_path)
     phantom.color_file = str(color_file_to_use)
-    phantom.scale = float(scale)
     phantom.container_margin_mm = float(container_margin_mm)
     if use_filtered_geometry:
         phantom.keep_regions = [int(x) for x in geometry_keep_ids]
@@ -202,7 +200,6 @@ def add_mrcp_phantom(
         node_bounds=bbox_native,
         ele_file_used=Path(ele_use),
         work_dir=work_path,
-        scale=float(scale),
         container_margin_mm=float(container_margin_mm),
         use_filtered_geometry=use_filtered_geometry,
     )
@@ -228,10 +225,7 @@ def add_mrcp_dose_actors(
     (Path(simulation.output_dir) / output_subdir).mkdir(parents=True, exist_ok=True)
 
     spacing = float(settings.spacing_mm) * units["mm"]
-    (gminx, gminy, gminz), (gmaxx, gmaxy, gmaxz) = phantom.node_bounds
-    full_sx = (gmaxx - gminx) * phantom.scale + 2.0 * phantom.container_margin_mm
-    full_sy = (gmaxy - gminy) * phantom.scale + 2.0 * phantom.container_margin_mm
-    full_sz = (gmaxz - gminz) * phantom.scale + 2.0 * phantom.container_margin_mm
+    (full_sx, full_sy, full_sz), _ = phantom.volume.get_bbox_size_and_center_mm()
     grid_size = [
         max(1, int(math.ceil(full_sx / settings.spacing_mm))),
         max(1, int(math.ceil(full_sy / settings.spacing_mm))),

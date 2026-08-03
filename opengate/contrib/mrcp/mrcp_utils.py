@@ -243,7 +243,6 @@ def apply_config(config: dict) -> SimpleNamespace:
         ele_file=str(config.get("ele_file", "MRCP_AF.ele")),
         material_file=str(config.get("material_file", "MRCP_AF.material")),
         color_file=str(config.get("color_file", "colour.dat")),
-        phantom_scale=float(config.get("phantom_scale", 10.0)),
         container_margin_mm=float(config.get("container_margin_mm", 0.0)),
         phantom_z_mm=float(config.get("phantom_z_mm", 0.0)),
         check_overlaps=bool(config.get("check_overlaps", False)),

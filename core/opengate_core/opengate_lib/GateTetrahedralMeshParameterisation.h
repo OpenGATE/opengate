@@ -76,6 +76,17 @@ G4VPhysicalVolume *build_tetrahedral_mesh_from_tetgen(
     G4bool check_overlaps,
     G4double scale);
 
+G4VPhysicalVolume *build_mrcp_tetrahedral_mesh_from_tetgen(
+    const std::string &node_path,
+    const std::string &ele_path,
+    G4LogicalVolume *mother_lv,
+    const std::map<int, G4Material *> &region_to_material,
+    const std::unordered_map<int, G4Colour> &region_to_colour,
+    const std::unordered_map<int, bool> &region_visible,
+    G4Material *default_material,
+    const std::string &pv_name,
+    G4bool check_overlaps);
+
 G4VPhysicalVolume *build_tetrahedral_mesh_from_tetgen_material_names(
     G4LogicalVolume *mother_lv,
     const std::string &pv_name,
