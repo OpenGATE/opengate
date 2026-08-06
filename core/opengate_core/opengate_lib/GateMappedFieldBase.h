@@ -10,18 +10,14 @@
 
 #include "GateFieldBase.h"
 #include "GateGridInterpolator.h"
-#include <vector>
 
-class G4VSolid;
+class G4LogicalVolume;
 
 // base class for mapped fields that use grid interpolation
 class GateMappedFieldBase : public GateFieldBase {
 public:
   // constructor
-  GateMappedFieldBase(const G4VSolid *solid,
-                      std::vector<G4ThreeVector> translations,
-                      std::vector<G4RotationMatrix> rotations,
-                      double deltaChordMM,
+  GateMappedFieldBase(const G4LogicalVolume *logicalVolume,
                       GateGridInterpolator::GridDefinition gridDef,
                       GateGridInterpolator::FieldValues fieldValues,
                       GateGridInterpolator::InterpolationMethod interpMethod);
