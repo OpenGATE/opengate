@@ -49,7 +49,7 @@ EXPECTED_DEFLECTION = magnetic_deflection(KE, By, PROTON_MASS, 1 * g4_eplus, BOX
 TOL_DEFLECTED = 0.01 * g4_mm  # deflected axis must stay within this of expected
 TOL_ZERO = 0.01 * g4_mm  # non-deflected axis must stay within this
 
-VISU = True  # set True for interactive qt viewer
+VISU = False  # set True for interactive qt viewer
 
 
 if __name__ == "__main__":
