@@ -278,6 +278,8 @@ Use ``add_field()`` to attach a field to a volume. The volume must already be ad
 
 **Propagation to daughter volumes.** A field attached to a volume automatically propagates to all of its daughter volumes. A daughter volume can override this by attaching its own field. In that case, the parent's field stops at the daughter's boundary and the daughter's field is used inside. This mirrors standard Geant4 behaviour.
 
+**Frame of an inherited field.** A field is always evaluated in the local frame of the volume it is *attached to*, not of the volume the particle happens to be in. So if a daughter inherits its mother's field and is rotated with respect to that mother, the field keeps the mother's orientation: it does not rotate with the daughter. A daughter that attaches its own field uses its own frame instead.
+
 **Behaviour with repeated placements.** When a volume with a field is repeatedly placed (i.e. a logical volume with several physical placements), each physical instance will have the field in its own local coordinate system.
 
 **Behaviour with dynamic geometry changes.** If a field is attached to a volume that is later moved or rotated, the field will move/rotate with it.
