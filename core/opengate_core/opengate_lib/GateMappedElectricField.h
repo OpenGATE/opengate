@@ -10,17 +10,15 @@
 
 #include "GateMappedFieldBase.h"
 #include <G4ElectroMagneticField.hh>
-#include <vector>
 
-class G4VSolid;
+class G4LogicalVolume;
 
 // grid-based mapped electric field
 class GateMappedElectricField : public G4ElectroMagneticField,
                                 public GateMappedFieldBase {
 public:
   GateMappedElectricField(
-      const G4VSolid *solid, std::vector<G4ThreeVector> translations,
-      std::vector<G4RotationMatrix> rotations, double deltaChordMM,
+      const G4LogicalVolume *logicalVolume,
       GateGridInterpolator::GridDefinition gridDef,
       GateGridInterpolator::FieldValues fieldValues,
       GateGridInterpolator::InterpolationMethod interpMethod);

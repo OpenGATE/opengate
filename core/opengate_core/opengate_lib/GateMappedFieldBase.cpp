@@ -9,13 +9,11 @@
 
 // constructor
 GateMappedFieldBase::GateMappedFieldBase(
-    const G4VSolid *solid, std::vector<G4ThreeVector> translations,
-    std::vector<G4RotationMatrix> rotations, double deltaChordMM,
+    const G4LogicalVolume *logicalVolume,
     GateGridInterpolator::GridDefinition gridDef,
     GateGridInterpolator::FieldValues fieldValues,
     GateGridInterpolator::InterpolationMethod interpMethod)
-    : GateFieldBase(solid, std::move(translations), std::move(rotations),
-                    deltaChordMM),
+    : GateFieldBase(logicalVolume),
       m_interpolator(gridDef, std::move(fieldValues), interpMethod) {}
 
 // Compute field value at world point: transform to local, interpolate, rotate

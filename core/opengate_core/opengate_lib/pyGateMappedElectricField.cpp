@@ -8,7 +8,7 @@
 #include "GateGridInterpolator.h"
 #include "GateMappedElectricField.h"
 #include <G4ElectroMagneticField.hh>
-#include <G4VSolid.hh>
+#include <G4LogicalVolume.hh>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -32,27 +32,20 @@ void init_GateMappedElectricField(py::module &m) {
              std::unique_ptr<GateMappedElectricField, py::nodelete>>(
       m, "GateMappedElectricField")
 
-      .def(py::init([](const G4VSolid *solid,
-                       std::vector<G4ThreeVector> translations,
-                       std::vector<G4RotationMatrix> rotations,
-                       double delta_chord_mm, int nx, int ny, int nz, double x0,
-                       double y0, double z0, double dx, double dy, double dz,
-                       DoubleArray Ex, DoubleArray Ey, DoubleArray Ez,
+      .def(py::init([](const G4LogicalVolume *logical_volume, int nx, int ny,
+                       int nz, double x0, double y0, double z0, double dx,
+                       double dy, double dz, DoubleArray Ex, DoubleArray Ey,
+                       DoubleArray Ez,
                        GateGridInterpolator::InterpolationMethod interp) {
              GateGridInterpolator::GridDefinition gridDef{nx, ny, nz, x0, y0,
                                                           z0, dx, dy, dz};
              GateGridInterpolator::FieldValues fieldValues{
                  to_vec(Ex), to_vec(Ey), to_vec(Ez)};
-             return new GateMappedElectricField(solid, translations, rotations,
-                                                delta_chord_mm, gridDef,
+             return new GateMappedElectricField(logical_volume, gridDef,
                                                 fieldValues, interp);
            }),
-           py::arg("solid"), py::arg("translations"), py::arg("rotations"),
-           py::arg("delta_chord_mm"), py::arg("nx"), py::arg("ny"),
+           py::arg("logical_volume"), py::arg("nx"), py::arg("ny"),
            py::arg("nz"), py::arg("x0"), py::arg("y0"), py::arg("z0"),
            py::arg("dx"), py::arg("dy"), py::arg("dz"), py::arg("Ex"),
-           py::arg("Ey"), py::arg("Ez"), py::arg("interpolation"))
-
-      .def("SetTransforms", &GateMappedElectricField::SetTransforms,
-           py::arg("translations"), py::arg("rotations"));
+           py::arg("Ey"), py::arg("Ez"), py::arg("interpolation"));
 }

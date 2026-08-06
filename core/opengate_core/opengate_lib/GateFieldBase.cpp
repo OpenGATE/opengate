@@ -6,103 +6,99 @@
    -------------------------------------------------- */
 
 #include "GateFieldBase.h"
-#include <G4VSolid.hh>
-#include <cmath>
-#include <limits>
+#include "GateHelpers.h"
+#include <G4EventManager.hh>
+#include <G4LogicalVolume.hh>
+#include <G4NavigationHistory.hh>
+#include <G4Navigator.hh>
+#include <G4StateManager.hh>
+#include <G4TouchableHistory.hh>
+#include <G4Track.hh>
+#include <G4TrackingManager.hh>
+#include <G4TransportationManager.hh>
+#include <G4VPhysicalVolume.hh>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 
+namespace {
+
+// World-to-local transform of the deepest level of the history that places the
+// given logical volume, or nullptr if the volume is not in the history at all.
+const G4AffineTransform *findPlacement(const G4NavigationHistory *history,
+                                       const G4LogicalVolume *lv) {
+  if (history == nullptr)
+    return nullptr;
+
+  for (G4int n = static_cast<G4int>(history->GetDepth()); n >= 0; --n) {
+    const G4VPhysicalVolume *pv = history->GetVolume(n);
+    if (pv != nullptr && pv->GetLogicalVolume() == lv)
+      return &history->GetTransform(n);
+  }
+  return nullptr;
+}
+
+// Navigation history of the track being tracked, or nullptr outside tracking.
+const G4NavigationHistory *trackingHistory() {
+  // G4TrackingManager::fpTrack is assigned in ProcessOneTrack and never
+  // cleared, so GetTrack() keeps returning the last track after the event
+  // manager has deleted it. Only trust it while an event is actually being
+  // processed; outside that, the caller falls back to the navigator.
+  if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_EventProc)
+    return nullptr;
+
+  const G4EventManager *eventManager = G4EventManager::GetEventManager();
+  const G4TrackingManager *trackingManager =
+      (eventManager != nullptr) ? eventManager->GetTrackingManager() : nullptr;
+  const G4Track *track =
+      (trackingManager != nullptr) ? trackingManager->GetTrack() : nullptr;
+  const G4VTouchable *touchable =
+      (track != nullptr) ? track->GetTouchable() : nullptr;
+  return (touchable != nullptr) ? touchable->GetHistory() : nullptr;
+}
+
+} // namespace
+
 // constructor
-GateFieldBase::GateFieldBase(const G4VSolid *solid,
-                             std::vector<G4ThreeVector> translations,
-                             std::vector<G4RotationMatrix> rotations,
-                             double deltaChordMM)
-    : m_solid(solid),
-      m_fallbackFatalDistanceMM(
-          5.0 * std::sqrt(8.0 * kMaxCurvatureRadiusMM * deltaChordMM)) {
-  if (solid == nullptr)
-    throw std::invalid_argument("GateFieldBase: solid must not be null");
-
-  if (translations.size() != rotations.size() || translations.empty())
-    throw std::invalid_argument("GateFieldBase: translations and rotations "
-                                "must be non-empty and have the same size");
-
-  m_transforms.reserve(translations.size());
-  for (std::size_t i = 0; i < translations.size(); ++i)
-    m_transforms.emplace_back(rotations[i].inverse(), translations[i]);
-}
-
-// recache the world-to-local transforms (e.g. after a geometry change between
-// runs)
-void GateFieldBase::SetTransforms(std::vector<G4ThreeVector> translations,
-                                  std::vector<G4RotationMatrix> rotations) {
-  if (translations.size() != rotations.size() || translations.empty())
+GateFieldBase::GateFieldBase(const G4LogicalVolume *logicalVolume)
+    : m_logicalVolume(logicalVolume) {
+  if (logicalVolume == nullptr)
     throw std::invalid_argument(
-        "GateFieldBase::SetTransforms: translations and rotations must be "
-        "non-empty and have the same size");
-
-  m_transforms.clear();
-  m_transforms.reserve(translations.size());
-  for (std::size_t i = 0; i < translations.size(); ++i)
-    m_transforms.emplace_back(rotations[i].inverse(), translations[i]);
+        "GateFieldBase: logical volume must not be null");
 }
 
-// find the local coordinates of worldPoint in the containing placement of the
-// field's logical volume
-G4ThreeVector GateFieldBase::findContainingPlacement(
-    const G4ThreeVector &worldPoint,
-    const G4AffineTransform *&outTransform) const {
-  std::size_t closestIdx = 0;
-  double minDistToSurface = std::numeric_limits<double>::infinity();
-  G4ThreeVector closestLocal{};
+// world-to-local transform of the placement of the field's logical volume that
+// the current navigation history is in
+G4AffineTransform GateFieldBase::findPlacementTransform() const {
 
-  for (std::size_t i = 0; i < m_transforms.size(); ++i) {
-    const auto &tr = m_transforms[i];
-    const G4ThreeVector localPoint = tr.InverseTransformPoint(worldPoint);
+  // During tracking, use the current track's navigation history.
+  if (const G4AffineTransform *transform =
+          findPlacement(trackingHistory(), m_logicalVolume))
+    return *transform;
 
-    if (m_solid->Inside(localPoint) != kOutside) {
-      outTransform = &tr;
-      return localPoint;
-    }
-
-    const double d = m_solid->DistanceToIn(localPoint);
-    if (d < minDistToSurface) {
-      minDistToSurface = d;
-      closestIdx = i;
-      closestLocal = localPoint;
-    }
+  // Outside tracking (e.g. when visualising with /vis/scene/add/magneticField),
+  // use the navigator's history.
+  const G4Navigator *navigator =
+      G4TransportationManager::GetTransportationManager()
+          ->GetNavigatorForTracking();
+  if (navigator != nullptr) {
+    const std::unique_ptr<G4TouchableHistory> touchable(
+        navigator->CreateTouchableHistory());
+    if (const G4AffineTransform *transform =
+            findPlacement(touchable->GetHistory(), m_logicalVolume))
+      return *transform;
   }
 
-  // if the point is outside every placement, check if it's within the
-  // fallback-fatal distance which accounts for any reasonable field integrator
-  // overshoot due to tolerances. if not, this is very likely a bug in the
-  // geometry or field setup -> fatal
-  if (minDistToSurface > m_fallbackFatalDistanceMM) {
-    std::ostringstream msg;
-    msg << "GateFieldBase::findContainingPlacement: world point ("
-        << worldPoint.x() << ", " << worldPoint.y() << ", " << worldPoint.z()
-        << ") mm is " << minDistToSurface
-        << " mm outside every cached placement of the field's solid — "
-        << "well beyond any chord-finder overshoot.\n"
-        << "  Closest placement: index " << closestIdx << "  (local point "
-        << closestLocal.x() << ", " << closestLocal.y() << ", "
-        << closestLocal.z() << ").\n"
-        << "  Maximum allowed distance before fatal: "
-        << m_fallbackFatalDistanceMM << " mm.\n"
-        << "  This likely indicates a real bug in the geometry or field "
-           "setup.\n";
-
-    G4Exception("GateFieldBase::findContainingPlacement", "GateField0001",
-                FatalException, msg.str().c_str());
-  }
-
-  outTransform = &m_transforms[closestIdx];
-  return closestLocal;
-}
-
-// rotate a field vector from local to world coordinates using the given
-// transform
-G4ThreeVector GateFieldBase::rotateToWorld(const G4ThreeVector &localField,
-                                           const G4AffineTransform &transform) {
-  return transform.TransformAxis(localField);
+  // Neither source knows about the field's volume: there is no frame in which
+  // the field is defined. This is a genuine inconsistency.
+  std::ostringstream msg;
+  msg << "GateFieldBase: the field's logical volume '"
+      << m_logicalVolume->GetName()
+      << "' does not appear in the current navigation history, so the local "
+         "frame of the field is undefined.\n"
+      << "  The field value was requested at a point that Geant4 does not "
+         "locate inside (or below) that volume.\n"
+      << "  This likely indicates a real bug in the geometry or field setup.\n";
+  Fatal(msg.str());
+  return G4AffineTransform(); // to avoid warning
 }
