@@ -21,29 +21,61 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  void StartSimulationAction() override;
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   void BeginOfRunAction(const G4Run *run) override;
+
+  void BeginOfEventAction(const G4Event *event) override;
 
   void PreUserTrackingAction(const G4Track *track) override;
 
   void PostUserTrackingAction(const G4Track *track) override;
 
-  void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
+  void EndOfEventAction(const G4Event *event) override;
 
-  double GetDepositedNominalCharge() const { return fDepositedNominalCharge; }
-  double GetDepositedDynamicCharge() const { return fDepositedDynamicCharge; }
+  void EndOfRunAction(const G4Run *run) override;
+
+  // Net deposited charge, summed over the events of the current run
+  double GetDepositedNominalCharge() const { return fRunNominalCharge; }
+  double GetDepositedDynamicCharge() const { return fRunDynamicCharge; }
+
+  // Sum of the squared per-event net charge over the current run
+  double GetDepositedNominalChargeSquared() const {
+    return fRunNominalChargeSquared;
+  }
+  double GetDepositedDynamicChargeSquared() const {
+    return fRunDynamicChargeSquared;
+  }
+
+  // Number of primary events (histories) scored in the current run
+  long long GetNumberOfEvents() const { return fRunNumberOfEvents; }
 
 protected:
+  // Zero the per-run accumulators (called at construction and before each run).
+  void ResetRunAccumulators();
+
   struct threadLocal_t {
-    double fNominalCharge = 0.0; // nominal charge of the particle definition
-    double fDynamicCharge = 0.0; // effective charge due to ionisation
+    // Net charge accumulated during the current event only
+    double fEventNominalCharge = 0.0;
+    double fEventDynamicCharge = 0.0;
+
+    // Running first and second moments over the events scored by this worker.
+    double fSumNominalCharge = 0.0;
+    double fSumNominalChargeSquared = 0.0;
+    double fSumDynamicCharge = 0.0;
+    double fSumDynamicChargeSquared = 0.0;
+
+    // Number of events (histories) scored by this worker.
+    long long fNumberOfEvents = 0;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
-  // Merged net deposited charge in units of eplus
-  double fDepositedNominalCharge;
-  double fDepositedDynamicCharge;
+  // Accumulators for the current run
+  double fRunNominalCharge;
+  double fRunDynamicCharge;
+  double fRunNominalChargeSquared;
+  double fRunDynamicChargeSquared;
+  long long fRunNumberOfEvents;
 };
 
 #endif // GateDepositedChargeActor_h
