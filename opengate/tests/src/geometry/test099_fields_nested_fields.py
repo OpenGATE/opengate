@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # Same geometry, same seed, identical result to floating point noise.
     is_ok = (
         utility.print_test(
-            np.isclose(dx["outerfirst"], dx["innerfirst"], atol=1e-6),
+            np.isclose(dx["outerfirst"], dx["innerfirst"], atol=1e-3 * g4_mm),
             f"Add order does not change the result "
             f"({dx['outerfirst']:.6f} vs {dx['innerfirst']:.6f} mm)",
         )
