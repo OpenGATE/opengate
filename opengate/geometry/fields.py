@@ -187,7 +187,7 @@ class MagneticField(FieldBase):
         gate_field = g4.GateMagneticField(
             inner, self._field_volume_obj.g4_logical_volume
         )
-        # TODO: allow user choice of stepper and equation type
+        # TODO: allow user choice of the equation of motion?
         return self._build_field_manager(inner, gate_field, g4.G4Mag_UsualEqRhs, 6)
 
 
@@ -316,7 +316,7 @@ class ElectroMagneticField(FieldBase):
         gate_field = g4.GateElectroMagneticField(
             inner, self._field_volume_obj.g4_logical_volume
         )
-        # TODO: allow user choice of stepper and equation type
+        # TODO: allow user choice of the equation of motion?
         # 8 variables: x,y,z + px,py,pz + t + E
         return self._build_field_manager(inner, gate_field, g4.G4EqMagElectricField, 8)
 
