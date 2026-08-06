@@ -5,13 +5,14 @@ from anytree import Node, RenderTree
 
 from ..base import process_cls
 from ..exception import fatal, warning
-from ..utility import g4_best_unit_tuple, g4_units
 from .actoroutput import (
     ActorOutputBase,
     ActorOutputSingleImage,
     ActorOutputStatisticsActor,
+    ActorOutputUsingDataItemContainer,
 )
 from .base import ActorBase
+from .dataitems import DepositedChargeItemContainer
 
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
@@ -350,218 +351,82 @@ def _setter_hook_particles(self, value):
         return list(value)
 
 
-class ActorOutputDepositedChargeActor(ActorOutputBase):
-    """Hand-crafted ActorOutput for the DepositedChargeActor."""
+class ActorOutputDepositedChargeActor(ActorOutputUsingDataItemContainer):
+    """Structured deposited-charge output with history-by-history statistics."""
+
+    data_container_class = DepositedChargeItemContainer
 
     # hints for IDE
     encoder: str
-    output_filename: str
-    write_to_disk: bool
 
     user_info_defaults = {
         "encoder": (
             "json",
             {
                 "doc": "How should the output be encoded?",
-                "allowed_values": ("json",),
+                "allowed_values": ("json", "legacy"),
             },
-        ),
-        "output_filename": (
-            "auto",
-            {
-                "doc": "Filename for the data represented by this actor output. "
-                "Relative paths and filenames are taken "
-                "relative to the global simulation output folder "
-                "set via the Simulation.output_dir option. ",
-                "setter_hook": _setter_hook_stats_actor_output_filename,
-            },
-        ),
-        "write_to_disk": (
-            False,
-            {
-                "doc": "Should the output be written to disk, or only kept in memory? ",
-            },
-        ),
-        "keep_data_per_run": (
-            False,
-            {
-                "doc": "In case the simulation has multiple runs, should the "
-                "statistics of each individual run be kept (in addition to the "
-                "merged result accumulated over all runs)? "
-            },
-        ),
-        "active": (
-            True,
-            {"doc": "This actor is always active. ", "read_only": True},
         ),
     }
 
-    default_suffix = "json"
-
-    @staticmethod
-    def _empty_charge_data():
-        """A zero-initialized charge data container (first/second moments + N)."""
-        return Box(
-            deposited_nominal_charge=0.0,
-            deposited_dynamic_charge=0.0,
-            deposited_nominal_charge_squared=0.0,
-            deposited_dynamic_charge_squared=0.0,
-            number_of_events=0,
-        )
-
     def __init__(self, *args, **kwargs):
+        self.default_suffix = "json"
         super().__init__(*args, **kwargs)
-        # predefine the merged_data (accumulated over runs/threads);
-        # per-run data is held in self.data_per_run (provided by the base class).
-        self.merged_data = self._empty_charge_data()
+        self.set_write_to_disk(False)
+        self.set_active(True)
 
-    @staticmethod
-    def _history_statistics(sum_x, sum_x2, n):
-        """History-by-history statistics from the first and second moments.
+    @property
+    def _charge_item(self):
+        if self.merged_data is None:
+            return None
+        return self.merged_data.get_data_item_object(0)
 
-        Returns a dict with, for the per-event charge distribution:
-            - ``mean``: mean net charge per event (sum_x / n)
-            - ``std``: sample standard deviation of the per-event charge (Bessel-corrected)
-            - ``sem``: standard error of the mean (std / sqrt(n))
-            - ``total``: total net charge (sum_x)
-            - ``total_uncertainty``: absolute uncertainty on ``total``
-            - ``relative_uncertainty``: total_uncertainty / |total|
-        """
-        stats = {
-            "mean": 0.0,
-            "std": 0.0,
-            "sem": 0.0,
-            "total": sum_x,
-            "total_uncertainty": 0.0,
-            "relative_uncertainty": 0.0,
-        }
-        if n < 1:
-            return stats
-        stats["mean"] = sum_x / n
-        if n < 2:
-            return stats
-        mean = stats["mean"]
-        # Sum of squared deviations = sum_x2 - (sum_x)^2 / n, clamped to >= 0
-        sum_sq_dev = max(sum_x2 - sum_x * sum_x / n, 0.0)
-        variance = sum_sq_dev / (n - 1)
-        std = variance**0.5
-        sem = std / n**0.5
-        total_uncertainty = n * sem
-        stats.update(
-            mean=mean,
-            std=std,
-            sem=sem,
-            total_uncertainty=total_uncertainty,
-            relative_uncertainty=(
-                total_uncertainty / abs(sum_x) if sum_x != 0.0 else 0.0
-            ),
-        )
-        return stats
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if self.get_output_filename() not in ("", None, "auto"):
+            self.set_write_to_disk(True)
 
-    def _statistics(self, data, kind):
-        """History-by-history statistics for one kind ('nominal'/'dynamic')."""
-        if kind == "nominal":
-            return self._history_statistics(
-                data.deposited_nominal_charge,
-                data.deposited_nominal_charge_squared,
-                data.number_of_events,
-            )
-        elif kind == "dynamic":
-            return self._history_statistics(
-                data.deposited_dynamic_charge,
-                data.deposited_dynamic_charge_squared,
-                data.number_of_events,
-            )
-        else:
-            fatal(f"Unknown charge kind '{kind}'. Use 'nominal' or 'dynamic'. ")
+    def _charge_item_of(self, which):
+        container = self.get_data_container(which)
+        if container is None:
+            return None
+        return container.get_data_item_object(0)
 
     def charge_statistics(self, kind="nominal", which="merged"):
         """History-by-history statistics for the merged result (which='merged')
         or for a specific run (which=run_index, requires keep_data_per_run=True).
         """
-        return self._statistics(self.get_data(which=which), kind)
+        charge_item = self._charge_item_of(which)
+        if charge_item is None:
+            return None
+        return charge_item.statistics(kind)
 
     @property
     def nominal_charge_statistics(self):
         """History-by-history statistics for the merged nominal deposited charge."""
-        return self._statistics(self.merged_data, "nominal")
+        return self.charge_statistics("nominal")
 
     @property
     def dynamic_charge_statistics(self):
         """History-by-history statistics for the merged dynamic deposited charge."""
-        return self._statistics(self.merged_data, "dynamic")
-
-    def store_run_data(self, run_index, data):
-        """Accumulate the moments of one run into the merged result and, if
-        keep_data_per_run is True, also keep them under this run index.
-        """
-        data = Box(data)
-        for key in self.merged_data.keys():
-            self.merged_data[key] += data[key]
-        if self.keep_data_per_run is True:
-            self.data_per_run[run_index] = data
-
-    def get_data(self, which="merged", **kwargs):
-        if which == "merged":
-            return self.merged_data
-        try:
-            run_index = int(which)
-        except (ValueError, TypeError):
-            fatal(
-                f"Invalid argument which={which} in get_data() of {self.name}. "
-                f"Allowed values are 'merged' or a run index (int). "
-            )
-            run_index = None  # avoid IDE warning
-        if run_index in self.data_per_run and self.data_per_run[run_index] is not None:
-            return self.data_per_run[run_index]
-        fatal(
-            f"No per-run data stored for run index {run_index} in {self.name}. "
-            f"Set keep_data_per_run=True to keep per-run statistics. "
-        )
+        return self.charge_statistics("dynamic")
 
     def get_processed_output(self, which="merged"):
-        data = self.get_data(which=which)
-        nominal = self._statistics(data, "nominal")
-        dynamic = self._statistics(data, "dynamic")
-        d = {}
-        d["number_of_events"] = {"value": data.number_of_events, "unit": None}
-        d["nominal_charge"] = {"value": nominal["total"], "unit": "e"}
-        d["nominal_charge_uncertainty"] = {
-            "value": nominal["total_uncertainty"],
-            "unit": "e",
-        }
-        d["dynamic_charge"] = {"value": dynamic["total"], "unit": "e"}
-        d["dynamic_charge_uncertainty"] = {
-            "value": dynamic["total_uncertainty"],
-            "unit": "e",
-        }
-        d["nominal_statistics"] = {"value": nominal, "unit": None}
-        d["dynamic_statistics"] = {"value": dynamic, "unit": None}
-        return d
+        charge_item = self._charge_item_of(which)
+        if charge_item is None:
+            return {}
+        return charge_item.get_processed_output()
 
     def __str__(self):
-        nominal = self.nominal_charge_statistics
-        dynamic = self.dynamic_charge_statistics
-        return (
-            f"  Nominal: {nominal['total']} +/- {nominal['total_uncertainty']} e\n"
-            f"  Dynamic: {dynamic['total']} +/- {dynamic['total_uncertainty']} e\n"
-            f"  (N events: {self.merged_data.number_of_events})"
-        )
+        if self._charge_item is None:
+            return "No data found. "
+        return str(self._charge_item)
 
-    def write_data(self, which="all", **kwargs):
-        """Override virtual method from base class."""
-        if which == "all":
-            self.write_data(which="merged")
-            if self.keep_data_per_run is True:
-                for run_index in self.data_per_run.keys():
-                    self.write_data(which=run_index)
-        else:
-            with open(self.get_output_path(which=which), "w+") as f:
-                dump_json(self.get_processed_output(which=which), f, indent=4)
-
-    def write_data_if_requested(self, **kwargs):
-        if self.write_to_disk is True:
-            self.write_data(**kwargs)
+    def write_data(self, which="all", item="all", **kwargs):
+        # write_data() recurses through self.write_data() for which="all", so
+        # the encoder must be injected only once, not re-added on every level.
+        kwargs.setdefault("encoder", self.encoder)
+        super().write_data(which=which, item=item, **kwargs)
 
 
 class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
@@ -607,9 +472,18 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
+    def StartSimulationAction(self):
+        # inform actor output that this simulation is starting
+        for u in self.user_output.values():
+            if u.get_active(item="any"):
+                u.start_of_simulation()
+
     def EndOfRunActionMasterThread(self, run_index):
-        # Hand the per-run statistics to the output object
-        self.user_output.charge.store_run_data(
+        # Hand the per-run moments to the output object. The C++ accumulators
+        # are reset at the beginning of every run, so this is per-run data;
+        # end_of_run() below folds it into the merged result and drops the
+        # per-run container unless keep_data_per_run is set.
+        self.user_output.charge.store_data(
             run_index,
             {
                 "deposited_nominal_charge": self.GetDepositedNominalCharge(),
@@ -619,10 +493,17 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
                 "number_of_events": self.GetNumberOfEvents(),
             },
         )
+        # inform actor output that this run is over
+        for u in self.user_output.values():
+            if u.get_active(item="all"):
+                u.end_of_run(run_index)
         return 0
 
     def EndSimulationAction(self):
-        self.user_output.charge.write_data_if_requested()
+        # inform actor output that this simulation is over and write data
+        for u in self.user_output.values():
+            if u.get_active(item="any"):
+                u.end_of_simulation()
 
     def __str__(self):
         return (
