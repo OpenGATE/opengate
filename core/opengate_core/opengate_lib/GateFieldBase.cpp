@@ -11,6 +11,7 @@
 #include <G4LogicalVolume.hh>
 #include <G4NavigationHistory.hh>
 #include <G4Navigator.hh>
+#include <G4StateManager.hh>
 #include <G4TouchableHistory.hh>
 #include <G4Track.hh>
 #include <G4TrackingManager.hh>
@@ -39,6 +40,13 @@ const G4AffineTransform *findPlacement(const G4NavigationHistory *history,
 
 // Navigation history of the track being tracked, or nullptr outside tracking.
 const G4NavigationHistory *trackingHistory() {
+  // G4TrackingManager::fpTrack is assigned in ProcessOneTrack and never
+  // cleared, so GetTrack() keeps returning the last track after the event
+  // manager has deleted it. Only trust it while an event is actually being
+  // processed; outside that, the caller falls back to the navigator.
+  if (G4StateManager::GetStateManager()->GetCurrentState() != G4State_EventProc)
+    return nullptr;
+
   const G4EventManager *eventManager = G4EventManager::GetEventManager();
   const G4TrackingManager *trackingManager =
       (eventManager != nullptr) ? eventManager->GetTrackingManager() : nullptr;
