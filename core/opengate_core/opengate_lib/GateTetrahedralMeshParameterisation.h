@@ -24,12 +24,10 @@ class G4VisAttributes;
 class G4VPhysicalVolume;
 class G4VSolid;
 
-class GateTetrahedralMeshParameterisation
-    : public G4VNestedParameterisation {
- public:
+class GateTetrahedralMeshParameterisation : public G4VNestedParameterisation {
+public:
   GateTetrahedralMeshParameterisation(
-      std::vector<G4Tet *> solids,
-      std::vector<G4Material *> unique_materials,
+      std::vector<G4Tet *> solids, std::vector<G4Material *> unique_materials,
       std::vector<unsigned int> material_index_per_copy,
       std::vector<int> region_per_copy,
       std::unordered_map<int, G4Colour> region_to_colour,
@@ -37,22 +35,21 @@ class GateTetrahedralMeshParameterisation
 
   ~GateTetrahedralMeshParameterisation() override = default;
 
-  void ComputeTransformation(
-      G4int copy_number, G4VPhysicalVolume *physical_volume) const override;
+  void ComputeTransformation(G4int copy_number,
+                             G4VPhysicalVolume *physical_volume) const override;
 
-  G4Material *ComputeMaterial(
-      G4VPhysicalVolume *current_volume,
-      G4int copy_number,
-      const G4VTouchable *parent_touch = nullptr) override;
+  G4Material *
+  ComputeMaterial(G4VPhysicalVolume *current_volume, G4int copy_number,
+                  const G4VTouchable *parent_touch = nullptr) override;
 
-  G4VSolid *ComputeSolid(
-      G4int copy_number, G4VPhysicalVolume *physical_volume) override;
+  G4VSolid *ComputeSolid(G4int copy_number,
+                         G4VPhysicalVolume *physical_volume) override;
 
   G4int GetNumberOfMaterials() const override;
 
   G4Material *GetMaterial(G4int index) const override;
 
- private:
+private:
   G4VisAttributes *get_or_create_vis(int region);
 
   std::vector<G4Tet *> fSolids;
@@ -65,35 +62,27 @@ class GateTetrahedralMeshParameterisation
 };
 
 G4VPhysicalVolume *build_tetrahedral_mesh_from_tetgen(
-    const std::string &node_path,
-    const std::string &ele_path,
+    const std::string &node_path, const std::string &ele_path,
     G4LogicalVolume *mother_lv,
     const std::map<int, G4Material *> &region_to_material,
     const std::unordered_map<int, G4Colour> &region_to_colour,
     const std::unordered_map<int, bool> &region_visible,
-    G4Material *default_material,
-    const std::string &pv_name,
-    G4bool check_overlaps,
-    G4double scale);
+    G4Material *default_material, const std::string &pv_name,
+    G4bool check_overlaps, G4double scale);
 
 G4VPhysicalVolume *build_mrcp_tetrahedral_mesh_from_tetgen(
-    const std::string &node_path,
-    const std::string &ele_path,
+    const std::string &node_path, const std::string &ele_path,
     G4LogicalVolume *mother_lv,
     const std::map<int, G4Material *> &region_to_material,
     const std::unordered_map<int, G4Colour> &region_to_colour,
     const std::unordered_map<int, bool> &region_visible,
-    G4Material *default_material,
-    const std::string &pv_name,
+    G4Material *default_material, const std::string &pv_name,
     G4bool check_overlaps);
 
 G4VPhysicalVolume *build_tetrahedral_mesh_from_tetgen_material_names(
-    G4LogicalVolume *mother_lv,
-    const std::string &pv_name,
-    const std::string &node_path,
-    const std::string &ele_path,
-    const std::map<int, std::string> &region_id_to_mat_name,
-    G4double scale,
+    G4LogicalVolume *mother_lv, const std::string &pv_name,
+    const std::string &node_path, const std::string &ele_path,
+    const std::map<int, std::string> &region_id_to_mat_name, G4double scale,
     G4bool check_overlaps);
 
 #endif // GateTetrahedralMeshParameterisation_h

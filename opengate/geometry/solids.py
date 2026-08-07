@@ -14,6 +14,7 @@ from .utility import ensure_is_g4_rotation, ensure_is_g4_translation, vec_np_as_
 
 logger = logging.getLogger(__name__)
 
+
 class SolidBase(GateObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -75,6 +76,7 @@ class SolidBase(GateObject):
         # The solid can only be constructed once
         if self.g4_solid is None:
             self.g4_solid = self.build_solid()
+
 
 class BooleanSolid(SolidBase):
     constructor_functions = {
@@ -138,6 +140,7 @@ class BooleanSolid(SolidBase):
             self.creator_volumes[i] = vol
             self.creator_volumes[i].from_dictionary(cv)
 
+
 class BoxSolid(SolidBase):
 
     size: list[float]
@@ -153,6 +156,7 @@ class BoxSolid(SolidBase):
         return g4.G4Box(
             self.name, self.size[0] / 2.0, self.size[1] / 2.0, self.size[2] / 2.0
         )
+
 
 class HexagonSolid(SolidBase):
     """
@@ -192,6 +196,7 @@ class HexagonSolid(SolidBase):
             radius_inner,
             radius_outer,
         )
+
 
 class ConsSolid(SolidBase):
     """Cone section.
@@ -238,6 +243,7 @@ class ConsSolid(SolidBase):
             self.sphi,
             self.dphi,
         )
+
 
 class PolyhedraSolid(SolidBase):
     """
@@ -288,6 +294,7 @@ class PolyhedraSolid(SolidBase):
             self.radius_outer,
         )
 
+
 class SphereSolid(SolidBase):
     user_info_defaults = {
         "rmin": (0, {"doc": "Inner radius (0 means solid sphere)."}),
@@ -314,6 +321,7 @@ class SphereSolid(SolidBase):
             self.stheta,
             self.dtheta,
         )
+
 
 class EllipsoidSolid(SolidBase):
     user_info_defaults = {
@@ -345,6 +353,7 @@ class EllipsoidSolid(SolidBase):
             self.zBottomCut,
             self.zTopCut,
         )
+
 
 class TrapSolid(SolidBase):
     """
@@ -415,6 +424,7 @@ class TrapSolid(SolidBase):
             self.alp2,
         )
 
+
 class TrdSolid(SolidBase):
     """
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=g4trd
@@ -453,6 +463,7 @@ class TrdSolid(SolidBase):
     def build_solid(self):
         return g4.G4Trd(self.name, self.dx1, self.dx2, self.dy1, self.dy2, self.dz)
 
+
 class TubsSolid(SolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -476,6 +487,7 @@ class TubsSolid(SolidBase):
 
     def build_solid(self):
         return g4.G4Tubs(self.name, self.rmin, self.rmax, self.dz, self.sphi, self.dphi)
+
 
 class TesselatedSolid(SolidBase):
     """
@@ -553,6 +565,7 @@ class TesselatedSolid(SolidBase):
         )
 
         return tessellated_solid
+
 
 class ImageSolid(SolidBase):
     """Utility to handle the solids of an ImageVolume.
@@ -638,6 +651,7 @@ class TetrahedralMeshEnvelopeSolid(SolidBase):
     size from ``node_file``; the C++ mesh builder later creates the
     parameterised ``G4Tet`` daughters inside this box.
     """
+
     user_info_defaults = {
         "node_file": ("", {"doc": "TetGen .node file", "is_input_file": True}),
         "ele_file": ("", {"doc": "TetGen .ele file", "is_input_file": True}),
@@ -700,9 +714,7 @@ class TetrahedralMeshEnvelopeSolid(SolidBase):
     def get_bbox_size_and_center_mm(self):
         """Calculate the MRCP envelope size and mesh center in millimetres."""
 
-        (minx, miny, minz), (maxx, maxy, maxz) = self._read_node_bounds(
-            self.node_file
-        )
+        (minx, miny, minz), (maxx, maxy, maxz) = self._read_node_bounds(self.node_file)
         # MRCP .node coordinates are centimetres. The envelope is expressed
         # in millimetres to match the C++ reader's use of Geant4's `cm` unit.
         cm_in_mm = g4_units.cm / g4_units.mm
@@ -719,10 +731,13 @@ class TetrahedralMeshEnvelopeSolid(SolidBase):
 
         size_mm, _ = self.get_bbox_size_and_center_mm()
         sx, sy, sz = size_mm
-        return g4.G4Box(self.name,
-                        0.5 * sx * g4_units.mm,
-                        0.5 * sy * g4_units.mm,
-                        0.5 * sz * g4_units.mm)
+        return g4.G4Box(
+            self.name,
+            0.5 * sx * g4_units.mm,
+            0.5 * sy * g4_units.mm,
+            0.5 * sz * g4_units.mm,
+        )
+
 
 process_cls(SolidBase)
 process_cls(BooleanSolid)
