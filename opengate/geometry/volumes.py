@@ -1337,6 +1337,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             labels = json.load(infile)
         self.voxel_materials = labels
 
+
 # -----------------------------------------------------------------------------
 # Added TetrahedralMesh volume support.
 #
@@ -1361,17 +1362,125 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
     }
 
     _element_symbols = (
-        "", "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na",
-        "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti",
-        "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As",
-        "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru",
-        "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs",
-        "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy",
-        "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir",
-        "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra",
-        "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es",
-        "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds",
-        "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og",
+        "",
+        "H",
+        "He",
+        "Li",
+        "Be",
+        "B",
+        "C",
+        "N",
+        "O",
+        "F",
+        "Ne",
+        "Na",
+        "Mg",
+        "Al",
+        "Si",
+        "P",
+        "S",
+        "Cl",
+        "Ar",
+        "K",
+        "Ca",
+        "Sc",
+        "Ti",
+        "V",
+        "Cr",
+        "Mn",
+        "Fe",
+        "Co",
+        "Ni",
+        "Cu",
+        "Zn",
+        "Ga",
+        "Ge",
+        "As",
+        "Se",
+        "Br",
+        "Kr",
+        "Rb",
+        "Sr",
+        "Y",
+        "Zr",
+        "Nb",
+        "Mo",
+        "Tc",
+        "Ru",
+        "Rh",
+        "Pd",
+        "Ag",
+        "Cd",
+        "In",
+        "Sn",
+        "Sb",
+        "Te",
+        "I",
+        "Xe",
+        "Cs",
+        "Ba",
+        "La",
+        "Ce",
+        "Pr",
+        "Nd",
+        "Pm",
+        "Sm",
+        "Eu",
+        "Gd",
+        "Tb",
+        "Dy",
+        "Ho",
+        "Er",
+        "Tm",
+        "Yb",
+        "Lu",
+        "Hf",
+        "Ta",
+        "W",
+        "Re",
+        "Os",
+        "Ir",
+        "Pt",
+        "Au",
+        "Hg",
+        "Tl",
+        "Pb",
+        "Bi",
+        "Po",
+        "At",
+        "Rn",
+        "Fr",
+        "Ra",
+        "Ac",
+        "Th",
+        "Pa",
+        "U",
+        "Np",
+        "Pu",
+        "Am",
+        "Cm",
+        "Bk",
+        "Cf",
+        "Es",
+        "Fm",
+        "Md",
+        "No",
+        "Lr",
+        "Rf",
+        "Db",
+        "Sg",
+        "Bh",
+        "Hs",
+        "Mt",
+        "Ds",
+        "Rg",
+        "Cn",
+        "Nh",
+        "Fl",
+        "Mc",
+        "Lv",
+        "Ts",
+        "Og",
     )
     _material_cache = {}
 
@@ -1393,7 +1502,9 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
                 fatal(f"Invalid MRCP material '{current_name}' in {material_file}")
             definitions[current_name] = {
                 "density_g_cm3": float(current_density),
-                "zfrac": {z: fraction / total for z, fraction in current_fractions.items()},
+                "zfrac": {
+                    z: fraction / total for z, fraction in current_fractions.items()
+                },
             }
             current_name = None
             current_density = None
@@ -1415,7 +1526,9 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
                             fatal(f"Invalid density at {material_file}:{line_number}")
                     continue
                 if current_name is None:
-                    fatal(f"Material data before a header at {material_file}:{line_number}")
+                    fatal(
+                        f"Material data before a header at {material_file}:{line_number}"
+                    )
                 tokens = stripped.split()
                 if tokens[0].startswith("m") and tokens[0][1:].isdigit():
                     region_to_name[int(tokens[0][1:])] = current_name
@@ -1433,7 +1546,9 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
                     fatal(f"Invalid composition at {material_file}:{line_number}")
                 if not 0 < atomic_number < len(TetrahedralMeshVolume._element_symbols):
                     fatal(f"Unsupported atomic number Z={atomic_number}")
-                current_fractions[atomic_number] = current_fractions.get(atomic_number, 0.0) + fraction
+                current_fractions[atomic_number] = (
+                    current_fractions.get(atomic_number, 0.0) + fraction
+                )
         flush_material()
         return definitions, region_to_name
 
@@ -1444,9 +1559,14 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
             return cls._material_cache[name]
         if density_g_cm3 <= 0 or density_g_cm3 > 30:
             fatal(f"Unreasonable density for '{name}': {density_g_cm3} g/cm3")
-        material = g4.G4Material(name, float(density_g_cm3) * g4_units.g_cm3,
-                                 len(zfrac), g4.kStateSolid,
-                                 293.15 * g4_units.kelvin, g4_units.atmosphere)
+        material = g4.G4Material(
+            name,
+            float(density_g_cm3) * g4_units.g_cm3,
+            len(zfrac),
+            g4.kStateSolid,
+            293.15 * g4_units.kelvin,
+            g4_units.atmosphere,
+        )
         nist = g4.G4NistManager.Instance()
         for atomic_number, fraction in sorted(zfrac.items()):
             element = nist.FindOrBuildElement(cls._element_symbols[int(atomic_number)])
@@ -1478,7 +1598,9 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
                 if len(rgba) == 3:
                     rgba.append(1.0)
                 if any(value < 0.0 or value > 1.0 for value in rgba):
-                    fatal(f"RGBA values must be between 0 and 1 at {color_file}:{line_number}")
+                    fatal(
+                        f"RGBA values must be between 0 and 1 at {color_file}:{line_number}"
+                    )
                 colors[key] = (rgba, rgba[3] > 0.0)
         return colors
 
@@ -1513,12 +1635,10 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
 
             definition = material_definitions[material_name]
 
-            region_to_material[int(rid)] = (
-                self._ensure_custom_material_from_zfrac(
-                    material_name,
-                    definition["density_g_cm3"],
-                    definition["zfrac"],
-                )
+            region_to_material[int(rid)] = self._ensure_custom_material_from_zfrac(
+                material_name,
+                definition["density_g_cm3"],
+                definition["zfrac"],
             )
 
             # Prefer a region-ID colour entry over a material-name entry.
@@ -1537,7 +1657,6 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
             region_visible[int(rid)] = bool(vis)
 
         return region_to_material, region_to_rgba, region_visible
-
 
     def construct(self):
         """Construct the envelope first, then populate it with the TetGen mesh."""
@@ -1581,7 +1700,10 @@ class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
         )
 
         self._is_constructed = True
+
+
 # End of added TetrahedralMesh volume support.
+
 
 class ParallelWorldVolume(NodeMixin):
     def __init__(self, name, volume_manager):

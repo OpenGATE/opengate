@@ -46,55 +46,43 @@ static std::unordered_map<int, G4Colour> rgba_to_colour_map(
 void init_GateTetrahedralMesh(py::module &m) {
   m.def(
       "build_tetrahedral_mesh_from_tetgen",
-      [](const std::string &node_path,
-         const std::string &ele_path,
+      [](const std::string &node_path, const std::string &ele_path,
          G4LogicalVolume *mother_lv,
          const std::map<int, G4Material *> &region_to_material,
          const std::unordered_map<int, std::vector<double>> &region_to_rgba,
          const std::unordered_map<int, bool> &region_visible,
-         G4Material *default_material,
-         const std::string &pv_name,
-         G4bool check_overlaps,
-         G4double scale) {
+         G4Material *default_material, const std::string &pv_name,
+         G4bool check_overlaps, G4double scale) {
         return build_tetrahedral_mesh_from_tetgen(
             node_path, ele_path, mother_lv, region_to_material,
             rgba_to_colour_map(region_to_rgba), region_visible,
             default_material, pv_name, check_overlaps, scale);
       },
-      py::return_value_policy::reference,
-      py::arg("node_path"),
-      py::arg("ele_path"),
-      py::arg("mother_lv"),
-      py::arg("region_to_material"),
+      py::return_value_policy::reference, py::arg("node_path"),
+      py::arg("ele_path"), py::arg("mother_lv"), py::arg("region_to_material"),
       py::arg("region_to_rgba") =
           std::unordered_map<int, std::vector<double>>{},
       py::arg("region_visible") = std::unordered_map<int, bool>{},
       py::arg("default_material") = nullptr,
       py::arg("pv_name") = std::string("phantom_tetmesh"),
-      py::arg("check_overlaps") = false,
-      py::arg("scale") = 1.0);
+      py::arg("check_overlaps") = false, py::arg("scale") = 1.0);
 
   m.def(
       "build_mrcp_tetrahedral_mesh_from_tetgen",
-      [](const std::string &node_path,
-         const std::string &ele_path,
+      [](const std::string &node_path, const std::string &ele_path,
          G4LogicalVolume *mother_lv,
          const std::map<int, G4Material *> &region_to_material,
          const std::unordered_map<int, std::vector<double>> &region_to_rgba,
          const std::unordered_map<int, bool> &region_visible,
-         G4Material *default_material,
-         const std::string &pv_name,
+         G4Material *default_material, const std::string &pv_name,
          G4bool check_overlaps) {
         return build_mrcp_tetrahedral_mesh_from_tetgen(
             node_path, ele_path, mother_lv, region_to_material,
             rgba_to_colour_map(region_to_rgba), region_visible,
             default_material, pv_name, check_overlaps);
       },
-      py::return_value_policy::reference,
-      py::arg("node_path"),
-      py::arg("ele_path"),
-      py::arg("mother_lv"),
-      py::arg("region_to_material"),
+      py::return_value_policy::reference, py::arg("node_path"),
+      py::arg("ele_path"), py::arg("mother_lv"), py::arg("region_to_material"),
       py::arg("region_to_rgba") =
           std::unordered_map<int, std::vector<double>>{},
       py::arg("region_visible") = std::unordered_map<int, bool>{},
@@ -104,12 +92,8 @@ void init_GateTetrahedralMesh(py::module &m) {
 
   m.def("build_tetrahedral_mesh_from_tetgen_material_names",
         &build_tetrahedral_mesh_from_tetgen_material_names,
-        py::return_value_policy::reference,
-        py::arg("mother_lv"),
-        py::arg("pv_name"),
-        py::arg("node_path"),
-        py::arg("ele_path"),
-        py::arg("region_id_to_mat_name"),
-        py::arg("scale") = 1.0,
+        py::return_value_policy::reference, py::arg("mother_lv"),
+        py::arg("pv_name"), py::arg("node_path"), py::arg("ele_path"),
+        py::arg("region_id_to_mat_name"), py::arg("scale") = 1.0,
         py::arg("check_overlaps") = false);
 }

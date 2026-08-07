@@ -4,7 +4,6 @@ from pathlib import Path
 
 import opengate as gate
 
-
 # All MRCP input files are expected to be in the same directory as this script.
 data_dir = Path(__file__).resolve().parent
 
