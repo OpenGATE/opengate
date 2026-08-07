@@ -296,6 +296,11 @@ void init_G4TriangularFacet(py::module &m);
 
 void init_G4QuadrangularFacet(py::module &m);
 
+// Added binding declaration: expose Geant4's single tetrahedron solid
+// (G4Tet) to Python. This is distinct from the OpenGATE tetrahedral mesh
+// builder declared below.
+void init_G4Tet(py::module &);
+
 // geometry/volume
 void init_G4PVPlacement(py::module &);
 
@@ -399,6 +404,14 @@ void init_GateTrackCreatorProcessFilter(py::module &);
 void init_GateBooleanFilter(py::module &);
 
 void init_GateAttributeComparisonFilter(py::module &);
+
+// Added filter binding declaration: select steps by the copy number of their
+// pre-step touchable.
+void init_GateCopyNumberFilter(py::module &);
+
+// Added OpenGATE geometry binding declaration: build a parameterised
+// tetrahedral mesh from TetGen .node and .ele files.
+void init_GateTetrahedralMesh(py::module &);
 
 // Gate actors
 void init_GateDoseActor(py::module &m);
@@ -714,6 +727,10 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4TriangularFacet(m);
   init_G4QuadrangularFacet(m);
 
+  // Added module registration: make g4.G4Tet and its helper binding available
+  // after importing opengate_core.
+  init_G4Tet(m);
+
   init_G4PVPlacement(m);
   init_G4TouchableHistory(m);
   init_G4NavigationHistory(m);
@@ -782,6 +799,15 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTrackCreatorProcessFilter(m);
   init_GateBooleanFilter(m);
   init_GateAttributeComparisonFilter(m);
+
+  // Added module registration: expose g4.GateCopyNumberFilter to the Python
+  // CopyNumberFilter wrapper in opengate/actors/filters.py.
+  init_GateCopyNumberFilter(m);
+
+  // Added module registration: expose the TetGen-based parameterised mesh
+  // builders implemented in opengate_lib.
+  init_GateTetrahedralMesh(m);
+
   init_itk_image(m);
   init_GateImageNestedParameterisation(m);
   init_GateRepeatParameterisation(m);
