@@ -1,4 +1,7 @@
 
+#Test for a linac
+#We use that test on VIP
+
 wget http://www.creatis.insa-lyon.fr/~baudier/data_advanced_test_linac.zip
 unzip data_advanced_test_linac.zip
 rm -f data_advanced_test_linac.zip
@@ -6,6 +9,6 @@ mkdir output
 
 python run_vmat_mc.py --json_name data_advanced_test_linac/header.json
 python normalize_dose.py --path data_advanced_test_linac
-python comparison_deposited_dose_mc_tps.py --path data_advanced_test_linac data_advanced_test_linac --path_output output
+python comparison_deposited_dose_mc_tps.py --path data_advanced_test_linac --path_output output
 
-For the moment the test in comparison_deposited_dose_MC_TPS is a gamma index of 2%/2mm with 0.6 (60%) of passing rate between the gate dose and the TPS. Maybe chage the RAM for VIP
+#For the moment the test in comparison_deposited_dose_MC_TPS is a gamma index of 2%/2mm with 0.7 (70%) of passing rate between the gate dose and the TPS. Maybe chage the RAM for VIP

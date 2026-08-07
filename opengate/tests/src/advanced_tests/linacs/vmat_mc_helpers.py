@@ -1,9 +1,11 @@
-import opengate as gate
-from opengate.tests import utility
-from opengate.contrib.linacs import elektaversa as versa
-from opengate.contrib.linacs import dicomrtplan as rtplan
-import numpy as np
 import itk
+import numpy as np
+
+import opengate as gate
+from opengate import utility as ut
+from opengate.contrib.linacs import dicomrtplan as rtplan
+from opengate.contrib.linacs import elektaversa as versa
+from opengate.tests import utility
 
 
 def information_img_patient(path_img=None, open_img=True, img=None):
@@ -90,8 +92,8 @@ def add_patient_image(
     patient.image = path_image + img
     patient.mother = name
     patient.material = "G4_AIR"  # material used by default
-    f1 = paths.data / "Schneider2000MaterialsTable.txt"
-    f2 = paths.data / "Schneider2000DensitiesTable.txt"
+    f1 = ut.get_data_folder() / "Schneider2000MaterialsTable.txt"
+    f2 = ut.get_data_folder() / "Schneider2000DensitiesTable.txt"
     tol = 0.05 * gcm3
     patient.voxel_materials, materials = (
         gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
