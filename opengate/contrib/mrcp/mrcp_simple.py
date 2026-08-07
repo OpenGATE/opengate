@@ -25,16 +25,17 @@ sim.visu_type = "qt"
 phantom = sim.add_volume("TetrahedralMesh", "phantom_tetmesh")
 phantom.mother = "world"
 phantom.material = "G4_Galactic"
-phantom.node_file = str(data_dir / "sample.node")
-phantom.ele_file = str(data_dir / "sample.ele")
-phantom.material_file = str(data_dir / "sample.material")
+phantom.node_file = str(data_dir / "letter.node")
+phantom.ele_file = str(data_dir / "letter.ele")
+phantom.material_file = str(data_dir / "letter.material")
+
 # Assign visualization colors to the material/organ indices.
-phantom.color_file = str(data_dir / "sample_colour.dat")
+phantom.color_file = str(data_dir / "letter_colour.dat")
 
 # Use vacuum for any tetrahedron whose material index is not defined.
 phantom.default_material = "G4_Galactic"
 phantom.pv_name = "phantom_tetmesh_env"
-phantom.check_overlaps = False
+phantom.check_overlaps = True
 
 # Initialize the geometry and open the Qt visualization window.
 sim.run()
