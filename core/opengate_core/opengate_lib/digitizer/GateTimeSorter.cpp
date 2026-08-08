@@ -396,9 +396,6 @@ void GateTimeSorter::SetupBarrierIfNeeded() {
       // to see it.
       const double maxTime = maxIt->value.load();
       ts.barrierGlobalTimeTarget.store(maxTime, std::memory_order_relaxed);
-      std::cout << "barrierGlobalTimeTarget "
-                << ts.barrierGlobalTimeTarget.load() << " sortedIndicesSize "
-                << ts.sortedIndicesSize.load(std::memory_order_relaxed) << "\n";
       ts.barrierSetupComplete.store(true, std::memory_order_release);
     }
   }
@@ -427,20 +424,6 @@ void GateTimeSorter::WaitAtBarrierIfNeeded() {
         const int numArrived =
             ts.numThreadsAtBarrier.fetch_add(1, std::memory_order_relaxed) + 1;
 
-        // TODO remove this logging
-        if (numArrived == 1) {
-          auto [minIt, maxIt] = std::minmax_element(
-              fMaxGlobalTimePerThread.get(),
-              fMaxGlobalTimePerThread.get() + fNumWorkingThreads,
-              [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
-                return a.value.load() < b.value.load();
-              });
-          std::cout << "[" << fName << "] Barrier hit with divergence "
-                    << (maxIt->value.load() - minIt->value.load()) << " at "
-                    << maxIt->value.load() << "\n";
-        }
-        // TODO remove until here
-
         if (numArrived >= fNumWorkingThreads) {
           // Last thread to arrive: reset state and release all waiters.
           ts.numThreadsAtBarrier.store(0, std::memory_order_relaxed);
@@ -461,22 +444,6 @@ void GateTimeSorter::WaitAtBarrierIfNeeded() {
                                minIt->value.load());
 
           ts.barrierGeneration.fetch_add(1, std::memory_order_relaxed);
-
-          // TODO remove this logging
-          {
-            auto [minIt, maxIt] = std::minmax_element(
-                fMaxGlobalTimePerThread.get(),
-                fMaxGlobalTimePerThread.get() + fNumWorkingThreads,
-                [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
-                  return a.value.load() < b.value.load();
-                });
-            std::cout << "[" << fName << "] Barrier lifted with divergence "
-                      << (maxIt->value.load() - minIt->value.load()) << "\n";
-          }
-          std::cout << "fBarrierGlobalTimeTarget "
-                    << ts.barrierGlobalTimeTarget.load() << "\n";
-          // TODO remove until here
-
           cvLock.unlock();
           // Last thread has arrived so all can resume their work.
           ts.barrierConditionVariable.notify_all();
@@ -551,7 +518,6 @@ void GateTimeSorter::Process() {
     if (fMostRecentTimeDeparted.has_value() &&
         (digiTime < *fMostRecentTimeDeparted)) {
       ++fNumDroppedDigi;
-      std::cout << "[" << fName << "] drop " << fNumDroppedDigi << "\n";
       fMaxDropDelta =
           std::max(fMaxDropDelta, *fMostRecentTimeDeparted - digiTime);
       if (!fSortingWindowWarningIssued) {
@@ -643,8 +609,6 @@ void GateTimeSorter::Prune() {
   // 2. Sorted collection A is cleared.
   // 3. The two collections and sorted index queues are swapped.
 
-  const auto numBefore = fSortedCollectionA->GetSize();
-
   // Step 1
   GateDigiAttributesFiller transferFiller(
       fSortedCollectionA, fSortedCollectionB,
@@ -668,9 +632,4 @@ void GateTimeSorter::Prune() {
   // Step 3
   std::swap(fSortedCollectionA, fSortedCollectionB);
   std::swap(fSortedIndicesA, fSortedIndicesB);
-
-  std::cout << "Prune [" << fName << "] " << numBefore << " "
-            << fSortedCollectionA->GetSize() << "\n";
-  std::cout << "[" << fName << "] thread "
-            << std::max(0, G4Threading::G4GetThreadId()) << "\n";
 }
