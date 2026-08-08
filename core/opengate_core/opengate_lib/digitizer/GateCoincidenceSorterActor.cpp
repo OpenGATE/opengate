@@ -103,6 +103,13 @@ void GateCoincidenceSorterActor::InitializeUserInfo(py::dict &user_info) {
   if (py::len(user_info) > 0 && user_info.contains("sorting_time")) {
     fSortingTime = DictGetDouble(user_info, "sorting_time"); // nanoseconds
   }
+  if (py::len(user_info) > 0 && user_info.contains("sorting_buffer_size")) {
+    fSortingBufferSyncThreshold = DictGetInt(user_info, "sorting_buffer_size");
+  }
+  if (py::len(user_info) > 0 && user_info.contains("thread_sync_enabled")) {
+    fThreadSyncEnabled = DictGetBool(user_info, "thread_sync_enabled");
+  }
+
   fGroupVolumeDepth = -1;
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
 }
@@ -183,6 +190,8 @@ void GateCoincidenceSorterActor::BeginOfRunActionMasterThread(int run_id) {
   fTimeSorter->Init(fInputDigiCollection);
   fTimeSorter->SetSortingWindow(fSortingTime);
   fTimeSorter->SetMaxSize(fClearEveryNEvents);
+  fTimeSorter->SetThreadSyncEnabled(fThreadSyncEnabled);
+  fTimeSorter->SetBufferThreadSyncThreshold(fSortingBufferSyncThreshold);
 
   // Create temporary storage, which stores time-sorted digis until a
   // sufficiently large GlobalTime range is covered to allow for coincidence
