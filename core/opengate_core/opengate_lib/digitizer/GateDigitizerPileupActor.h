@@ -60,8 +60,10 @@ protected:
   TimeWindowPolicy fTimeWindowPolicy;
   AttributePolicy fAttributePolicy;
   PositionAttributePolicy fPositionAttributePolicy;
-  double fSortingTime;
   int fGroupVolumeDepth;
+  double fSortingTime;
+  int fSortingBufferSyncThreshold;
+  bool fThreadSyncEnabled;
 
   // Struct for storing digis in one particular volume which belong to the same
   // time window.
