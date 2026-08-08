@@ -343,14 +343,23 @@ bool GateTimeSorter::Ingest() {
 bool GateTimeSorter::IsFirstUpstream() {
   // The most upstream time sorter is the one that has succeeded in replacing
   // the nullptr value with its own this pointer.
-  if (sMostUpstreamInstance.load(std::memory_order_relaxed) == this) {
+  if (fIsFirstUpstream.load(std::memory_order_relaxed)) {
     return true;
   }
-  // Try to replace nullptr by the this pointer value, and return true if it
+  // Once any instance is elected, there is no point retrying the CAS.
+  if (sMostUpstreamInstance.load(std::memory_order_relaxed) != nullptr) {
+    return false;
+  }
+  // Try to replace nullptr by the this pointer value and return true if it
   // succeeded.
   GateTimeSorter *expected = nullptr;
-  return sMostUpstreamInstance.compare_exchange_strong(
-      expected, this, std::memory_order_acq_rel, std::memory_order_relaxed);
+  if (sMostUpstreamInstance.compare_exchange_strong(
+          expected, this, std::memory_order_acq_rel,
+          std::memory_order_relaxed)) {
+    fIsFirstUpstream.store(true, std::memory_order_release);
+    return true;
+  }
+  return false;
 }
 
 bool GateTimeSorter::ThreadSyncRequired() {
