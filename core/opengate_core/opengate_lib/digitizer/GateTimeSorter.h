@@ -112,6 +112,7 @@ private:
   std::optional<double> fMostRecentTimeDeparted;
 
   static std::atomic<GateTimeSorter *> sMostUpstreamInstance;
+  std::atomic<bool> fIsFirstUpstream{false};
 
   struct ThreadSync {
     bool enabled{true};
