@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # Source for native box
     src_native = sim.add_source("GenericSource", "src_native")
     src_native.particle = "proton"
-    src_native.n = 1
+    src_native.number_of_primaries = 1
     src_native.energy.type = "mono"
     src_native.energy.mono = T
     src_native.position.type = "point"
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # Source for custom box
     src_custom = sim.add_source("GenericSource", "src_custom")
     src_custom.particle = "proton"
-    src_custom.n = 1
+    src_custom.number_of_primaries = 1
     src_custom.energy.type = "mono"
     src_custom.energy.mono = T
     src_custom.position.type = "point"

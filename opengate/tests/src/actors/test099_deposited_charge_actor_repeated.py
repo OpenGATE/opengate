@@ -77,7 +77,7 @@ if __name__ == "__main__":
     source_single.position.translation = [-8 * cm, 0, -10 * cm]
     source_single.direction.type = "momentum"
     source_single.direction.momentum = [0, 0, 1]
-    source_single.n = n_events
+    source_single.number_of_primaries = n_events
 
     source_repeat = sim.add_source("GenericSource", "electrons_repeat")
     source_repeat.particle = "e-"
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     source_repeat.position.translation = [8 * cm, 0, -10 * cm]
     source_repeat.direction.type = "momentum"
     source_repeat.direction.momentum = [0, 0, 1]
-    source_repeat.n = n_events
+    source_repeat.number_of_primaries = n_events
 
     charge_single = sim.add_actor("DepositedChargeActor", "charge_single")
     charge_single.attached_to = single_box.name

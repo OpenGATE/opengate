@@ -124,7 +124,7 @@ def create_and_run_cc_simulation():
     source.position.radius = 0.25 * mm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.activity = 0.847 * 1e6 * Bq / sim.number_of_threads
+    source.activity = 0.847 * 1e6 * Bq
 
     if sim.visu:
         source.activity = 1 * Bq

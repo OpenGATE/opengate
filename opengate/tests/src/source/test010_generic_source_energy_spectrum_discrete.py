@@ -128,7 +128,7 @@ def add_source_energy_spectrum_discrete(sim, phsp):
     source = sim.add_source("GenericSource", "beam")
     source.attached_to = phsp.name
     source.particle = "gamma"
-    source.n = 5e5 / sim.number_of_threads
+    source.number_of_primaries = 5e5
     source.position.type = "point"
     source.direction.type = "iso"
     source.energy.type = "spectrum_discrete"

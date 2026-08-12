@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation
 
 from opengate.actors.simulation_stats_helpers import sum_stats, write_stats
 from opengate.image import write_itk_image
-from opengate.jobs import get_jobs_status
+from opengate.jobs import jobs_status
 from opengate.tests import utility
 from opengate.tests.src.geometry.test009_voxels_dynamic_helpers import (
     wait_for_completed_jobs,
@@ -93,7 +93,11 @@ def build_voxel_source_simulation(paths, output_dir, write_dose_to_disk):
 def merge_stats_from_jobs(job_folders, output_path):
     merged_stats = None
     for job_folder in job_folders:
-        job_stats = utility.read_stats_file(Path(job_folder) / "stats.txt")
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
+        job_stats_path = child_simulation.get_actor("Stats").get_output_path()
+        job_stats = utility.read_stats_file(job_stats_path)
         merged_stats = (
             job_stats if merged_stats is None else sum_stats(merged_stats, job_stats)
         )
@@ -104,11 +108,19 @@ def merge_stats_from_jobs(job_folders, output_path):
 
 
 def merge_images_from_jobs(job_folders, output_path):
-    first_image = itk.imread(str(Path(job_folders[0]) / "test021-1_edep.mhd"))
+    def get_job_edep_path(job_folder):
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
+        return child_simulation.get_actor(
+            "dose"
+        ).user_output.edep_with_uncertainty.get_output_path(item=0)
+
+    first_image = itk.imread(str(get_job_edep_path(job_folders[0])))
     merged_array = itk.array_view_from_image(first_image).copy()
 
     for job_folder in job_folders[1:]:
-        job_image = itk.imread(str(Path(job_folder) / "test021-1_edep.mhd"))
+        job_image = itk.imread(str(get_job_edep_path(job_folder)))
         merged_array += itk.array_view_from_image(job_image)
 
     merged_image = itk.image_from_array(merged_array)
@@ -193,17 +205,21 @@ def assert_rehydrated_child_inputs(job_folder):
         child_simulation.volume_manager.material_database.filenames
     )
 
-    expected_ct_image = (Path(job_folder) / "10x10x10.mhd").resolve()
-    expected_source_image = (Path(job_folder) / "five_pixels_10.mhd").resolve()
-    expected_material_db = (Path(job_folder) / "GateMaterials.db").resolve()
+    # Rehydrated child simulations now keep absolute paths to the archived
+    # campaign-local files without dereferencing symlinks. This preserves the
+    # split-campaign structure instead of silently collapsing linked inputs
+    # back to their original source location outside the job folder.
+    expected_ct_image = (Path(job_folder) / "10x10x10.mhd").absolute()
+    expected_source_image = (Path(job_folder) / "five_pixels_10.mhd").absolute()
+    expected_material_db = (Path(job_folder) / "GateMaterials.db").absolute()
 
     is_ok = utility.print_test(
-        Path(ct.image).resolve() == expected_ct_image,
+        Path(ct.image) == expected_ct_image,
         f"{Path(job_folder).name} rehydrated CT image path: {ct.image}",
     )
     is_ok = (
         utility.print_test(
-            Path(source.image).resolve() == expected_source_image,
+            Path(source.image) == expected_source_image,
             f"{Path(job_folder).name} rehydrated voxel-source image path: {source.image}",
         )
         and is_ok
@@ -211,7 +227,7 @@ def assert_rehydrated_child_inputs(job_folder):
     is_ok = (
         utility.print_test(
             len(material_database_filenames) == 1
-            and Path(material_database_filenames[0]).resolve() == expected_material_db,
+            and Path(material_database_filenames[0]) == expected_material_db,
             f"{Path(job_folder).name} rehydrated material DB path: {material_database_filenames}",
         )
         and is_ok
@@ -219,7 +235,7 @@ def assert_rehydrated_child_inputs(job_folder):
     return is_ok
 
 
-def run_split_campaign(paths, split_path, backend, link_files, backend_options=None):
+def run_split_campaign(paths, split_path, backend, link_files, number_of_workers=None):
     sim, _, _ = build_voxel_source_simulation(
         paths,
         split_path.parent / f"{split_path.name}_master_input",
@@ -227,16 +243,16 @@ def run_split_campaign(paths, split_path, backend, link_files, backend_options=N
     )
 
     split_root = gate.jobs_split(
-        sim,
-        3,
-        split_path,
+        simulation=sim,
+        number_of_jobs=3,
+        campaign_dir=split_path,
         policy="split_in_time_total",
         link_files=link_files,
-    )
+    ).campaign_dir
     summary = gate.jobs_run(
         split_root,
         backend=backend,
-        backend_options=backend_options,
+        number_of_workers=number_of_workers,
     )
     mode_label = "linked" if link_files else "copied"
     is_ok = utility.print_test(
@@ -244,7 +260,7 @@ def run_split_campaign(paths, split_path, backend, link_files, backend_options=N
         f"{backend} {mode_label} submission summary:\n{pretty_json(summary)}",
     )
 
-    initial_status = get_jobs_status(split_root)
+    initial_status = jobs_status(split_root)
     for job_status in initial_status["jobs"]:
         is_ok = (
             utility.print_test(
@@ -309,11 +325,7 @@ if __name__ == "__main__":
             paths.output / "split_campaign_pool_copied",
             backend="local_pool",
             link_files=False,
-            backend_options={
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            number_of_workers=2,
         )
         and is_ok
     )
@@ -332,11 +344,7 @@ if __name__ == "__main__":
             paths.output / "split_campaign_pool_linked",
             backend="local_pool",
             link_files=True,
-            backend_options={
-                "n_workers": 2,
-                "start_method": "spawn",
-                "maxtasksperchild": 1,
-            },
+            number_of_workers=2,
         )
         and is_ok
     )

@@ -40,7 +40,7 @@ if __name__ == "__main__":
     source.position.translation = [3 * cm, 0, -1 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 50000
+    source.number_of_primaries = 50000
 
     aux_no_prop = sim.activate_auxiliary_attribute(
         "LastInteractionPositionInVolumeAttribute",

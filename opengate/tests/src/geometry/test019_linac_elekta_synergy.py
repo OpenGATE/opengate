@@ -40,9 +40,9 @@ if __name__ == "__main__":
 
     # add linac e- source
     source = synergy.add_electron_source(sim, linac.name, linac.rotation)
-    source.n = 1e4 / sim.number_of_threads
+    source.number_of_primaries = 1e4
     if sim.visu:
-        source.n = 2
+        source.number_of_primaries = 2
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"

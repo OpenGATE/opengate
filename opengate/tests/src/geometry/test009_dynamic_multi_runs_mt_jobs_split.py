@@ -45,7 +45,7 @@ def build_dynamic_multi_run_simulation(output_dir):
     source = sim.add_source("GenericSource", "src")
     source.attached_to = "world"
     source.particle = "gamma"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     source.position.type = "point"
     source.direction.type = "iso"
     source.energy.type = "spectrum_discrete"
@@ -101,7 +101,6 @@ def build_dynamic_multi_run_simulation(output_dir):
 def merge_phase_space_root_from_jobs_with_runid_remap(
     job_folders,
     output_path,
-    root_filename="b.root",
     tree_name="phsp2",
 ):
     merged_branch_data = {}
@@ -116,7 +115,15 @@ def merge_phase_space_root_from_jobs_with_runid_remap(
             )
         original_run_index = original_run_indices[0]
 
-        with uproot.open(Path(job_folder) / root_filename) as root_file:
+        child_simulation = gate.create_sim_from_json(
+            Path(job_folder) / "simulation.json"
+        )
+        child_root_path = child_simulation.get_actor("phsp2").get_output_path()
+
+        # Child output lives under the child simulation's output_dir. Resolve
+        # the ROOT file through the rehydrated actor output rather than assuming
+        # it sits directly under job000X.
+        with uproot.open(child_root_path) as root_file:
             tree = root_file[tree_name]
             branch_data = root_tree_get_branch_data(tree, library="ak")
 
@@ -139,7 +146,10 @@ def merge_phase_space_root_from_jobs_with_runid_remap(
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, None, "test009_mr_mt")
+    # Use a jobs-specific output folder so this test can run concurrently with
+    # the non-jobs multi-run test under opengate_tests without deleting its
+    # output while it is still running.
+    paths = utility.get_default_test_paths(__file__, None, "test009_mr_mt_jobs_split")
     shutil.rmtree(paths.output, ignore_errors=True)
     is_ok = True
 
@@ -150,19 +160,15 @@ if __name__ == "__main__":
     original_run_timing_intervals = list(sim.run_timing_intervals)
 
     split_root = gate.jobs_split(
-        sim,
-        number_of_angles,
-        split_path,
+        simulation=sim,
+        number_of_jobs=number_of_angles,
+        campaign_dir=split_path,
         policy="split_in_time_per_run",
-    )
+    ).campaign_dir
     summary = gate.jobs_run(
         split_root,
         backend="local_pool",
-        backend_options={
-            "n_workers": number_of_angles,
-            "start_method": "spawn",
-            "maxtasksperchild": 1,
-        },
+        number_of_workers=number_of_angles,
     )
     is_ok = (
         utility.print_test(
@@ -192,11 +198,13 @@ if __name__ == "__main__":
     merge_phase_space_root_from_jobs_with_runid_remap(
         job_folders,
         merged_root,
-        root_filename="b.root",
         tree_name="phsp2",
     )
 
-    ref_root = paths.output_ref / "b.root"
+    # The jobs variant validates against the same non-split reference ROOT file
+    # as test009_dynamic_multi_runs_mt.py. It must not depend on that test being
+    # executed first; the reference file is part of the test data.
+    ref_root = paths.data / "output_ref" / "test009_mr_mt" / "b.root"
     is_ok = (
         utility.compare_root3(
             ref_root,

@@ -65,7 +65,7 @@ if __name__ == "__main__":
     sim.physics_manager.mean_energy_per_ion_pair["IEC_PLASTIC"] = mean_energy
 
     # go
-    sim.run()
+    sim.run(start_new_process=True)
 
     # test: no mean energy, should be mostly colinear
     gamma_pairs = read_gamma_pairs(root_filename)

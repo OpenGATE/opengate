@@ -688,14 +688,19 @@ class GateObject:
             )
         for k in self.user_info.keys():
             if k in d["user_info"]:
-                if hasattr(self, k):
+                # Check the generated user-info property on the class without
+                # touching the instance attribute. Some properties intentionally
+                # raise on raw access (for deprecation guidance), so instance-
+                # level hasattr/getattr is not safe during deserialization.
+                descriptor = getattr(type(self), k, None)
+                if descriptor is not None:
                     # Writable user infos restore through their generated
                     # property setter. Read-only user infos may opt into
                     # deserialization through an explicit developer-provided
                     # from_dictionary_hook stored alongside the user-info
                     # definition.
                     property_options = self.inherited_user_info_defaults[k][1]
-                    if getattr(type(self), k).fset is not None:
+                    if descriptor.fset is not None:
                         setattr(self, k, d["user_info"][k])
                     elif "from_dictionary_hook" in property_options:
                         property_options["from_dictionary_hook"](
@@ -760,6 +765,28 @@ class DynamicGateObject(GateObject):
             if "dynamic" in self.inherited_user_info_defaults[k][1]
             and self.inherited_user_info_defaults[k][1]["dynamic"] is True
         ]
+
+    @classmethod
+    def get_dynamic_input_file_user_info_names(cls):
+        """Return dynamic user-info keys that represent file-backed inputs.
+
+        Contract:
+        - This is a class-level semantic mapper based purely on
+          ``inherited_user_info_defaults``.
+        - It returns the dynamic user-info keys whose definitions are marked
+          both ``dynamic=True`` and ``is_input_file=True``.
+        - It does not inspect instance state such as ``dynamic_params`` and
+          does not say whether a particular object has populated those keys.
+
+        Higher-level callers should intersect this class-level set with the
+        keys actually present in a serialized or live dynamic parametrisation.
+        """
+
+        return {
+            name
+            for name, (_, options) in cls.inherited_user_info_defaults.items()
+            if options.get("dynamic") is True and options.get("is_input_file") is True
+        }
 
     @requires_fatal("simulation")
     def process_dynamic_parametrisation(self, params):

@@ -58,6 +58,7 @@ void GateDigitizerHitsCollectionActor::StartSimulationAction() {
   fHits->SetFilenameAndInitRoot(outputPath);
   fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
   fHits->RootInitializeTupleForMaster();
+  AddOutputTreeInfo(fOutputNameRoot, fHits);
 }
 
 // Called every time a Run starts

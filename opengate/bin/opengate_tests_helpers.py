@@ -222,6 +222,57 @@ def select_tests_by_id_or_random(files_to_run, start_id, end_id, random_tests, s
     return files_to_run
 
 
+def select_tests_by_explicit_paths(files_to_run, requested_tests, path_tests_src):
+    """Select explicit tests while preserving dashboard-relative path keys.
+
+    ``requested_tests`` entries may be relative to ``tests/src`` or absolute
+    paths below ``tests/src``. The returned paths always use the same relative
+    representation as ``discover_all_tests()``.
+    """
+
+    path_tests_src = Path(path_tests_src).resolve()
+    available = set(files_to_run)
+    selected = []
+    missing = []
+    outside = []
+
+    for requested_test in requested_tests:
+        requested_path = Path(requested_test)
+        if requested_path.is_absolute():
+            absolute_path = requested_path.resolve()
+        else:
+            candidate = (path_tests_src / requested_path).resolve()
+            if candidate.exists():
+                absolute_path = candidate
+            else:
+                absolute_path = requested_path.resolve()
+
+        try:
+            relative_path = absolute_path.relative_to(path_tests_src)
+        except ValueError:
+            outside.append(str(requested_test))
+            continue
+
+        normalized = relative_path.as_posix()
+        if normalized not in available:
+            missing.append(normalized)
+            continue
+        if normalized not in selected:
+            selected.append(normalized)
+
+    if outside:
+        fatal(
+            "Explicit test paths must point inside the OpenGATE tests/src folder. "
+            f"Invalid entries: {', '.join(outside)}"
+        )
+    if missing:
+        fatal(
+            "Explicit test paths were not found among available tests: "
+            f"{', '.join(missing)}"
+        )
+    return selected
+
+
 # --- Dependency Graph Management ---
 
 
@@ -284,6 +335,10 @@ def resolve_dependencies(files_to_run, path_tests_src):
 def run_one_test_case(f, processes_run, path_tests_src):
     start_time = time.time()
     print(f"Running: {f:<46}  ", end="")
+    # FIXME: The launcher currently uses the master-style shell command for
+    # broad platform compatibility. Revisit a sys.executable-based variant in a
+    # dedicated follow-up, but implement it without POSIX shell quoting so the
+    # Windows test runner stays functional.
     cmd = f"python {path_tests_src / f}"
     log = str(path_tests_src.parent / "log" / os.path.basename(f)) + ".log"
 
@@ -318,6 +373,9 @@ def run_one_test_case(f, processes_run, path_tests_src):
 def run_one_test_case_mp(f):
     path_tests_src = return_tests_path()
     print(f"Running: {f:<46}  ", end="")
+    # FIXME: Keep the launcher aligned with the master-style command for now.
+    # A future interpreter-consistent rewrite should avoid shell=True/string
+    # quoting pitfalls on Windows.
     cmd = f"python {path_tests_src / f}"
     log = str(path_tests_src.parent / "log" / Path(os.path.basename(f)).stem) + ".log"
 

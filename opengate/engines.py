@@ -1,5 +1,4 @@
 import time
-import random
 import sys
 import os
 import weakref
@@ -194,10 +193,7 @@ class SourceEngine(EngineBase):
         )
 
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
-        self.expected_number_of_events = (
-            ms.GetExpectedNumberOfEvents()
-            * self.simulation_engine.simulation.number_of_threads
-        )
+        self.expected_number_of_events = ms.GetExpectedNumberOfEvents()
         # set the flag for user event info
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
@@ -211,6 +207,16 @@ class SourceEngine(EngineBase):
 
     def start(self):
         sim = self.simulation_engine.simulation
+
+        if sim.multithreaded and len(self.g4_thread_source_managers) > 0:
+            self.expected_number_of_events = sum(
+                manager.GetExpectedNumberOfEvents()
+                for manager in self.g4_thread_source_managers
+            )
+        elif self.g4_master_source_manager is not None:
+            self.expected_number_of_events = (
+                self.g4_master_source_manager.GetExpectedNumberOfEvents()
+            )
 
         if sim.progress_hook:
             interval = float(
@@ -420,6 +426,11 @@ class PhysicsEngine(EngineBase):
     def initialize_regions(self):
         for region in self.physics_manager.regions.values():
             region.initialize_after_runmanager()
+
+    def initialize_regions_for_volume(self, volume):
+        region = self.physics_manager.find_region(volume.name)
+        if region is not None:
+            region.initialize_root_logical_volume(volume)
 
     def initialize_global_cuts(self):
         ui = self.physics_manager.user_info
@@ -1094,11 +1105,11 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
         G4 overloaded.
         Override the Construct method from G4VUserParallelWorld
         """
-
         # Construct all volumes within this world along the tree hierarchy
         # The world volume of this world is the first item
         for volume in PreOrderIter(self.parallel_world_volume):
             volume.construct()
+            self.simulation_engine.physics_engine.initialize_regions_for_volume(volume)
 
     def ConstructSD(self):
         self.simulation_engine.actor_engine.register_sensitive_detectors(
@@ -1157,22 +1168,13 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         G4 overloaded.
         Override the Construct method from G4VUserDetectorConstruction
         """
-
-        # # build the materials
-        # # FIXME: should go into initialize method
-        # self.simulation_engine.simulation.volume_manager.material_database.initialize()
-
         # Construct all volumes within the mass world along the tree hierarchy
         # The world volume is the first item
 
         self.volume_manager.update_volume_tree()
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
-
-        for (
-            region
-        ) in self.simulation_engine.simulation.physics_manager.regions.values():
-            region.initialize_during_runmanager()
+            self.simulation_engine.physics_engine.initialize_regions_for_volume(volume)
 
         # return the (main) world physical volume
         self._is_constructed = True
@@ -1678,10 +1680,13 @@ class SimulationEngine(GateSingletonFatal):
 
         # set the random engine
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        if self.simulation.random_seed == "auto":
-            self.current_random_seed = random.randrange(sys.maxsize)
-        else:
-            self.current_random_seed = self.simulation.random_seed
+        self.current_random_seed = self.simulation.current_random_seed
+        if self.current_random_seed is None:
+            fatal(
+                "Simulation.current_random_seed is not resolved. "
+                "resolve_and_validate_config() should assign a concrete seed "
+                "before SimulationEngine.initialize_random_engine() is called."
+            )
 
         # if windows, the long are 4 bytes instead of 8 bytes for python and unix system
         if os.name == "nt":

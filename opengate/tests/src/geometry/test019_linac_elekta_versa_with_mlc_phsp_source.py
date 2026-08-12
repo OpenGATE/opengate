@@ -108,9 +108,9 @@ if __name__ == "__main__":
     data = f["linac_box_phsp_plane_phsp"].arrays()
     nb_part = len(data)
 
-    source.n = nb_part / sim.number_of_threads
+    source.number_of_primaries = nb_part
     if sim.visu:
-        source.n = 20
+        source.number_of_primaries = 20
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"

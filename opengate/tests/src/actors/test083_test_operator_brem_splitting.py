@@ -136,7 +136,7 @@ if __name__ == "__main__":
     ####### Electron source ###########
     source = sim.add_source("GenericSource", "source1")
     source.particle = "e-"
-    source.n = 10000
+    source.number_of_primaries = 10000
     source.position.type = "sphere"
     source.position.radius = 1 * nm
     source.direction.type = "momentum"

@@ -22,24 +22,28 @@ if __name__ == "__main__":
 
     sim = build_simple_simulation(paths.output / "sequential_input")
     split_root = gate.jobs_split(
-        sim,
-        2,
-        paths.output / "sequential_campaign",
+        simulation=sim,
+        number_of_jobs=2,
+        campaign_dir=paths.output / "sequential_campaign",
         policy="split_in_time_per_run",
-    )
+    ).campaign_dir
 
-    summary = gate.jobs_run(split_root, backend="local_sequential")
+    summary = gate.jobs_run(
+        split_root,
+        backend="local_sequential",
+        detach=False,
+    )
     is_ok = is_ok and utility.print_test(
         summary["submitted_jobs"] == 2
         and summary["skipped_completed_jobs"] == 0
-        and summary["campaign_process_pid"] is not None,
+        and summary["campaign_process_pid"] is None,
         f"local_sequential submission summary: {summary}",
     )
     backend_status = load_backend_status(split_root)
     is_ok = is_ok and utility.print_test(
         backend_status is not None
         and backend_status["backend"] == "local_sequential"
-        and backend_status["status"] == "submitted"
+        and backend_status["status"] == "completed"
         and backend_status["submitted_jobs"] == 2
         and backend_status["campaign_process_pid"] == summary["campaign_process_pid"],
         f"local backend status: {backend_status}",
@@ -57,7 +61,11 @@ if __name__ == "__main__":
             f"local_sequential execution status for {job['folder_name']}: {status}",
         )
 
-    summary_second = gate.jobs_run(split_root, backend="local_sequential")
+    summary_second = gate.jobs_run(
+        split_root,
+        backend="local_sequential",
+        detach=False,
+    )
     is_ok = is_ok and utility.print_test(
         summary_second["submitted_jobs"] == 0
         and summary_second["skipped_completed_jobs"] == 2
@@ -74,17 +82,18 @@ if __name__ == "__main__":
     try:
         gate.jobs_run(split_root, backend="local_sequential")
     except Exception as error:
-        running_failure_detected = "restart_running_jobs=True" in str(error)
+        running_failure_detected = "allow_rerun_running=True" in str(error)
 
     is_ok = is_ok and utility.print_test(
         running_failure_detected,
-        "jobs_run detects running jobs and asks for restart_running_jobs=True",
+        "jobs_run detects running jobs and asks for allow_rerun_running=True",
     )
 
     summary_restart = gate.jobs_run(
         split_root,
         backend="local_sequential",
-        restart_running_jobs=True,
+        allow_rerun_running=True,
+        detach=False,
     )
     is_ok = is_ok and utility.print_test(
         summary_restart["submitted_jobs"] == 1

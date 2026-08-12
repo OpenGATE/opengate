@@ -730,7 +730,9 @@ class SourceConfig(ConfigBase):
             )
         set_source_energy_spectrum(source, self.radionuclide)
         source.particle = "gamma"
-        source.activity = self.total_activity / self.spect_config.number_of_threads
+        # Keep the configured activity as the simulation-level total. Sources
+        # now scale activity internally per worker when running in MT mode.
+        source.activity = self.total_activity
 
         # remove gamma lines lower than min energy
         if self.remove_low_energy_lines:

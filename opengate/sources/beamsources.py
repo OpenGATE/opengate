@@ -269,8 +269,8 @@ class TreatmentPlanPBSource(SourceBase):
                 self.ion.E = words[3]
 
         self.initialize_start_end_time(run_timing_intervals)
-        self.check_ui_activity(self.user_info)
-        g4_source.InitializeUserInfo(self.user_info)
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        g4_source.InitializeUserInfo(runtime_user_info)
 
     def get_generated_primaries(self):
         if self.g4_thread_sources:

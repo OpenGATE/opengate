@@ -79,7 +79,7 @@ if __name__ == "__main__":
     source.position.type = "box"
     source.position.size = [1 * mm, 200 * mm, 1 * mm]
     source.position.translation = [0, 0, 0 * cm]
-    source.activity = 1e5 * Bq / sim.number_of_threads
+    source.activity = 1e5 * Bq
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
 

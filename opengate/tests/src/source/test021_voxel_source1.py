@@ -60,7 +60,7 @@ if __name__ == "__main__":
     source = sim.add_source("VoxelSource", "vox_source")
     source.attached_to = ct.name
     source.particle = "alpha"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     source.image = str(paths.data / "five_pixels_10.mhd")
     source.direction.type = "iso"
     source.position.translation = gate.image.get_translation_between_images_center(

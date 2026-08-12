@@ -75,7 +75,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -30 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 1e6
+    source.number_of_primaries = 1e6
 
     # PhaseSpace Actor to save polarization
     phspa = sim.add_actor("PhaseSpaceActor", "PhaseSpace")

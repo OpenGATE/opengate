@@ -98,7 +98,7 @@ if __name__ == "__main__":
     beam_data["isocenter"] = []
 
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
-    tps.n = 2000
+    tps.number_of_primaries = 2000
     tps.sorted_spot_generation = True
     tps.beam_model = beamline
     tps.beam_data_dict = beam_data

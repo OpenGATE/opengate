@@ -35,6 +35,10 @@ public:
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
 
+  // Called every time a Run starts/ends (master thread only)
+  void BeginOfRunActionMasterThread(int run_id) override;
+  int EndOfRunActionMasterThread(int run_id) override;
+
   // Called every time the simulation is about to end (all threads)
   void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
 
@@ -45,6 +49,7 @@ public:
   void SteppingAction(G4Step *) override;
 
   py::dict GetCounts();
+  py::dict GetCountsCurrentRun();
 
 protected:
   // Local data for the threads (each one has a copy)
@@ -54,6 +59,11 @@ protected:
     long int fTrackCount;
     long int fStepCount;
     std::map<std::string, long int> fTrackTypes;
+    int fCurrentRunCount;
+    long int fCurrentRunEventCount;
+    long int fCurrentRunTrackCount;
+    long int fCurrentRunStepCount;
+    std::map<std::string, long int> fCurrentRunTrackTypes;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
@@ -61,6 +71,10 @@ protected:
   std::map<std::string, long int> fCounts;
   std::map<std::string, double> fCountsD;
   std::map<std::string, std::string> fCountsStr;
+  std::map<std::string, long int> fCountsCurrentRun;
+  std::map<std::string, double> fCountsDCurrentRun;
+  std::map<std::string, std::string> fCountsStrCurrentRun;
+  std::map<std::string, long int> fTrackTypesCurrentRun;
 
   bool fTrackTypesFlag;
   std::map<std::string, long int> fTrackTypes;
@@ -69,6 +83,8 @@ protected:
   std::chrono::system_clock::time_point fStartTime;
   std::chrono::system_clock::time_point fStartRunTime;
   std::chrono::system_clock::time_point fStopTime;
+  std::chrono::system_clock::time_point fStartCurrentRunTime;
+  std::chrono::system_clock::time_point fStopCurrentRunTime;
   bool fStartRunTimeIsSet;
 };
 

@@ -48,9 +48,9 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "src")
     source.attached_to = "world"
     source.particle = "gamma"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     if sim.visu:
-        source.activity = 10 * Bq / sim.number_of_threads
+        source.activity = 10 * Bq
     source.position.type = "point"
     source.direction.type = "iso"
     source.energy.type = "spectrum_discrete"

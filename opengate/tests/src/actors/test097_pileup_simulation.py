@@ -57,7 +57,7 @@ def create_simulation(paths, num_threads):
 
     source1 = sim.add_source("GenericSource", "b2b_1")
     source1.particle = "back_to_back"
-    source1.activity = 5 * 1e6 * Bq / num_threads
+    source1.activity = 5 * 1e6 * Bq
     source1.position.type = "point"
     source1.position.translation = [100 * mm, 0, 0]
     source1.direction.theta = [90 * deg, 90 * deg]
@@ -65,7 +65,7 @@ def create_simulation(paths, num_threads):
 
     source2 = sim.add_source("GenericSource", "b2b_2")
     source2.particle = "back_to_back"
-    source2.activity = 5 * 1e6 * Bq / num_threads
+    source2.activity = 5 * 1e6 * Bq
     source1.position.translation = [-100 * mm, 0, 0]
     source2.position.type = "point"
     source2.direction.theta = [90 * deg, 90 * deg]

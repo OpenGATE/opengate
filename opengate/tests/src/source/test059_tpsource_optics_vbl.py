@@ -109,7 +109,7 @@ if __name__ == "__main__":
     nSim = 20000
     tps = sim.add_source("TreatmentPlanPBSource", "TP source")
     tps.beam_model = IR2VBL
-    tps.n = nSim
+    tps.number_of_primaries = nSim
     tps.particle = "ion 6 12"
     tps.plan_path = ref_path / "TreatmentPlan4Gate-gate_test59tps_v.txt"
 

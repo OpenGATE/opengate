@@ -56,7 +56,7 @@ def create_simulation(sim, paths, colli="lehr", version=""):
     sim.check_volumes_overlap = True
     sim.random_seed = 4123456
     # ac = 1e6 * BqmL
-    ac = 3e3 * BqmL / sim.number_of_threads
+    ac = 3e3 * BqmL
     sim.visu = False
     # sim.running_verbose_level = gate.EVENT
     # sim.g4_verbose = True

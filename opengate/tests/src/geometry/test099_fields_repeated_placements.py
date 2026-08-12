@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     src_single = sim.add_source("GenericSource", "src_single")
     src_single.particle = "proton"
-    src_single.n = 1
+    src_single.number_of_primaries = 1
     src_single.energy.type = "mono"
     src_single.energy.mono = KE
     src_single.position.type = "point"
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     src_multi = sim.add_source("GenericSource", "src_multi")
     src_multi.particle = "proton"
-    src_multi.n = 1
+    src_multi.number_of_primaries = 1
     src_multi.energy.type = "mono"
     src_multi.energy.mono = KE
     src_multi.position.type = "point"

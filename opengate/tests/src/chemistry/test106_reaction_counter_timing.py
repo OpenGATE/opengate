@@ -52,7 +52,7 @@ def create_simulation(number_of_events, time_step_model, confine_to_half_box):
     source.position.size = [18 * um, 18 * um, 18 * um]
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.n = number_of_events
+    source.number_of_primaries = number_of_events
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
@@ -70,7 +70,7 @@ def run_case(number_of_events, time_step_model, confine_to_half_box):
         "half-box confinement" if confine_to_half_box else "no confinement"
     )
     print(
-        f"Run case: model={time_step_model}, source.n={number_of_events}, "
+        f"Run case: model={time_step_model}, source.number_of_primaries={number_of_events}, "
         f"{confinement_label}"
     )
     sim, stats, chem_actor = create_simulation(

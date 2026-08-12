@@ -367,7 +367,7 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     source.position.radius = 2 * mm  # FIXME not really similar to GATE need sigma etc
     source.position.translation = [0, 0, target.dz - 1 * nm]
     source.direction.type = "momentum"
-    source.n = 10
+    source.number_of_primaries = 10
     # consider linac rotation
     dir = np.dot(rotation_matrix, np.array([0, 0, -1]))
     source.direction.momentum = dir
