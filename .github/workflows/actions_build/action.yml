@@ -51,15 +51,7 @@ runs:
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
         restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
     - name: Miniconda setup Macos and windows
-      if: (inputs.os == 'macos-15') || (inputs.os == 'windows-2025')
-      uses: conda-incubator/setup-miniconda@v4
-      with:
-          miniconda-version: "latest"
-          auto-update-conda: true
-          activate-environment: opengate_core
-          python-version: '3.14'
-    - name: Miniconda setup Macos intel and windows arm
-      if: (inputs.os == 'macos-15-intel')
+      if: (inputs.os == 'macos-15')|| (inputs.os == 'macos-15-intel') || (inputs.os == 'windows-2025') || (inputs.os == 'windows-11-arm')
       uses: conda-incubator/setup-miniconda@v4
       with:
           miniconda-version: "latest"
