@@ -32,7 +32,7 @@ fi
 echo "QT_PLUGIN_DIR is $QT_PLUGIN_DIR"
 pip install wget colored setuptools
 # install cibuildwheel
-pip install cibuildwheel[uv]==3.4.0
+pip install cibuildwheel==3.4.0
 
 mkdir -p $HOME/software
 if [ "${MATRIX_CACHE}" != 'true' ]; then
@@ -77,11 +77,11 @@ mkdir opengate_core/plugins
 cp -r $QT_PLUGIN_DIR/platforms/* opengate_core/plugins/
 cp -r $QT_PLUGIN_DIR/imageformats/* opengate_core/plugins/
 
-export CIBW_BUILD_FRONTEND="build[uv]"
+export CIBW_BUILD_FRONTEND="build"
 export CIBW_PLATFORM="macos"
 export CIBW_SKIP="*t*"
 export MACOSX_DEPLOYMENT_TARGET=15.0
-export CIBW_BEFORE_BUILD="uv pip install cmake colored"
+export CIBW_BEFORE_BUILD="pip install cmake colored"
 
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/Users/runner/miniconda3/envs/opengate_core/lib

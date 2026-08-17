@@ -12,7 +12,7 @@ python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delvewheel
 
-pip install cibuildwheel[uv]==3.4.0
+pip install cibuildwheel==3.4.0
 
 # For windows 2025, Need to add the certifi CA bundle to avoid SSL errors when downloading dependencies during the build. This is a workaround for cibuildwheel which does not handle this properly on Windows.
 python - << 'EOF'
@@ -72,7 +72,7 @@ if [[ ${MATRIX_OS} == "windows-11-arm" ]]; then
 else
     export CIBW_ARCHS="AMD64"
 fi
-export CIBW_BUILD_FRONTEND="build[uv]"
+export CIBW_BUILD_FRONTEND="build"
 export CIBW_SKIP="*t*"
 export CIBW_PLATFORM="windows"
 find $HOME/software/geant4/bin/ -iname "*.dll"
@@ -80,7 +80,7 @@ ls $HOME/software/geant4/bin/BuildProducts/Release/bin
 ls $HOME/software/geant4/bin/BuildProducts/Release/lib/
 
 # use delvewheel on windows
-export CIBW_BEFORE_BUILD_WINDOWS="uv pip install colored"
+export CIBW_BEFORE_BUILD_WINDOWS="pip install colored"
 export CIBW_REPAIR_WHEEL_COMMAND_WINDOWS=''
 python -m cibuildwheel --output-dir dist
 

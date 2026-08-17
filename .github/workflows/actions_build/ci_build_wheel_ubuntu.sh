@@ -4,7 +4,7 @@ set -e
 source $GITHUB_WORKSPACE/env_dump.txt
 
 pip install wget colored setuptools
-pip install cibuildwheel[uv]==3.4.0
+pip install cibuildwheel==3.4.0
 
 # Setup the environment for the build
 if [ ${MATRIX_OS} == "ubuntu-24.04-arm" ]; then
@@ -27,7 +27,7 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
   export CIBW_BUILD="cp314-*"
 fi
 export CIBW_PLATFORM="linux"
-export CIBW_BUILD_FRONTEND="build[uv]"
+export CIBW_BUILD_FRONTEND="build"
 export CIBW_SKIP="*-musllinux_* *t*"
 export CIBW_BEFORE_BUILD='
 pip install colored &&
