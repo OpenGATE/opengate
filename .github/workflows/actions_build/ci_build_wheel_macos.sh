@@ -18,10 +18,10 @@ export PATH="/Users/runner/miniconda3/envs/opengate_core/bin/:$PATH"
 
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
-    brew install --force --verbose --overwrite libiconv cups
+
     export QT_PLUGIN_DIR="/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins"
-    export LDFLAGS="-L/usr/local/opt/cups/lib -L/usr/local/opt/libiconv/lib -L/usr/local/opt/llvm/lib"
-    export CPPFLAGS="-I/usr/local/opt/cups/include -I/usr/local/opt/libiconv/include -I/usr/local/opt/llvm/include -fopenmp"
+    export LDFLAGS="-L/usr/local/opt/llvm/lib"
+    export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 else
     brew install qt
     export QT_PLUGIN_DIR=$(qtpaths6 --plugin-dir)
@@ -81,10 +81,10 @@ export CIBW_BUILD_FRONTEND="build[uv]"
 export CIBW_PLATFORM="macos"
 export CIBW_SKIP="*t*"
 export MACOSX_DEPLOYMENT_TARGET=15.0
-export CIBW_BEFORE_BUILD="uv pip install colored"
+export CIBW_BEFORE_BUILD="uv pip install cmake colored"
 
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
-    export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms:/usr/local/opt/cups/lib:/usr/local/opt/libiconv/lib:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/Users/runner/miniconda3/envs/opengate_core/lib
+    export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/Users/runner/miniconda3/envs/opengate_core/lib
     export CIBW_ARCHS_MACOS="x86_64"
 else
     export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/opt/homebrew/share/qt/plugins/platforms/:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/opt/homebrew/lib
