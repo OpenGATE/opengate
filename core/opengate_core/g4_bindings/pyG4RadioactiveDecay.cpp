@@ -9,10 +9,10 @@
 
 namespace py = pybind11;
 
-#include "G4DecayTable.hh"
-#include "G4Ions.hh"
-#include "G4RadioactiveDecay.hh"
-#include "G4VRestDiscreteProcess.hh"
+#include <G4DecayTable.hh>
+#include <G4Ions.hh>
+#include <G4RadioactiveDecay.hh>
+#include <G4VRestDiscreteProcess.hh>
 
 void init_G4RadioactiveDecay(py::module &m) {
   py::class_<G4RadioactiveDecay, G4VRestDiscreteProcess>(m,

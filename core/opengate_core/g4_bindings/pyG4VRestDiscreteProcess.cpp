@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4VRestDiscreteProcess.hh"
+#include <G4VRestDiscreteProcess.hh>
 
 void init_G4VRestDiscreteProcess(py::module &m) {
   py::class_<G4VRestDiscreteProcess, G4VProcess>(m, "G4VRestDiscreteProcess");

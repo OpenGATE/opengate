@@ -8,9 +8,9 @@
 #ifndef GateEventAction_h
 #define GateEventAction_h
 
-#include "G4Event.hh"
-#include "G4UserEventAction.hh"
 #include "GateVActor.h"
+#include <G4Event.hh>
+#include <G4UserEventAction.hh>
 
 class GateEventAction : public G4UserEventAction {
 
@@ -24,6 +24,8 @@ public:
   virtual void BeginOfEventAction(const G4Event *event);
 
   virtual void EndOfEventAction(const G4Event *event);
+
+  bool fChemistryIsActive;
 
 protected:
   std::vector<GateVActor *> fBeginOfEventAction_actors;

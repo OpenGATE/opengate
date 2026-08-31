@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigiAttributeManager.h"
+#include "../GateHelpers.h"
 #include "GateTDigiAttribute.h"
 
 GateDigiAttributeManager *GateDigiAttributeManager::fInstance = nullptr;
@@ -21,7 +22,7 @@ GateDigiAttributeManager::GateDigiAttributeManager() {
 }
 
 GateVDigiAttribute *
-GateDigiAttributeManager::GetDigiAttribute(std::string name) {
+GateDigiAttributeManager::GetDigiAttribute(const std::string &name) {
   if (fAvailableDigiAttributes.find(name) == fAvailableDigiAttributes.end()) {
     std::ostringstream oss;
     oss << "Error the attribute named '" << name << "' does not exists. Abort.";
@@ -70,7 +71,8 @@ void GateDigiAttributeManager::DefineDigiAttribute(
     att = new GateTDigiAttribute<double>(name);
   if (type == 'I')
     att = new GateTDigiAttribute<int>(name);
-
+  if (type == 'L')
+    att = new GateTDigiAttribute<int64_t>(name);
   if (type == 'S')
     att = new GateTDigiAttribute<std::string>(name);
   if (type == '3')
@@ -89,13 +91,19 @@ void GateDigiAttributeManager::DefineDigiAttribute(
 }
 
 GateVDigiAttribute *GateDigiAttributeManager::CopyDigiAttribute(
-    GateVDigiAttribute *att) { // FIXME to move elsewhere !!!!!
+    GateVDigiAttribute *att) { // FIXME to move elsewhere
   GateVDigiAttribute *a = nullptr;
+
+  // FIXME do a real copy, including the inner members !
+
   if (att->GetDigiAttributeType() == 'D') {
     a = new GateTDigiAttribute<double>(att->GetDigiAttributeName());
   }
   if (att->GetDigiAttributeType() == 'I') {
     a = new GateTDigiAttribute<int>(att->GetDigiAttributeName());
+  }
+  if (att->GetDigiAttributeType() == 'L') {
+    a = new GateTDigiAttribute<int64_t>(att->GetDigiAttributeName());
   }
   if (att->GetDigiAttributeType() == 'S') {
     a = new GateTDigiAttribute<std::string>(att->GetDigiAttributeName());

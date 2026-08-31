@@ -1,11 +1,14 @@
 from box import Box
 from functools import wraps
+import copy
 
 from ..definitions import __world_name__
-from ..exception import fatal, GateImplementationError
-from ..base import GateObject, process_cls
+from ..exception import fatal, GateImplementationError, GateMergeError
+from ..base import GateObject, process_cls, create_gate_object_from_dict
+from ..physics import Region
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
+import opengate_core as g4
 
 
 def _setter_hook_attached_to(self, attached_to):
@@ -40,6 +43,12 @@ def _setter_hook_attached_to(self, attached_to):
         f"or a list/tuple of volumes or volume names. "
         f"Received: {attached_to}"
     )
+
+
+def _setter_hook_filter(self, filter_obj):
+    from .filters import bind_filter_to_simulation
+
+    return bind_filter_to_simulation(filter_obj, self.simulation)
 
 
 def shortcut_for_single_output_actor(func):
@@ -87,8 +96,9 @@ class ActorBase(GateObject):
 
     # hints for IDE
     attached_to: str
-    filters: list
-    filters_boolean_operator: str
+    filter: str
+    filters: list  # deprecated
+    filters_boolean_operator: str  # deprecated
     priority: int
 
     user_info_defaults = {
@@ -105,21 +115,20 @@ class ActorBase(GateObject):
                 "deprecated": "The user input parameter 'mother' is deprecated. Use 'attached_to' instead. ",
             },
         ),
-        "filters": (
-            [],
+        "filter": (
+            None,
             {
-                "doc": "Filters used by this actor. ",
+                "doc": "Filter used by this actor: the acti is only triggered if the filter accepts the step",
+                "setter_hook": _setter_hook_filter,
             },
+        ),
+        "filters": (
+            None,
+            {"deprecated": "Use '.filter' not '.filters'."},
         ),
         "filters_boolean_operator": (
             "and",
-            {
-                "doc": "Boolean operator to join multiple filters of this actor. ",
-                "allowed_values": (
-                    "and",
-                    "or",
-                ),
-            },
+            {"deprecated": "Use filters composition instead."},
         ),
         "priority": (
             100,
@@ -127,6 +136,18 @@ class ActorBase(GateObject):
                 "doc": "Indicates where the actions of this actor should be placed "
                 "in the list of all actions in the simulation. "
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
+            },
+        ),
+        "track_structure_em_physics": (
+            None,
+            {
+                "doc": "If not None, request region-based track-structure EM physics "
+                "in the volume to which this actor is attached. "
+                "Use the full Geant4 constructor names where they exist, such as "
+                "`G4EmDNAPhysics_option2`, `G4EmDNAPhysics_option4`, "
+                "`G4EmDNAPhysics_option6`, `G4EmDNAPhysics_option7`, or "
+                "`G4EmDNAPhysics_option8`.",
+                "allowed_values": Region.available_track_structure_em_physics + (None,),
             },
         ),
     }
@@ -142,6 +163,26 @@ class ActorBase(GateObject):
     # The list is filled automatically during the class manufacturing process triggered by __process_this__
     # Do not redefine this in inheriting classes!
     _existing_properties_to_interfaces = []
+
+    @property
+    def is_chemistry_actor(self):
+        from .chemistryactors import ChemistryActorBase
+
+        return isinstance(self, ChemistryActorBase)
+
+    def get_track_structure_em_physics_request(self):
+        # Freeze-time hook for actors that request region-based track-structure EM
+        # activation before Geant4 physics initialization. Actors should
+        # return None or a (volume_name, track_structure_em_physics) tuple.
+        if self.track_structure_em_physics is None:
+            return None
+        if not isinstance(self.attached_to, str):
+            fatal(
+                f"Actor '{self.name}' requests track_structure_em_physics='{self.track_structure_em_physics}' "
+                f"but is attached to {self.attached_to}. "
+                f"Actors currently support track-structure EM activation only for a single attached volume."
+            )
+        return self.attached_to, self.track_structure_em_physics
 
     @classmethod
     def _process_user_output_config(cls):
@@ -161,6 +202,9 @@ class ActorBase(GateObject):
 
             # default to "auto" if output_config has no key "interfaces"
             interfaces_of_this_output = output_config.get("interfaces", "auto")
+            item_config_overrides = copy.deepcopy(
+                output_config.get("item_config_overrides", {})
+            )
             # if the GATE developer has not defined any interfaces, we create one automatically
             if interfaces_of_this_output == "auto":
                 interface_name = output_name  # use the output name as interface name
@@ -176,7 +220,12 @@ class ActorBase(GateObject):
                     [
                         (k, v)
                         for k, v in output_config.items()
-                        if k not in ("actor_output_class", "interfaces")
+                        if k
+                        not in (
+                            "actor_output_class",
+                            "interfaces",
+                            "item_config_overrides",
+                        )
                     ]
                 )
                 interfaces_of_this_output[interface_name].update(other_parameters)
@@ -199,6 +248,7 @@ class ActorBase(GateObject):
 
             cls._processed_user_output_config[output_name] = {
                 "actor_output_class": actor_output_class,
+                "item_config_overrides": item_config_overrides,
                 "interfaces": interfaces_of_this_output,
             }
 
@@ -307,12 +357,14 @@ class ActorBase(GateObject):
 
     def __init__(self, *args, **kwargs) -> None:
         GateObject.__init__(self, *args, **kwargs)
-        self.actor_engine = (
-            None  # this is set by the actor engine during initialization
-        )
+        # the actor engine is set by the actor engine during initialization
+        self.actor_engine = None
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
         self._init_user_output_instance()
+        # the mother of the volume the actor is attached to will be automatically set
+        self.mother_attached_to = None
+        self.fFilter = None
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -342,7 +394,24 @@ class ActorBase(GateObject):
         return d
 
     def from_dictionary(self, d):
-        super().from_dictionary(d)
+        serialized_filter = d["user_info"].get("filter", None)
+
+        # Filters are GateObjects owned by actors. Reconstruct them explicitly
+        # here rather than letting GateObject.from_dictionary() feed the raw
+        # serialized dictionary into the actor's filter setter hook.
+        d_without_filter = dict(d)
+        d_without_filter["user_info"] = dict(d["user_info"])
+        d_without_filter["user_info"].pop("filter", None)
+
+        super().from_dictionary(d_without_filter)
+
+        if serialized_filter is not None:
+            filter_obj = create_gate_object_from_dict(serialized_filter)
+            filter_obj.from_dictionary(serialized_filter)
+            # Route through the generated property setter so the filter is
+            # rebound to this actor's simulation and registered consistently.
+            self.filter = filter_obj
+
         # Create all actor output objects
         for k, v in d["user_output"].items():
             self.user_output[k].from_dictionary(v)
@@ -442,36 +511,103 @@ class ActorBase(GateObject):
         return self.simulation.volume_manager.get_volume(self.attached_to)
 
     def close(self):
+        # first, Close the cpp part of the actor
+        self.Close()
+        # close all outputs
         for uo in self.user_output.values():
             uo.close()
+        # remove the g4 objects and the actor engine pointer
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
         self.actor_engine = None
+        # close the base GateObject
         super().close()
 
-    def initialize(self):
-        """This base class method initializes common settings and should be called in all inheriting classes."""
+    def resolve_and_validate_config(self, context=None):
+        # Resolve the mother of the attached_to volume now so initialize() only
+        # needs to forward the resolved value to the runtime layer.
+        if isinstance(self.attached_to, str):
+            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            self.mother_attached_to = vol.mother
+            if vol.mother is None:
+                # the mother of the world is the world (sic)
+                self.mother_attached_to = __world_name__
+        else:
+            self.mother_attached_to = "None"
 
         any_active = False
-        for p in self._existing_properties_to_interfaces:
-            interface = getattr(self, p)
+        for property_name in self._existing_properties_to_interfaces:
+            interface = getattr(self, property_name)
             any_active |= interface.active
         if len(self.user_output) > 0 and not any_active:
             self.warn_user(f"The actor {self.name} has no active output. ")
 
+        for user_output in self.user_output.values():
+            user_output.resolve_and_validate_config(context=context)
+
+    def initialize(self):
+        """This base class method initializes common settings and should be called in all inheriting classes."""
+
+        if self.mother_attached_to is None:
+            self.resolve_and_validate_config()
+
+        # set the name of the attached_to mother volume to cpp
+        self.SetMotherAttachedToVolumeName(self.mother_attached_to)
+        self.ClearAttachedVolumeExitPairs()
+
         for k, v in self.user_output.items():
             v.initialize()
 
-        # initialize filters
+        # initialize filter
         try:
-            self.fFilters = self.filters
+            self.fFilter = self.filter
         except AttributeError:
             fatal(
-                f"Implementation error: Unable to set the attribute 'fFilters' in actor '{self.name}' "
+                f"Implementation error: Unable to set the attribute 'fFilter' in actor '{self.name}' "
                 f"(actor type: {self.type_name}). "
                 f"Does the actor class somehow inherit from GateVActor (as it should)?"
             )
+
+    def initialize_attached_volume_mother_pairs(self, world_name):
+        attached_to = self.attached_to
+        if isinstance(attached_to, str):
+            attached_to = [attached_to]
+
+        for volume_name in attached_to:
+            volume = self.simulation.volume_manager.get_volume(volume_name)
+            if volume.world_volume.name != world_name or volume_name == __world_name__:
+                continue
+
+            valid_instance_ids = {
+                pv.GetInstanceID() for pv in volume.g4_physical_volumes
+            }
+            pairs_added = 0
+
+            # Restrict the touchable lookup to the world currently being
+            # constructed. A global scan across all active navigators is too
+            # fragile during parallel-world setup because some other worlds may
+            # not have a ready navigator yet.
+            for touchable in g4.FindAllTouchables(volume_name, world_name):
+                attached_pv = touchable.GetVolume(0)
+                if attached_pv.GetInstanceID() not in valid_instance_ids:
+                    continue
+                if touchable.GetHistoryDepth() < 1:
+                    fatal(
+                        f"Could not resolve the mother physical volume for "
+                        f"attached volume '{volume_name}' in actor "
+                        f"'{self.name}'."
+                    )
+                mother_pv = touchable.GetVolume(1)
+                self.AddAttachedVolumeExitPair(attached_pv, mother_pv)
+                pairs_added += 1
+
+            # Some actors never use the attached volume / mother volume pairs,
+            # and in parallel-world setup there may be ConstructSDandField
+            # passes where Geant4 does not yield touchables for a given volume
+            # yet. We therefore leave the setup non-fatal here and let actors
+            # that actually need these pairs fail later if they try to use
+            # IsStepExitingAttachedVolume() without any resolved pairs.
 
     def _init_user_output_instance(self):
         for output_name, output_config in self._processed_user_output_config.items():
@@ -490,7 +626,11 @@ class ActorBase(GateObject):
             )
 
             # create and add the instance of the actor output
-            self._add_user_output(actor_output_class, output_name)
+            self._add_user_output(
+                actor_output_class,
+                output_name,
+                item_config_overrides=output_config.get("item_config_overrides", {}),
+            )
 
             # now create the interface instances linking to the actor output
             for interface_name, interface_config in interfaces.items():
@@ -510,7 +650,29 @@ class ActorBase(GateObject):
                 )
                 # use the newly created interface to set the defaults
                 interface = self.interfaces_to_user_output[interface_name]
+                is_container_output = self.user_output[
+                    output_name
+                ].is_container_output()
                 for p in default_params:
+                    if is_container_output:
+                        item_config_overrides = output_config.get(
+                            "item_config_overrides", {}
+                        )
+                        item_identifier = interface_config.get("item", 0)
+                        normalized_item_identifier = self.user_output[
+                            output_name
+                        ]._normalize_item_identifier(item_identifier)
+                        item_override = item_config_overrides.get(
+                            normalized_item_identifier,
+                            item_config_overrides.get(
+                                str(normalized_item_identifier), {}
+                            ),
+                        )
+                        # Per-output item_config_overrides are the authoritative
+                        # place for semantic per-item defaults such as suffixes.
+                        # Do not let interface defaults overwrite them.
+                        if p in item_override:
+                            continue
                     v = interface_config[p]
                     setattr(interface, p, v)
 
@@ -529,6 +691,9 @@ class ActorBase(GateObject):
             ]
         ):
             raise GateImplementationError("Only one ROOT output per actor supported. ")
+
+        if not actor_output_class.is_container_output():
+            kwargs.pop("item_config_overrides", None)
 
         self.user_output[name] = actor_output_class(
             name=name,
@@ -566,6 +731,100 @@ class ActorBase(GateObject):
             u.simulation = self.simulation
         for v in self.interfaces_to_user_output.values():
             v.belongs_to_actor = self
+
+    def import_user_output_from_actor(self, *actor, **kwargs):
+        """Import or merge user output from compatible actor instances.
+
+        This is the actor-level entry point we can later reuse for split-job
+        merging once child simulations are rehydrated from disk.
+        """
+
+        if not all([self.type_name == a.type_name for a in actor]):
+            fatal("An actor can only import user output from the same type of actor.")
+
+        if len(actor) == 1:
+            self.recover_user_output(actor[0])
+            return
+
+        for output_name in self.user_output:
+            try:
+                self.user_output[output_name].merge_data_from_actor_output(
+                    *[a.user_output[output_name] for a in actor], **kwargs
+                )
+            except NotImplementedError:
+                self.warn_user(
+                    f"User output {output_name} in {self.type_name} cannot be imported "
+                    "because merge support is not implemented for this output type yet."
+                )
+
+    def plan_merge(self, mode="as_configured"):
+        output_plans = []
+        for output_name, output in self.user_output.items():
+            output_plans.append(output.plan_merge(mode=mode))
+        return output_plans
+
+    def compare_with(self, other, mode="merge_target_compatibility"):
+        """Compare this actor against another actor and report differences."""
+        differences = []
+
+        if not isinstance(other, ActorBase):
+            return [
+                f"Object type mismatch: expected ActorBase, received {type(other).__name__}."
+            ]
+
+        if self.type_name != other.type_name:
+            differences.append(
+                f"type mismatch: target={self.type_name}, reference={other.type_name}."
+            )
+
+        self_output_names = set(self.user_output.keys())
+        other_output_names = set(other.user_output.keys())
+        if self_output_names != other_output_names:
+            missing_in_self = sorted(other_output_names - self_output_names)
+            missing_in_other = sorted(self_output_names - other_output_names)
+            if missing_in_self:
+                differences.append(
+                    "missing actor outputs in target actor: " f"{missing_in_self}."
+                )
+            if missing_in_other:
+                differences.append(
+                    "extra actor outputs in target actor: " f"{missing_in_other}."
+                )
+
+        return differences
+
+    def execute_merge(self, source_actor, context=None):
+        if self.type_name != source_actor.type_name:
+            raise GateMergeError(
+                f"Cannot execute merge of actor '{source_actor.name}' of type "
+                f"{source_actor.type_name} into actor '{self.name}' of type "
+                f"{self.type_name}."
+            )
+        if context is None:
+            raise GateMergeError(
+                f"Missing actor-level merge context while merging actor '{self.name}'."
+            )
+        if not hasattr(context, "get_output_view"):
+            raise GateMergeError(
+                "ActorBase.execute_merge() expects an ActorMergeContextView."
+            )
+
+        common_output_names = sorted(
+            set(self.user_output.keys()).intersection(source_actor.user_output.keys())
+        )
+        for output_name in common_output_names:
+            target_output = self.user_output[output_name]
+            source_output = source_actor.user_output[output_name]
+            output_context = context.get_output_view(output_name)
+            try:
+                target_output.execute_merge(source_output, context=output_context)
+            except Exception as error:
+                if isinstance(error, GateMergeError):
+                    raise
+                raise GateMergeError(
+                    f"Failed to execute merge of actor output '{output_name}' from "
+                    f"actor '{source_actor.name}' into actor '{self.name}'."
+                ) from error
 
     def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)

@@ -21,7 +21,7 @@ The rotation should be adapted according to your need. The order of the 6 sphere
 
 .. image:: ../figures/iec_6spheres.png
 
-Examples can be found in `test015 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test015_iec_phantom_1.py>`_ (and others).
+Examples can be found in `test015 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test015_iec_phantom_1.py>`_ (and others).
 
 Phantom: cylinder phantom for PET NECR
 --------------------------------------
@@ -38,4 +38,4 @@ An analytical model of the simple NECR phantom (cylinder and linear source) is p
     necr_source = gate_necr.add_necr_source(sim, 'necr_phantom')
     necr_source.activity = 1000 * Bq
 
-Example can be found in `test049 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test049_pet_digit_blurring_v1.py>`_ (and others).
+Example can be found in `test049 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test049_pet_digit_blurring_v1.py>`_ (and others).

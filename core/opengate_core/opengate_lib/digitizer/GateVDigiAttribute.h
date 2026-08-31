@@ -8,14 +8,12 @@
 #ifndef GateVDigiAttribute_h
 #define GateVDigiAttribute_h
 
-#include "../GateHelpers.h"
 #include "../GateUniqueVolumeID.h"
-#include "G4TouchableHistory.hh"
-#include <pybind11/stl.h>
+#include <G4Step.hh>
 
 class GateVDigiAttribute {
 public:
-  GateVDigiAttribute(std::string vname, char vtype);
+  GateVDigiAttribute(const std::string &vname, char vtype);
 
   virtual ~GateVDigiAttribute();
 
@@ -24,6 +22,8 @@ public:
   virtual std::vector<double> &GetDValues();
 
   virtual std::vector<int> &GetIValues();
+
+  virtual std::vector<int64_t> &GetLValues();
 
   virtual std::vector<std::string> &GetSValues();
 
@@ -39,6 +39,8 @@ public:
 
   virtual void FillIValue(int) {}
 
+  virtual void FillLValue(int64_t) {}
+
   virtual void Fill3Value(G4ThreeVector) {}
 
   virtual void FillUValue(GateUniqueVolumeID::Pointer) {}
@@ -46,6 +48,11 @@ public:
   virtual void Fill(GateVDigiAttribute * /*unused*/, size_t /*unused*/) {}
 
   virtual void FillDigiWithEmptyValue();
+
+  // When set to true, the attribute stores data in a plain (non-thread-local)
+  // vector so that it can be safely shared across worker threads (under an
+  // external mutex).  The default implementation is a no-op.
+  virtual void SetSharedStorage(bool /*b*/) {}
 
   virtual int GetSize() const = 0;
 
@@ -74,7 +81,7 @@ protected:
   // Name of the attribute (e.g. "KineticEnergy")
   std::string fDigiAttributeName;
 
-  // Attribute type as a single character : D I S 3
+  // Attribute type as a single character: D I L S 3
   char fDigiAttributeType;
 
   // Attribute index in a given DigiCollection

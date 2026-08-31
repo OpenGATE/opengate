@@ -6,10 +6,14 @@
    -------------------------------------------------- */
 
 #include "GateVDigiAttribute.h"
+#include "../GateHelpers.h"
 
-GateVDigiAttribute::GateVDigiAttribute(std::string vname, char vtype) {
+GateVDigiAttribute::GateVDigiAttribute(const std::string &vname, char vtype) {
   fDigiAttributeName = vname;
   fDigiAttributeType = vtype;
+  fDigiAttributeId = -1;
+  fTupleId = -1;
+  fProcessHitsFunction = nullptr;
 }
 
 GateVDigiAttribute::~GateVDigiAttribute() {}
@@ -27,6 +31,12 @@ std::vector<double> &GateVDigiAttribute::GetDValues() {
 std::vector<int> &GateVDigiAttribute::GetIValues() {
   Fatal("Must never be there ! GateVDigiAttribute I");
   static std::vector<int> fake;
+  return fake; // to avoid warning
+}
+
+std::vector<int64_t> &GateVDigiAttribute::GetLValues() {
+  Fatal("Must never be there ! GateVDigiAttribute L");
+  static std::vector<int64_t> fake;
   return fake; // to avoid warning
 }
 

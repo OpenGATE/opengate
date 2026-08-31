@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4Step.hh"
-#include "G4VPrimitiveScorer.hh"
+#include <G4Step.hh>
+#include <G4VPrimitiveScorer.hh>
 
 class PyG4VPrimitiveScorer : public G4VPrimitiveScorer {
 public:

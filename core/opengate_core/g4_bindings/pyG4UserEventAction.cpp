@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4Event.hh"
-#include "G4UserEventAction.hh"
+#include <G4Event.hh>
+#include <G4UserEventAction.hh>
 
 class PyG4UserEventAction : public G4UserEventAction {
 public:

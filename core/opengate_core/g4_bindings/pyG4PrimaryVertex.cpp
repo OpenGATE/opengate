@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4PrimaryVertex.hh"
+#include <G4PrimaryVertex.hh>
 
 void init_G4PrimaryVertex(py::module &m) {
   py::class_<G4PrimaryVertex>(m, "G4PrimaryVertex")

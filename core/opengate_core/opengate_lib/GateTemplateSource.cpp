@@ -6,14 +6,12 @@
    -------------------------------------------------- */
 
 #include "GateTemplateSource.h"
-#include "G4ParticleTable.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include <G4ParticleTable.hh>
 #include <G4UnitsTable.hh>
 
-GateTemplateSource::GateTemplateSource() : GateVSource() {
-  fN = 0;
-  fFloatValue = 0;
-}
+GateTemplateSource::GateTemplateSource() : GateVSource() { fFloatValue = 0; }
 
 GateTemplateSource::~GateTemplateSource() {
   // nothing
@@ -21,24 +19,12 @@ GateTemplateSource::~GateTemplateSource() {
 
 void GateTemplateSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
-  // get user info about activity or nb of events
-  fN = DictGetInt(user_info, "n");
   fFloatValue = DictGetDouble(user_info, "float_value");
   fVectorValue = DictGetVecDouble(user_info, "vector_value");
   // Check parameters
   if (fVectorValue.size() != 3) {
     Fatal("Error, fVectorValue must be size 3");
   }
-}
-
-double GateTemplateSource::PrepareNextTime(double current_simulation_time) {
-  // If all N events have been generated, we stop (negative time)
-  if (fNumberOfGeneratedEvents >= fN) {
-    return -1;
-  }
-  // Else we consider all event with a timestamp equal to the simulation
-  // StartTime
-  return fStartTime;
 }
 
 void GateTemplateSource::PrepareNextRun() {
@@ -50,7 +36,7 @@ void GateTemplateSource::PrepareNextRun() {
   // fGlobalTranslation & fGlobalRotation
 
   // init the number of generated events (here, for each run)
-  fNumberOfGeneratedEvents = 0;
+  fRunGeneratedEvents = 0;
 }
 
 void GateTemplateSource::GeneratePrimaries(G4Event *event,
@@ -68,12 +54,11 @@ void GateTemplateSource::GeneratePrimaries(G4Event *event,
 
   // the position is changed according to fGlobalTranslation and fGlobalRotation
   auto pos = G4ThreeVector(fVectorValue[0], fVectorValue[1], fVectorValue[2]);
-  auto &l = fThreadLocalData.Get();
-  pos = l.fGlobalRotation * pos + l.fGlobalTranslation;
+  pos = fGlobalRotation * pos + fGlobalTranslation;
 
   // create the vertex
   auto *vertex = new G4PrimaryVertex(pos, current_simulation_time);
   vertex->SetPrimary(particle);
   event->AddPrimaryVertex(vertex);
-  fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
 }

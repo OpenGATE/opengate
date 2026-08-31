@@ -8,11 +8,9 @@
 #ifndef GatePhaseSpaceActor_h
 #define GatePhaseSpaceActor_h
 
-#include "G4Cache.hh"
-#include "G4GenericAnalysisManager.hh"
-#include "GateHelpers.h"
 #include "GateVActor.h"
 #include "digitizer/GateDigiCollection.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -65,6 +63,8 @@ public:
 
   void SetStoreFirstStepInVolumeFlag(bool b) { fStoreFirstStepInVolume = true; }
 
+  void SetStoreAllStepsFlag(bool b) { fStoreAllSteps = true; }
+
 protected:
   // Local data for the threads (each one has a copy)
   struct threadLocalT {
@@ -81,6 +81,7 @@ protected:
   bool fStoreEnteringStep;
   bool fStoreExitingStep;
   bool fStoreFirstStepInVolume;
+  bool fStoreAllSteps;
 
   int fNumberOfAbsorbedEvents;
   int fTotalNumberOfEntries;

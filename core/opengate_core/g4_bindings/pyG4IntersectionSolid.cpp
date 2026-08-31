@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4IntersectionSolid.hh"
-#include "G4VSolid.hh"
+#include <G4IntersectionSolid.hh>
+#include <G4VSolid.hh>
 
 void init_G4IntersectionSolid(py::module &m) {
   py::class_<G4IntersectionSolid, G4VSolid>(m, "G4IntersectionSolid")

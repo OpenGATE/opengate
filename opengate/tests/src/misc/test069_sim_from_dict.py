@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import opengate as gate
+from opengate.tests import utility
+import pathlib
+import os
+import subprocess
+
+
+# This test is to be run after test069_sim_as_dict.py
+# It checks whether the simulation is recreated correctly from the JSON file,
+# but does not actually run any simulation.
+def main(a, b, c, dependency="test069_sim_as_dict.py"):
+    pathFile = pathlib.Path(__file__).parent.resolve()
+    paths = utility.get_default_test_paths(__file__)
+    archive_dir = paths.output / "test069"
+
+    # the test069_sim_as_dict.py is needed first
+    if dependency and not os.path.isfile(archive_dir / "simu_test069.json"):
+        print(f"Running test069_sim_as_dict.py")
+        subdir = os.path.dirname(__file__)
+        subprocess.call(["python", paths.current / subdir / dependency])
+
+    # create the simulation
+    sim = gate.create_sim_from_json(archive_dir / "simu_test069.json")
+
+    # Assert that objects have been read back correctly
+    assert "rod" in sim.volume_manager.volumes
+    m = gate.g4_units.m
+    assert sim.volume_manager.world_volume.size == [1.5 * m, 1.5 * m, 1.5 * m]
+    assert "rod_region" in sim.physics_manager.regions
+    assert pathlib.Path(archive_dir / "patient-4mm.mhd").exists()
+    assert (
+        sim.volume_manager.get_volume("waterbox_with_hole").creator_volumes[0].name
+        == "Waterbox"
+    )
+    # Assert that sources have been read back correctly
+    assert "mysource" in sim.source_manager.sources
+    assert sim.source_manager.get_source("mysource").particle == "proton"
+    assert (
+        sim.source_manager.get_source("mysource").energy.mono == 230 * gate.g4_units.MeV
+    )
+
+    # If we make it until here without exception, the test is passed
+    utility.test_ok(True)
+
+
+if __name__ == "__main__":
+    main(1, 2, 3)

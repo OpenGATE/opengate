@@ -8,12 +8,17 @@
 #ifndef GateGenericSource_h
 #define GateGenericSource_h
 
-#include "GateAcceptanceAngleTesterManager.h"
+#include "GateAcceptanceAngleManager.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
+#include "biasing/GateForcedDirectionManager.h"
+#include <G4Polymarker.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
+
+class G4ModelingParameters;
+class G4VGraphicsScene;
 
 class GateGenericSource : public GateVSource {
 
@@ -26,11 +31,13 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  double PrepareNextTime(double current_simulation_time) override;
+  double PrepareNextTime(double current_simulation_time,
+                         unsigned long NumberOfGeneratedEvents) override;
 
   void PrepareNextRun() override;
 
-  void GeneratePrimaries(G4Event *event, double time) override;
+  void GeneratePrimaries(G4Event *event,
+                         double current_simulation_time) override;
 
   void SetEnergyCDF(const std::vector<double> &cdf);
 
@@ -43,9 +50,10 @@ public:
 
   unsigned long GetTotalSkippedEvents() const;
   unsigned long GetTotalZeroEvents() const;
+  virtual void Visualize() const override;
 
 protected:
-  //  We cannot not use a std::unique_ptr
+  //  We cannot use a std::unique_ptr
   //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
   G4ParticleDefinition *fParticleDefinition;
   G4ThreeVector fInitializeMomentum;
@@ -53,6 +61,17 @@ protected:
   G4ThreeVector fInitTranslation;
   G4String fangType;
   double fUserParticleLifeTime;
+  struct PosPointCloud {
+    PosPointCloud(const G4Colour &colour, G4double size);
+
+    void operator()(G4VGraphicsScene &sceneHandler,
+                    const G4ModelingParameters *modelingParameters);
+
+    G4Polymarker fPolymarker;
+  };
+  G4Colour fVisColour;
+  G4double fVisSize;
+  G4int fVisCount = 0;
 
   // Time Curve Activity
   std::vector<double> fTAC_Times;
@@ -75,23 +94,16 @@ protected:
   // source, eg: needed for motion actor
   bool fDirectionRelativeToAttachedVolume;
 
-  // thread local structure
-  struct threadLocalGenericSource {
-    GateSingleParticleSource *fSPS = nullptr;
-    GateAcceptanceAngleTesterManager *fAAManager = nullptr;
-    bool fInitConfine = false;
-    bool fInitGenericIon = false;
-    double fEffectiveEventTime = -1;
-    unsigned long fCurrentSkippedEvents = 0;
-    unsigned long fCurrentZeroEvents = 0;
-  };
-  G4Cache<threadLocalGenericSource> fThreadLocalDataGenericSource;
-
-  // sum of all threads
+  GateSingleParticleSource *fSPS = nullptr;
+  GateAcceptanceAngleManager *fAAManager = nullptr;
+  GateForcedDirectionManager *fFDManager = nullptr;
+  bool fInitConfine = false;
+  bool fInitGenericIon = false;
+  double fEffectiveEventTime = -1;
+  unsigned long fCurrentSkippedEvents = 0;
+  unsigned long fCurrentZeroEvents = 0;
   unsigned long fTotalSkippedEvents = 0;
   unsigned long fTotalZeroEvents = 0;
-
-  threadLocalGenericSource &GetThreadLocalDataGenericSource();
 
   // if confine is used, must be defined after the initialization
   // bool fInitConfine;
@@ -113,7 +125,11 @@ protected:
 
   virtual void InitializeDirection(py::dict user_info);
 
+  virtual void InitializePolarization(py::dict user_info);
+
   virtual void InitializeEnergy(py::dict user_info);
+
+  virtual void InitializeVisualization(py::dict user_info);
 
   void UpdateActivity(double time) override;
 

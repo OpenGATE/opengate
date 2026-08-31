@@ -8,15 +8,19 @@
 #ifndef GateVActor_h
 #define GateVActor_h
 
-#include "GateVFilter.h"
+#include "filters/GateVFilter.h"
+#include <G4Cache.hh>
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
 #include <pybind11/stl.h>
+#include <vector>
 
 namespace py = pybind11;
 
 class GateSourceManager;
+class G4VPhysicalVolume;
+class GateDigiCollection;
 
 class GateVActor : public G4VPrimitiveScorer {
 
@@ -37,9 +41,9 @@ public:
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
 
-  const bool HasAction(std::string);
+  bool HasAction(const std::string &);
 
-  const bool IsSensitiveDetector();
+  bool IsSensitiveDetector();
 
   // Called when the simulation start (master thread only)
   virtual void StartSimulationAction() {}
@@ -47,12 +51,14 @@ public:
   // Called when the simulation end (master thread only)
   virtual void EndSimulationAction() {}
 
+  // Call when the python actor is closed
+  virtual void Close() {}
+
   // Called by Geant4 every hit. Call SteppingAction and return True
-  // Take care about the filters
+  // Take care about the filter
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
   /*
-
    ************ WARNING ************
 
    * In multi-thread mode, there is (for the moment) a single actor object
@@ -102,38 +108,70 @@ public:
   // Called every time a Track ends
   virtual void PostUserTrackingAction(const G4Track *track);
 
+  // Called when the track stack reaches a new stage.
+  virtual void NewStage() {}
+
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
-  void SetOutputPath(std::string outputName, std::string outputPath);
+  void SetOutputPath(const std::string &outputName,
+                     const std::string &outputPath);
 
-  std::string GetOutputPath(std::string outputName);
+  std::string GetOutputPath(std::string outputName) const;
 
-  void SetWriteToDisk(std::string outputName, bool writeToDisk);
+  // FIXME: ROOT-specific bookkeeping currently lives in GateVActor as a
+  // pragmatic bridge for Python-side metadata capture and merge support. Long
+  // term, move this responsibility into a dedicated ROOT/output handler that
+  // can digest digi collections and own tree/schema/file metadata without
+  // baking backend-specific state into the generic actor base.
+  void AddOutputTreeName(const std::string &outputName,
+                         const std::string &treeName);
 
-  bool GetWriteToDisk(std::string outputName);
+  std::vector<std::string> GetOutputTreeNames(std::string outputName) const;
 
-  void AddActorOutputInfo(std::string outputName);
+  void AddOutputTreeInfo(const std::string &outputName,
+                         const GateDigiCollection *digiCollection);
 
-  //  void RegisterCallBack(std::string, std::function);
+  std::map<std::string, std::map<std::string, std::string>>
+  GetOutputTreeInfo(std::string outputName) const;
 
-  // convenience function to get the output path of this actor via the callback
-  // function
-  //  std::string GetOutputPathString(std::string output_type, int run_index);
+  void SetWriteToDisk(const std::string &outputName, bool writeToDisk);
+
+  bool GetWriteToDisk(std::string outputName) const;
+
+  void AddActorOutputInfo(const std::string &outputName);
+
+  static bool IsStepEnteringVolume(
+      const G4Step *step,
+      const std::unordered_set<const G4LogicalVolume *> &volumes);
+
+  bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
   inline static std::string fOutputNameRoot = "root_output";
 
   struct ActorOutputInfo {
-    std::string outputName;
-    std::string outputPath;
-    bool writeToDisk;
+    std::string outputName = "";
+    std::string outputPath = "";
+    std::vector<std::string> treeNames;
+    std::map<std::string, std::map<std::string, std::string>> treeBranchTypes;
+    bool writeToDisk = false;
   };
 
   typedef ActorOutputInfo ActorOutputInfo_t;
 
   std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
 
+  struct threadLocalT {
+    std::vector<std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *>>
+        attachedToVolumeExitPairs;
+  };
+
   void SetSourceManager(GateSourceManager *s);
+
+  void SetMotherAttachedToVolumeName(const std::string &attachedToVolumeName);
+  void ClearAttachedVolumeExitPairs();
+  void AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
+                                 G4VPhysicalVolume *motherVolume);
 
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
@@ -141,18 +179,19 @@ public:
 
   // Name of the mother volume (logical volume)
   std::string fAttachedToVolumeName;
+  std::string fAttachedToVolumeMotherName;
+  mutable G4Cache<threadLocalT> fThreadLocalExitPairsData;
 
-  // List of active filters
-  std::vector<GateVFilter *> fFilters;
+  // Pointer to the filter
+  GateVFilter *fFilter;
 
-  // callback functions
-  //  typedef CallbackMap std::map<std::string, std::function>;
-  //  CallbackMap fcallBacks;
-
-  // Is this actor ok for multi-thread ?
+  // Is this actor ok for multi-thread?
   bool fMultiThreadReady;
-  bool fOperatorIsAnd;
 
+  // Name of the actor
+  std::string fActorName;
+
+  // Should this actor write to disk?
   bool fWriteToDisk;
 
   GateSourceManager *fSourceManager;

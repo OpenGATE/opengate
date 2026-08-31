@@ -8,10 +8,8 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERSIMAGE_H
 #define OPENGATE_CORE_OPENGATEHELPERSIMAGE_H
 
-#include "G4LogicalVolumeStore.hh"
-#include "G4PhysicalVolumeStore.hh"
-#include "GateHelpers.h"
-#include "itkImage.h"
+#include <G4RotationMatrix.hh>
+#include <G4Step.hh>
 
 template <class ImageType>
 void ImageAddValue(typename ImageType::Pointer image,
@@ -23,6 +21,12 @@ void AttachImageToVolume(typename ImageType::Pointer image,
                          std::string volumeName,
                          G4ThreeVector initial_translation = G4ThreeVector(),
                          G4RotationMatrix img_rotation = G4RotationMatrix());
+
+template <class ImageType>
+void GetStepVoxelPosition(G4Step *step, std::string hitType,
+                          typename ImageType::Pointer cpp_image,
+                          G4ThreeVector &position, bool &isInside,
+                          typename ImageType::IndexType &index);
 
 #include "GateHelpersImage.txx"
 

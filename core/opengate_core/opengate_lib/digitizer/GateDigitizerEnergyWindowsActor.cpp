@@ -8,7 +8,6 @@
 #include "GateDigitizerEnergyWindowsActor.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiCollectionManager.h"
-#include <iostream>
 
 GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
     py::dict &user_info)
@@ -31,7 +30,7 @@ void GateDigitizerEnergyWindowsActor::InitializeUserInfo(py::dict &user_info) {
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
 
   // Get information for all channels
-  auto dv = DictGetVecDict(user_info, "channels");
+  const auto dv = DictGetVecDict(user_info, "channels");
   for (auto d : dv) {
     fChannelNames.push_back(DictGetStr(d, "name"));
     fChannelMin.push_back(DictGetDouble(d, "min"));
@@ -44,7 +43,7 @@ void GateDigitizerEnergyWindowsActor::InitializeCpp() {
   fInputDigiCollection = nullptr;
 }
 
-// Called when the simulation start
+// Called when the simulation starts
 void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
   // Get input digi collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
@@ -70,6 +69,7 @@ void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
     hc->InitDigiAttributesFromCopy(fInputDigiCollection,
                                    fUserSkipDigiAttributeNames);
     hc->RootInitializeTupleForMaster();
+    AddOutputTreeInfo(fOutputNameRoot, hc);
     fChannelDigiCollections.push_back(hc);
   }
 }
@@ -93,7 +93,7 @@ void GateDigitizerEnergyWindowsActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GateDigitizerEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
-  bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+  const bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
   for (auto *hc : fChannelDigiCollections) {
     hc->FillToRootIfNeeded(must_clear);
   }
@@ -102,7 +102,7 @@ void GateDigitizerEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
 
 void GateDigitizerEnergyWindowsActor::EndOfEventAction(
     const G4Event * /*event*/) {
-  auto index = fInputDigiCollection->GetBeginOfEventIndex();
+  const auto index = fInputDigiCollection->GetBeginOfEventIndex();
   auto n = fInputDigiCollection->GetSize() - index;
   // If no new hits, do nothing
   if (n <= 0)
@@ -113,24 +113,25 @@ void GateDigitizerEnergyWindowsActor::EndOfEventAction(
   }
 }
 
-void GateDigitizerEnergyWindowsActor::ApplyThreshold(size_t i, double min,
-                                                     double max) {
+void GateDigitizerEnergyWindowsActor::ApplyThreshold(const size_t i,
+                                                     const double min,
+                                                     const double max) const {
   auto &l = fThreadLocalData.Get();
   // get the vector of values
-  auto &edep = *l.fInputEdep;
+  const auto &edep = *l.fInputEdep;
   // get the index of the first hit for this event
-  auto index = fInputDigiCollection->GetBeginOfEventIndex();
+  const auto index = fInputDigiCollection->GetBeginOfEventIndex();
   // fill all the hits
   for (size_t n = index; n < fInputDigiCollection->GetSize(); n++) {
     auto e = edep[n];
     if (e >= min && e < max) { // FIXME put in doc. strictly or not ?
       l.fFillers[i]->Fill(n);
-      l.fLastEnergyWindowId = i;
+      l.fLastEnergyWindowId = static_cast<int>(i);
     }
   }
 }
 
-int GateDigitizerEnergyWindowsActor::GetLastEnergyWindowId() {
+int GateDigitizerEnergyWindowsActor::GetLastEnergyWindowId() const {
   return fThreadLocalData.Get().fLastEnergyWindowId;
 }
 
@@ -143,13 +144,13 @@ void GateDigitizerEnergyWindowsActor::EndOfRunAction(const G4Run * /*run*/) {
 // Called every time a Run ends
 void GateDigitizerEnergyWindowsActor::EndOfSimulationWorkerAction(
     const G4Run * /*run*/) {
-  for (auto *hc : fChannelDigiCollections)
+  for (const auto *hc : fChannelDigiCollections)
     hc->Write();
 }
 
-// Called when the simulation end
+// Called when the simulation ends
 void GateDigitizerEnergyWindowsActor::EndSimulationAction() {
-  for (auto *hc : fChannelDigiCollections) {
+  for (const auto *hc : fChannelDigiCollections) {
     hc->Write();
     hc->Close();
   }

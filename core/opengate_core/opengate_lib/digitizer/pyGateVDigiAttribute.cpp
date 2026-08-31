@@ -5,13 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateVDigiAttribute.h"
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "GateVDigiAttribute.h"
 
 void init_GateVDigiAttribute(py::module &m) {
   py::class_<GateVDigiAttribute,

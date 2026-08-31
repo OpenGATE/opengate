@@ -9,9 +9,9 @@
 
 namespace py = pybind11;
 
-#include "G4ProcessTable.hh"
-#include "G4ProcessVector.hh"
-#include "G4RadioactiveDecay.hh"
+#include <G4ProcessTable.hh>
+#include <G4ProcessVector.hh>
+#include <G4RadioactiveDecay.hh>
 
 void init_G4ProcessTable(py::module &m) {
 

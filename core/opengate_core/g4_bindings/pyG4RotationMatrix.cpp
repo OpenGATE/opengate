@@ -11,7 +11,7 @@
 namespace py = pybind11;
 
 // CLHEP::HepRotation
-#include "G4RotationMatrix.hh"
+#include <G4RotationMatrix.hh>
 
 void init_G4RotationMatrix(py::module &m) {
 

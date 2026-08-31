@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4VisAttributes.hh"
+#include <G4VisAttributes.hh>
 
 void init_G4VisAttributes(py::module &m) {
   py::class_<G4VisAttributes>(m, "G4VisAttributes")
@@ -17,5 +17,7 @@ void init_G4VisAttributes(py::module &m) {
       .def("SetColor",
            [](G4VisAttributes &va, G4double red, G4double green, G4double blue,
               G4double alpha) { va.SetColor(red, green, blue, alpha); })
-      .def("SetVisibility", &G4VisAttributes::SetVisibility);
+      .def("SetVisibility", &G4VisAttributes::SetVisibility)
+      .def("SetForceWireframe", &G4VisAttributes::SetForceWireframe)
+      .def("SetForceSolid", &G4VisAttributes::SetForceSolid);
 }

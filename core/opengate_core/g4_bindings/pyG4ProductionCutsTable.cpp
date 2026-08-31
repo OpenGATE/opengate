@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4ProductionCutsTable.hh"
+#include <G4ProductionCutsTable.hh>
 
 void init_G4ProductionCutsTable(py::module &m) {
 

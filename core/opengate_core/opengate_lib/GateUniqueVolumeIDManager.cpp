@@ -6,16 +6,18 @@
    -------------------------------------------------- */
 
 #include "GateUniqueVolumeIDManager.h"
+#include "GateGeometryUtils.h"
 #include "GateHelpers.h"
-#include <shared_mutex>
+#include <algorithm>
 
-std::shared_mutex GetVolumeIDMutex;
-
+G4Cache<GateUniqueVolumeIDManager::threadLocalT>
+    GateUniqueVolumeIDManager::fThreadLocalData;
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::fInstance = nullptr;
 
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::GetInstance() {
-  if (fInstance == nullptr)
+  if (fInstance == nullptr) {
     fInstance = new GateUniqueVolumeIDManager();
+  }
   return fInstance;
 }
 
@@ -23,48 +25,115 @@ GateUniqueVolumeIDManager::GateUniqueVolumeIDManager() = default;
 
 GateUniqueVolumeID::Pointer
 GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
-  // Since this function can be called from different threads,
-  // the map fToVolumeID must be protected against concurrent modifications.
-  // Concurrent reads of fToVolumeID are allowed, however.
-
-  // Since this function is potentially called a large number of times (every
-  // hit), locks need to be in place as briefly as possible.
-
-  // https://geant4-forum.web.cern.ch/t/identification-of-unique-physical-volumes-with-ids/2568/3
   const auto name = touchable->GetVolume()->GetName();
   const auto id = GateUniqueVolumeID::ComputeArrayID(touchable);
+  const auto key = std::make_pair(name, id);
 
-  // Gain read access before checking if the touchable has already
-  // been associated with a unique volume ID.
-  std::shared_lock<std::shared_mutex> readLock(GetVolumeIDMutex);
-  auto it = fToVolumeID.find({name, id});
-  if (it != fToVolumeID.end()) {
+  // Check thread-local cache
+  auto &l = fThreadLocalData.Get();
+  auto it = l.fToVolumeID.find(key);
+  if (it != l.fToVolumeID.end()) {
     return it->second;
-  } else {
-    // The volume ID does not exist yet, so we will create it.
-    readLock.unlock();
-    const auto uid = GateUniqueVolumeID::New(touchable);
-    // Before modifying the map, we must obtain exclusive write access.
-    std::unique_lock<std::shared_mutex> writeLock(GetVolumeIDMutex);
-    // There is a chance that another thread has already created the volume ID
-    // in the time interval between unlocking the read lock and locking the
-    // write lock, so we have to check again if the volume ID exists already.
-    it = fToVolumeID.find({name, id});
-    if (it != fToVolumeID.end()) {
-      return it->second;
-    } else {
-      // Add the new ID to the map and return it.
-      fToVolumeID[{name, id}] = uid;
-      return uid;
-    }
   }
+
+  // Create a new GateUniqueVolumeID
+  const auto uid = GateUniqueVolumeID::New(touchable);
+
+  // Also generate the unique int id
+  const auto *lv = touchable->GetVolume()->GetLogicalVolume();
+  uid->fNumericID = GetNumericID(
+      lv, uid->fID, touchable); // FIXME should it be lazy, on demand ?
+  l.fToVolumeID[key] = uid;
+
+  return uid;
 }
 
 std::vector<GateUniqueVolumeID::Pointer>
 GateUniqueVolumeIDManager::GetAllVolumeIDs() const {
-  std::vector<GateUniqueVolumeID::Pointer> l;
-  for (const auto &x : fToVolumeID) {
-    l.push_back(x.second);
+  auto &l = fThreadLocalData.Get();
+  std::vector<GateUniqueVolumeID::Pointer> list;
+  list.reserve(l.fToVolumeID.size());
+  for (const auto &x : l.fToVolumeID) {
+    list.push_back(x.second);
   }
-  return l; // copy
+  return list; // copy
+}
+
+int GateUniqueVolumeIDManager::GetNumericID(const G4LogicalVolume *lv,
+                                            const std::string &id,
+                                            const G4VTouchable *touchable) {
+  auto &l = fThreadLocalData.Get();
+  auto it = l.fLVtoNumericIds.find(lv);
+  if (it != l.fLVtoNumericIds.end()) {
+    auto idIt = it->second.find(id);
+    if (idIt != it->second.end()) {
+      return idIt->second;
+    }
+  }
+
+  // Not found, need to initialize all IDs for this LV
+  InitializeNumericIDsForLV(lv, touchable);
+
+  it = l.fLVtoNumericIds.find(lv);
+  if (it != l.fLVtoNumericIds.end()) {
+    auto idIt = it->second.find(id);
+    if (idIt != it->second.end()) {
+      return idIt->second;
+    }
+  }
+
+  // Should never reach here, but as a safeguard:
+  std::string msg = "Cannot find numeric ID for " + id;
+  msg += " for LV " + lv->GetName();
+  Fatal(msg);
+  return -1;
+}
+
+void GateUniqueVolumeIDManager::InitializeNumericIDsForLV(
+    const G4LogicalVolume *lv, const G4VTouchable *touchable) {
+  auto &l = fThreadLocalData.Get();
+
+  // TODO: In parallel-world setups, revisit this global touchable scan.
+  // FindAllTouchables(lv->GetName()) may aggregate instances across worlds
+  // that share the same LV name, whereas numeric ID assignment should ideally
+  // be resolved in the world context of the current touchable. We keep the
+  // legacy behavior on this branch to avoid mixing that refactor with the
+  // PhaseSpaceActor attached_to work.
+  // Collect all touchables for this LV
+  const auto touchables = FindAllTouchables(lv->GetName());
+
+  std::vector<std::string> stringIDs;
+  stringIDs.reserve(touchables.size());
+  for (const auto &t : touchables) {
+    stringIDs.push_back(GateUniqueVolumeID::ComputeStringID(t.get()));
+  }
+
+  // Add the current id if not already present. This is a safeguard against
+  // incomplete results from FindAllTouchables, especially for parameterized
+  // volumes with boundary issues.
+  const auto currentID = GateUniqueVolumeID::ComputeStringID(touchable);
+  if (std::find(stringIDs.begin(), stringIDs.end(), currentID) ==
+      stringIDs.end()) {
+    stringIDs.push_back(currentID);
+  }
+
+  // Sort for deterministic ordering
+  std::sort(stringIDs.begin(), stringIDs.end());
+
+  // Assign sequential IDs
+  std::map<std::string, int> sIDRegistry;
+  int nextID = 1;
+  for (const auto &stringID : stringIDs) {
+    if (sIDRegistry.find(stringID) == sIDRegistry.end()) {
+      sIDRegistry[stringID] = nextID++;
+    }
+  }
+
+  l.fLVtoNumericIds[lv] = std::move(sIDRegistry);
+}
+
+void GateUniqueVolumeIDManager::Clear() {
+  auto &l = fThreadLocalData.Get();
+  l.fToVolumeID.clear();
+  l.fLVtoNumericIds.clear();
 }

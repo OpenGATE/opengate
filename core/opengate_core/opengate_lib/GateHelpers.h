@@ -8,14 +8,14 @@
 #ifndef GateHelpers_h
 #define GateHelpers_h
 
-#include "GateSourceManager.h"
+#include <G4Step.hh>
+#include <G4Threading.hh>
 #include <G4ThreeVector.hh>
 #include <fmt/color.h>
 #include <fmt/core.h>
-#include <iostream>
 #include <pybind11/stl.h>
 
-namespace py = pybind11;
+extern G4Mutex DebugMutex;
 
 void Fatal(std::string s);
 
@@ -24,20 +24,31 @@ void FatalKeyError(std::string s);
 #define DD(a) std::cout << #a << " = [ " << (a) << " ]\n";
 
 // debug print
-#define DDD(a)                                                                 \
+#define DDD(...)                                                               \
   {                                                                            \
+    G4AutoLock __l__(&DebugMutex);                                             \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
-              << __func__ << ") ==> " << #a << " = [ " << (a) << " ]\n";       \
+              << __func__ << ") ==> ";                                         \
+    /* 1. Define a lambda that takes a real parameter pack */                  \
+    auto __print__ = [](auto &&...args) {                                      \
+      /* 2. Use the expander trick on the REAL pack 'args' */                  \
+      using expander = int[];                                                  \
+      (void)expander{0, (std::cout << args, 0)...};                            \
+    };                                                                         \
+    /* 3. Call the lambda with your macro arguments */                         \
+    __print__(__VA_ARGS__);                                                    \
+    std::cout << std::endl;                                                    \
   }
 
 // for vector
 #define DDDV(a)                                                                \
   {                                                                            \
+    G4AutoLock l(&DebugMutex);                                                 \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
               << __func__ << ") ==> " << #a << " (" << (a).size() << ") = ";   \
     for (auto &_i : (a))                                                       \
       std::cout << _i << " ";                                                  \
-    std::cout << "\n";                                                         \
+    std::cout << std::endl;                                                    \
   }
 
 // debug for error
@@ -49,10 +60,10 @@ void FatalKeyError(std::string s);
 
 // Log verbose (with color and level)
 template <typename S, typename... Args>
-void Log(int level, const S &format_str, Args &&...args);
+void Log(int level, int verboseLevel, const S &format_str, Args &&...args);
 
 template <typename S, typename... Args>
-void LogDebug(int level, const S &format_str, Args &&...args);
+void LogDebug(const S &format_str, Args &&...args);
 
 extern const int LogLevel_RUN;
 extern const int LogLevel_EVENT;
@@ -62,6 +73,20 @@ extern const int LogLevel_EVENT;
 static const double sigma_to_fwhm = 2.0 * sqrt(2.0 * log(2.0));
 static const double fwhm_to_sigma = 1.0 / sigma_to_fwhm;
 
-#include "GateHelpers.txx"
+std::string DebugStep(const G4Step *step);
+
+int createTestQtWindow();
+
+template <typename S, typename... Args>
+void Log(int level, int verboseLevel, const S &format_str, Args &&...args) {
+  if (level > verboseLevel)
+    return;
+  fmt::print(fg(fmt::color::bisque), format_str, args...);
+}
+
+template <typename S, typename... Args>
+void LogDebug(const S &format_str, Args &&...args) {
+  fmt::print(fg(fmt::color::crimson), format_str, args...);
+}
 
 #endif // GateHelpers_h

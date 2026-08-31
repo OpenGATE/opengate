@@ -8,6 +8,18 @@
 #ifndef GateSourceManager_h
 #define GateSourceManager_h
 
+#include "GateImageBox.h"
+#include "GateUserEventInformation.h"
+#include "GateVActor.h"
+#include "GateVSource.h"
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#endif
+#include "indicators.hpp"
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #include <G4Cache.hh>
 #include <G4ParticleGun.hh>
 #include <G4Threading.hh>
@@ -15,15 +27,17 @@
 #include <G4UIsession.hh>
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <mutex>
+#include <pybind11/pybind11.h>
 
-#include "GateUserEventInformation.h"
-#include "GateVActor.h"
-#include "GateVSource.h"
-#include "indicators.hpp"
+namespace py = pybind11;
 
 using namespace indicators;
 
-// Temporary: later option will be used to control the verbosity
+// Temporary: later options will be used to control the verbosity
 class UIsessionSilent : public G4UIsession {
 public:
   G4int ReceiveG4cout(const G4String & /*coutString*/) override { return 0; }
@@ -33,7 +47,7 @@ public:
 
 /*
  * The source manager manages a set of sources.
- * There will be one copy per thread + one for the Master thread
+ * There will be one copy per thread plus one for the Master thread
  * Only the master thread call StartMasterThread
  *
  * The Geant4 fEngine will call GeneratePrimaries for all threads
@@ -54,35 +68,43 @@ public:
   ~GateSourceManager() override;
 
   // [py side] store the list of run time intervals
-  void Initialize(TimeIntervals simulation_times, py::dict &options);
+  void Initialize(const TimeIntervals &simulation_times, py::dict &options);
 
   // [py side] add a source to manage
   void AddSource(GateVSource *source);
 
   // [py side] set the list of actors
-  void SetActors(std::vector<GateVActor *> &actors);
+  void SetActors(const std::vector<GateVActor *> &actors);
 
   // Return a source
-  GateVSource *FindSourceByName(std::string name) const;
+  GateVSource *FindSourceByName(const std::string &name) const;
+
+  // Return the name of the active source
+  G4String GetActiveSourceName();
+
+  // Set the active source by name
+  void SetActiveSourcebyName(G4String sourceName);
 
   // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 
-  // Initialize a new Run
+  // Initialise a new Run
   void PrepareRunToStart(int run_id);
 
   // Called by G4 fEngine
-  void GeneratePrimaries(G4Event *anEvent) override;
+  void GeneratePrimaries(G4Event *event) override;
 
   // After an event, prepare for the next
-  void PrepareNextSource();
+  void PrepareNextSource() const;
 
   // Check if the current run is terminated
-  void CheckForNextRun();
+  void CheckForNextRun() const;
 
   void InitializeVisualization();
 
   void InitializeProgressBar();
+
+  void RegisterImageBox(GateImageBox *g4Solid);
 
   bool IsEndOfSimulationForWorker() const;
 
@@ -90,11 +112,30 @@ public:
 
   long int GetExpectedNumberOfEvents() const;
 
+  unsigned long GetRunGeneratedEvents() const;
+  unsigned long GetTotalGeneratedEvents() const;
+
+  double GetCurrentSimulationTime() const;
+  int GetCurrentRunId() const;
+
   void ComputeExpectedNumberOfEvents();
 
-  void SetRunTerminationFlag(bool flag);
+  void SetProgressReportCallback(py::function func, double interval_seconds);
 
-  // bool fRunTerminationFlag = false;
+  void CheckProgressReport() const;
+
+  static void SetRunTerminationFlag(bool flag);
+  static void ResetPrimaryCounterForRun();
+  static bool TryReservePrimarySlot();
+  static void WarnPrimaryLimitReached();
+  static void SetMaxPrimariesPerRun(std::uint64_t value);
+  static std::uint64_t GetPlatformMaxPrimariesPerRun();
+
+  // fRunTerminationFlag should not be thread local
+  static bool fRunTerminationFlag;
+  static std::atomic<std::uint64_t> fGeneratedPrimariesThisRun;
+  static std::atomic<bool> fPrimaryLimitWarningIssued;
+  static std::uint64_t fMaxPrimariesPerRun;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;
@@ -108,9 +149,9 @@ public:
   long int fProgressBarStep;
   long int fCurrentEvent;
 
-  // The following variables must be local to each threads
+  // The following variables must be local to each thread
   struct threadLocalT {
-    // Will be used by thread to initialize a new Run
+    // Will be used by thread to initialise a new Run
     bool fStartNewRun;
     int fNextRunId;
 
@@ -130,12 +171,16 @@ public:
     GateUserEventInformation *fUserEventInformation;
 
     // progress bar
-    indicators::ProgressBar *fProgressBar{};
+    // indicators::ProgressBar *fProgressBar;
+    std::unique_ptr<indicators::ProgressBar> fProgressBar;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 
   // List of managed sources
   std::vector<GateVSource *> fSources;
+
+  // List of GateImageBox
+  std::vector<GateImageBox *> fImageBoxes;
 
   // List of actors (for PreRunMaster callback)
   std::vector<GateVActor *> fActors;
@@ -143,11 +188,19 @@ public:
   // List of run time intervals
   TimeIntervals fSimulationTimes;
 
-  // static verbose level
-  static int fVerboseLevel;
+  // verbose level
+  int fVerboseLevel;
 
   // Options (visualisation for example)
   py::dict fOptions;
+
+  // Progress report
+  double fProgressReportInterval;
+  py::function fProgressReportCallback;
+  mutable std::chrono::steady_clock::time_point
+      fLastProgressReportTime; // (mutable needed in CheckProgressReport)
+  mutable std::mutex
+      fProgressReportMutex; // (mutable needed in CheckProgressReport)
 
   bool fUserEventInformationFlag;
 };

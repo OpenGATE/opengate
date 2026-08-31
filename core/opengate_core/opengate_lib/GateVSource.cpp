@@ -6,11 +6,10 @@
    -------------------------------------------------- */
 
 #include "GateVSource.h"
-#include "G4PhysicalVolumeStore.hh"
-#include "G4RandomTools.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
+#include <G4RandomTools.hh>
 
 GateVSource::GateVSource() {
   fName = "";
@@ -28,10 +27,6 @@ GateVSource::GateVSource() {
 
 GateVSource::~GateVSource() = default;
 
-GateVSource::threadLocalT &GateVSource::GetThreadLocalData() {
-  return fThreadLocalData.Get();
-}
-
 void GateVSource::InitializeUserInfo(py::dict &user_info) {
   // get info from the dict
   fName = DictGetStr(user_info, "name");
@@ -40,7 +35,9 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
 
   // get user info about activity or nb of events
-  fMaxN = DictGetInt(user_info, "n");
+  fVectorOfMaxN = DictGetVecInt(user_info, "number_of_primaries");
+  fMaxN = fVectorOfMaxN[0];
+  // fMaxN = DictGetInt(user_info, "number_of_primaries");
   fActivity = DictGetDouble(user_info, "activity");
   fInitialActivity = fActivity;
 
@@ -56,18 +53,39 @@ void GateVSource::UpdateActivity(double time) {
 }
 
 double GateVSource::CalcNextTime(double current_simulation_time) {
-  double next_time =
-      current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+  double next_time = current_simulation_time;
+  if ((fMaxN <= 0)) {
+    next_time =
+        current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+  }
   return next_time;
 }
 
 void GateVSource::PrepareNextRun() {
+  fTotalGeneratedEvents += fRunGeneratedEvents;
+  fRunGeneratedEvents = 0;
+  fMaxN = fVectorOfMaxN[fRunID];
+  fRunID++;
   SetOrientationAccordingToAttachedVolume();
 }
 
-double GateVSource::PrepareNextTime(double current_simulation_time) {
-  Fatal("PrepareNextTime must be overloaded");
-  return current_simulation_time;
+double GateVSource::PrepareNextTime(double current_simulation_time,
+                                    unsigned long numberOfGeneratedEvents) {
+  UpdateActivity(current_simulation_time);
+  if ((fMaxN <= 0) || ((fMaxN > numberOfGeneratedEvents) && (fMaxN > 0))) {
+    if (current_simulation_time < fStartTime)
+      return fStartTime;
+    if (current_simulation_time >= fEndTime)
+      return -1;
+
+    double next_time = CalcNextTime(current_simulation_time);
+    if (next_time >= fEndTime)
+      return -1;
+    return next_time;
+  } else {
+    return -1;
+  }
+  return fStartTime; // FIXME timing ?
 }
 
 void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
@@ -75,26 +93,32 @@ void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
 }
 
 void GateVSource::SetOrientationAccordingToAttachedVolume() {
-  auto &l = GetThreadLocalData();
-  l.fGlobalRotation = fLocalRotation;
-  l.fGlobalTranslation = fLocalTranslation;
+  fGlobalRotation = fLocalRotation;
+  fGlobalTranslation = fLocalTranslation;
 
   // No change in the translation rotation if mother is the world
   if (fAttachedToVolumeName == "world")
     return;
 
   // compute global translation rotation and keep it.
-  // Will be used for example in GenericSource to change position
+  // Will be used, for example, in GenericSource to change position
   ComputeTransformationFromVolumeToWorld(
-      fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
+      fAttachedToVolumeName, fGlobalTranslation, fGlobalRotation, false);
 }
 
 unsigned long
-GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &simulation_times) {
-  if (fMaxN != 0)
-    return fMaxN;
+GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &time_intervals) {
+  if (!fVectorOfMaxN.empty()) {
+    unsigned long total = 0;
+    for (size_t i = 0; i < time_intervals.size() && i < fVectorOfMaxN.size();
+         ++i) {
+      total += fVectorOfMaxN[i];
+    }
+    if (total > 0)
+      return total;
+  }
   unsigned long n = 0;
-  for (auto time_interval : simulation_times)
+  for (auto time_interval : time_intervals)
     n += GetExpectedNumberOfEvents(time_interval);
   return n;
 }
@@ -102,11 +126,11 @@ GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &simulation_times) {
 unsigned long
 GateVSource::GetExpectedNumberOfEvents(const TimeInterval &time_interval) {
   long n = 0;
-  auto t0 = time_interval.first / CLHEP::s;
-  auto t1 = time_interval.second / CLHEP::s;
-  auto a = fInitialActivity / CLHEP::Bq;
-  auto l = fDecayConstant;
-  auto duration = t1 - t0;
+  const auto t0 = time_interval.first / CLHEP::s;
+  const auto t1 = time_interval.second / CLHEP::s;
+  const auto a = fInitialActivity / CLHEP::Bq;
+  const auto l = fDecayConstant;
+  const auto duration = t1 - t0;
   if (fHalfLife <= 0)
     n = (long)round((duration)*a);
   else {

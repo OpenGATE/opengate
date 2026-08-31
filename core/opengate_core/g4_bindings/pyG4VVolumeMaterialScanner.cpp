@@ -4,7 +4,7 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
-#include "G4VVolumeMaterialScanner.hh"
+#include <G4VVolumeMaterialScanner.hh>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;

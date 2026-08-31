@@ -22,7 +22,7 @@ energy, see the following example:
    source.particle = 'proton'
    source.activity = 10000 * Bq
    source.position.type = 'box'
-   source.position.dimension = [4 * cm, 4 * cm, 4 * cm]
+   source.position.size = [4 * cm, 4 * cm, 4 * cm]
    source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
    source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
    source.direction.type = 'iso'
@@ -42,6 +42,7 @@ shape (‘box’, ‘sphere’, ‘point’, ‘disc’), defined by several par
 are defined with ‘iso’, ‘momentum’, ‘focused’ and ‘histogram’. The energy
 can be defined by a single value (‘mono’) or Gaussian (‘gauss’).
 
+Available shapes are: "sphere", "point", "box", "disc" and "cylinder".
 
 .. _source-particle-type:
 
@@ -133,6 +134,63 @@ Here are some examples (mostly from ``test010_generic_source.py``):
     source.position.radius = 5 * mm
     source.position.dz = 300 * mm / 2.0
     source.position.translation = [8 * cm, 8 * cm, 30 * cm]
+
+
+Source position visualization
+-----------------------------
+
+A ``GenericSource`` can draw a point cloud sampled from its position
+distribution in the Geant4 visualization scene. This is useful to check
+the source shape, translation, rotation, or attachment before running a
+large simulation.
+
+The same method is also available for source classes that inherit from
+``GenericSource``. See source definitions `here
+<https://github.com/OpenGATE/opengate/tree/master/opengate/sources>`_ for
+source inheritance details.
+
+The following figure is generated from test file ``test010_generic_source_visu.py``.
+It shows the position distribution of 5 different sources with different color:
+
+.. image:: ../figures/source_visualization.png
+   :align: center
+   :width: 70%
+
+Enable simulation visualization and set the source visualization parameters
+before ``sim.run()``:
+
+.. code:: python
+
+    sim.visu = True
+    sim.visu_type = "qt"
+
+    source = sim.add_source("GenericSource", "mysource")
+    source.position.type = "sphere"
+    source.position.radius = 5 * cm
+    source.visualization.count = 2000
+    source.visualization.color = "red"
+    source.visualization.size = 3
+
+The visualization of the source is only available with ``"qt"``.
+
+The ``count`` parameter controls the number of sampled positions. Values
+larger than 10000 are reduced to 2000. The ``size`` parameter controls the
+screen size of the markers and must be in the range ``(0, 20)``; otherwise
+the default value ``3`` is used.
+
+The ``color`` parameter can be one of ``"white"``, ``"grey"``, ``"gray"``,
+``"black"``, ``"brown"``, ``"red"``, ``"green"``, ``"blue"``, ``"cyan"``,
+``"magenta"``, or ``"yellow"``. It can also be an RGB or RGBA list with
+components between 0 and 1:
+
+.. code:: python
+
+    source.visualization.color = [0.0, 0.5, 1.0, 0.7]
+
+This point cloud only represents the source initial position distribution
+at initialization time. If the source is attached to a volume that moves
+during the run, this visualization does not show the updated source
+distribution after the volume movement.
 
 
 .. _source-direction:
@@ -230,40 +288,117 @@ Using ``source.direction_relative_to_attached_volume = True`` will make
 your source direction change following the rotation of that volume.
 
 
+Polarization
+------------
+
+``polarization = '[1, 0, 0]'`` assigns a polarization to primary particles (gamma).
+The polarization is defined in the particle coordinate system with the
+`Stokes parameters <https://en.wikipedia.org/wiki/Stokes_parameters>`_ [Q, U, V].
+Do not forget to use an adequate physics list. You can define the polarization as follows:
+
+   .. code:: python
+
+      source.polarization = [1, 0, 0] # linear polarization (horizontal)
+      source.polarization = [-1, 0, 0] # linear polarization (vertical)
+      source.polarization = [0, 1, 0] # linear polarization (45°)
+      source.polarization = [0, -1, 0] # linear polarization (-45°)
+      source.polarization = [0, 0, 1] # circular polarization (right)
+      source.polarization = [0, 0, -1] # circular polarization (left)
+      source.polarization = [0, 0, 0] # unpolarized
+      sim.physics_manager.physics_list_name = "G4EmLivermorePolarizedPhysics"
+
+.. autoproperty:: opengate.sources.generic.GenericSource.polarization
 
 Acceptance Angle
 ----------------
 
-It is possible to indicate an ``angle_acceptance_volume`` to the
-direction of a source. In that case, the particle will be created only
-if their position & direction make them intersect the given volume. This
-is for example useful for SPECT imaging in order to limit the particle
-creation to the ones that will have a chance to reach the detector. Note
-that the particles that will not intersect the volume will be created
-anyway but with a zero energy (so not tracked). This mechanism ensures
-to remain consistent with the required activity and timestamps of the
-particles, there is no need to scale with the solid angle. See for
-example ``test028`` test files for more details.
+It is possible to configure an ``angular_acceptance`` on the direction of a source. This mechanism controls which particles are accepted based on their direction relative to one or more ``target_volumes``. Two checks can be enabled independently and combined:
 
-Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
-= -cos𝜃.
+- ``enable_intersection_check``: accepts the particle only if its trajectory intersects the target volume(s). This is useful for SPECT imaging to limit particle creation to those that have a chance of reaching the detector.
+- ``enable_angle_check``: accepts the particle only if its direction lies within a given angular tolerance relative to a reference vector.
 
-So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY
-plane from -X to -Y.
+The behavior when a particle fails a check is controlled by ``policy``:
 
-.. image:: ../figures/thetaphi.png
+- ``"Rejection"`` with ``skip_policy="ZeroEnergy"``: the particle is kept but its energy is set to 0 (not tracked). This preserves consistency with the required activity and timestamps — no solid angle scaling is needed.
+- ``"Rejection"`` with ``skip_policy="SkipEvents"``: the event is discarded and retried. Slightly faster but the total number of events becomes unpredictable.
+- ``"ForceDirection"``: the particle direction is forced toward the target volume.
+
+Example using intersection check with rejection (ZeroEnergy):
+
+.. code-block:: python
+
+    source = sim.add_source("GenericSource", "mysource")
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "ZeroEnergy"
+    source.direction.angular_acceptance.target_volumes = ["spect_detector"]
+    source.direction.angular_acceptance.enable_intersection_check = True
+
+Example combining intersection and angle checks:
+
+.. code-block:: python
+
+    source = sim.add_source("GenericSource", "mysource")
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "SkipEvents"
+    source.direction.angular_acceptance.target_volumes = ["spect_detector"]
+    source.direction.angular_acceptance.enable_intersection_check = True
+    source.direction.angular_acceptance.enable_angle_check = True
+    source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
+    source.direction.angular_acceptance.angle_tolerance_max = 20 * sim.unit.deg
+
+See for example ``test028`` test files for more details (in particular ``test028_ge_nm670_spect_4_acc_angle_helpers.py``).
+
+For details on how Geant4 defines particle directions using 𝜃 and 𝜙 angles, see the `Particle initial direction`_ section.
+
+.. note::
+
+   **Historical note:**
+
+   - Until **March 2022**, this feature was called ``angle_acceptance_volume`` with a different structure.
+   - From **March 2022 to November 2025**, it was called ``acceptance_angle`` (i.e. ``source.direction.acceptance_angle``), with properties ``volumes``, ``intersection_flag``, ``normal_flag``, ``normal_vector``, and ``normal_tolerance``.
+   - From **November 2025** onwards, it was renamed to ``angular_acceptance`` and the properties were refactored:
+
+     .. list-table::
+        :header-rows: 1
+
+        * - ``acceptance_angle`` property (pre Nov 2025)
+          - ``angular_acceptance`` property (current)
+        * - ``volumes``
+          - ``target_volumes``
+        * - ``intersection_flag``
+          - ``enable_intersection_check``
+        * - ``normal_flag``
+          - ``enable_angle_check``
+        * - ``normal_vector``
+          - ``angle_check_reference_vector``
+        * - ``normal_tolerance``
+          - ``angle_tolerance_max``
+        * - *(implicit)*
+          - ``policy`` (``"Rejection"`` or ``"ForceDirection"``)
 
 
 Half-life
 ---------
 
 You can instruct GATE to decrease the activity according to an exponential
-decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Exmaple:
+decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Example:
 
 .. code-block:: python
 
     source = sim.add_source('GenericSource, 'mysource')
     source.half_life = 60 * gate.g4_units.s
+
+Note1: If you set a run_timing_intervals starting at t > 0, the activity set in the source is the activity at t=0.
+
+Note2: If you do not set the half_life for an ion, G4 will use it's own value. Moreover, if you set a
+run_timing_intervals, by default you the source will decrease without taking into account the run_timing_intervals.
+To restrict the decay to the run_timing_intervals, you can set the parameter:
+
+.. code-block:: python
+
+    sim.run_timing_intervals = [[18 * sec, 28 * sec]]
+    source.user_particle_life_time = 0
+
 
 .. autoproperty:: opengate.sources.generic.GenericSource.half_life
 
@@ -357,12 +492,12 @@ Probabilities are derived from weights simply by normalizing the weights list.
    spectrum = gate.sources.utility.get_spectrum("Lu177", spectrum_type, database="icrp107")
 
 where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron",
-"auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
+"auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra". From this list,
 only b-spectra is histogram based (see next section), the rest are discrete. ``database`` can be "icrp107" or "radar".
 
-ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`
-with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`.
-`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`
+ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`__
+with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`__.
+`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`__
 
 The source can be configured like this:
 
@@ -489,3 +624,20 @@ Reference
 
 .. autoclass:: opengate.sources.generic.GenericSource
 
+
+Confine Source to Detector Volumes
+===================================
+
+OpenGATE allows for the simulation of intrinsic radioactivity within detector materials, such as the natural background radiation arising from Lutetium-176 in LSO/LYSO crystals.
+
+This functionality is achieved by defining a radioactive source and explicitly **confining** its spatial distribution to specific volumes within the detector geometry (e.g., the ``Crystal`` volume). Rather than defining a point source, the simulation generates events stochastically throughout the specified physical volume.
+
+.. note::
+   This strategy relies on defining the final layer of the geometry hierarchy as a single, non-repeated volume. This specific volume is then used as the target for source confinement, allowing the simulation to automatically generate the source within every repeated instance of the detector element throughout the entire scanner.
+
+Reference Implementation
+------------------------
+
+For a comprehensive demonstration of how to define a hierarchical PET scanner geometry and confine the source to crystal volumes, please refer to the following test script:
+
+``tests/src/source/testXXX_source_confine_in_the_detector_volume.py``

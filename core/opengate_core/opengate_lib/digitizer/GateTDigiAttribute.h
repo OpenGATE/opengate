@@ -8,10 +8,9 @@
 #ifndef GateTDigiAttribute_h
 #define GateTDigiAttribute_h
 
-#include "../GateHelpers.h"
 #include "../GateUniqueVolumeID.h"
 #include "GateVDigiAttribute.h"
-#include <pybind11/stl.h>
+#include <G4Cache.hh>
 
 template <class T> class GateTDigiAttribute : public GateVDigiAttribute {
 public:
@@ -23,6 +22,8 @@ public:
 
   std::vector<int> &GetIValues() override;
 
+  std::vector<int64_t> &GetLValues() override;
+
   std::vector<std::string> &GetSValues() override;
 
   std::vector<G4ThreeVector> &Get3Values() override;
@@ -31,6 +32,8 @@ public:
 
   const std::vector<T> &GetValues() const;
 
+  T GetSingleValue() const;
+
   void FillToRoot(size_t index) const override;
 
   void FillDValue(double v) override;
@@ -38,6 +41,8 @@ public:
   void FillSValue(std::string v) override;
 
   void FillIValue(int v) override;
+
+  void FillLValue(int64_t v) override;
 
   void Fill3Value(G4ThreeVector v) override;
 
@@ -51,11 +56,30 @@ public:
 
   std::string Dump(int i) const override;
 
+  void SetSingleValueMode(bool b) { fSingleValueMode = b; }
+
+  void SetSharedStorage(bool b) override { fSharedMode = b; }
+
 protected:
   struct threadLocal_t {
     std::vector<T> fValues;
+    T fSingleValue; // Use by the filters (only one value needed)
   };
   G4Cache<threadLocal_t> threadLocalData;
+  bool fSingleValueMode = false; // Default to false (Digi mode)
+
+  // Shared (non-thread-local) storage, used when fSharedMode is true.
+  // The caller is responsible for external synchronisation.
+  bool fSharedMode = false;
+  std::vector<T> fSharedValues;
+
+  // Returns the active value vector depending on the storage mode.
+  std::vector<T> &Values() {
+    return fSharedMode ? fSharedValues : threadLocalData.Get().fValues;
+  }
+  const std::vector<T> &Values() const {
+    return fSharedMode ? fSharedValues : threadLocalData.Get().fValues;
+  }
 
   void InitDefaultProcessHitsFunction();
 };

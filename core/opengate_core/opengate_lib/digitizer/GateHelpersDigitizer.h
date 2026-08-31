@@ -8,7 +8,6 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERDIGITIZER_H
 #define OPENGATE_CORE_OPENGATEHELPERDIGITIZER_H
 
-#include "G4TouchableHistory.hh"
 #include "GateDigiCollection.h"
 #include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
@@ -22,8 +21,21 @@ public:
                            GateDigiCollection *output,
                            const std::set<std::string> &names);
 
-  void Fill(size_t index);
+  void Fill(size_t index) const;
 
+  std::vector<GateVDigiAttribute *> fInputDigiAttributes;
+  std::vector<GateVDigiAttribute *> fOutputDigiAttributes;
+};
+
+class GateCoincidenceDigiAttributesFiller {
+public:
+  GateCoincidenceDigiAttributesFiller(GateDigiCollection *input,
+                                      GateDigiCollection *output,
+                                      const std::set<std::string> &names);
+
+  void Fill(size_t index1, size_t index2) const;
+
+private:
   std::vector<GateVDigiAttribute *> fInputDigiAttributes;
   std::vector<GateVDigiAttribute *> fOutputDigiAttributes;
 };

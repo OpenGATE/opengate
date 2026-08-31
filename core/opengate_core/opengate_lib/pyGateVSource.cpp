@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateVSource.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateVSource.h"
 
 void init_GateVSource(py::module &m) {
 
@@ -19,5 +16,7 @@ void init_GateVSource(py::module &m) {
       .def(py::init())
       .def("InitializeUserInfo", &GateVSource::InitializeUserInfo)
       .def("SetOrientationAccordingToAttachedVolume",
-           &GateVSource::SetOrientationAccordingToAttachedVolume);
+           &GateVSource::SetOrientationAccordingToAttachedVolume)
+      .def("GetRunGeneratedEvents", &GateVSource::GetRunGeneratedEvents)
+      .def("GetTotalGeneratedEvents", &GateVSource::GetTotalGeneratedEvents);
 }

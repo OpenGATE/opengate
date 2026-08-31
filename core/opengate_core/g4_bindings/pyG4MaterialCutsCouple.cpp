@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4Material.hh"
-#include "G4MaterialCutsCouple.hh"
+#include <G4Material.hh>
+#include <G4MaterialCutsCouple.hh>
 
 void init_G4MaterialCutsCouple(py::module &m) {
 

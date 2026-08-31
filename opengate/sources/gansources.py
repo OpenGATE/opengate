@@ -10,14 +10,12 @@ import bisect
 import random
 
 import opengate_core as g4
-from .phspsources import PhaseSpaceSource
 from ..exception import fatal
 from .generic import GenericSource
 from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
 from ..utility import LazyModuleLoader
 from ..base import process_cls
-
 
 #
 torch = LazyModuleLoader("torch")
@@ -269,7 +267,7 @@ class VoxelizedSourceConditionGenerator:
         return np.column_stack((p, v))
 
 
-class GANSource(GenericSource, g4.GateGANSource):
+class GANSource(GenericSource):
     """
     GAN source: the Generator produces particles
     Input is a neural network Generator trained with a GAN
@@ -278,7 +276,13 @@ class GANSource(GenericSource, g4.GateGANSource):
     user_info_defaults = {
         "pth_filename": (
             None,
-            {"doc": "Filename of the Generator (.pth), train with gaga_train"},
+            {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "Filename of the Generator (.pth), train with gaga_train",
+                "is_input_file": True,
+            },
         ),
         "backward_distance": (
             None,
@@ -357,6 +361,9 @@ class GANSource(GenericSource, g4.GateGANSource):
         "cond_image": (
             None,
             {
+                # FIXME: this conditional image input looks file-backed but is
+                # still modeled as a plain string-like parameter and is not yet
+                # marked as an input file for archiving.
                 "doc": "Filename of the activity distribution (provided as image) to use for the conditional GAN"
             },
         ),
@@ -387,31 +394,27 @@ class GANSource(GenericSource, g4.GateGANSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        GenericSource.__init__(self, *args, **kwargs)
 
-    def __initcpp__(self):
-        g4.GateGANSource.__init__(self)
+    def create_g4_source(self):
+        return g4.GateGANSource()
 
-    def initialize(self, run_timing_intervals):
-        # FIXME -> check input user_info
-        # initialize the mother class generic source
-        GenericSource.initialize(self, run_timing_intervals)
-
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
         # default generator or set by the user
         if self.user_info.generator is None:
             self.set_default_generator()
         gen = self.user_info.generator
 
         # initialize the generator (read the GAN)
-        # this function must have 1) the generator function 2) the associated info
         gen.initialize()
 
         # set the function pointer to the cpp side
-        self.SetGeneratorFunction(gen.generator)
+        g4_source.SetGeneratorFunction(gen.generator)
 
         # set the parameters to the cpp side
-        self.SetGeneratorInfo(gen.gan_info)
+        g4_source.SetGeneratorInfo(gen.gan_info)
+
+        GenericSource.initialize_g4_source(self, g4_source, run_timing_intervals)
 
     def set_default_generator(self):
         # non-conditional generator
@@ -419,27 +422,24 @@ class GANSource(GenericSource, g4.GateGANSource):
             self.generator = GANSourceDefaultGenerator(self.user_info)
             return
 
-        # FIXME: I changed this line because the second arg 'self' seemed wrong to me. Check!
         vcg = VoxelizedSourceConditionGenerator(self.cond_image)
-        # vcg = VoxelizedSourceConditionGenerator(self.cond_image, self)
         vcg.compute_directions = self.compute_directions
         self.generator = GANSourceConditionalGenerator(
             self.user_info, vcg.generate_condition
         )
 
 
-class GANPairsSource(GANSource, g4.GateGANPairSource):
+class GANPairsSource(GANSource):
     """
     GAN source: the Generator produces pairs of particles (for PET)
     Input is a neural network Generator trained with a GAN
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        GANSource.__init__(self, *args, **kwargs)
 
-    def __initcpp__(self):
-        g4.GateGANPairSource.__init__(self)
+    def create_g4_source(self):
+        return g4.GateGANPairSource()
 
     def set_default_generator(self):
         # non-conditional generator
@@ -947,7 +947,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
     def generate_condition(self, n):
         fatal(
             f'Error: to use GANSourceConditionalGenerator,  you must provide a function "f" '
-            f'that take a single int "n" as input and generate n condition samples. '
+            f'that take a single int "number_of_primaries" as input and generate that many condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
         )
         return None
@@ -1029,7 +1029,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
     def generate_condition(self, n):
         fatal(
             f'Error: to use GANSourceConditionalPairsGenerator,  you must provide a function "f" '
-            f'that take a single int "n" as input and generate n condition samples. '
+            f'that take a single int "number_of_primaries" as input and generate that many condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
         )
         return None

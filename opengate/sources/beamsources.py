@@ -3,13 +3,19 @@ from box import Box
 import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate_core as g4
-from .generic import GenericSource, SourceBase
+from .generic import (
+    GenericSource,
+    SourceBase,
+    DirectionValidator,
+    _direction_parameters,
+)
 from ..contrib.tps.ionbeamtherapy import (
     get_spots_from_beamset_beam,
     spots_info_from_txt,
     BeamsetInfo,
 )
 from ..base import process_cls
+from ..exception import fatal
 
 
 def _check_ph_space_params(param_v):
@@ -30,66 +36,205 @@ def _check_ph_space_params(param_v):
         raise ValueError("convergence parameter can be only 0 or 1.")
 
 
-class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
+def _pbs_direction_parameters():
+    b = _direction_parameters()
+    b.partPhSp_x = [0, 0, 0, 0]
+    b.partPhSp_y = [0, 0, 0, 0]
+    return b
+
+
+class PBSDirectionValidator(DirectionValidator):
+    """Validates the 'direction' Box for a Pencil Beam Source."""
+
+    __schema__ = set(_pbs_direction_parameters().keys())
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        # 1. Validate all the common direction parameters (theta, phi, etc.)
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+
+        # 2. Validate the PBS-specific parameters
+        b = getattr(parent_obj, attr_name)
+        # Check that partPhSp_x and partPhSp_y are 4-element lists
+        if len(b.partPhSp_x) != 4:
+            fatal(
+                f"In {context_name}: 'partPhSp_x' must be a 4-element list [sigma, theta, epsilon, conv]. "
+                f"Provided: {b.partPhSp_x}"
+            )
+        if len(b.partPhSp_y) != 4:
+            fatal(
+                f"In {context_name}: 'partPhSp_y' must be a 4-element list [sigma, theta, epsilon, conv]. "
+                f"Provided: {b.partPhSp_y}"
+            )
+
+        #
+        # Run the physics checks from _check_ph_space_params
+        #
+        pi = math.pi
+        param_names = ["partPhSp_x", "partPhSp_y"]
+        for name in param_names:
+            params = b[name]
+            sigma = params[0]
+            theta = params[1]
+            epsilon = params[2]
+            conv = params[3]
+
+            if epsilon == 0:
+                fatal(f"In {context_name}.{name}: Ellipse area 'epsilon' cannot be 0.")
+            if pi * sigma * theta < epsilon:
+                fatal(
+                    f"In {context_name}.{name}: The condition 'pi * sigma * theta < epsilon' is not met. "
+                    f"Provided values: sigma = {sigma}, theta = {theta}, epsilon = {epsilon}."
+                )
+            if conv not in [0, 1]:
+                fatal(
+                    f"In {context_name}.{name}: 'conv' (convergence) parameter must be 0 or 1. "
+                    f"Provided: {conv}."
+                )
+
+        return context_name
+
+
+_pbs_dir_validator = PBSDirectionValidator()
+
+
+class IonPencilBeamSource(GenericSource):
     """
     Pencil Beam source
     """
 
+    user_info_defaults = {
+        "direction": (
+            _pbs_direction_parameters(),
+            {"doc": "Define the direction of the primary particles", "override": True},
+        )
+    }
+
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        GenericSource.__init__(self, *args, **kwargs)
         self.position.type = "disc"
+        self._dir_validator = PBSDirectionValidator()
 
-        # FIXME: how to change the user_info for this new param ? -> use "override:True" entry in options dict
-
-        # additional parameters: direction
-        # sigma, theta, epsilon, conv (0: divergent, 1: convergent)
-        self.direction.partPhSp_x = [0, 0, 0, 0]
-        self.direction.partPhSp_y = [0, 0, 0, 0]
-
-    def __initcpp__(self):
-        g4.GatePencilBeamSource.__init__(self)
-
-    def initialize(self, run_timing_intervals):
-        GenericSource.initialize(self, run_timing_intervals)
-        _check_ph_space_params(self.direction.partPhSp_x)
-        _check_ph_space_params(self.direction.partPhSp_y)
+    def create_g4_source(self):
+        return g4.GatePencilBeamSource()
 
 
-class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
+class TreatmentPlanPBSource(SourceBase):
     """
     Treatment Plan source Pencil Beam
     """
 
     user_info_defaults = {
-        "sorted_spot_generation": (False, {"doc": "FIXME"}),
-        "beam_model": (None, {"doc": "FIXME"}),
-        "plan_path": (None, {"doc": "FIXME"}),
-        "beam_data_dict": (None, {"doc": "FIXME"}),
-        "beam_nr": (1, {"doc": "FIXME"}),
-        "gantry_rot_axis": ("z", {"doc": "FIXME"}),
-        "flat_generation": (False, {"doc": "FIXME"}),
-        "particle": (None, {"doc": "FIXME"}),
-        "ion": (Box({"Z": 0, "A": 0, "E": 0}), {"doc": "FIXME"}),
+        "sorted_spot_generation": (
+            False,
+            {
+                "doc": "If True the source will generate primaries for each spot in the plan one by one, following "
+                "the order of the plan. Otherwise the spot to fire is randomly sampled at each event from a "
+                "probability distribution function."
+            },
+        ),
+        "beam_model": (
+            None,
+            {
+                "doc": "A BeamModel object instance, containing the geometrical and energy-dependent "
+                "parameters of the beam model"
+            },
+        ),
+        "plan_path": (
+            None,
+            {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "path of the treatment plan file to simulate. It can be in DICOM or Gate 9 .txt format ",
+                "is_input_file": True,
+            },
+        ),
+        "beam_data_dict": (
+            None,
+            {
+                "doc": "If a plan path is not provided, the source can be initialized "
+                "by providing custom or plan derived spot data. Check opengate.contrib.tps.ionbeamtherapy.spots_info_from_txt() "
+                "for more details on the structure of this dictionary."
+            },
+        ),
+        "beam_nr": (1, {"doc": "Which beam to simulate. Numbering starts from 1."}),
+        "gantry_rot_axis": (
+            "z",
+            {
+                "doc": "By default the source is oriented in +y direction. The source will be rotated "
+                "of the gantry angle specified in the plan, around the specified axis."
+            },
+        ),
+        "flat_generation": (
+            False,
+            {
+                "doc": "If True, the same number of primaries is generated for each spot "
+                "and the spot weight is applied to the energy deposition instead."
+            },
+        ),
+        "particle": (
+            None,
+            {
+                "doc": "Name of the particle generated by the source (gamma, e+ ... or an ion such as 'ion 9 18')"
+            },
+        ),
+        "ion": (
+            Box({"Z": 0, "A": 0, "E": 0}),
+            {
+                "doc": "If the particle is an ion, you must set Z: Atomic Number, A: Atomic Mass (nn + np +nlambda), E: Excitation energy (i.e. for metastable)"
+            },
+        ),
         "position": (
             Box(
                 {"translation": [0, 0, 0], "rotation": Rotation.identity().as_matrix()}
             ),
-            {"doc": "FIXME"},
+            {
+                "doc": "translation and rotation to be applied to the source. Note that the transform will be applied to "
+                "the source AFTER the gantry rotation and the source to axis distance have been applied. Note: rotation is not used yet."
+            },
         ),
-        "positions": ([], {"doc": "FIXME"}),
-        "rotations": ([], {"doc": "FIXME"}),
-        "energies": ([], {"doc": "FIXME"}),
-        "energy_sigmas": ([], {"doc": "FIXME"}),
-        "weights": ([], {"doc": "FIXME"}),
-        "pdf": ([], {"doc": "FIXME"}),
-        "partPhSp_xV": ([], {"doc": "FIXME"}),
-        "partPhSp_yV": ([], {"doc": "FIXME"}),
+        "positions": (
+            [],
+            {
+                "doc": "list of the positions to which the single particle source (SPS) will be moved "
+                "during the simulation to irradiate all the spots. Calculated internally."
+            },
+        ),
+        "rotations": (
+            [],
+            {"doc": "list of the rotations of each SPS.Calculated internally."},
+        ),
+        "energies": ([], {"doc": "List of the SPS's energies. Calculated internally."}),
+        "energy_sigmas": (
+            [],
+            {"doc": "List of the SPS's energy sigmas. Calculated internally."},
+        ),
+        "weights": (
+            [],
+            {"doc": "List of the weight for each spot. Calculated internally."},
+        ),
+        "pdf": (
+            [],
+            {
+                "doc": "Probability distribution function. Calculated internally and used to sample the spots to irradiate."
+            },
+        ),
+        "partPhSp_xV": (
+            [],
+            {
+                "doc": "List of phase space parameters for each SPS. Calculated internally."
+            },
+        ),
+        "partPhSp_yV": (
+            [],
+            {
+                "doc": "List of phase space parameters for each SPS. Calculated internally."
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        SourceBase.__init__(self, *args, **kwargs)
         # initialize internal members
         self.spots = None
         self.rotation = None
@@ -100,18 +245,15 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         self.proportion_factor_x = None
         self.proportion_factor_y = None
 
-    def __initcpp__(self):
-        g4.GateTreatmentPlanPBSource.__init__(self)
+    def create_g4_source(self):
+        return g4.GateTreatmentPlanPBSource()
 
-    def initialize(self, run_timing_intervals):
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
         if not self.beam_data_dict and not self.plan_path:
             raise ValueError(
                 "User must provide either a treatment plan file path or a beam data dictionary "
                 "with spots and gantry angle."
             )
-
-        # if len(self.user_info.n_primaries_vector) != len(self.user_info.run_timing_intervals):
-        #     raise ValueError("Particles per run must have the same length of the number of runs")
 
         # set pbs param
         self._set_pbs_param_all_spots()
@@ -126,11 +268,14 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
             if len(words) > 3:
                 self.ion.E = words[3]
 
-        # initialize
-        SourceBase.initialize(self, run_timing_intervals)
+        self.initialize_start_end_time(run_timing_intervals)
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        g4_source.InitializeUserInfo(runtime_user_info)
 
     def get_generated_primaries(self):
-        return self.g4_source.GetGeneratedPrimaries()
+        if self.g4_thread_sources:
+            return self.g4_thread_sources[0].GetGeneratedPrimaries()
+        return []
 
     def _set_pbs_param_all_spots(self):
         # initialize vectors every time, otherwise issues with MT
@@ -154,7 +299,7 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
                 gantry_angle = beam_data["gantry_angle"]
             elif str(plan_path).endswith(".dcm"):
                 beamset = BeamsetInfo(plan_path)
-                gantry_angle = beamset.beam_angles[beam_nr - 1]
+                gantry_angle = float(beamset.beam_angles[beam_nr - 1])
                 self.spots = get_spots_from_beamset_beam(beamset, beam_nr)
             else:
                 raise ValueError(
@@ -197,7 +342,10 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
 
             # add weight
             if self.flat_generation:
-                weights.append(spot.beamFraction * len(self.spots))
+                n_primaries = spot.beamFraction * beamline.get_n_primaries_from_MU(
+                    spot.energy
+                )
+                weights.append(n_primaries * len(self.spots))
             else:
                 weights.append(1.0)
 
@@ -231,7 +379,10 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         if flat_generation:
             pdf = [1.0 / len(self.spots) for spot in self.spots]
         else:
-            pdf = [spot.beamFraction for spot in self.spots]
+            pdf = [
+                s.beamFraction * self.beam_model.get_n_primaries_from_MU(s.energy)
+                for s in self.spots
+            ]
 
         # normalize vector, to assure the probabilities sum up to 1
         pdf = pdf / np.sum(pdf)

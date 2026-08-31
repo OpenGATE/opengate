@@ -9,7 +9,6 @@
 #define GateAttenuationImageActor_h
 
 #include "GateVActor.h"
-#include <functional>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

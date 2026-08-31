@@ -1,0 +1,97 @@
+/* --------------------------------------------------
+Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#ifndef GateVBiasOptrActor_h
+#define GateVBiasOptrActor_h
+
+#include "../GateVActor.h"
+#include <G4Cache.hh>
+#include <G4Navigator.hh>
+#include <G4VBiasingOperator.hh>
+#include <pybind11/stl.h>
+#include <unordered_set>
+
+namespace py = pybind11;
+
+/*
+    This is a base class (Virtual) to various Operator (Optr) Actors for
+   biasing. It inherits from GateVActor (this is an actor) and also from
+   G4VBiasingOperator.
+
+    The common operation of all actors that inherit this class is for
+    AttachAllLogicalDaughtersVolumes that propagate the actors to all
+   sub-volumes. (Later: could be an option to not propagate).
+
+   WARNING.
+   There is a global static variable in G4VBiasingOperator that
+   contains a vector of operators. This variable must be cleared
+   once the simulation is done to allow another simulation to be run.
+   This cannot be properly done via Geant4 interface (or at least I don't know
+   how to do), but we proudly provide an awful trick to do the job, via
+   the ClearOperators and GetNonConstBiasingOperators functions
+
+   - GetNonConstBiasingOperators get non const access to the cached static var
+   - ClearOperators clear the vector, should be called once everything is done.
+
+ */
+
+class GateVBiasOptrActor : public G4VBiasingOperator, public GateVActor {
+public:
+  explicit GateVBiasOptrActor(const std::string &name, py::dict &user_info,
+                              bool MT_ready = false);
+
+  ~GateVBiasOptrActor() override;
+
+  void InitializeUserInfo(py::dict &user_info) override;
+  void Configure() override;
+  void ConfigureForWorker() override;
+  void PreUserTrackingAction(const G4Track *track) override;
+  void SteppingAction(G4Step *step) override;
+  virtual void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *volume);
+
+  static void ClearOperators();
+  static std::vector<G4VBiasingOperator *> &GetNonConstBiasingOperators();
+
+  bool IsTrackValid(const G4Track *track) const;
+
+  void BuildLVCache(const std::vector<std::string> &names,
+                    std::unordered_set<const G4LogicalVolume *> &cache,
+                    const std::string &callerName) const;
+
+  bool IsInVolumeListAcrossAllWorlds(
+      const G4Track *track,
+      const std::unordered_set<const G4LogicalVolume *> &cache) const;
+
+  bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
+
+  // Helper to abstract the Geant4 parallel navigator math
+  const G4LogicalVolume *
+  GetVolumeFromParallelNavigator(const G4ThreeVector &pos,
+                                 const G4ThreeVector &dir,
+                                 G4Navigator *realNav) const;
+
+  bool IsStepEnteringVolumeAcrossAllWorlds(
+      const G4Step *step,
+      const std::unordered_set<const G4LogicalVolume *> &volumes) const;
+
+  std::vector<std::string> fExcludeVolumes;
+
+  // The following cache the logical volumes for faster comparison
+  // (lazy initialisation as this is complex with the parallel worlds)
+  struct threadLocalCache_t {
+    bool fIsVolumePointersCached = false;
+    std::unordered_set<const G4LogicalVolume *> fExcludedVolumePointers;
+    G4Navigator fTmpNav;
+  };
+
+  mutable G4Cache<threadLocalCache_t> fThreadLocalCache;
+
+  double fWeightCutoff;
+  double fEnergyCutoff;
+};
+
+#endif

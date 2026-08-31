@@ -8,8 +8,6 @@
 #ifndef GateDigiAttributeManager_h
 #define GateDigiAttributeManager_h
 
-#include "../GateHelpers.h"
-#include "GateDigiCollection.h"
 #include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
@@ -28,7 +26,7 @@ class GateDigiAttributeManager {
 public:
   static GateDigiAttributeManager *GetInstance();
 
-  GateVDigiAttribute *GetDigiAttribute(std::string name);
+  GateVDigiAttribute *GetDigiAttribute(const std::string &name);
 
   void
   DefineDigiAttribute(std::string name, char type,

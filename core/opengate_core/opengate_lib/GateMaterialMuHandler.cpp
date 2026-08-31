@@ -9,13 +9,12 @@
 #include "GateHelpers.h"
 #include "GateMuDatabase.h"
 #include "GateMuTables.h"
-
-#include "G4Gamma.hh"
-#include "G4ProcessManager.hh"
-#include "G4ProcessVector.hh"
-#include "G4ProductionCutsTable.hh"
-#include "G4VAtomDeexcitation.hh"
-#include "G4VEmProcess.hh"
+#include <G4Gamma.hh>
+#include <G4ProcessManager.hh>
+#include <G4ProcessVector.hh>
+#include <G4ProductionCutsTable.hh>
+#include <G4VAtomDeexcitation.hh>
+#include <G4VEmProcess.hh>
 
 // GateMaterialMuHandler *GateMaterialMuHandler::fSingletonMaterialMuHandler =
 // nullptr;
@@ -264,8 +263,8 @@ void GateMaterialMuHandler::ConstructMaterial(
 }
 
 void GateMaterialMuHandler::InitElementTable() {
-  const int *energyNumberList;
-  const float *data;
+  const int *energyNumberList = nullptr;
+  const double *data = nullptr;
   if (fDatabaseName == "NIST") {
     fElementNumber = NIST_mu_muen_data_elementNumber;
     energyNumberList = NIST_mu_muen_data_energyNumber;
@@ -274,13 +273,16 @@ void GateMaterialMuHandler::InitElementTable() {
     fElementNumber = EPDL_mu_muen_data_elementNumber;
     energyNumberList = EPDL_mu_muen_data_energyNumber;
     data = EPDL_mu_muen_data;
+  } else {
+    Fatal("GateMaterialMuHandler::InitElementTable db is '" + fDatabaseName +
+          " but must be 'NIST' or 'EPDL'");
   }
 
   fElementsTable = new GateMuTable *[fElementNumber + 1];
   int index = 0;
 
   for (int i = 0; i < fElementNumber + 1; i++) {
-    auto energyNumber = energyNumberList[i];
+    const auto energyNumber = energyNumberList[i];
     auto *table = new GateMuTable(nullptr, energyNumber);
     fElementsTable[i] = table;
 

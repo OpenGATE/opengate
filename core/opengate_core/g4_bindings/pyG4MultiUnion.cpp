@@ -9,10 +9,10 @@
 
 namespace py = pybind11;
 
-#include "G4MultiUnion.hh"
-#include "G4String.hh"
-#include "G4Transform3D.hh"
-#include "G4VSolid.hh"
+#include <G4MultiUnion.hh>
+#include <G4String.hh>
+#include <G4Transform3D.hh>
+#include <G4VSolid.hh>
 
 void init_G4MultiUnion(py::module &m) {
   py::class_<G4MultiUnion, G4VSolid>(m, "G4MultiUnion")

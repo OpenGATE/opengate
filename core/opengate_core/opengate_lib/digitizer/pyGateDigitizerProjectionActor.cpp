@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateDigitizerProjectionActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateDigitizerProjectionActor.h"
 
 void init_GateDigitizerProjectionActor(py::module &m) {
 
@@ -19,6 +16,10 @@ void init_GateDigitizerProjectionActor(py::module &m) {
              GateVActor>(m, "GateDigitizerProjectionActor")
       .def(py::init<py::dict &>())
       .def_readwrite("fImage", &GateDigitizerProjectionActor::fImage)
+      .def_readwrite("fSquaredImage",
+                     &GateDigitizerProjectionActor::fSquaredImage)
+      .def("EnableSquaredImage",
+           &GateDigitizerProjectionActor::EnableSquaredImage)
       .def("SetPhysicalVolumeName",
            &GateDigitizerProjectionActor::SetPhysicalVolumeName);
 }

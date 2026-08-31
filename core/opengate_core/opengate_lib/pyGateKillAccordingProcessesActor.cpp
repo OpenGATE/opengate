@@ -5,11 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateKillAccordingProcessesActor.h"
+#include <pybind11/pybind11.h>
 
 void init_GateKillAccordingProcessesActor(py::module &m) {
   py::class_<GateKillAccordingProcessesActor,

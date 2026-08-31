@@ -10,8 +10,8 @@
 
 namespace py = pybind11;
 
-#include "G4Region.hh"
-#include "G4RegionStore.hh"
+#include <G4Region.hh>
+#include <G4RegionStore.hh>
 #include <vector>
 
 void init_G4RegionStore(py::module &m) {

@@ -1,8 +1,6 @@
 from typing import List
-
 import numpy as np
 from scipy.spatial.transform import Rotation
-
 import opengate_core as g4
 from ..base import process_cls
 from .base import ActorBase
@@ -185,10 +183,12 @@ class Digitizer:
         if "input_digi_collection" in mod.user_info:
             mod.input_digi_collection = self.actors[index - 1].name
         first_key = next(iter(mod.user_output))
-        if module_type == "DigitizerProjectionActor":
-            mod.user_output[first_key].set_write_to_disk(False)
-        else:
-            mod.user_output[first_key].write_to_disk = False
+        # ``mod.user_output[...]`` returns the raw ActorOutput object, not the
+        # user-facing interface proxy. Disabling persistence must therefore go
+        # through the explicit setter method so the internal item config is
+        # updated, instead of creating a stray Python attribute named
+        # ``write_to_disk`` on the ActorOutput instance.
+        mod.user_output[first_key].set_write_to_disk(False)
         self.actors.append(mod)
         return mod
 
@@ -206,6 +206,15 @@ class Digitizer:
         for m in self.actors:
             if s in m.name:
                 return m
+        return None
+
+    def find_module_by_type(self, module_type):
+        for m in self.actors:
+            if m.type_name == module_type:
+                return m
+        fatal(
+            f'Error, the module type "{module_type}" is not found in the digitizer "{self.name}"'
+        )
         return None
 
 
@@ -243,8 +252,8 @@ class DigitizerBase(ActorBase):
     #         )
     #     return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
-    def initialize(self):
-        ActorBase.initialize(self)
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if self.authorize_repeated_volumes is True:
             return
         att = self.attached_to
@@ -252,7 +261,11 @@ class DigitizerBase(ActorBase):
             att = [self.attached_to]
         for a in att:
             current = self.simulation.volume_manager.get_volume(a).parent
-            while current.name != "world" and hasattr(current, "g4_transform"):
+            while (
+                current is not None
+                and current.name != "world"
+                and hasattr(current, "g4_transform")
+            ):
                 if len(current.g4_transform) > 1:
                     fatal(
                         f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}'. "
@@ -261,6 +274,25 @@ class DigitizerBase(ActorBase):
                         f"sure, enable the option 'authorize_repeated_volumes'."
                     )
                 current = current.parent
+
+    def initialize(self):
+        ActorBase.initialize(self)
+
+    def end_simulation_action(self):
+        """Finalize digitizer outputs on the Python side.
+
+        This lower-case helper contains the reusable Python-side end-of-
+        simulation logic. Concrete ``EndSimulationAction()`` trampoline methods
+        should call their actor-specific C++ ``EndSimulationAction()`` first and
+        then forward here, either directly or via this base implementation.
+        """
+        for user_output in self.user_output.values():
+            user_output.end_of_simulation()
+
+    def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
+        self.end_simulation_action()
 
 
 class DigitizerWithRootOutput(DigitizerBase):
@@ -352,7 +384,8 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
         g4.GateDigitizerAdderActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def initialize(self):
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         if (
             self.policy != "EnergyWinnerPosition"
             and self.policy != "EnergyWeightedCentroidPosition"
@@ -361,11 +394,18 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
                 f"Error, the policy for the Adder '{self.name}' must be EnergyWinnerPosition or "
                 f"EnergyWeightedCentroidPosition, while is is '{self.policy}'"
             )
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
         depth = -1
         if self.user_info.group_volume is not None:
             depth = self.simulation.volume_manager.get_volume(
@@ -379,7 +419,10 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
         g4.GateDigitizerAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerAdderActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringActor):
@@ -467,8 +510,13 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def initialize(self):
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
+
+    def initialize(self):
+        # group_volume existence is validated during resolve_and_validate_config();
+        # runtime preparation here only translates it into the depth expected by C++.
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -524,7 +572,230 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
+
+
+class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeActor):
+    """
+    Dititizer module for simulating dead time
+    (drops singles that occur briefly after a previous one, in the same volume).
+    """
+
+    user_info_defaults = {
+        "input_digi_collection": (
+            "Singles",
+            {
+                "doc": "Digi collection to be used as input.",
+            },
+        ),
+        "dead_time": (
+            0,
+            {
+                "doc": "Time interval after one digi during which following digis are dropped",
+            },
+        ),
+        "policy": (
+            "NonParalyzable",
+            {
+                "doc": "Policy controlling whether the dead time interval is extended when new digis occur. "
+                + "NonParalyzable: the dead time interval is fixed and does not change when new digis occur during that interval. "
+                + "Paralyzable: when a new digi arrives during the current dead time interval, the interval is extended to last until dead_time after the new digi. ",
+                "allowed_values": (
+                    "NonParalyzable",
+                    "Paralyzable",
+                ),
+            },
+        ),
+        "group_volume": (
+            None,
+            {
+                "doc": "Name of the volume in which the dead time effect takes place",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
+            },
+        ),
+        "sorting_time": (
+            1e3,
+            {
+                "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "Attributes to be omitted from the output.",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigitizerDeadTimeActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
+    def initialize(self):
+        # group_volume existence is validated during resolve_and_validate_config();
+        # runtime preparation here only translates it into the depth expected by C++.
+        DigitizerBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
+        depth = -1
+        if self.user_info.group_volume is not None:
+            depth = self.simulation.volume_manager.get_volume(
+                self.user_info.group_volume
+            ).volume_depth_in_tree
+        self.SetGroupVolumeDepth(depth)
+
+    def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
+        self.set_group_by_depth()
+        g4.GateDigitizerDeadTimeActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
+        g4.GateDigitizerDeadTimeActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
+
+
+class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor):
+    """
+    Dititizer module for simulating pile-up
+    (combining singles that occur close to each other in time, in the same volume).
+    """
+
+    user_info_defaults = {
+        "input_digi_collection": (
+            "Singles",
+            {
+                "doc": "Digi collection to be used as input.",
+            },
+        ),
+        "time_window": (
+            0,
+            {
+                "doc": "Time window during which consecutive digis are merged into a single digi",
+            },
+        ),
+        "time_window_policy": (
+            "NonParalyzable",
+            {
+                "doc": "Policy controlling how the pileup window is updated when new digis occur. "
+                + "NonParalyzable: the time window is fixed and does not change when new digis occur. "
+                + "Paralyzable: the time window is extended each time a new digi occurs within the current time window. "
+                + "EnergyWinnerParalyzable: the time window is extended when a new digi occurs within the current time window, "
+                + "if this digi has a higher energy than the previous digis in the current window.",
+                "allowed_values": (
+                    "NonParalyzable",
+                    "Paralyzable",
+                    "EnergyWinnerParalyzable",
+                ),
+            },
+        ),
+        "position_attribute_policy": (
+            "EnergyWeightedCentroid",
+            {
+                "doc": "Policy used to determine the PostPosition attribute of the piled-up digi. "
+                + "EnergyWinner: the position of the digi with the highest energy is used. "
+                + "EnergyWeightedCentroid: the position is the energy-weighted centroid of all piled-up digis.",
+                "allowed_values": ("EnergyWinner", "EnergyWeightedCentroid"),
+            },
+        ),
+        "attribute_policy": (
+            "First",
+            {
+                "doc": "Policy used to determine the value of all attributes of the piled-up digi other than TotalEnergyDeposit and PostPosition. "
+                + "First: the attribute value of the first digi is used. "
+                + "EnergyWinner: the attribute value of the digi with the highest energy is used. "
+                + "Last: the attribute value of the last digi is used.",
+                "allowed_values": ("First", "EnergyWinner", "Last"),
+            },
+        ),
+        "group_volume": (
+            None,
+            {
+                "doc": "Name of the volume in which digis are piled up.",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
+            },
+        ),
+        "sorting_time": (
+            1e3,
+            {
+                "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "Attributes to be omitted from the output.",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigitizerPileupActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
+    def initialize(self):
+        DigitizerBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
+        depth = -1
+        if self.user_info.group_volume is not None:
+            depth = self.simulation.volume_manager.get_volume(
+                self.user_info.group_volume
+            ).volume_depth_in_tree
+        self.SetGroupVolumeDepth(depth)
+
+    def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
+        self.set_group_by_depth()
+        g4.GateDigitizerPileupActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
+        g4.GateDigitizerPileupActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerSpatialBlurringActor(
@@ -543,6 +814,7 @@ class DigitizerSpatialBlurringActor(
     blur_fwhm: float
     blur_sigma: float
     keep_in_solid_limits: bool
+    use_truncated_Gaussian: bool
 
     user_info_defaults = {
         "attributes": (
@@ -572,25 +844,31 @@ class DigitizerSpatialBlurringActor(
         "blur_attribute": (
             None,
             {
-                "doc": "FIXME",
+                "doc": "Which attribute to blur, e.g. PostPosition.",
             },
         ),
         "blur_fwhm": (
             None,
             {
-                "doc": "FIXME",
+                "doc": "FWHM for the blurring.",
             },
         ),
         "blur_sigma": (
             None,
             {
-                "doc": "FIXME",
+                "doc": "std. dev. for the blurring.",
             },
         ),
         "keep_in_solid_limits": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "If the blurring move the position outside the solid limits, keep the point inside, on the boundary",
+            },
+        ),
+        "use_truncated_Gaussian": (
+            True,
+            {
+                "doc": "Apply a truncated Gaussian distribution to blur the position when close to the solid limits.",
             },
         ),
     }
@@ -620,8 +898,11 @@ class DigitizerSpatialBlurringActor(
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
-    def initialize(self):
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -631,7 +912,10 @@ class DigitizerSpatialBlurringActor(
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerSpatialBlurringActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerEfficiencyActor(
@@ -690,8 +974,11 @@ class DigitizerEfficiencyActor(
                 f"Efficency set to {self.efficiency}, which is not in [0;1]."
             )
 
-    def initialize(self):
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -701,7 +988,10 @@ class DigitizerEfficiencyActor(
         g4.GateDigitizerEfficiencyActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerEfficiencyActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerEnergyWindowsActor(
@@ -765,8 +1055,10 @@ class DigitizerEnergyWindowsActor(
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        DigitizerBase.EndSimulationAction(self)
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerHitsCollectionActor(
@@ -824,8 +1116,10 @@ class DigitizerHitsCollectionActor(
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        DigitizerBase.EndSimulationAction(self)
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
@@ -844,7 +1138,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     detector_orientation_matrix: np.ndarray
 
     user_info_defaults = {
-        # FIXME: implement a setter hook so the user can provided digitizer instances instead of their name,
+        # FIXME: implement a setter hook so the user can provide digitizer instances instead of their name,
         # like in attached_to
         "input_digi_collections": (
             ["Hits"],
@@ -858,7 +1152,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         ),
         "size": (
             [128, 128],
-            {"doc": "FIXME"},
+            {"doc": "size of the 2D projection in pixels"},
         ),
         "physical_volume_index": (
             -1,
@@ -881,8 +1175,12 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     }
 
     user_output_config = {
-        "projection": {
+        "counts": {
             "actor_output_class": ActorOutputSingleImage,
+        },
+        "squared_counts": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": False,
         },
     }
 
@@ -896,7 +1194,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def initialize(self):
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
         # for the moment, we cannot use this actor with several volumes
         m = self.attached_to
         if hasattr(m, "__len__") and not isinstance(m, str):
@@ -909,6 +1208,8 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
                 f"Sorry, cannot (yet) use ProjectionActor with repeated volumes, "
                 f"set 'authorize_repeated_volumes' to False"
             )
+
+    def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -927,7 +1228,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
     @property
     def output_spacing(self):
-        # consider 3D images, third dimension can be the energy windows
+        # consider 3D images, the third dimension can be the energy windows
         output_spacing = list(self.spacing)
         if len(output_spacing) != 2:
             fatal(
@@ -956,7 +1257,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         solid.BoundingLimits(pMin, pMax)
         d = np.array([0, 0, 1.0])
         d = np.dot(self.detector_orientation_matrix, d)
-        imax = np.argmax(d)
+        imax = np.argmax(np.abs(d))
         thickness = (pMax[imax] - pMin[imax]) / channels
         return thickness
 
@@ -983,7 +1284,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         # we use the image associated with run 0 for the entire simulation
         # in the future, this actor should implement a BeginOfRunActionMasterThread
         # to be able to work on a per-run basis
-        self.user_output.projection.create_empty_image(0, size, spacing)
+        self.user_output.counts.create_empty_image(0, size, spacing)
 
         # check physical_volume_index and number of repeating
         n = len(self.attached_to_volume.g4_physical_volumes)
@@ -1009,30 +1310,52 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             )
             pv = None  # avoid warning from IDE
         align_image_with_physical_volume(
-            self.attached_to_volume, self.user_output.projection.data_per_run[0].image
+            self.attached_to_volume, self.user_output.counts.data_per_run[0].image
         )
         self.SetPhysicalVolumeName(str(pv.GetName()))
 
         # update the cpp image and start
         update_image_py_to_cpp(
-            self.user_output.projection.data_per_run[0].image, self.fImage, True
+            self.user_output.counts.data_per_run[0].image, self.fImage, True
         )
-        # keep initial origin
+
+        # uncertainty ?
+        if self.user_output.squared_counts.get_active():
+            self.user_output.squared_counts.create_empty_image(0, size, spacing)
+            align_image_with_physical_volume(
+                self.attached_to_volume,
+                self.user_output.squared_counts.data_per_run[0].image,
+            )
+            update_image_py_to_cpp(
+                self.user_output.squared_counts.data_per_run[0].image,
+                self.fSquaredImage,
+                True,
+            )
+            self.EnableSquaredImage(True)
+
+        # keep the initial origin
         self.start_output_origin = list(
-            self.user_output.projection.data_per_run[0].get_image_properties()[0].origin
+            self.user_output.counts.data_per_run[0].get_image_properties().origin
         )
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
 
+        self.end_simulation_action()
+
+    def end_simulation_action(self):
+        """Transfer the projection image from C++ to Python and finalize outputs."""
+
         # retrieve the image
-        self.user_output.projection.store_data(
+        self.user_output.counts.store_data(
             "merged", get_py_image_from_cpp_image(self.fImage)
         )
 
         # set its properties
-        info = self.user_output.projection.data_per_run[0].get_image_properties()[0]
+        info = self.user_output.counts.data_per_run[0].get_image_properties()
         spacing = info.spacing
         if self.origin_as_image_center:
             origin = -info.size * spacing / 2.0 + spacing / 2.0
@@ -1040,14 +1363,166 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             origin = self.start_output_origin
         origin[2] = 0
         spacing[2] = 1
-        self.user_output.projection.merged_data.SetSpacing(list(spacing))
-        self.user_output.projection.merged_data.SetOrigin(list(origin))
+        self.user_output.counts.merged_data.image.SetSpacing(list(spacing))
+        self.user_output.counts.merged_data.image.SetOrigin(list(origin))
 
-        self.user_output.projection.data_per_run.pop(
-            0
-        )  # remove the image for run 0 as result is in merged_data
+        # FIXME: DigitizerProjectionActor currently uses ``data_per_run[0]`` as
+        # temporary internal scaffolding for image properties/runtime setup and
+        # later moves the actual result into ``merged_data`` before deleting
+        # the run-0 slot. This works pragmatically but blurs the actor-output
+        # semantics: per-run slots should represent true user-facing per-run
+        # output, not internal scratch state. Revisit this actor so temporary
+        # runtime bookkeeping is structurally separate from actual output slots.
+        #
+        # Related concern: this method still writes certain outputs explicitly
+        # instead of relying purely on the generic actor-output finalization
+        # path below, which suggests the projection actor does not yet align
+        # cleanly with the standard actor-output workflow.
+        # remove the image for run 0 as the result is in merged_data
+        self.user_output.counts.data_per_run.pop(0)
+        self.user_output.counts.write_data_if_requested(which="merged")
 
-        self.user_output.projection.write_data_if_requested(which="merged")
+        # squared ?
+        if self.user_output.squared_counts.get_active():
+            self.user_output.squared_counts.store_data(
+                "merged", get_py_image_from_cpp_image(self.fSquaredImage)
+            )
+            self.user_output.squared_counts.merged_data.image.SetSpacing(list(spacing))
+            self.user_output.squared_counts.merged_data.image.SetOrigin(list(origin))
+            self.user_output.squared_counts.data_per_run.pop(0)
+            self.user_output.squared_counts.write_data_if_requested(which="merged")
+
+        DigitizerBase.end_simulation_action(self)
+
+
+class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterActor):
+    """
+    Module for detecting coincident singles in different volumes.
+    """
+
+    user_info_defaults = {
+        "input_digi_collection": (
+            "Singles",
+            {
+                "doc": "Digi collection to be used as input.",
+            },
+        ),
+        "window": (
+            0,
+            {
+                "doc": "Coincidence window, maximum time difference between singles to be paired as a coincidence.",
+            },
+        ),
+        "offset": (
+            0,
+            {
+                "doc": "Offset of the coincidence window, for estimating the number of random coincidences.",
+            },
+        ),
+        "multiples_policy": (
+            "TakeAllGoods",
+            {
+                "doc": "Rule to apply when multiple coincidences occur in the same coincidence window",
+                "allowed_values": (
+                    "RemoveMultiples",
+                    "TakeAllGoods",
+                    "TakeWinnerOfGoods",
+                    "TakeIfOnlyOneGood",
+                    "TakeWinnerIfIsGood",
+                    "TakeWinnerIfAllAreGoods",
+                ),
+            },
+        ),
+        "multi_window": (
+            True,
+            {
+                "doc": "True if every single opens its own coincidence window, False if only one coincidence window can be open at a time.",
+            },
+        ),
+        "min_transaxial_distance": (
+            None,
+            {
+                "doc": "Minimally required transaxial distance between singles to be considered a valid coincidence.",
+            },
+        ),
+        "max_axial_distance": (
+            None,
+            {
+                "doc": "Maximally allowed axial distance between singles to be considered a valid coincidence.",
+            },
+        ),
+        "transaxial_plane": (
+            "XY",
+            {
+                "doc": "Transaxial plane.",
+                "allowed_values": ("XY", "YZ", "XZ"),
+            },
+        ),
+        "group_volume": (
+            None,
+            {
+                "doc": "Name of the volume in which coincidences are detected.",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
+            },
+        ),
+        "sorting_time": (
+            1e3,
+            {
+                "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "Attributes to be omitted from the output.",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateCoincidenceSorterActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if self.user_info.group_volume is not None:
+            self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+
+    def initialize(self):
+        DigitizerBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def set_group_by_depth(self):
+        # FIXME: this helper is duplicated across multiple digitizer classes.
+        # Refactor the group_volume-to-depth translation into a shared base
+        # implementation once the digitizer hierarchy is cleaned up.
+        depth = -1
+        if self.user_info.group_volume is not None:
+            depth = self.simulation.volume_manager.get_volume(
+                self.user_info.group_volume
+            ).volume_depth_in_tree
+        self.SetGroupVolumeDepth(depth)
+
+    def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
+        self.set_group_by_depth()
+        g4.GateCoincidenceSorterActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
+        g4.GateCoincidenceSorterActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
@@ -1079,11 +1554,15 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if self.user_info.discretize_volume is None:
+            fatal('Please, set the option "discretize_volume"')
+        self.simulation.volume_manager.get_volume(self.user_info.discretize_volume)
+
     def StartSimulationAction(self):
         DigitizerBase.StartSimulationAction(self)
         DigitizerAdderActor.set_group_by_depth(self)
-        if self.user_info.discretize_volume is None:
-            fatal('Please, set the option "discretize_volume"')
         depth = self.simulation.volume_manager.get_volume(
             self.discretize_volume
         ).volume_depth_in_tree
@@ -1091,12 +1570,16 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         g4.GateDigitizerReadoutActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
         g4.GateDigitizerReadoutActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
 
 
 class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
-    """Similar to HitsCollectionActor : store a list of hits.
-    However only the first hit of given event is stored here.
+    """
+    Similar to HitsCollectionActor : store a list of hits.
+    The hits can be stored when entering, exiting, first time seen or always (all hits stored).
     """
 
     user_info_defaults = {
@@ -1121,7 +1604,11 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         "steps_to_store": (
             "entering",
             {
-                "doc": "FIXME entering exiting first (can be combined)",
+                "doc": "Define when to store the hits, can be 'entering', 'exiting', 'first' or 'all'. "
+                "Or several values separated by a space. When 'exiting' is used with multiple "
+                "attached_to volumes, exit transitions are resolved independently for each "
+                "attached physical volume. ",
+                # "allowed_values": ["entering", "exiting", "first", "all"], # can be multiple
             },
         ),
     }
@@ -1136,14 +1623,36 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
 
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if isinstance(self.steps_to_store, str):
+            requested_steps = self.steps_to_store.split()
+        else:
+            requested_steps = list(self.steps_to_store)
+        allowed_steps = {"entering", "exiting", "first", "all"}
+        unknown_steps = [step for step in requested_steps if step not in allowed_steps]
+        if unknown_steps:
+            fatal(
+                f"Unknown steps_to_store values {unknown_steps} for actor '{self.name}'. "
+                f"Allowed values are {sorted(allowed_steps)}."
+            )
+        self.user_info.steps_to_store = " ".join(requested_steps)
+
     def initialize(self):
         DigitizerBase.initialize(self)
+        if "exiting" in self.steps_to_store:
+            # Exit transitions are resolved later, once Geant4 has constructed
+            # the physical volumes and we can identify concrete (pre, post)
+            # volume pairs for each attached volume copy.
+            self.ClearAttachedVolumeExitPairs()
         if "entering" in self.steps_to_store:
             self.SetStoreEnteringStepFlag(True)
         if "exiting" in self.steps_to_store:
             self.SetStoreExitingStepFlag(True)
         if "first" in self.steps_to_store:
             self.SetStoreFirstStepInVolumeFlag(True)
+        if "all" in self.steps_to_store:
+            self.SetStoreAllStepsFlag(True)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
@@ -1152,23 +1661,165 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        # Concrete Python-side finalization belongs in end_simulation_action().
+        g4.GatePhaseSpaceActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
+
+    def end_simulation_action(self):
+        """Capture phase-space summary counters and finalize ROOT output."""
         self.number_of_absorbed_events = self.GetNumberOfAbsorbedEvents()
         self.total_number_of_entries = self.GetTotalNumberOfEntries()
         if self.total_number_of_entries == 0:
             self.warn_user(
                 f"Empty output, no particles stored in {self.get_output_path()}"
             )
-        g4.GatePhaseSpaceActor.EndSimulationAction(self)
+        DigitizerBase.end_simulation_action(self)
+
+
+class DigiAttributeProcessDefinedStepInVolumeActor(
+    ActorBase, g4.GateDigiAttributeProcessDefinedStepInVolumeActor
+):
+    """
+    This actor is use when the user create a ProcessDefinedStepAttribute.
+    The actor is automatically created and use to store how many time a given process (process_name)
+    occur in a given volume (attached_to).
+    This actor is not intended to be used directly by the user.
+    """
+
+    user_info_defaults = {
+        "process_name": (None, {}),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigiAttributeProcessDefinedStepInVolumeActor.__init__(
+            self, self.user_info
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        ActorBase.StartSimulationAction(self)
+        g4.GateDigiAttributeProcessDefinedStepInVolumeActor.StartSimulationAction(self)
+
+
+class ProcessDefinedStepInVolumeAttributeLegacy:
+    """
+    Legacy wrapper based on an internal hidden actor.
+
+    Replaced by the auxiliary attribute
+    ``ProcessDefinedStepInVolumeAttribute``. This legacy wrapper is kept for
+    compatibility and will be deprecated soon.
+    """
+
+    def __init__(self, sim, process_name, volume_name):
+        self.name = f"ProcessDefinedStep__{process_name}__{volume_name}"
+        self.actor = sim.add_actor(
+            "DigiAttributeProcessDefinedStepInVolumeActor", self.name
+        )
+        self._process_name = process_name
+        self._volume_name = volume_name
+        self.actor.attached_to = volume_name
+        self.actor.process_name = process_name
+        # self.actor.priority = 1  # FIXME before other
+
+    @property
+    def process_name(self):
+        return self._process_name
+
+    @property
+    def volume_name(self):
+        return self._volume_name
+
+    @process_name.setter
+    def process_name(self, value):
+        fatal(f"Cannot change dynamically the process name")
+
+    @volume_name.setter
+    def volume_name(self, value):
+        fatal(f"Cannot change dynamically the volume name")
+
+
+class DigiAttributeLastProcessDefinedStepInVolumeActor(
+    ActorBase, g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor
+):
+    """
+    This actor is use when the user create a ProcessDefinedStepAttribute.
+    The actor is automatically created and use to store how many time a given process (process_name)
+    occur in a given volume (attached_to).
+    This actor is not intended to be used directly by the user.
+    """
+
+    user_info_defaults = {}
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.__init__(
+            self, self.user_info
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        ActorBase.StartSimulationAction(self)
+        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.StartSimulationAction(
+            self
+        )
+
+
+class LastProcessDefinedStepInVolumeAttributeLegacy:
+    """
+    Legacy wrapper based on an internal hidden actor.
+
+    Replaced by the auxiliary attribute
+    ``LastProcessDefinedStepInVolumeAttribute``. This legacy wrapper is kept
+    for compatibility and will be deprecated soon.
+    """
+
+    def __init__(self, sim, volume_name):
+        self.name = f"LastOccuringProcess__{volume_name}"
+        self.actor = sim.add_actor(
+            "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name
+        )
+        self._volume_name = volume_name
+        self.actor.attached_to = volume_name
+        # self.actor.priority = 1  # FIXME before other
+
+    @property
+    def volume_name(self):
+        return self._volume_name
+
+    @volume_name.setter
+    def volume_name(self, value):
+        fatal(f"Cannot change dynamically the volume name")
 
 
 process_cls(DigitizerBase)
 process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
 process_cls(DigitizerBlurringActor)
+process_cls(DigitizerDeadTimeActor)
+process_cls(DigitizerPileupActor)
 process_cls(DigitizerSpatialBlurringActor)
 process_cls(DigitizerEfficiencyActor)
 process_cls(DigitizerEnergyWindowsActor)
 process_cls(DigitizerHitsCollectionActor)
 process_cls(DigitizerProjectionActor)
+process_cls(CoincidenceSorterActor)
 process_cls(DigitizerReadoutActor)
 process_cls(PhaseSpaceActor)
+process_cls(DigiAttributeProcessDefinedStepInVolumeActor)
+process_cls(DigiAttributeLastProcessDefinedStepInVolumeActor)

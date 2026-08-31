@@ -5,12 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
-#include "GateHelpers.h"
 #include "GateVActor.h"
+#include <pybind11/pybind11.h>
 
 /*
  * The "trampoline" functions below are required if we want to
@@ -25,7 +21,7 @@ namespace py = pybind11;
  * (but it will be slower, especially for steps)
  */
 
-// for the moment, we dont need that. So it is commented
+// for the moment, we don't need that. So it is commented
 
 class PyGateVActor : public GateVActor {
 public:
@@ -71,19 +67,24 @@ public:
 
 void init_GateVActor(py::module &m) {
 
-  py::class_<GateVActor, PyGateVActor, // do not inherit from trampoline for
-                                       // the moment (not needed)
-             std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
+  // do not inherit from trampoline for the moment (not needed)
+  py::class_<GateVActor, PyGateVActor>(m, "GateVActor")
       .def(py::init<py::dict &>())
       .def("RegisterSD", &GateVActor::RegisterSD)
-      //      .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
-      //      this -> problems with pickle
-      .def_readwrite("fFilters", &GateVActor::fFilters)
+      // .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
+      // this -> problems with pickle
+      .def_readwrite("fFilter", &GateVActor::fFilter)
+      .def("Close", &GateVActor::Close)
       .def("InitializeCpp", &GateVActor::InitializeCpp)
       .def("InitializeUserInfo", &GateVActor::InitializeUserInfo)
       .def("AddActions", &GateVActor::AddActions)
       .def("IsSensitiveDetector", &GateVActor::IsSensitiveDetector)
       .def("HasAction", &GateVActor::HasAction)
+      .def("SetMotherAttachedToVolumeName",
+           &GateVActor::SetMotherAttachedToVolumeName)
+      .def("ClearAttachedVolumeExitPairs",
+           &GateVActor::ClearAttachedVolumeExitPairs)
+      .def("AddAttachedVolumeExitPair", &GateVActor::AddAttachedVolumeExitPair)
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)
       .def("BeginOfRunAction", &GateVActor::BeginOfRunAction)
@@ -96,11 +97,14 @@ void init_GateVActor(py::module &m) {
       .def("EndOfEventAction", &GateVActor::EndOfEventAction)
       .def("PreUserTrackingAction", &GateVActor::PreUserTrackingAction)
       .def("PostUserTrackingAction", &GateVActor::PostUserTrackingAction)
+      .def("NewStage", &GateVActor::NewStage)
       .def("GetOutputPath", &GateVActor::GetOutputPath)
       .def("SetOutputPath", &GateVActor::SetOutputPath)
+      .def("GetOutputTreeNames", &GateVActor::GetOutputTreeNames)
+      .def("AddOutputTreeName", &GateVActor::AddOutputTreeName)
+      .def("GetOutputTreeInfo", &GateVActor::GetOutputTreeInfo)
       .def("GetWriteToDisk", &GateVActor::GetWriteToDisk)
       .def("SetWriteToDisk", &GateVActor::SetWriteToDisk)
       .def("AddActorOutputInfo", &GateVActor::AddActorOutputInfo)
       .def("SteppingAction", &GateVActor::SteppingAction);
-  //      .def("RegisterCallBack", &GateVActor::RegisterCallBack);
 }

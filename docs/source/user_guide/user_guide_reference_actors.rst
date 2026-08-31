@@ -71,7 +71,11 @@ The number of killed particle can be retrieved printing the actor object.
     kill_actor.attached_to = kill_plane
     print(kill_actor)
 
-Refers tot the test064 for more details.
+    # Example: Kill only electrons with energy below 10 keV in the volume
+    F = gate.GateFilterBuilder(sim)
+    kill_actor.filter = (F.ParticleName == "e-") & (F.KineticEnergy < 10 * keV)
+
+Refers to the `test064 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test064_kill_actor_mt.py>`_ for more details.
 
 Reference
 ~~~~~~~~~
@@ -108,6 +112,70 @@ Adding following lines
 
 to the dose actor object will trigger an additional image scoring the dose. The uncertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
 
+**Setting and Evaluating the Statistical Uncertainty Goal**
+
+This section demonstrates how to monitor and enforce a statistical uncertainty goal during a Monte Carlo simulation, particularly in dose simulations using GATE10. It includes how to define the uncertainty criteria, how often to check it, and how to evaluate the final result based on the deposited energy distribution.
+
+To ensure simulation efficiency, we may wish to stop early when a target uncertainty (e.g., 5%) is reached in the high-dose (high-edep) region.
+
+.. code-block:: python
+
+   # Target statistical uncertainty (e.g., 5%)
+   unc_goal = 0.05
+
+   # Define how "high-dose" voxels are selected:
+   # first compute the mean edep of the N highest voxels,
+   # then keep voxels above 70% of that reference value
+   n_top_voxels = 20
+   thresh_voxel_edep_for_unc_calc = 0.7
+
+   # Planned number of primary particles or events (e.g., 100 MBq)
+   n_planned = 100 * 1e6  # 100 million particles
+
+These parameters are then passed to the dose actor:
+
+.. code-block:: python
+
+   dose.uncertainty_goal = unc_goal # 0.05
+   dose.uncertainty_first_check_after_n_events = 0.01 * n_planned # check statistical uncertainty every 1 MBq particles
+   dose.uncertainty_top_voxels_count = n_top_voxels # 20
+   dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc # 0.7
+
+Uncertainty is computed only in high-deposition voxels to focus on the clinically relevant region:
+
+.. code-block:: python
+
+   def calculate_mean_unc(edep_arr, unc_arr, n_top_voxels=20, edep_thresh_rel=0.7):
+       # Average the uncertainty values ​​over the high energy deposition areas
+       flat = edep_arr.ravel()
+       top_n = np.partition(flat, -n_top_voxels)[-n_top_voxels:]
+       edep_mean_max = float(top_n.mean())
+       mask = edep_arr > edep_mean_max * edep_thresh_rel
+       unc_used = unc_arr[mask]
+       unc_mean = np.mean(unc_used)
+
+       return unc_mean
+
+The parameter ``uncertainty_top_voxels_count`` must be greater than 0 and no larger than the number of voxels in the scoring image.
+
+At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
+
+.. code-block:: python
+
+   # test that final mean uncertainty satisfies the goal uncertainty
+   edep_arr = np.asarray(dose.edep.image)
+   unc_array = np.asarray(dose.edep_uncertainty.image)
+   unc_mean = calculate_mean_unc(edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc)
+   n_effective = stats.counts.events
+
+   print(f"{unc_goal = }")
+   print(f"{unc_mean = }")
+   print(f"{n_planned = }")
+   print(f"{n_effective = }")
+   if n_effective < n_planned: print("Simulation ended early.")
+
+This can help determine if the simulation converged early due to meeting the uncertainty goal.
+
 Like any image, the output dose map will have an origin, spacing and orientation. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True`, the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin.
 
 .. image:: ../figures/image_coord_system.png
@@ -133,6 +201,8 @@ The DoseActor has the following output:
 - :attr:`~.opengate.actors.doseactors.DoseActor.counts`
 - :attr:`~.opengate.actors.doseactors.DoseActor.density`
 
+Note: to report dose and uncertainty in radiation therapy, please refer to TG-268 report : https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.12702
+
 Reference
 ~~~~~~~~~
 
@@ -154,7 +224,7 @@ Description
 
 The LET Actor scores the fluence- (also referred to as track-) or dose averaged LET within a volume using a voxelizing parametrization identical to the Dose Actor. Hence, see the Dose Actor documentation for spatial commands like image resolution, origin etc. - the same commands apply for the LET Actor.
 
-.. note:: In most use cases of LET in literature, only a subset of particles is considered for the calculation of averaged LET, e.g. in proton radiotherapy, where often only protons are considered. Therefore, the LET actor often goes along with a particle filter. See test050 as an example.
+.. note:: In most use cases of LET in literature, only a subset of particles is considered for the calculation of averaged LET, e.g. in proton radiotherapy, where often only protons are considered. Therefore, the LET actor often goes along with a particle filter. See `test050 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test050_let_actor_letd_mt.py>`_ as an example.
 
 .. note:: Refer to test050 for a current example.
 
@@ -173,7 +243,7 @@ Description
 The REActor scores the dose-averaged relative effectiveness (RE) map within a given volume, according to `Herrmann et al., 2011 <https://pubmed.ncbi.nlm.nih.gov/21626919/>`_. Spatial options are identical to those of :class:`~.opengate.actors.doseactors.DoseActor`.
 
 
-.. note:: Refer to test087_beam_quality_actor_re for a current example.
+.. note:: Refer to `test087_beam_quality_actor_re <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test087_beam_quality_actor_re.py>`_ for a current example.
 
 The actor reads a lookup table of RE values as a function of particle and kinetic energy, by `lookup_table_path`. The kinetic energy can be in the unit of either MeV/u or MeV, while remaining consistent with `energy_per_nucleon` option.
 
@@ -199,11 +269,9 @@ Description
 
 The RBEActor scores the relative biological effectiveness (RBE) map within a given volume. Spatial options are identical to those of :class:`~.opengate.actors.doseactors.DoseActor`. The available values for the `model` option are: `mMKM`, `LEM1lda`.
 
-- **mMKM**:
-The implementation of modified microdosimetric kinetic model (mMKM) was based on `Inaniwa et al., 2010 <https://doi.org/10.1088/0031-9155/55/22/008>`_. The actor reads a lookup table of saturation-corrected dose-averaged specific energy (z*_1D) values by `lookup_table_path`.
+- **mMKM**: The implementation of modified microdosimetric kinetic model (mMKM) was based on `Inaniwa et al., 2010 <https://doi.org/10.1088/0031-9155/55/22/008>`_. The actor reads a lookup table of saturation-corrected dose-averaged specific energy (z*_1D) values by `lookup_table_path`.
 
-- **LEM1lda**:
-The implementation of local effect model I with low dose approximation (LEM1lda) was based on `Krämer and Scholz, 2006 <10.1088/0031-9155/51/8/001>`_. The actor reads a lookup table of initial slope (alpha_z) values by `lookup_table_path`.
+- **LEM1lda**: The implementation of local effect model I with low dose approximation (LEM1lda) was based on `Krämer and Scholz, 2006 <https://doi.org/10.1088/0031-9155/51/8/001>`_. The actor reads a lookup table of initial slope (alpha_z) values by `lookup_table_path`.
 
 The format requirement of the lookup table is identical to that in :class:`~.opengate.actors.doseactors.REActor`. By default, the actor uses the radiosensitivity parameters of aerobic `HSG` cells. In order to calculate RBE using the radiosentivity parameters of `Chordoma`, the user should specify by the `cell_type` option.
 
@@ -222,7 +290,7 @@ The actor has the following outputs:
 - :attr:`~.opengate.actors.doseactors.RBEActor.alpha_mix`
 - :attr:`~.opengate.actors.doseactors.RBEActor.beta_mix` (if `model` is set to `LEM1lda`)
 
-The user can refer to test087_beam_quality_actor_rbe_mMKM for an example. The test case simulates the central RBE profile (shown in the following figure) and alpha_mix profile of a quasi-monoenergetic carbon ion beam in water, using the `mMKM` model and z*_1D lookup table generated with SURVIVAL (`Manganaro et al., 2018 <https://doi.org/10.1088/1361-6560/aab697>`_). The "reference" RBE profile was simulated using the same configurations, but better statistics (1e5 primaries). The "filter" :attr:`~.opengate.actors.doseactors.DoseActor.edep` profile is shown in arbituary unit to indicate the Bragg peak position, up to which the evaluation is conducted.
+The user can refer to `test087_beam_quality_actor_rbe_mMKM <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test087_beam_quality_actor_rbe_mMKM_mt.py>`_ for an example. The test case simulates the central RBE profile (shown in the following figure) and alpha_mix profile of a quasi-monoenergetic carbon ion beam in water, using the `mMKM` model and z*_1D lookup table generated with SURVIVAL (`Manganaro et al., 2018 <https://doi.org/10.1088/1361-6560/aab697>`_). The "reference" RBE profile was simulated using the same configurations, but better statistics (1e5 primaries). The "filter" :attr:`~.opengate.actors.doseactors.DoseActor.edep` profile is shown in arbituary unit to indicate the Bragg peak position, up to which the evaluation is conducted.
 
 .. image:: ../figures/test087-RBE_rbe_test.png
 
@@ -243,13 +311,86 @@ FluenceActor
 Description
 ~~~~~~~~~~~
 
-This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. The FluenceActor will be extended in the future with features to handle scattered radiation, e.g. in cone beam CT imaging.
+This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. When a particle enters a voxel, it records either the counts or the kinetic energy of the incoming particle. If a particle is created within a voxel of the geometry to which the Fluence Actor is attached, this particle is not counted as part of the incoming flux for that voxel. A basic example of its usage is provided below:
 
+.. code-block:: python
+
+    fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
+    fluence_actor.counts_uncertainty.active = True
+    fluence_actor.counts_squared.active = True
+    fluence_actor.energy.active = True
+    fluence_actor.energy_uncertainty.active = True
+    fluence_actor.energy_squared.active = True
+    fluence_actor.output_filename = "test099.mhd"
+    fluence_actor.attached_to = fluence_plane
+    fluence_actor.size = [10, 10, 1]
+    ts = [10 * cm, 10 * cm, 1 * nm]
+    fluence_actor.spacing = [x / y for x, y in zip(ts, fluence_actor.size)]
+    fluence_actor.hit_type = "random"
+
+
+In addition, it is possible to generate separate fluence maps resolving the particle's tracking state and underlying physics processes (`primaries`, `secondaries`, `compton`, and `rayleigh`). These maps are created as follows: particles originating directly from the source without interacting are recorded as `primaries`, while all others are recorded as `secondaries`. Furthermore, if the incoming particle is a gamma photon and its last interaction was either Compton or Rayleigh scattering, the counts (and optionally the photon energy) are also recorded in the corresponding scattering-process maps. At present, pair production is not yet included as a recordable process. This actor is also compatible with the FreeFlightAngularAcceptance variance reduction technique. To enable the recording of these additional maps, simply set the following boolean to True:
+
+.. code-block:: python
+
+    fluence_actor.score_by_process = True
+
+The activation of the squared counts (and energies) and their associated uncertainty maps is handled automatically, according to the global settings defined by the user for counts and energy scoring.
 
 Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.doseactors.FluenceActor
+
+
+DepositedChargeActor
+--------------------
+
+Description
+~~~~~~~~~~~
+
+The DepositedChargeActor accumulates the net electric charge deposited in a volume during a simulation. The result is expressed in elementary-charge units (Geant4's ``eplus``).
+
+Charge is counted at track endpoints: when a charged track is *born* inside the attached volume, its charge is subtracted from the running total; when a charged track *dies* inside the volume, its charge is added. This counting method is robust with respect to nested geometries and to particles whose tracks end mid-volume from range cuts or in-flight interactions. Each contribution is weighted by the track weight, so totals remain correct under biasing or weighted sources.
+
+Two quantities are accumulated in parallel:
+
+  - ``deposited_nominal_charge``: uses the PDG charge from ``G4ParticleDefinition::GetPDGCharge``.
+  - ``deposited_dynamic_charge``: uses the effective charge from ``G4DynamicParticle::GetCharge``, which accounts for the ionisation state of heavy ions.
+
+For leptons and ordinary protons the two are identical. They diverge only when a track's effective charge differs from its nominal charge, e.g. for partially-stripped ions.
+
+.. code-block:: python
+
+    target = sim.add_volume("Box", "target")
+    target.size = [5 * cm, 5 * cm, 5 * cm]
+    target.material = "G4_WATER"
+
+    charge = sim.add_actor("DepositedChargeActor", "charge")
+    charge.attached_to = target.name
+
+    sim.run()
+    print(charge)
+    print(f"nominal: {charge.deposited_nominal_charge} e")
+    print(f"dynamic: {charge.deposited_dynamic_charge} e")
+
+
+Refer to the test files
+`test099_deposited_charge_actor*.py <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/actors>`_
+for examples covering stopping electrons, stopping positrons, neutral beams, traversal geometries, nested volumes, and multithreaded simulations.
+
+.. note::
+
+   Nested geometries are treated as a partition of space: the charge scored in a mother volume does **not** include the contribution from its daughters. To score the daughter region, attach a second ``DepositedChargeActor`` to the daughter, so that the totals from both actors add up to the charge deposited in the mother's full geometric extent.
+
+.. note::
+
+   For repeated volume placements, the actor will score the total charge deposited across all instances of the volume.
+
+Reference
+~~~~~~~~~
+.. autoclass:: opengate.actors.miscactors.DepositedChargeActor
+
 
 
 TLEDoseActor
@@ -258,18 +399,44 @@ TLEDoseActor
 Description
 ~~~~~~~~~~~
 
-This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor` which scores dose due to low energy gammas in another way, namely via the track length in the given voxel. Most options as well as the output are identical to the :class:`~.opengate.actors.doseactors.DoseActor`.
-It is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_. It is designed to model a photon population instead of treating each photon as a single particle. This approach enables efficient and accurate dose calculation by enabling a multiple energy deposition by a single photon.
+This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor`
+which scores dose due to low-energy gammas through a Track Length Estimator
+(TLE) formulation. Most options and outputs are identical to those of the
+:class:`~.opengate.actors.doseactors.DoseActor`.
+
+It is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_.
+It is designed to model a photon population instead of treating each photon as
+an isolated stochastic energy-deposition event. This enables efficient and
+accurate dose calculation by allowing a single photon track to contribute dose
+continuously along its path.
 
 **How It Works**
-During a step, where a typical photon would interact and deposit its energy stochastically, a TLE photon deposits dose based on the material's mass energy-absorption coefficient (`μ_en`) and the step length. This method implies a local dose deposition at the voxel scale, even though secondary electrons are emitted. This actor indeed do not interfer with the GEANT4 tracking.
+During a step, where a typical photon would interact and deposit its energy
+stochastically, a TLE photon deposits dose based on the material's mass
+energy-absorption coefficient (``mu_en``) and the step length. This implies a
+local dose deposition at the voxel scale, even though secondary electrons are
+emitted. The actor does not replace Geant4 tracking; it changes how dose is
+scored for tracks that enter the TLE mode.
 
-Since the database does not take into account the radiative part during the TLE energy deposition calculation, this method is applied to all photons, whether originating from the primary source or from secondary radiative processes. This approach offers a computationally efficient alternative to traditional dose calculation methods.
+Since the database does not take into account the radiative part during the TLE
+energy-deposition calculation, this method is applied to all photons, whether
+originating from the primary source or from secondary radiative processes. This
+approach offers a computationally efficient alternative to traditional dose
+calculation methods.
 
 **Energy Threshold Option**
-A novel feature of the TLE actor is the ability to activate or deactivate the TLE mechanism based on a user-defined energy threshold. This provides flexibility in simulations, allowing users to tailor the behavior of the TLE actor according to the energy ranges of interest.
+A key feature of the TLE actor is the ability to activate or deactivate the TLE
+mechanism according to user-defined criteria:
 
-Here is the a classical way to use the TLEDoseActor :
+- no threshold
+- photon energy threshold
+- maximum-range threshold
+- average-range threshold
+
+This provides flexibility in simulations, allowing users to tailor the
+behavior of the TLE actor to the energy ranges and materials of interest.
+
+Here is a classical way to use the TLEDoseActor:
 
 .. code-block:: python
 
@@ -280,8 +447,12 @@ Here is the a classical way to use the TLEDoseActor :
    tle_dose_actor.dose_uncertainty.active = True
    tle_dose_actor.size = [200, 200, 200]
    tle_dose_actor.spacing = [x / y for x, y in zip(irradiated_volume.size, tle_dose_actor.size)]
+   tle_dose_actor.tle_threshold_type = "max range"
+   tle_dose_actor.tle_threshold = 10 * mm
+   tle_dose_actor.database = "EPDL"
 
-Refer to test081 for more details.
+Refer to the ``test081_tle_*`` tests in ``opengate/tests/src/actors`` for
+more details.
 
 Reference
 ~~~~~~~~~
@@ -323,11 +494,11 @@ A PhaseSpaceActor stores any set of particles reaching a given volume during the
        "EventPosition",
    ]
    phsp.output_filename = "test019_hits.root"
-   f = sim.add_filter("ParticleFilter", "f")
-   f.particle = "gamma"
-   phsp.filters.append(f)
+   # Create a filter for gammas only
+   F = gate.GateFilterBuilder(sim)
+   phsp.filter = F.ParticleName == "gamma"
 
-In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp`.
+In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp <https://github.com/OpenGATE/opengate/blob/master/core/opengate_core/opengate_lib/digitizer/GateDigiAttributeList.cpp>`_.
 
 The output is a ROOT file that contains a tree. It can be analyzed, for example, with `uproot`.
 
@@ -337,6 +508,9 @@ By default, the PhaseSpaceActor stores information about particles entering the 
 
    phsp.steps_to_store = "entering"  # this is the default
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
+   phsp.steps_to_store = "all"   # all steps (including secondary particles)
+
+If ``steps_to_store`` includes ``"exiting"`` and ``attached_to`` contains multiple volumes, the actor resolves the exit condition independently for each attached physical volume. This allows repeated volumes and attached volumes with different mothers to be handled consistently.
 
 The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
 
@@ -344,6 +518,10 @@ The option “entering” stores the particle information whenever it is at the 
 For example: if a particle enters the volume only once, its information is stored only once; the option entering is equal to the option first. If a particle passes through a volume, performs n scattering outside of it, and re-enters the volume, its entry information will be stored n times. If a particle interacts with the volume interfaces without exiting the volume (e.g., the reflection of optical photons), the actor will store all instances when the particle is at the boundary (all reflections are stored).
 
 The option “exiting” stores the particle information whenever, starting from within the volume, it is at the boundary between the volume to which the actor is attached and the surrounding environment (world, another volume). The variables to be used are the PostPosition, PostDirection, etc.
+
+The option “all” stores the particle information for every step in the volume, including secondary particles generated in the volume. If you want to track all steps for both primary and secondary particles, use this option.
+
+When using local coordinates such as ``PrePositionLocal`` or ``PostPositionLocal`` with multiple ``attached_to`` volumes, each stored position is expressed in the local frame of the volume touched by that step. To interpret these entries afterwards, it is useful to also store a volume-identifying attribute such as ``PreStepUniqueVolumeID`` or ``PostStepUniqueVolumeID``. For simpler cases, ``TrackVolumeName`` together with ``PreStepVolumeCopyNo`` or ``PostStepVolumeCopyNo`` can also help distinguish the contributing volumes. If uniquely meaningful local coordinates are important for the analysis, it is often simpler to attach one ``PhaseSpaceActor`` per volume rather than combining several ``attached_to`` volumes in the same actor.
 
 
 Reference
@@ -388,15 +566,33 @@ In this example, the actor is attached to (attached_to option) several volumes (
 
 Attribute correspondence with Gate 9.X for Hits and Singles:
 
-+----------------------------+-------------------------+
-| Gate 9.X                   | Gate 10                 |
-+============================+=========================+
-| edep or energy             | TotalEnergyDeposit      |
-+----------------------------+-------------------------+
-| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z      |
-+----------------------------+-------------------------+
-| time                       | GlobalTime              |
-+----------------------------+-------------------------+
++----------------------------+---------------------------------------+
+| Gate 9.X                   | Gate 10                               |
++============================+=======================================+
+| edep or energy             | TotalEnergyDeposit                    |
++----------------------------+---------------------------------------+
+| posX/Y/Z or globalPosX/Y/Z | PostPosition_X/Y/Z or Position_X/Y/Z  |
++----------------------------+---------------------------------------+
+| time                       | GlobalTime                            |
++----------------------------+---------------------------------------+
+| PDGEncoding                | PDGCode                               |
++----------------------------+---------------------------------------+
+| parentID                   | ParentID                              |
++----------------------------+---------------------------------------+
+| momDirX/Y/Z                | PostDirection_X/Y/Z                   |
++----------------------------+---------------------------------------+
+| localPosX/Y/Z              | PostPositionLocal_X/Y/Z               |
++----------------------------+---------------------------------------+
+| runID                      | RunID                                 |
++----------------------------+---------------------------------------+
+| stepLength                 | StepLength                            |
++----------------------------+---------------------------------------+
+| processName                | TrackCreatorProcess                   |
++----------------------------+---------------------------------------+
+| trackID                    | TrackID                               |
++----------------------------+---------------------------------------+
+| trackLength                | TrackLength                           |
++----------------------------+---------------------------------------+
 
 At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is None nothing will be written. Note that, like in Gate, every hit with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using DigitizerHitsCollectionActor are proposed: test025, test028, test035, etc.
 
@@ -409,6 +605,75 @@ Reference
 
 .. autoclass:: opengate.actors.digitizers.DigitizerHitsCollectionActor
 
+.. note::
+    The ``ProcessDefinedStepInVolumeAttribute`` "hidden actor" was recently (May 2026) replaced by the ``auxiliary`` actor.
+    These docs will get corresponding updates soon.
+
+ProcessDefinedStepInVolumeAttributeLegacy
+-----------------------------------------
+
+Description
+~~~~~~~~~~~
+
+This is a helper class used to define a custom attribute for hits-related actors (such as :class:`~.opengate.actors.digitizers.PhaseSpaceActor` or :class:`~.opengate.actors.digitizers.DigitizerHitsCollectionActor`).
+
+It creates a new integer attribute that **counts** the number of times a particle has undergone a specific physics process (e.g. Compton, Rayleigh) within a specific volume.
+
+* **Value:** The attribute contains the cumulative number of interactions of the defined type that the track has experienced in the volume up to the current step.
+
+This is useful for analyzing particle history, for example, to determine how many times a detected photon has scattered in a collimator or patient.
+
+Usage
+~~~~~
+
+To use it, you must instantiate the class with the simulation object, the process name (as defined in Geant4), and the volume name. The instance provides a ``.name`` property that must be added to the actor's attribute list.
+
+.. code-block:: python
+
+   from opengate.actors.digitizers import ProcessDefinedStepInVolumeAttributeLegacy
+
+   # 1. Define the custom attributes
+   # Count "compt" (Compton scattering) interactions in volume "Waterbox1"
+   att_compt = ProcessDefinedStepInVolumeAttributeLegacy(sim, "compt", "Waterbox1")
+
+   # Count "Rayl" (Rayleigh scattering) interactions in volume "world"
+   att_rayl = ProcessDefinedStepInVolumeAttributeLegacy(sim, "Rayl", "world")
+
+   # 2. Create the actor (e.g. PhaseSpace)
+   phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
+   phsp.attached_to = "Detector"
+
+   # 3. Add the custom attributes to the list
+   phsp.attributes = [
+       "KineticEnergy",
+       "PrePosition",
+       "EventID",
+       att_compt.name,  # Add the custom counter here
+       att_rayl.name
+   ]
+
+Filtering
+~~~~~~~~~
+
+Once defined, this custom attribute behaves like any other standard attribute (e.g. ``KineticEnergy``). This means you can use it in a filter to select specific particles.
+
+.. code-block:: python
+
+   # Create a filter using the custom attribute name
+   # Example: Keep only particles that have undergone at least one Compton scatter in the waterbox
+   F = gate.GateFilterBuilder(sim)
+   phsp.filter = F(att_compt.name) > 0
+
+.. note::
+   * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
+   * **Volume Name:** Must be the name of a volume existing in the simulation.
+
+..
+    Reference
+    ~~~~~~~~~
+
+..
+    .. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttributeLegacy
 
 DigitizerAdderActor
 -----------------------
@@ -437,7 +702,7 @@ This actor groups the hits per different volumes according to the option `group_
    # sc.policy = "EnergyWinnerPosition"
    sc.group_volume = crystal.name
 
-.. note:: This actor is only triggered at the end of an event, so the `attached_to` volume has no effect. Examples are available in test 037.
+.. note:: This actor is only triggered at the end of an event, so the `attached_to` volume has no effect. Examples are available in `test 037 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/>`_ .
 
 Reference
 ~~~~~~~~~
@@ -450,7 +715,7 @@ DigitizerReadoutActor
 Description
 ~~~~~~~~~~~
 
-This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerAdderActor.discretize_volume` indicates the volume name where the discrete position will be taken.
+This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume` indicates the volume name where the discrete position will be taken.
 
 .. code-block:: python
 
@@ -478,7 +743,7 @@ This module applies blurring to an attribute, such as time or energy. The method
 
 For Gaussian blurring, specify the sigma or FWHM with `blur_sigma` or `blur_fwhm`.
 
-For InverseSquare blurring, use `blur_reference_value` and `blur_reference_value` (equation TBD).
+For InverseSquare blurring, specify the reference energy value with `blur_reference_value` and the FWHM (at the reference energy) with `blur_resolution` (equation TBD).
 
 For Linear blurring, specify `blur_reference_value`, `blur_slope`, and `blur_reference_value` (equation TBD).
 
@@ -503,7 +768,20 @@ DigitizerSpatialBlurringActor
 Description
 ~~~~~~~~~~~
 
-   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This will push the hits back to the closest edge of the crystal. Alternatively the `use_truncated_Gaussian` option can be used with `keep_in_solid_limits` to recreate a more realistic scenario. This option changes the common Gaussian distribution to a new truncated Gaussian that preserves the standard deviation of the distribution within the crystal. This variation is paramount when using big crystals with spatial resolution, since it is the only way to preserve the original standard deviation of the reconstructed distribution. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+
+.. code-block:: python
+
+   bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
+   bc.attached_to = hc.attached_to
+   bc.output_filename = hc.output_filename
+   bc.input_digi_collection = sc.name
+   bc.keep_in_solid_limits = True
+   bc.use_truncated_Gaussian = True
+   bc.blur_attribute = "PostPosition"
+   bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
+
+
 
 Reference
 ~~~~~~~~~
@@ -592,7 +870,7 @@ This module simulates detection with non-100% efficiency, which can be set as a 
    ea.input_digi_collection = "Hits"
    ea.efficiency = 0.3
 
-Refer to test057 for more details.
+Refer to `test057 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test057_digit_efficiency.py>`_ for more details.
 
 Reference
 ~~~~~~~~~
@@ -600,34 +878,204 @@ Reference
 .. autoclass:: opengate.actors.digitizers.DigitizerEfficiencyActor
 
 
-Coincidences Sorter
--------------------
+DigitizerDeadTimeActor
+----------------------
 
-.. note::
-   The current version of the Coincidence sorter is still a work in progress. It is only available for offline use.
+Description
+~~~~~~~~~~~
 
-The Coincidence Sorter finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences:
+Dead time is the period following the detection of a single during which a detector cannot register a new event.
+The :class:`~.opengate.actors.digitizers.DigitizerDeadTimeActor` simulates this effect by dropping singles that arrive within the dead time interval
+after a previously accepted single, on a per-volume basis (set by `group_volume`).
+
+Two policies are available, controlled by the `policy` parameter:
+
+* **NonParalyzable** (default): the dead time interval is fixed in duration, starting from each accepted single.
+Singles arriving during that interval are discarded, but do not extend it. This models, for example,
+a detector that keeps accepting events after the dead time has elapsed regardless of what happened during the interval.
+* **Paralyzable**: every single that arrives during the current dead time interval extends it by `dead_time` from the time of that single.
+If the rate is very high, the detector can become fully paralyzed because each new single keeps resetting the interval.
+
+The actor internally time-sorts its input digis using a buffer window controlled by `sorting_time` before applying the dead time logic.
+This is necessary to correctly handle events from different threads or runs that may arrive out of order.
 
 .. code-block:: python
 
-   singles_tree = root_file["Singles_crystal"]
-   ns = gate.g4_units.nanosecond
-   time_window = 3 * ns
-   policy = "keepAll"
-   minSecDiff = 1  # NOT YET IMPLEMENTED
+    ns = gate.g4_units.ns
 
-   # Apply coincidence sorter
-   coincidences = coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=1000000)
+    dt = sim.add_actor("DigitizerDeadTimeActor", "Singles_after_deadtime")
+    dt.attached_to = crystal.name
+    dt.authorize_repeated_volumes = True
+    dt.input_digi_collection = "Singles"
+    dt.group_volume = crystal.name
+    dt.dead_time = 1.0 * ns
+    dt.policy = "NonParalyzable"  # or "Paralyzable"
+    dt.output_filename = "singles.root"
 
-The following policies are supported:
+Refer to `test100 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test100_deadtime_actor.py>`_ for an example.
+The multi-threaded variant is in `test100_deadtime_actor_mt <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test100_deadtime_actor_mt.py>`_.
 
-- **takeAllGoods**: Each good pair is considered.
-- **takeWinnerOfGoods**: Only the pair with the highest energy is considered.
-- **takeWinnerIfIsGood**: If the highest energy pair is good, take it; otherwise, kill the event.
-- **keepIfOnlyOneGood**: If exactly one good pair exists, keep the multicoincidence.
-- **removeMultiples**: No multiple coincidences are accepted, even if there are good pairs.
+Reference
+~~~~~~~~~
 
-Refer to test072 for more details.
+.. autoclass:: opengate.actors.digitizers.DigitizerDeadTimeActor
+
+
+DigitizerPileupActor
+--------------------
+
+Description
+~~~~~~~~~~~
+
+Pile‑up occurs when multiple detector interactions happen within a time interval shorter than the resolving/shaping time. As a result,
+their pulses overlap and cannot be distinguished as separate events.
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` simulates this by combining singles in the same volume
+(set by `group_volume`) if they occur in a time interval set by `time_window`.
+
+The actor applies the following rules to combine singles:
+
+* The first single occurring after a time period of at least `time_window` without singles opens a time window of duration `time_window`.
+* Any additional single occurring in that time window is merged with the other singles in that window.
+* Depending on the value of `time_window_policy`, the time window may be extended if new singles arrive before the end of the current time window:
+  * NonParalyzable (default): the time window remains fixed in duration, starting from the first single.
+  * Paralyzable: the time window is extended to end `time_window` after the most recent single.
+  * EnergyWinnerParalyzable: if the most recent single's deposited energy is higher than that of all preceding singles in the same time window,
+  the time window is extended to end `time_window` after the most recent single.
+* The resulting combined single gets an attribute value TotalEnergyDeposit that is the sum of the deposited energy of all singles in the window.
+* The resulting combined single gets an attribute value PostPosition that depends on the value of `position_attribute_policy`:
+  * EnergyWeightedCentroid (default): energy-weighted centroid of all singles in the window
+  * EnergyWinner: position of the single with the highest deposited energy in the window
+* All other attribute values of the resulting combined single are determined by the value of `attribute_policy`:
+   * First (default): attribute values are taken from the first single in the window.
+   * EnergyWinner: attribute values are taken from the single with the highest deposited energy in the window.
+   * Last: attribute values are taken from the last single in the window.
+
+To obtain the same pile-up behavior as in GATE 9, set the following options:
+
+.. code-block:: python
+
+   time_window_policy = "EnergyWinnerParalyzable"
+   position_attribute_policy = "EnergyWinner"
+   attribute_policy = "EnergyWinner"
+
+.. code-block:: python
+
+    pu = sim.add_actor("DigitizerPileupActor", "Singles_with_pileup")
+    pu.input_digi_collection = "Singles"
+    pu.group_volume = crystal.name
+    pu.authorize_repeated_volumes = True
+    pu.time_window = 100.0 * ns
+    pu.output_filename = "singles.root"
+
+Refer to test097 for an example.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerPileupActor
+
+
+
+Coincidence Sorter
+------------------
+
+Coincidence sorting finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences.
+
+It can be performed on-line during the simulation with the :class:`~.opengate.actors.digitizers.CoincidenceSorterActor`, or off-line after the simulation with the `CoincidenceSorter` class.
+
+.. code-block:: python
+
+   # On-line coincidence sorting (minimal example)
+   cc = sim.add_actor("CoincidenceSorterActor", "Coincidences")
+   cc.input_digi_collection = "Singles"
+   cc.window = 1e-9 * sec
+   cc.output_filename = "coincidences.root"
+
+.. code-block:: python
+
+   # Off-line coincidence sorting (minimal example)
+   from opengate.actors.coincidences import CoincidenceSorter
+   sorter = CoincidenceSorter()
+   sorter.window = 1e-9 * sec
+   coincidences_pd = sorter.run("singles.root", "Singles")
+
+Coincidences with oblique lines of response can be excluded by limiting the axial distance between their two singles (`max_axial_distance`).
+Likewise, coincidences between adjacent detectors can be excluded by imposing a minimum transaxial distance (`min_transaxial_distance`).
+The `transaxial_plane` can be `"XY"`, `"YZ"`, or `"XZ"`, depending on the scanner geometry.
+Coincidences that comply with the given `max_distance_axial` and `max_distance_axial` are referred to
+as "good pairs" in the definitions below.
+
+The following policies are supported to deal with multiple coincidences in the same time window:
+
+- **RemoveMultiples**: No multiple coincidences are accepted, even if there are good pairs.
+- **TakeAllGoods**: Each good pair is considered.
+- **TakeWinnerOfGoods**: From all good pairs, only the one with the highest energy is considered.
+- **TakeIfOnlyOneGood**: If exactly one good pair exists, keep it, otherwise discard all pairs.
+- **TakeWinnerIfIsGood**: If the highest energy pair is good, take it, otherwise discard all pairs.
+- **TakeWinnerIfAllAreGoods**: If all pairs are good, then take the one with the highest energy, otherwise discard all pairs.
+
+On-line coincidence sorting does not require saving singles to a file,
+which is more economical in terms of disk space if the singles are not needed after the simulation.
+
+With off-line coincidence sorting, coincidences are returned from the `CoincidenceSorter.run()`` method as a pandas DataFrame.
+Alternatively, `output_file_path` can be specified for saving the coincidences to a file. In this case, the run() method returns `None`.
+The output file format is ROOT, except when the extension of `output_file_path` indicates that HDF5 format should be used (`.hdf5` or `h5`).
+Saving coincidences to a file is recommended when processing large numbers of singles, to avoid running out of memory.
+A current limitation of off-line coincidence sorting is that a delayed time window is not supported.
+
+Refer to `test072 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ and `test098 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_
+for examples of off-line and on-line coincidence sorting, respectively.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.CoincidenceSorterActor
+
+CCMod offline tools
+------------------------------------
+A few functionalities from the Compton camera module (CCMod) have been added.
+These tools are currently available only for offline use.
+
+Ideal singles
+~~~~~~~~~~~~~
+
+The ``ccmod_ideal_singles`` function uses as input a PhaseSpace file that stores all steps  n the slected volume (Compton camera volume), including those with zero energy deposition.  The following attributes are needed : "EventID", "PostPosition_X", "PostPosition_Y", "PostPosition_Z", "ProcessDefinedStep", "PreKineticEnergy", "PostKineticEnergy", "PDGCode", "ParentID". It  filters hits with "PDGCode" = 22 and "ParentID" equals to 0 and "ProcessDefinedStep" different from "Transportation" and "Rayl". Therefore, for a gamma source, it stores only the photonic interactions (except Rayleigh) of the primary photons. In order to use this function for ion sources the "ParentID"  corresponding to the primary photons should be selected. This function also creates a new attribute "IdealTotalEnergyDeposit" using the "PreKineticEnergy" and "PostKineticEnergy"  of the photons at each interaction. Therefore, we can recover Compton and Photoelectric interactions with the correct  position and the  ideal energy deposition obtained from the energy lost by the photon in the interaction.  Position  information and "EventID" are needed for the following steps when coincidences or cones are created.
+
+.. code-block:: python
+
+	root_file = uproot.open(root_filename)
+	phSp_tree = root_file["PhaseSpace"]
+	data = phSp_tree.arrays(library="pd")
+	data_singles = ccmod_ideal_singles(data)
+
+
+See `test096 step1 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ for an example simulation that generates the PhaseSpace file.
+
+Ideal coincidences
+~~~~~~~~~~~~~~~~~~
+The ``ccmod_ideal_coincidences`` sorts entries (hits or singles)  by eventID and groups them into coincidence events by adding a coincidence identification attribute  "CoincID". This function can be used with hits or singles (ideal or not). It adds the "CoincID" attribute to the data when more than two entries have the same eventID, and removes entries where the eventID value appears only once. The input and output are a pandas data frame.
+
+.. code-block:: python
+
+	data_coinc = ccmod_ideal_coincidences(data_singles)
+
+Create cones
+~~~~~~~~~~~~
+The ``ccmod_make_cones``  takes the pandas data frame for coincidences (i.e. with "CoincID" attribute). Attributes for position and energy must be present.
+The name of these attributes can be specified in the function. By default  "TotalEnergyDeposit", "PostPosition_X", "PostPosition_Y" and  "PostPosition_Z" are employed. This function creates a new data frame with the information needed to create Compton cones. The new attributes for each "CoincID" value (each entry) are   "Energy1" (energy of the first interaction of the coincidence), "EnergyRest" (the energy corresponding to the rest of the interactions in the coincidence), and the position of the first ("X1", "Y1", "Z1") and second  interaction ("X2", "Y2", "Z2").
+
+In the following example cones are created using the "IdealTotalEnergyDeposit" attribute instead of "TotalEnergyDeposit".
+
+
+.. code-block:: python
+
+    data_cones = ccmod_make_cones(data_coinc,energy_key_name = "IdealTotalEnergyDeposit", posX_key_name = "PostPosition_X", posY_key_name = "PostPosition_Y",posZ_key_name = "PostPosition_Z")
+
+
+
+
+
+Refer to `test096 step2 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ for more details.
 
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------
@@ -647,7 +1095,7 @@ The Angular Response Function (ARF) is a method designed to accelerate SPECT sim
 Step 1: Creating the Training Dataset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The initial step involves creating a dataset for training. This can be implemented by following the example in `test043_garf_training_dataset.py`. Configure a simplified simulation to emit photons across the expected energy range (e.g., slightly above 140.5 keV for Tc99m) through the SPECT head, recording detected counts. The `ARFTrainingDatasetActor` is utilized here, with input from a detector plane positioned directly in front of the collimator. This actor stores detected counts per energy window in a ROOT file. For efficiency, a Russian roulette technique reduces the data size for photons with low detection probabilities due to large incident angles. Users must specify energy windows by referencing the name of the `DigitizerEnergyWindowsActor` associated with the SPECT system.
+The initial step involves creating a dataset for training. This can be implemented by following the example in `test043_garf_training_dataset.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test043_garf_training_dataset.py>`_ . Configure a simplified simulation to emit photons across the expected energy range (e.g., slightly above 140.5 keV for Tc99m) through the SPECT head, recording detected counts. The `ARFTrainingDatasetActor` is utilized here, with input from a detector plane positioned directly in front of the collimator. This actor stores detected counts per energy window in a ROOT file. For efficiency, a Russian roulette technique reduces the data size for photons with low detection probabilities due to large incident angles. Users must specify energy windows by referencing the name of the `DigitizerEnergyWindowsActor` associated with the SPECT system.
 
 .. code-block:: python
 
@@ -703,12 +1151,11 @@ LETActor
 --------
 
 .. note::
-   Documentation TODO. Refer to test050 for current examples.
+   Documentation TODO. Refer to test050 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test050_let_actor_letd_mt.py>`_ for current examples.
 
 
-BremSplittingActor
----------------------
-
+BremsstrahlungSplittingActor
+----------------------------
 
 Description
 ~~~~~~~~~~~
@@ -730,36 +1177,188 @@ To be noted that the GEANT4 command line is a more straightforward way to obtain
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.miscactors.BremSplittingActor
+.. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
-ComptonSplittingActor
----------------------
+Free Flight Actors and Directional Biasing
+------------------------------------------
 
 Description
 ~~~~~~~~~~~
 
-This actor generates N particles with reduced weight whenever a Compton process occurs. The options include:
+Free Flight is a variance reduction technique (VRT) designed to accelerate simulations, particularly in SPECT imaging, by replacing stochastic particle transport with analytical probability calculations. Instead of tracking a photon step-by-step through a collimator or SPECT head, these actors analytically "project" the probability of a photon reaching a target volume (like a detector plane) without interaction. See `[Sarrut et al, PMB, 2026] <https://doi.org/10.1088/1361-6560/ae622a>`_.
+
+OpenGATE provides two main actors for this purpose:
+
+* **GammaFreeFlightActor**: Primarily used for "primary" photons (unscattered) or those originating directly from the source.
+* **ScatterSplittingFreeFlightActor**: Used to handle photons that undergo Compton or Rayleigh scattering within a volume, such as a patient phantom.
+
+GammaFreeFlightActor
+~~~~~~~~~~~~~~~~~~~~
+
+This actor is typically attached to the world or a specific phantom volume. It ensures that photons directed towards the detector are accounted for analytically[cite: 249]. It is often used in conjunction with **Forced Direction** or **Angular Acceptance** source settings to focus the simulation on the detector's field of view.
 
 .. code-block:: python
 
-   compt_splitting_actor = sim.add_actor("ComptSplittingActor", name="compt_splitting")
-   compt_splitting_actor.attached_to = W_tubs.name
-   compt_splitting_actor.splitting_factor = nb_split
-   compt_splitting_actor.russian_roulette = True
-   compt_splitting_actor.rotation_vector_director = True
-   compt_splitting_actor.vector_director = [0, 0, -1]
+   # Add the actor to the simulation
+   ff = sim.add_actor("GammaFreeFlightActor", "ff")
+   ff.attached_to = "world"
 
-Refer to test071 for more details.
+   # Optionally exclude specific volumes like the detector crystal
+   # to let standard Geant4 tracking take over once the particle reaches the detector.
+   ff.exclude_volumes = ["spect_1_crystal"]
 
-The options include:
 
-- the splitting factor: Specifies the number of splits to create.
-- A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
-- A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.
+Angular Acceptance and Forced Direction Policies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When configuring directional biasing, the choice of policy is important.
+
+.. warning::
+   The **Rejection** policy should only be used when the acceptance probability is spatially uniform (e.g., for point sources or far-field approximations). When the acceptance probability varies spatially, as is common with volumetric sources near a detector, this policy introduces a systematic spatial bias by "warping" the simulated activity distribution.
+
+For quantitative SPECT simulations, use one of the following:
+
+* **ForceDirection (Recommended)**: This forces particles into the acceptance cone and adjusts their statistical weight (w = w_initial * P_acc). This preserves the correct spatial activity distribution.
+* **ZeroEnergy (or Kill)**: This maintains correct timing and event counts by simply terminating particles that fall outside the acceptance criteria, though it is less computationally efficient than weighting.
+
+**Multi-Target Strategy**: For systems with multiple detector heads, use the "Copy Source" method. Create N copies of the source, each targeting a different detector. If the angular acceptance cones of the targets **do not overlap**, maintain the full activity A for each copy to ensure correct absolute counts in each detector head. If the cones **do overlap**, another strategy is needed to avoid double counting, such as splitting the activity A across the N copies (A/N) or using a single source with an acceptance cone that encompasses all targets. This is not currently implemented in OpenGATE but is planned for future releases.
+
+
+
+ScatterSplittingFreeFlightActor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``ScatterSplittingFreeFlightActor`` handles the calculation of scattered radiation contributions. When a photon interacts, this actor "splits" the interaction into multiple analytical paths directed toward the detector, weighted by the physics of the interaction (e.g., Klein-Nishina cross-section).
+
+* **compton_splitting_factor / rayleigh_splitting_factor**: Defines how many analytical photons are generated per interaction.
+* **kill_interacting_in_volumes**: Volumes where the original interacting particle should be stopped to avoid double counting.
+* **angular_acceptance**: Filters the analytical scattered photons to only those heading toward the detector.
+
+.. code-block:: python
+
+   ff_sc = sim.add_actor("ScatterSplittingFreeFlightActor", "ff_scatter")
+   ff_sc.attached_to = "world"
+   ff_sc.exclude_volumes = ["spect_1_crystal"]
+   ff_sc.kill_interacting_in_volumes = ["spect_1_crystal"]
+
+   # Splitting configuration
+   ff_sc.compton_splitting_factor = 50
+   ff_sc.rayleigh_splitting_factor = 50
+
+   # Direct scattered photons only towards the SPECT head
+   ff_sc.angular_acceptance.policy = "Rejection"
+   ff_sc.angular_acceptance.target_volumes = ["spect_1"]
+   ff_sc.angular_acceptance.angle_tolerance_max = 10 * gate.g4_units.deg
+
+
+
+Merging and Uncertainty Calculation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because Free Flight separates simulations into primary and scatter components, results must be merged offline. To obtain a statistically sound result, one must sum the mean counts per event from each step and propagate the variance.
+
+The helper function ``merge_freeflight_uncertainty`` automates this by processing the ``counts.mhd`` and ``squared_counts.mhd`` files from each subfolder (e.g., primary, scatter).
+
+**Statistical Equations:**
+
+* Let $C_i$ be the raw counts and $C2_i$ the squared counts for step $i$ with $N_i$ events.
+* Mean per event: $E[X_i] = C_i / N_i$.
+* Variance of the mean: $Var(E[X_i]) = (E[X_i^2] - (E[X_i])^2) / (N_i - 1)$.
+* Total Mean: $E[X_{total}] = \sum E[X_i]$.
+* Final Relative Uncertainty: $R = \frac{\sqrt{\sum Var(E[X_i])}}{E[X_{total}]}$.
+
+**Usage of Helpers:**
+
+.. code-block:: python
+
+   from opengate.contrib.spect.spect_freeflight_helpers import merge_freeflight_uncertainty
+   from pathlib import Path
+
+   # Define parameters
+   folder = Path("./output_simu")
+   ref_n = 1e8  # Target reference number of events
+   subfolders = ["primary", "scatter"]
+   num_events = [1e6, 2e5]  # Number of simulated events in each subfolder
+
+   # Merge images and calculate uncertainty for head 0
+   merge_freeflight_uncertainty(
+       folder,
+       ref_n,
+       subfolders,
+       num_events,
+       counts_filename="projection_0_counts.mhd",
+       squared_counts_filename="projection_0_squared_counts.mhd",
+       output_filename="relative_uncertainty_0.mhd"
+   )
+
 
 
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.miscactors.ComptSplittingActor
+.. autoclass:: opengate.actors.biasingactors.GammaFreeFlightActor
+.. autoclass:: opengate.actors.biasingactors.ScatterSplittingFreeFlightActor
 
+.. autofunction:: opengate.contrib.spect.spect_freeflight_helpers.merge_freeflight_uncertainty
+
+
+Voxelized Prompt-Gamma Actors
+-----------------------------
+
+Description
+~~~~~~~~~~~
+
+There are two actors to compute the 4D prompt-gamma (PG) energy and time distributions:
+
+* **VoxelizedPromptGammaAnalogActor** for the analog Monte Carlo,
+* **VoxelizedPromptGammaTLEActor** for the track-length estimator (vpgTLE).
+
+Both variations have boolean variables to activate the computation of the energy and/or time distribution for proton and/or neutron particles.
+For example for the analog:
+
+.. code-block:: python
+
+    vpg_analog = sim.add_actor("VoxelizedPromptGammaAnalogActor", "vpg_analog")
+    vpg_analog.prot_E.active = True
+    vpg_analog.neutr_E.active = True
+    vpg_analog.prot_tof.active = True
+    vpg_analog.neutr_tof.active = True
+
+and for the vpgTLE:
+
+.. code-block:: python
+
+    vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpg_tle")
+    vpg_tle.prot_E.active = True
+    vpg_tle.neutr_E.active = True
+    vpg_tle.prot_tof.active = True
+    vpg_tle.neutr_tof.active = True
+
+In addition, the PG time distribution computed by the vpgTLE actor can be weigthed by a PG emission yield,
+a 1D vector indexed by the proton or neutron energy. It makes it possible to take into account the fact that
+when the proton kinetic energy is small (below a few tens of MeV), the prompt gamma yield can be small.
+These vectors should represent an composition-averaged human material, and they are computed off-line and stored
+in the PG database (ROOT file).
+
+.. code-block:: python
+
+   # Get the 1D PG yield computed for a human-averaged material, for proton and neutron inelastic processes
+   with uproot.open(paths.data / "test081_pgtle" / "data_merge_proton.root") as root_file:
+      vect_p = root_file["standard_Weight"]["Weight"].to_numpy()[0]
+   with uproot.open(paths.data / "test081_pgtle" / "data_merge_neutron.root") as root_file:
+      vect_n = root_file["standard_Weight"]["Weight"].to_numpy()[0]
+
+   vpg_tle.weight = True
+   vpg_tle.vect_p = vect_p
+   vpg_tle.vect_n = vect_n
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaAnalogActor
+.. autoclass:: opengate.actors.pgactors.VoxelizedPromptGammaTLEActor
+.. autoproperty:: opengate.actors.digitizers.DigitizerBase.authorize_repeated_volumes
+.. autoproperty:: opengate.actors.digitizers.DigitizerReadoutActor.discretize_volume
+.. autoproperty:: opengate.sources.base.SourceBase.half_life
+.. automethod:: opengate.managers.VolumeManager.dump_volume_tree

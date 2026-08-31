@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateActorManager.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateActorManager.h"
 
 void init_GateActorManager(py::module &m) {
   py::class_<GateActorManager, std::unique_ptr<GateActorManager, py::nodelete>>(

@@ -1,8 +1,9 @@
 import inspect
-import colored
 
+import colored
 import opengate_core as g4
-from .logger import global_log
+
+from .logger import logger
 
 
 class GateDeprecationError(Exception):
@@ -25,28 +26,37 @@ class GateImplementationError(Exception):
     """
 
 
+class GateJobsBackendError(Exception):
+    """Raise this when a split-job execution backend fails or rejects its options."""
+
+
+class GateSplitError(Exception):
+    """Raise this when a simulation merge operation fails."""
+
+
+class GateMergeError(Exception):
+    """Raise this when a simulation merge operation fails."""
+
+
 color_error = colored.fore("red") + colored.style("bold")
 color_warning = colored.fore("orange_1")
-color_ok = colored.fore("green")
+color_ok = colored.fore("light_blue")
 
 
 def fatal(s):
     caller = inspect.getframeinfo(inspect.stack()[1][0])
-    ss = f"(in {caller.filename} line {caller.lineno})"
-    ss = colored.stylize(ss, color_error)
-    global_log.critical(ss)
-    s = colored.stylize(s, color_error)
-    global_log.critical(s)
+    ss = f"Fatal in {caller.filename} line {caller.lineno}"
+    logger.critical(ss)
+    logger.critical(s)
     raise Exception(s)
 
 
 def warning(s):
-    s = colored.stylize(s, color_warning)
-    global_log.warning(s)
+    logger.warning(s)
 
 
 def raise_except(s):
-    s = colored.stylize(s, color_error)
+    # s = colored.stylize(s, color_error)
     raise Exception(s)
 
 

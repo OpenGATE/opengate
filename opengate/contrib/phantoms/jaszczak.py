@@ -73,8 +73,12 @@ def add_background_source(
     bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
     # it is a tubs inside the box
-    bg.position.confine = bg.mother
     """
+    cm = g4_units.cm
+    bg.position.type = "cylinder"
+    bg.position.radius = 21.6 * cm / 2
+    bg.position.dz = 18.6 * cm / 2
+    bg.position.confine = bg.attached_to
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_bqml * v_info.cubic_volume

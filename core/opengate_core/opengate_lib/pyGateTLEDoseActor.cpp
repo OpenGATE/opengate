@@ -5,13 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
-namespace py = pybind11;
-
 #include "GateDoseActor.h"
 #include "GateTLEDoseActor.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 class PyGateTLEDoseActor : public GateTLEDoseActor {
 public:
@@ -45,13 +42,21 @@ void init_GateTLEDoseActor(py::module &m) {
       .def("SetDoseFlag", &GateTLEDoseActor::SetDoseFlag)
       .def("GetDoseSquaredFlag", &GateTLEDoseActor::GetDoseSquaredFlag)
       .def("SetDoseSquaredFlag", &GateTLEDoseActor::SetDoseSquaredFlag)
-      .def("GetToWaterFlag", &GateTLEDoseActor::GetToWaterFlag)
-      .def("SetToWaterFlag", &GateTLEDoseActor::SetToWaterFlag)
+      .def("GetScoreInMaterial", &GateTLEDoseActor::GetScoreInMaterial)
+      .def("SetScoreInMaterial", &GateTLEDoseActor::SetScoreInMaterial)
+      .def("GetFastSPRCalculationFlag",
+           &GateTLEDoseActor::GetFastSPRCalculationFlag)
+      .def("SetFastSPRCalculationFlag",
+           &GateTLEDoseActor::SetFastSPRCalculationFlag)
+      .def("GetReferenceEnergySPR", &GateTLEDoseActor::GetReferenceEnergySPR)
+      .def("SetReferenceEnergySPR", &GateTLEDoseActor::SetReferenceEnergySPR)
+      .def("GetTransitionEnergySPR", &GateTLEDoseActor::GetTransitionEnergySPR)
+      .def("SetTransitionEnergySPR", &GateTLEDoseActor::SetTransitionEnergySPR)
       .def("GetCountsFlag", &GateTLEDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateTLEDoseActor::SetCountsFlag)
       .def("GetPhysicalVolumeName", &GateTLEDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateTLEDoseActor::SetPhysicalVolumeName)
-      .def_readwrite("NbOfEvent", &GateTLEDoseActor::NbOfEvent)
+      .def_readwrite("NbOfEvent", &GateTLEDoseActor::fNbOfEvent)
       .def_readwrite("cpp_edep_image", &GateTLEDoseActor::cpp_edep_image)
       .def_readwrite("cpp_edep_squared_image",
                      &GateTLEDoseActor::cpp_edep_squared_image)

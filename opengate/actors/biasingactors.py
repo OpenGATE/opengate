@@ -1,7 +1,111 @@
+import itk
+import numpy as np
 import opengate_core as g4
-from .base import ActorBase
+from anytree import RenderTree
+from box import Box
+
+import opengate as gate
+
+from ..base import UserInfoValidatorBase, process_cls
+from ..exception import fatal, warning
 from ..utility import g4_units
-from ..base import process_cls
+from .actoroutput import ActorOutputBase
+from .base import ActorBase
+
+
+def generic_source_default_aa():
+    """
+    Defines the Angular Acceptance (AA) parameters for biasing.
+    This controls which particle directions are accepted or rejected.
+    Two main policies are available:
+    - rejection: reject the particle if any check fails. SkipEvent or ZeroEnergy.
+    - force direction: force the particle to be in a valid direction.
+    """
+    return Box(
+        {
+            # -----------------------------------------------------------------
+            # --- Global Acceptance Policy ---
+            # What to do when a particle's direction fails *any* enabled check.
+            # - "ForceDirection": force the particle in a valid direction.
+            # - "Rejection": if the direction is non-valid, reject the event with the skip_policy
+            # - None or False: AA is not used
+            "policy": None,
+            # - "SkipEvents": rejection, discard the event and try again.
+            # - "ZeroEnergy": rejection, keep the event, but set the particle's energy to 0.
+            "skip_policy": "SkipEvents",
+            "max_rejection": 10000,
+            # -----------------------------------------------------------------
+            # --- Target Volumes ---
+            # The volume(s) that all checks are relative to.
+            "target_volumes": [],
+            # -----------------------------------------------------------------
+            # -----------------------------------------------------------------
+            # --- Biasing Checks (can be combined) ---
+            # You can enable one or both of these. If both are enabled,
+            # the direction must pass *both* checks to be accepted.
+            # 1. Intersection Check
+            "enable_intersection_check": False,
+            # 2. Angle Check
+            "enable_angle_check": False,
+            # -----------------------------------------------------------------
+            # --- Parameters for Angle Check ---
+            # The "ideal" vector to compare the particle's direction against.
+            "angle_check_reference_vector": [0, 0, 1],
+            # --- Proximity-Based Tolerance Logic ---
+            # The cutoff distance: when the particle is closer than this, the max angle is given
+            # by 'angle_tolerance_proximal' and not by 'angle_tolerance_max'
+            # (only with policies 'SkipEvents' or 'ZeroEnergy'
+            "angle_check_proximity_distance": 0 * g4_units.cm,
+            # The tolerance to use *within* the proximity_distance
+            # (e.g., any direction "generally towards" the volume is fine).
+            "angle_tolerance_proximal": 90 * g4_units.deg,
+            # The strict tolerance to use *outside* the proximity_distance.
+            "angle_tolerance_min": 0 * g4_units.deg,
+            "angle_tolerance_max": 6 * g4_units.deg,
+        }
+    )
+
+
+class AngularAcceptanceValidator(UserInfoValidatorBase):
+    """Validates the 'angular_acceptance' Box."""
+
+    __schema__ = set(generic_source_default_aa().keys())
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+        b = getattr(parent_obj, attr_name)
+        if b.policy is False:
+            b.policy = None
+        # check policy
+        valid_policies = [None, "ForceDirection", "Rejection"]
+        if b.policy not in valid_policies:
+            fatal(
+                f"In {context_name}: '{b.policy}' is not a valid policy. Must be one of {valid_policies}."
+            )
+        # check policy
+        valid_skip_policies = ["SkipEvents", "ZeroEnergy"]
+        if b.skip_policy not in valid_skip_policies:
+            fatal(
+                f"In {context_name}: '{b.skip_policy}' is not a valid policy. Must be one of {valid_skip_policies}."
+            )
+        # check normal vector
+        if b.enable_angle_check:
+            if len(b.angle_check_reference_vector) != 3:
+                fatal(f"In {context_name}: 'normal_vector' must be a 3-vector.")
+            if np.linalg.norm(b.angle_check_reference_vector) != 1:
+                fatal(f"In {context_name}: 'normal_vector' must be a unit vector.")
+        # if FD, angle_check is ignored
+        if b.policy == "ForceDirection":
+            if not b.enable_angle_check:
+                fatal(
+                    f"In {context_name}: 'enable_angle_check' must be True when policy is 'ForceDirection'."
+                )
+        if b.policy == "Rejection":
+            if not b.enable_intersection_check and not b.enable_angle_check:
+                fatal(
+                    f"In {context_name}: at least one of 'enable_intersection_check' or 'enable_angle_check' "
+                    f"must be True when policy is {b.policy}."
+                )
 
 
 def _setter_hook_particles(self, value):
@@ -21,6 +125,9 @@ class GenericBiasingActorBase(ActorBase):
     bias_primary_only: bool
     bias_only_once: bool
     particles: list
+    exclude_volumes: list
+    weight_cutoff: float
+    energy_cutoff: float
 
     user_info_defaults = {
         "bias_primary_only": (
@@ -44,10 +151,40 @@ class GenericBiasingActorBase(ActorBase):
                 "setter_hook": _setter_hook_particles,
             },
         ),
+        "exclude_volumes": (
+            [],
+            {
+                "doc": "A list of volumes where this actor's biasing is disabled, allowing particles to be tracked with normal, unbiased physics. ",
+            },
+        ),
+        "weight_cutoff": (
+            -1,
+            {
+                "doc": "if the particle weight become lower than this value, the particle is killed. "
+            },
+        ),
+        "energy_cutoff": (
+            0,
+            {
+                "doc": "if the particle energy become lower than this value, the particle is killed. "
+            },
+        ),
     }
 
+    def initialize(self):
+        super().initialize()
 
-class SplittingActorBase(GenericBiasingActorBase):
+    def check_compatibility_with_generic_process(self):
+        em_parameters = g4.G4EmParameters.Instance()
+        if em_parameters.GeneralProcessActive():
+            fatal(
+                f"Biasing actors can only be used without GenericProcess. \n"
+                f" use : sim.g4_commands_before_init.append('/process/em/UseGeneralProcess false')"
+            )
+            # note: we CANNOT turn it off now because the physics list is already initialized
+
+
+class SplitProcessActorBase(GenericBiasingActorBase):
     """
     This actor  enables non-physics-based particle splitting (e.g., pure geometrical splitting) to introduce biasing
     into simulations. SplittingActorBase serves as a foundational class for particle splitting operations,
@@ -67,75 +204,17 @@ class SplittingActorBase(GenericBiasingActorBase):
     }
 
 
-class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
+class BremsstrahlungSplittingActor(
+    SplitProcessActorBase, g4.GateBremsstrahlungSplittingOptrActor
+):
     """
-    This splitting actor enables process-based splitting specifically for Compton interactions. Each time a Compton
-     process occurs, its behavior is modified by generating multiple Compton scattering tracks
-     (splitting factor - 1 additional tracks plus the original) associated with the initial particle.
-     Compton electrons produced in the interaction are also included, in accordance with the secondary cut settings
-     provided by the user.
-    """
-
-    # hints for IDE
-    min_weight_of_particle: float
-    russian_roulette: bool
-    rotation_vector_director: bool
-    vector_director: list
-    max_theta: float
-
-    user_info_defaults = {
-        "min_weight_of_particle": (
-            0,
-            {
-                "doc": "Defines a minimum weight for particles. Particles with weights below this threshold will not be split, limiting the splitting cascade of low-weight particles generated during Compton interactions.",
-            },
-        ),
-        "russian_roulette": (
-            False,
-            {
-                "doc": "If enabled (True), applies a Russian roulette mechanism. Particles emitted in undesired directions are discarded if a random number exceeds 1 / splitting_factor",
-            },
-        ),
-        "vector_director": (
-            [0, 0, 1],
-            {
-                "doc": "Specifies the particle’s direction of interest for the Russian roulette. In this direction, the Russian roulette is not applied",
-            },
-        ),
-        "rotation_vector_director": (
-            False,
-            {
-                "doc": "If enabled, allows the vector_director to rotate based on any rotation applied to a volume to which this actor is attached",
-            },
-        ),
-        "max_theta": (
-            90 * g4_units.deg,
-            {
-                "doc": "Sets the angular range (in degrees) around vector_director within which the Russian roulette mechanism is not applied.",
-            },
-        ),
-    }
-
-    processes = ("compt",)
-
-    def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
-
-    def initialize(self):
-        SplittingActorBase.initialize(self)
-        self.InitializeUserInfo(self.user_info)
-        self.InitializeCpp()
-
-
-class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
-    """
-    This splitting actor enables process-based splitting specifically for bremsstrahlung process. Each time a Brem
+    This splitting actor enables process-based splitting specifically for the Bremsstrahlung process. Each time a Brem
     process occurs, its behavior is modified by generating multiple secondary Brem scattering tracks
-    (splitting factor) attached to  the initial charged particle.
+    (splitting factor) attached to the initial charged particle.
+
+    This actor is not really needed as Geant4 already proposes this with:
+    /process/em/setSecBiasing eBrem my_region 100 50 MeV
+    But we use it as a test/example.
     """
 
     # hints for IDE
@@ -153,21 +232,20 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     processes = ("eBrem",)
 
     def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
+        SplitProcessActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})
+        g4.GateBremsstrahlungSplittingOptrActor.__init__(self, {"name": self.name})
 
     def initialize(self):
-        SplittingActorBase.initialize(self)
+        SplitProcessActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 
-class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
+class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrActor):
     """
-    FIXME
 
     Warning: as a G4VBiasingOperator, the attachTo operation MUST be done
     1) before the StartSimulationAction and 2) for each thread
@@ -175,40 +253,413 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
     that is specifically called in engines.py
     in the register_sensitive_detectors function
 
-    Also PreUserTrackingAction is needed because StartTracking is not used in MT.
-
+    Also, PreUserTrackingAction is needed because StartTracking is not used in MT.
     """
 
-    # hints for IDE FIXME
+    # hints for IDE
     processes: list
-    # user info FIXME
+    particles: list
 
-    processes = ("compt", "Rayl", "phot", "conv", "GammaGeneralProc")
+    # This biased actor DOES NOT work for GammaGeneralProc
+    processes = ["compt", "phot", "conv", "Rayl"]
+    particles = ["gamma"]
 
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateOptrFreeFlightActor.__init__(self, {"name": self.name})
-        self.AddActions(
-            {
-                "PreUserTrackingAction",
-            }
-        )
-        # self.AddActions({"PreUserTrackingAction"})
+        g4.GateGammaFreeFlightOptrActor.__init__(self, {"name": self.name})
 
     def initialize(self):
         GenericBiasingActorBase.initialize(self)
+        if self.user_info.attached_to != "world":
+            warning(
+                f"GammaFreeFlightActor actors can only be attached to the world volume, "
+                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
+            )
+        self.check_compatibility_with_generic_process()
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        g4.GateOptrFreeFlightActor.StartSimulationAction(self)
+        g4.GateGammaFreeFlightOptrActor.StartSimulationAction(self)
+
+
+class ActorOutputScatterSplittingFreeFlightActor(ActorOutputBase):
+    """
+    Some output statistics computed during ScatterSplittingFreeFlightActor
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # self.splitting_factor = kwargs.get("belongs_to").user_info.splitting_factor
+
+        # predefine the split_info
+        self.split_info = Box()
+        self.split_info.nb_tracks = 0
+        self.split_info.nb_tracks_with_free_flight = 0
+        self.split_info.nb_compt_splits = 0
+        self.split_info.nb_rayl_splits = 0
+        self.split_info.nb_compt_tracks = 0
+        self.split_info.nb_rayl_tracks = 0
+        self.split_info.nb_killed_non_gamma_particles = 0
+        self.split_info.nb_killed_gammas_compton_level = 0
+        self.split_info.nb_killed_gammas_exiting = 0
+        self.split_info.compton_splitting_factor = 1
+        self.split_info.rayleigh_splitting_factor = 1
+
+    def get_processed_output(
+        self, infos, compton_splitting_factor, rayleigh_splitting_factor
+    ):
+        self.split_info.nb_tracks = infos["nb_tracks"]
+        self.split_info.nb_tracks_with_free_flight = infos["nb_tracks_with_free_flight"]
+        self.split_info.nb_compt_splits = infos["nb_compt_splits"]
+        self.split_info.nb_rayl_splits = infos["nb_rayl_splits"]
+        self.split_info.nb_compt_tracks = infos["nb_compt_tracks"]
+        self.split_info.nb_rayl_tracks = infos["nb_rayl_tracks"]
+        self.split_info.nb_killed_non_gamma_particles = infos[
+            "nb_killed_non_gamma_particles"
+        ]
+        self.split_info.nb_killed_gammas_compton_level = infos[
+            "nb_killed_gammas_compton_level"
+        ]
+        self.split_info.nb_killed_gammas_exiting = infos["nb_killed_gammas_exiting"]
+        self.split_info.compton_splitting_factor = compton_splitting_factor
+        self.split_info.rayleigh_splitting_factor = rayleigh_splitting_factor
+        return self.split_info
+
+    def __str__(self):
+        s = ""
+        for key, value in self.split_info.items():
+            s += f"{key}: {value}\n"
+
+        if (
+            self.split_info.compton_splitting_factor > 0
+            and self.split_info.nb_compt_splits > 0
+        ):
+            f = self.split_info.nb_compt_tracks / (
+                self.split_info.nb_compt_splits
+                * self.split_info.compton_splitting_factor
+            )
+            s += f"Fraction of FF compton: {f*100:.2f} %\n"
+
+        if (
+            self.split_info.rayleigh_splitting_factor > 0
+            and self.split_info.nb_rayl_splits > 0
+        ):
+            f = self.split_info.nb_rayl_tracks / (
+                self.split_info.nb_rayl_splits
+                * self.split_info.rayleigh_splitting_factor
+            )
+            s += f"Fraction of FF rayleigh: {f*100:.2f} %\n"
+
+        if self.split_info.nb_compt_tracks < 1 and self.split_info.nb_rayl_tracks < 1:
+            f = 0
+        else:
+            f = self.split_info.nb_tracks_with_free_flight / (
+                self.split_info.nb_compt_tracks + self.split_info.nb_rayl_tracks
+            )
+        s += f"Check split vs ff (should be 100): {f*100:.2f} %\n"
+        return s
+
+
+class ScatterSplittingFreeFlightActor(
+    SplitProcessActorBase, g4.GateScatterSplittingFreeFlightOptrActor
+):
+    """
+    Split Compton processes for gamma. The initial gamma is tracked until it goes out of the volume.
+    Split gammas are tracked with free flight and Angular Acceptance
+    """
+
+    # hints for IDE
+    processes: list
+    particles: list
+    max_compton_level: int
+    compton_splitting_factor: int
+    rayleigh_splitting_factor: int
+    angular_acceptance: Box
+    kill_interacting_in_volumes: list
+
+    # user info
+    user_info_defaults = {
+        "max_compton_level": (
+            10,
+            {
+                "doc": "Compton are split until this max level is reached (then the initial gamma is killed).",
+            },
+        ),
+        "compton_splitting_factor": (
+            -1,
+            {
+                "doc": "All Compton interactions will be split by this factor (if -1, set by splitting_factor).",
+            },
+        ),
+        "rayleigh_splitting_factor": (
+            -1,
+            {
+                "doc": "All Rayleigh interactions will be split by this factor (if -1, set by splitting_factor).",
+            },
+        ),
+        "angular_acceptance": (
+            generic_source_default_aa(),
+            {
+                "doc": "Scattered photon will be limited to an angular acceptance. Several methods available, see XXX",
+            },
+        ),
+        "kill_interacting_in_volumes": (
+            [],
+            {
+                "doc": "When a non-split particle enters one of those volumes, it is killed.",
+            },
+        ),
+        "debug": (
+            False,
+            {"doc": "Print debug information during the stepping action of the actor."},
+        ),
+    }
+
+    # Do NOT work with GammaGeneralProc
+    processes = ["compt", "phot", "conv", "Rayl"]
+    particles = ["gamma"]
+
+    user_output_config = {
+        "info": {
+            "actor_output_class": ActorOutputScatterSplittingFreeFlightActor,
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        SplitProcessActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        self._aa_validator = AngularAcceptanceValidator()
+
+    def __initcpp__(self):
+        g4.GateScatterSplittingFreeFlightOptrActor.__init__(self, {"name": self.name})
+
+    def __str__(self):
+        s = self.user_output["info"].__str__()
+        return s
+
+    def initialize(self):
+        SplitProcessActorBase.initialize(self)
+        # FIXME: the world-attachment warning, GenericProcess compatibility
+        # check, angular_acceptance validation, and the derived splitting-factor
+        # defaults below are configuration-resolution concerns and should
+        # probably move into resolve_and_validate_config().
+        if self.user_info.attached_to != "world":
+            warning(
+                f"ScatterSplittingFreeFlightActor actors can only be attached to the world volume, "
+                f"while it is '{self.user_info.attached_to}' for the actor '{self.name}'"
+            )
+        self.check_compatibility_with_generic_process()
+        # Check the sub-parameters
+        self._aa_validator.validate(self, "angular_acceptance")
+        if self.user_info.compton_splitting_factor == -1:
+            self.user_info.compton_splitting_factor = self.user_info.splitting_factor
+        if self.user_info.rayleigh_splitting_factor == -1:
+            self.user_info.rayleigh_splitting_factor = self.user_info.splitting_factor
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def EndSimulationAction(self):
+        g4.GateScatterSplittingFreeFlightOptrActor.EndSimulationAction(self)
+        self.user_output["info"].get_processed_output(
+            self.GetBiasInformation(),
+            self.user_info.compton_splitting_factor,
+            self.user_info.rayleigh_splitting_factor,
+        )
+
+
+class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_replayed_events = 0
+        self.number_of_events = 0
+
+    def get_processed_output(self):
+        d = {}
+        d["replayed_particles"] = self.number_of_replayed_events
+        d["nb_events"] = self.number_of_events
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            s = k + ": " + str(v)
+            s += "\n"
+        return s
+
+
+class LastVertexInteractionSplittingActor(
+    ActorBase, g4.GateLastVertexInteractionSplittingActor
+):
+    """Specific VRT which do not use the generic biaising. This splitting actor proposes an interaction splitting at the last particle vertex before the exit
+     of the biased volume.  This actor can be usefull for application where collimation are important,
+    such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
+    """
+
+    # hints for IDE
+    splitting_factor: int
+    batch_size: int
+    nb_of_max_batch_per_event: int
+
+    user_info_defaults = {
+        "splitting_factor": (
+            1,
+            {
+                "doc": "Defines the number of particles exiting at each split process. Unlike other split actors, this splitting factor counts particles that actually exit, not just those generated.",
+            },
+        ),
+        "batch_size": (
+            1,
+            {
+                "doc": "Defines a batch of number of processes to regenerate. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+            },
+        ),
+        "nb_of_max_batch_per_event": (
+            500,
+            {
+                "doc": "Defines a maximum number of attempt to enable the particles to exit. Useful to avoid an important loss of time for extremely rare events",
+            },
+        ),
+        "angular_acceptance": (
+            generic_source_default_aa(),
+            {
+                "doc": "See generic source",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        # FIXME: Should rely on user_output_config and not call _add_user_output manually
+        self._add_user_output(
+            ActorOutputLastVertexInteractionSplittingActor, "last_vertex_output"
+        )
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateLastVertexInteractionSplittingActor.__init__(self, {"name": self.name})
+        self.AddActions(
+            {
+                "BeginOfRunAction",
+                "BeginOfEventAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "PostUserTrackingAction",
+                "EndOfEventAction",
+                "EndOfRunAction",
+                "EndSimulationAction",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        self.simulation.volume_manager.update_volume_tree_if_needed()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        self.user_output.last_vertex_output.number_of_events = self.GetNumberOfEvents()
+        self.user_output.last_vertex_output.number_of_replayed_events = (
+            self.GetNumberOfReplayedEvents()
+        )
+        print("Number of replayed Events: ", self.GetNumberOfReplayedEvents())
+        print("Number of killed particle:", self.GetNumberOfKilledParticles())
+
+    def __str__(self):
+        s = self.user_output["last_vertex_output"].__str__()
+        return s
+
+    def UncertaintyCalculation(self, N, uncertainty_file, file, squared_file):
+        img = itk.imread(file)
+        array = itk.GetArrayFromImage(img)
+
+        squared_img = itk.imread(squared_file)
+        squared_array = itk.GetArrayFromImage(squared_img)
+
+        unc_dose_array = np.sqrt(1 / (N - 1) * (squared_array / N - (array / N) ** 2))
+        unc_dose_array = unc_dose_array / (array / N)
+
+        new_uncertainty_img = itk.GetImageFromArray(unc_dose_array)
+        new_uncertainty_img.CopyInformation(img)
+        itk.imwrite(new_uncertainty_img, uncertainty_file)
+
+    def CorrectDoseUncertainty(self):
+        # FIXME: This post-processing hook appears to be unused at the moment:
+        # no current execution path calls it. Even if revived later, the
+        # authority is awkward because a biasing actor rewrites outputs owned
+        # by dose actors. The uncertainty post-processing should probably live
+        # with the corresponding dose actor or actor output instead.
+        actors = self.simulation.actor_manager.actors
+        for key in actors.keys():
+            actor = actors[key]
+            if hasattr(actor, "dose_uncertainty"):
+                N = self.user_output.last_vertex_output.number_of_events
+                t_N = N - self.user_output.last_vertex_output.number_of_replayed_events
+                if (
+                    actor.dose_uncertainty.active == True
+                    and actor.dose_squared.active == True
+                ):
+                    uncertainty_file = actor.edep_uncertainty.get_output_path(
+                        which="merged"
+                    )
+                    file = actor.dose.get_output_path(which="merged")
+                    squared_file = actor.dose_squared.get_output_path(which="merged")
+                    self.UncertaintyCalculation(
+                        t_N, uncertainty_file, file, squared_file
+                    )
+                elif (
+                    actor.edep_uncertainty.active == True
+                    and actor.edep_squared.active == True
+                ):
+                    uncertainty_file = actor.edep_uncertainty.get_output_path(
+                        which="merged"
+                    )
+                    file = actor.edep.get_output_path(which="merged")
+                    squared_file = actor.edep_squared.get_output_path(which="merged")
+                    self.UncertaintyCalculation(
+                        t_N, uncertainty_file, file, squared_file
+                    )
+
+    # def retrieveDoseActors(self):
+    #     actors = self.simulation.actor_manager.actors
+    #     VoxelDepositActorSubClasses = self.retrieveVoxelDepositActorSubClasses(gate.actors.doseactors.VoxelDepositActor)
+    #     print(VoxelDepositActorSubClasses)
+    #     for key in actors.keys():
+    #         print(type(actors[key]))
+    #         if type(actors[key]) in VoxelDepositActorSubClasses:
+    #             print(actors[key])
+    #
+    #
+    #
+    # def retrieveVoxelDepositActorSubClasses(self,cls):
+    #     result = []
+    #     for sub in cls.__subclasses__():
+    #         result.append(sub)
+    #         result.extend(self.retrieveVoxelDepositActorSubClasses(sub))  # récursif
+    #     return result
 
 
 process_cls(GenericBiasingActorBase)
-process_cls(SplittingActorBase)
-process_cls(ComptSplittingActor)
-process_cls(BremSplittingActor)
-process_cls(FreeFlightActor)
+process_cls(SplitProcessActorBase)
+process_cls(BremsstrahlungSplittingActor)
+process_cls(GammaFreeFlightActor)
+process_cls(ActorOutputScatterSplittingFreeFlightActor)
+process_cls(ScatterSplittingFreeFlightActor)
+process_cls(LastVertexInteractionSplittingActor)
+process_cls(ActorOutputLastVertexInteractionSplittingActor)

@@ -7,6 +7,8 @@ User Guide
 
    user_guide_installation
    user_guide_intro
+   user_guide_resources
+   user_guide_meetings
 
 .. toctree::
    :caption: How to setup a simulation
@@ -15,9 +17,12 @@ User Guide
    user_guide_first_simulation
    user_guide_volumes
    user_guide_physics
+   user_guide_chemistry
    user_guide_sources
+   user_guide_dynamic_parametrisations
    user_guide_actors
-   user_guide_resources
+   user_guide_fields
+   user_guide_multijobs
 
 .. toctree::
    :caption: Detailed description of components
@@ -26,7 +31,10 @@ User Guide
    user_guide_reference_simulation
    user_guide_reference_volumes
    user_guide_reference_actors
+   user_guide_reference_auxiliary_attributes
    user_guide_reference_sources
+   user_guide_reference_fields
+   user_guide_reference_filters
    user_guide_advanced
    user_guide_optical_photons
    user_guide_voxelization

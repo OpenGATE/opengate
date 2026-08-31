@@ -4,11 +4,9 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
 
 #include "GateSourceManager.h"
+#include <pybind11/pybind11.h>
 
 void init_GateSourceManager(py::module &m) {
 
@@ -17,12 +15,25 @@ void init_GateSourceManager(py::module &m) {
       m, "GateSourceManager")
       .def(py::init())
       .def("AddSource", &GateSourceManager::AddSource)
+      .def("RegisterImageBox", &GateSourceManager::RegisterImageBox)
       .def("Initialize", &GateSourceManager::Initialize)
       .def("SetActors", &GateSourceManager::SetActors)
+      .def("ComputeExpectedNumberOfEvents",
+           &GateSourceManager::ComputeExpectedNumberOfEvents)
       .def("GetExpectedNumberOfEvents",
            &GateSourceManager::GetExpectedNumberOfEvents)
+      .def("GetRunGeneratedEvents", &GateSourceManager::GetRunGeneratedEvents)
+      .def("GetTotalGeneratedEvents",
+           &GateSourceManager::GetTotalGeneratedEvents)
+      .def("GetCurrentSimulationTime",
+           &GateSourceManager::GetCurrentSimulationTime)
+      .def("GetCurrentRunId", &GateSourceManager::GetCurrentRunId)
+      .def_static("GetPlatformMaxPrimariesPerRun",
+                  &GateSourceManager::GetPlatformMaxPrimariesPerRun)
       .def_readwrite("fUserEventInformationFlag",
                      &GateSourceManager::fUserEventInformationFlag)
+      .def("SetProgressReportCallback",
+           &GateSourceManager::SetProgressReportCallback)
       .def("StartMasterThread", &GateSourceManager::StartMasterThread,
            py::call_guard<py::gil_scoped_release>());
 }

@@ -8,7 +8,6 @@
 #include "GateVDigitizerWithOutputActor.h"
 #include "../GateHelpersDict.h"
 #include "GateDigiCollectionManager.h"
-#include <iostream>
 
 GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
     py::dict &user_info, bool MT_ready)
@@ -26,7 +25,7 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   fOutputDigiCollection = nullptr;
   fInputDigiCollection = nullptr;
   fInitializeRootTupleForMasterFlag = true;
-  fClearEveryNEvents = 1e5;
+  fClearEveryNEvents = 100000;
 }
 
 GateVDigitizerWithOutputActor::~GateVDigitizerWithOutputActor() = default;
@@ -49,6 +48,13 @@ void GateVDigitizerWithOutputActor::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateVDigitizerWithOutputActor::StartSimulationAction() {
+  // FIXME: This method currently bundles several responsibilities in one block:
+  // resolving the input digi collection, creating/configuring the output
+  // collection, initializing output attributes, and preparing ROOT tuple
+  // creation. That makes inheritance awkward: simple digitizers can reuse the
+  // method, while more specialized ones often have to reimplement it almost
+  // entirely. Refactor toward smaller template-method style hooks so derived
+  // classes can override only the part they actually specialize.
   // Get the input hits collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
   fInputDigiCollection = hcm->GetDigiCollection(fInputDigiCollectionName);
@@ -65,8 +71,10 @@ void GateVDigitizerWithOutputActor::StartSimulationAction() {
   fOutputDigiCollection->InitDigiAttributesFromCopy(
       fInputDigiCollection, fUserSkipDigiAttributeNames);
 
-  if (fInitializeRootTupleForMasterFlag)
+  if (fInitializeRootTupleForMasterFlag) {
     fOutputDigiCollection->RootInitializeTupleForMaster();
+    AddOutputTreeInfo(fOutputNameRoot, fOutputDigiCollection);
+  }
 }
 
 void GateVDigitizerWithOutputActor::BeginOfRunAction(const G4Run *run) {

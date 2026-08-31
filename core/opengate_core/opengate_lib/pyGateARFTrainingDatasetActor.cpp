@@ -5,14 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateARFTrainingDatasetActor.h"
+#include "digitizer/GateDigitizerHitsCollectionActor.h"
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateARFTrainingDatasetActor.h"
-#include "digitizer/GateDigitizerHitsCollectionActor.h"
 
 void init_GateARFTrainingDatasetActor(py::module &m) {
   py::class_<GateARFTrainingDatasetActor,

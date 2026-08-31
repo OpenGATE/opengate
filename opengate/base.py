@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional, List
 from difflib import get_close_matches
 from functools import wraps
-
 from box import Box
 import sys
 
@@ -21,7 +20,7 @@ from .definitions import (
 )
 from .decorators import requires_fatal
 import traceback
-from .logger import global_log
+from .logger import logger
 
 
 def print_call_location():
@@ -47,6 +46,8 @@ class MetaSingletonFatal(type):
                 f"You are trying to create another instance of {cls.__name__}, but an instance already exists "
                 f"in this process. Only one instance per process can be created. "
                 f"Please open a new python session and run the simulation again. "
+                f"If you want to run multiple simulation within a single script, "
+                f"make sure to use sim.run(start_new_process=True)"
             )
 
 
@@ -452,7 +453,7 @@ class GateObject:
 
     def __init__(self, *args, simulation=None, **kwargs) -> None:
         self._simulation = simulation
-        # keep internal number of raised warnings (for debug)
+        # keep the internal number of raised warnings (for debug)
         self.number_of_warnings = 0
         self._temporary_warning_cache = []
         # prefill user info with defaults
@@ -497,14 +498,22 @@ class GateObject:
 
     @simulation.setter
     def simulation(self, sim):
-        sim.warnings.extend(self._temporary_warning_cache)
-        self._temporary_warning_cache = []
-        self._simulation = sim
+        if sim is None:
+            if self._simulation is not None:
+                self.warn_user(
+                    f"The simulation reference of {self.type_name} '{self.name}' "
+                    "is now being cleared after it had already been assigned once. "
+                    "This is unusual."
+                )
+            self._simulation = None
+        else:
+            sim.warnings.extend(self._temporary_warning_cache)
+            self._temporary_warning_cache = []
+            self._simulation = sim
 
     def __str__(self):
         ret_string = (
-            f"***\n"
-            f"{type(self).__name__} named {self.name} "
+            f"GateObject {type(self).__name__} named {self.name} "
             f"with the following parameters:\n"
         )
         for k, v in self.user_info.items():
@@ -679,11 +688,24 @@ class GateObject:
             )
         for k in self.user_info.keys():
             if k in d["user_info"]:
-                if hasattr(self, k):
-                    # get the class property associate with the user info end check if it has a setter
-                    # otherwise, it is read-only
-                    if getattr(type(self), k).fset is not None:
+                # Check the generated user-info property on the class without
+                # touching the instance attribute. Some properties intentionally
+                # raise on raw access (for deprecation guidance), so instance-
+                # level hasattr/getattr is not safe during deserialization.
+                descriptor = getattr(type(self), k, None)
+                if descriptor is not None:
+                    # Writable user infos restore through their generated
+                    # property setter. Read-only user infos may opt into
+                    # deserialization through an explicit developer-provided
+                    # from_dictionary_hook stored alongside the user-info
+                    # definition.
+                    property_options = self.inherited_user_info_defaults[k][1]
+                    if descriptor.fset is not None:
                         setattr(self, k, d["user_info"][k])
+                    elif "from_dictionary_hook" in property_options:
+                        property_options["from_dictionary_hook"](
+                            self, d["user_info"][k]
+                        )
                 else:
                     if "deprecated" not in self.inherited_user_info_defaults[k][1]:
                         warning(
@@ -719,6 +741,9 @@ class DynamicGateObject(GateObject):
                 "Instead, use the 'add_dynamic_parametrisation()' method of your object."
                 "If None, the object is static (default).",
                 "read_only": True,
+                "from_dictionary_hook": lambda self, value: self.restore_dynamic_params_from_dictionary(
+                    value
+                ),
             },
         )
     }
@@ -740,6 +765,28 @@ class DynamicGateObject(GateObject):
             if "dynamic" in self.inherited_user_info_defaults[k][1]
             and self.inherited_user_info_defaults[k][1]["dynamic"] is True
         ]
+
+    @classmethod
+    def get_dynamic_input_file_user_info_names(cls):
+        """Return dynamic user-info keys that represent file-backed inputs.
+
+        Contract:
+        - This is a class-level semantic mapper based purely on
+          ``inherited_user_info_defaults``.
+        - It returns the dynamic user-info keys whose definitions are marked
+          both ``dynamic=True`` and ``is_input_file=True``.
+        - It does not inspect instance state such as ``dynamic_params`` and
+          does not say whether a particular object has populated those keys.
+
+        Higher-level callers should intersect this class-level set with the
+        keys actually present in a serialized or live dynamic parametrisation.
+        """
+
+        return {
+            name
+            for name, (_, options) in cls.inherited_user_info_defaults.items()
+            if options.get("dynamic") is True and options.get("is_input_file") is True
+        }
 
     @requires_fatal("simulation")
     def process_dynamic_parametrisation(self, params):
@@ -785,6 +832,15 @@ class DynamicGateObject(GateObject):
                 )
                 fatal(s)
 
+    def restore_dynamic_params_from_dictionary(self, dynamic_params):
+        # Dynamic parametrisations are normally introduced through
+        # add_dynamic_parametrisation(), which processes and normalizes the
+        # user-facing input before storing the final representation in
+        # user_info["dynamic_params"]. During deserialization we already
+        # receive that persisted, processed representation, so restoring it
+        # directly is the correct object-specific read-only path here.
+        self.user_info["dynamic_params"] = dynamic_params
+
     def _add_dynamic_parametrisation_to_userinfo(self, params, name):
         """This base class implementation only acts as a setter.
         Classes inheriting from this class should implement an
@@ -804,19 +860,38 @@ class DynamicGateObject(GateObject):
             self.user_info["dynamic_params"] = {}
         processed_params, extra_params = self.process_dynamic_parametrisation(params)
         processed_params["extra_params"] = extra_params
-        # if user provided no name, create one
+        # if the user provided no name, create one
         if name is None:
             name = f"parametrisation_{len(self.dynamic_params)}"
         self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
-        # issue debugging message
+        # issue a debugging message
         s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
-        global_log.debug(s)
+        logger.debug(s)
 
     def create_changers(self):
         # this base class implementation is here to keep inheritance intact.
         return []
+
+    def reassign_dynamic_params_for_run_indices(self, original_run_indices):
+        if self.is_dynamic is False:
+            return
+
+        reassigned_dynamic_params = {}
+        for name, params in self.dynamic_params.items():
+            reassigned_dynamic_params[name] = {}
+            for key, value in params.items():
+                if key == "extra_params":
+                    reassigned_dynamic_params[name][key] = copy.deepcopy(value)
+                elif key in self.dynamic_user_info:
+                    reassigned_dynamic_params[name][key] = [
+                        copy.deepcopy(value[i]) for i in original_run_indices
+                    ]
+                else:
+                    reassigned_dynamic_params[name][key] = copy.deepcopy(value)
+
+        self.user_info["dynamic_params"] = reassigned_dynamic_params
 
 
 class GateUserInputSwitchDict(Box):
@@ -895,7 +970,6 @@ def recursive_userinfo_to_dict(obj):
 def find_paths_in_gate_object_dictionary(go_dict, only_input_files=False):
     paths = []
     for ui_name, ui in go_dict["user_info"].items():
-        new_paths = find_all_paths(ui)
         if only_input_files is True:
             options = _get_user_info_options(
                 ui_name, go_dict["object_type"], go_dict["class_module"]
@@ -904,8 +978,14 @@ def find_paths_in_gate_object_dictionary(go_dict, only_input_files=False):
                 consider_this = options["is_input_file"]
             except KeyError:
                 consider_this = False
+            # Some historical input-file user infos are still stored as plain
+            # strings rather than Path objects. When a field is explicitly
+            # marked as an input file, collect both representations so JSON
+            # archiving and split-job staging remain backward compatible.
+            new_paths = find_all_file_refs(ui)
         else:
             consider_this = True
+            new_paths = find_all_paths(ui)
         if consider_this is True:
             paths.extend(new_paths)
     return paths
@@ -942,6 +1022,13 @@ def find_all_paths(dct):
     return recursively_search_object(dct, condition=condition)
 
 
+def find_all_file_refs(dct):
+    def condition(obj):
+        return isinstance(obj, (Path, str))
+
+    return [Path(p) for p in recursively_search_object(dct, condition=condition)]
+
+
 def _get_user_info_options(user_info_name, object_type, class_module):
     """Utility function to retrieve the options associated with a user info given the class name,
     the module in which the class is defined, and the name of the user info.
@@ -976,6 +1063,69 @@ def create_gate_object_from_dict(dct):
         name=dct["user_info"]["name"]
     )
     return obj
+
+
+class UserInfoValidatorBase:
+    """
+    Base class for a validator that checks a Box
+    against a known set of parameters (a schema).
+    """
+
+    __schema__ = set()
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        """
+        Validates an attribute on a parent object.
+
+        Args:
+            parent_obj: The object holding the config (e.g., GenericSource).
+            attr_name: The name of the attribute (e.g., "position").
+            parent_context: (Optional) The context of the parent object.
+
+        Returns:
+            str: The full context name for the validated box (e.g., "my_source.position").
+        """
+
+        # 1. Get the Box to check
+        try:
+            box_to_check = getattr(parent_obj, attr_name)
+        except AttributeError:
+            fatal(
+                f"Internal error: Validator cannot find attribute '{attr_name}' on object {parent_obj}."
+            )
+
+        # 2. Build the full context name
+        if parent_context is None:
+            # This is a top-level call
+            parent_name = getattr(parent_obj, "name", "unknown_object")
+            context_name = f"{parent_name}.{attr_name}"
+        else:
+            # This is a nested call
+            context_name = f"{parent_context}.{attr_name}"
+
+        # 3. Check for schema
+        if not self.__schema__:
+            raise NotImplementedError(
+                f"Validator class '{self.__class__.__name__}' has no __schema__ defined."
+            )
+
+        user_keys = set(box_to_check.keys())
+        valid_keys = self.__schema__
+
+        # 4. Check for unknown keys (typos)
+        unknown_keys = user_keys - valid_keys
+
+        if unknown_keys:
+            key_str = f"'{list(unknown_keys)[0]}'"
+            matches = get_close_matches(list(unknown_keys)[0], valid_keys)
+
+            msg = f"Unknown parameter {key_str} found in '{context_name}'."
+            if matches:
+                msg += f" Did you mean '{matches[0]}'?"
+            msg += f"\nValid parameters are: {sorted(list(valid_keys))}"
+            fatal(msg)
+
+        return context_name  # Return context for potential chaining
 
 
 process_cls(GateObject)

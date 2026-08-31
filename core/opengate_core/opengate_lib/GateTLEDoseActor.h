@@ -10,16 +10,13 @@
 
 #include "GateDoseActor.h"
 #include "GateMaterialMuHandler.h"
-
-#include "G4Cache.hh"
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
-#include "G4VPrimitiveScorer.hh"
-
+#include <G4Cache.hh>
+#include <G4EmCalculator.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
+/* Dose actor with Track Length Estimator (TLE) scoring support for gammas. */
 class GateTLEDoseActor : public GateDoseActor {
 
 public:
@@ -27,25 +24,45 @@ public:
   explicit GateTLEDoseActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
+  void InitializeCpp() override;
 
   void BeginOfEventAction(const G4Event *event) override;
 
   void PreUserTrackingAction(const G4Track *track) override;
 
+  void SetTLETrackInformationOnSecondaries(G4Step *step, G4bool info,
+                                           G4int nbSec);
+
+  void InitializeCSDAForNewGamma(G4bool isFirstStep, G4Step *step);
+
+  G4double FindEkinMaxForTLE();
+
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
+  void ScoreTLEDepositStep(G4Step *step);
 
   // Kill the gamma if below this energy
   double fEnergyMin;
-
-  // Conventional DoseActor if above this energy
   double fEnergyMax;
 
+  // Conventional DoseActor if above this energy
+  double fTLEThreshold;
+
+  std::string fDatabase;
+
+  G4EmCalculator *fEmCalc = nullptr;
+  G4String fStrTLEThresholdType;
+  G4int fTLEThresholdType;
+  int fLegacyTLETrackDataSlotID{-1};
+
   struct threadLocalT {
-    // Bool if current track is a TLE gamma or not
-    bool fIsTLEGamma;
-    bool fIsTLESecondary;
-    std::map<G4int, G4int> fSecNbWhichDeposit;
+    bool fIsTLEGamma = false;
+    bool fIsTLESecondary = false;
+    bool fIsFirstStep = false;
+    G4double fCsda = 0;
+    G4String fPreviousMatName;
+    G4double fPreviousEnergy;
+    std::map<G4int, std::vector<G4bool>> fSecWhichDeposit;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

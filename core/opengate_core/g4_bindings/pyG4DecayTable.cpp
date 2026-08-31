@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4DecayTable.hh"
+#include <G4DecayTable.hh>
 
 void init_G4DecayTable(py::module &m) {
   py::class_<G4DecayTable>(m, "G4DecayTable")

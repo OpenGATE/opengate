@@ -5,12 +5,11 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateVolumeVoxelizer.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "GateVolumeVoxelizer.h"
 
 void init_GateVolumeVoxelizer(py::module &m) {
 

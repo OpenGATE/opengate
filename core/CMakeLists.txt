@@ -5,7 +5,7 @@
 #   See LICENSE.md for further details
 # --------------------------------------------------
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5.0)
 
 # remove warning about project version
 cmake_policy(SET CMP0048 NEW)
@@ -38,13 +38,23 @@ IF (Geant4_qt_FOUND OR Geant4_vis_opengl_x11_FOUND)
     message(STATUS "OPENGATE - Geant4 is compiled with QT")
     find_package(OpenGL QUIET)
     include_directories(${OPENGL_INCLUDE_DIR})
-    add_definitions(-DUSE_USE_VISU=1)
+    add_definitions(-DUSE_VISU=1)
 ELSE ()
     message(STATUS "OPENGATE without Geant4 visualisation")
-    add_definitions(-DUSE_USE_VISU=0)
+    add_definitions(-DUSE_VISU=0)
 ENDIF ()
 
+# Force CMake to use Python passed from setup.py
+set(Python_EXECUTABLE "${Python_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+set(Python3_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+set(Python_ROOT_DIR "${Python_ROOT_DIR}" CACHE PATH "" FORCE)
+set(Python3_ROOT_DIR "${Python3_ROOT_DIR}" CACHE PATH "" FORCE)
+
+message(STATUS "Python_EXECUTABLE = ${Python_EXECUTABLE}")
+message(STATUS "Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
+
 # Need pybind11
+set(PYBIND11_FINDPYTHON "NEW")
 add_subdirectory(external/pybind11)
 #find_package(pybind11 REQUIRED)
 #message(STATUS "OPENGATE - pybind11 version = ${pybind11_VERSION}")
@@ -62,24 +72,13 @@ endif (ITK_FOUND)
 # fmt
 add_subdirectory(external/fmt EXCLUDE_FROM_ALL)
 
-# root ? NOT root for the moment (use G4GenericAnalysisManager)
-#IF (FALSE)
-#find_package(ROOT)
-#if (ROOT_FOUND)
-#    include_directories(${ROOT_INCLUDE_DIRS})
-#    set(LINK_DIRECTORIES ${ROOT_LIBRARY_DIR})
-#    message(STATUS "OPENGATE - ROOT version = ${ROOT_VERSION} in ${ROOT_INCLUDE_DIRS} ${ROOT_LIBRARY_DIR}")
-#else (ROOT_FOUND)
-#    MESSAGE("Root not found! Please install Root and make it available in PATH")
-#ENDIF()
-#ENDIF()
-
-
 # Create the geant4 python module
 file(GLOB all_SRCS
         "${PROJECT_SOURCE_DIR}/opengate_core/g4_bindings/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/digitizer/*.cpp"
+        "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/biasing/*.cpp"
+        "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/filters/*.cpp"
         )
 pybind11_add_module(opengate_core
         #NO_EXTRAS
@@ -107,7 +106,10 @@ if (WIN32)
 endif ()
 
 # additional utilities
-target_include_directories(opengate_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(opengate_core PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/
+        ${CMAKE_CURRENT_SOURCE_DIR}/opengate_core/opengate_lib
+        )
 
 #set(CMAKE_VERBOSE_MAKEFILE on)
 target_link_libraries(opengate_core PRIVATE pybind11::module ${Geant4_LIBRARIES} Threads::Threads ${ITK_LIBRARIES} fmt::fmt-header-only)

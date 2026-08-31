@@ -5,6 +5,6 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateSPSVoxelsPosDistribution.h"
+#include "GateSPSPosDistribution.h"
 
 G4ThreeVector GateSPSPosDistribution::VGenerateOne() { return GenerateOne(); }

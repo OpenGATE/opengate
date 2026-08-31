@@ -1949,9 +1949,10 @@ public:
 
   size_t current() {
     std::lock_guard<std::mutex> lock{mutex_};
-    return (std::min)(
-        progress_,
-        size_t(get_value<details::ProgressBarOption::max_progress>()));
+    return (
+        std::min)(progress_,
+                  size_t(
+                      get_value<details::ProgressBarOption::max_progress>()));
   }
 
   bool is_completed() const {
@@ -2285,9 +2286,10 @@ public:
 
   size_t current() {
     std::lock_guard<std::mutex> lock{mutex_};
-    return (std::min)(
-        static_cast<size_t>(progress_),
-        size_t(get_value<details::ProgressBarOption::max_progress>()));
+    return (
+        std::min)(static_cast<size_t>(progress_),
+                  size_t(
+                      get_value<details::ProgressBarOption::max_progress>()));
   }
 
   bool is_completed() const {
@@ -3082,9 +3084,10 @@ public:
 
   size_t current() {
     std::lock_guard<std::mutex> lock{mutex_};
-    return (std::min)(
-        progress_,
-        size_t(get_value<details::ProgressBarOption::max_progress>()));
+    return (
+        std::min)(progress_,
+                  size_t(
+                      get_value<details::ProgressBarOption::max_progress>()));
   }
 
   bool is_completed() const {

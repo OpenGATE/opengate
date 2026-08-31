@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateVDigitizerWithOutputActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateVDigitizerWithOutputActor.h"
 
 void init_GateVDigitizerWithOutputActor(py::module &m) {
 

@@ -13,21 +13,27 @@ script-files = [
 version = { file = "VERSION" }
 readme = { file = "README.md", content-type = "text/markdown"}
 
-[tool.setuptools.packages]
-find = { }  # Scanning implicit namespaces is active by default
+#[tool.setuptools.packages]
+#find = { }  # Scanning implicit namespaces is active by default
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["opengate*"]
+namespaces = false
 
 [project]
 name = "opengate"
 dynamic = ["version", "readme", "dependencies"]
 authors = [{ name = "Opengate collaboration", email = "david.sarrut@creatis.insa-lyon.fr" }]
 description = "Simulation for Medical Physics"
-license = { file = "LICENSE.md" }
+license-files = [ "LICENSE.md" ]
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Operating System :: OS Independent",
 ]
@@ -40,8 +46,16 @@ novis = ["opengate-core-novis"]
 opengate_tests = "opengate.bin.opengate_tests:go"
 opengate_info = "opengate.bin.opengate_info:go"
 opengate_visu = "opengate.bin.opengate_visu:go"
+opengate_download_data = "opengate.bin.opengate_download_data:go"
+opengate_plot_volume_info = "opengate.bin.opengate_plot_volume_info:go"
 opengate_photon_attenuation_mixture = "opengate.bin.opengate_photon_attenuation_mixture:go"
 opengate_photon_attenuation_image = "opengate.bin.opengate_photon_attenuation_image:go"
+opengate_jobs_split = "opengate.bin.opengate_jobs_split:go"
+opengate_jobs_run = "opengate.bin.opengate_jobs_run:go"
+opengate_jobs_status = "opengate.bin.opengate_jobs_status:go"
+opengate_jobs_merge = "opengate.bin.opengate_jobs_merge:go"
+opengate_jobs_clean = "opengate.bin.opengate_jobs_clean:go"
+opengate_job_runner = "opengate.bin.opengate_job_runner:go"
 
 dose_rate = "opengate.bin.dose_rate:go"
 split_spect_projections = "opengate.bin.split_spect_projections:go"
@@ -52,3 +66,5 @@ phid_gammas = "opengate.bin.phid_gammas:go"
 phid_tac = "opengate.bin.phid_tac:go"
 phid_atomic_relaxation = "opengate.bin.phid_atomic_relaxation:go"
 phid_isomeric_transition = "opengate.bin.phid_isomeric_transition:go"
+
+protonct = "opengate.bin.protonct:go"

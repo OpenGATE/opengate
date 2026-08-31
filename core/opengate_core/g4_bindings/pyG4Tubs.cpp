@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Tubs.hh"
+#include <G4Tubs.hh>
 
 void init_G4Tubs(py::module &m) {
   py::class_<G4Tubs, G4VSolid>(m, "G4Tubs")

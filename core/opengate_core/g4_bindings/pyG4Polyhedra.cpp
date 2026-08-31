@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4Polyhedra.hh"
+#include <G4Polyhedra.hh>
 
 /*
  This class is needed to convert vector (from python) to double*

@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4PixeCrossSectionHandler.hh"
+#include <G4PixeCrossSectionHandler.hh>
 
 void init_G4PixeCrossSectionHandler(py::module &m) {
   py::class_<G4PixeCrossSectionHandler>(m, "G4PixeCrossSectionHandler")

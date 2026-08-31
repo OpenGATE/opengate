@@ -11,7 +11,7 @@
 
 namespace py = pybind11;
 
-#include "G4DataVector.hh"
+#include <G4DataVector.hh>
 
 void init_G4DataVector(py::module &m) {
   py::class_<G4DataVector>(m, "G4DataVector").def(py::init<>());

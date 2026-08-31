@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateDigitizerAdderActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateDigitizerAdderActor.h"
 
 void init_GateHitsAdderActor(py::module &m) {
 

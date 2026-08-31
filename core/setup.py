@@ -1,12 +1,13 @@
-import os
-import re
-import sys
-import platform
-import subprocess
 import json
-import setuptools
+import os
+import platform
+import re
+import subprocess
+import sys
 import sysconfig
 from pathlib import Path
+
+import setuptools
 
 
 def warning(s):
@@ -29,9 +30,10 @@ def get_base_dir() -> Path:
 with open("../VERSION", "r") as fh:
     version = fh.read()[:-1]
 
+from distutils.version import LooseVersion
+
 from setuptools import Extension, find_packages
 from setuptools.command.build_ext import build_ext
-from distutils.version import LooseVersion
 
 
 class CMakeExtension(Extension):
@@ -69,12 +71,18 @@ class CMakeBuild(build_ext):
 
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
-            "-DPYTHON_EXECUTABLE=" + sys.executable,
+            f"-DPython_EXECUTABLE={sys.executable}",
+            f"-DPython3_EXECUTABLE={sys.executable}",
+            "-DPython_FIND_STRATEGY=LOCATION",  # avoid picking newer Python
+            "-DPython_FIND_REGISTRY=NEVER",  # Linux safe default
+            f"-DPython_ROOT_DIR={sys.exec_prefix}",
+            f"-DPython3_ROOT_DIR={sys.exec_prefix}",
         ]
 
-        # cfg = 'Debug' if self.debug else 'Release'
+        # cfg = "Debug" if self.debug else 'Release'
         cfg = "Release"
         build_args = ["--config", cfg]
+        env = os.environ.copy()
 
         # Pile all .so in one place and use $ORIGIN as RPATH
         cmake_args += ["-DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE"]
@@ -87,16 +95,19 @@ class CMakeBuild(build_ext):
             cmake_args += [
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
             ]
-            # cmake_args += ['-G "CodeBlocks - NMake Makefiles"']
-            if sys.maxsize > 2**32:
+            cmake_generator = env.get("CMAKE_GENERATOR", "")
+            # Multi-config Visual Studio generators need an explicit platform and
+            # use MSBuild-style parallelism. Single-config generators such as
+            # Ninja should not receive Visual Studio-specific flags.
+            if sys.maxsize > 2**32 and "Visual Studio" in cmake_generator:
                 cmake_args += ["-A", "x64"]
-            build_args += ["--", "/m"]
+                build_args += ["--", "/m"]
+            else:
+                build_args += ["--parallel", "4"]
         else:
             cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
             build_args += ["--", "-j4"]
-
-        env = os.environ.copy()
 
         env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
             env.get("CXXFLAGS", ""), self.distribution.get_version()
@@ -156,11 +167,10 @@ if platform.system() == "Darwin":
     package_data = {
         "opengate_core": ["plugins/platforms/*.dylib"]
         + ["plugins/imageformats/*.dylib"]
-        + ["plugins/miniconda/libQt5Svg.5.9.7.dylib"]
     }
     # package_data = {}
 else:
-    package_data = {"opengate_core": ["plugins/*/*.so"]}
+    package_data = {"opengate_core": ["plugins/*/*.so"] + ["plugins/*.so"]}
 
 setuptools.setup(
     name="opengate-core",
@@ -179,10 +189,9 @@ setuptools.setup(
     zip_safe=False,
     python_requires=">=3.9",
     include_package_data=True,
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
-    ),
-    install_requires=["wget", "colored>1.5", "requests"],
+    ],
+    install_requires=["colored>1.5", "requests"],
 )

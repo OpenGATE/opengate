@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4ParallelWorldPhysics.hh"
-#include "G4VPhysicsConstructor.hh"
+#include <G4ParallelWorldPhysics.hh>
+#include <G4VPhysicsConstructor.hh>
 
 void init_G4ParallelWorldPhysics(py::module &m) {
   py::class_<G4ParallelWorldPhysics, G4VPhysicsConstructor,

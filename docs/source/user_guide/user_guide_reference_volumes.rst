@@ -6,6 +6,8 @@ Details: Volumes
 This section describes the different volumes available in GATE 10 and
 their parameters.
 
+.. _common_parameters:
+
 Common parameters
 -----------------
 
@@ -21,7 +23,7 @@ Common parameters are:
    to the reference frame of the mother volume and therefore moves with
    the mother volume.
 -  ``material``: the name of the material that composes the volume,
-   e.g. ``G4_WATER``. See section `Materials <#materials>`__
+   e.g. ``G4_WATER``. See section :ref:`Materials <materials_section>`
 -  ``translation``: list of 3 numerical values,
    e.g. ``[0, 2*cm, 3*mm]``. It defines the translation of the volume
    with respect to the reference frame of the mother volume. Note: the
@@ -32,6 +34,9 @@ Common parameters are:
    ``scipy.spatial.transform.Rotation`` to manage the rotation matrix.
 -  ``color``: a list of 4 values (Red, Green, Blue, Opacity) between 0
    and 1, e.g. ``[1, 0, 0, 0.5]``. Only used when visualization is on.
+- ``style``: forced visualization style for this volume. Can be ``'solid'``,
+   or ``'wireframe'``. Otherwise or not set, the volume will be displayed
+   according to global visualization style. Only available with qt.
 
 Image volume
 ------------
@@ -81,7 +86,7 @@ In the example above, the material “Lung” will be assigned to every
 voxel with a value between -900 and -100 (not including -100). Voxels
 whose value does not fall into any of the intervals are considered to
 contain the volume’s default material,
-i.e. ``patient.material = "G4_AIR"`` in the example above. If a path is
+i.e. ``patient.material = "G4_AIR"`` in the example above. If a path is
 provided as ``dump_label_image`` parameter of the image volume, an image
 will be written to the provided path containing material labels. Label 0
 stands for voxels to which the default material was assigned, and labels
@@ -89,13 +94,13 @@ greater than 1 represent all other materials, in ascending order of the
 lower interval bounds provided in ``voxel_materials``. In the example
 above, voxels with label 3 correspond to “G4_ADIPOSE_TISSUE_ICRP”,
 voxels with label 4 correspond to “G4_TISSUE_SOFT_ICRP”, and so forth.
-See test ``test009`` as an example simulation using an Image volume.
+See test `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry>`_ as an example simulation using an Image volume.
 
 The frame of reference of an Image is linked to the bounding box and
-treated like other Geant4 volumes, i.e. by default, the center of the
+treated like other Geant4 volumes, i.e. by default, the center of the
 image box is positioned at the origin of the mother volume’s frame of
 reference. Important: Currently, the origin provided by the input image
-(e.g. in the DICOM or mhd file) is ignored. If you want to place the
+(e.g. in the DICOM or mhd file) is ignored. If you want to place the
 Image volume according to the origin and rotation provided by the input
 image, you need to extract that information and set it via the
 ``translation`` and ``rotation`` parameters of the image volume. A
@@ -157,25 +162,24 @@ Reference
 .. autoclass:: opengate.geometry.volumes.TubsVolume
 
 
-Tesselated (STL) volumes
-------------------------
+Tesselated (mesh) volumes
+-------------------------
 
 .. _description-tesselated-volume:
 
 Description
 ~~~~~~~~~~~
 
-It is possible to create a tesselated volume shape based on an Standard
-Triangle Language (STL) data file. Such a file contains a mesh of
-triangles for one object. It is a typical output format of Computer
-Aided Design (CAD) software. To create such a volume add a volume of
-type “Tesselated”. Please keep in mind, that no material information is
-provided, it has to be specified by the user. A Tesselated volume
-inherits the the same basic options as other solids described above such
-as translation or rotation. A basic example how to import an STL file
-into a geometry “MyTesselatedVolume” and assign the material G4_WATER to
-it can be found below. In order to verify the correct generation of the
-solid, one could look at the volume.
+It is possible to create a tessellated volume shape based on a mesh file:
+STL, OBJ, OFF, CTK, … full list available at https://github.com/nschloe/meshio.
+
+To create such a volume add a volume of type “Tesselated”. Please keep in mind,
+that no material information is provided, it has to be specified by the user. A
+Tesselated volume inherits the same basic options as other solids described
+above such as translation or rotation. A basic example how to import a Standard
+Triangle Language (STL) file into a geometry “MyTesselatedVolume” and assign
+the material G4_WATER to it can be found below. In order to verify the correct
+generation of the solid, one could look at the volume.
 
 .. code:: python
 
@@ -185,6 +189,7 @@ solid, one could look at the volume.
    tes.material = "G4_WATER"
    tes.mother = "world"  # by default
    tes.file_name = "myTesselatedVolume.stl"
+   tes.origin_at_cog = True  # by default
    #to read the volume of the generated solid
    print("volume: ",sim.volume_manager.get_volume(
            "MyTesselatedVolume"
@@ -192,7 +197,7 @@ solid, one could look at the volume.
    #an alternative way read the volume of the generated solid
    print("same volume: ",tes.solid_info.cubic_volume)
 
-See test test067_stl_volume for example.
+See test test067_tesselated_volume <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test067_tesselated_volume.py>`_ for example.
 
 .. _reference-1:
 
@@ -356,6 +361,7 @@ Reference
 
 .. autoclass:: opengate.geometry.volumes.RepeatParametrisedVolume
 
+.. _boolean_vol:
 
 Boolean volumes
 ---------------
@@ -388,7 +394,7 @@ combine compatible volumes. For example:
    t.dz = 15 * cm
 
    combined_b_s = gate.geometry.volumes.unite_volumes(b, s, translation=[0, 1 * cm, 5 * cm])
-   final_vol = gate.geometry.volumes.subtract(combined_b_s, t, rotation=Rotation.from_euler("x", 3, degrees=True).as_matrix())
+   final_vol = gate.geometry.volumes.subtract_volumes(combined_b_s, t, rotation=Rotation.from_euler("x", 3, degrees=True).as_matrix())
 
    final_vol.translation = [5 * cm, 5 * cm, 5 * cm]
    final_vol.mother = "world"
@@ -400,7 +406,7 @@ second shape is translated and rotated, respectively, with respect to
 the first shape prior to the boolean operation. The absolute placement
 in space in the simulation is irrelevant for this. On the other hand,
 the line ``final_vol.translation = [5 * cm, 5 * cm, 5 * cm]`` simply
-refers to the `common parameter <#Common%20parameters>`__ which
+refers to the :ref:`common parameter <common_parameters>` which
 specifies the placement of the final volume in space with respect to its
 mother, in this case the world volume.
 
@@ -414,7 +420,7 @@ message when trying to apply booelan operations to incompatible volumes.
 
 Boolean operations are a great tool to build complex shapes. The
 phantoms in ``opengate.contrib.phantoms`` are good examples. Also have a
-look at ``test016``. Be aware, however, that the Geant4 user guide warns
+look at `test016 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test016_bool_volumes.py>`_ . Be aware, however, that the Geant4 user guide warns
 that very extensive use of boolean operations can slow down particle
 tracking speed.
 

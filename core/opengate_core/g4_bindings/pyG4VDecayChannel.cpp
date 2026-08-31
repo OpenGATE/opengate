@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4ParticleDefinition.hh"
-#include "G4VDecayChannel.hh"
+#include <G4ParticleDefinition.hh>
+#include <G4VDecayChannel.hh>
 
 void init_G4VDecayChannel(py::module &m) {
   py::class_<G4VDecayChannel>(m, "G4VDecayChannel")

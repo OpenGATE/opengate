@@ -6,10 +6,11 @@
    -------------------------------------------------- */
 
 #include "GateDigiCollection.h"
-#include "G4Step.hh"
+#include "../GateHelpers.h"
 #include "GateDigiAttributeManager.h"
 #include "GateDigiCollectionIterator.h"
 #include "GateDigiCollectionsRootManager.h"
+#include <G4Step.hh>
 
 GateDigiCollection::GateDigiCollection(const std::string &collName)
     : G4VHitsCollection("", collName), fDigiCollectionName(collName) {
@@ -18,25 +19,42 @@ GateDigiCollection::GateDigiCollection(const std::string &collName)
   fCurrentDigiAttributeId = 0;
   SetFilenameAndInitRoot("");
   threadLocalData.Get().fBeginOfEventIndex = 0;
+  fWriteToRootFlag = false;
 }
 
-GateDigiCollection::~GateDigiCollection() {}
+GateDigiCollection::~GateDigiCollection() = default;
 
 size_t GateDigiCollection::GetBeginOfEventIndex() const {
+  if (fSharedStorageMode) {
+    return fSharedBeginOfEventIndex;
+  }
   return threadLocalData.Get().fBeginOfEventIndex;
 }
 
-void GateDigiCollection::SetBeginOfEventIndex(size_t index) {
-  threadLocalData.Get().fBeginOfEventIndex = index;
+void GateDigiCollection::SetBeginOfEventIndex(size_t index) const {
+  if (fSharedStorageMode) {
+    fSharedBeginOfEventIndex = index;
+  } else {
+    threadLocalData.Get().fBeginOfEventIndex = index;
+  }
 }
 
-void GateDigiCollection::SetBeginOfEventIndex() {
+void GateDigiCollection::SetBeginOfEventIndex() const {
   SetBeginOfEventIndex(GetSize());
 }
 
-void GateDigiCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
+void GateDigiCollection::SetSharedStorage(const bool b) {
+  fSharedStorageMode = b;
+  fSharedBeginOfEventIndex = 0;
+  for (auto *att : fDigiAttributes)
+    att->SetSharedStorage(b);
+}
 
-void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
+void GateDigiCollection::SetWriteToRootFlag(const bool f) {
+  fWriteToRootFlag = f;
+}
+
+void GateDigiCollection::SetFilenameAndInitRoot(const std::string &filename) {
   fFilename = filename;
   if (fFilename.empty())
     SetWriteToRootFlag(false);
@@ -55,7 +73,7 @@ void GateDigiCollection::RootStartInitialization() {
   if (!fWriteToRootFlag)
     return;
   auto *am = GateDigiCollectionsRootManager::GetInstance();
-  auto id = am->DeclareNewTuple(fDigiCollectionName);
+  const auto id = am->DeclareNewTuple(fDigiCollectionName);
   fTupleId = id;
 }
 
@@ -79,7 +97,7 @@ void GateDigiCollection::RootInitializeTupleForWorker() {
 
 void GateDigiCollection::FillToRootIfNeeded(bool clear) {
   /*
-      Policy :
+      Policy:
       - can write to root or not according to the flag
       - can clear every N calls
    */
@@ -106,11 +124,11 @@ void GateDigiCollection::FillToRoot() {
     }
     am->AddNtupleRow(fTupleId);
   }
-  // required ! Cannot fill without clear
+  // required! Cannot fill without clearing
   Clear();
 }
 
-void GateDigiCollection::Clear() {
+void GateDigiCollection::Clear() const {
   for (auto *att : fDigiAttributes) {
     att->Clear();
   }
@@ -120,7 +138,7 @@ void GateDigiCollection::Clear() {
 void GateDigiCollection::Write() const {
   if (!fWriteToRootFlag)
     return;
-  auto *am = GateDigiCollectionsRootManager::GetInstance();
+  const auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->Write(fTupleId);
 }
 
@@ -144,7 +162,7 @@ void GateDigiCollection::InitDigiAttributeFromName(const std::string &name) {
 }
 
 void GateDigiCollection::InitDigiAttribute(GateVDigiAttribute *att) {
-  auto name = att->GetDigiAttributeName();
+  const auto name = att->GetDigiAttributeName();
   if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name
@@ -219,17 +237,52 @@ std::set<std::string> GateDigiCollection::GetDigiAttributeNames() const {
   return list;
 }
 
+std::map<std::string, std::string>
+GateDigiCollection::GetRootBranchTypes() const {
+  std::map<std::string, std::string> branchTypes;
+  for (auto *att : fDigiAttributes) {
+    const auto name = att->GetDigiAttributeName();
+    const auto type = att->GetDigiAttributeType();
+    if (type == 'D') {
+      branchTypes[name] = "float64";
+    } else if (type == 'S' || type == 'U') {
+      branchTypes[name] = "string";
+    } else if (type == 'I') {
+      branchTypes[name] = "int32";
+    } else if (type == 'L') {
+      branchTypes[name] = "int64";
+    } else if (type == '3') {
+      branchTypes[name + "_X"] = "float64";
+      branchTypes[name + "_Y"] = "float64";
+      branchTypes[name + "_Z"] = "float64";
+    } else {
+      std::ostringstream oss;
+      oss << "Unsupported digi attribute type '" << type
+          << "' while building ROOT branch metadata for attribute '" << name
+          << "'.";
+      Fatal(oss.str());
+    }
+  }
+  return branchTypes;
+}
+
 GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
-  return {this, 0};
+  return GateDigiCollectionIterator(this, 0);
 }
 
 std::string GateDigiCollection::DumpLastDigi() const {
   if (GetSize() == 0)
     return "";
-  std::ostringstream oss;
   auto n = GetSize() - 1;
+  return DumpDigi(static_cast<int>(n));
+}
+
+std::string GateDigiCollection::DumpDigi(int i) const {
+  if (GetSize() == 0)
+    return "";
+  std::ostringstream oss;
   for (auto *att : fDigiAttributes) {
-    oss << att->GetDigiAttributeName() << " = " << att->Dump(n) << "  ";
+    oss << att->GetDigiAttributeName() << " = " << att->Dump(i) << "  ";
   }
   return oss.str();
 }

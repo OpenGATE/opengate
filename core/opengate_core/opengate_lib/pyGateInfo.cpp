@@ -5,11 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateInfo.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
-
-#include "GateInfo.h"
 
 void init_GateInfo(py::module &m) {
   py::class_<GateInfo>(m, "GateInfo")

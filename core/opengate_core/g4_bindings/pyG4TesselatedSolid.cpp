@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4TessellatedSolid.hh"
+#include <G4TessellatedSolid.hh>
 
 void init_G4TessellatedSolid(py::module &m) {
   py::class_<G4TessellatedSolid, G4VSolid,

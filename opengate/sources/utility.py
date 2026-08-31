@@ -32,7 +32,7 @@ icrp107_emissions = [
     "auger",
     "IE",
     "alpha recoil",
-    "anihilation",
+    "annihilation",
     "fission",
     "betaD",
     "b-spectra",  # beta spectras, both beta+ and beta-
@@ -56,7 +56,7 @@ def get_spectrum(
     spectrum_type : str, optional
         The type of spectrum to retrieve. Default is "gamma". Must be one of
         "gamma", "beta+", "beta-", or "e+". icrp107 allows also one of
-        "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra".
+        "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra".
         In the case of beta spectras, make use of the
         :py:func:`set_source_energy_spectrum` function instead.
 
@@ -98,7 +98,7 @@ def set_source_energy_spectrum(source, rad: str, database=DEFAULT_DATABASE) -> N
     rad : str
         The name of the radionuclide to use
     database : str, optional
-        The database to use. Default is "icrp107".
+        The database to use. The default is "icrp107".
 
     Notes
     -----
@@ -250,7 +250,7 @@ def __get_icrp107_spectrum(rad_name: str, spectrum_type=DEFAULT_SPECTRUM_TYPE) -
         The name of the radionuclide in Gate format, e.g. "Tc99m", "Lu177"
 
     spectrum_type : str
-        The type of spectrum to retrieve. Must be one of "gamma", "beta-", "beta+", "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra"
+        The type of spectrum to retrieve. Must be one of "gamma", "beta-", "beta+", "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra"
 
     Returns
     -------
@@ -320,3 +320,21 @@ def __get_rad_beta_spectrum(rad: str):
     data.energies = np.array(energies)
 
     return data
+
+
+def _setter_hook_generic_source_particle(self, particle):
+    # The particle parameter must be a str
+    if not isinstance(particle, str):
+        fatal(f"the .particle user info must be a str, while it is {type(str)}")
+    # if it does not start with ion, we consider this is a simple particle (gamma, e+, etc.)
+    if not particle.startswith("ion"):
+        return particle
+    # if start with ion, it is like 'ion 9 18' with Z A E
+    words = particle.split(" ")
+    if len(words) > 1:
+        self.ion.Z = int(words[1])
+    if len(words) > 2:
+        self.ion.A = int(words[2])
+    if len(words) > 3:
+        self.ion.E = int(words[3])
+    return particle

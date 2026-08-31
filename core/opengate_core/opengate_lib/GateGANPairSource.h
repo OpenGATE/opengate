@@ -9,8 +9,6 @@
 #define GateGANPairSource_h
 
 #include "GateGANSource.h"
-#include "GateSPSVoxelsPosDistribution.h"
-#include "GateSingleParticleSource.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

@@ -11,9 +11,9 @@
 
 namespace py = pybind11;
 
-#include "G4PhysicalVolumeStore.hh"
-#include "G4String.hh"
-#include "G4VPhysicalVolume.hh"
+#include <G4PhysicalVolumeStore.hh>
+#include <G4String.hh>
+#include <G4VPhysicalVolume.hh>
 
 void init_G4PhysicalVolumeStore(py::module &m) {
   using pybind11::operator""_a;

@@ -5,11 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateMaterialMuHandler.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
-
-#include "GateMaterialMuHandler.h"
 
 void init_GateMaterialMuHandler(py::module &m) {
   py::class_<GateMaterialMuHandler,

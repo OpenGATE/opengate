@@ -8,10 +8,9 @@
 #ifndef GateRunAction_h
 #define GateRunAction_h
 
-#include "G4Event.hh"
-#include "G4UserRunAction.hh"
 #include "GateSourceManager.h"
 #include "GateVActor.h"
+#include <G4UserRunAction.hh>
 
 class GateRunAction : public G4UserRunAction {
 
@@ -25,6 +24,8 @@ public:
   virtual void BeginOfRunAction(const G4Run *run);
 
   virtual void EndOfRunAction(const G4Run *run);
+
+  bool fChemistryIsActive;
 
 protected:
   GateSourceManager *fSourceManager;

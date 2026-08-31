@@ -8,8 +8,8 @@
 
 namespace py = pybind11;
 
-#include "G4UserSpecialCuts.hh"
-#include "G4VProcess.hh"
+#include <G4UserSpecialCuts.hh>
+#include <G4VProcess.hh>
 
 void init_G4UserSpecialCuts(py::module &m) {
 

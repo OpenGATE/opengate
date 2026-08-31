@@ -53,6 +53,13 @@ Alternatively, you can specify the fixed number of primary particles to be gener
 
 Note, however, that certain functionality regarding simulations with multiple runs is currently not supported when sources specify the fixed number of particles as above.
 
+There is an important Geant4 limitation behind the scenes: one ``BeamOn()``
+call can only handle up to the maximum value of Geant4's ``G4int`` type
+(typically ``2147483647``). In OpenGATE, this limit applies per run timing
+interval, because each interval is executed as a separate Geant4 run. If a run
+would generate more primaries than this limit, OpenGATE stops that run
+cleanly and emits a warning instead of letting the simulation crash.
+
 
 How to position the source in space
 ===================================
@@ -65,3 +72,7 @@ Geant4 creates primary particles *ex nihilo*, i.e. out of nothing anywhere in th
     source2.attached_to = my_gantry
 
 Whenver the volume ``my_gantry`` moves, the source will move with it.
+
+If you want the source itself to change from run to run, for example by using a
+different activity image in a ``VoxelSource``, see
+:doc:`user_guide_dynamic_parametrisations`.

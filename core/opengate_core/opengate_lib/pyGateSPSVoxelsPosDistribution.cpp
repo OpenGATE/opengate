@@ -5,13 +5,12 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateSPSPosDistribution.h"
+#include "GateSPSVoxelsPosDistribution.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-#include "GateSPSPosDistribution.h"
-#include "GateSPSVoxelsPosDistribution.h"
 
 void init_GateSPSVoxelsPosDistribution(py::module &m) {
 
@@ -21,8 +20,6 @@ void init_GateSPSVoxelsPosDistribution(py::module &m) {
       .def("SetCumulativeDistributionFunction",
            &GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
       .def("VGenerateOne", &GateSPSVoxelsPosDistribution::VGenerateOne)
-      .def("VGenerateOneDebug",
-           &GateSPSVoxelsPosDistribution::VGenerateOneDebug)
       .def_readwrite("cpp_edep_image",
                      &GateSPSVoxelsPosDistribution::cpp_image);
 }

@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4UnitsTable.hh"
+#include <G4UnitsTable.hh>
 
 void init_G4UnitsTable(py::module &m) {
 

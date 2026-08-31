@@ -1,0 +1,16 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#include "GateVBiasOptrActor.h"
+#include <pybind11/pybind11.h>
+
+void init_GateVBiasOptrActor(py::module &m) {
+
+  py::class_<GateVBiasOptrActor, GateVActor>(m, "GateVBiasOptrActor")
+      .def("ConfigureForWorker", &GateVBiasOptrActor::ConfigureForWorker)
+      .def("ClearOperators", &GateVBiasOptrActor::ClearOperators);
+}

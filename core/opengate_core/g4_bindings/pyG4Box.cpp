@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4Box.hh"
+#include <G4Box.hh>
 
 void init_G4Box(py::module &m) {
   py::class_<G4Box, G4VSolid, std::unique_ptr<G4Box, py::nodelete>>(m, "G4Box")

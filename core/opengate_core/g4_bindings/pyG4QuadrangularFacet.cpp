@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4QuadrangularFacet.hh"
+#include <G4QuadrangularFacet.hh>
 
 void init_G4QuadrangularFacet(py::module &m) {
   // py::class_<G4QuadrangularFacet, G4VFacet>(m, "G4QuadrangularFacet")

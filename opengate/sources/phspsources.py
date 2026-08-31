@@ -23,11 +23,23 @@ class PhaseSpaceSourceGenerator:
         self.root_file = None
         self.num_entries = 0
         self.cycle_count = 0
+        self.cycle_changed_flag = False
         # used during generation
         self.batch = None
         self.points = None
         self.current_index = 0
         self.w = None
+        # need to avoid garbage collection
+        self.pos_x = None
+        self.pos_y = None
+        self.pos_z = None
+        self.dir_x = None
+        self.dir_y = None
+        self.dir_z = None
+        self.energy = None
+        self.pdg = None
+        self.name = None
+        self.weight = None
 
     def initialize(self, phsp_source):
         self.phsp_source = phsp_source
@@ -102,141 +114,143 @@ class PhaseSpaceSourceGenerator:
             )
         return n
 
-    def generate(self, source, pid):
+    def generate(self, g4_source, pid):
         """
-        Main function that will be called from the cpp side every time a batch
-        of particles should be created.
-        Once created here, the particles are copied to cpp.
-        (Yes maybe the copy could be avoided, but I did not manage to do it)
+        Main function called from C++ to generate a batch of particles.
         """
-
-        # read data from root tree
-        current_batch_size = source.batch_size
-        if self.current_index + source.batch_size > self.num_entries:
-            current_batch_size = self.num_entries - self.current_index
-
-        if source.verbose_batch:
-            print(
-                f"Thread {g4.G4GetThreadId()} "
-                f"generate {current_batch_size} starting {self.current_index} "
-                f" (phsp as n = {self.num_entries} entries)"
-            )
-
-        # read a batch of particles in the phsp (keep the reference)
-        self.batch = self.root_file.arrays(
-            entry_start=self.current_index,
-            entry_stop=self.current_index + current_batch_size,
-            library="numpy",
-        )
-        batch = self.batch
-
-        # ensure encoding is float32
-        for key in batch:
-            # Convert to float32 if the array contains floating-point values
-            if np.issubdtype(batch[key].dtype, np.floating):
-                batch[key] = batch[key].astype(np.float32)
-            else:
-                if np.issubdtype(batch[key].dtype, np.integer):
-                    batch[key] = batch[key].astype(np.int32)
-
-        # update index if end of file
-        self.current_index += current_batch_size
+        # --- 1. Cycle Management ---
         if self.current_index >= self.num_entries:
-            self.cycle_count += 1
+            self.current_index = 0
+
+        if self.cycle_changed_flag:
             warning(
                 f"End of the phase-space {self.num_entries} elements, "
                 f"restart from beginning. Cycle count = {self.cycle_count}"
             )
+            self.cycle_changed_flag = False
+
+        # --- 2. Calculate Batch Size ---
+        requested_batch_size = self.phsp_source.batch_size
+
+        if self.current_index + requested_batch_size >= self.num_entries:
+            requested_batch_size = self.num_entries - self.current_index
+            self.cycle_count += 1
+            self.cycle_changed_flag = True
+
+        if requested_batch_size == 0:
             self.current_index = 0
+            requested_batch_size = min(self.phsp_source.batch_size, self.num_entries)
+            self.cycle_count += 1
+            self.cycle_changed_flag = True
 
-        # set particle type
-        if source.particle == "" or source.particle is None:
-            # check if the keys for PDGCode are in the root file
-            if source.PDGCode_key not in batch:
-                fatal(
-                    f"PhaseSpaceSource: no PDGCode key ({source.PDGCode_key}) "
-                    f"in the phsp file and no source.particle"
-                )
-
-        # if translate_position is set to True, the position
-        # supplied will be added to the phsp file position
-        if source.translate_position:
-            batch[source.position_key_x] += float(source.position.translation[0])
-            batch[source.position_key_y] += float(source.position.translation[1])
-            batch[source.position_key_z] += float(source.position.translation[2])
-
-        # direction is a rotation of the stored direction
-        # if rotate_direction is set to True, the direction
-        # in the root file will be rotated based on the supplied rotation matrix
-        if source.rotate_direction:
-            # create point vectors
-            self.points = np.column_stack(
-                (
-                    batch[source.direction_key_x],
-                    batch[source.direction_key_y],
-                    batch[source.direction_key_z],
-                )
+        if self.phsp_source.verbose_batch:
+            print(
+                f"Thread {g4.G4GetThreadId()} reading {requested_batch_size} events from index {self.current_index}"
             )
-            # create rotation matrix
-            r = Rotation.from_matrix(source.position.rotation)
-            if source.verbose:
-                print("Rotation matrix: ", r.as_matrix())
-            # rotate vector with rotation matrix
-            points = r.apply(self.points)
-            # source.fDirectionX, source.fDirectionY, source.fDirectionZ = points.T
-            batch[source.direction_key_x] = points[:, 0].astype(np.float32)
-            batch[source.direction_key_y] = points[:, 1].astype(np.float32)
-            batch[source.direction_key_z] = points[:, 2].astype(np.float32)
 
-        # set weight
-        if source.weight_key != "" and source.weight_key is not None:
-            if source.weight_key not in batch:
-                fatal(
-                    f"PhaseSpaceSource: no Weight key ({source.weight_key}) in the phsp file."
-                )
-        else:
-            self.w = np.ones(current_batch_size, dtype=np.float32)
-            batch[source.weight_key] = self.w.astype(np.float32)
+        # --- 3. Read Data ---
+        # We store 'batch' in self to keep the raw data alive
+        self.batch = self.root_file.arrays(
+            entry_start=self.current_index,
+            entry_stop=self.current_index + requested_batch_size,
+            library="numpy",
+        )
+        batch = self.batch
+        self.current_index += requested_batch_size
 
-        # send to cpp
-        # set position
-        source.SetPositionXBatch(batch[source.position_key_x])
-        source.SetPositionYBatch(batch[source.position_key_y])
-        source.SetPositionZBatch(batch[source.position_key_z])
+        # --- 4. Paranoid Data Extractor ---
+        def get_data(key, dtype, must_exist=True):
+            raw = None
+            if hasattr(batch, "dtype") and batch.dtype.names:
+                if key in batch.dtype.names:
+                    raw = batch[key]
+            elif isinstance(batch, dict) and key in batch:
+                raw = batch[key]
 
-        # set direction
-        source.SetDirectionXBatch(batch[source.direction_key_x])
-        source.SetDirectionYBatch(batch[source.direction_key_y])
-        source.SetDirectionZBatch(batch[source.direction_key_z])
+            if raw is None:
+                if must_exist:
+                    avail = (
+                        batch.dtype.names
+                        if hasattr(batch, "dtype")
+                        else list(batch.keys())
+                    )
+                    fatal(
+                        f"PhaseSpaceSource: Key '{key}' not found. Available: {avail}"
+                    )
+                return None
 
-        # set energy
-        source.SetEnergyBatch(batch[source.energy_key])
+            try:
+                # copy=True creates a new array. We MUST store this new array in 'self' later!
+                return np.array(raw, dtype=dtype, copy=True, order="C")
+            except Exception as e:
+                fatal(f"PhaseSpaceSource: Conversion error for '{key}'. {e}")
 
-        # set PDGCode
-        if source.PDGCode_key in batch:
-            source.SetPDGCodeBatch(batch[source.PDGCode_key])
-        # set weight
-        source.SetWeightBatch(batch[source.weight_key])
+        # --- 5. Extract & STORE IN SELF (Prevent GC) ---
 
-        if source.verbose:
-            print("PhaseSpaceSourceGenerator: batch generated: ")
-            print("particle name: ", source.particle)
-            if source.PDGCode_key in batch:
-                print("source.fPDGCode: ", batch[source.PDGCode_key])
-            print("source.fEnergy: ", batch[source.energy_key])
-            print("source.fWeight: ", batch[source.weight_key])
-            print("source.fPositionX: ", batch[source.position_key_x])
-            print("source.fPositionY: ", batch[source.position_key_y])
-            print("source.fPositionZ: ", batch[source.position_key_z])
-            print("source.fDirectionX: ", batch[source.direction_key_x])
-            print("source.fDirectionY: ", batch[source.direction_key_y])
-            print("source.fDirectionZ: ", batch[source.direction_key_z])
-            print("source.fEnergy dtype: ", batch[source.energy_key].dtype)
+        # We assign to 'self.X' to ensure the Python object survives
+        # as long as the C++ side needs it (until the next batch overwrites it).
 
-        return current_batch_size
+        self.pos_x = get_data(self.phsp_source.position_key_x, np.float32)
+        actual_size = len(self.pos_x)
+
+        self.pos_y = get_data(self.phsp_source.position_key_y, np.float32)
+        self.pos_z = get_data(self.phsp_source.position_key_z, np.float32)
+
+        self.dir_x = get_data(self.phsp_source.direction_key_x, np.float32)
+        self.dir_y = get_data(self.phsp_source.direction_key_y, np.float32)
+        self.dir_z = get_data(self.phsp_source.direction_key_z, np.float32)
+
+        self.energy = get_data(self.phsp_source.energy_key, np.float32)
+
+        # Weights
+        self.weight = None
+        if self.phsp_source.weight_key:
+            self.weight = get_data(
+                self.phsp_source.weight_key, np.float32, must_exist=False
+            )
+        if self.weight is None:
+            self.weight = np.ones(actual_size, dtype=np.float32)
+
+        # PDG Code
+        self.pdg = None
+        if not self.phsp_source.particle:
+            self.pdg = get_data(self.phsp_source.PDGCode_key, np.int32)
+
+        # --- 6. Transforms (Modify SELF) ---
+        if self.phsp_source.translate_position:
+            self.pos_x += float(self.phsp_source.position.translation[0])
+            self.pos_y += float(self.phsp_source.position.translation[1])
+            self.pos_z += float(self.phsp_source.position.translation[2])
+
+        if self.phsp_source.rotate_direction:
+            points = np.column_stack((self.dir_x, self.dir_y, self.dir_z))
+            r = Rotation.from_matrix(self.phsp_source.position.rotation)
+            rotated = r.apply(points)
+            self.dir_x = np.ascontiguousarray(rotated[:, 0], dtype=np.float32)
+            self.dir_y = np.ascontiguousarray(rotated[:, 1], dtype=np.float32)
+            self.dir_z = np.ascontiguousarray(rotated[:, 2], dtype=np.float32)
+
+        # --- 7. Send to C++ ---
+        if len(self.energy) != actual_size:
+            fatal(f"Size mismatch: Pos {actual_size} vs Energy {len(self.energy)}")
+
+        # Pass the SELF variables to C++
+        g4_source.SetPositionXBatch(self.pos_x)
+        g4_source.SetPositionYBatch(self.pos_y)
+        g4_source.SetPositionZBatch(self.pos_z)
+        g4_source.SetDirectionXBatch(self.dir_x)
+        g4_source.SetDirectionYBatch(self.dir_y)
+        g4_source.SetDirectionZBatch(self.dir_z)
+        g4_source.SetEnergyBatch(self.energy)
+        g4_source.SetWeightBatch(self.weight)
+
+        if self.pdg is not None:
+            g4_source.SetPDGCodeBatch(self.pdg)
+
+        return actual_size
 
 
-class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
+class PhaseSpaceSource(SourceBase):
     """
     Source of particles from a (root) phase space.
     Read position + direction + energy + weight from the root and use them as event.
@@ -252,6 +266,7 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     entry_start: int
     particle: str
     global_flag: bool
+    isotropic_momentum: bool
     translate_position: bool
     rotate_direction: bool
     batch_size: int
@@ -271,10 +286,49 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     primary_PDGCode: int
     verbose: bool
 
+    @staticmethod
+    def _as_total_number_of_events(number_of_primaries):
+        """Return the total event count represented by scalar or per-run primaries."""
+        counts = np.asarray(number_of_primaries, dtype=float)
+        if counts.shape == ():
+            return int(counts)
+        return int(np.sum(counts))
+
+    @classmethod
+    def get_number_of_events_per_lane(cls, number_of_primaries, number_of_lanes):
+        """Return the entry spacing used to distribute PHSP reads over lanes."""
+        total_number_of_events = cls._as_total_number_of_events(number_of_primaries)
+        return int(np.ceil(total_number_of_events / number_of_lanes)) + 1
+
+    @classmethod
+    def generate_entry_start_list(
+        cls,
+        number_of_events_to_be_split,
+        n_threads,
+        offset=0,
+    ):
+        """Generate per-thread phase-space entry starts.
+
+        ``n_threads`` controls the length of the returned list. ``offset`` and
+        ``step`` are entry-space quantities, so callers that coordinate multiple
+        simulations can inject their own campaign-level layout while this method
+        keeps the thread-local list construction in the source.
+        """
+        number_of_events_per_split = cls.get_number_of_events_per_lane(
+            number_of_events_to_be_split, n_threads
+        )
+        return [int(offset + i * number_of_events_per_split) for i in range(n_threads)]
+
     user_info_defaults = {
         "phsp_file": (
             None,
-            {"doc": "Filename of the phase-space file (root). This is required"},
+            {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "Filename of the phase-space file (root). This is required",
+                "is_input_file": True,
+            },
         ),
         "entry_start": (
             None,
@@ -289,6 +343,13 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
                 "doc": "If true, the positions of the generated particles in the phase-space "
                 "are in the world coordinate system. If false, they are relative to the volume"
                 "this source is attached to",
+            },
+        ),
+        "isotropic_direction": (
+            False,
+            {
+                "doc": "If true, It enables to generate a particle with a position energy and weight "
+                "according to the provided phase but with an isotropic momentum.",
             },
         ),
         "translate_position": (
@@ -421,38 +482,43 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        SourceBase.__init__(self, *args, **kwargs)
         # there will be one particle generator per thread
-        self.particle_generator = {}
+        self.particle_generators = {}
         # number of entries in the phsp root file
         self.num_entries = None
 
-    def __initcpp__(self):
-        g4.GatePhaseSpaceSource.__init__(self)
+    def __getstate__(self):
+        # the particle generator cannot (?) being pickled
+        # we convert in a dict with the cycle count values
+        all_pg = self.particle_generators
+        self.particle_generators = {}
+        for k, pg in all_pg.items():
+            self.particle_generators[k] = Box({"cycle_count": pg.cycle_count})
+        state_dict = super().__getstate__()
+        return state_dict
 
-    def initialize(self, run_timing_intervals):
-        # create a generator for each thread
-        tid = g4.G4GetThreadId()
-        self.particle_generator[tid] = PhaseSpaceSourceGenerator(tid)
+    def create_g4_source(self):
+        return g4.GatePhaseSpaceSource()
 
-        # initialize source
-        SourceBase.initialize(self, run_timing_intervals)
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
+        # Calculate the target thread ID for this g4_source
+        if g4.IsMultithreadedApplication():
+            try:
+                thread_idx = self.g4_thread_sources.index(g4_source)
+            except ValueError:
+                thread_idx = 0
+            tid = thread_idx - 1
+        else:
+            tid = 0
 
-        # check user info
-        if self.position_key_x is None:
-            self.position_key_x = f"{self.position_key}_X"
-        if self.position_key_y is None:
-            self.position_key_y = f"{self.position_key}_Y"
-        if self.position_key_z is None:
-            self.position_key_z = f"{self.position_key}_Z"
+        # Master source does not need generator
+        if tid < 0:
+            return
 
-        if self.direction_key_x is None:
-            self.direction_key_x = f"{self.direction_key}_X"
-        if self.direction_key_y is None:
-            self.direction_key_y = f"{self.direction_key}_Y"
-        if self.direction_key_z is None:
-            self.direction_key_z = f"{self.direction_key}_Z"
+        # Create/initialize the generator for this thread
+        if tid not in self.particle_generators:
+            self.particle_generators[tid] = PhaseSpaceSourceGenerator(tid)
 
         # check if the source should generate particles until the second one
         # which is identified as primary by name, PDGCode and above a threshold
@@ -472,32 +538,51 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
             if not g4.IsMultithreadedApplication():
                 self.entry_start = 0
             else:
-                # create an entry_start array with the correct number of start entries
-                # all entries are spaced by the number of particles/thread
-                # FIXME: check this line. I corrected it because it seemed like a typo (NK)
                 n_threads = self.simulation.number_of_threads
-                # n_threads = self.simulation.phsp_source.number_of_threads
-                step = np.ceil(self.n / n_threads) + 1  # Specify the increment value
-                self.entry_start = [i * step for i in range(n_threads)]
+                self.entry_start = self.generate_entry_start_list(
+                    self.number_of_primaries, n_threads
+                )
+
+        # check user info
+        if self.position_key_x is None:
+            self.position_key_x = f"{self.position_key}_X"
+        if self.position_key_y is None:
+            self.position_key_y = f"{self.position_key}_Y"
+        if self.position_key_z is None:
+            self.position_key_z = f"{self.position_key}_Z"
+
+        if self.direction_key_x is None:
+            self.direction_key_x = f"{self.direction_key}_X"
+        if self.direction_key_y is None:
+            self.direction_key_y = f"{self.direction_key}_Y"
+        if self.direction_key_z is None:
+            self.direction_key_z = f"{self.direction_key}_Z"
+
+        # Initialize base start/end times and check activity on the python side
+        self.initialize_start_end_time(run_timing_intervals)
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        g4_source.InitializeUserInfo(runtime_user_info)
 
         # initialize the generator (read the phsp file)
-        self.particle_generator[tid].initialize(self)
+        self.particle_generators[tid].initialize(self)
 
         # keep a copy of the number of entries
-        self.num_entries = self.particle_generator[tid].num_entries
+        self.num_entries = self.particle_generators[tid].num_entries
 
         # set the function pointer to the cpp side
-        self.SetGeneratorFunction(self.particle_generator[tid].generate)
+        g4_source.SetGeneratorFunction(self.particle_generators[tid].generate)
 
     @property
     def cycle_count(self):
         if not g4.IsMultithreadedApplication():
-            tid = g4.G4GetThreadId()
-            return self.particle_generator[tid].cycle_count
+            if not self.particle_generators:
+                return 0
+            key = list(self.particle_generators.keys())[0]
+            return self.particle_generators[key].cycle_count
         else:
             s = " ".join(
-                str(self.particle_generator[tid].cycle_count)
-                for tid in self.particle_generator.keys()
+                str(self.particle_generators[tid].cycle_count)
+                for tid in sorted(self.particle_generators.keys())
             )
             return s
 

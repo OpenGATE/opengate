@@ -8,7 +8,6 @@
 #ifndef GateARFActor_h
 #define GateARFActor_h
 
-#include "GateHelpers.h"
 #include "GateVActor.h"
 #include <pybind11/stl.h>
 
@@ -31,6 +30,8 @@ public:
   // End run callback
   void EndOfRunAction(const G4Run * /*run*/) override;
 
+  void PreUserTrackingAction(const G4Track *track) override;
+
   int GetCurrentNumberOfHits() const;
 
   int GetCurrentRunId() const;
@@ -49,7 +50,7 @@ public:
 
   std::vector<double> GetWeights() const;
 
-  // Main function called every step in attached volume
+  // This main function is called every step in the attached volume
   void SteppingAction(G4Step *) override;
 
   // set the user "apply" function (python)
@@ -70,10 +71,11 @@ protected:
     std::vector<double> fDirectionY;
     std::vector<double> fDirectionZ;
     std::vector<double> fWeights;
-    // number of particle hitting the detector
+    // number of particles hitting the detector
     int fCurrentNumberOfHits;
-    // Current run id (to detect if run has changed)
+    // Current run id (to detect if the run has changed)
     int fCurrentRunId;
+    bool fIsFirstInteraction;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

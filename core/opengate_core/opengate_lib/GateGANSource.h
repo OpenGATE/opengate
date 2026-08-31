@@ -9,7 +9,6 @@
 #define GateGANSource_h
 
 #include "GateGenericSource.h"
-#include "GateSPSVoxelsPosDistribution.h"
 #include "GateSingleParticleSource.h"
 #include <pybind11/stl.h>
 
@@ -73,7 +72,7 @@ public:
   /// used to skip event with too low or too high energy
   double fEnergyMinThreshold;
   double fEnergyMaxThreshold;
-  typedef GateAcceptanceAngleTesterManager::AAPolicyType SEPolicyType;
+  typedef GateAcceptanceAngleManager::AAPolicyType SEPolicyType;
   SEPolicyType fSkipEnergyPolicy;
 
   bool fRelativeTiming;

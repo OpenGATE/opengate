@@ -1,7 +1,7 @@
 Details: Simulation object
 ==========================
 
-You can configure the general behavior of your simulation via the parameters of the :class:`opengate.Simulation` object.
+You can configure the general behavior of your simulation via the parameters of the :class:`opengate.managers.Simulation` object.
 
 Random Number Generator
 ------------------------
@@ -14,6 +14,10 @@ Run and timing
 --------------
 
 The simulation can be split into several runs, each of them with a given time duration. This is used for example for simulations with a dynamic geometry, e.g. a rotating gantry or a breathing patient. Gaps between the intervals are allowed. By default, the simulation has only one run with a duration of 1 second.
+
+See also :doc:`user_guide_dynamic_parametrisations` for the user-facing dynamic
+parametrisation interface used by moving geometries, dynamic image volumes, and
+dynamic voxel sources.
 
 Splitting a simulation into multiple runs is faster than executing a simulation multiple times because Geant4 is initialized only once at the beginning.
 
@@ -50,11 +54,16 @@ GATE 10 can visualize your simulation is different ways, namely using the native
 
 .. autoproperty:: opengate.Simulation.visu_type
 
+Qt
+^^
+
+.. image:: ../figures/visu_qt.png
+
 If you set `visu_type='qt'`, you can customize the Geant4 visualization commands with
 
 .. autoproperty:: opengate.Simulation.visu_commands
 
-.. warning:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume`, the visualization would need to render every voxel, which is highly inefficient and cannot really be used in practice. Replace the :class:`opengate.geometry.volumes.ImageVolume` by a :class:`opengate.geometry.volumes.BoxVolume` with the same size as a work-around for visualization.
+.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume`, the visualization displays the middle slices of the image. See `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others).
 
 VRML
 ^^^^
@@ -67,7 +76,7 @@ You can choose VRML visualization with ``sim.visu_type = "vrml"``. Opengate uses
 
 Alternatively, if you want to use an external VRML viewer, you can save a VRML file with ``sim.visu_type = "vrml_file_only"``. In such cases, the GUI is not opened, and you do not need ``pyvista``. In both cases, you need to set ``sim.visu_filename = "geant4VisuFile.wrl"`` to save the VRML file.
 
-If you want to personalize the ``pyvista`` GUI, you can set ``sim.visu_type = "vrml_file_only"`` and execute your own code in your Python script. You can find an example in [test004_simple_visu_vrml.py](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test004_simple_visu_vrml.py#L69-L90).
+If you want to personalize the ``pyvista`` GUI, you can set ``sim.visu_type = "vrml_file_only"`` and execute your own code in your Python script. You can find an example in `test004_simple_visu_vrml <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/others/test004_simple_visu_vrml.py>`_ .
 
 GDML
 ^^^^
@@ -80,7 +89,7 @@ Opengate uses ``pyg4ometry`` for the GUI, so you need to install it with:
 
 ``pip install pyg4ometry``
 
-``pyg4ometry`` uses opencascade libraries, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with ``sim.visu_type = "gdml_file_only"``. In such cases, the GUI is not open, and you do not need ``pyg4ometry``. In both cases, you need to set ``sim.visu_filename = "geant4VisuFile.gdml"`` to save the GDML file.
+``pyg4ometry`` uses opencascade libraries, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with ``sim.visu_type = "gdml_file_only"``. In such cases, the GUI is not open, and you do not need ``pyg4ometry``. In both cases, you need to set ``sim.visu_filename = "geant4VisuFile.gdml"`` to save the GDML file. You can find an example in `test004_simple_visu_gdml <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/others/test004_simple_visu_gdml.py>`_ .
 
 Multithreading
 --------------
@@ -108,10 +117,56 @@ This could be a problem in certain scenarios, e.g. when using interactive Python
 
 When this option is used, the Geant4 engine will be created and run in a separate process, which will be terminated after the simulation is finished. The output of the simulation will be copied back to the main process that called the ``run()`` method. This allows for the use of Gate in Python Notebooks, as long as this option is not forgotten.
 
+Progress Hook
+-------------
+
+You can attach a progress reporting hook function to monitor the progress of a running simulation at periodic intervals.
+
+Standard Use with `progress_status`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The simplest and standard way to monitor simulation progress is using the built-in helper `gate.progress_status(filename)`. This periodically outputs structured simulation metrics (status, elapsed wall time, current run index, event progress percentage, simulation time progress, total and expected events) into a JSON file:
+
+.. code-block:: python
+
+   import opengate as gate
+
+   status_file = "output/progress_status.json"
+   sim.progress_hook = gate.progress_status(status_file)
+   sim.progress_hook_interval = 0.5 * gate.g4_units.s
+
+Advanced Use with a Custom Hook
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For advanced usage, you can define a custom Python callback function and set `sim.progress_hook`. The hook accepts the simulation engine (or status string) and can optionally delegate to `gate.progress_status` while performing custom actions (such as logging to screen or sending progress notifications):
+
+.. code-block:: python
+
+   import opengate as gate
+
+   status_file = "output/progress_status.json"
+   status_reporter = gate.progress_status(status_file)
+
+   def custom_hook(sim_engine, status="running"):
+       # Perform progress reporting to JSON file
+       data = status_reporter(sim_engine, status)
+
+       # Custom action: print progress to console
+       print(
+           f"[Progress Hook] Run {data['run_index']}/{data['run_total']}, "
+           f"Events: {data['events_total']}/{data['events_expected']} ({data['events_progress']}%), "
+           f"Status: {status}"
+       )
+
+   sim.progress_hook = custom_hook
+   sim.progress_hook_interval = 0.5 * gate.g4_units.s
+
+
 User hooks
 ----------
 
 TODO
+
 
 .. [//]: # (For advanced usage, you can explicitly create the engine for the simulation with:)
 
@@ -124,4 +179,3 @@ TODO
 .. [//]: # (   output = se.start(True))
 
 .. [//]: # (Here user can also define a function (``my_function`` in the above example) that will be called after the Geant4 engine is initialized, and before it starts the simulation. This function will be called in the newly created process, so all data it accesses must be serializable (Python's pickable) to be copied to the new process.)
-

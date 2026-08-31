@@ -3,7 +3,7 @@ import numpy as np
 from box import Box
 from scipy.spatial.transform import Rotation
 import math
-
+import SimpleITK as sitk
 from .exception import fatal
 from .geometry.utility import (
     get_transform_world_to_local,
@@ -59,6 +59,36 @@ def create_3d_image(
     return img
 
 
+def create_3d_image_of_histogram(
+    size, spacing, bins, origin=None, pixel_type="double", allocate=True
+):
+    if len(size) != 4:
+        size.append(bins)
+        spacing.append(1.0)
+    else:
+        size[3] = bins
+    if (origin is not None) and (len(origin) != 4):
+        origin.append(0.0)
+    return create_4d_image(size, spacing, origin, pixel_type, allocate)
+
+
+def create_4d_image(size, spacing, origin=None, pixel_type="double", allocate=True):
+    dim = 4
+    pixel_type = itk.ctype(pixel_type)
+    image_type = itk.Image[pixel_type, dim]
+    img = image_type.New()
+    region = itk.ImageRegion[dim]()
+    region.SetSize([int(s) for s in size])
+    region.SetIndex([0, 0, 0, 0])
+    img.SetRegions(region)
+    img.SetSpacing(spacing)
+    if origin is not None:
+        img.SetOrigin(origin)
+    if allocate:
+        img.Allocate()
+    return img
+
+
 def create_image_like(like_image, allocate=True, pixel_type=""):
     # TODO fix pixel_type -> copy from image rather than argument
     info = get_info_from_image(like_image)
@@ -90,27 +120,32 @@ def get_info_from_image(image):
     return info
 
 
+def read_image_info_sitk(image):
+    info = Box()
+    info.size = np.array(image.GetSize(), dtype=int)
+    info.spacing = np.array(image.GetSpacing())
+    info.origin = np.array(image.GetOrigin())
+    # SimpleITK returns the direction cosines as a flat 1D tuple.
+    # We infer the dimension 'n' and reshape it into an n x n matrix.
+    n = len(info.size)
+    info.dir = np.array(image.GetDirection()).reshape((n, n))
+    return info
+
+
 def read_image_info(path_to_image):
     path_to_image = str(path_to_image)
-    image_IO = itk.ImageIOFactory.CreateImageIO(
-        path_to_image, itk.CommonEnums.IOFileMode_ReadMode
-    )
-    if not image_IO:
-        fatal(f"Cannot read the image file (itk): {path_to_image}")
-    image_IO.SetFileName(path_to_image)
-    image_IO.ReadImageInformation()
-    info = Box()
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(path_to_image)
+
+    try:
+        # Reads only the header information, not the pixel data
+        reader.ReadImageInformation()
+    except RuntimeError as e:
+        fatal(f"Cannot read the image file (sitk): {path_to_image}\nDetails: {e}")
+
+    info = read_image_info_sitk(reader)
     info.filename = path_to_image
-    n = info.size = image_IO.GetNumberOfDimensions()
-    info.size = np.ones(n).astype(int)
-    info.spacing = np.ones(n)
-    info.origin = np.ones(n)
-    info.dir = np.ones((n, n))
-    for i in range(n):
-        info.size[i] = image_IO.GetDimensions(i)
-        info.spacing[i] = image_IO.GetSpacing(i)
-        info.origin[i] = image_IO.GetOrigin(i)
-        info.dir[i] = image_IO.GetDirection(i)
+
     return info
 
 
@@ -131,9 +166,36 @@ def get_translation_between_images_center(img_name1, img_name2):
 
 
 def get_translation_to_isocenter(img_filename):
-    info = read_image_info(img_filename)
-    tr = info.size * info.spacing / 2.0 + info.origin
-    return tr
+    """
+    Computes the translation required to move the image's geometric center
+    to the physical origin (0,0,0).
+    Returns: list of 3 floats [x, y, z]
+    """
+    # info = read_image_info(img_filename)
+    # tr = (info.size - 1) * info.spacing / 2.0 + info.origin
+    # return tr
+    center = np.array(get_image_physical_center(img_filename))
+    translation = -center
+    return translation.tolist()
+
+
+def get_image_physical_center(img_filename):
+    """
+    Computes the physical coordinate of the geometric center of an ITK image.
+    Used during PyTomography reconstruction when the Gate rotation was around this center.
+
+    Returns: list of 3 floats [x, y, z]
+    """
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(str(img_filename))
+    reader.ReadImageInformation()
+
+    size = np.array(reader.GetSize())
+    spacing = np.array(reader.GetSpacing())
+    origin = np.array(reader.GetOrigin())
+
+    center = origin + (size - 1) * spacing / 2.0
+    return center.tolist()
 
 
 def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
@@ -184,12 +246,6 @@ def itk_image_from_array(arr, view=True):
         image.SetRegions(new_region)
         image.Update()
     return image
-
-
-def get_image_center(image):
-    info = read_image_info(image)
-    center = info.size * info.spacing / 2.0  # + info.spacing / 2.0
-    return center
 
 
 def align_image_with_physical_volume(
@@ -261,8 +317,12 @@ def compute_image_3D_CDF(image):
 
     :param image: itk image
     """
-    # consider image as np array
-    array = itk.array_view_from_image(image)
+    # consider the image as a np array
+    # WARNING: cannot use array_view_from_image here because it seems to lead to
+    # a segfault in some cases (linux + multithread + multiple sources)
+    # It is unclear why, but for now we use array_from_image that copy the data
+    # array = itk.array_view_from_image(image)
+    array = itk.array_from_image(image)
 
     # normalize
     array = array / np.sum(array)
@@ -278,7 +338,7 @@ def compute_image_3D_CDF(image):
         for j in range(array.shape[1]):  # Y
             # cumulated sum along X axis
             t = np.cumsum(array[i][j])
-            # normalise if last value (sum) is not zero
+            # normalise if the last value (sum) is not zero
             if t[-1] != 0:
                 t = t / t[-1]
             cdf_x[i].append(t)
@@ -306,6 +366,10 @@ def scale_itk_image(img, scale):
     img2 = itk_image_from_array(imgarr)
     img2.CopyInformation(img)
     return img2
+
+
+def copy_itk_image(img):
+    return itk.image_duplicator(img)
 
 
 def divide_itk_images(
@@ -495,12 +559,16 @@ def resample_itk_image_like(img, like_img, default_pixel_value, linear=True):
     return resampled_img
 
 
-def resample_itk_image(image, size, spacing, default_pixel_value, linear=True):
+def resample_itk_image(
+    image, size, spacing, default_pixel_value, linear=True, translation=None
+):
     # create a temporary image
     like = create_3d_image(size, spacing, allocate=False)
-    # position the image such as the center is the same than the initial image
+    # position the image such as the centre is the same as the initial image
     info1 = get_info_from_image(like)
     center1 = info1.size / 2.0 * info1.spacing + info1.origin - info1.spacing / 2.0
+    if translation is not None:
+        center1 += translation
     info2 = get_info_from_image(image)
     center2 = info2.size / 2.0 * info2.spacing + info2.origin - info2.spacing / 2.0
     tr = center2 - center1

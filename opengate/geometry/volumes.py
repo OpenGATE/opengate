@@ -23,6 +23,7 @@ from .utility import (
 )
 from ..decorators import requires_fatal, requires_attribute_fatal
 from ..definitions import __world_name__, __gate_list_objects__
+from .fields import FieldBase
 from ..actors.dynamicactors import (
     VolumeImageChanger,
     VolumeTranslationChanger,
@@ -30,6 +31,7 @@ from ..actors.dynamicactors import (
 )
 from .materials import create_density_img, write_material_database
 from opengate.serialization import dump_json
+from opengate.utility import g4_units
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -165,6 +167,13 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 )
             },
         ),
+        "style": (
+            "default",
+            {
+                "doc": "Visualization style for this volume. "
+                "Can be 'default', 'solid' or 'wireframe'"
+            },
+        ),
         "rotation": (
             [Rotation.identity().as_matrix()],
             {
@@ -182,6 +191,13 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             {
                 "doc": "Boolean flag (True/False) whether G4 should build a physical volume.",
                 "type": bool,
+            },
+        ),
+        "field": (
+            None,
+            {
+                "doc": "Name of the field attached to this volume.",
+                "type": str,
             },
         ),
     }
@@ -215,6 +231,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # this list contains all physical volumes (in case of repeated volume)
         self.g4_physical_volumes = []
         self.g4_material = None
+        self.g4_field_manager = None
+
+        # Field attached to this volume (only one allowed)
+        self.field = None
 
     def close(self):
         self.release_g4_references()
@@ -227,6 +247,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self.g4_vis_attributes = None
         self.g4_physical_volumes = []
         self.g4_material = None
+        self.g4_field_manager = None
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -236,6 +257,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         return_dict["g4_vis_attributes"] = None
         return_dict["g4_physical_volumes"] = []
         return_dict["g4_material"] = None
+        return_dict["g4_field_manager"] = None
         return_dict["volume_engine"] = None
         return_dict["_is_constructed"] = False
         return return_dict
@@ -438,6 +460,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
         # color
         self.g4_vis_attributes = g4.G4VisAttributes()
+        if self.style == "wireframe":
+            self.g4_vis_attributes.SetForceWireframe(True)
+        elif self.style == "solid":
+            self.g4_vis_attributes.SetForceSolid(True)
         self.g4_vis_attributes.SetColor(*self.color)
         self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
@@ -528,6 +554,29 @@ class VolumeBase(DynamicGateObject, NodeMixin):
     def set_min_range(self, min_range):
         self.volume_manager.simulation.physics_manager.set_min_range(
             self.name, min_range
+        )
+
+    @requires_fatal("volume_manager")
+    def add_field(self, field: FieldBase):
+        if self.field is not None:
+            fatal(
+                f"Volume '{self.name}' already has a field attached ('{self.field}'). "
+                f"A volume can only have one field. Remove the existing field first."
+            )
+        existing = self.volume_manager.fields.get(field.name)
+        if existing is not None and existing is not field:
+            fatal(
+                f"A field named '{field.name}' is already registered in the volume manager. "
+                f"Field names must be unique, please choose a different name for this field."
+            )
+        self.field = field.name
+        field.attached_to.append(self.name)
+        self.volume_manager.fields[field.name] = field
+
+    @requires_fatal("volume_manager")
+    def set_track_structure_em_physics(self, track_structure_em_physics):
+        self.volume_manager.simulation.physics_manager.set_track_structure_em_physics(
+            self.name, track_structure_em_physics
         )
 
 
@@ -647,6 +696,9 @@ def subtract_volumes(
 
 
 class BoxVolume(RepeatableVolume, solids.BoxSolid):
+    # hints for IDE
+    size: list[float]
+
     """
     Volume with a box shape.
     """
@@ -676,6 +728,12 @@ class SphereVolume(RepeatableVolume, solids.SphereSolid):
     """
 
 
+class EllipsoidVolume(RepeatableVolume, solids.EllipsoidSolid):
+    """
+    Volume with an ellipsoid shape.
+    """
+
+
 class TrapVolume(RepeatableVolume, solids.TrapSolid):
     """
     Volume with a generic trapezoidal shape.
@@ -689,6 +747,13 @@ class TrdVolume(RepeatableVolume, solids.TrdSolid):
 
 
 class TubsVolume(RepeatableVolume, solids.TubsSolid):
+
+    # hints for IDE
+    rmin: float
+    rmax: float
+    dz: float
+    sphi: float
+    dphi: float
     """
     Volume with a tube or cylindrical section shape.
     """
@@ -696,8 +761,7 @@ class TubsVolume(RepeatableVolume, solids.TubsSolid):
 
 class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
     """
-    Volume based on a mesh volume
-    by reading an STL file.
+    Volume based on a mesh volume by reading a mesh file.
     """
 
 
@@ -866,6 +930,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_y = None
         self.g4_logical_z = None
         self.g4_voxel_param = None
+        self.g4_vis_attributes_logical_slices = None
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -876,6 +941,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         return_dict["g4_logical_y"] = None
         return_dict["g4_logical_z"] = None
         return_dict["g4_voxel_param"] = None
+        return_dict["g4_vis_attributes_logical_slices"] = None
+        return_dict["slice_xy"] = None
+        return_dict["slice_xz"] = None
+        return_dict["slice_yz"] = None
         return return_dict
 
     def close(self):
@@ -890,15 +959,22 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_physical_y = None
         self.g4_physical_z = None
         self.g4_voxel_param = None
+        self.g4_vis_attributes_logical_slices = None
+        self.slice_xy = None
+        self.slice_xz = None
+        self.slice_yz = None
 
     @property
     def itk_image(self):
         if self._itk_image is None:
-            warning(
-                f"The itk_image in {self.type_name} '{self.name}' is None. "
-                f"If this is unexpected, run my_image_volume.load_input_image() first, "
-                f"where my_image_volume is the variable name of the {self.type_name} in your script. "
-            )
+            if self.image:
+                self._itk_image = self.load_input_image()
+            else:
+                warning(
+                    f"The itk_image in {self.type_name} '{self.name}' is None. "
+                    f"If this is unexpected, run my_image_volume.load_input_image() first, "
+                    f"where my_image_volume is the variable name of the {self.type_name} in your script. "
+                )
         return self._itk_image
 
     @itk_image.setter
@@ -909,21 +985,25 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     # FIXME: replace this property by function in opengate.image
     @property
     def size_pix(self):
-        if self.itk_image is None:
+        if self._itk_image is None:
             self.load_input_image()
-        return np.array(itk.size(self.itk_image)).astype(int)
+        return np.array(itk.size(self._itk_image)).astype(int)
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
     @property
     def spacing(self):
-        if self.itk_image is None:
+        if self._itk_image is None:
             self.load_input_image()
-        return np.array(self.itk_image.GetSpacing())
+        return np.array(self._itk_image.GetSpacing())
 
     # @requires_fatal("itk_image")
     @property
     def native_translation(self):
+        # FIXME: some actors may need image-derived geometry information during
+        # resolve_and_validate_config(). Revisit whether ImageVolume should offer
+        # an explicit config-resolution step for input-image metadata, rather
+        # than relying only on these lazy runtime-facing properties.
         if self.itk_image is not None:
             origin = np.array(self.itk_image.GetOrigin())
             spacing = np.array(self.itk_image.GetSpacing())
@@ -981,9 +1061,34 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.half_spacing = 0.5 * self.spacing
         self.construct_material()
         self.construct_solid()
+        self.construct_slices()
         self.construct_logical_volume()
         self.g4_voxel_param = self.create_image_parametrisation()
         self.construct_physical_volume()
+
+    def construct_slices(self):
+        image_array = itk.GetArrayFromImage(self.itk_image)
+        min_pixel = np.min(image_array)
+        interval_pixel = np.max(image_array) - min_pixel
+        self.slice_xy = (
+            image_array[int(self.size_pix[2] / 2), :, :] - min_pixel
+        ) / interval_pixel
+        self.slice_xy = list(self.slice_xy.reshape(1, -1)[0])
+        self.slice_xz = (
+            image_array[:, int(self.size_pix[1] / 2), :] - min_pixel
+        ) / interval_pixel
+        self.slice_xz = list(self.slice_xz.reshape(1, -1)[0])
+        self.slice_yz = (
+            image_array[:, :, int(self.size_pix[0] / 2)] - min_pixel
+        ) / interval_pixel
+        self.slice_yz = list(self.slice_yz.reshape(1, -1)[0])
+        image_dict = {
+            "slice_xy": self.slice_xy,
+            "slice_xz": self.slice_xz,
+            "slice_yz": self.slice_yz,
+        }
+        self.g4_solid.SetSlices(image_dict)
+        self.volume_manager.solid_with_texture_init.append(self.g4_solid)
 
     def construct_physical_volume(self):
         super().construct_physical_volume()
@@ -1030,6 +1135,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_z = g4.G4LogicalVolume(
             self.g4_solid_z, self.g4_material, self.name + "_log_Z"
         )
+        self.g4_vis_attributes_logical_slices = g4.G4VisAttributes()
+        self.g4_vis_attributes_logical_slices.SetVisibility(bool(False))
+        self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
 
     def create_material_to_label_lut(self, material=None, voxel_materials=None):
         if voxel_materials is None:
@@ -1068,17 +1178,19 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     def create_attenuation_image(self, database, energy):
         # convert all materials to mu
         label_to_mu = {}
-        mu_handler = g4.GateMaterialMuHandler.GetInstance(database, 200)  # max in MeV
+        mu_handler = g4.GateMaterialMuHandler.GetInstance(
+            database, 200 * g4_units.MeV
+        )  # max in MeV
         prod_cuts_table = g4.G4ProductionCutsTable.GetProductionCutsTable()
         for i in range(prod_cuts_table.GetTableSize()):
             couple = prod_cuts_table.GetMaterialCutsCouple(i)
             mat_name = str(couple.GetMaterial().GetName())
             label = self.material_to_label_lut[mat_name]
-            mu = mu_handler.GetMu(couple, energy)
+            mu = mu_handler.GetMu(couple, energy / g4_units.MeV)
             label_to_mu[label] = mu
 
         arr = itk.GetArrayViewFromImage(self.label_image)
-        mu_arr = arr.copy().astype("float")
+        mu_arr = arr.copy().astype("float32")
         for label, mu in label_to_mu.items():
             mu_arr[mu_arr == label] = mu
         itk_mu_img = itk.GetImageFromArray(mu_arr)
@@ -1152,25 +1264,25 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_voxel_param.initialize_image()
 
     def save_label_image(self, path=None):
-        # dump label image ?
+        # Resolve debug output paths through the simulation output directory so
+        # split child simulations keep their auxiliary files local to the job.
+        image_path = self.dump_label_image
         if path is None:
             if self.volume_manager is None:
                 fatal(
                     f"Cannot save label image of ImageVolume {self.name}. "
                     f"Either provide a path or add the volume to the simulation. "
                 )
-            root, ext = os.path.splitext(self.dump_label_image)
-            # path = (
-            #    self.volume_manager.simulation.get_output_path()
-            #    / f"label_to_material_lut_{self.name}.json"
-            # )
-            path = root + ".json"
+            image_path = self.volume_manager.simulation.get_output_path(image_path)
+            path = image_path.with_suffix(".json")
+        elif self.volume_manager is not None:
+            image_path = self.volume_manager.simulation.get_output_path(image_path)
+            path = self.volume_manager.simulation.get_output_path(path)
         if self.label_image is None:
             self.create_label_image()
 
         self.label_image.SetOrigin(self.itk_image.GetOrigin())  # set origin as in input
-        # FIXME: should write image into output dir
-        write_itk_image(self.label_image, str(self.dump_label_image))
+        write_itk_image(self.label_image, str(image_path))
         with open(path, "w") as f:
             json.dump(self.material_to_label_lut, f)
 
@@ -1189,17 +1301,14 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         for dp in self.dynamic_params.values():
             if dp["extra_params"]["auto_changer"] is True:
                 if "image" in dp:
-                    # create a LUT of image parametrisations
-                    label_image = {}
-                    for path_to_image in set(dp["image"]):
-                        itk_image = self.load_input_image(path_to_image)
-                        label_image[path_to_image] = self.create_label_image(itk_image)
+                    # Only create the serializable changer definition here.
+                    # The heavy label-image LUT is rebuilt later in
+                    # VolumeImageChanger.initialize().
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
                         attached_to=self,
                         simulation=self.simulation,
                         images=dp["image"],
-                        label_image=label_image,
                     )
                     changers.append(new_changer)
                     counter += 1
@@ -1217,6 +1326,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         return changers
 
     def write_material_database(self, material_filename):
+        if self.simulation is not None:
+            material_filename = self.simulation.get_output_path(material_filename)
         # get all the materials names
         materials = [m[2] for m in self.voxel_materials]
         # Maintaining order while keeping unique
@@ -1224,6 +1335,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         write_material_database(self.simulation, unique_materials, material_filename)
 
     def write_label_to_material(self, labels_filename):
+        if self.simulation is not None:
+            labels_filename = self.simulation.get_output_path(labels_filename)
         with open(labels_filename, "w") as outfile:
             dump_json(self.voxel_materials, outfile, indent=4)
 
@@ -1248,6 +1361,21 @@ class ParallelWorldVolume(NodeMixin):
 
         self.g4_world_phys_vol = None
         self.g4_world_log_vol = None
+
+    @property
+    def world_volume(self):
+        """A parallel world acts as its own world volume."""
+        return self
+
+    @property
+    def g4_logical_volume(self):
+        """Map the standard logical volume property to the parallel world's specific attribute."""
+        return self.g4_world_log_vol
+
+    @property
+    def mother(self):
+        """A parallel world is the root of its own geometry tree and has no mother."""
+        return None
 
     def release_g4_references(self):
         self.g4_world_phys_vol = None
@@ -1306,6 +1434,7 @@ process_cls(HexagonVolume)
 process_cls(ConsVolume)
 process_cls(PolyhedraVolume)
 process_cls(SphereVolume)
+process_cls(EllipsoidVolume)
 process_cls(TrapVolume)
 process_cls(TrdVolume)
 process_cls(TubsVolume)

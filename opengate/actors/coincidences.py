@@ -1,13 +1,126 @@
 from collections import deque
+from dataclasses import dataclass
 from itertools import chain
-
+from pathlib import Path
 import awkward as ak
 import numpy as np
 import pandas as pd
+import os
+import time
+import logging
+import uproot
+import sys
+from opengate.contrib.root_helpers import *
+from enum import Enum, auto
+
+logger = logging.getLogger(__name__)
 
 
 class ChunkSizeTooSmallError(Exception):
     pass
+
+
+class CoincidenceOutputFile:
+    def __init__(self, file_path, file_format):
+        assert file_format in ["root", "hdf5"]
+        self.file_path = file_path
+        self.format = file_format
+        self.empty = True
+
+        if self.format == "root":
+            # recreate() deletes the file that may already exist with the same name.
+            self.file = uproot.recreate(self.file_path)
+        elif self.format == "hdf5":
+            if os.path.exists(self.file_path):
+                os.remove(self.file_path)
+
+    def add(self, coincidences):
+        if len(coincidences) == 0:
+            return
+        # dtype "object" (used for strings) is not accepted by extend() function in uproot,
+        # need to convert to categorical.
+        for col in coincidences.columns:
+            if coincidences[col].dtype == "object":
+                coincidences[col] = pd.Categorical(coincidences[col])
+        table_name = "Coincidences"
+        if self.format == "root":
+            coincidences_to_write = coincidences.to_dict(orient="list")
+            coincidences_to_write_data = root_tree_get_branch_data(
+                coincidences_to_write
+            )
+            if self.empty:
+                coincidences_to_write_types = root_tree_get_branch_types(
+                    coincidences_to_write_data
+                )
+                root_write_tree(
+                    self.file,
+                    table_name,
+                    coincidences_to_write_types,
+                    coincidences_to_write_data,
+                )
+            else:
+                coincidences_tree = self.file[table_name]
+                formatted_data = {
+                    k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
+                    for k, v in coincidences_to_write_data.items()
+                }
+                coincidences_tree.extend(formatted_data)
+        elif self.format == "hdf5":
+            coincidences.to_hdf(
+                self.file_path,
+                key=table_name,
+                mode="a",
+                format="table",
+                append=True,
+                index=False,
+            )
+        self.empty = False
+
+    def close(self):
+        if self.format == "root":
+            self.file.close()
+
+
+class ResultType(Enum):
+    COINCIDENCE_PAIRS = auto()
+    COINCIDENT_SINGLES = auto()
+
+
+def cc_coincidences_sorter(
+    singles_tree, time_window, chunk_size=100000, output_file_path=None
+):
+    """
+    Sort singles and detect coincidences.
+    :param singles_tree: input tree of singles (root format)
+    :param time_window: time windows in G4 units (ns)
+    :param chunk_size: singles are processed by this chunk size
+    :param output_file_path: if provided, the coincident singles will be saved to the given file path, in root or hdf5 format depending on the file extension (.root or .hdf5).
+    :return: if output_file_path is given, the return value is None, otherwise the coincident singles are returned as a pandas DataFrame.
+
+    Chunk size is important for very large root file to avoid loading everything in memory at once
+    """
+    output_file_format = None
+    if output_file_path is not None:
+        if output_file_path.endswith(".root"):
+            output_file_format = "root"
+        elif output_file_path.endwith(".hdf5"):
+            output_file_format = "hdf5"
+        else:
+            raise ValueError("output_file_path must end with .root or .hdf5")
+    return _coincidences_sorter(
+        singles_tree,
+        time_window,
+        False,
+        None,
+        None,
+        None,
+        None,
+        chunk_size,
+        ResultType.COINCIDENT_SINGLES,
+        "pd",
+        output_file_path,
+        output_file_format or "root",
+    )
 
 
 def coincidences_sorter(
@@ -17,34 +130,132 @@ def coincidences_sorter(
     min_transaxial_distance,
     transaxial_plane,
     max_axial_distance,
-    chunk_size=10000,
+    chunk_size=100000,
     return_type="dict",
+    output_file_path=None,
+    output_file_format="root",
+    allDigiOpenCoincGate=True,
 ):
     """
     Sort singles and detect coincidences.
     :param singles_tree: input tree of singles (root format)
     :param time_window: time windows in G4 units (ns)
     :param policy: coincidence detection policy, one of:
-            "removeMultiples"
-            "takeAllGoods"
-            "takeWinnerOfGoods"
-            "takeIfOnlyOneGood"
-            "takeWinnerIfIsGood"
-            "takeWinnerIfAllAreGoods"
+            "RemoveMultiples"
+            "TakeAllGoods"
+            "TakeWinnerOfGoods"
+            "TakeIfOnlyOneGood"
+            "TakeWinnerIfIsGood"
+            "TakeWinnerIfAllAreGoods"
     :param min_transaxial_distance: minimum transaxial distance between the two singles of a coincidence
     :param transaxial_plane: "xy", "yz", or "xz"
     :param max_axial_distance: maximum axial distance between the two singles of a coincidence
     :param chunk_size: singles are processed by this chunk size
     :param return_type: "dict" or "pd"
-    :return: the coincidences as a dict of events (return_type "dict") or pandas DataFrame (return_type "pd")
+    :param output_file_path: if provided, the coincidences will be saved to the given file path
+    :param output_file_format: "root" or "hdf5"
+    :return: if output_file_path is given, the return value is None, otherwise the coincidences are returned
+             as a dict of events (return_type "dict") or a pandas DataFrame (return_type "pd")
 
     Chunk size is important for very large root file to avoid loading everything in memory at once
-
-    DEV NOTES:
-    1) TODO: add option allDigiOpenCoincGate=false, so far only for allDigiOpenCoincGate=true
     """
+    return _coincidences_sorter(
+        singles_tree,
+        time_window,
+        allDigiOpenCoincGate,
+        policy,
+        min_transaxial_distance,
+        transaxial_plane,
+        max_axial_distance,
+        chunk_size,
+        ResultType.COINCIDENCE_PAIRS,
+        return_type,
+        output_file_path,
+        output_file_format,
+    )
 
-    # Check availability of the necessary branches in the root file
+
+@dataclass
+class CoincidenceSorter:
+    window: float = 0.0
+    multiples_policy: str = "TakeAllGoods"
+    multi_window: bool = True
+    min_transaxial_distance: float = None
+    max_axial_distance: float = None
+    transaxial_plane: str = "XY"
+    chunk_size: int = 100000
+    output_file_path: Path = None
+
+    def run(self, root_filepath, tree_name):
+        root_file = uproot.open(root_filepath)
+        singles_tree = root_file[tree_name]
+        if self.output_file_path is not None:
+            output_file_format = (
+                "hdf5"
+                if str(self.output_file_path).endswith(".hdf5")
+                or str(self.output_file_path).endswith(".h5")
+                else "root"
+            )
+        else:
+            output_file_format = None
+
+        return coincidences_sorter(
+            singles_tree,
+            self.window,
+            self.multiples_policy,
+            self.min_transaxial_distance,
+            str.lower(self.transaxial_plane),
+            self.max_axial_distance,
+            self.chunk_size,
+            "pd",
+            self.output_file_path,
+            output_file_format,
+            self.multi_window,
+        )
+
+
+def _decompose_coincidence_pairs_into_singles(coincidence_pairs):
+    # Create two DataFrames, one with the columns ending in "1", the other with "2".
+    s1 = coincidence_pairs.filter(regex="1$").copy()
+    s2 = coincidence_pairs.filter(regex="2$").copy()
+    # Strip the "1" and "2" from the column names, so that s1 and s2 have the same column names.
+    s1.columns = s1.columns.str.rstrip("1")
+    s2.columns = s2.columns.str.rstrip("2")
+    # Rename column "SingleIndex" to "CoincID" in s1 and copy it into s2.
+    s1 = s1.rename(columns={"SingleIndex": "CoincID"})
+    s2 = s2.drop(columns=["SingleIndex"])
+    s2["CoincID"] = s1["CoincID"].values
+    # In s1, each row with the same CoincID as the row before is marked for removal,
+    # because the single that opened the time window will appear multiple times
+    # in case of multiple coincidences in the time window.
+    s1["ToBeRemoved"] = s1["CoincID"].eq(s1["CoincID"].shift())
+    # In s2, nothing will be removed.
+    s2["ToBeRemoved"] = False
+    # Combine s1 and s2 into a single DataFrame, by interleaving their rows.
+    s1.index = s1.index * 2
+    s2.index = s2.index * 2 + 1
+    decomposed = pd.concat([s1, s2]).sort_index().reset_index(drop=True)
+    # Remove the rows marked for removal, then drop the column.
+    decomposed = decomposed[~decomposed["ToBeRemoved"]]
+    decomposed = decomposed.drop(columns=["ToBeRemoved"])
+    return decomposed
+
+
+def _coincidences_sorter(
+    singles_tree,
+    time_window,
+    allDigiOpenCoincGate,
+    policy,
+    min_transaxial_distance,
+    transaxial_plane,
+    max_axial_distance,
+    chunk_size=100000,
+    result_type=ResultType.COINCIDENCE_PAIRS,
+    return_type="dict",
+    output_file_path=None,
+    output_file_format="root",
+):
+    # Check the availability of the necessary branches in the root file
     required_branches = {
         "EventID",
         "GlobalTime",
@@ -67,41 +278,74 @@ def coincidences_sorter(
 
     # Check validity of policy parameter
     policy_functions = {
-        "removeMultiples": remove_multiples,
-        "takeAllGoods": take_all_goods,
-        "takeWinnerOfGoods": take_winner_of_goods,
-        "takeIfOnlyOneGood": take_if_only_one_good,
-        "takeWinnerIfIsGood": take_winner_if_is_good,
-        "takeWinnerIfAllAreGoods": take_winner_if_all_are_goods,
+        str.lower("RemoveMultiples"): _remove_multiples,
+        str.lower("TakeAllGoods"): _take_all_goods,
+        str.lower("TakeWinnerOfGoods"): _take_winner_of_goods,
+        str.lower("TakeIfOnlyOneGood"): _take_if_only_one_good,
+        str.lower("TakeWinnerIfIsGood"): _take_winner_if_is_good,
+        str.lower("TakeWinnerIfAllAreGoods"): _take_winner_if_all_are_goods,
     }
-    if policy not in policy_functions:
+    if (
+        result_type == ResultType.COINCIDENCE_PAIRS
+        and str.lower(policy) not in policy_functions
+    ):
         raise ValueError(
             f"Unknown policy '{policy}', must be one of {policy_functions.keys()}"
         )
 
-    # Check validity of return_type
-    known_return_types = ["dict", "pd"]
-    if return_type not in known_return_types:
+    if any((min_transaxial_distance, max_axial_distance)) and not transaxial_plane:
         raise ValueError(
-            f"Unknown return type '{return_type}', must be one of {known_return_types}"
+            f"transaxial_plane must be specified when min_transaxial_distance and/or max_axial_distance is given"
         )
 
+    # Check the validity of return_type or output_file_format and output_file_path.
+    if output_file_path is None:
+        known_return_types = ["dict", "pd"]
+        if return_type not in known_return_types:
+            raise ValueError(
+                f"Unknown return type '{return_type}', must be one of {known_return_types}"
+            )
+    else:
+        known_output_formats = ["root", "hdf5"]
+        if output_file_format not in known_output_formats:
+            raise ValueError(
+                f"Unknown output file format '{output_file_format}', must be one of {known_output_formats}"
+            )
+        # Saving to a HDF5 file in append mode requires pytables>=3.10 if numpy>=2.0 is used,
+        # but that version of pytables is only supported from Python 3.10 onwards
+        if output_file_format == "hdf5" and sys.version_info[1] < 10:
+            raise NotImplementedError(
+                "HDF5 output is only supported in Python 3.10 or newer"
+            )
+        if not output_file_path:
+            raise ValueError(f"Output file path has not been provided")
+
     # Since singles in the root file are not guaranteed to be sorted by GlobalTime
-    # (especially in case of multithreaded simulation), singles in one chunk
+    # (especially in the case of multithreaded simulation), singles in one chunk
     # may be more recent than the singles in the next chunk.
     # If that's the case, the chunk size must be increased for successful coincidence sorting.
+    original_chunk_size = chunk_size
     max_num_chunk_size_increases = 10
     num_chunk_size_increases = 0
     processing_finished = False
+    start = time.time()
+    time_lost = 0
+    allow_intra_volume_coincidences = result_type == ResultType.COINCIDENT_SINGLES
     while (
         not processing_finished
         and num_chunk_size_increases < max_num_chunk_size_increases
     ):
         try:
+            if output_file_path:
+                output_file = CoincidenceOutputFile(
+                    output_file_path, output_file_format
+                )
+
             # A double-ended queue is used as a FIFO to store the current and the next chunk of singles
             queue = deque()
-            coincidences = []
             num_singles = 0
+            coincidences_to_transfer = None
+            coincidences_to_return = []
             for chunk in singles_tree.iterate(step_size=chunk_size):
                 num_singles_in_chunk = len(chunk)
                 # Convert chunk to pandas DataFrame
@@ -114,47 +358,148 @@ def coincidences_sorter(
                 queue.append(chunk_pd)
                 # Process a chunk, unless only one has been read so far
                 if len(queue) > 1:
-                    coincidences.append(process_chunk(queue, time_window))
+                    coincidences = _process_chunk(
+                        queue, time_window, allow_intra_volume_coincidences
+                    )
+                    # Before filtering coincidences, we want to make sure that we have all
+                    # coincidences that belong to the same time window (same SingleIndex1 value).
+                    # When processing the next chunk of singles, we may still find one or more
+                    # coincidences that belong to the same time window as the last coincidence so far.
+                    #
+                    # All coincidences that have a SingleIndex1 value different from the last one
+                    # can already be filtered, the others will be transferred to be filtered in
+                    # the next iteration.
+                    coincidences_to_process = coincidences.loc[
+                        coincidences["SingleIndex1"]
+                        != coincidences["SingleIndex1"].iloc[-1]
+                    ].reset_index(drop=True)
+                    if coincidences_to_transfer is not None:
+                        coincidences_to_process = pd.concat(
+                            [coincidences_to_transfer, coincidences_to_process],
+                            axis=0,
+                            ignore_index=True,
+                        )
+                    coincidences_to_transfer = coincidences.loc[
+                        coincidences["SingleIndex1"]
+                        == coincidences["SingleIndex1"].iloc[-1]
+                    ].reset_index(drop=True)
+
+                    if not allDigiOpenCoincGate:
+                        # If one single opens a time window, then the following singles which are inside this time window
+                        # cannot open a time window of their own.
+                        # This means that, if a single's index appears in the column "SingleIndex2", then we won't consider
+                        # coincidences where the same index appears in the column "SingleIndex1".
+                        # Remove rows from coincidences_to_process where the "SingleIndex1" value is present in
+                        # the "SingleIndex2" of any row.
+                        indices_to_remove = coincidences_to_process[
+                            "SingleIndex1"
+                        ].isin(coincidences_to_process["SingleIndex2"])
+                        coincidences_to_process = coincidences_to_process[
+                            ~indices_to_remove
+                        ].reset_index(drop=True)
+
+                    if result_type == ResultType.COINCIDENCE_PAIRS:
+                        # Apply policy for multiple coincidences
+                        processed_coincidences = policy_functions[str.lower(policy)](
+                            coincidences_to_process,
+                            min_transaxial_distance,
+                            transaxial_plane,
+                            max_axial_distance,
+                        )
+                        # Remove the temporary SingleIndex columns
+                        processed_coincidences = processed_coincidences.drop(
+                            columns=["SingleIndex1", "SingleIndex2"]
+                        )
+                    elif result_type == ResultType.COINCIDENT_SINGLES:
+                        processed_coincidences = (
+                            _decompose_coincidence_pairs_into_singles(
+                                coincidences_to_process
+                            )
+                        )
+
+                    if output_file_path:
+                        output_file.add(processed_coincidences)
+                    else:
+                        coincidences_to_return.append(processed_coincidences)
                     # Remove processed chunk from the left of the queue
                     queue.popleft()
                 num_singles += num_singles_in_chunk
 
             # At this point, all chunks have been read. Now process the last chunk.
-            coincidences.append(process_chunk(queue, time_window))
-
-            # Combine all coincidences from all chunks into a single pandas DataFrame
-            all_coincidences = pd.concat(coincidences, axis=0, ignore_index=True)
-
-            # Apply policy
-            filtered_coincidences = policy_functions[policy](
-                all_coincidences,
-                min_transaxial_distance,
-                transaxial_plane,
-                max_axial_distance,
+            coincidences_to_process = _process_chunk(
+                queue, time_window, allow_intra_volume_coincidences
             )
+            if coincidences_to_transfer is not None:
+                coincidences_to_process = pd.concat(
+                    [coincidences_to_transfer, coincidences_to_process],
+                    axis=0,
+                    ignore_index=True,
+                )
 
-            # Remove the temporary SingleIndex columns
-            filtered_coincidences = filtered_coincidences.drop(
-                columns=["SingleIndex1", "SingleIndex2"]
-            )
+            if not allDigiOpenCoincGate:
+                indices_to_remove = coincidences_to_process["SingleIndex1"].isin(
+                    coincidences_to_process["SingleIndex2"]
+                )
+                coincidences_to_process = coincidences_to_process[
+                    ~indices_to_remove
+                ].reset_index(drop=True)
+
+            if result_type == ResultType.COINCIDENCE_PAIRS:
+                processed_coincidences = policy_functions[str.lower(policy)](
+                    coincidences_to_process,
+                    min_transaxial_distance,
+                    transaxial_plane,
+                    max_axial_distance,
+                )
+                # Remove the temporary SingleIndex columns
+                processed_coincidences = processed_coincidences.drop(
+                    columns=["SingleIndex1", "SingleIndex2"]
+                )
+            elif result_type == ResultType.COINCIDENT_SINGLES:
+                processed_coincidences = _decompose_coincidence_pairs_into_singles(
+                    coincidences_to_process
+                )
+
+            if output_file_path:
+                output_file.add(processed_coincidences)
+            else:
+                coincidences_to_return.append(processed_coincidences)
+
             processing_finished = True
 
         except ChunkSizeTooSmallError:
             # Double chunk size and start all over again
             chunk_size *= 2
             num_chunk_size_increases += 1
+            time_lost = time.time() - start
+
+        finally:
+            if output_file_path:
+                output_file.close()
 
     if not processing_finished:
         # Coincidence sorting has failed, even after repeated increases of the chunk size
         raise ChunkSizeTooSmallError
 
-    if return_type == "dict":
-        return filtered_coincidences.to_dict(orient="list")
-    elif return_type == "pd":
-        return filtered_coincidences
+    if num_chunk_size_increases > 0:
+        time_reduction = time_lost / (time.time() - start)
+        if time_reduction >= 0.01:
+            logger.warning(
+                f"Coincidence sorting execution time can be reduced by {time_reduction*100:.02f}% by using chunk_size {chunk_size} instead of {original_chunk_size}"
+            )
+
+    if output_file_path is None:
+        # Combine all coincidences from all chunks into a single pandas DataFrame
+        coincidences_to_return = pd.concat(
+            coincidences_to_return, axis=0, ignore_index=True
+        )
+        if return_type == "dict":
+            return coincidences_to_return.to_dict(orient="list")
+        elif return_type == "pd":
+            return coincidences_to_return
 
 
-def process_chunk(queue, time_window):
+def _process_chunk(queue, time_window, allow_intra_volume_coincidences):
     """
     Processes singles in the chunk queue[0],
     possibly transferring some of those singles to the next chunk queue[1].
@@ -170,13 +515,15 @@ def process_chunk(queue, time_window):
         t2 = next_chunk["GlobalTime"]
         t2_min = np.min(t2)
         t2_max = np.max(t2)
-        # Require that the next chunk's time interval is later than
-        # the current chunk's time interval (overlap (t2_min < t1_max) is allowed).
-        if not (t2_min > t1_min and t2_max > t1_max):
+        # Require that the next chunk's time interval starts later than
+        # the start time of the current chunk's time interval.
+        if t2_min <= t1_min:
             raise ChunkSizeTooSmallError
 
     # Find coincidences in the current chunk
-    coincidences = run_coincidence_detection_in_chunk(chunk, time_window)
+    coincidences = _run_coincidence_detection_in_chunk(
+        chunk, time_window, allow_intra_volume_coincidences
+    )
 
     if next_chunk is not None:
         # If there are singles in the current chunk that are beyond t_min
@@ -197,17 +544,20 @@ def process_chunk(queue, time_window):
     return coincidences
 
 
-def run_coincidence_detection_in_chunk(chunk, time_window):
+def _run_coincidence_detection_in_chunk(
+    chunk, time_window, allow_intra_volume_coincidences
+):
     """
     Detects coincidences between singles in the given chunk, excluding coincidences
     between singles in the same volume.
     """
-    # Add a temporary column containing hash values of the strings identifying the volumes,
-    # to assist in excluding coincidences between singles in the same volume
-    # (calculating and comparing hash values is much faster than comparing strings).
-    chunk["VolumeIDHash"] = pd.util.hash_pandas_object(
-        chunk["PreStepUniqueVolumeID"], index=False
-    )
+    if not allow_intra_volume_coincidences:
+        # Add a temporary column containing hash values of the strings identifying the volumes,
+        # to assist in excluding coincidences between singles in the same volume
+        # (calculating and comparing hash values is much faster than comparing strings).
+        chunk["VolumeIDHash"] = pd.util.hash_pandas_object(
+            chunk["PreStepUniqueVolumeID"], index=False
+        )
     time_np = chunk["GlobalTime"].to_numpy()
     # Sort the time values chronologically (singles in the chunk may not be in chronological order).
     time_np_sorted_indices = np.argsort(time_np)
@@ -252,68 +602,76 @@ def run_coincidence_detection_in_chunk(chunk, time_window):
     coincidences = pd.concat([coincidence_singles1, coincidence_singles2], axis=1)[
         interleaved_columns
     ]
-    # Remove coincidences between singles in the same volume.
-    coincidences = coincidences.loc[
-        coincidences["VolumeIDHash1"] != coincidences["VolumeIDHash2"]
-    ].reset_index(drop=True)
-    # Remove the temporary volume ID hash columns.
-    coincidences = coincidences.drop(columns=["VolumeIDHash1", "VolumeIDHash2"])
+    if not allow_intra_volume_coincidences:
+        # Remove coincidences between singles in the same volume.
+        coincidences = coincidences.loc[
+            coincidences["VolumeIDHash1"] != coincidences["VolumeIDHash2"]
+        ].reset_index(drop=True)
+        # Remove the temporary volume ID hash columns.
+        coincidences = coincidences.drop(columns=["VolumeIDHash1", "VolumeIDHash2"])
 
     return coincidences
 
 
-def remove_multiples(
+def _remove_multiples(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
     # Remove multiple coincidences.
     # Remaining coincidences are the ones that are alone in their time window.
-
-    coincidences_output = filter_multi(coincidences)
+    coincidences_multiples_removed = _filter_multi(coincidences)
+    # Only keep coincidences that comply with the minimum transaxial distance
+    # and the maximum axial distance.
+    coincidences_output = _filter_goods(
+        coincidences_multiples_removed,
+        min_transaxial_distance,
+        transaxial_plane,
+        max_axial_distance,
+    )
     return coincidences_output
 
 
-def take_all_goods(
+def _take_all_goods(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
     # Only keep coincidences that comply with the minimum transaxial distance
     # and the maximum axial distance.
-    return filter_goods(
+    return _filter_goods(
         coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
     )
 
 
-def take_winner_of_goods(
+def _take_winner_of_goods(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
     # Of all the "good" coincidences in a window, only keep the one with highest energy.
 
-    coincidences_goods = filter_goods(
+    coincidences_goods = _filter_goods(
         coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
     )
-    return filter_max_energy(coincidences_goods)
+    return _filter_max_energy(coincidences_goods)
 
 
-def take_if_only_one_good(
+def _take_if_only_one_good(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
     # Keep only the "good" coincidences, then remove multiples from the remaining coincidences.
     # As a result, the only coincidences remainining are the ones that are the only "good" one
     # in their coincidence window.
 
-    coincidences_goods = filter_goods(
+    coincidences_goods = _filter_goods(
         coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
     )
 
-    return filter_multi(coincidences_goods)
+    return _filter_multi(coincidences_goods)
 
 
-def take_winner_if_is_good(
+def _take_winner_if_is_good(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
     # Only keep the coincidence with max energy in each time window, then remove
     # coincidences that are not "good".
-    coincidences_winner = filter_max_energy(coincidences)
-    return filter_goods(
+    coincidences_winner = _filter_max_energy(coincidences)
+    return _filter_goods(
         coincidences_winner,
         min_transaxial_distance,
         transaxial_plane,
@@ -321,10 +679,10 @@ def take_winner_if_is_good(
     )
 
 
-def take_winner_if_all_are_goods(
+def _take_winner_if_all_are_goods(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
-    filtered_coincidences = filter_goods(
+    filtered_coincidences = _filter_goods(
         coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
     )
 
@@ -348,32 +706,46 @@ def take_winner_if_all_are_goods(
     ]
 
     # In each time window, take the "winner" with maximal sum of singles deposited energy.
-    return filter_max_energy(filtered_coincidences)
+    return _filter_max_energy(filtered_coincidences)
 
 
-def filter_multi(coincidences):
+def _filter_multi(coincidences):
 
     # Coincidences with the same value of SingleIndex1 belong to the same time window.
     # Remove multiples by removing coincidences where the first single appears more than once.
     return coincidences[~coincidences["SingleIndex1"].duplicated(keep=False)]
 
 
-def filter_goods(
+def _filter_goods(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
-    # Calculate the transaxial distance between the singles in each coincidence.
-    td = transaxial_distance(coincidences, transaxial_plane)
-    # Remove coincidences of which the transaxial distance is below threshold.
-    filtered_coincidences = coincidences.loc[td >= min_transaxial_distance].reset_index(
-        drop=True
-    )
-    # Calculate the axial distance between the singles in each remaining coincidence.
-    ad = axial_distance(filtered_coincidences, transaxial_plane)
-    # Remove coincidences of which the axial distance is above the threshold.
-    return filtered_coincidences.loc[ad <= max_axial_distance].reset_index(drop=True)
+    # If transaxial_plane is None, then min_transaxial_distance and max_axial_distance are None as well.
+    # No coincidences need to be removed.
+    if not transaxial_plane:
+        return coincidences
+
+    filtered_coincidences = coincidences
+
+    if min_transaxial_distance is not None:
+        # Calculate the transaxial distance between the singles in each coincidence.
+        td = _transaxial_distance(filtered_coincidences, transaxial_plane)
+        # Remove coincidences of which the transaxial distance is below the threshold.
+        filtered_coincidences = filtered_coincidences.loc[
+            td >= min_transaxial_distance
+        ].reset_index(drop=True)
+
+    if max_axial_distance is not None:
+        # Calculate the axial distance between the singles in each remaining coincidence.
+        ad = _axial_distance(filtered_coincidences, transaxial_plane)
+        # Remove coincidences of which the axial distance is above the threshold.
+        filtered_coincidences = filtered_coincidences.loc[
+            ad <= max_axial_distance
+        ].reset_index(drop=True)
+
+    return filtered_coincidences
 
 
-def filter_max_energy(coincidences):
+def _filter_max_energy(coincidences):
 
     filtered_coincidences = coincidences.copy(deep=True)
     # Add a temporary column containing the sum of deposited energy of both singles.
@@ -392,7 +764,7 @@ def filter_max_energy(coincidences):
     return filtered_coincidences.drop(columns=["TotalEnergyInCoincidence"])
 
 
-def transaxial_distance(coincidences, transaxial_plane):
+def _transaxial_distance(coincidences, transaxial_plane):
 
     if transaxial_plane not in ("xy", "yz", "xz"):
         raise ValueError(
@@ -412,7 +784,7 @@ def transaxial_distance(coincidences, transaxial_plane):
     return np.sqrt((a1 - a2) ** 2 + (b1 - b2) ** 2)
 
 
-def axial_distance(coincidences, transaxial_plane):
+def _axial_distance(coincidences, transaxial_plane):
 
     if transaxial_plane not in ("xy", "yz", "xz"):
         raise ValueError(
@@ -428,8 +800,282 @@ def axial_distance(coincidences, transaxial_plane):
     return np.abs(a1 - a2)
 
 
-def copy_tree_for_dump(input_tree):
-    branches = {}
-    for key in input_tree.keys():
-        branches[key] = input_tree.arrays([key], library="np")[key]
-    return branches
+def filter_pandas_tree(df, branch_name="ParentID", value=0, accepted=True):
+
+    if accepted == True:
+        df = df[df[branch_name] == value]
+        # df.drop(df[df[branch_name] != value].index, inplace=True)
+
+    else:
+        df = df[df[branch_name] != value]
+        # df.drop(df[df[branch_name] == value].index, inplace=True) #to avoid copie of data frame. Is it worth it?
+
+    # print(f"Number of entries after filtering: {len(df_filtered)}")
+
+    return df
+
+
+def ccmod_ideal_singles(data):
+    required_branches = {
+        "EventID",
+        "PostPosition_X",
+        "PostPosition_Y",
+        "PostPosition_Z",
+        "ProcessDefinedStep",
+        "PreKineticEnergy",
+        "PostKineticEnergy",
+        "PDGCode",  # it could be optional ?
+        "ParentID",
+    }
+    missing_columns = set(required_branches) - set(
+        data.columns
+    )  # all branches in required that are not in data columns
+    assert (
+        not missing_columns
+    ), f"Missing columns: {missing_columns}"  # Error if there are missing columns
+    data["ProcessDefinedStep"] = data["ProcessDefinedStep"].astype(
+        str
+    )  # otherwise strange error coming from having string values in the conversion to pandas
+    # Filter Hits
+    df = filter_pandas_tree(
+        data, branch_name="PDGCode", value=22, accepted=True
+    )  # it should be the case. Just check it
+    df = filter_pandas_tree(
+        df, branch_name="ParentID", value=0, accepted=True
+    )  # I rewrite the data but I couls save different ones
+    df = filter_pandas_tree(
+        df, branch_name="ProcessDefinedStep", value="Transportation", accepted=False
+    )
+    df = filter_pandas_tree(
+        df, branch_name="ProcessDefinedStep", value="Rayl", accepted=False
+    )  # Check but I think that this process did not generate a pulse
+
+    # Create a new branch  with ideal energy info
+    df["IdealTotalEnergyDeposit"] = df["PreKineticEnergy"] - df["PostKineticEnergy"]
+
+    # rm branches (optional)# use of inplace worth it?
+    df = df.drop(columns=["PreKineticEnergy"])
+    # df = df.drop(columns=["PostKineticEnergy"])
+    df = df.drop(columns=["ParentID"])
+    df = df.drop(columns=["PDGCode"])
+
+    return df
+
+
+def ccmod_ideal_coincidences(df):
+    required_branches = {"EventID"}
+    missing_columns = set(required_branches) - set(
+        df.columns
+    )  # all branches in required that are not in data columns
+    assert (
+        not missing_columns
+    ), f"Missing columns: {missing_columns}"  # Error if there are missing columns
+    # create a new attribute CoincID that groups hits from the same coincidence. We can have more that two hits/pulses in a coincidence oe
+    nSingles = df["EventID"].value_counts()
+    # keep only events with more than one nSingles
+    df = df[df["EventID"].isin(nSingles[nSingles > 1].index)]
+    # Assign CoincIDs starting from 0, in order of first appearance).
+    df["CoincID"] = pd.factorize(df["EventID"])[0]
+
+    return df
+
+
+def ccmod_make_cones(
+    data,
+    groupby_key="CoincID",
+    energy_key_name="TotalEnergyDeposit",
+    posX_key_name="PostPosition_X",
+    posY_key_name="PostPosition_Y",
+    posZ_key_name="PostPosition_Z",
+):
+
+    required_branches = {
+        groupby_key,
+        posX_key_name,
+        posY_key_name,
+        posZ_key_name,
+        energy_key_name,
+    }
+    missing_columns = set(required_branches) - set(
+        data.columns
+    )  # all branches in required that are not in data columns
+    assert (
+        not missing_columns
+    ), f"Missing columns: {missing_columns}"  # Error if there are missing columns
+
+    # Attribute name  for energy to create the cones : either IdealTotalEnergyDeposit or TotalEnergyDeposit
+    first_vals = data.groupby(groupby_key).first()[
+        [energy_key_name, posX_key_name, posY_key_name, posZ_key_name]
+    ]
+    second_vals = (
+        data.groupby(groupby_key)
+        .nth(1)[[posX_key_name, posY_key_name, posZ_key_name]]
+        .reset_index()
+    )  # reset otherwise old indexes of data
+
+    # last_vals = data.groupby("CoincID").last()[["PostKineticEnergy"]]
+
+    total_energy = data.groupby(groupby_key)[energy_key_name].sum()
+    EnergyRest = total_energy - first_vals[energy_key_name]
+
+    # it would be nice to have the info of energy and position of the sourve
+    data_cones = pd.DataFrame(
+        {
+            # "CoincID": first_vals.index,#Not needed
+            "Energy1": first_vals[energy_key_name].values,
+            "EnergyRest": EnergyRest.values,
+            "X1": first_vals[posX_key_name].values,
+            "Y1": first_vals[posY_key_name].values,
+            "Z1": first_vals[posZ_key_name].values,
+            #
+            "X2": second_vals[posX_key_name].values,
+            "Y2": second_vals[posY_key_name].values,
+            "Z2": second_vals[posZ_key_name].values,
+            # "EnergyExit": last_vals["PostKineticEnergy"].values, #Added if possible
+        }
+    ).reset_index(
+        drop=True
+    )  # flatten index Do not save old index from data
+
+    return data_cones
+
+
+def kill_multiple_coinc(df: pd.DataFrame, group_col: str = "CoincID") -> pd.DataFrame:
+    """
+    Remove coincidences that contain more than 2 singles.
+    """
+    singles_per_coinc = df.groupby(group_col, sort=False).size()
+    valid_ids = singles_per_coinc[singles_per_coinc == 2].index
+    return df[df[group_col].isin(valid_ids)].copy()
+
+
+def kill_same_volume_pairs(
+    df: pd.DataFrame,
+    group_col: str = "CoincID",
+    volume_col: str = "PreStepUniqueVolumeID",
+) -> pd.DataFrame:
+    """
+    Remove 2‑single coincidences where both singles occur in the same volume.
+
+    Assumes:
+    - Each CoincID has exactly 2 singles (e.g. after kill_multiple_coinc).
+    """
+    unique_volumes_per_coinc = df.groupby(group_col, sort=False)[volume_col].nunique()
+    good_ids = unique_volumes_per_coinc[unique_volumes_per_coinc >= 2].index
+    return df[df[group_col].isin(good_ids)].copy()
+
+
+def _first_tree(f: uproot.ReadOnlyFile):
+    key = f.keys()[0]
+    name = key.split(";")[0]
+    return f[name]
+
+
+def _get_tree(f: uproot.ReadOnlyFile, preferred: str | None):
+    if preferred and preferred in f:
+        return f[preferred]
+    return _first_tree(f)
+
+
+def ccmod_merge_several_singles_root_into_one(
+    scatt_root_filename,
+    abs_root_filename,
+    output_root_filename,
+    scatt_tree_name,
+    abs_tree_name,
+    output_tree_name,
+    overwrite: bool = True,
+    save_branches: list[str] | None = None,
+):
+    scatt_root_filename = Path(scatt_root_filename)
+    abs_root_filename = Path(abs_root_filename)
+    output_root_filename = Path(output_root_filename)
+    output_root_filename.parent.mkdir(parents=True, exist_ok=True)
+
+    if output_root_filename.exists():
+        if overwrite:
+            output_root_filename.unlink()
+        else:
+            return output_root_filename
+
+    required_branches = (
+        "EventID",
+        "GlobalTime",
+        "PreStepUniqueVolumeID",
+        "TotalEnergyDeposit",
+        "PostPosition_X",
+        "PostPosition_Y",
+        "PostPosition_Z",
+    )
+
+    with (
+        uproot.open(scatt_root_filename) as f_sc,
+        uproot.open(abs_root_filename) as f_ab,
+    ):
+        t_sc = _get_tree(f_sc, scatt_tree_name)
+        t_ab = _get_tree(f_ab, abs_tree_name)
+
+        branches_sc = set(t_sc.keys())
+        branches_ab = set(t_ab.keys())
+
+        # check that all needed columns exist
+        miss_sc = set(required_branches) - branches_sc
+        miss_ab = set(required_branches) - branches_ab
+        if miss_sc:
+            raise ValueError(f"Scatterer singles missing branches: {sorted(miss_sc)}")
+        if miss_ab:
+            raise ValueError(f"Absorber singles missing branches: {sorted(miss_ab)}")
+        # check that both trees have the same branches
+        if branches_sc != branches_ab:
+            only_sc = branches_sc - branches_ab
+            only_ab = branches_ab - branches_sc
+
+            if only_sc:
+                raise ValueError(f"Branches only in scatterer: {sorted(only_sc)}")
+            if only_ab:
+                raise ValueError(f"Branches only in absorber: {sorted(only_ab)}")
+
+        # Load all branches from each tree into pandas
+        sc_df = t_sc.arrays(library="pd")
+        ab_df = t_ab.arrays(library="pd")
+
+        merged = pd.concat([sc_df, ab_df], ignore_index=True)
+        # Optionally filter branches before writing
+        if save_branches is not None:
+            missing = set(save_branches) - set(merged.columns)
+            if missing:
+                raise ValueError(
+                    f"Branches not found in merged data: {sorted(missing)}"
+                )
+
+            merged = merged[save_branches]
+
+        # cc_coincidences_sorter expects time-ordered singles
+        merged = merged.sort_values(
+            ["EventID", "GlobalTime"], kind="mergesort"
+        ).reset_index(drop=True)
+
+        # Write merged tree as a TTree
+        for col in merged.columns:
+            if merged[col].dtype == object:
+                merged[col] = pd.Categorical(merged[col])
+        data = merged.to_dict(orient="list")
+        data = root_tree_get_branch_data(data)
+        types = root_tree_get_branch_types(data)
+        with uproot.recreate(output_root_filename) as f_out:
+            root_write_tree(f_out, output_tree_name, types, data)
+
+        # Validate exact branch set
+        with uproot.open(output_root_filename) as f_chk:
+            if output_tree_name not in f_chk:
+                raise ValueError("Merged singles tree is empty; no data to write.")
+            out_keys = set(f_chk[output_tree_name].keys())
+
+        # Warn if "required branches" for sorting are not included in the merged file
+        missing_required = set(required_branches) - out_keys
+        if missing_required:
+            print(
+                "WARNING: The merged tree does not include all required branches for sorting.\n"
+                f"Missing required branches: {sorted(missing_required)}\n"
+                f"Required branches are: {sorted(required_branches)}"
+            )

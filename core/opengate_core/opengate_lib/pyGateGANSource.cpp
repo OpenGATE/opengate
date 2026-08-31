@@ -5,13 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateGANSource.h"
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateGANSource.h"
 
 void init_GateGANSource(py::module &m) {
 

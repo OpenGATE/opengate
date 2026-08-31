@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateDoseActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateDoseActor.h"
 
 class PyGateDoseActor : public GateDoseActor {
 public:
@@ -43,17 +40,26 @@ void init_GateDoseActor(py::module &m) {
       .def("SetDoseFlag", &GateDoseActor::SetDoseFlag)
       .def("GetDoseSquaredFlag", &GateDoseActor::GetDoseSquaredFlag)
       .def("SetDoseSquaredFlag", &GateDoseActor::SetDoseSquaredFlag)
-      .def("GetToWaterFlag", &GateDoseActor::GetToWaterFlag)
-      .def("SetToWaterFlag", &GateDoseActor::SetToWaterFlag)
+      .def("GetScoreInMaterial", &GateDoseActor::GetScoreInMaterial)
+      .def("SetScoreInMaterial", &GateDoseActor::SetScoreInMaterial)
+      .def("GetFastSPRCalculationFlag",
+           &GateDoseActor::GetFastSPRCalculationFlag)
+      .def("SetFastSPRCalculationFlag",
+           &GateDoseActor::SetFastSPRCalculationFlag)
+      .def("GetReferenceEnergySPR", &GateDoseActor::GetReferenceEnergySPR)
+      .def("SetReferenceEnergySPR", &GateDoseActor::SetReferenceEnergySPR)
+      .def("GetTransitionEnergySPR", &GateDoseActor::GetTransitionEnergySPR)
+      .def("SetTransitionEnergySPR", &GateDoseActor::SetTransitionEnergySPR)
       .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
       .def("SetUncertaintyGoal", &GateDoseActor::SetUncertaintyGoal)
+      .def("SetTopVoxelsCount", &GateDoseActor::SetTopVoxelsCount)
       .def("SetThreshEdepPerc", &GateDoseActor::SetThreshEdepPerc)
       .def("SetOvershoot", &GateDoseActor::SetOvershoot)
       .def("SetNbEventsFirstCheck", &GateDoseActor::SetNbEventsFirstCheck)
       .def("GetPhysicalVolumeName", &GateDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateDoseActor::SetPhysicalVolumeName)
-      .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)
+      .def_readwrite("NbOfEvent", &GateDoseActor::fNbOfEvent)
       .def_readwrite("cpp_edep_image", &GateDoseActor::cpp_edep_image)
       .def_readwrite("cpp_edep_squared_image",
                      &GateDoseActor::cpp_edep_squared_image)

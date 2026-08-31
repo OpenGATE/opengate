@@ -6,27 +6,15 @@
    ------------------------------------ -------------- */
 
 #include "GateBeamQualityActor.h"
-#include "G4LinInterpolation.hh"
-#include "G4Navigator.hh"
-#include "G4RandomTools.hh"
-#include "G4RunManager.hh"
-#include "GateHelpers.h"
 #include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
-#include <itkImageRegionIterator.h>
-
-#include "G4Deuteron.hh"
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4MaterialTable.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
-#include "G4Positron.hh"
-#include "G4Proton.hh"
-
+#include <G4Electron.hh>
+#include <G4EmCalculator.hh>
+#include <G4Gamma.hh>
+#include <G4LinInterpolation.hh>
+#include <G4MaterialTable.hh>
+#include <G4ParticleDefinition.hh>
 #include <cmath>
+#include <itkImageRegionIterator.h>
 
 GateBeamQualityActor::~GateBeamQualityActor() {
   for (auto *vec : *table) {
@@ -55,7 +43,7 @@ void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
 double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
                                                double *secondQuantity) {
   auto *current_material = step->GetPreStepPoint()->GetMaterial();
-  auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
+  auto density = current_material->GetDensity(); // / CLHEP::g * CLHEP::cm3;
   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
   auto &l = fThreadLocalData.Get();
   auto dedx_currstep = l.dedx_currstep;

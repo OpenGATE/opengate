@@ -9,17 +9,17 @@
 
 namespace py = pybind11;
 
-#include "G4FastSimulationManager.hh"
-#include "G4FieldManager.hh"
-#include "G4LogicalVolume.hh"
-#include "G4Material.hh"
-#include "G4MaterialCutsCouple.hh"
-#include "G4SmartVoxelHeader.hh"
-#include "G4UserLimits.hh"
-#include "G4VSensitiveDetector.hh"
-#include "G4VSolid.hh"
-#include "G4Version.hh"
-#include "G4VisAttributes.hh"
+#include <G4FastSimulationManager.hh>
+#include <G4FieldManager.hh>
+#include <G4LogicalVolume.hh>
+#include <G4Material.hh>
+#include <G4MaterialCutsCouple.hh>
+#include <G4SmartVoxelHeader.hh>
+#include <G4UserLimits.hh>
+#include <G4VSensitiveDetector.hh>
+#include <G4VSolid.hh>
+#include <G4Version.hh>
+#include <G4VisAttributes.hh>
 
 void init_G4LogicalVolume(py::module &m) {
   py::class_<G4LogicalVolume, std::unique_ptr<G4LogicalVolume, py::nodelete>>(
@@ -97,5 +97,6 @@ void init_G4LogicalVolume(py::module &m) {
            &G4LogicalVolume::GetFastSimulationManager,
            py::return_value_policy::reference_internal)
       .def("SetBiasWeight", &G4LogicalVolume::SetBiasWeight)
-      .def("GetBiasWeight", &G4LogicalVolume::GetBiasWeight);
+      .def("GetBiasWeight", &G4LogicalVolume::GetBiasWeight)
+      .def("GetInstanceID", &G4LogicalVolume::GetInstanceID);
 }

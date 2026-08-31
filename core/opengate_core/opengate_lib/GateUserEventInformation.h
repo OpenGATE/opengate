@@ -8,9 +8,9 @@
 #ifndef GateEventUserInfo_h
 #define GateEventUserInfo_h
 
-#include "G4VUserEventInformation.hh"
-#include "GateVActor.h"
-#include <map>
+#include <G4Event.hh>
+#include <G4Track.hh>
+#include <G4VUserEventInformation.hh>
 
 class GateUserEventInformation : public G4VUserEventInformation {
 

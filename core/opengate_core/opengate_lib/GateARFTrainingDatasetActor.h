@@ -8,8 +8,6 @@
 #ifndef GateARFTrainingDatasetActor_h
 #define GateARFTrainingDatasetActor_h
 
-#include "GateHelpers.h"
-#include "GateVActor.h"
 #include "digitizer/GateDigitizerEnergyWindowsActor.h"
 #include "digitizer/GateDigitizerHitsCollectionActor.h"
 #include <pybind11/stl.h>
@@ -24,10 +22,9 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  // Main function called every step in attached volume
   void StartSimulationAction() override;
 
-  void BeginOfEventAction(const G4Event *event) override;
+  void PreUserTrackingAction(const G4Track *track) override;
 
   void SteppingAction(G4Step *step) override;
 
@@ -50,6 +47,7 @@ public:
     double fE;
     double fTheta;
     double fPhi;
+    bool fIsFirstInteraction;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4Ions.hh"
-#include "G4ParticleDefinition.hh"
+#include <G4Ions.hh>
+#include <G4ParticleDefinition.hh>
 
 void init_G4Ions(py::module &m) {
   py::class_<G4Ions, G4ParticleDefinition>(m, "G4Ions")

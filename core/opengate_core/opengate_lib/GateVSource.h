@@ -8,9 +8,9 @@
 #ifndef GateVSource_h
 #define GateVSource_h
 
-#include "G4Cache.hh"
-#include "G4Event.hh"
-#include "G4RotationMatrix.hh"
+#include <G4Cache.hh>
+#include <G4Event.hh>
+#include <G4RotationMatrix.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -26,7 +26,7 @@ public:
   virtual ~GateVSource();
 
   // May be used to clear some allocated data during a thread
-  // (see for example GateGenericSource)
+  // (see, for example, GateGenericSource)
   virtual void CleanWorkerThread() {}
 
   // Called at initialisation to set the source properties from a single dict
@@ -38,9 +38,11 @@ public:
 
   virtual void PrepareNextRun();
 
-  virtual double PrepareNextTime(double current_simulation_time);
+  virtual double PrepareNextTime(double current_simulation_time,
+                                 unsigned long NumberOfGeneratedEvents);
 
-  virtual void GeneratePrimaries(G4Event *event, double time);
+  virtual void GeneratePrimaries(G4Event *event,
+                                 double current_simulation_time);
 
   virtual void SetOrientationAccordingToAttachedVolume();
 
@@ -49,6 +51,13 @@ public:
 
   virtual unsigned long
   GetExpectedNumberOfEvents(const TimeInterval &time_interval);
+
+  unsigned long GetRunGeneratedEvents() const { return fRunGeneratedEvents; }
+  unsigned long GetTotalGeneratedEvents() const {
+    return fTotalGeneratedEvents + fRunGeneratedEvents;
+  }
+
+  std::vector<int> GetVectorOfSimulatedEvents() { return fVectorOfMaxN; }
 
   std::string fName;
   double fStartTime;
@@ -63,22 +72,19 @@ public:
 
   G4ThreeVector fGlobalTranslation;
   G4RotationMatrix fGlobalRotation;
+  virtual void Visualize() const {}
 
 protected:
+  std::vector<int> fVectorOfMaxN;
   unsigned long fMaxN;
   double fActivity;
   double fInitialActivity;
   double fHalfLife;
   double fDecayConstant;
 
-  struct threadLocalT {
-    unsigned long fNumberOfGeneratedEvents = 0;
-    G4ThreeVector fGlobalTranslation;
-    G4RotationMatrix fGlobalRotation;
-  };
-  G4Cache<threadLocalT> fThreadLocalData;
-
-  virtual threadLocalT &GetThreadLocalData();
+  unsigned long fRunGeneratedEvents = 0;
+  unsigned long fTotalGeneratedEvents = 0;
+  G4int fRunID = 0;
 };
 
 #endif // GateVSource_h

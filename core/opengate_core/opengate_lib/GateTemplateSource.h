@@ -8,8 +8,6 @@
 #ifndef GateTemplateSource_h
 #define GateTemplateSource_h
 
-#include "GateAcceptanceAngleTesterManager.h"
-#include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
 
@@ -32,15 +30,11 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  double PrepareNextTime(double current_simulation_time) override;
-
   void PrepareNextRun() override;
 
   void GeneratePrimaries(G4Event *event, double time) override;
 
 protected:
-  unsigned long fNumberOfGeneratedEvents;
-  unsigned long fN;
   double fFloatValue;
   std::vector<double> fVectorValue;
 };

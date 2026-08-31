@@ -8,17 +8,17 @@
 #ifndef GateMultiFunctionalDetector_h
 #define GateMultiFunctionalDetector_h 1
 
-#include "G4MultiFunctionalDetector.hh"
+#include <G4MultiFunctionalDetector.hh>
 
 // Re-implementation of G4MultiFunctionalDetector to better control destructor
-// It seema that, in MT mode, the primitive should not be deleted by all
+// It seems that, in MT mode, the primitive should not be deleted by all
 // threads.
 class GateMultiFunctionalDetector : public G4MultiFunctionalDetector {
 
 public:
   GateMultiFunctionalDetector(G4String);
 
-  virtual ~GateMultiFunctionalDetector();
+  ~GateMultiFunctionalDetector() override;
 };
 
 #endif

@@ -8,7 +8,6 @@
 #ifndef GateDigiCollectionsRootManager_h
 #define GateDigiCollectionsRootManager_h
 
-#include "../GateHelpers.h"
 #include "GateDigiCollection.h"
 #include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
@@ -32,13 +31,13 @@ public:
 
   GetInstance();
 
-  void OpenFile(int tupleId, std::string filename);
+  void OpenFile(int tupleId, const std::string &filename);
 
   void CloseFile(int tupleId);
 
-  void Write(int tupleId);
+  void Write(int tupleId) const;
 
-  int DeclareNewTuple(std::string name);
+  int DeclareNewTuple(const std::string &name);
 
   void CreateRootTuple(GateDigiCollection *hc);
 

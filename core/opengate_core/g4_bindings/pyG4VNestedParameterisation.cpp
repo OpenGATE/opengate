@@ -6,9 +6,9 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4VNestedParameterisation.hh"
-#include "G4VPVParameterisation.hh"
-#include "G4VVolumeMaterialScanner.hh"
+#include <G4VNestedParameterisation.hh>
+#include <G4VPVParameterisation.hh>
+#include <G4VVolumeMaterialScanner.hh>
 
 namespace py = pybind11;
 

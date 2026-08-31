@@ -8,16 +8,13 @@
 #ifndef GateDoseActor_h
 #define GateDoseActor_h
 
-#include "G4Cache.hh"
-#include "G4VPrimitiveScorer.hh"
+#include "GateSPRCache.h"
 #include "GateVActor.h"
-#include "itkImage.h"
-#include <G4Threading.hh>
-#include <iostream>
-#include <pybind11/stl.h>
-
-#include "G4EmCalculator.hh"
-#include "G4NistManager.hh"
+#include <G4Cache.hh>
+#include <G4EmCalculator.hh>
+#include <G4VPrimitiveScorer.hh>
+#include <itkImage.h>
+#include <memory>
 
 namespace py = pybind11;
 
@@ -25,13 +22,13 @@ class GateDoseActor : public GateVActor {
 
 public:
   // Constructor
-  GateDoseActor(py::dict &user_info);
+  explicit GateDoseActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
 
   void InitializeCpp() override;
 
-  // Main function called every step in attached volume
+  // The main function called every step in the attached volume
   void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
@@ -48,39 +45,51 @@ public:
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
 
-  inline bool GetToWaterFlag() const { return fToWaterFlag; }
+  std::string GetScoreInMaterial() const { return fScoreInMaterial; }
 
-  inline void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
+  void SetScoreInMaterial(const std::string b) { fScoreInMaterial = b; }
 
-  inline bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
+  bool GetFastSPRCalculationFlag() const { return fFastSPRCalcFlag; }
 
-  inline void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
+  void SetFastSPRCalculationFlag(const bool b) { fFastSPRCalcFlag = b; }
 
-  inline void SetDoseFlag(const bool b) { fDoseFlag = b; }
+  double GetReferenceEnergySPR() const { return fReferenceEnergySPR; }
 
-  inline bool GetDoseFlag() const { return fDoseFlag; }
+  void SetReferenceEnergySPR(const double b) { fReferenceEnergySPR = b; }
 
-  inline void SetDoseSquaredFlag(const bool b) { fDoseSquaredFlag = b; }
+  double GetTransitionEnergySPR() const { return fTransitionEnergySPR; }
 
-  inline bool GetDoseSquaredFlag() const { return fDoseSquaredFlag; }
+  void SetTransitionEnergySPR(const double b) { fTransitionEnergySPR = b; }
 
-  inline void SetCountsFlag(const bool b) { fCountsFlag = b; }
+  bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
 
-  inline bool GetCountsFlag() const { return fCountsFlag; }
+  void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
 
-  inline void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
+  void SetDoseFlag(const bool b) { fDoseFlag = b; }
 
-  inline void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
+  bool GetDoseFlag() const { return fDoseFlag; }
 
-  inline void SetOvershoot(const double b) { Overshoot = b; }
+  void SetDoseSquaredFlag(const bool b) { fDoseSquaredFlag = b; }
 
-  inline void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
+  bool GetDoseSquaredFlag() const { return fDoseSquaredFlag; }
 
-  inline std::string GetPhysicalVolumeName() const {
-    return fPhysicalVolumeName;
-  }
+  void SetCountsFlag(const bool b) { fCountsFlag = b; }
 
-  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+  bool GetCountsFlag() const { return fCountsFlag; }
+
+  void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
+
+  void SetTopVoxelsCount(const std::size_t b) { fTopVoxelsCount = b; }
+
+  void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
+
+  void SetOvershoot(const double b) { fOvershoot = b; }
+
+  void SetNbEventsFirstCheck(const int b) { fNbEventsFirstCheck = b; }
+
+  std::string GetPhysicalVolumeName() const { return fPhysicalVolumeName; }
+
+  void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
   // Image type needs to be 3D double by default
   typedef itk::Image<double, 3> Image3DType;
@@ -89,7 +98,7 @@ public:
 
   void ind2sub(int index, Image3DType::IndexType &index3D);
 
-  double GetMaxValueOfImage(Image3DType::Pointer imageP);
+  double GetMeanOfHighestNValues(Image3DType::Pointer imageP);
   double ComputeMeanUncertainty();
 
   // The image is accessible on py side (shared by all threads)
@@ -102,29 +111,34 @@ public:
   Image3DType::SizeType size_edep{};
 
   struct threadLocalT {
-    G4EmCalculator emcalc;
+    std::unique_ptr<G4EmCalculator> emcalc;
     std::vector<double> squared_worker_flatimg;
     std::vector<int> lastid_worker_flatimg;
   };
 
-  void ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image,
-                         double value, int event_id,
-                         Image3DType::IndexType index);
+  void ScoreSquaredValue(threadLocalT &data,
+                         const Image3DType::Pointer &cpp_image, double value,
+                         int event_id, const Image3DType::IndexType &index);
 
-  void FlushSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image);
+  void FlushSquaredValues(threadLocalT &data,
+                          const Image3DType::Pointer &cpp_image);
 
-  void PrepareLocalDataForRun(threadLocalT &data, int numberOfVoxels);
+  static void PrepareLocalDataForRun(threadLocalT &data,
+                                     unsigned int numberOfVoxels);
 
   void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
                         Image3DType::IndexType &index) const;
 
-  // Option: indicate we must convert to dose to water
-  bool fToWaterFlag{};
+  // Option: indicate we convert dose to dose in this material
+  std::string fScoreInMaterial{};
+  double fReferenceEnergySPR;
+  double fTransitionEnergySPR;
+  bool fFastSPRCalcFlag;
 
   // Option: indicate if we must compute edep squared
   bool fEdepSquaredFlag{};
 
-  // Option: Is dose to be scored?
+  // Option: Is the dose to be scored?
   bool fDoseFlag{};
   bool fDoseSquaredFlag{};
 
@@ -135,18 +149,16 @@ public:
 
   // Option: set target statistical uncertainty for each run
   double fUncertaintyGoal;
+  std::size_t fTopVoxelsCount;
   double fThreshEdepPerc;
-  double Overshoot;
+  double fOvershoot;
 
-  int NbOfEvent = 0;
-  // set from python side. It will be overwritten by an estimation of the Nb of
-  // events needed to achieve the goal uncertainty.
-  int NbEventsFirstCheck;
-  int NbEventsNextCheck;
-  int NbOfThreads = 0;
-
-  double goalUncertainty;
-  double threshEdepPerc{};
+  int fNbOfEvent;
+  // set from python's side. It will be overwritten by an estimation of the
+  // number of events needed to achieve the goal uncertainty.
+  int fNbEventsFirstCheck;
+  int fNbEventsNextCheck;
+  double fGoalUncertainty;
 
   std::string fPhysicalVolumeName;
 
@@ -154,8 +166,11 @@ public:
   std::string fHitType;
 
 protected:
+  bool fScoreInOtherMaterial;
   G4Cache<threadLocalT> fThreadLocalDataEdep;
   G4Cache<threadLocalT> fThreadLocalDataDose;
+  GateSPRCache fSPRCache;
+  double CalculateSPR(G4Step *step);
 };
 
 #endif // GateDoseActor_h

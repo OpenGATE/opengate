@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-from opengate.managers import Simulation
-from opengate.utility import g4_units, g4_best_unit
+
+from opengate.geometry.materials import HounsfieldUnit_to_material
 from opengate.image import get_translation_between_images_center, read_image_info
 from opengate.logger import INFO
-from opengate.geometry.materials import HounsfieldUnit_to_material
+from opengate.managers import Simulation
+from opengate.sources.utility import set_source_energy_spectrum
+from opengate.utility import g4_best_unit, g4_units
 
 
 def create_simulation(param):
@@ -34,6 +36,7 @@ def create_simulation(param):
     sim.verbose_level = INFO
     param.output_folder = pathlib.Path(param.output_folder)
     sim.output_dir = param.output_folder
+    sim.progress_bar = True
 
     # units
     m = g4_units.m
@@ -96,15 +99,35 @@ def create_simulation(param):
     )
 
     # cuts
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = True
     sim.physics_manager.set_production_cut("world", "all", 1 * m)
-    sim.physics_manager.set_production_cut("ct", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("ct", "all", 2 * mm)
+
+    if param.mode == "e-":
+        # electron source
+        source.particle = "e-"
+        set_source_energy_spectrum(source, param.radionuclide)
+        sim.physics_manager.set_production_cut("ct", "all", 1 * m)
+    elif "gamma" in param.mode:
+        # electron source
+        source.particle = "gamma"
+        set_source_energy_spectrum(source, param.radionuclide)
+        sim.physics_manager.set_production_cut("ct", "all", 1 * m)
 
     # add dose actor (get the same size as the source)
     source_info = read_image_info(param.activity_image)
-    dose = sim.add_actor("DoseActor", "dose")
+    if param.mode == "gamma_tle":
+        dose = sim.add_actor("TLEDoseActor", "dose")
+        dose.tle_threshold_type = "energy"
+        dose.tle_threshold = source.energy.spectrum_energies[-1]
+        print(f"tle_threshold = {dose.tle_threshold/keV} keV")
+    else:
+        dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "edep.mhd"
+    dose.dose_uncertainty.active = True
+    dose.dose_squared.active = True
+    dose.dose.active = True
     dose.attached_to = ct.name
     dose.size = source_info.size
     dose.spacing = source_info.spacing
@@ -114,9 +137,14 @@ def create_simulation(param):
     if not sim.visu:
         dose.output_coordinate_system = "attached_to_image"
     dose.hit_type = "random"
+    dose.dose_uncertainty.active = True
+    dose.dose_squared.active = True
+    dose.dose.active = True
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
+    stats.output_filename = "stats.txt"
+    stats.stats.write_to_disk = True
 
     return sim

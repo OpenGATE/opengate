@@ -5,12 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateAttenuationImageActor.h"
-#include "GateHelpers.h"
+#include <pybind11/pybind11.h>
 
 class PyGateAttenuationImageActor : public GateAttenuationImageActor {
 public:

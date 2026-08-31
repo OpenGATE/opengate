@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4VUserPhysicsList.hh"
+#include <G4VUserPhysicsList.hh>
 
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
 // Needed helper class because of the pure virtual method

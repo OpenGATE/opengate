@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4Run.hh"
+#include <G4Run.hh>
 
 void init_G4Run(py::module &m) {
 

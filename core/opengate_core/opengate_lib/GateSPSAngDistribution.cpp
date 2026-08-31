@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateSPSAngDistribution.h"
-#include "GateHelpers.h"
 
 G4ThreeVector GateSPSAngDistribution::VGenerateOne() {
   // return GenerateOne();

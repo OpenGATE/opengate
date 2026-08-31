@@ -1,19 +1,27 @@
+import numpy as np
+import opengate_core as g4
 from box import Box
 from scipy.spatial.transform import Rotation
 
-import opengate_core as g4
+from opengate.actors.biasingactors import (
+    AngularAcceptanceValidator,
+    generic_source_default_aa,
+)
+
+from ..base import UserInfoValidatorBase, process_cls
+from ..exception import fatal, warning
+from ..logger import logger
+from ..utility import g4_units
 from .base import SourceBase
 from .utility import (
     all_beta_plus_radionuclides,
-    get_spectrum,
     compute_cdf_and_total_yield,
+    get_spectrum,
+    _setter_hook_generic_source_particle,
 )
-from ..base import process_cls
-from ..utility import g4_units
-from ..exception import fatal, warning
 
 
-def _generic_source_default_position():
+def _position_parameters():
     return Box(
         {
             "type": "point",
@@ -24,11 +32,12 @@ def _generic_source_default_position():
             "translation": [0, 0, 0],
             "rotation": Rotation.identity().as_matrix(),
             "confine": None,
+            "dz": None,  # (when cylinder)
         }
     )
 
 
-def _generic_source_default_direction():
+def _direction_parameters():
     return Box(
         {
             "type": "iso",
@@ -37,7 +46,7 @@ def _generic_source_default_direction():
             "momentum": [0, 0, 1],
             "focus_point": [0, 0, 0],
             "sigma": [0, 0],
-            "acceptance_angle": _generic_source_default_aa(),
+            "angular_acceptance": generic_source_default_aa(),
             "accolinearity_flag": False,
             "accolinearity_fwhm": 0.5 * g4_units.deg,
             "histogram_theta_weights": [],
@@ -48,21 +57,7 @@ def _generic_source_default_direction():
     )
 
 
-def _generic_source_default_aa():
-    deg = g4_units.deg
-    return Box(
-        {
-            "skip_policy": "SkipEvents",
-            "volumes": [],
-            "intersection_flag": False,
-            "normal_flag": False,
-            "normal_vector": [0, 0, 1],
-            "normal_tolerance": 3 * deg,
-        }
-    )
-
-
-def _generic_source_default_energy():
+def energy_parameters():
     return Box(
         {
             "type": "mono",
@@ -74,31 +69,268 @@ def _generic_source_default_energy():
             "spectrum_type": None,
             "spectrum_weights": [],
             "spectrum_energies": [],
+            "histogram_weight": [],
+            "histogram_energy": [],
             "spectrum_energy_bin_edges": [],
             "spectrum_histogram_interpolation": None,
         }
     )
 
 
-def _setter_hook_generic_source_particle(self, particle):
-    # particle must be a str
-    if not isinstance(particle, str):
-        fatal(f"the .particle user info must be a str, while it is {type(str)}")
-    # if it does not start with ion, we consider this is a simple particle (gamma, e+ etc)
-    if not particle.startswith("ion"):
-        return particle
-    # if start with ion, it is like 'ion 9 18' with Z A E
-    words = particle.split(" ")
-    if len(words) > 1:
-        self.ion.Z = int(words[1])
-    if len(words) > 2:
-        self.ion.A = int(words[2])
-    if len(words) > 3:
-        self.ion.E = int(words[3])
-    return particle
+def visualization_parameters():
+    return Box(
+        {
+            "count": 2000,
+            "color": "yellow",
+            "size": 2,
+        }
+    )
 
 
-class GenericSource(SourceBase, g4.GateGenericSource):
+class PositionValidator(UserInfoValidatorBase):
+    """Validates the 'position' Box."""
+
+    __schema__ = set(_position_parameters().keys())
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+        b = getattr(parent_obj, attr_name)
+        valid_types = {"sphere", "point", "box", "disc", "cylinder", "surface_sphere"}
+        if b.type not in valid_types:
+            fatal(
+                f"In {context_name}: '{b.type}' is not a valid position type. "
+                f"Must be one of {valid_types}."
+            )
+        if b.radius < 0:
+            fatal(f"In {context_name}: radius must be >= 0")
+        if b.sigma_x < 0:
+            fatal(f"In {context_name}: sigma_x must be >= 0")
+        if b.sigma_y < 0:
+            fatal(f"In {context_name}: sigma_y must be >= 0")
+        if len(b.size) != 3:
+            fatal(f"In {context_name}: size must be a 3-vector")
+        if len(b.translation) != 3:
+            fatal(f"In {context_name}: translation must be a 3-vector")
+        try:
+            rot_array = np.array(b.rotation)
+            if rot_array.shape != (3, 3):
+                raise ValueError("Shape is not (3, 3)")
+        except Exception:
+            fatal(
+                f"In {context_name}: 'rotation' must be convertible to a 3x3 matrix/array, "
+                f"but got: {b.rotation}"
+            )
+
+        # check confine
+        if b.confine:
+            if b.type == "point":
+                warning(
+                    f"In {context_name}, "
+                    f"confine is used, while position.type is point ... really ?"
+                )
+        return context_name
+
+
+class DirectionValidator(UserInfoValidatorBase):
+    """Validates the 'direction' Box."""
+
+    __schema__ = set(_direction_parameters().keys())
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        """
+        Validates the properties of a given object based on pre-defined constraints and
+        rules. This process ensures that specific attributes adhere to expected formats,
+        ranges, or lengths to maintain consistency and avoid errors.
+
+        Args:
+            parent_obj: The parent object containing the attribute to be validated.
+            attr_name: The name of the attribute to validate as a string.
+            parent_context: Optional; the context name or identifier for validation.
+
+        Returns:
+            A string containing the validation context name.
+
+        Raises:
+            Generates fatal errors and halts execution if validation constraints are not met
+            for the attribute, such as improper types, incorrect vector lengths, or invalid
+            range values.
+        """
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+        b = getattr(parent_obj, attr_name)
+        valid_types = ["iso", "histogram", "momentum", "focused", "beam2d", "cos"]
+        if b.type not in valid_types:
+            fatal(
+                f"In {context_name}: Cannot find the direction type '{b.type}'. "
+                f"Available types are {valid_types}"
+            )
+        # theta must be in [0, 180]
+        if len(b.theta) != 2:
+            fatal(f"In {context_name}: theta must be a 2-vector")
+        if b.theta[0] < 0 or b.theta[1] > 180:
+            fatal(
+                f"In {context_name}: Theta must be in [0, 180] degrees. "
+                f"Got {b.theta[0]} and {b.theta[1]}"
+            )
+        # phi must be in [0, 360]
+        if len(b.phi) != 2:
+            fatal(f"In {context_name}: phi must be a 2-vector")
+        if b.phi[0] < 0 or b.phi[1] > 360:
+            fatal(
+                f"In {context_name}: Phi must be in [0, 360] degrees. "
+                f"Got {b.phi[0]} and {b.phi[1]}"
+            )
+        # check the momentum
+        if len(b.momentum) != 3:
+            fatal(f"In {context_name}: momentum must be a 3-vector")
+        # check focus point
+        if len(b.focus_point) != 3:
+            fatal(f"In {context_name}: focus_point must be a 3-vector")
+        # sigma
+        if len(b.sigma) != 2:
+            fatal(f"In {context_name}: sigma must be a 2-vector")
+        # check angular acceptance
+        aa = AngularAcceptanceValidator()
+        aa.validate(b, "angular_acceptance", context_name)
+        # check histogram theta weights
+        if len(b.histogram_theta_weights) > 0 or len(b.histogram_theta_angles) > 0:
+            if len(b.histogram_theta_weights) != len(b.histogram_theta_angles) - 1:
+                fatal(
+                    f"In {context_name}: histogram_theta_weights must have -1 elements than histogram_theta_angles"
+                )
+        # check histogram phi weights
+        if len(b.histogram_phi_weights) > 0 or len(b.histogram_phi_angles) > 0:
+            if len(b.histogram_phi_weights) != len(b.histogram_phi_angles) - 1:
+                fatal(
+                    f"In {context_name}: histogram_phi_weights must have -1 elements than histogram_phi_angles"
+                )
+        return context_name
+
+
+class EnergyValidator(UserInfoValidatorBase):
+    """Validates the 'energy' Box."""
+
+    __schema__ = set(energy_parameters().keys())
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+        b = getattr(parent_obj, attr_name)
+        # check spectrum type
+        if b.spectrum_type is not None:
+            valid_spectrum_types = ["discrete", "histogram", "interpolated"]
+            if b.spectrum_type not in valid_spectrum_types:
+                fatal(
+                    f"In {context_name}: Cannot find the energy spectrum type '{b.spectrum_type}'. "
+                    f"Available types are {valid_spectrum_types}"
+                )
+        # check type
+        valid_types = [
+            "mono",
+            "gauss",
+            "F18_analytic",
+            "O15_analytic",
+            "C11_analytic",
+            "histogram",
+            "spectrum_discrete",
+            "spectrum_histogram",
+        ]
+        valid_types.extend(all_beta_plus_radionuclides)
+        if b.type not in valid_types:
+            fatal(
+                f"In {context_name}: Cannot find the energy type '{b.type}'. "
+                f"Available types are {valid_types}"
+            )
+        # check spectrum weights
+        if b.spectrum_type == "discrete":
+            if len(b.spectrum_weights) != len(b.spectrum_energies):
+                fatal(
+                    f"In {context_name}: spectrum_weights and spectrum_energies must have the same length"
+                )
+        elif b.spectrum_type == "histogram":
+            if len(b.spectrum_energy_bin_edges) != len(
+                b.spectrum_histogram_interpolation
+            ):
+                fatal(
+                    f"In {context_name}: spectrum_energy_bin_edges and spectrum_histogram_interpolation must have the same length"
+                )
+        # check sigma
+        if b.sigma_gauss < 0:
+            fatal(f"In {context_name}: sigma_gauss must be >= 0")
+        # check interpolation
+        valid_types = [None, "linear"]
+        if b.spectrum_histogram_interpolation not in valid_types:
+            fatal(
+                f"In {context_name}: Cannot find the spectrum_histogram_interpolation type '{b.spectrum_histogram_interpolation}'. "
+                f"Available types are {valid_types}"
+            )
+        return context_name
+
+
+class VisualizationValidator(UserInfoValidatorBase):
+    """Validates the 'visualization' Box."""
+
+    __schema__ = set(visualization_parameters().keys())
+
+    def validate_color(self, color, prefix=""):
+        valid_color_str = [
+            "white",
+            "grey",
+            "gray",
+            "black",
+            "brown",
+            "red",
+            "green",
+            "blue",
+            "cyan",
+            "magenta",
+            "yellow",
+        ]
+
+        if isinstance(color, str) and not color in valid_color_str:
+            fatal(
+                f"{prefix}Invalid color name '{color}'. Valid color name options are: {valid_color_str}."
+            )
+        if isinstance(color, list):
+            if len(color) > 4 or len(color) < 3:
+                fatal(
+                    f"{prefix}Color list must have 3 (RGB) or 4 (RGBA) elements. Got {len(color)}."
+                )
+            if len(color) == 3:
+                color.append(1.0)  # Add alpha value of 1.0 if only RGB is provided
+                logger.debug(
+                    f"{prefix}Alpha value of 1.0 is added to the color list since only RGB values are provided."
+                )
+            for i, c in enumerate(color):
+                if not isinstance(c, (int, float, np.number)):
+                    fatal(
+                        f"{prefix}All elements of color list must be numbers. Element {i} is not."
+                    )
+                if c < 0 or c > 1:
+                    fatal(
+                        f"{prefix}All elements of color list must be in the range [0, 1]. Element {i} is {c}."
+                    )
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+        b = getattr(parent_obj, attr_name)
+        if b.count <= 0:
+            logger.info(
+                f"For source {parent_obj.name}, visualization count is set to {b.count}. No visualization will be performed."
+            )
+        elif b.count > 10000:
+            warning(
+                f"For source {parent_obj.name}, visualization count is too high ({b.count}), using 2000 instead."
+            )
+            b.count = 2000
+        if b.size <= 0 or b.size >= 20:
+            warning(
+                f"For source {parent_obj.name}, visualization size must be in the range (0, 20). Got {b.size}. Using 3 instead."
+            )
+            b.size = 3
+        self.validate_color(b.color, f"For visualization of source {parent_obj.name}: ")
+        return context_name
+
+
+class GenericSource(SourceBase):
     """
     GenericSource close to the G4 SPS, but a bit simpler.
     The G4 source created by this class is GateGenericSource.
@@ -116,6 +348,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
     position: Box
     direction: Box
     energy: Box
+    visualization: Box
 
     user_info_defaults = {
         "particle": (
@@ -165,22 +398,36 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             },
         ),
         "position": (
-            _generic_source_default_position(),
+            _position_parameters(),
             {"doc": "Define the position of the primary particles"},
         ),
         "direction": (
-            _generic_source_default_direction(),
+            _direction_parameters(),
             {"doc": "Define the direction of the primary particles"},
         ),
         "energy": (
-            _generic_source_default_energy(),
+            energy_parameters(),
             {"doc": "Define the energy of the primary particles"},
+        ),
+        "polarization": (
+            [],
+            {"doc": "Polarization of the particle (3 Stokes parameters)."},
+        ),
+        "visualization": (
+            visualization_parameters(),
+            {
+                "doc": "count is the number of particles to visualize, color is the color of the visualized particles and size is their size (in mm).",
+            },
         ),
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.__initcpp__()
+        SourceBase.__init__(self, *args, **kwargs)
+        # to validate the parameters
+        self._pos_validator = PositionValidator()
+        self._dir_validator = DirectionValidator()
+        self._ene_validator = EnergyValidator()
+        self._visu_validator = VisualizationValidator()
         self.total_zero_events = 0
         self.total_skipped_events = 0
         if not self.user_info.particle.startswith("ion"):
@@ -193,60 +440,43 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         if len(words) > 3:
             self.user_info.ion.E = words[3]
 
-    def __initcpp__(self):
-        g4.GateGenericSource.__init__(self)
+    def create_g4_source(self):
+        return g4.GateGenericSource()
 
-    def initialize(self, run_timing_intervals):
-        if not isinstance(self.position, Box):
-            fatal(
-                f"Generic Source: user_info.position must be a Box, but is: {self.position}"
-            )
-        if not isinstance(self.direction, Box):
-            fatal(
-                f"Generic Source: user_info.direction must be a Box, but is: {self.direction}"
-            )
-        if not isinstance(self.energy, Box):
-            fatal(
-                f"Generic Source: user_info.energy must be a Box, but is: {self.energy}"
-            )
+    def resolve_and_validate_config(self, run_timing_intervals, context=None):
+        self.resolve_tac_activity()
+        super().resolve_and_validate_config(run_timing_intervals, context=context)
+
+        # Check the sub-parameters
+        self._pos_validator.validate(self, "position")
+        self._ene_validator.validate(self, "energy")
+        self._dir_validator.validate(self, "direction")
+        self._visu_validator.validate(self, "visualization")
 
         if self.particle == "back_to_back":
             # force the energy to 511 keV
             self.energy.type = "mono"
             self.energy.mono = 511 * g4_units.keV
 
-        # check energy type
-        l = [
-            "mono",
-            "gauss",
-            "F18_analytic",
-            "O15_analytic",
-            "C11_analytic",
-            "histogram",
-            "spectrum_discrete",
-            "spectrum_histogram",
-            "range",
-        ]
-        l.extend(all_beta_plus_radionuclides)
-        if self.energy.type not in l:
-            fatal(
-                f"Cannot find the energy type {self.energy.type} for the source {self.name}.\n"
-                f"Available types are {l}"
-            )
-
-        # check energy spectrum type if not None
-        valid_spectrum_types = [
-            "discrete",
-            "histogram",
-            "interpolated",
-        ]
-        if self.energy.spectrum_type is not None:
-            if self.energy.spectrum_type not in valid_spectrum_types:
+        # histogram parameters: histogram_weight, histogram_energy"
+        ene = self.energy
+        if ene.type == "histogram":
+            if len(ene.histogram_weight) != len(ene.histogram_energy):
                 fatal(
-                    f"Cannot find the energy spectrum type {self.energy.spectrum_type} for the source {self.name}.\n"
-                    f"Available types are {valid_spectrum_types}"
+                    f'For the source {self.name}, the parameters "energy", '
+                    f'"histogram_energy" and "histogram_weight" must have the same length'
                 )
 
+        # logic for half life and user_particle_life_time
+        if self.half_life > 0:
+            # if the user set the half life and not the user_particle_life_time
+            # we force the latter to zero
+            if self.user_particle_life_time < 0:
+                self.user_particle_life_time = 0
+
+        self.check_confine(self.user_info)
+
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
         # special case for beta plus energy spectra
         # FIXME put this elsewhere
         if self.particle == "e+":
@@ -258,69 +488,14 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
                 self.energy.is_cdf = True
-                self.SetEnergyCDF(ene)
-                self.SetProbabilityCDF(cdf)
+                g4_source.SetEnergyCDF(ene)
+                g4_source.SetProbabilityCDF(cdf)
 
-        self.update_tac_activity()
-
-        # histogram parameters: histogram_weight, histogram_energy"
-        ene = self.energy
-        if ene.type == "histogram":
-            if len(ene.histogram_weight) != len(ene.histogram_energy):
-                fatal(
-                    f'For the source {self.name}, the parameters "energy", '
-                    f'"histogram_energy" and "histogram_weight" must have the same length'
-                )
-
-        # check direction type
-        l = ["iso", "histogram", "momentum", "focused", "beam2d"]
-        if self.direction.type not in l:
-            fatal(
-                f"Cannot find the direction type {self.direction.type} for the source {self.name}.\n"
-                f"Available types are {l}"
-            )
-
-        # logic for half life and user_particle_life_time
-        if self.half_life > 0:
-            # if the user set the half life and not the user_particle_life_time
-            # we force the latter to zero
-            if self.user_particle_life_time < 0:
-                self.user_particle_life_time = 0
-
-        # initialize
-        SourceBase.initialize(self, run_timing_intervals)
-
-        if self.n > 0 and self.activity > 0:
-            fatal(
-                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
-            )
-        if self.n == 0 and self.activity == 0:
-            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
-        if self.activity > 0:
-            self.n = 0
-        if self.n > 0:
-            self.activity = 0
+        self.initialize_start_end_time(run_timing_intervals)
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        self.update_tac_activity(g4_source, runtime_user_info)
+        g4_source.InitializeUserInfo(runtime_user_info)
         # warning for non-used ?
-
-        # check confine
-        if self.position.confine:
-            if self.position.type == "point":
-                warning(
-                    f"In source {self.name}, "
-                    f"confine is used, while position.type is point ... really ?"
-                )
-
-    def check_ui_activity(self, ui):
-        # FIXME: This should rather be a function than a method
-        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
-        if ui.n > 0 and ui.activity > 0:
-            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
-        if ui.n == 0 and ui.activity == 0:
-            fatal(f"Choose either n or activity : {self.user_info}")
-        if ui.activity > 0:
-            ui.n = 0
-        if ui.n > 0:
-            ui.activity = 0
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method
@@ -332,13 +507,19 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                     f"confine is used, while position.type is point ... really ?"
                 )
 
-    def prepare_output(self):
-        SourceBase.prepare_output(self)
-        # store the output from G4 object
-        self.total_zero_events = self.GetTotalZeroEvents()
-        self.total_skipped_events = self.GetTotalSkippedEvents()
+    def gather_outputs(self, thread_sources):
+        self.total_zero_events = sum(
+            g4_src.GetTotalZeroEvents()
+            for g4_src in thread_sources
+            if g4_src is not None
+        )
+        self.total_skipped_events = sum(
+            g4_src.GetTotalSkippedEvents()
+            for g4_src in thread_sources
+            if g4_src is not None
+        )
 
-    def update_tac_activity(self):
+    def resolve_tac_activity(self):
         if self.tac_times is None and self.tac_activities is None:
             return
         if len(self.tac_times) != len(self.tac_activities):
@@ -349,11 +530,20 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # may start later than the simulation timing
         self.start_time = self.tac_times[0]
         self.activity = self.tac_activities[0]
-        self.SetTAC(self.tac_times, self.tac_activities)
+
+    def update_tac_activity(self, g4_source, runtime_user_info=None):
+        if self.tac_times is None and self.tac_activities is None:
+            return
+        tac_activities = (
+            runtime_user_info["tac_activities"]
+            if runtime_user_info is not None
+            else self.tac_activities
+        )
+        g4_source.SetTAC(self.tac_times, tac_activities)
 
     def can_predict_number_of_events(self):
-        aa = self.direction.acceptance_angle
-        if aa.intersection_flag or aa.normal_flag:
+        aa = self.direction.angular_acceptance
+        if aa.policy == "Rejection":
             if aa.skip_policy == "ZeroEnergy":
                 return True
             return False

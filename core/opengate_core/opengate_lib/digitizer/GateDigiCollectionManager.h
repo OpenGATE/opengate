@@ -8,9 +8,7 @@
 #ifndef GateHitsCollectionManager_h
 #define GateHitsCollectionManager_h
 
-#include "G4TouchableHistory.hh"
 #include "GateDigiCollection.h"
-#include "GateVDigiAttribute.h"
 #include <pybind11/stl.h>
 
 class GateDigiCollectionManager {

@@ -8,8 +8,9 @@
 #ifndef GateDigiCollection_h
 #define GateDigiCollection_h
 
-#include "G4TouchableHistory.hh"
 #include "GateVDigiAttribute.h"
+#include <G4Cache.hh>
+#include <G4VHitsCollection.hh>
 #include <pybind11/stl.h>
 
 class GateDigiCollectionManager;
@@ -74,7 +75,11 @@ public:
 
   void SetWriteToRootFlag(bool f);
 
-  void SetFilenameAndInitRoot(std::string filename);
+  void SetFilenameAndInitRoot(const std::string &filename);
+
+  // Switch all attributes to shared (non-thread-local) storage.
+  // Must be called after InitDigiAttributes* and before any Fill call.
+  void SetSharedStorage(bool b);
 
   std::string GetFilename() const { return fFilename; }
 
@@ -86,13 +91,15 @@ public:
 
   size_t GetSize() const override;
 
-  void Clear();
+  void Clear() const;
 
   std::vector<GateVDigiAttribute *> &GetDigiAttributes() {
     return fDigiAttributes;
   }
 
   std::set<std::string> GetDigiAttributeNames() const;
+
+  std::map<std::string, std::string> GetRootBranchTypes() const;
 
   GateVDigiAttribute *GetDigiAttribute(const std::string &name);
 
@@ -104,13 +111,15 @@ public:
 
   std::string DumpLastDigi() const;
 
+  std::string DumpDigi(int i) const;
+
   Iterator NewIterator();
 
   size_t GetBeginOfEventIndex() const;
 
-  void SetBeginOfEventIndex(size_t index);
+  void SetBeginOfEventIndex(size_t index) const;
 
-  void SetBeginOfEventIndex();
+  void SetBeginOfEventIndex() const;
 
 protected:
   // Can only be created by GateDigiCollectionManager
@@ -124,6 +133,11 @@ protected:
   int fTupleId;
   int fCurrentDigiAttributeId;
   bool fWriteToRootFlag;
+
+  // When fSharedStorageMode is true, fBeginOfEventIndex is stored in a plain
+  // member rather than thread-local storage (all access serialised externally).
+  bool fSharedStorageMode = false;
+  mutable size_t fSharedBeginOfEventIndex = 0;
 
   // thread local: the index of the beginning
   // of event is specific for each thread

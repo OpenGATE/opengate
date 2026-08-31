@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-#include "G4String.hh"
+#include <G4String.hh>
 
 void init_G4String(py::module &m) {
 
@@ -32,10 +32,16 @@ void init_G4String(py::module &m) {
 
       // stream output
       // not sure if this is the right way to do
-      .def("__repr__", [](const G4String &a) {
-        std::ostringstream os;
-        os << a;
-        return os.str();
+      .def("__repr__",
+           [](const G4String &a) {
+             std::ostringstream os;
+             os << a;
+             return os.str();
+           })
+
+      .def("__hash__", [](const G4String &s) {
+        return py::hash(
+            py::cast(s.data())); // Hash its underlying string representation
       });
 
   // py::implicitly_convertible<G4String, const char*>();

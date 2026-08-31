@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from test077_scatter_helpers import *
+
+import opengate as gate
+from opengate.actors.filters import GateFilterBuilder
+
+if __name__ == "__main__":
+    # paths
+    paths = utility.get_default_test_paths(__file__, output_folder="test077_scatter")
+
+    # create the simulation
+    sim = gate.Simulation()
+
+    # main options
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.number_of_threads = 1
+    sim.random_seed = 1321654
+    sim.output_dir = paths.output
+
+    # units
+    m = gate.g4_units.m
+    cm = gate.g4_units.cm
+    mm = gate.g4_units.mm
+    deg = gate.g4_units.deg
+    MeV = gate.g4_units.MeV
+
+    # world
+    world = sim.world
+    world.size = [5 * m, 5 * m, 5 * m]
+    world.material = "G4_AIR"
+
+    # waterbox
+    wb = sim.add_volume("Box", "waterbox")
+    wb.size = [20 * cm, 30 * cm, 30 * cm]
+    wb.material = "G4_WATER"
+
+    # detector
+    det = sim.add_volume("Box", "detector")
+    det.size = [10 * cm, 60 * cm, 60 * cm]
+    det.translation = [40 * cm, 0, 0]
+    det.material = "G4_WATER"
+    det.material = "G4_Ir"
+
+    # phys
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.set_production_cut("waterbox", "all", 0.1 * mm)
+
+    # source
+    source = sim.add_source("GenericSource", "beam")
+    source.particle = "gamma"
+    source.energy.type = "gauss"
+    source.energy.mono = 0.5 * MeV
+    source.energy.sigma_gauss = 0  # .2 * MeV
+    source.position.type = "box"
+    source.position.translation = [-60 * cm, 0, 0]
+    source.position.size = [0 * cm, 8 * cm, 8 * cm]
+    # source.direction.type = "focused"
+    # source.direction.focus_point = [-20 * cm, 0, 0]
+    source.direction.type = "momentum"
+    source.direction.momentum = [1, 0, 0]
+    source.number_of_primaries = 50000
+
+    # stats
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
+
+    # phsp
+    att_list = [
+        "ParticleName",
+        "ParentID",
+        "PrePosition",
+        "PostPosition",
+        "EventKineticEnergy",
+        "EventDirection",
+        "EventID",
+        "TrackID",
+        "KineticEnergy",
+        "PreDirection",
+        "PostDirection",
+        "UnscatteredPrimaryFlag",
+    ]
+
+    unscattered_primary_aux = sim.activate_auxiliary_attribute(
+        "UnscatteredPrimaryAttribute",
+        "UnscatteredPrimaryAuxFlag",
+    )
+    phsp = sim.add_actor("PhaseSpaceActor", "phsp")
+    phsp.attached_to = det.name
+    phsp.attributes = att_list + [unscattered_primary_aux.name]
+    # phsp.debug = True
+    phsp.output_filename = "test077_scatter.root"
+    F = GateFilterBuilder()
+    phsp.filter = F.ParticleName == "gamma"
+
+    # phsp
+    phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_scatter")
+    phsp2.attached_to = det.name
+    phsp2.attributes = att_list + [unscattered_primary_aux.name]
+    phsp2.output_filename = phsp.output_filename
+    # phsp2.debug = True
+    phsp2.filter = (F.ParticleName == "gamma") & (F.UnscatteredPrimaryFlag == True)
+
+    phsp2_aux = sim.add_actor("PhaseSpaceActor", "phsp_scatter_aux")
+    phsp2_aux.attached_to = det.name
+    phsp2_aux.attributes = att_list + [unscattered_primary_aux.name]
+    phsp2_aux.output_filename = phsp.output_filename
+    phsp2_aux.filter = (F.ParticleName == "gamma") & (
+        F(unscattered_primary_aux.name) == 1
+    )
+
+    # phsp
+    phsp3 = sim.add_actor("PhaseSpaceActor", "phsp_no_scatter")
+    phsp3.attached_to = det.name
+    phsp3.attributes = att_list + [unscattered_primary_aux.name]
+    phsp3.output_filename = phsp.output_filename
+    phsp3.filter = (F.ParticleName == "gamma") & (F.UnscatteredPrimaryFlag == False)
+
+    # start simulation
+    sim.run()
+    print(stats)
+
+    # test
+    print(phsp.get_output_path())
+    print(phsp2.get_output_path())
+    print(phsp3.get_output_path())
+    is_ok = check_scatter(phsp.get_output_path())
+    utility.test_ok(is_ok)

@@ -6,11 +6,15 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4VPVParameterisation.hh"
+#include <G4VPVParameterisation.hh>
 
 namespace py = pybind11;
 
 void init_G4VPVParameterisation(py::module &m) {
 
-  py::class_<G4VPVParameterisation>(m, "G4VPVParameterisation");
+  // py::class_<G4VPVParameterisation>(m, "G4VPVParameterisation");
+  py::class_<G4VPVParameterisation>(m, "G4VPVParameterisation")
+      //.def("SetUserInfo", &G4VPVParameterisation::SetUserInfo)
+      .def("ComputeTransformation",
+           &G4VPVParameterisation::ComputeTransformation);
 }

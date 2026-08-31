@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4AssemblyVolume.hh"
-#include "G4LogicalVolume.hh"
+#include <G4AssemblyVolume.hh>
+#include <G4LogicalVolume.hh>
 
 void init_G4AssemblyVolume(py::module &m) {
 

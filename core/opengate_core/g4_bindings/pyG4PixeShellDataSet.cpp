@@ -10,8 +10,8 @@
 
 namespace py = pybind11;
 
-#include "G4IInterpolator.hh"
-#include "G4PixeShellDataSet.hh"
+#include <G4IInterpolator.hh>
+#include <G4PixeShellDataSet.hh>
 
 void init_G4PixeShellDataSet(py::module &m) {
   py::class_<G4PixeShellDataSet,

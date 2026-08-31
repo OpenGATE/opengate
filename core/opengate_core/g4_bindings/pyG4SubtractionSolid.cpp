@@ -9,8 +9,8 @@
 
 namespace py = pybind11;
 
-#include "G4SubtractionSolid.hh"
-#include "G4VSolid.hh"
+#include <G4SubtractionSolid.hh>
+#include <G4VSolid.hh>
 
 void init_G4SubtractionSolid(py::module &m) {
   py::class_<G4SubtractionSolid, G4VSolid>(m, "G4SubtractionSolid")

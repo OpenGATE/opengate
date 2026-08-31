@@ -6,11 +6,11 @@
    -------------------------------------------------- */
 #include <pybind11/pybind11.h>
 
-#include "G4LogicalVolume.hh"
-#include "G4RotationMatrix.hh"
-#include "G4VPVParameterisation.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4Version.hh"
+#include <G4LogicalVolume.hh>
+#include <G4RotationMatrix.hh>
+#include <G4VPVParameterisation.hh>
+#include <G4VPhysicalVolume.hh>
+#include <G4Version.hh>
 
 namespace py = pybind11;
 
@@ -112,6 +112,7 @@ void init_G4VPhysicalVolume(py::module &m) {
       .def("GetCopyNo", &G4VPhysicalVolume::GetCopyNo)
       .def("IsMany", &G4VPhysicalVolume::IsMany)
       .def("IsReplicated", &G4VPhysicalVolume::IsReplicated)
+      .def("GetInstanceID", &G4VPhysicalVolume::GetInstanceID)
       .def("IsParameterised", &G4VPhysicalVolume::IsParameterised)
       .def("GetMultiplicity", &G4VPhysicalVolume::GetMultiplicity)
       .def("GetParameterisation", &G4VPhysicalVolume::GetParameterisation,

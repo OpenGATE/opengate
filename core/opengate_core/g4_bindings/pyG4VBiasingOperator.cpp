@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4VBiasingOperator.hh"
+#include <G4VBiasingOperator.hh>
 
 // Declaration of this class is needed because other classes such as
 // StepLimiter inherit from it and pybind needs to know about it.

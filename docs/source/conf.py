@@ -38,7 +38,7 @@ autodoc_mock_imports = [
     # "matplotlib",
     # "GitPython",
     # "colorlog",
-    # "numpy-stl",
+    # "meshio",
     # "radioactivedecay",
     # "jsonpickle",
     # "pandas",
@@ -125,6 +125,13 @@ pygments_style = None
 # }
 add_module_names = False
 
+# Enable nitpicky mode for broken references/links
+nitpicky = True
+
+# Suppress warnings for pybind11-bound C++ types that have no Sphinx docs entry
+nitpick_ignore = [
+    ("py:class", "opengate_core.G4FieldManager"),
+]
 
 # -- Options for HTML output -------------------------------------------------
 

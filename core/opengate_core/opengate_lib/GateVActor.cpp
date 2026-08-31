@@ -6,20 +6,24 @@
    -------------------------------------------------- */
 
 #include "GateVActor.h"
-#include "G4SDManager.hh"
 #include "GateActorManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateMultiFunctionalDetector.h"
 #include "GateSourceManager.h"
+#include "digitizer/GateDigiCollection.h"
+#include <G4LogicalVolumeStore.hh>
+#include <G4SDManager.hh>
+#include <algorithm>
+#include <unordered_set>
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
   // register this actor to the global list of actors
   fMultiThreadReady = MT_ready;
-  fOperatorIsAnd = true;
   fSourceManager = nullptr;
   fWriteToDisk = false;
+  fFilter = nullptr;
 }
 
 GateVActor::~GateVActor() = default;
@@ -35,32 +39,53 @@ void GateVActor::InitializeCpp() {
   }
 };
 
-void GateVActor::InitializeUserInfo(py::dict &user_info) {
-  fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
-  auto op = DictGetStr(user_info, "filters_boolean_operator");
-  if (op == "and") {
-    fOperatorIsAnd = true;
-  } else {
-    fOperatorIsAnd = false;
-  }
+void GateVActor::SetMotherAttachedToVolumeName(
+    const std::string &attachedToVolumeName) {
+  fAttachedToVolumeMotherName = attachedToVolumeName;
 }
 
-void GateVActor::AddActorOutputInfo(std::string outputName) {
+void GateVActor::ClearAttachedVolumeExitPairs() {
+  fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs.clear();
+}
+
+void GateVActor::AddAttachedVolumeExitPair(G4VPhysicalVolume *attachedVolume,
+                                           G4VPhysicalVolume *motherVolume) {
+  if (attachedVolume == nullptr || motherVolume == nullptr) {
+    Fatal("Cannot register an attached volume exit pair with a null physical "
+          "volume.");
+  }
+  const std::pair<const G4VPhysicalVolume *, const G4VPhysicalVolume *> pair(
+      attachedVolume, motherVolume);
+  auto &exitPairs = fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
+  for (const auto &existingPair : exitPairs) {
+    if (existingPair == pair)
+      return;
+  }
+  exitPairs.push_back(pair);
+}
+
+void GateVActor::InitializeUserInfo(py::dict &user_info) {
+  fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
+  fActorName = DictGetStr(user_info, "name");
+}
+
+void GateVActor::AddActorOutputInfo(const std::string &outputName) {
   ActorOutputInfo_t aInfo;
   aInfo.outputName = outputName;
   fActorOutputInfos[outputName] = aInfo;
 }
 
-void GateVActor::SetOutputPath(std::string outputName, std::string outputPath) {
+void GateVActor::SetOutputPath(const std::string &outputName,
+                               const std::string &outputPath) {
   fActorOutputInfos[outputName].outputPath = outputPath;
 }
 
-std::string GateVActor::GetOutputPath(std::string outputName) {
+std::string GateVActor::GetOutputPath(std::string outputName) const {
   try {
     ActorOutputInfo_t aInfo;
     aInfo = fActorOutputInfos.at(outputName);
     return aInfo.outputPath;
-  } catch (std::out_of_range &e) {
+  } catch (std::out_of_range &) {
     std::ostringstream msg;
     msg << "(GetOutputPath) No actor output with the name " << outputName
         << " exists, attached to " << fAttachedToVolumeName << " " << GetName();
@@ -69,16 +94,66 @@ std::string GateVActor::GetOutputPath(std::string outputName) {
   return ""; // to avoid warning
 }
 
-void GateVActor::SetWriteToDisk(std::string outputName, bool writeToDisk) {
+void GateVActor::AddOutputTreeName(const std::string &outputName,
+                                   const std::string &treeName) {
+  auto &treeNames = fActorOutputInfos[outputName].treeNames;
+  if (std::find(treeNames.begin(), treeNames.end(), treeName) ==
+      treeNames.end()) {
+    treeNames.push_back(treeName);
+  }
+}
+
+std::vector<std::string>
+GateVActor::GetOutputTreeNames(std::string outputName) const {
+  try {
+    ActorOutputInfo_t aInfo;
+    aInfo = fActorOutputInfos.at(outputName);
+    return aInfo.treeNames;
+  } catch (std::out_of_range &) {
+    std::ostringstream msg;
+    msg << "(GetOutputTreeNames) No actor output with the name " << outputName
+        << " exists, attached to " << fAttachedToVolumeName << " " << GetName();
+    Fatal(msg.str());
+  }
+  return {}; // to avoid warning
+}
+
+void GateVActor::AddOutputTreeInfo(const std::string &outputName,
+                                   const GateDigiCollection *digiCollection) {
+  if (digiCollection == nullptr) {
+    Fatal("Cannot register ROOT output tree info from a null digi collection.");
+  }
+  AddOutputTreeName(outputName, digiCollection->GetName());
+  fActorOutputInfos[outputName].treeBranchTypes[digiCollection->GetName()] =
+      digiCollection->GetRootBranchTypes();
+}
+
+std::map<std::string, std::map<std::string, std::string>>
+GateVActor::GetOutputTreeInfo(std::string outputName) const {
+  try {
+    ActorOutputInfo_t aInfo;
+    aInfo = fActorOutputInfos.at(outputName);
+    return aInfo.treeBranchTypes;
+  } catch (std::out_of_range &) {
+    std::ostringstream msg;
+    msg << "(GetOutputTreeInfo) No actor output with the name " << outputName
+        << " exists, attached to " << fAttachedToVolumeName << " " << GetName();
+    Fatal(msg.str());
+  }
+  return {};
+}
+
+void GateVActor::SetWriteToDisk(const std::string &outputName,
+                                const bool writeToDisk) {
   fActorOutputInfos[outputName].writeToDisk = writeToDisk;
 }
 
-bool GateVActor::GetWriteToDisk(std::string outputName) {
+bool GateVActor::GetWriteToDisk(std::string outputName) const {
   try {
     ActorOutputInfo_t aInfo;
     aInfo = fActorOutputInfos.at(outputName);
     return aInfo.writeToDisk;
-  } catch (std::out_of_range &e) {
+  } catch (std::out_of_range &) {
     std::ostringstream msg;
     msg << "(GetWriteToDisk) No actor output with the name " << outputName
         << " exists exists in actor " << GetName() << " attached to "
@@ -92,27 +167,15 @@ void GateVActor::AddActions(std::set<std::string> &actions) {
   fActions.insert(actions.begin(), actions.end());
 }
 
-const bool GateVActor::HasAction(std::string action) {
+bool GateVActor::HasAction(const std::string &action) {
   return fActions.find(action) != fActions.end();
 };
 
-const bool GateVActor::IsSensitiveDetector() {
-  return HasAction("SteppingAction");
-};
+bool GateVActor::IsSensitiveDetector() { return HasAction("SteppingAction"); };
 
-void GateVActor::PreUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
-    if (!f->Accept(track))
-      return;
-  }
-}
+void GateVActor::PreUserTrackingAction(const G4Track *track) {}
 
-void GateVActor::PostUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
-    if (!f->Accept(track))
-      return;
-  }
-}
+void GateVActor::PostUserTrackingAction(const G4Track *track) {}
 
 G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
   /*
@@ -130,34 +193,21 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
 
     => so we decide to simplify and remove "touchable" in the following.
    */
-
-  // if the operator is AND, we perform the SteppingAction only if ALL filters
-  // are true (If only one is false, we stop and return)
-  if (fOperatorIsAnd) {
-    for (auto f : fFilters) {
-      if (!f->Accept(step))
-        return true;
-    }
-    SteppingAction(step);
-    return true;
-  }
-  // if the operator is OR, we accept as soon as one filter is OK
-  for (auto f : fFilters) {
-    if (f->Accept(step)) {
-      SteppingAction(step);
+  if (fFilter != nullptr) {
+    if (!fFilter->Accept(step))
       return true;
-    }
   }
+  SteppingAction(step);
   return true;
 }
 
 void GateVActor::RegisterSD(G4LogicalVolume *lv) {
   // Look is a SD already exist for this LV
-  auto currentSD = lv->GetSensitiveDetector();
+  const auto currentSD = lv->GetSensitiveDetector();
   GateMultiFunctionalDetector *mfd;
   if (!currentSD) {
     // This is the first time a SD is set to this LV
-    auto f = new GateMultiFunctionalDetector("mfd_" + lv->GetName());
+    const auto f = new GateMultiFunctionalDetector("mfd_" + lv->GetName());
     G4SDManager::GetSDMpointer()->AddNewDetector(f);
     lv->SetSensitiveDetector(f);
     mfd = f;
@@ -177,34 +227,53 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
   mfd->RegisterPrimitive(this);
 }
 
-// void RegisterCallBack(std::string callback_name, std::function func) {
-//     std::cout << "Register callback " << callback_name << " (not yet
-//     implemented)" << std::endl;
-//   if (fcallBacks.count(callback_name) > 0) {
-//     std::ostringstream oss;
-//     oss << "You are trying to register a callback function with the name "
-//         << callback_name
-//         << ", but a callback with this name is already registered.";
-//     FatalKeyError(oss.str());
-//   } else {
-//     fallBacks.insert({callback_name, func});
-//   }
-// }
-
-// std::string GetOutputPathString(std::string output_type, int run_index) {
-//   CallbackMap::const_iterator pos =
-//   fcallBacks.find("get_output_path_string");
-//
-//   if (pos == fcallBacks.end()) {
-//     std::ostringstream oss;
-//     oss << "No callback function 'get_output_path_string' found for output "
-//            "type "
-//         << output_type;
-//     FatalKeyError(oss.str());
-//   }
-//   auto func = pos->second;
-//   string::path path = func(output_type, run_index);
-//   return path
-// }
-
 void GateVActor::SetSourceManager(GateSourceManager *s) { fSourceManager = s; }
+
+bool GateVActor::IsStepEnteringVolume(
+    const G4Step *step,
+    const std::unordered_set<const G4LogicalVolume *> &volumes) {
+  // empty list ? do nothing
+  if (volumes.empty())
+    return false;
+
+  // If the pre step is NOT at a volume boundary, return False
+  if (step->GetPostStepPoint()->GetStepStatus() != fGeomBoundary)
+    return false;
+
+  // Check it the entering volume (post step) is in the list of volumes.
+  const auto *vol =
+      step->GetPostStepPoint()->GetTouchable()->GetVolume()->GetLogicalVolume();
+  return volumes.count(vol) > 0;
+}
+
+bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
+  // If the post step is world boundary: exiting
+  if (step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary)
+    return true;
+
+  // If the post step is not on a boundary: not exiting
+  if (step->GetPostStepPoint()->GetStepStatus() != fGeomBoundary)
+    return false;
+
+  // step->IsLastStepInVolume() cannot be used here, because we don't know if
+  // the volume we are exiting is the fAttachedToVolume. When daughters
+  // boundaries overlap fAttachedToVolume boundaries, post step gives the
+  // daughter.
+
+  const auto *preVol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
+  const auto *postVol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
+  const auto &exitPairs =
+      fThreadLocalExitPairsData.Get().attachedToVolumeExitPairs;
+
+  // Runtime-resolved physical-volume pairs are the robust path, notably for
+  // repeated volumes whose physical names are auto-generated.
+  for (const auto &exitPair : exitPairs) {
+    if (exitPair.first == preVol && exitPair.second == postVol)
+      return true;
+  }
+  if (exitPairs.empty()) {
+    Fatal("Cannot use IsStepExitingAttachedVolume because no attached volume "
+          "exit pairs were configured.");
+  }
+  return false;
+}

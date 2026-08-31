@@ -26,15 +26,7 @@ public:
   void PrepareNextRun() override;
 
 protected:
-  // thread local structure
-  struct threadLocalPencilBeamSource {
-    // the fSPS will be a GateSingleParticleSourcePencilBeam
-    // we store the two pointers fSPS and fSPS_PB to the same object
-    GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
-  };
-  G4Cache<threadLocalPencilBeamSource> fThreadLocalDataPencilBeamSource;
-
-  threadLocalPencilBeamSource &GetThreadLocalDataPencilBeamSource();
+  GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
 
   void CreateSPS() override;
 };

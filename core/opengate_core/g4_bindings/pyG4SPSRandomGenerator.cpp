@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4SPSRandomGenerator.hh"
+#include <G4SPSRandomGenerator.hh>
 
 void init_G4SPSRandomGenerator(py::module &m) {
 

@@ -5,11 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateTemplateSource.h"
+#include <pybind11/pybind11.h>
 
 void init_GateTemplateSource(py::module &m) {
 

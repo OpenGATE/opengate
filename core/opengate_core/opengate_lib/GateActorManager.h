@@ -18,7 +18,7 @@ public:
 
   static void AddActor(GateVActor *actor);
 
-  static GateVActor *GetActor(std::string name);
+  static GateVActor *GetActor(const std::string &name);
 
 protected:
   static GateActorManager *fInstance;

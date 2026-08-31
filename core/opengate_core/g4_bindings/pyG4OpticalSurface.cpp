@@ -1,6 +1,6 @@
-#include "G4MaterialPropertiesTable.hh"
-#include "G4OpticalSurface.hh"
-#include "G4SurfaceProperty.hh"
+#include <G4MaterialPropertiesTable.hh>
+#include <G4OpticalSurface.hh>
+#include <G4SurfaceProperty.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

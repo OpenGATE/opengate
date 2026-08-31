@@ -5,12 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateDigitizerHitsCollectionActor.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateDigitizerHitsCollectionActor.h"
 
 void init_GateHitsCollectionActor(py::module &m) {
 

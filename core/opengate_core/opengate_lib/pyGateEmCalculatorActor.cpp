@@ -5,11 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 #include "GateEmCalculatorActor.h"
+#include <pybind11/pybind11.h>
 
 void init_GateEmCalculatorActor(py::module &m) {
 

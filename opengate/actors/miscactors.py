@@ -1,12 +1,17 @@
-from box import Box
 import platform
+
 import opengate_core as g4
-from .base import ActorBase
-from ..utility import g4_units, g4_best_unit_tuple
-from .actoroutput import ActorOutputBase, ActorOutputSingleImage
-from ..serialization import dump_json
-from ..exception import fatal, warning
+from anytree import Node, RenderTree
+
 from ..base import process_cls
+from ..exception import fatal, warning
+from ..utility import g4_best_unit_tuple, g4_units
+from .actoroutput import (
+    ActorOutputBase,
+    ActorOutputSingleImage,
+    ActorOutputStatisticsActor,
+)
+from .base import ActorBase
 
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
@@ -20,186 +25,6 @@ from ..base import process_cls
         g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
         do_something()
 """
-
-
-def _setter_hook_stats_actor_output_filename(self, output_filename):
-    # By default, write_to_disk is False.
-    # However, if user actively sets the output_filename
-    # s/he most likely wants to write to disk also
-    if output_filename != "" and output_filename is not None:
-        self.write_to_disk = True
-    return output_filename
-
-
-class ActorOutputStatisticsActor(ActorOutputBase):
-    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
-
-    # hints for IDE
-    encoder: str
-    output_filename: str
-    write_to_disk: bool
-
-    user_info_defaults = {
-        "encoder": (
-            "json",
-            {
-                "doc": "How should the output be encoded?",
-                "allowed_values": ("json", "legacy"),
-            },
-        ),
-        "output_filename": (
-            "auto",
-            {
-                "doc": "Filename for the data represented by this actor output. "
-                "Relative paths and filenames are taken "
-                "relative to the global simulation output folder "
-                "set via the Simulation.output_dir option. ",
-                "setter_hook": _setter_hook_stats_actor_output_filename,
-            },
-        ),
-        "write_to_disk": (
-            False,
-            {
-                "doc": "Should the output be written to disk, or only kept in memory? ",
-            },
-        ),
-        "active": (
-            True,
-            {"doc": "This actor is always active. ", "read_only": True},
-        ),
-    }
-
-    default_suffix = "json"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # predefine the merged_data
-        self.merged_data = Box()
-        self.merged_data.runs = 0
-        self.merged_data.events = 0
-        self.merged_data.tracks = 0
-        self.merged_data.steps = 0
-        self.merged_data.duration = 0
-        self.merged_data.start_time = 0
-        self.merged_data.stop_time = 0
-        self.merged_data.sim_start_time = 0
-        self.merged_data.sim_stop_time = 0
-        self.merged_data.init = 0
-        self.merged_data.track_types = {}
-        self.merged_data.nb_threads = 1
-
-    @property
-    def pps(self):
-        if self.merged_data.duration != 0:
-            return int(
-                self.merged_data.events / (self.merged_data.duration / g4_units.s)
-            )
-        else:
-            return 0
-
-    @property
-    def tps(self):
-        if self.merged_data.duration != 0:
-            return int(
-                self.merged_data.tracks / (self.merged_data.duration / g4_units.s)
-            )
-        else:
-            return 0
-
-    @property
-    def sps(self):
-        if self.merged_data.duration != 0:
-            return int(
-                self.merged_data.steps / (self.merged_data.duration / g4_units.s)
-            )
-        else:
-            return 0
-
-    def store_data(self, data, **kwargs):
-        self.merged_data.update(data)
-
-    def get_data(self, **kwargs):
-        if "which" in kwargs and kwargs["which"] != "merged":
-            warning(
-                f"The statistics actor output only stores merged data currently. "
-                f"The which={kwargs['which']} you provided will be ignored. "
-            )
-        # the statistics actor currently only handles merged data, so we return it
-        # no input variable 'which' as in other output classes
-        return self.merged_data
-
-    def get_processed_output(self):
-        d = {}
-        d["runs"] = {"value": self.merged_data.runs, "unit": None}
-        d["events"] = {"value": self.merged_data.events, "unit": None}
-        d["tracks"] = {"value": self.merged_data.tracks, "unit": None}
-        d["steps"] = {"value": self.merged_data.steps, "unit": None}
-        val, unit = g4_best_unit_tuple(self.merged_data.init, "Time")
-        d["init"] = {
-            "value": val,
-            "unit": unit,
-        }
-        val, unit = g4_best_unit_tuple(self.merged_data.duration, "Time")
-        d["duration"] = {
-            "value": val,
-            "unit": unit,
-        }
-        d["pps"] = {"value": self.pps, "unit": None}
-        d["tps"] = {"value": self.tps, "unit": None}
-        d["sps"] = {"value": self.sps, "unit": None}
-        d["start_time"] = {
-            "value": self.merged_data.start_time,
-            "unit": None,
-        }
-        d["stop_time"] = {
-            "value": self.merged_data.stop_time,
-            "unit": None,
-        }
-        val, unit = g4_best_unit_tuple(self.merged_data.sim_start_time, "Time")
-        d["sim_start_time"] = {
-            "value": val,
-            "unit": unit,
-        }
-        val, unit = g4_best_unit_tuple(self.merged_data.sim_stop_time, "Time")
-        d["sim_stop_time"] = {
-            "value": val,
-            "unit": unit,
-        }
-        d["threads"] = {"value": self.merged_data.nb_threads, "unit": None}
-        d["arch"] = {"value": platform.system(), "unit": None}
-        d["python"] = {"value": platform.python_version(), "unit": None}
-        d["track_types"] = {"value": self.merged_data.track_types, "unit": None}
-        return d
-
-    def __str__(self):
-        s = ""
-        for k, v in self.get_processed_output().items():
-            if k == "track_types":
-                if len(v["value"]) > 0:
-                    s += "track_types\n"
-                    for t, n in v["value"].items():
-                        s += f"{' ' * 24}{t}: {n}\n"
-            else:
-                if v["unit"] is None:
-                    unit = ""
-                else:
-                    unit = str(v["unit"])
-                s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
-        # remove last line break
-        return s.rstrip("\n")
-
-    def write_data(self, **kwargs):
-        """Override virtual method from base class."""
-        with open(self.get_output_path(which="merged"), "w+") as f:
-            if self.encoder == "json":
-                dump_json(self.get_processed_output(), f, indent=4)
-            else:
-                f.write(self.__str__())
-
-    def write_data_if_requested(self, **kwargs):
-        if self.write_to_disk is True:
-            self.write_data(**kwargs)
 
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
@@ -238,7 +63,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     @property
     def counts(self):
-        return self.user_output.stats.merged_data
+        return self.user_output.stats.get_data(which="merged")
 
     def store_output_data(self, output_name, run_index, *data):
         raise NotImplementedError
@@ -250,13 +75,26 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
-        self.user_output.stats.merged_data.nb_threads = (
-            self.simulation.number_of_threads
-        )
+
+    def EndOfRunActionMasterThread(self, run_index):
+        g4.GateSimulationStatisticsActor.EndOfRunActionMasterThread(self, run_index)
+        data = dict(self.GetCountsCurrentRun())
+        if self.simulation is not None:
+            data["run_start"] = self.simulation.run_timing_intervals[run_index][0]
+            data["run_stop"] = self.simulation.run_timing_intervals[run_index][1]
+            data["nb_threads"] = self.simulation.number_of_threads
+        self.user_output.stats.store_data(run_index, data)
+        self.user_output.stats.write_data_if_requested(which=run_index)
+        return 0
 
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
-        self.user_output.stats.store_data(self.GetCounts())
+        data = dict(self.GetCounts())
+        # FIXME: split-job merging needs explicit handling of run identities for
+        # the statistics output. Naively summing child-local "runs" counters is
+        # not meaningful. Child outputs should carry original master run indices
+        # or be remapped during merge so the merged stats can reconstruct the
+        # set of original runs directly from actor output data.
 
         if self.simulation is not None:
             sim_start = self.simulation.run_timing_intervals[0][0]
@@ -268,19 +106,13 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         else:
             sim_stop = 0
 
-        self.user_output.stats.store_data(
-            {"sim_start": sim_start, "sim_stop": sim_stop}
-        )
-        self.user_output.stats.merged_data.sim_start_time = (
-            self.simulation.run_timing_intervals[0][0]
-        )
-        self.user_output.stats.merged_data.sim_stop_time = (
-            self.simulation.run_timing_intervals[-1][1]
-        )
-        self.user_output.stats.merged_data.nb_threads = (
-            self.simulation.number_of_threads
-        )
-        self.user_output.stats.write_data_if_requested()
+        data["sim_start"] = sim_start
+        data["sim_stop"] = sim_stop
+        data["sim_start_time"] = self.simulation.run_timing_intervals[0][0]
+        data["sim_stop_time"] = self.simulation.run_timing_intervals[-1][1]
+        data["nb_threads"] = self.simulation.number_of_threads
+        self.user_output.stats.store_data("merged", data)
+        self.user_output.stats.write_data_if_requested(which="merged")
 
 
 class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
@@ -326,16 +158,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             },
         ),
     }
+
     user_output_config = {
         "kill_according_processes": {
             "actor_output_class": ActorOutputKillAccordingProcessesActor,
         },
     }
-
-    """
-    If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
-    without interaction, the particle is killed.
-    """
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -371,6 +199,52 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         return s
 
 
+class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleNameActor):
+    """Actor which kills a particle according the particle name provied by the user at the exit of the
+    actorified volume."""
+
+    particles_name_to_kill: list
+
+    user_info_defaults = {
+        "particles_name_to_kill": (
+            [],
+            {
+                "doc": "Put particles name the user wants to kill at the exit of the volume"
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.number_of_killed_particles = 0
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"PreUserTrackingAction", "SteppingAction", "EndSimulationAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        self.number_of_killed_particles = self.GetNumberOfKilledParticles()
+
+
 class KillActor(ActorBase, g4.GateKillActor):
     """Actor which kills a particle entering a volume."""
 
@@ -394,6 +268,135 @@ class KillActor(ActorBase, g4.GateKillActor):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
+class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_killed_particles = 0
+
+    def get_processed_output(self):
+        d = {}
+        d["particles killed"] = self.number_of_killed_particles
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            s = k + ": " + str(v)
+            s += "\n"
+        return s
+
+
+class KillNonInteractingParticleActor(
+    ActorBase, g4.GateKillNonInteractingParticleActor
+):
+    """
+    If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
+    without interaction, the particle is killed. Warning : this actor being based on energy measurement, Rayleigh photon
+    may not be killed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        # FIXME: Should rely on user_output_config and not call _add_user_output manually
+        self._add_user_output(
+            ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles"
+        )
+        self.__initcpp__()
+        self.list_of_volume_name = []
+        self.number_of_killed_particles = 0
+
+    def __initcpp__(self):
+        g4.GateKillNonInteractingParticleActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "StartSimulationAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "EndOfSimulationAction",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        self.simulation.volume_manager.update_volume_tree_if_needed()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        self.user_output.kill_non_interacting_particles.number_of_killed_particles = (
+            self.number_of_killed_particles
+        )
+
+    def __str__(self):
+        s = self.user_output["kill_non_interacting_particles"].__str__()
+        return s
+
+
+def _setter_hook_particles(self, value):
+    if isinstance(value, str):
+        return [value]
+    else:
+        return list(value)
+
+
+class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
+    """Actor which accumulates the net electric charge deposited in a volume,
+    defined as the sum of the charge of charged particles dying in the volume
+    minus the sum of the charge of charged particles being born in it. The result is
+    expressed in elementary-charge units (eplus).
+
+        Two different quantities are accumulated:
+            - Nominal deposited charge: uses the PDG charge of the particles.
+            - Dynamic deposited charge: uses the effective charge of the particles, accounting for ionisation.
+    """
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.deposited_nominal_charge = 0.0
+        self.deposited_dynamic_charge = 0.0
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDepositedChargeActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "StartSimulationAction",
+                "EndSimulationAction",
+                "BeginOfRunAction",
+                "PreUserTrackingAction",
+                "PostUserTrackingAction",
+                "EndOfSimulationWorkerAction",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def EndSimulationAction(self):
+        self.deposited_nominal_charge = self.GetDepositedNominalCharge()
+        self.deposited_dynamic_charge = self.GetDepositedDynamicCharge()
+
+    def __str__(self):
+        return (
+            f"DepositedChargeActor {self.name}:"
+            f"  Nominal: {self.deposited_nominal_charge} e"
+            f"  Dynamic: {self.deposited_dynamic_charge} e"
+        )
+
+
 class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     """
     This actor generates an attenuation image for a simulation run.
@@ -404,11 +407,16 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     - database: The database source for attenuation coefficients, either 'EPDL' or 'NIST'.
     """
 
+    # IDE hints
+    image_volume = str
+    energy = float
+    database = str
+
     user_info_defaults = {
         "image_volume": (  # FIXME name or not name
             None,
             {
-                "doc": "InputVolume image from which the attenuation map is generated.",
+                "doc": "Input ImageVolume for which the attenuation map is generated.",
             },
         ),
         "energy": (
@@ -458,9 +466,71 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
         self.user_output.attenuation_image.end_of_simulation()
 
 
+class DebugActor(ActorBase, g4.GateDebugActor):
+    """
+    Process tracking for debugging and education purposes.
+
+    Example usage in Python:
+      debug = sim.add_actor("DebugActor", "debug")
+      debug.debug_flag = True
+    """
+
+    user_info_defaults = {"debug_flag": (False, {"doc": "Test option"})}
+
+    def __init__(self, *args, **kwargs):
+        print(f"(python) DebugActor: __init__")
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        print(f"(python) DebugActor ({self.name}) : __initcpp__")
+        g4.GateDebugActor.__init__(self, self.user_info)
+        print(f"(python) DebugActor ({self.name}) : AddActions")
+        self.AddActions(
+            {
+                "BeginOfSimulationAction",
+                "BeginOfRunAction",
+                "PreUserTrackingAction",
+                "PostUserTrackingAction",
+                "BeginOfEventAction",
+                "EndOfEventAction",
+                "SteppingAction",
+                "EndOfRunAction",
+                "EndOfSimulationAction",
+            }
+        )
+
+    def __getstate__(self):
+        print(f"(python) DebugActor ({self.name}) : __getstate__")
+        return ActorBase.__getstate__(self)
+
+    def __setstate__(self, state):
+        print(f"(python) DebugActor ({self.name}) : __setstate__")
+        ActorBase.__setstate__(self, state)
+
+    def initialize(self):
+        print(f"(python) DebugActor ({self.name}) : initialize")
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def BeginOfSimulationAction(self):
+        print(f"(python) DebugActor ({self.name}) : BeginOfSimulationAction")
+        g4.GateDebugActor.BeginOfSimulationAction(self)
+
+    def EndOfSimulationAction(self):
+        print(f"(python) DebugActor ({self.name}) : EndOfSimulationAction")
+        g4.GateDebugActor.EndOfSimulationAction(self)
+
+
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
+process_cls(DepositedChargeActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
+process_cls(KillAccordingParticleNameActor)
+process_cls(ActorOutputKillNonInteractingParticleActor)
+process_cls(KillNonInteractingParticleActor)
 process_cls(AttenuationImageActor)
+process_cls(DebugActor)

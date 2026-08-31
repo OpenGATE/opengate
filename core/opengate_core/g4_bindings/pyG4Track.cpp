@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-#include "G4Track.hh"
+#include <G4Track.hh>
 
 void init_G4Track(py::module &m) {
 

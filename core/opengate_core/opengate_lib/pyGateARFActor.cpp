@@ -5,13 +5,10 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "GateARFActor.h"
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-namespace py = pybind11;
-
-#include "GateARFActor.h"
 
 class PyGateARFActor : public GateARFActor {
 public:

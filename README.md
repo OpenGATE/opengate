@@ -11,8 +11,8 @@ GATE is an open-source Monte Carlo simulation platform designed for modeling and
 GATE 10 introduces a Python-based interface, replacing the macro scripting of GATE 9.x, offering improved flexibility, readability, and integration with modern scientific workflows. Read our [motivation](https://opengate-python.readthedocs.io/en/master/user_guide/user_guide_intro.html).
 
 - Documentation: see the [User Guide](https://opengate-python.readthedocs.io/en/master/user_guide/index.html).
-- This current version uses [Geant4 11.3.0](https://geant4.web.cern.ch).
-- Compatible with Python 3.9, 3.10, 3.11, 3.12. (**Not python 3.13 yet**)
+- This current version uses [Geant4 11.4.2](https://geant4.web.cern.ch).
+- Compatible with Python 3.10, 3.11, 3.12, 3.13, 3.14.
 - **Warning**: on Windows, the multithreading and Qt visualization are not (yet) available.
 
 ### How to install (short version)
@@ -20,21 +20,23 @@ GATE 10 introduces a Python-based interface, replacing the macro scripting of GA
 First, create a python environment:
 
 ```
-python -m venv opengate_env
+python3 -m venv opengate_env
 source opengate_env/bin/activate
-pip install --upgrade pip
+python -m pip install --upgrade pip
 ```
 
-Then install the package opengate. The associated package ```opengate_core``` is automatically downloaded. ```opengate_core``` installs Geant4 librairies.
+Then install the package opengate:
 
 ```
-pip install opengate
+python -m pip install opengate
 ```
+
+The associated package ```opengate_core``` is automatically downloaded. ```opengate_core``` installs Geant4 librairies.
 
 If you already installed the packages and want to upgrade to the latest version:
 
 ```
-pip install --upgrade opengate
+python -m pip install --upgrade opengate
 ```
 
 Once installed, you can run all tests:
@@ -43,7 +45,7 @@ Once installed, you can run all tests:
 opengate_tests
 ````
 
-**WARNING (1)** The first time you run this command, the geant4 data and the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests:
+**WARNING (1)** The first time you run this command, the Geant4 data and the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests:
 
 ````
 export GIT_SSL_NO_VERIFY=1
@@ -54,17 +56,8 @@ All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/mas
 **WARNING (2)** Some tests (e.g. test034) needs [gaga-phsp](https://github.com/dsarrut/gaga-phsp) which needs [pytorch](https://pytorch.org/) that cannot really be automatically installed by the previous pip install (at least we don't know how to do). So, in order to run those tests, you will have to install both PyTorch and gaga-phsp first with:
 
 ````
-pip install torch
-pip install gaga-phsp
-````
-
-**WARNING (3)** With some linux systems (not all), you may encounter an error similar to “cannot allocate memory in static TLS block”. In that case, you must add a specific path to the linker as follows:
-````
-export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
-````
-or
-````
-export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000
+python -m pip install torch
+python -m pip install gaga-phsp
 ````
 
 The test history can be visualized here: https://opengate.github.io/opengate_tests_results
@@ -79,3 +72,12 @@ See the [developer guide](https://opengate-python.readthedocs.io/en/master/devel
 - https://github.com/pybind/pybind11
 - https://github.com/fmtlib/fmt
 - https://github.com/p-ranav/indicators
+
+## References collaboration papers:
+
+- 2026 PMB focus collection : https://iopscience.iop.org/collections/pmb-250417-827
+- 2026 https://pubmed.ncbi.nlm.nih.gov/41285107 and https://pubmed.ncbi.nlm.nih.gov/41285109
+- 2021 http://www.ncbi.nlm.nih.gov/pubmed/33770774
+- 2014 http://www.ncbi.nlm.nih.gov/pubmed/24877844
+- 2011 http://www.ncbi.nlm.nih.gov/pubmed/21248393
+- 2004 http://www.ncbi.nlm.nih.gov/pubmed/15552416

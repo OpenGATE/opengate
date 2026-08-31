@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "G4Transform3D.hh"
+#include <G4Transform3D.hh>
 
 void init_G4Transform3D(py::module &m) {
   py::class_<G4Transform3D>(m, "G4Transform3D")

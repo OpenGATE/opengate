@@ -8,11 +8,6 @@
 #ifndef GateDigitizerGaussianBlurringActor_h
 #define GateDigitizerGaussianBlurringActor_h
 
-#include "../GateVActor.h"
-#include "GateDigiCollection.h"
-#include "GateDigiCollectionIterator.h"
-#include "GateHelpersDigitizer.h"
-#include "GateTDigiAttribute.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>
 #include <pybind11/stl.h>
@@ -50,14 +45,14 @@ protected:
   double fBlurResolution;
   double fBlurSlope;
 
-  // This member store the function used to blur (Gaussian, InverseSquare etc)
+  // This member stores the function used to blur (Gaussian, InverseSquare etc)
   std::function<double(double)> fBlurValue;
 
-  double GaussianBlur(double value);
+  double GaussianBlur(double value) const;
 
-  double InverseSquare(double value);
+  double InverseSquare(double value) const;
 
-  double Linear(double value);
+  double Linear(double value) const;
 
   // During computation (thread local)
   struct threadLocalT {

@@ -9,9 +9,9 @@
 #define OPENGATE_CORE_OPENGateDigitizerEnergyWindowsActor_H
 
 #include "../GateVActor.h"
-#include "G4Cache.hh"
 #include "GateDigiCollection.h"
 #include "GateHelpersDigitizer.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -52,7 +52,7 @@ public:
   void EndSimulationAction() override;
 
   // Get the id of the last energy window
-  int GetLastEnergyWindowId();
+  int GetLastEnergyWindowId() const;
 
 protected:
   std::string fInputDigiCollectionName;
@@ -64,7 +64,7 @@ protected:
   std::vector<double> fChannelMax;
   int fClearEveryNEvents;
 
-  void ApplyThreshold(size_t i, double min, double max);
+  void ApplyThreshold(size_t i, double min, double max) const;
 
   // During computation
   struct threadLocalT {
