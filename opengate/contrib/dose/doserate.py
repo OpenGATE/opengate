@@ -104,13 +104,16 @@ def create_simulation(param):
     sim.physics_manager.set_production_cut("world", "all", 1 * m)
     sim.physics_manager.set_production_cut("ct", "all", 2 * mm)
 
+    if not hasattr(param, "mode") or param.mode is None:
+        param.mode = ""
+
     if param.mode == "e-":
         # electron source
         source.particle = "e-"
         set_source_energy_spectrum(source, param.radionuclide)
         sim.physics_manager.set_production_cut("ct", "all", 1 * m)
     elif "gamma" in param.mode:
-        # electron source
+        # gamma source
         source.particle = "gamma"
         set_source_energy_spectrum(source, param.radionuclide)
         sim.physics_manager.set_production_cut("ct", "all", 1 * m)

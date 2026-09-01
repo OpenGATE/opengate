@@ -454,6 +454,11 @@ Here is a classical way to use the TLEDoseActor:
 Refer to the ``test081_tle_*`` tests in ``opengate/tests/src/actors`` for
 more details.
 
+.. seealso::
+
+   For an application combining ``TLEDoseActor`` with particle splitting for fast internal dosimetry and dose rate calculation, see :ref:`dose_rate_vrt_label`.
+
+
 Reference
 ~~~~~~~~~
 
