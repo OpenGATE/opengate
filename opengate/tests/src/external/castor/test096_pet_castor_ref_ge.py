@@ -54,9 +54,9 @@ if __name__ == "__main__":
     module = sim.volume_manager.get_volume("module")
 
     n_crystal = len(crystal.translation)
-    n_optical= len(optical.translation)
+    n_optical = len(optical.translation)
     n_block = len(block.translation)
-    n_unit = len(unit.translation) 
+    n_unit = len(unit.translation)
     n_module = len(module.translation)
 
     # set a (fake) digitizer

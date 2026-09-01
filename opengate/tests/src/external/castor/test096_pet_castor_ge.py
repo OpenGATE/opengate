@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [1. * m, 1. * m, 0.5 * m]
+    world.size = [1.0 * m, 1.0 * m, 0.5 * m]
     world.material = "G4_AIR"
 
     # create the pet
@@ -53,14 +53,16 @@ if __name__ == "__main__":
     module = sim.volume_manager.get_volume("module")
 
     n_crystal = len(crystal.translation)
-    n_optical= len(optical.translation)
+    n_optical = len(optical.translation)
     n_block = len(block.translation)
-    n_unit = len(unit.translation) 
+    n_unit = len(unit.translation)
     n_module = len(module.translation)
 
     # set a digitizer
     output_root = output_path / "output_ref.root"
-    singles  = pet_ge_signa.add_digitizer(sim, pet.name, output_root, singles_name="singles")
+    singles = pet_ge_signa.add_digitizer(
+        sim, pet.name, output_root, singles_name="singles"
+    )
 
     # source and physics
     stats = test_add_physics_and_stats(sim, "pet")
@@ -106,12 +108,12 @@ if __name__ == "__main__":
     # 1) read all hits/singles in the root file
     fn = singles.get_output_path()
     print()
-    #is_ok = assert_positions(fn, "hits", castor_config, check_pos=True)
-    #print()
+    # is_ok = assert_positions(fn, "hits", castor_config, check_pos=True)
+    # print()
     # don't check the position for the singles as Position is replaced by weighted centroid
     is_ok = assert_positions(fn, "singles", castor_config) and is_ok
-    #print()
+    # print()
     # don't check the position for the singles as Position is replaced by blured position
-    #is_ok = assert_positions(fn, "singles_blur", castor_config) and is_ok
+    # is_ok = assert_positions(fn, "singles_blur", castor_config) and is_ok
 
     utility.test_ok(is_ok)
