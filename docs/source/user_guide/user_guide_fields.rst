@@ -184,7 +184,7 @@ Combined magnetic and electric fields.
 Integration and accuracy parameters
 --------------------------------
 
-All field types inherit the following parameters that control the numerical integration of the equation of motion. The defaults are suitable for most cases, but they can be tuned for better accuracy or performance.
+All field types inherit the following parameters that control the numerical integration of the equation of motion. The defaults are the Geant4 defaults (``G4FieldDefaults``); they can be tuned for better accuracy or performance.
 
 .. list-table::
    :header-rows: 1
@@ -198,21 +198,21 @@ All field types inherit the following parameters that control the numerical inte
      - Stepping algorithm used for integrating the equation of motion. See :ref:`steppers` for available options.
    * - ``step_minimum``
      - 0.01 mm
-     - Minimum step size for the chord finder.
+     - Position error accepted over a step.
    * - ``delta_chord``
-     - 0.001 mm
+     - 0.25 mm
      - Maximum sagitta (miss distance between the chord approximation and the true curved trajectory).
    * - ``delta_one_step``
-     - 0.001 mm
+     - 0.01 mm
      - Positional accuracy per integration step.
    * - ``delta_intersection``
-     - 0.0001 mm
+     - 0.001 mm
      - Positional accuracy at volume boundaries.
    * - ``min_epsilon_step``
-     - 1e-7
+     - 5e-5
      - Minimum relative integration accuracy.
    * - ``max_epsilon_step``
-     - 1e-5
+     - 1e-3
      - Maximum relative integration accuracy.
 
 Example:

@@ -39,37 +39,37 @@ class FieldBase(GateObject):
             },
         ),
         "step_minimum": (
-            1e-2 * g4_units.mm,
+            0.01 * g4_units.mm,
             {
                 "doc": "Minimum step size for the chord finder.",
             },
         ),
         "delta_chord": (
-            1e-3 * g4_units.mm,
+            0.25 * g4_units.mm,
             {
                 "doc": "Maximum miss distance between chord and curved trajectory.",
             },
         ),
         "delta_one_step": (
-            1e-3 * g4_units.mm,
+            0.01 * g4_units.mm,
             {
                 "doc": "Positional accuracy per integration step.",
             },
         ),
         "delta_intersection": (
-            1e-4 * g4_units.mm,
+            1e-3 * g4_units.mm,
             {
                 "doc": "Positional accuracy at volume boundaries.",
             },
         ),
         "min_epsilon_step": (
-            1e-7,
+            5e-5,
             {
                 "doc": "Minimum relative integration accuracy.",
             },
         ),
         "max_epsilon_step": (
-            1e-5,
+            1e-3,
             {
                 "doc": "Maximum relative integration accuracy.",
             },
