@@ -3447,10 +3447,13 @@ def jobs_status(campaign_dir):
 
         if not folder_exists:
             job_status = "missing_folder"
+            print(f"Job {folder_name}: missing job folder at '{job_folder}'")
         elif not metadata_exists:
             job_status = "missing_metadata"
+            print(f"Job {folder_name}: missing metadata file at '{metadata_file}'")
         elif missing_input_files:
             job_status = "missing_input_file"
+            print(f"Job {folder_name}: missing input files: {missing_input_files}")
         elif sim_exists:
             job_status = "ready"
         else:
