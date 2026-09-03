@@ -1564,6 +1564,10 @@ class VolumeManager(GateObject):
         #  to a volume in the volumes dictionary is satisfied
         for k, v in d["volumes"].items():
             self.volumes[k].from_dictionary(v)
+        # and check that any reference to a volume in the volumes dictionary is satisfied (for RepeatParametrisedVolume)
+        for volume in self.volumes.values():
+            if hasattr(volume, "resolve_references"):
+                volume.resolve_references()
 
     @property
     def world_volume(self):
