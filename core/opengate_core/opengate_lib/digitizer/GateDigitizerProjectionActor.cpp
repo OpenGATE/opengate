@@ -96,6 +96,7 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
     l.fLocalImage->SetRegions(fImage->GetLargestPossibleRegion());
     l.fLocalImage->SetSpacing(fImage->GetSpacing());
     l.fLocalImage->Allocate();
+    l.fLocalImage->FillBuffer(0.0);
 
     // Set size and allocate temporary images
     if (fSquaredImageIsEnabled) {
@@ -111,10 +112,17 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
       l.fLocalSquaredImage->Allocate();
       l.fSquaredTempImage->Allocate();
       l.fLastEventIdImage->Allocate();
+      l.fLocalSquaredImage->FillBuffer(0.0);
+      l.fSquaredTempImage->FillBuffer(0.0);
+      l.fLastEventIdImage->FillBuffer(0);
     }
   }
 
-  l.fLocalImage->FillBuffer(0.0);
+  const auto run_region = GetRunRegion(run->GetRunID());
+  itk::ImageRegionIterator<ImageType> iter_local(l.fLocalImage, run_region);
+  for (iter_local.GoToBegin(); !iter_local.IsAtEnd(); ++iter_local) {
+    iter_local.Set(0.0);
+  }
   AttachImageToVolume<ImageType>(l.fLocalImage, fPhysicalVolumeName,
                                  G4ThreeVector(), fDetectorOrientationMatrix);
   if (fSquaredImageIsEnabled) {
@@ -126,10 +134,19 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
     AttachImageToVolume<ImageIDType>(l.fLastEventIdImage, fPhysicalVolumeName,
                                      G4ThreeVector(),
                                      fDetectorOrientationMatrix);
-    // end reset to 0
-    l.fLocalSquaredImage->FillBuffer(0.0);
-    l.fSquaredTempImage->FillBuffer(0.0);
-    l.fLastEventIdImage->FillBuffer(0);
+    // end reset to 0 for this run's slices
+    itk::ImageRegionIterator<ImageType> iter_sq(l.fLocalSquaredImage,
+                                                run_region);
+    itk::ImageRegionIterator<ImageType> iter_temp(l.fSquaredTempImage,
+                                                  run_region);
+    itk::ImageRegionIterator<ImageIDType> iter_id(l.fLastEventIdImage,
+                                                  run_region);
+    for (iter_sq.GoToBegin(), iter_temp.GoToBegin(), iter_id.GoToBegin();
+         !iter_sq.IsAtEnd(); ++iter_sq, ++iter_temp, ++iter_id) {
+      iter_sq.Set(0.0);
+      iter_temp.Set(0.0);
+      iter_id.Set(0);
+    }
   }
 }
 
@@ -215,23 +232,35 @@ void GateDigitizerProjectionActor::ScoreSquaredValue(
   }
 }
 
+GateDigitizerProjectionActor::ImageType::RegionType
+GateDigitizerProjectionActor::GetRunRegion(const int run_id) const {
+  auto region = fImage->GetLargestPossibleRegion();
+  auto index = region.GetIndex();
+  auto size = region.GetSize();
+  index[2] += run_id * fInputDigiCollections.size();
+  size[2] = fInputDigiCollections.size();
+  region.SetIndex(index);
+  region.SetSize(size);
+  return region;
+}
+
 void GateDigitizerProjectionActor::EndOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
-  MergeLocalImageToGlobal(l.fLocalImage, fImage);
+  const auto run_region = GetRunRegion(run->GetRunID());
+  MergeLocalImageToGlobal(l.fLocalImage, fImage, run_region);
   if (fSquaredImageIsEnabled) {
-    FlushSquaredValues();
-    MergeLocalImageToGlobal(l.fLocalSquaredImage, fSquaredImage);
+    FlushSquaredValues(run_region);
+    MergeLocalImageToGlobal(l.fLocalSquaredImage, fSquaredImage, run_region);
   }
 }
 
-void GateDigitizerProjectionActor::FlushSquaredValues() const {
+void GateDigitizerProjectionActor::FlushSquaredValues(
+    const ImageType::RegionType &region) const {
   // When multithreading, the order is unclear, so we do it for all the threads,
   // setting to zero once one is done.
   auto &l = fThreadLocalData.Get();
-  itk::ImageRegionIterator<ImageType> iter1(
-      l.fSquaredTempImage, l.fSquaredTempImage->GetLargestPossibleRegion());
-  itk::ImageRegionIterator<ImageType> iter2(
-      l.fLocalSquaredImage, l.fLocalSquaredImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<ImageType> iter1(l.fSquaredTempImage, region);
+  itk::ImageRegionIterator<ImageType> iter2(l.fLocalSquaredImage, region);
   for (iter1.GoToBegin(), iter2.GoToBegin();
        !iter1.IsAtEnd() && !iter2.IsAtEnd(); ++iter1, ++iter2) {
     if (iter1.Get() != 0.0) {
@@ -244,11 +273,10 @@ void GateDigitizerProjectionActor::FlushSquaredValues() const {
 
 void GateDigitizerProjectionActor::MergeLocalImageToGlobal(
     const ImageType::Pointer &local_image,
-    const ImageType::Pointer &global_image) const {
-  itk::ImageRegionIterator<ImageType> iter1(
-      local_image, local_image->GetLargestPossibleRegion());
-  itk::ImageRegionIterator<ImageType> iter2(
-      global_image, global_image->GetLargestPossibleRegion());
+    const ImageType::Pointer &global_image,
+    const ImageType::RegionType &region) const {
+  itk::ImageRegionIterator<ImageType> iter1(local_image, region);
+  itk::ImageRegionIterator<ImageType> iter2(global_image, region);
   G4AutoLock mutex(&DigitizerProjectionActorMutex);
   for (iter1.GoToBegin(), iter2.GoToBegin();
        !iter1.IsAtEnd() && !iter2.IsAtEnd(); ++iter1, ++iter2) {

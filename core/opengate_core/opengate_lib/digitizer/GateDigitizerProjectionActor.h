@@ -67,9 +67,11 @@ protected:
   void ProcessSlice(size_t slice, size_t channel) const;
   void ScoreSquaredValue(const ImageType::IndexType &index,
                          int current_event_id, double value) const;
-  void FlushSquaredValues() const;
+  ImageType::RegionType GetRunRegion(int run_id) const;
+  void FlushSquaredValues(const ImageType::RegionType &region) const;
   void MergeLocalImageToGlobal(const ImageType::Pointer &local_image,
-                               const ImageType::Pointer &global_image) const;
+                               const ImageType::Pointer &global_image,
+                               const ImageType::RegionType &region) const;
 
   G4ThreeVector fPreviousTranslation;
   G4RotationMatrix fPreviousRotation;
