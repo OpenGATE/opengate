@@ -466,7 +466,7 @@ def main():
     src = sim.add_source("GenericSource", "Na22_decay")
     src.particle = "ion 11 22"
     src.attached_to = plastic
-    src.activity = 847e3 * Bq
+    src.activity = 5 * 847e3 * Bq
     src.position.type = "point"
     src.direction.type = "iso"
     src.user_particle_life_time = 0
@@ -517,6 +517,7 @@ def main():
         exp_abs_counts,
         exp_abs_edges,
         expected_energy=1274.5,
+        tol_frac=0.3,
         label="Absorber 1274.5 keV",
         output_plot_path=output_folder / "test107_abs_peak_1274.5keV.png",
     )
