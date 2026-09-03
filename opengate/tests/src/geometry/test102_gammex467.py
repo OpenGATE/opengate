@@ -1,11 +1,10 @@
+import itk
+import numpy as np
+
 import opengate as gate
 from opengate.contrib.phantoms import gammex467
 from opengate.tests import utility
 from opengate.voxelize import voxelize_geometry, write_voxelized_geometry
-
-import itk
-import numpy as np
-import filecmp
 
 # Define the units used in the simulation set-up
 cm = gate.g4_units.cm
@@ -37,9 +36,8 @@ if __name__ == "__main__":
 
     is_ok = np.array_equal(output, reference)
 
-    is_ok = is_ok and filecmp.cmp(
+    is_ok = is_ok and utility.assert_json(
         paths.output / "gammex467_volumes.json",
         paths.output_ref / "gammex467_volumes.json",
     )
-
     utility.test_ok(is_ok)
