@@ -47,8 +47,8 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("GenericSource", "source")
     source.particle = "gamma"
-    # source.n = 100 / sim.number_of_threads
-    source.n = 1e6 / sim.number_of_threads
+    # source.number_of_primaries = 100
+    source.number_of_primaries = 1e6
     source.position.type = "point"
     source.position.translation = [0 * cm, 0 * cm, 0 * cm]
     source.direction.type = "histogram"

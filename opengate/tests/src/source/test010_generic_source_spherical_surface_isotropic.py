@@ -50,7 +50,7 @@ def run_simulation(paths):
     # source
     source = sim.add_source("GenericSource", "source")
     source.particle = "gamma"
-    source.n = 1e5
+    source.number_of_primaries = 1e5
     source.position.type = "surface_sphere"
     source.position.radius = 19.9 * cm
     source.position.translation = [0 * cm, 0 * cm, 0 * cm]

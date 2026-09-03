@@ -47,7 +47,7 @@ def run_simulation(
     source.position.translation = [0, 0, -5 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 100000
+    source.number_of_primaries = 100000
 
     aux = sim.activate_auxiliary_attribute(
         "InteractionCounterAttribute",

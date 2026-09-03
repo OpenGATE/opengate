@@ -30,7 +30,7 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
 
     # activity
-    activity = 1e6 * Bq / sim.number_of_threads
+    activity = 1e6 * Bq
 
     # world size
     test43.sim_set_world(sim)

@@ -125,7 +125,7 @@ def root_load_ekin(root_file: str):
 def add_source_energy_spectrum_histogram(sim, interpolation: str = None):
     source = sim.add_source("GenericSource", "beam")
     source.particle = "e-"
-    source.n = 2e6 / sim.number_of_threads
+    source.number_of_primaries = 2e6
     source.position.type = "point"
     source.direction.type = "iso"
 

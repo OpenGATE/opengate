@@ -51,9 +51,9 @@ if __name__ == "__main__":
 
     # add linac e- source
     source = versa.add_electron_source(sim, linac.name, 6.49 * MeV, 1 * mm, 0.5 * mm)
-    source.n = 8e4 / sim.number_of_threads
+    source.number_of_primaries = 8e4
     if sim.visu:
-        source.n = 200
+        source.number_of_primaries = 200
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 200000 / sim.number_of_threads
+    source.number_of_primaries = 200000
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

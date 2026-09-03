@@ -25,6 +25,9 @@ class VoxelSource(GenericSource):
         "image": (
             None,
             {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
                 "doc": "Filename of the image of the 3D activity distribution "
                 "(will be automatically normalized to sum=1)",
                 "is_input_file": True,

@@ -161,6 +161,7 @@ def compute_voxelized_geometry(sim, extent, spacing, margin):
 
     vl = sim.verbose_level
     sim.verbose_level = logger.NONE
+    sim.resolve_and_validate_config()
     with SimulationEngine(sim) as se:
         se.initialize()
         vox = g4.GateVolumeVoxelizer()

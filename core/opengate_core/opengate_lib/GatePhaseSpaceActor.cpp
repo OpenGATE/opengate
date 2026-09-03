@@ -73,6 +73,7 @@ void GatePhaseSpaceActor::StartSimulationAction() {
   fHits->SetFilenameAndInitRoot(outputPath);
   fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
   fHits->RootInitializeTupleForMaster();
+  AddOutputTreeInfo(fOutputNameRoot, fHits);
   if (fStoreAbsorbedEvent) {
     CheckRequiredAttribute(fHits, "EventID");
     CheckRequiredAttribute(fHits, "EventPosition");

@@ -22,7 +22,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     sim.number_of_threads = n_thr
     sim.output_dir = paths.output
     Ntotal = 10000 * (30 / n_thr) ** 2
-    N_per_trhead = Ntotal / sim.number_of_threads
+    N_per_trhead = Ntotal
 
     # units
     cm = gate.g4_units.cm
@@ -59,7 +59,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = N_per_trhead
+    source.number_of_primaries = N_per_trhead
 
     dose_size = [100, 1, 1]
     dose_spacing = [0.5 * mm, 100.0 * mm, 100.0 * mm]

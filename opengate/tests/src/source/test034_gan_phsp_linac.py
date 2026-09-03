@@ -62,8 +62,8 @@ if __name__ == "__main__":
     gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
     gsource.attached_to = plane.name
-    # gsource.activity = 10 * MBq / sim.number_of_threads
-    gsource.n = 1e6 / sim.number_of_threads
+    # gsource.activity = 10 * MBq
+    gsource.number_of_primaries = 1e6
     gsource.pth_filename = (
         paths.data / "003_v3_40k.pth"
     )  # FIXME also allow .pt (include the NN)

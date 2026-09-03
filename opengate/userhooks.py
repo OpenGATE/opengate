@@ -169,3 +169,139 @@ def user_hook_dna_region_models(simulation_engine):
         print(f"Volume {volume_name}: {model_name}")
 
     simulation_engine.user_hook_log.append(model_checks)
+
+
+def progress_status(filename):
+    """
+    Factory function returning a progress reporting hook that periodically writes simulation progress status to a JSON file.
+    """
+    import time
+    from datetime import datetime
+    from pathlib import Path
+    from opengate.serialization import dump_json
+    from opengate.utility import g4_units
+
+    def progress_reporter(simulation_engine, status="running"):
+        if hasattr(simulation_engine, "simulation"):
+            simulation = simulation_engine.simulation
+            source_engine = simulation_engine.source_engine
+        else:
+            # Called directly from source_engine
+            source_engine = simulation_engine
+            simulation = source_engine.simulation_engine.simulation
+
+        if not hasattr(progress_reporter, "_start_wall_time"):
+            progress_reporter._start_wall_time = time.time()
+            progress_reporter._start_iso_time = datetime.now().isoformat()
+
+        start_wall_time = progress_reporter._start_wall_time
+        start_iso_time = progress_reporter._start_iso_time
+
+        intervals = simulation.run_timing_intervals
+        total_sim_time = (
+            sum(interval[1] - interval[0] for interval in intervals) / g4_units.s
+            if intervals
+            else 0.0
+        )
+
+        current_wall_time = time.time()
+        elapsed_sec = current_wall_time - start_wall_time
+        current_iso_time = datetime.now().isoformat()
+
+        # retrieve total number of events (summed on all threads and runs)
+        total_events = 0
+        if source_engine.g4_master_source_manager:
+            total_events += (
+                source_engine.g4_master_source_manager.GetTotalGeneratedEvents()
+            )
+        for mgr in source_engine.g4_thread_source_managers:
+            total_events += mgr.GetTotalGeneratedEvents()
+
+        expected_events = source_engine.expected_number_of_events
+
+        events_per_sec = total_events / elapsed_sec if elapsed_sec > 0 else 0.0
+        active_mgr = (
+            source_engine.g4_thread_source_managers[0]
+            if source_engine.g4_thread_source_managers
+            else source_engine.g4_master_source_manager
+        )
+        raw_current_sim_time = (
+            active_mgr.GetCurrentSimulationTime() / g4_units.s if active_mgr else 0.0
+        )
+        if raw_current_sim_time == 0.0 and expected_events and expected_events > 0:
+            raw_current_sim_time = (total_events / expected_events) * total_sim_time
+
+        if status == "completed":
+            current_sim_time = total_sim_time
+            progress_ratio = 1.0
+        else:
+            current_sim_time = raw_current_sim_time
+            progress_ratio = (
+                min(1.0, total_events / expected_events)
+                if expected_events and expected_events > 0
+                else 0.0
+            )
+
+        progress_pct = 100.0 if status == "completed" else progress_ratio * 100.0
+
+        if status == "completed":
+            current_run_idx = len(intervals) - 1 if intervals else 0
+        else:
+            current_run_idx = active_mgr.GetCurrentRunId() if active_mgr else 0
+
+        time_pct = (
+            100.0
+            if status == "completed"
+            else (
+                (current_sim_time / total_sim_time * 100.0)
+                if total_sim_time > 0
+                else 0.0
+            )
+        )
+
+        if status == "completed":
+            estimated_remaining_sec = 0.0
+        elif events_per_sec > 0 and expected_events and expected_events > total_events:
+            remaining_events = expected_events - total_events
+            estimated_remaining_sec = remaining_events / events_per_sec
+        else:
+            estimated_remaining_sec = 0.0
+
+        report_data = {
+            "status": status,
+            "simulation_id": getattr(simulation, "simulation_id", "unknown"),
+            "start_time": start_iso_time,
+            "current_time": current_iso_time,
+            "elapsed_time_seconds": round(elapsed_sec, 2),
+            "estimated_time_remaining_seconds": round(estimated_remaining_sec, 2),
+            "run_index": current_run_idx,
+            "run_total": len(intervals) if intervals else 0,
+            "simulation_time_current": round(current_sim_time, 4),
+            "simulation_time_total": round(total_sim_time, 4),
+            "simulation_time_progress": round(time_pct, 2),
+            "events_total": total_events,
+            "events_expected": expected_events,
+            "events_progress": round(progress_pct, 2),
+            "events_per_second": round(events_per_sec, 2),
+        }
+
+        out_path = Path(filename)
+        if not out_path.is_absolute():
+            out_path = simulation.output_dir / out_path
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            tmp_path = out_path.with_suffix(".tmp")
+            with open(tmp_path, "w") as f:
+                dump_json(report_data, f)
+            tmp_path.replace(out_path)
+        except Exception:
+            try:
+                with open(out_path, "w") as f:
+                    dump_json(report_data, f)
+            except Exception:
+                pass
+
+        return report_data
+
+    return progress_reporter

@@ -57,8 +57,8 @@ def create_simulation(sim, threads=1, singles_name="Singles", fname_suffix=""):
     total_yield = get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
-    source.activity = 1787.914158 * MBq * total_yield / sim.number_of_threads
-    # source.n = 50000
+    source.activity = 1787.914158 * MBq * total_yield
+    # source.number_of_primaries = 50000
     source.half_life = 6586.26 * sec
     source.energy.type = "F18_analytic"  # WARNING not ok, but similar to previous Gate
     # source.energy.type = "F18"  # this is the correct F18 e+ source

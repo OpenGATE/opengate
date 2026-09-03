@@ -217,7 +217,6 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
-    sim.store_json_archive = True
     sim.output_dir = paths.output / "test007"
 
     # add a material database
@@ -307,14 +306,17 @@ if __name__ == "__main__":
 
     # check
     stats_ref = gate.actors.miscactors.SimulationStatisticsActor(name="ref")
-    c = stats_ref.counts
-    c.runs = 1
-    c.events = 1280
-    c.tracks = 17034  # 25668
-    c.steps = 78096  # 99465
-    # stats_ref.pps = 506.6
     sec = gate.g4_units.second
-    c.duration = 2.5267 * sec
+    stats_ref.user_output.stats.store_data(
+        "merged",
+        {
+            "runs": 1,
+            "events": 1280,
+            "tracks": 17034,  # 25668
+            "steps": 78096,  # 99465
+            "duration": 2.5267 * sec,
+        },
+    )
     print("-" * 80)
     is_ok = utility.assert_stats(stats, stats_ref, 0.16)
 

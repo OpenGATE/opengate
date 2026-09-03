@@ -444,6 +444,10 @@ class ScatterSplittingFreeFlightActor(
 
     def initialize(self):
         SplitProcessActorBase.initialize(self)
+        # FIXME: the world-attachment warning, GenericProcess compatibility
+        # check, angular_acceptance validation, and the derived splitting-factor
+        # defaults below are configuration-resolution concerns and should
+        # probably move into resolve_and_validate_config().
         if self.user_info.attached_to != "world":
             warning(
                 f"ScatterSplittingFreeFlightActor actors can only be attached to the world volume, "
@@ -531,6 +535,7 @@ class LastVertexInteractionSplittingActor(
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        # FIXME: Should rely on user_output_config and not call _add_user_output manually
         self._add_user_output(
             ActorOutputLastVertexInteractionSplittingActor, "last_vertex_output"
         )
@@ -595,8 +600,12 @@ class LastVertexInteractionSplittingActor(
         itk.imwrite(new_uncertainty_img, uncertainty_file)
 
     def CorrectDoseUncertainty(self):
+        # FIXME: This post-processing hook appears to be unused at the moment:
+        # no current execution path calls it. Even if revived later, the
+        # authority is awkward because a biasing actor rewrites outputs owned
+        # by dose actors. The uncertainty post-processing should probably live
+        # with the corresponding dose actor or actor output instead.
         actors = self.simulation.actor_manager.actors
-        output_dir = self.simulation.output_dir
         for key in actors.keys():
             actor = actors[key]
             if hasattr(actor, "dose_uncertainty"):
@@ -606,11 +615,11 @@ class LastVertexInteractionSplittingActor(
                     actor.dose_uncertainty.active == True
                     and actor.dose_squared.active == True
                 ):
-                    uncertainty_file = (
-                        output_dir + actor.edep_uncertainty.output_filename
+                    uncertainty_file = actor.edep_uncertainty.get_output_path(
+                        which="merged"
                     )
-                    file = output_dir + actor.dose.output_filename
-                    squared_file = output_dir + actor.dose_squared.output_filename
+                    file = actor.dose.get_output_path(which="merged")
+                    squared_file = actor.dose_squared.get_output_path(which="merged")
                     self.UncertaintyCalculation(
                         t_N, uncertainty_file, file, squared_file
                     )
@@ -618,11 +627,11 @@ class LastVertexInteractionSplittingActor(
                     actor.edep_uncertainty.active == True
                     and actor.edep_squared.active == True
                 ):
-                    uncertainty_file = (
-                        output_dir + actor.edep_uncertainty.output_filename
+                    uncertainty_file = actor.edep_uncertainty.get_output_path(
+                        which="merged"
                     )
-                    file = output_dir + actor.edep.output_filename
-                    squared_file = output_dir + actor.edep_squared.output_filename
+                    file = actor.edep.get_output_path(which="merged")
+                    squared_file = actor.edep_squared.get_output_path(which="merged")
                     self.UncertaintyCalculation(
                         t_N, uncertainty_file, file, squared_file
                     )

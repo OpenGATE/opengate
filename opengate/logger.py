@@ -36,4 +36,6 @@ EVENT = 50
 
 def log_level(log_handler_id):
     handler_config = logger._core.handlers.get(log_handler_id)
+    if handler_config is None:
+        return INFO
     return handler_config.levelno

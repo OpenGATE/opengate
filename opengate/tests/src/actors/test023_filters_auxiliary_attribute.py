@@ -39,7 +39,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -6 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 5000
+    source.number_of_primaries = 5000
 
     aux = sim.activate_auxiliary_attribute(
         "ProcessDefinedStepInVolumeAttribute",

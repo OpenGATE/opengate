@@ -258,7 +258,7 @@ void GateGenericSource::GeneratePrimaries(
     }
   }
 
-  fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
 }
 
 void GateGenericSource::InitializeParticle(py::dict &user_info) {

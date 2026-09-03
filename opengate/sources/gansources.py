@@ -276,7 +276,13 @@ class GANSource(GenericSource):
     user_info_defaults = {
         "pth_filename": (
             None,
-            {"doc": "Filename of the Generator (.pth), train with gaga_train"},
+            {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "Filename of the Generator (.pth), train with gaga_train",
+                "is_input_file": True,
+            },
         ),
         "backward_distance": (
             None,
@@ -355,6 +361,9 @@ class GANSource(GenericSource):
         "cond_image": (
             None,
             {
+                # FIXME: this conditional image input looks file-backed but is
+                # still modeled as a plain string-like parameter and is not yet
+                # marked as an input file for archiving.
                 "doc": "Filename of the activity distribution (provided as image) to use for the conditional GAN"
             },
         ),
@@ -413,9 +422,7 @@ class GANSource(GenericSource):
             self.generator = GANSourceDefaultGenerator(self.user_info)
             return
 
-        # FIXME: I changed this line because the second arg 'self' seemed wrong to me. Check!
         vcg = VoxelizedSourceConditionGenerator(self.cond_image)
-        # vcg = VoxelizedSourceConditionGenerator(self.cond_image, self)
         vcg.compute_directions = self.compute_directions
         self.generator = GANSourceConditionalGenerator(
             self.user_info, vcg.generate_condition
@@ -940,7 +947,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
     def generate_condition(self, n):
         fatal(
             f'Error: to use GANSourceConditionalGenerator,  you must provide a function "f" '
-            f'that take a single int "n" as input and generate n condition samples. '
+            f'that take a single int "number_of_primaries" as input and generate that many condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
         )
         return None
@@ -1022,7 +1029,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
     def generate_condition(self, n):
         fatal(
             f'Error: to use GANSourceConditionalPairsGenerator,  you must provide a function "f" '
-            f'that take a single int "n" as input and generate n condition samples. '
+            f'that take a single int "number_of_primaries" as input and generate that many condition samples. '
             f'This function "f" must be set with generator.generate_condition = f'
         )
         return None

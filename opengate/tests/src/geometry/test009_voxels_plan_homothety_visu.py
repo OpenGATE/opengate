@@ -21,8 +21,6 @@ if __name__ == "__main__":
     sim.visu_type = "qt"
     sim.number_of_threads = 1
     sim.output_dir = paths.output
-    sim.store_json_archive = True
-    sim.json_archive_filename = "simulation_test009_voxels.json"
 
     # add a material database
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")

@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # source
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
-    tps.n = 1e5
+    tps.number_of_primaries = 1e5
     tps.beam_model = beamline
     tps.beam_data_dict = beam_data
     tps.beam_nr = 1

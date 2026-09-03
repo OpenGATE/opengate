@@ -86,7 +86,7 @@ if __name__ == "__main__":
     sim.user_hook_after_init_arg = {"volume": wb, "mean_energy": mean_energy}
 
     # go
-    sim.run()
+    sim.run(start_new_process=True)
 
     # test: no mean energy, should be mostly colinear
     gamma_pairs = read_gamma_pairs(root_filename)

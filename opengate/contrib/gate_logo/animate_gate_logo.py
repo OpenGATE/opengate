@@ -142,7 +142,7 @@ def run_simulation_create_gif(
                 run_time_intervals.append([start_time, source.end_time])
 
         else:
-            source.n = np.ceil(numPartSimTest * w)
+            source.number_of_primaries = np.ceil(numPartSimTest * w)
 
     size = [1, 400, 200]
     spacing = [100 * mm, 1.0 * mm, 1.0 * mm]

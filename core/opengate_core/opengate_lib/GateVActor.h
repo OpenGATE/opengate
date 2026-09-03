@@ -20,6 +20,7 @@ namespace py = pybind11;
 
 class GateSourceManager;
 class G4VPhysicalVolume;
+class GateDigiCollection;
 
 class GateVActor : public G4VPrimitiveScorer {
 
@@ -118,6 +119,22 @@ public:
 
   std::string GetOutputPath(std::string outputName) const;
 
+  // FIXME: ROOT-specific bookkeeping currently lives in GateVActor as a
+  // pragmatic bridge for Python-side metadata capture and merge support. Long
+  // term, move this responsibility into a dedicated ROOT/output handler that
+  // can digest digi collections and own tree/schema/file metadata without
+  // baking backend-specific state into the generic actor base.
+  void AddOutputTreeName(const std::string &outputName,
+                         const std::string &treeName);
+
+  std::vector<std::string> GetOutputTreeNames(std::string outputName) const;
+
+  void AddOutputTreeInfo(const std::string &outputName,
+                         const GateDigiCollection *digiCollection);
+
+  std::map<std::string, std::map<std::string, std::string>>
+  GetOutputTreeInfo(std::string outputName) const;
+
   void SetWriteToDisk(const std::string &outputName, bool writeToDisk);
 
   bool GetWriteToDisk(std::string outputName) const;
@@ -135,6 +152,8 @@ public:
   struct ActorOutputInfo {
     std::string outputName = "";
     std::string outputPath = "";
+    std::vector<std::string> treeNames;
+    std::map<std::string, std::map<std::string, std::string>> treeBranchTypes;
     bool writeToDisk = false;
   };
 

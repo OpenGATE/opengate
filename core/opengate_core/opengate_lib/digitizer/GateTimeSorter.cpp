@@ -139,14 +139,9 @@ void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
   // with a mutex, because all threads must copy their digis sequentially into
   // the same buffer.
   // 2. The actual time-sorting, followed by the work provided by the actor,
-  // happens next on two conditions: (i) a minimum number of ingestions
-  // has happened since the previous time sorting, and (ii) the current thread
-  // is the one with the most advanced GlobalTime value. If these conditions are
-  // not fulfilled, the execution of stage 2 is postponed until a later
-  // invocation of OnEndOfEventAction. These conditions avoid incurring the
-  // overhead of stage 2 after every ingestion of (typically very few) digis and
-  // make sure that the fastest progressing working threads do more work than
-  // the slower ones, which reduces GlobalTime divergence between threads.
+  // happens next when a certain number of ingestions has happened since the
+  // previous time sorting. This condition avoid incurring the overhead of stage
+  // 2 after every ingestion of (typically very few) digis.
 
   // Phase 1
 
@@ -166,7 +161,7 @@ void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
     return;
   }
 
-  // Number of ingestions thas reached the threshold: subtract the threshold
+  // Number of ingestions has reached the threshold: subtract the threshold
   // value and continue.
   fNumIngestions.fetch_sub(numIngestionsPerProcessCall,
                            std::memory_order_relaxed);
@@ -178,13 +173,8 @@ void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
     if (fProcessingOngoing.compare_exchange_strong(expected, true,
                                                    std::memory_order_acquire,
                                                    std::memory_order_relaxed)) {
-      // If the current thread has been identified as the fastest progressing
-      // one, then do the processing.
-      const int tid = std::max(0, G4Threading::G4GetThreadId());
-      if (tid == fFastestThread.load()) {
-        Process(); // executes time-sorting logic
-        work();    // executes the work provided by the actor
-      }
+      Process(); // executes time-sorting logic
+      work();    // executes the work provided by the actor
       fProcessingOngoing.store(false, std::memory_order_release);
     }
   }
@@ -206,7 +196,6 @@ void GateTimeSorter::OnEndOfRunAction(
     lastThreadWork();
   }
   anyThreadWork();
-  MarkThreadAsFinished(std::max(0, G4Threading::G4GetThreadId()));
 }
 
 GateDigiCollection *GateTimeSorter::OutputCollection() const {
@@ -402,12 +391,6 @@ void GateTimeSorter::Process() {
   if ((n >= n1 && n >= fSortedCollectionA->GetSize() / 2) || n >= n2) {
     Prune();
   }
-
-  // The current thread was the fastest one at the time when Process() got
-  // called. Since it has been doing sorting work since, it may no longer be the
-  // one with the highest GlobalTime value. So we have to re-evaluate which
-  // thread is currently the fastest one.
-  IdentifyFastestThread();
 }
 
 void GateTimeSorter::Flush() {
@@ -433,26 +416,6 @@ void GateTimeSorter::Flush() {
               << fMinimumSortingWindow << " ns (suggestion: > " << fMaxDropDelta
               << "ns)\n";
   }
-}
-
-void GateTimeSorter::IdentifyFastestThread() {
-  // Look up the index of the thread that currently has the largest GlobalTime
-  // value.
-  const auto maxIt = std::max_element(
-      fMaxGlobalTimePerThread.get(),
-      fMaxGlobalTimePerThread.get() + fNumWorkingThreads,
-      [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
-        return a.value.load() < b.value.load();
-      });
-  fFastestThread.store(
-      static_cast<int>(std::distance(fMaxGlobalTimePerThread.get(), maxIt)));
-}
-
-void GateTimeSorter::MarkThreadAsFinished(int threadId) {
-  // Sets the maximum observed GlobalTime of the given thread to zero, to make
-  // sure that it can no longer be selected to do sorting work.
-  fMaxGlobalTimePerThread[threadId].value.store(0.0);
-  IdentifyFastestThread();
 }
 
 void GateTimeSorter::Prune() {

@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("GenericSource", "beam")
     source.particle = "gamma"
-    source.activity = 1e6 * Bq / sim.number_of_threads
+    source.activity = 1e6 * Bq
     source.position.type = "point"
     source.position.translation = [0 * cm, 0 * cm, 1 * m]
     source.direction.type = "iso"

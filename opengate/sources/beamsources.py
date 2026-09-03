@@ -142,7 +142,11 @@ class TreatmentPlanPBSource(SourceBase):
         "plan_path": (
             None,
             {
-                "doc": "path of the treatment plan file to simulate. It can be in DICOM or Gate 9 .txt format "
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter. Consider migrating to Path-based user
+                # info handling consistently across serialized inputs.
+                "doc": "path of the treatment plan file to simulate. It can be in DICOM or Gate 9 .txt format ",
+                "is_input_file": True,
             },
         ),
         "beam_data_dict": (
@@ -265,8 +269,8 @@ class TreatmentPlanPBSource(SourceBase):
                 self.ion.E = words[3]
 
         self.initialize_start_end_time(run_timing_intervals)
-        self.check_ui_activity(self.user_info)
-        g4_source.InitializeUserInfo(self.user_info)
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        g4_source.InitializeUserInfo(runtime_user_info)
 
     def get_generated_primaries(self):
         if self.g4_thread_sources:

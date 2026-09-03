@@ -451,6 +451,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     user_output_config = {
         "edep_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
+            "item_config_overrides": {
+                0: {"suffix": "edep"},
+                1: {"suffix": "edep_squared"},
+                "uncertainty": {"suffix": "edep_uncertainty"},
+            },
             "interfaces": {
                 "edep": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -471,6 +476,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         },
         "dose_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
+            "item_config_overrides": {
+                0: {"suffix": "dose"},
+                1: {"suffix": "dose_squared"},
+                "uncertainty": {"suffix": "dose_uncertainty"},
+            },
             "interfaces": {
                 "dose": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -657,8 +667,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.cpp_edep_squared_image,
         )
         self._update_output_coordinate_system("edep_with_uncertainty", run_index)
-        self.user_output.edep_with_uncertainty.store_meta_data(
-            run_index, number_of_samples=self.NbOfEvent
+        self.user_output.edep_with_uncertainty.set_number_of_samples(
+            run_index, self.NbOfEvent
         )
 
         if self.user_output.dose_with_uncertainty.get_active(item="any"):
@@ -669,8 +679,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 self.cpp_dose_squared_image,
             )
             self._update_output_coordinate_system("dose_with_uncertainty", run_index)
-            self.user_output.dose_with_uncertainty.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
+            self.user_output.dose_with_uncertainty.set_number_of_samples(
+                run_index, self.NbOfEvent
             )
             # divide by voxel volume and scale to unit Gy
             if self.user_output.dose_with_uncertainty.get_active(item=0):
@@ -688,9 +698,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         if self.user_output.counts.get_active():
             self.fetch_from_cpp_image("counts", run_index, self.cpp_counts_image)
             self._update_output_coordinate_system("counts", run_index)
-            self.user_output.counts.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
+            self.user_output.counts.set_number_of_samples(run_index, self.NbOfEvent)
 
         # density image
         if self.user_output.density.get_active():
@@ -700,14 +708,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.density.store_data(
                 run_index, self.create_density_image_from_image_volume(edep_image)
             )
-            self.user_output.density.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
+            self.user_output.density.set_number_of_samples(run_index, self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
-        # FIXME: should check if uncertainty goal is reached (return value: 0),
-        # but the current mechanism is quite hacky and it is therefore temporarily not in use!
         return 0
 
     def EndSimulationAction(self):
@@ -889,9 +893,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
         )
         self._update_output_coordinate_system("let", run_index)
-        self.user_output.let.store_meta_data(
-            run_index, number_of_samples=self.NbOfEvent
-        )
+        self.user_output.let.set_number_of_samples(run_index, self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
@@ -938,6 +940,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         "lookup_table_path": (
             "",
             {
+                # FIXME: this appears to be a file-backed input but is still
+                # modeled as a plain string-like parameter rather than a Path.
                 "doc": "path of the z*_1d or alpha_z table.",
                 "setter_hook": _setter_hook_lookup_table_path,
             },
@@ -1231,9 +1235,9 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             self.cpp_denominator_image,
         )
         self._update_output_coordinate_system(f"{self.scored_quantity}_mix", run_index)
-        self.user_output.__getattr__(f"{self.scored_quantity}_mix").store_meta_data(
-            run_index, number_of_samples=self.NbOfEvent
-        )
+        self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).set_number_of_samples(run_index, self.NbOfEvent)
         if self.multiple_scoring:
             self.fetch_from_cpp_image(
                 "beta_mix",
@@ -1242,9 +1246,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 self.cpp_denominator_image,
             )
             self._update_output_coordinate_system("beta_mix", run_index)
-            self.user_output.beta_mix.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
+            self.user_output.beta_mix.set_number_of_samples(run_index, self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
@@ -1631,7 +1633,6 @@ class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStopping
             "production_stopping", run_index, self.cpp_value_image
         )
         self._update_output_coordinate_system("production_stopping", run_index)
-        self.user_output.production_stopping.store_meta_data(run_index)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
@@ -2090,8 +2091,8 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             self.cpp_counts_squared_image,
         )
         self._update_output_coordinate_system("counts_with_uncertainty", run_index)
-        self.user_output.counts_with_uncertainty.store_meta_data(
-            run_index, number_of_samples=self.NbOfEvent
+        self.user_output.counts_with_uncertainty.set_number_of_samples(
+            run_index, self.NbOfEvent
         )
         if self.user_info.score_by_process:
             for process, img, squared_img, output in zip(
@@ -2106,11 +2107,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 self._update_output_coordinate_system(
                     f"{process}_counts_with_uncertainty", run_index
                 )
-                output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
-                self._update_output_coordinate_system(
-                    f"{process}_counts_with_uncertainty", run_index
-                )
-                output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
+                output.set_number_of_samples(run_index, self.NbOfEvent)
 
         if self.user_output.energy_with_uncertainty.get_active(item="any"):
             self.fetch_from_cpp_image(
@@ -2120,8 +2117,8 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 self.cpp_energy_squared_image,
             )
             self._update_output_coordinate_system("energy_with_uncertainty", run_index)
-            self.user_output.energy_with_uncertainty.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
+            self.user_output.energy_with_uncertainty.set_number_of_samples(
+                run_index, self.NbOfEvent
             )
             if self.user_info.score_by_process:
                 for process, img, squared_img, output in zip(
@@ -2139,11 +2136,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                     self._update_output_coordinate_system(
                         f"{process}_energy_with_uncertainty", run_index
                     )
-                    output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
-                    self._update_output_coordinate_system(
-                        f"{process}_energy_with_uncertainty", run_index
-                    )
-                    output.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
+                    output.set_number_of_samples(run_index, self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0  # required by GateFluenceActor.EndOfRunActionMasterThread

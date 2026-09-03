@@ -8,9 +8,18 @@ from opengate.geometry.utility import vec_g4_as_np, rot_g4_as_np
 import json
 
 
-def store_volumes_info(sim, json_filename):
+# FIXME: consider renaming to store_runtime_volumes_info to distinguish from config writing via to_dictionary()
+def store_volumes_info(simulation_engine, json_filename):
+    """Dump the current Geant4 volume store to JSON from a user hook.
+
+    This helper is intended to be called from `user_hook_after_init` or similar
+    runtime hooks, which receive a `SimulationEngine` object rather than a
+    `Simulation`.
+    """
+
+    json_filename = simulation_engine.simulation.get_output_path(json_filename)
     # get the pointers to the Geant4 volumes
-    vol_info_raw = get_g4_volumes_pointers(sim)
+    vol_info_raw = get_g4_volumes_pointers(simulation_engine)
 
     # Prepare a dictionary to hold processed volume data with world coordinates
     processed_volumes = serialize_volume_data(vol_info_raw)
@@ -20,16 +29,21 @@ def store_volumes_info(sim, json_filename):
         json.dump(processed_volumes, f, indent=4)
 
 
-def store_expanded_volumes_info(sim, json_filename):
+def store_expanded_volumes_info(simulation_engine, json_filename):
     """
-    Main function to be called.
-    Expands the entire geometry tree to find every single instance of every
-    volume, calculates their world coordinates, and saves the complete,
-    expanded geometry to a JSON file. This is the correct method for
-    geometries with nested replications.
+    Dump the expanded runtime geometry to JSON from a user hook.
+
+    This helper is intended to be called from `user_hook_after_init` or similar
+    runtime hooks, which receive a `SimulationEngine` object rather than a
+    `Simulation`. It expands the entire geometry tree to find every single
+    instance of every volume, calculates their world coordinates, and saves the
+    complete expanded geometry. This is the correct method for geometries with
+    nested replications.
     """
+    json_filename = simulation_engine.simulation.get_output_path(json_filename)
+
     # 1. Get the initial prototype volumes from the G4 store
-    vol_info_raw = get_g4_volumes_pointers(sim)
+    vol_info_raw = get_g4_volumes_pointers(simulation_engine)
 
     # 2. Serialize the prototype volumes to get their basic properties (like local bounds)
     #    This now uses the correct GetMother() method.
@@ -218,7 +232,7 @@ def _get_world_transform_matrix(volume_name, all_volume_data, memo={}):
     return world_transform
 
 
-def get_g4_volumes_pointers(sim):
+def get_g4_volumes_pointers(simulation_engine):
     store = g4.G4PhysicalVolumeStore.GetInstance()
     map = store.GetMap()
     volumes = Box()

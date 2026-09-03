@@ -65,7 +65,7 @@ def create_simulation(use_actor_requested_dna_em, seed):
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 1
+    source.number_of_primaries = 1
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 

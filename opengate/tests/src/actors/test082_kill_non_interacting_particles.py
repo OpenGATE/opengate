@@ -113,7 +113,7 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, -1]
     source.energy.type = "mono"
     source.energy.mono = 6 * MeV
-    source.n = 5000
+    source.number_of_primaries = 5000
 
     tungsten_leaves = sim.add_volume("Box", "tungsten_leaves")
     tungsten_leaves.mother = actor_box

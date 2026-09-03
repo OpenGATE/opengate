@@ -48,7 +48,6 @@ Makefile
 *.lib
 *.dylib
 *.dll
-bin/
 make*.sh
 
 
@@ -84,3 +83,4 @@ a.txt
 *.so
 
 
+.clangd

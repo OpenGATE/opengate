@@ -38,7 +38,7 @@ def read_stats_file_json(filename):
         if u in g4_units:
             counts[k] *= g4_units[u]
     stat = SimulationStatisticsActor(name=r)
-    stat.user_output.stats.store_data(counts)
+    stat.user_output.stats.store_data("merged", counts)
     return stat
 
 
@@ -85,45 +85,13 @@ def read_stats_file_legacy(filename):
                 counts.nb_threads = int(a)
             except:
                 counts.nb_threads = "?"
-    stats.user_output.stats.store_data(counts)
+    stats.user_output.stats.store_data("merged", counts)
     return stats
 
 
 def sum_stats(stats1, stats2):
     stats = SimulationStatisticsActor(name="add")
-    k_int = {"runs", "events", "tracks", "steps"}
-    k_float = {"duration", "sim_start_time", "sim_stop_time"}
-    k_date = {"start_time", "stop_time"}
-    k_str = {"arch", "python"}
-
-    counts = stats1.counts.copy()
-    for k, v1 in stats1.counts.items():
-        v2 = stats2.counts[k]
-        if k not in stats1.counts:
-            continue
-        v1 = stats1.counts[k]
-        if k in k_int:
-            counts[k] = int(v1) + int(v2)
-        if k in k_float:
-            counts[k] = float(v1) + float(v2)
-        if k in k_date:
-            counts[k] = str(v1).replace("\n", "") + " _ " + str(v2).replace("\n", "")
-        if k in k_str:
-            if v1 != v2:
-                counts[k] = str(v1) + " " + str(v2)
-            else:
-                counts[k] = v1
-        if k == "track_types":
-            v = v1.copy()
-            for kk, vv in v1.items():
-                if kk in v2:
-                    v[kk] = int(v1[kk]) + int(v2[kk])
-            for kk, vv in v2.items():
-                if kk not in v1:
-                    v[kk] = int(v2[kk])
-            counts[k] = v
-
-    stats.user_output.stats.store_data(counts)
+    stats.import_user_output_from_actor(stats1, stats2)
     return stats
 
 

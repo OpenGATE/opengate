@@ -1,5 +1,4 @@
 import time
-import random
 import sys
 import os
 import weakref
@@ -127,7 +126,6 @@ class SourceEngine(EngineBase):
         #        "No source: no particle will be generated"
         #    )
         self.progress_bar = progress_bar
-        self.initialize_dynamic_parametrisations()
 
         # Pre-create C++ sources for all threads (1 master + N workers) on the main thread
         num_instances = 1 + self.simulation_engine.simulation.number_of_threads
@@ -141,18 +139,6 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager.SetActors(
             self.simulation_engine.simulation.actor_manager.sorted_actors
         )
-
-    def initialize_dynamic_parametrisations(self):
-        dynamic_sources = self.source_manager.dynamic_sources
-        for s in self.source_manager.dynamic_sources:
-            s.check_if_dynamic_params_match_run_timing_intervals()
-        if len(dynamic_sources) > 0:
-            dynamic_source_actor = self.simulation_engine.simulation.add_actor(
-                "DynamicSourceActor", "dynamic_source_actor"
-            )
-            dynamic_source_actor.priority = 1
-            for s in self.source_manager.dynamic_sources:
-                dynamic_source_actor.changers.extend(s.create_changers())
 
     def create_master_source_manager(self):
         # create the master source for the masterThread
@@ -207,14 +193,12 @@ class SourceEngine(EngineBase):
         )
 
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
-        self.expected_number_of_events = (
-            ms.GetExpectedNumberOfEvents()
-            * self.simulation_engine.simulation.number_of_threads
-        )
+        self.expected_number_of_events = ms.GetExpectedNumberOfEvents()
         # set the flag for user event info
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
         )
+
         # keep the pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
@@ -222,6 +206,40 @@ class SourceEngine(EngineBase):
         return ms
 
     def start(self):
+        sim = self.simulation_engine.simulation
+
+        if sim.multithreaded and len(self.g4_thread_source_managers) > 0:
+            self.expected_number_of_events = sum(
+                manager.GetExpectedNumberOfEvents()
+                for manager in self.g4_thread_source_managers
+            )
+        elif self.g4_master_source_manager is not None:
+            self.expected_number_of_events = (
+                self.g4_master_source_manager.GetExpectedNumberOfEvents()
+            )
+
+        if sim.progress_hook:
+            interval = float(
+                sim.progress_hook_interval
+                if sim.progress_hook_interval is not None
+                else 30.0  # sec
+            )
+            target_manager = (
+                self.g4_thread_source_managers[0]
+                if self.g4_thread_source_managers
+                else self.g4_master_source_manager
+            )
+
+            # Convenience wrapper to handle signature differences
+            def progress_hook_wrapper(status="running"):
+                try:
+                    sim.progress_hook(self.simulation_engine, status)
+                except TypeError:
+                    sim.progress_hook(status)
+
+            self._progress_hook_wrapper = progress_hook_wrapper
+            target_manager.SetProgressReportCallback(progress_hook_wrapper, interval)
+
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
@@ -233,6 +251,12 @@ class SourceEngine(EngineBase):
         self.simulation_engine.simulation.volume_manager.solid_with_texture_init = []
 
         self.g4_master_source_manager.StartMasterThread()
+
+        if hasattr(self, "_progress_hook_wrapper") and self._progress_hook_wrapper:
+            try:
+                self._progress_hook_wrapper("completed")
+            except Exception:
+                pass
 
         # once terminated, packup the sources (if needed)
         for source in self.sources:
@@ -344,10 +368,6 @@ class PhysicsEngine(EngineBase):
         G4RunManager.Initialize() is called.
 
         """
-        # Regions have a split lifecycle because their G4Region objects must
-        # exist during Geant4 initialization, while some settings are only safe
-        # to apply after G4RunManager.Initialize() has completed.
-        self.initialize_regions_before_runmanager()
         self.initialize_physics_list()
         self.initialize_dna_physics_regions()
         self.initialize_g4_em_parameters()
@@ -381,10 +401,6 @@ class PhysicsEngine(EngineBase):
         self.initialize_ionisation_options()
         self.initialize_users_ionisation_potentials()
 
-    def initialize_regions_before_runmanager(self):
-        for region in self.physics_manager.regions.values():
-            region.initialize_before_runmanager()
-
     def initialize_parallel_world_physics(self):
         for (
             world
@@ -410,6 +426,11 @@ class PhysicsEngine(EngineBase):
     def initialize_regions(self):
         for region in self.physics_manager.regions.values():
             region.initialize_after_runmanager()
+
+    def initialize_regions_for_volume(self, volume):
+        region = self.physics_manager.find_region(volume.name)
+        if region is not None:
+            region.initialize_root_logical_volume(volume)
 
     def initialize_global_cuts(self):
         ui = self.physics_manager.user_info
@@ -1084,11 +1105,11 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
         G4 overloaded.
         Override the Construct method from G4VUserParallelWorld
         """
-
         # Construct all volumes within this world along the tree hierarchy
         # The world volume of this world is the first item
         for volume in PreOrderIter(self.parallel_world_volume):
             volume.construct()
+            self.simulation_engine.physics_engine.initialize_regions_for_volume(volume)
 
     def ConstructSD(self):
         self.simulation_engine.actor_engine.register_sensitive_detectors(
@@ -1141,42 +1162,19 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
     def initialize(self):
         # build the materials
         self.simulation_engine.simulation.volume_manager.material_database.initialize()
-        # initialize actors which handle dynamic volume parametrization, e.g. MotionActors
-        self.initialize_dynamic_parametrisations()
-
-    def initialize_dynamic_parametrisations(self):
-        dynamic_volumes = self.volume_manager.dynamic_volumes
-        for vol in self.volume_manager.dynamic_volumes:
-            vol.check_if_dynamic_params_match_run_timing_intervals()
-        if len(dynamic_volumes) > 0:
-            dynamic_geometry_actor = self.simulation_engine.simulation.add_actor(
-                "DynamicGeometryActor", "dynamic_geometry_actor"
-            )
-            dynamic_geometry_actor.priority = 0
-            for vol in self.volume_manager.dynamic_volumes:
-                dynamic_geometry_actor.changers.extend(vol.create_changers())
 
     def Construct(self):
         """
         G4 overloaded.
         Override the Construct method from G4VUserDetectorConstruction
         """
-
-        # # build the materials
-        # # FIXME: should go into initialize method
-        # self.simulation_engine.simulation.volume_manager.material_database.initialize()
-
         # Construct all volumes within the mass world along the tree hierarchy
         # The world volume is the first item
 
         self.volume_manager.update_volume_tree()
         for volume in PreOrderIter(self.volume_manager.world_volume):
             volume.construct()
-
-        for (
-            region
-        ) in self.simulation_engine.simulation.physics_manager.regions.values():
-            region.initialize_during_runmanager()
+            self.simulation_engine.physics_engine.initialize_regions_for_volume(volume)
 
         # return the (main) world physical volume
         self._is_constructed = True
@@ -1682,10 +1680,13 @@ class SimulationEngine(GateSingletonFatal):
 
         # set the random engine
         g4.G4Random.setTheEngine(self.g4_HepRandomEngine)
-        if self.simulation.random_seed == "auto":
-            self.current_random_seed = random.randrange(sys.maxsize)
-        else:
-            self.current_random_seed = self.simulation.random_seed
+        self.current_random_seed = self.simulation.current_random_seed
+        if self.current_random_seed is None:
+            fatal(
+                "Simulation.current_random_seed is not resolved. "
+                "resolve_and_validate_config() should assign a concrete seed "
+                "before SimulationEngine.initialize_random_engine() is called."
+            )
 
         # if windows, the long are 4 bytes instead of 8 bytes for python and unix system
         if os.name == "nt":
@@ -1730,10 +1731,6 @@ class SimulationEngine(GateSingletonFatal):
 
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
-
-        # Some sources (e.g. PHID) need to perform computation once everything is defined in user_info but *before* the
-        # initialization of the G4 engine starts. This can be done via this function.
-        self.simulation.initialize_source_before_g4_engine()
 
         # create the run manager (assigned to self.g4_RunManager)
         if self.g4_RunManager:

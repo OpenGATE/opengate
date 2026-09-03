@@ -87,7 +87,7 @@ if __name__ == "__main__":
     source1.position.type = "sphere"
     source1.position.radius = 1 * mm
     source1.direction.type = "iso"
-    source1.activity = activity_Bq / sim.number_of_threads
+    source1.activity = activity_Bq
     source1.half_life = half_life
     # this is needed, but automatically done in GenericSource.py
     source1.user_particle_life_time = 0
@@ -104,9 +104,9 @@ if __name__ == "__main__":
     source2.position.translation = [0, 0, -3 * cm]
     source2.direction.type = "iso"
     source2.user_particle_life_time = lifetime
-    source2.n = [activity_Bq / Bq / sim.number_of_threads * lifetime / sec, 0]
+    source2.number_of_primaries = [activity_Bq / Bq * lifetime / sec, 0]
     print()
-    print("Source2 n = ", source2.n)
+    print("Source2 n = ", source2.number_of_primaries)
     print(f"Source2 HL = {half_life / sec} sec")
     print(f"Source2 LT = {lifetime / sec} sec")
     print()

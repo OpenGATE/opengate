@@ -93,7 +93,7 @@ def create_spect_simu(
         beam1.direction.angular_acceptance.enable_intersection_check = True
         beam1.direction.angular_acceptance.policy = "Rejection"
         beam1.direction.angular_acceptance.skip_policy = aa_mode
-    beam1.activity = activity / sim.number_of_threads
+    beam1.activity = activity
 
     beam2 = sim.add_source("GenericSource", "beam2")
     beam2.attached_to = waterbox.name
@@ -108,7 +108,7 @@ def create_spect_simu(
         beam2.direction.angular_acceptance.enable_intersection_check = True
         beam2.direction.angular_acceptance.policy = "Rejection"
         beam2.direction.angular_acceptance.skip_policy = aa_mode
-    beam2.activity = activity / sim.number_of_threads
+    beam2.activity = activity
 
     beam3 = sim.add_source("GenericSource", "beam3")
     beam3.attached_to = waterbox.name
@@ -123,7 +123,7 @@ def create_spect_simu(
         beam3.direction.angular_acceptance.enable_intersection_check = True
         beam3.direction.angular_acceptance.policy = "Rejection"
         beam3.direction.angular_acceptance.skip_policy = aa_mode
-    beam3.activity = activity / sim.number_of_threads
+    beam3.activity = activity
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")

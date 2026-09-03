@@ -2,13 +2,15 @@ import platform
 
 import opengate_core as g4
 from anytree import Node, RenderTree
-from box import Box
 
 from ..base import process_cls
 from ..exception import fatal, warning
-from ..serialization import dump_json
 from ..utility import g4_best_unit_tuple, g4_units
-from .actoroutput import ActorOutputBase, ActorOutputSingleImage
+from .actoroutput import (
+    ActorOutputBase,
+    ActorOutputSingleImage,
+    ActorOutputStatisticsActor,
+)
 from .base import ActorBase
 
 """
@@ -23,186 +25,6 @@ from .base import ActorBase
         g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
         do_something()
 """
-
-
-def _setter_hook_stats_actor_output_filename(self, output_filename):
-    # By default, write_to_disk is False.
-    # However, if user actively sets the output_filename
-    # s/he most likely wants to write to disk also
-    if output_filename != "" and output_filename is not None:
-        self.write_to_disk = True
-    return output_filename
-
-
-class ActorOutputStatisticsActor(ActorOutputBase):
-    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
-
-    # hints for IDE
-    encoder: str
-    output_filename: str
-    write_to_disk: bool
-
-    user_info_defaults = {
-        "encoder": (
-            "json",
-            {
-                "doc": "How should the output be encoded?",
-                "allowed_values": ("json", "legacy"),
-            },
-        ),
-        "output_filename": (
-            "auto",
-            {
-                "doc": "Filename for the data represented by this actor output. "
-                "Relative paths and filenames are taken "
-                "relative to the global simulation output folder "
-                "set via the Simulation.output_dir option. ",
-                "setter_hook": _setter_hook_stats_actor_output_filename,
-            },
-        ),
-        "write_to_disk": (
-            False,
-            {
-                "doc": "Should the output be written to disk, or only kept in memory? ",
-            },
-        ),
-        "active": (
-            True,
-            {"doc": "This actor is always active. ", "read_only": True},
-        ),
-    }
-
-    default_suffix = "json"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # predefine the merged_data
-        self.merged_data = Box()
-        self.merged_data.runs = 0
-        self.merged_data.events = 0
-        self.merged_data.tracks = 0
-        self.merged_data.steps = 0
-        self.merged_data.duration = 0
-        self.merged_data.start_time = 0
-        self.merged_data.stop_time = 0
-        self.merged_data.sim_start_time = 0
-        self.merged_data.sim_stop_time = 0
-        self.merged_data.init = 0
-        self.merged_data.track_types = {}
-        self.merged_data.nb_threads = 1
-
-    @property
-    def pps(self):
-        if self.merged_data.duration != 0:
-            return int(
-                self.merged_data.events / (self.merged_data.duration / g4_units.s)
-            )
-        else:
-            return 0
-
-    @property
-    def tps(self):
-        if self.merged_data.duration != 0:
-            return int(
-                self.merged_data.tracks / (self.merged_data.duration / g4_units.s)
-            )
-        else:
-            return 0
-
-    @property
-    def sps(self):
-        if self.merged_data.duration != 0:
-            return int(
-                self.merged_data.steps / (self.merged_data.duration / g4_units.s)
-            )
-        else:
-            return 0
-
-    def store_data(self, data, **kwargs):
-        self.merged_data.update(data)
-
-    def get_data(self, **kwargs):
-        if "which" in kwargs and kwargs["which"] != "merged":
-            warning(
-                f"The statistics actor output only stores merged data currently. "
-                f"The which={kwargs['which']} you provided will be ignored. "
-            )
-        # the statistics actor currently only handles merged data, so we return it
-        # no input variable 'which' as in other output classes
-        return self.merged_data
-
-    def get_processed_output(self):
-        d = {}
-        d["runs"] = {"value": self.merged_data.runs, "unit": None}
-        d["events"] = {"value": self.merged_data.events, "unit": None}
-        d["tracks"] = {"value": self.merged_data.tracks, "unit": None}
-        d["steps"] = {"value": self.merged_data.steps, "unit": None}
-        val, unit = g4_best_unit_tuple(self.merged_data.init, "Time")
-        d["init"] = {
-            "value": val,
-            "unit": unit,
-        }
-        val, unit = g4_best_unit_tuple(self.merged_data.duration, "Time")
-        d["duration"] = {
-            "value": val,
-            "unit": unit,
-        }
-        d["pps"] = {"value": self.pps, "unit": None}
-        d["tps"] = {"value": self.tps, "unit": None}
-        d["sps"] = {"value": self.sps, "unit": None}
-        d["start_time"] = {
-            "value": self.merged_data.start_time,
-            "unit": None,
-        }
-        d["stop_time"] = {
-            "value": self.merged_data.stop_time,
-            "unit": None,
-        }
-        val, unit = g4_best_unit_tuple(self.merged_data.sim_start_time, "Time")
-        d["sim_start_time"] = {
-            "value": val,
-            "unit": unit,
-        }
-        val, unit = g4_best_unit_tuple(self.merged_data.sim_stop_time, "Time")
-        d["sim_stop_time"] = {
-            "value": val,
-            "unit": unit,
-        }
-        d["threads"] = {"value": self.merged_data.nb_threads, "unit": None}
-        d["arch"] = {"value": platform.system(), "unit": None}
-        d["python"] = {"value": platform.python_version(), "unit": None}
-        d["track_types"] = {"value": self.merged_data.track_types, "unit": None}
-        return d
-
-    def __str__(self):
-        s = ""
-        for k, v in self.get_processed_output().items():
-            if k == "track_types":
-                if len(v["value"]) > 0:
-                    s += "track_types\n"
-                    for t, n in v["value"].items():
-                        s += f"{' ' * 24}{t}: {n}\n"
-            else:
-                if v["unit"] is None:
-                    unit = ""
-                else:
-                    unit = str(v["unit"])
-                s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
-        # remove last line break
-        return s.rstrip("\n")
-
-    def write_data(self, **kwargs):
-        """Override virtual method from base class."""
-        with open(self.get_output_path(which="merged"), "w+") as f:
-            if self.encoder == "json":
-                dump_json(self.get_processed_output(), f, indent=4)
-            else:
-                f.write(self.__str__())
-
-    def write_data_if_requested(self, **kwargs):
-        if self.write_to_disk is True:
-            self.write_data(**kwargs)
 
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
@@ -241,7 +63,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     @property
     def counts(self):
-        return self.user_output.stats.merged_data
+        return self.user_output.stats.get_data(which="merged")
 
     def store_output_data(self, output_name, run_index, *data):
         raise NotImplementedError
@@ -253,13 +75,26 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
-        self.user_output.stats.merged_data.nb_threads = (
-            self.simulation.number_of_threads
-        )
+
+    def EndOfRunActionMasterThread(self, run_index):
+        g4.GateSimulationStatisticsActor.EndOfRunActionMasterThread(self, run_index)
+        data = dict(self.GetCountsCurrentRun())
+        if self.simulation is not None:
+            data["run_start"] = self.simulation.run_timing_intervals[run_index][0]
+            data["run_stop"] = self.simulation.run_timing_intervals[run_index][1]
+            data["nb_threads"] = self.simulation.number_of_threads
+        self.user_output.stats.store_data(run_index, data)
+        self.user_output.stats.write_data_if_requested(which=run_index)
+        return 0
 
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
-        self.user_output.stats.store_data(self.GetCounts())
+        data = dict(self.GetCounts())
+        # FIXME: split-job merging needs explicit handling of run identities for
+        # the statistics output. Naively summing child-local "runs" counters is
+        # not meaningful. Child outputs should carry original master run indices
+        # or be remapped during merge so the merged stats can reconstruct the
+        # set of original runs directly from actor output data.
 
         if self.simulation is not None:
             sim_start = self.simulation.run_timing_intervals[0][0]
@@ -271,19 +106,13 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         else:
             sim_stop = 0
 
-        self.user_output.stats.store_data(
-            {"sim_start": sim_start, "sim_stop": sim_stop}
-        )
-        self.user_output.stats.merged_data.sim_start_time = (
-            self.simulation.run_timing_intervals[0][0]
-        )
-        self.user_output.stats.merged_data.sim_stop_time = (
-            self.simulation.run_timing_intervals[-1][1]
-        )
-        self.user_output.stats.merged_data.nb_threads = (
-            self.simulation.number_of_threads
-        )
-        self.user_output.stats.write_data_if_requested()
+        data["sim_start"] = sim_start
+        data["sim_stop"] = sim_stop
+        data["sim_start_time"] = self.simulation.run_timing_intervals[0][0]
+        data["sim_stop_time"] = self.simulation.run_timing_intervals[-1][1]
+        data["nb_threads"] = self.simulation.number_of_threads
+        self.user_output.stats.store_data("merged", data)
+        self.user_output.stats.write_data_if_requested(which="merged")
 
 
 class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
@@ -469,6 +298,7 @@ class KillNonInteractingParticleActor(
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        # FIXME: Should rely on user_output_config and not call _add_user_output manually
         self._add_user_output(
             ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles"
         )

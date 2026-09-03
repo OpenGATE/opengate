@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # rotate the disc, equiv to : rot1 0 1 0 and rot2 0 0 1
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 20000
+    source.number_of_primaries = 20000
     source.weight = 1
     source.direction.partPhSp_x = [
         2.3335754 * mm,
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # rotate the disc, equiv to : rot1 0 1 0 and rot2 0 0 1
     source2.direction.type = "momentum"
     source2.direction.momentum = [0, 0, 1]
-    source2.n = 20000
+    source2.number_of_primaries = 20000
     source2.weight = 2
     source2.direction.partPhSp_x = [
         2.3335754 * mm,

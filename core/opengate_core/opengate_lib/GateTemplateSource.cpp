@@ -11,10 +11,7 @@
 #include <G4ParticleTable.hh>
 #include <G4UnitsTable.hh>
 
-GateTemplateSource::GateTemplateSource() : GateVSource() {
-  fN = 0;
-  fFloatValue = 0;
-}
+GateTemplateSource::GateTemplateSource() : GateVSource() { fFloatValue = 0; }
 
 GateTemplateSource::~GateTemplateSource() {
   // nothing
@@ -22,8 +19,6 @@ GateTemplateSource::~GateTemplateSource() {
 
 void GateTemplateSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
-  // get user info about activity or nb of events
-  fN = DictGetInt(user_info, "n");
   fFloatValue = DictGetDouble(user_info, "float_value");
   fVectorValue = DictGetVecDouble(user_info, "vector_value");
   // Check parameters
@@ -41,7 +36,7 @@ void GateTemplateSource::PrepareNextRun() {
   // fGlobalTranslation & fGlobalRotation
 
   // init the number of generated events (here, for each run)
-  fNumberOfGeneratedEvents = 0;
+  fRunGeneratedEvents = 0;
 }
 
 void GateTemplateSource::GeneratePrimaries(G4Event *event,
@@ -65,5 +60,5 @@ void GateTemplateSource::GeneratePrimaries(G4Event *event,
   auto *vertex = new G4PrimaryVertex(pos, current_simulation_time);
   vertex->SetPrimary(particle);
   event->AddPrimaryVertex(vertex);
-  fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
 }

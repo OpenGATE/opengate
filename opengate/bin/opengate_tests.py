@@ -10,7 +10,7 @@ import click
 from opengate.bin.opengate_library_path import return_tests_path
 
 try:
-    import opengate_tests_helpers as helpers
+    import opengate.bin.opengate_tests_helpers as helpers
 except ImportError:
     from opengate.bin import opengate_tests_helpers as helpers
 
@@ -20,6 +20,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--start_id", "-i", default="all", help="Start test from this number")
 @click.option("--end_id", "-e", default="all", help="Start test up to this number")
+@click.option(
+    "--test",
+    "-t",
+    "tests",
+    multiple=True,
+    help="Run one explicit test path relative to opengate/tests/src. Repeat -t for multiple tests.",
+)
 @click.option(
     "--no_log_on_fail",
     default=False,
@@ -62,7 +69,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.0",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.2",
 )
 @click.option(
     "--print_last_test",
@@ -74,6 +81,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 def go(
     start_id,
     end_id,
+    tests,
     random_tests,
     seed,
     no_log_on_fail,
@@ -107,7 +115,16 @@ def go(
 
     fpath_dashboard_output = helpers.get_dashboard_file_path(test_dir_path)
 
-    if not run_previously_failed_jobs:
+    if tests:
+        all_files = helpers.discover_all_tests(path_tests_src)
+        files_to_run_avail, files_to_ignore = helpers.get_available_tests(all_files)
+        files_to_run = helpers.select_tests_by_explicit_paths(
+            files_to_run_avail, tests, path_tests_src
+        )
+        if files_to_run_avail:
+            helpers.download_data_at_first_run(files_to_run_avail[0])
+        dashboard_dict_out = {k: [""] for k in files_to_run_avail}
+    elif not run_previously_failed_jobs:
         all_files = helpers.discover_all_tests(path_tests_src)
         files_to_run_avail, files_to_ignore = helpers.get_available_tests(all_files)
         files_to_run = helpers.select_tests_by_id_or_random(

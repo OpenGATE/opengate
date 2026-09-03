@@ -44,9 +44,6 @@ def create_simulation_test085(
     sim.random_seed = "auto"
     sim.progress_bar = True
     sim.output_dir = paths.output
-    sim.store_json_archive = True
-    sim.store_input_files = False
-    sim.json_archive_filename = f"simu_{simu_name}.json"
     sim.random_seed = 654789
     data_folder = Path(paths.data) / "test085"
 
@@ -60,13 +57,13 @@ def create_simulation_test085(
     deg = gate.g4_units.deg
 
     # options
-    activity = ac * BqmL / sim.number_of_threads
+    activity = ac * BqmL
     radius = 28 * cm
 
     # visu
     if sim.visu:
         sim.number_of_threads = 1
-        activity = 50 * BqmL / sim.number_of_threads
+        activity = 50 * BqmL
 
     # world
     world = sim.world

@@ -56,7 +56,7 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source.direction.type = "momentum"
     source.direction_relative_to_attached_volume = True
     source.direction.momentum = [0, 0, -1]
-    source.n = nb_part
+    source.number_of_primaries = nb_part
 
 
 def validation_test_19_rt_plan(array, nb_part):

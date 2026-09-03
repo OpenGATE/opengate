@@ -212,6 +212,125 @@ manually in your ``__init__()`` method. They are passed on to the
 superclass inside the ``kwargs`` dictionary. See section XXX for more
 detail.
 
+The ``user_info_defaults`` dictionary maps a parameter name to a tuple
+``(default_value, options_dict)``. Example:
+
+.. code:: python
+
+   user_info_defaults = {
+       "image": (
+           None,
+           {
+               "doc": "Input image used by this object.",
+               "is_input_file": True,
+               "dynamic": True,
+           },
+       ),
+       "policy": (
+           "A",
+           {
+               "allowed_values": ("A", "B"),
+           },
+       ),
+   }
+
+For each entry, the factory machinery behind ``GateObject`` creates a
+python property with the same name. In normal usage, developers and
+users access ``my_object.image`` while the actual value is stored in
+``my_object.user_info["image"]``.
+
+The options dictionary can be used to control the behavior of this
+generated property and to attach metadata that is needed elsewhere in
+the framework.
+
+Common ``user_info_defaults`` options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``doc``
+  Short description used in generated help text.
+
+``required``
+  If ``True``, the parameter must be provided when the object is
+  created.
+
+``allowed_values``
+  Restricts the accepted values in the generated setter. This is useful
+  for policies, enumerations, modes, etc.
+
+``setter_hook``
+  Function called before storing the value. It can normalize the input,
+  convert object references to names, expand shorthand values, and so
+  on. The hook signature is ``setter_hook(self, value)`` and it must
+  return the value that should actually be stored in ``user_info``.
+
+``getter_hook``
+  Function called when the property is read. It can expose a derived or
+  adapted view of the stored value. The hook signature is
+  ``getter_hook(self, value)``.
+
+``read_only``
+  If ``True``, no setter is generated for the property. This is meant
+  for parameters that are maintained internally by GATE rather than
+  assigned directly by the user. A read-only user info is still part of
+  the serialized object state and may still need an explicit restore
+  path during deserialization; see ``from_dictionary_hook`` below.
+
+``from_dictionary_hook``
+  Optional hook used during ``from_dictionary()`` for read-only user
+  infos. If a user info has no setter, the generic deserializer will not
+  assign it automatically. In that case, a developer can provide a hook
+  with signature ``from_dictionary_hook(self, value)``. This is useful
+  when the persisted representation is valid and should be restored
+  through an object-specific mechanism.
+
+  This keeps restore behavior close to the user info definition instead
+  of hiding it in unrelated deserialization code. A good example is
+  ``dynamic_params`` in ``DynamicGateObject``: user-authored dynamic
+  parametrisations are created through ``add_dynamic_parametrisation()``,
+  but during deserialization the already-processed persisted
+  representation can be restored directly through a dedicated hook.
+
+``dynamic``
+  Marks a user info as time-dependent for ``DynamicGateObject``-based
+  classes. Dynamic parametrisation helpers use this metadata to identify
+  which entries should be sampled or remapped across run timing
+  intervals.
+
+``is_input_file``
+  Marks the entry as an input file so it can be discovered by file
+  copying / archiving helpers.
+
+``deprecated``
+  Marks a user info as deprecated. Attempts to use it raise a
+  deprecation error with the provided message.
+
+``deactivated``
+  Temporarily disables a parameter while still keeping its definition in
+  the API. The generated setter rejects non-default assignments.
+
+``override``
+  Internal option used when a derived class intentionally replaces
+  inherited user-info definitions.
+
+``expose_items``
+  Only applicable to dictionary-like default values. If ``True``, the
+  keys of that dictionary are also exposed as convenience properties. A
+  common example is a dictionary-like user info whose entries should be
+  accessible directly as ``my_region.max_step_size`` rather than only
+  through ``my_region.user_limits["max_step_size"]``.
+
+Practical guidance
+~~~~~~~~~~~~~~~~~~
+
+- Use ``setter_hook`` for normalization of user input.
+- Use ``getter_hook`` only when a derived view is really needed.
+- Use ``read_only`` for internal state, not as a substitute for
+  validation.
+- If a read-only user info must survive serialization,
+  add ``from_dictionary_hook`` explicitly.
+- Prefer storing the final normalized representation in ``user_info``.
+  This makes serialization, cloning, and job splitting much more robust.
+
 Initialization of Geant4 objects
 --------------------------------
 

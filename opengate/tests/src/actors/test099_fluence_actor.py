@@ -111,7 +111,7 @@ if __name__ == "__main__":
     source.position.radius = 1 * cm
     source.position.translation = [0, 0, -80 * mm]
     source.direction.type = "iso"
-    source.n = 30000
+    source.number_of_primaries = 30000
 
     # add fluence actor
     fluence_actor = sim.add_actor("FluenceActor", "fluence_actor")
@@ -167,10 +167,10 @@ if __name__ == "__main__":
             df.copy(),
             type=type,
         )
-        std_dev_tab = std_dev_img_calculation(source.n, tab, s_tab)
+        std_dev_tab = std_dev_img_calculation(source.number_of_primaries, tab, s_tab)
         rel_err_tab_phsp = np.divide(
             std_dev_tab,
-            (tab / source.n),
+            (tab / source.number_of_primaries),
             out=np.zeros_like(std_dev_tab),
             where=(tab != 0),
         )
