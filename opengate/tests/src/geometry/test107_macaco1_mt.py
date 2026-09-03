@@ -435,6 +435,7 @@ def main():
     sim.random_seed = 123456789
 
     m = g4_units.m
+    cm = g4_units.cm
     mm = g4_units.mm
     keV = g4_units.keV
     Bq = g4_units.Bq
