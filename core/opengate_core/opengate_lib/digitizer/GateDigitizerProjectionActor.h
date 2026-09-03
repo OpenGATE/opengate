@@ -78,10 +78,10 @@ protected:
   struct threadLocalT {
     std::vector<std::vector<G4ThreeVector> *> fInputPos;
     std::vector<std::vector<double> *> fInputWeights;
-    ImageType::Pointer fLocalImage;
-    ImageType::Pointer fLocalSquaredImage;
-    ImageType::Pointer fSquaredTempImage;
-    ImageIDType::Pointer fLastEventIdImage;
+    ImageType::Pointer fLocalImage = nullptr;
+    ImageType::Pointer fLocalSquaredImage = nullptr;
+    ImageType::Pointer fSquaredTempImage = nullptr;
+    ImageIDType::Pointer fLastEventIdImage = nullptr;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

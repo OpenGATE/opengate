@@ -72,11 +72,12 @@ void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
 
 void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
-  if (run->GetRunID() == 0) {
-    // The first time here we need to initialise the input position
+  if (!l.fLocalImage) {
+    // The first time a thread reaches here, initialise the input position and
+    // local images
     l.fInputPos.resize(fInputDigiCollectionNames.size());
     l.fInputWeights.resize(fInputDigiCollectionNames.size());
-    for (int slice = 0; slice < fInputDigiCollections.size(); slice++) {
+    for (size_t slice = 0; slice < fInputDigiCollections.size(); slice++) {
       auto *att_pos =
           fInputDigiCollections[slice]->GetDigiAttribute("PostPosition");
       l.fInputPos[slice] = &att_pos->Get3Values();
