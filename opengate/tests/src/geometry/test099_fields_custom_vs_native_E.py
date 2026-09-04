@@ -62,7 +62,7 @@ if __name__ == "__main__":
     box_custom.material = "G4_Galactic"
     box_custom.translation = [80 * g4_cm, 0, 0]
 
-    def custom_uniform_E(x, y, z, t):
+    def custom_uniform_E(x, y, z):
         return [Ex, 0, 0]
 
     custom_field = fields.CustomElectricField(
