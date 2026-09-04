@@ -639,6 +639,106 @@ class ImageSolid(SolidBase):
         self.g4_solid = g4.GateImageBox(image_dict)
 
 
+# -----------------------------------------------------------------------------
+# Added TetGen helpers and envelope solid for TetrahedralMeshVolume.
+# The tetrahedra themselves are created by the C++ parameterised-mesh builder;
+# this module only reads auxiliary files and constructs the enclosing G4Box.
+# -----------------------------------------------------------------------------
+class TetrahedralMeshEnvelopeSolid(SolidBase):
+    """Build the bounding-box solid that encloses a TetGen tetrahedral mesh.
+
+    This class does not create individual tetrahedra. It derives the envelope
+    size from ``node_file``; the C++ mesh builder later creates the
+    parameterised ``G4Tet`` daughters inside this box.
+    """
+
+    user_info_defaults = {
+        "node_file": ("", {"doc": "TetGen .node file", "is_input_file": True}),
+        "ele_file": ("", {"doc": "TetGen .ele file", "is_input_file": True}),
+        "material_file": ("", {"doc": "TetGen .material file", "is_input_file": True}),
+        "color_file": ("", {"doc": "colour.dat", "is_input_file": True}),
+        "container_margin_mm": (20.0, {"doc": "Extra margin around node bounds (mm)"}),
+    }
+
+    @staticmethod
+    def _read_node_bounds(node_file):
+        """Return the coordinate bounds found in a TetGen .node file."""
+
+        minx = miny = minz = 1e30
+        maxx = maxy = maxz = -1e30
+        with open(node_file, "r") as node_stream:
+            # The first non-comment line is the TetGen header
+            # (<number of points> <dimension> <attributes> <boundary markers>),
+            # not a node coordinate. Read and validate it before parsing nodes.
+            for line in node_stream:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                parts = stripped.split()
+                if len(parts) < 4:
+                    fatal(f"Invalid TetGen node header in {node_file}")
+                try:
+                    number_of_points = int(parts[0])
+                    dimension = int(parts[1])
+                except ValueError:
+                    fatal(f"Invalid TetGen node header in {node_file}")
+                if number_of_points <= 0 or dimension < 3:
+                    fatal(f"Invalid TetGen node header values in {node_file}")
+                break
+            else:
+                fatal(f"Cannot find TetGen node header in {node_file}")
+
+            read_count = 0
+            for line in node_stream:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                parts = stripped.split()
+                if len(parts) < 4:
+                    continue
+                try:
+                    x, y, z = float(parts[1]), float(parts[2]), float(parts[3])
+                except (TypeError, ValueError):
+                    continue
+                minx, miny, minz = min(minx, x), min(miny, y), min(minz, z)
+                maxx, maxy, maxz = max(maxx, x), max(maxy, y), max(maxz, z)
+                read_count += 1
+
+        if read_count != number_of_points:
+            fatal(
+                f"TetGen node count mismatch in {node_file}: "
+                f"header declares {number_of_points}, read {read_count}"
+            )
+        return (minx, miny, minz), (maxx, maxy, maxz)
+
+    def get_bbox_size_and_center_mm(self):
+        """Calculate the MRCP envelope size and mesh center in millimetres."""
+
+        (minx, miny, minz), (maxx, maxy, maxz) = self._read_node_bounds(self.node_file)
+        # MRCP .node coordinates are centimetres. The envelope is expressed
+        # in millimetres to match the C++ reader's use of Geant4's `cm` unit.
+        cm_in_mm = g4_units.cm / g4_units.mm
+        cx = 0.5 * (minx + maxx) * cm_in_mm
+        cy = 0.5 * (miny + maxy) * cm_in_mm
+        cz = 0.5 * (minz + maxz) * cm_in_mm
+        sx = (maxx - minx) * cm_in_mm + 2.0 * float(self.container_margin_mm)
+        sy = (maxy - miny) * cm_in_mm + 2.0 * float(self.container_margin_mm)
+        sz = (maxz - minz) * cm_in_mm + 2.0 * float(self.container_margin_mm)
+        return (sx, sy, sz), (cx, cy, cz)
+
+    def build_solid(self):
+        """Create the enclosing G4Box, including the configured margin."""
+
+        size_mm, _ = self.get_bbox_size_and_center_mm()
+        sx, sy, sz = size_mm
+        return g4.G4Box(
+            self.name,
+            0.5 * sx * g4_units.mm,
+            0.5 * sy * g4_units.mm,
+            0.5 * sz * g4_units.mm,
+        )
+
+
 process_cls(SolidBase)
 process_cls(BooleanSolid)
 process_cls(BoxSolid)
@@ -652,3 +752,6 @@ process_cls(TrdSolid)
 process_cls(TubsSolid)
 process_cls(ImageSolid)
 process_cls(TesselatedSolid)
+
+# Added class processing for TetrahedralMeshEnvelopeSolid user properties.
+process_cls(TetrahedralMeshEnvelopeSolid)

@@ -33,6 +33,18 @@ void init_G4Material(py::module &m) {
       .def("AddElementByNumberOfAtoms", &G4Material::AddElementByNumberOfAtoms)
       .def("AddElementByMassFraction", &G4Material::AddElementByMassFraction)
 
+      // Expose both native G4Material::AddElement overloads. The G4double
+      // overload interprets its second argument as a mass fraction, whereas
+      // the G4int overload interprets it as the number of atoms. Explicit
+      // overload selection is required because both methods have the same
+      // C++ name and must remain distinguishable to pybind11.
+      .def("AddElement",
+           py::overload_cast<G4Element *, G4double>(&G4Material::AddElement),
+           py::arg("element"), py::arg("fraction"))
+      .def("AddElement",
+           py::overload_cast<G4Element *, G4int>(&G4Material::AddElement),
+           py::arg("element"), py::arg("natoms"))
+
       .def("GetElementFraction",
            [](G4Material &ma, int i) -> double {
              return ma.GetFractionVector()[i];
