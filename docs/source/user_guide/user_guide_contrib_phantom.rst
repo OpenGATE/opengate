@@ -39,3 +39,18 @@ An analytical model of the simple NECR phantom (cylinder and linear source) is p
     necr_source.activity = 1000 * Bq
 
 Example can be found in `test049 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test049_pet_digit_blurring_v1.py>`_ (and others).
+
+Phantom: Gammex 467
+--------------------------------------
+
+An analytical model of the Gammex 467 phantom is provided. It can be used as follows:
+
+.. code-block:: python
+
+    import opengate as gate
+    import opengate.contrib.phantoms.gammex467 as gammex467_phantom
+
+    sim = gate.Simulation()
+    gammex467_phantom = gammex467.add_gammex467_phantom(sim)
+
+.. image:: ../figures/gammex467.png
