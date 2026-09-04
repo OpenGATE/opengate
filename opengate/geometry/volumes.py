@@ -775,6 +775,10 @@ class RepeatParametrisedVolume(VolumeBase):
             [1, 1, 1],
             {"doc": "FIXME"},
         ),
+        "repeated_volume_name": (
+            None,
+            {"doc": "Name of the repeated volume."},
+        ),
         "offset": (
             [0, 0, 0],
             {"doc": "3 component vector or list."},
@@ -783,20 +787,33 @@ class RepeatParametrisedVolume(VolumeBase):
         "start": ("auto", {"doc": "FIXME"}),
     }
 
-    def __init__(self, repeated_volume, *args, **kwargs):
+    def __init__(self, repeated_volume=None, *args, **kwargs):
         # FIXME: This should probably be a user_info
         self.repeated_volume = repeated_volume
-        if "name" not in kwargs:
-            kwargs["name"] = f"{repeated_volume.name}_param"
-        kwargs["mother"] = repeated_volume.mother
+        if repeated_volume is not None:
+            if "name" not in kwargs:
+                kwargs["name"] = f"{repeated_volume.name}_param"
+            kwargs["mother"] = repeated_volume.mother
         super().__init__(*args, **kwargs)
-        if repeated_volume.build_physical_volume is True:
-            repeated_volume.build_physical_volume = False
+        if repeated_volume is not None:
+            self.user_info["repeated_volume_name"] = repeated_volume.name
+            if repeated_volume.build_physical_volume is True:
+                repeated_volume.build_physical_volume = False
         self.g4_repeat_parametrisation = None
 
     def close(self):
         self.repeated_volume.close()
         super().close()
+
+    def resolve_references(self):
+        if self.repeated_volume is not None:
+            return
+        if self.user_info["repeated_volume_name"] is None:
+            return
+        self.repeated_volume = self.volume_manager.volumes[
+            self.user_info["repeated_volume_name"]
+        ]
+        self.repeated_volume.build_physical_volume = False
 
     def release_g4_references(self):
         super().release_g4_references()

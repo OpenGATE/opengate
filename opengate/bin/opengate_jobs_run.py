@@ -60,6 +60,7 @@ def _resolve_backend_configuration(campaign_dir, backend, backend_options_json):
 @click.option(
     "--backend",
     default=None,
+    type=click.Choice(["local_pool", "htcondor"], case_sensitive=False),
     help="Execution backend to use. If omitted, the command looks for jobs_backend_options.json in CAMPAIGN_DIR.",
 )
 @click.option(
