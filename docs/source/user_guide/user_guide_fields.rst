@@ -60,11 +60,11 @@ Magnetic fields
    field.gradient = 10 * tesla / m   # field gradient (T/m)
    box.add_field(field)
 
-**CustomMagneticField** -- Arbitrary magnetic field defined by a Python callback. The function receives ``(x, y, z, t)`` in Geant4 internal units and must return ``[Bx, By, Bz]``.
+**CustomMagneticField** -- Arbitrary magnetic field defined by a Python callback. The function receives ``(x, y, z)`` in Geant4 internal units and must return ``[Bx, By, Bz]``.
 
 .. code-block:: python
 
-   def my_B_field(x, y, z, t): # <- relative to the volume's local coordinate system
+   def my_B_field(x, y, z): # <- relative to the volume's local coordinate system
        # Spatially varying field
        return [0, (1 + x * z / m**2) * tesla, 0] # <- relative to the volume's local coordinate system
 
@@ -115,11 +115,11 @@ Electric fields
    field.field_vector = [1e6 * volt / m, 0, 0]   # [Ex, Ey, Ez] <- relative to the volume's local coordinate system
    box.add_field(field)
 
-**CustomElectricField** -- Arbitrary electric field defined by a Python callback. The function receives ``(x, y, z, t)`` in Geant4 internal units and must return ``[Ex, Ey, Ez]``.
+**CustomElectricField** -- Arbitrary electric field defined by a Python callback. The function receives ``(x, y, z)`` in Geant4 internal units and must return ``[Ex, Ey, Ez]``.
 
 .. code-block:: python
 
-   def my_E_field(x, y, z, t): # <- relative to the volume's local coordinate system
+   def my_E_field(x, y, z): # <- relative to the volume's local coordinate system
        return [1e6 * volt / m, 0, 0] # <- relative to the volume's local coordinate system
 
    field = fields.CustomElectricField(name="E_custom")
@@ -160,7 +160,7 @@ Combined magnetic and electric fields.
 
 .. code-block:: python
 
-   def my_EM_field(x, y, z, t):
+   def my_EM_field(x, y, z):
        return [0, 1 * tesla, 0, 1e6 * volt / m, 0, 0]
 
    field = fields.CustomElectroMagneticField(name="EM_custom")

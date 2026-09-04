@@ -139,7 +139,7 @@ if __name__ == "__main__":
     # 6. Custom field with wrong component count
     print("Test: custom B field returning 6 components instead of 3")
     f = fields.CustomMagneticField(name="B_wrong_dims")
-    f.field_function = lambda x, y, z, t: [0, 0, 0, 0, 0, 0]
+    f.field_function = lambda x, y, z: [0, 0, 0, 0, 0, 0]
     ok = _expect_error(
         lambda: f._create_inner_field(),
         "wrong component count",
