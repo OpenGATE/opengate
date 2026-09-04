@@ -71,6 +71,7 @@ protected:
     std::vector<GateDigiAttributesFiller *> fFillers;
     std::vector<double> *fInputEdep;
     int fLastEnergyWindowId;
+    int fCollectionClearCounter{};
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };
