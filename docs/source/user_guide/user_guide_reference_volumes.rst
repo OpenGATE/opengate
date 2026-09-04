@@ -162,6 +162,65 @@ Reference
 .. autoclass:: opengate.geometry.volumes.TubsVolume
 
 
+GDML volumes
+------------
+
+Description
+~~~~~~~~~~~
+
+A GDML volume imports a complete geometry described with the Geant4
+Geometry Description Markup Language. The logical volume associated with
+the selected GDML setup is placed as a subtree inside the specified GATE
+mother volume. The regular GATE world volume is therefore preserved.
+
+Solids, logical volumes, placements, and materials contained in the GDML
+file are constructed directly by Geant4. The ``material`` parameter of
+the GATE volume is ignored because the materials are read from the GDML
+file.
+
+GDML support requires ``opengate_core`` and Geant4 to have been compiled
+with GDML support.
+
+A basic example is:
+
+.. code:: python
+
+   import opengate as gate
+
+   sim = gate.Simulation()
+
+   gdml = sim.add_volume("GDML", name="ImportedGeometry")
+   gdml.file_name = "geometry.gdml"
+   gdml.mother = "world"
+   gdml.setup_name = "Default"
+   gdml.validate = False
+   gdml.strip_names = False
+   gdml.parser_overlap_check = False
+
+The standard volume parameters ``translation`` and ``rotation`` control
+the placement of the imported GDML root inside its GATE mother volume.
+
+The GDML-specific parameters are:
+
+- ``file_name``: path to the GDML input file.
+- ``setup_name``: GDML setup to import, ``"Default"`` by default.
+- ``validate``: enable XML schema validation while reading the file.
+- ``strip_names``: strip Geant4 pointer suffixes from imported names.
+- ``parser_overlap_check``: enable overlap checking during GDML parsing.
+
+Actors attached to the GDML volume are propagated to its imported logical
+volume subtree in the same way as for native GATE volumes.
+
+See
+`test113_gdml_volume <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test113_gdml_volume.py>`_
+for an example simulation.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.geometry.volumes.GDMLVolume
+
+
 Tesselated (mesh) volumes
 -------------------------
 

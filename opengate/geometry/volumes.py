@@ -765,6 +765,161 @@ class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
     """
 
 
+class GDMLVolume(VolumeBase):
+    """
+    Volume importing a complete GDML geometry as a subtree.
+
+    The logical volume associated with the GDML world is placed inside
+    the OpenGATE mother volume. The OpenGATE world is therefore preserved.
+    """
+
+    user_info_defaults = {
+        "file_name": (
+            "",
+            {
+                "doc": "Path to the GDML input file.",
+                "is_input_file": True,
+            },
+        ),
+        "setup_name": (
+            "Default",
+            {
+                "doc": "Name of the GDML setup whose world volume is imported.",
+            },
+        ),
+        "validate": (
+            False,
+            {
+                "doc": "Enable XML schema validation while reading the GDML file.",
+                "type": bool,
+            },
+        ),
+        "strip_names": (
+            False,
+            {
+                "doc": "Strip Geant4 pointer suffixes from imported GDML names.",
+                "type": bool,
+            },
+        ),
+        "parser_overlap_check": (
+            False,
+            {
+                "doc": "Enable overlap checking while the GDML parser creates placements.",
+                "type": bool,
+            },
+        ),
+        "material": (
+            None,
+            {
+                "doc": "Ignored. Materials are read directly from the GDML file.",
+                "override": True,
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Keep the parser alive for as long as the imported geometry is used.
+        self.g4_gdml_parser = None
+        self.g4_imported_world_physical_volume = None
+        self.g4_solid = None
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["g4_gdml_parser"] = None
+        return_dict["g4_imported_world_physical_volume"] = None
+        return_dict["g4_solid"] = None
+        return return_dict
+
+    def release_g4_references(self):
+        super().release_g4_references()
+        self.g4_imported_world_physical_volume = None
+        self.g4_gdml_parser = None
+        self.g4_solid = None
+
+    def construct(self):
+        if self._is_constructed:
+            return
+
+        if not hasattr(g4, "G4GDMLParser"):
+            fatal(
+                "GDML support is unavailable in opengate_core. "
+                "Geant4 and opengate_core must be compiled with GDML support."
+            )
+
+        if self.mother is None:
+            fatal(
+                f"GDMLVolume '{self.name}' cannot be used as the OpenGATE world. "
+                "Assign it to an existing OpenGATE mother volume."
+            )
+
+        gdml_file_name = ensure_filename_is_str(self.file_name)
+
+        if not gdml_file_name:
+            fatal(
+                f"No GDML file was provided for GDMLVolume '{self.name}'. "
+                "Set its 'file_name' property."
+            )
+
+        if not os.path.isfile(gdml_file_name):
+            fatal(
+                f"GDML file '{gdml_file_name}' does not exist "
+                f"for GDMLVolume '{self.name}'."
+            )
+
+        parser = g4.G4GDMLParser()
+        parser.SetStripFlag(self.strip_names)
+        parser.SetOverlapCheck(self.parser_overlap_check)
+        parser.Read(gdml_file_name, self.validate)
+
+        imported_world = parser.GetWorldVolume(self.setup_name)
+
+        if imported_world is None:
+            fatal(
+                f"Unable to retrieve GDML setup '{self.setup_name}' "
+                f"from file '{gdml_file_name}'."
+            )
+
+        imported_logical_volume = imported_world.GetLogicalVolume()
+
+        if imported_logical_volume is None:
+            fatal(
+                f"The world physical volume from GDML setup "
+                f"'{self.setup_name}' has no logical volume."
+            )
+
+        self.g4_gdml_parser = parser
+        self.g4_imported_world_physical_volume = imported_world
+        self.g4_logical_volume = imported_logical_volume
+        self.g4_solid = imported_logical_volume.GetSolid()
+        self.g4_material = imported_logical_volume.GetMaterial()
+
+        if self.build_physical_volume:
+            self.construct_physical_volume()
+
+        self._is_constructed = True
+
+    def _make_physical_volume(self, volume_name, g4_transform, copy_index=0):
+        mother_volume = self.mother_volume
+
+        if mother_volume is None or mother_volume.g4_logical_volume is None:
+            fatal(
+                f"Unable to retrieve the constructed mother logical volume "
+                f"for GDMLVolume '{self.name}'."
+            )
+
+        return g4.G4PVPlacement(
+            g4_transform,
+            self.g4_logical_volume,
+            volume_name,
+            mother_volume.g4_logical_volume,
+            False,
+            copy_index,
+            self.volume_manager.simulation.check_volumes_overlap,
+        )
+
+
 class RepeatParametrisedVolume(VolumeBase):
     """
     Volume created from another volume via translations.
@@ -1440,4 +1595,5 @@ process_cls(TrdVolume)
 process_cls(TubsVolume)
 process_cls(RepeatParametrisedVolume)
 process_cls(ImageVolume)
+process_cls(GDMLVolume)
 process_cls(TesselatedVolume)
