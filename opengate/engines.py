@@ -1205,13 +1205,26 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             self.volume_manager.world_volume.name,
         )
 
-        for field in self.simulation_engine.simulation.volume_manager.fields.values():
-            for volume_name in field.attached_to:
-                volume_obj = self.volume_manager.get_volume(volume_name)
-                volume_obj.g4_field_manager = field.create_field_manager(volume_obj)
-                volume_obj.g4_logical_volume.SetFieldManager(
-                    volume_obj.g4_field_manager, True
-                )
+        # Fields are attached with forceToAllDaughters=True, so the order of declaration
+        # matters. Assign the outermost volumes first, so that a field attached to a
+        # deeper volume always wins over one inherited from an ancestor,
+        # whatever order the user happened to add the fields in.
+        field_assignments = [
+            (field, volume_name)
+            for field in self.simulation_engine.simulation.volume_manager.fields.values()
+            for volume_name in field.attached_to
+        ]
+        field_assignments.sort(
+            key=lambda assignment: len(
+                self.volume_manager.get_volume(assignment[1]).ancestor_volumes
+            )
+        )
+        for field, volume_name in field_assignments:
+            volume_obj = self.volume_manager.get_volume(volume_name)
+            volume_obj.g4_field_manager = field.create_field_manager(volume_obj)
+            volume_obj.g4_logical_volume.SetFieldManager(
+                volume_obj.g4_field_manager, True
+            )
 
     def get_volume(self, name):
         return self.volume_manager.get_volume(name)

@@ -10,18 +10,15 @@
 
 #include "GateFieldBase.h"
 #include <G4MagneticField.hh>
-#include <vector>
 
-class G4VSolid;
+class G4LogicalVolume;
 
 // GATE wrapper for G4MagneticField
 class GateMagneticField : public G4MagneticField, public GateFieldBase {
 public:
   // constructor
-  GateMagneticField(G4MagneticField *inner, const G4VSolid *solid,
-                    std::vector<G4ThreeVector> translations,
-                    std::vector<G4RotationMatrix> rotations,
-                    double deltaChordMM);
+  GateMagneticField(G4MagneticField *inner,
+                    const G4LogicalVolume *logicalVolume);
 
   // override GetFieldValue to apply the coordinate transforms
   void GetFieldValue(const G4double Point[4], G4double *Bfield) const override;

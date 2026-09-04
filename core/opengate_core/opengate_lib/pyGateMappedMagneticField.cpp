@@ -7,8 +7,8 @@
 
 #include "GateGridInterpolator.h"
 #include "GateMappedMagneticField.h"
+#include <G4LogicalVolume.hh>
 #include <G4MagneticField.hh>
-#include <G4VSolid.hh>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -32,27 +32,20 @@ void init_GateMappedMagneticField(py::module &m) {
              std::unique_ptr<GateMappedMagneticField, py::nodelete>>(
       m, "GateMappedMagneticField")
 
-      .def(py::init([](const G4VSolid *solid,
-                       std::vector<G4ThreeVector> translations,
-                       std::vector<G4RotationMatrix> rotations,
-                       double delta_chord_mm, int nx, int ny, int nz, double x0,
-                       double y0, double z0, double dx, double dy, double dz,
-                       DoubleArray Bx, DoubleArray By, DoubleArray Bz,
+      .def(py::init([](const G4LogicalVolume *logical_volume, int nx, int ny,
+                       int nz, double x0, double y0, double z0, double dx,
+                       double dy, double dz, DoubleArray Bx, DoubleArray By,
+                       DoubleArray Bz,
                        GateGridInterpolator::InterpolationMethod interp) {
              GateGridInterpolator::GridDefinition gridDef{nx, ny, nz, x0, y0,
                                                           z0, dx, dy, dz};
              GateGridInterpolator::FieldValues fieldValues{
                  to_vec(Bx), to_vec(By), to_vec(Bz)};
-             return new GateMappedMagneticField(solid, translations, rotations,
-                                                delta_chord_mm, gridDef,
+             return new GateMappedMagneticField(logical_volume, gridDef,
                                                 fieldValues, interp);
            }),
-           py::arg("solid"), py::arg("translations"), py::arg("rotations"),
-           py::arg("delta_chord_mm"), py::arg("nx"), py::arg("ny"),
+           py::arg("logical_volume"), py::arg("nx"), py::arg("ny"),
            py::arg("nz"), py::arg("x0"), py::arg("y0"), py::arg("z0"),
            py::arg("dx"), py::arg("dy"), py::arg("dz"), py::arg("Bx"),
-           py::arg("By"), py::arg("Bz"), py::arg("interpolation"))
-
-      .def("SetTransforms", &GateMappedMagneticField::SetTransforms,
-           py::arg("translations"), py::arg("rotations"));
+           py::arg("By"), py::arg("Bz"), py::arg("interpolation"));
 }

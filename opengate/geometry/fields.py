@@ -4,13 +4,6 @@ import numpy as np
 import opengate_core as g4
 
 from ..base import GateObject, process_cls
-from ..geometry.utility import (
-    get_transform_world_to_local,
-    vec_np_as_g4,
-    rot_np_as_g4,
-    vec_g4_as_np,
-    rot_g4_as_np,
-)
 from ..utility import g4_units
 
 # ! ======= KNOWN TODO'S ========
@@ -46,37 +39,37 @@ class FieldBase(GateObject):
             },
         ),
         "step_minimum": (
-            1e-2 * g4_units.mm,
+            0.01 * g4_units.mm,
             {
                 "doc": "Minimum step size for the chord finder.",
             },
         ),
         "delta_chord": (
-            1e-3 * g4_units.mm,
+            0.25 * g4_units.mm,
             {
                 "doc": "Maximum miss distance between chord and curved trajectory.",
             },
         ),
         "delta_one_step": (
-            1e-3 * g4_units.mm,
+            0.01 * g4_units.mm,
             {
                 "doc": "Positional accuracy per integration step.",
             },
         ),
         "delta_intersection": (
-            1e-4 * g4_units.mm,
+            1e-3 * g4_units.mm,
             {
                 "doc": "Positional accuracy at volume boundaries.",
             },
         ),
         "min_epsilon_step": (
-            1e-7,
+            5e-5,
             {
                 "doc": "Minimum relative integration accuracy.",
             },
         ),
         "max_epsilon_step": (
-            1e-5,
+            1e-3,
             {
                 "doc": "Maximum relative integration accuracy.",
             },
@@ -104,53 +97,10 @@ class FieldBase(GateObject):
         """Whether the field changes particle energy (False for magnetic, True for others)."""
         return self._field_changes_energy
 
-    def refresh_transforms(self) -> None:
-        """Recompute and push cached world-to-local transforms after dynamic
-        geometry changes.
-        """
-        for entry in self._g4_runtime_objects:
-            volume = entry.get("volume")
-            g4_field = entry.get("field")
-            if volume is None or g4_field is None:
-                continue
-
-            g4_translations = []
-            g4_rotations = []
-            for i in range(volume.number_of_repetitions):
-                pv = volume.get_g4_physical_volume(i)
-                T = vec_g4_as_np(pv.GetObjectTranslation())
-                rot = pv.GetObjectRotation()
-                R = rot_g4_as_np(rot) if rot is not None else np.eye(3)
-                for anc in volume.ancestor_volumes[::-1]:
-                    # Ancestors are assumed to be singly placed, so we use idx 0
-                    anc_pvs = getattr(anc, "g4_physical_volumes", None)
-                    if not anc_pvs:
-                        continue
-                    anc_pv = anc_pvs[0]
-                    anc_T = vec_g4_as_np(anc_pv.GetObjectTranslation())
-                    anc_rot = anc_pv.GetObjectRotation()
-                    anc_R = rot_g4_as_np(anc_rot) if anc_rot is not None else np.eye(3)
-                    T = anc_R @ T + anc_T
-                    R = anc_R @ R
-                g4_translations.append(vec_np_as_g4(T))
-                g4_rotations.append(rot_np_as_g4(R))
-
-            g4_field.SetTransforms(g4_translations, g4_rotations)
-
     def create_field_manager(self, volume_obj) -> g4.G4FieldManager:
         """Construct the field and return a configured G4FieldManager."""
         msg = "create_field_manager() must be implemented in subclasses."
         raise NotImplementedError(msg)
-
-    def _make_g4_transforms(self):
-        """Return (g4_translations, g4_rotations) for the current field volume."""
-        translations_np, rotations_np = get_transform_world_to_local(
-            self._field_volume_obj
-        )
-        return (
-            [vec_np_as_g4(t) for t in translations_np],
-            [rot_np_as_g4(r) for r in rotations_np],
-        )
 
     def _validate_stepper(self) -> None:
         """Raise ValueError if the current stepper is incompatible with this field type."""
@@ -165,9 +115,7 @@ class FieldBase(GateObject):
                 "Choose a general-purpose stepper for electric or EM fields."
             )
 
-    def _build_field_manager(
-        self, inner_field, gate_field, equation_cls, n_vars, volume_obj
-    ):
+    def _build_field_manager(self, inner_field, gate_field, equation_cls, n_vars):
         """Build equation/stepper/driver/chord_finder/fm, record runtime objects, return fm."""
         self._validate_stepper()
         self.g4_field = gate_field
@@ -198,7 +146,6 @@ class FieldBase(GateObject):
                 "driver": self.g4_integration_driver,
                 "chord_finder": self.g4_chord_finder,
                 "field_manager": fm,
-                "volume": volume_obj,
             }
         )
 
@@ -237,18 +184,11 @@ class MagneticField(FieldBase):
         """Construct the field and return a configured G4FieldManager."""
         self._field_volume_obj = volume_obj
         inner = self._create_inner_field()
-        g4_translations, g4_rotations = self._make_g4_transforms()
         gate_field = g4.GateMagneticField(
-            inner,
-            self._field_volume_obj.g4_solid,
-            g4_translations,
-            g4_rotations,
-            self.delta_chord,
+            inner, self._field_volume_obj.g4_logical_volume
         )
-        # TODO: allow user choice of stepper and equation type
-        return self._build_field_manager(
-            inner, gate_field, g4.G4Mag_UsualEqRhs, 6, volume_obj
-        )
+        # TODO: allow user choice of the equation of motion?
+        return self._build_field_manager(inner, gate_field, g4.G4Mag_UsualEqRhs, 6)
 
 
 class UniformMagneticField(MagneticField):
@@ -373,19 +313,12 @@ class ElectroMagneticField(FieldBase):
         """Construct the field and return a configured G4FieldManager."""
         self._field_volume_obj = volume_obj
         inner = self._create_inner_field()
-        g4_translations, g4_rotations = self._make_g4_transforms()
         gate_field = g4.GateElectroMagneticField(
-            inner,
-            self._field_volume_obj.g4_solid,
-            g4_translations,
-            g4_rotations,
-            self.delta_chord,
+            inner, self._field_volume_obj.g4_logical_volume
         )
-        # TODO: allow user choice of stepper and equation type
+        # TODO: allow user choice of the equation of motion?
         # 8 variables: x,y,z + px,py,pz + t + E
-        return self._build_field_manager(
-            inner, gate_field, g4.G4EqMagElectricField, 8, volume_obj
-        )
+        return self._build_field_manager(inner, gate_field, g4.G4EqMagElectricField, 8)
 
 
 class ElectricField(ElectroMagneticField):
@@ -652,12 +585,8 @@ class MappedMagneticField(MagneticField):
         nx, ny, nz, x0, y0, z0, dx, dy, dz, (Bx, By, Bz) = _parse_field_matrix(
             self.field_matrix, "MappedMagneticField"
         )
-        g4_translations, g4_rotations = self._make_g4_transforms()
         gate_field = g4.GateMappedMagneticField(
-            self._field_volume_obj.g4_solid,
-            g4_translations,
-            g4_rotations,
-            self.delta_chord,
+            self._field_volume_obj.g4_logical_volume,
             nx,
             ny,
             nz,
@@ -672,9 +601,7 @@ class MappedMagneticField(MagneticField):
             Bz,
             _interp_map[self.interpolation],
         )
-        return self._build_field_manager(
-            None, gate_field, g4.G4Mag_UsualEqRhs, 6, volume_obj
-        )
+        return self._build_field_manager(None, gate_field, g4.G4Mag_UsualEqRhs, 6)
 
 
 class MappedElectricField(ElectricField):
@@ -697,12 +624,8 @@ class MappedElectricField(ElectricField):
         nx, ny, nz, x0, y0, z0, dx, dy, dz, (Ex, Ey, Ez) = _parse_field_matrix(
             self.field_matrix, "MappedElectricField"
         )
-        g4_translations, g4_rotations = self._make_g4_transforms()
         gate_field = g4.GateMappedElectricField(
-            self._field_volume_obj.g4_solid,
-            g4_translations,
-            g4_rotations,
-            self.delta_chord,
+            self._field_volume_obj.g4_logical_volume,
             nx,
             ny,
             nz,
@@ -717,9 +640,7 @@ class MappedElectricField(ElectricField):
             Ez,
             _interp_map[self.interpolation],
         )
-        return self._build_field_manager(
-            None, gate_field, g4.G4EqMagElectricField, 8, volume_obj
-        )
+        return self._build_field_manager(None, gate_field, g4.G4EqMagElectricField, 8)
 
 
 class MappedElectroMagneticField(ElectroMagneticField):
@@ -787,12 +708,8 @@ class MappedElectroMagneticField(ElectroMagneticField):
                 self.field_matrix_E, "MappedElectroMagneticField (E grid)"
             )
         )
-        g4_translations, g4_rotations = self._make_g4_transforms()
         gate_field = g4.GateMappedElectroMagneticField(
-            self._field_volume_obj.g4_solid,
-            g4_translations,
-            g4_rotations,
-            self.delta_chord,
+            self._field_volume_obj.g4_logical_volume,
             nx_B,
             ny_B,
             nz_B,
@@ -819,9 +736,7 @@ class MappedElectroMagneticField(ElectroMagneticField):
             Ez,
             _interp_map[self.interpolation],
         )
-        return self._build_field_manager(
-            None, gate_field, g4.G4EqMagElectricField, 8, volume_obj
-        )
+        return self._build_field_manager(None, gate_field, g4.G4EqMagElectricField, 8)
 
 
 field_types = {
