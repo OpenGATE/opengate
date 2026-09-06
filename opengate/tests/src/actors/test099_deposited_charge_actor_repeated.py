@@ -103,10 +103,10 @@ if __name__ == "__main__":
     print(charge_single)
     print(charge_repeat)
 
-    q_single_nom = charge_single.deposited_nominal_charge
-    q_single_dyn = charge_single.deposited_dynamic_charge
-    q_repeat_nom = charge_repeat.deposited_nominal_charge
-    q_repeat_dyn = charge_repeat.deposited_dynamic_charge
+    q_single_nom = charge_single.user_output.charge.merged_data.deposited_nominal_charge
+    q_single_dyn = charge_single.user_output.charge.merged_data.deposited_dynamic_charge
+    q_repeat_nom = charge_repeat.user_output.charge.merged_data.deposited_nominal_charge
+    q_repeat_dyn = charge_repeat.user_output.charge.merged_data.deposited_dynamic_charge
 
     # Relative tolerance between equivalent geometries.
     tol_rel = 0.05
