@@ -44,9 +44,6 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
     source.energy.mono = 1 * MeV
 
-    print("Phys list cuts:")
-    print(sim.physics_manager.dump_production_cuts())
-
     # run
     sim.run(start_new_process=True)
 
@@ -63,7 +60,7 @@ if __name__ == "__main__":
     print(h)
     is_ok = (
         utility.assert_images(
-            paths.output_ref / "edep.mhd",
+            paths.output_ref / "    .mhd",
             h.edep.get_output_path(),
             stats,
             tolerance=15,

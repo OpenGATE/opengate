@@ -246,8 +246,8 @@ class SourceBase(DynamicGateObject):
         pass
 
     def recover_user_output(self, s):
-        pid = os.getpid()
-        print(f"(python) recover_user_output {self.name} pid={pid}")
+        # pid = os.getpid()
+        # print(f"(python) recover_user_output {self.name} pid={pid}")
         for k, v in s.user_info.items():
             self.user_info[k] = v
 
