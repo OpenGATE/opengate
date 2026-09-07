@@ -575,6 +575,217 @@ class StatisticsDataItem(DataItem):
         self.set_data(loaded_data)
 
 
+class DepositedChargeDataItem(DataItem):
+    """Semantic data item for the deposited charge actor.
+
+    The payload holds the first and second moments of the per-event deposited
+    charge together with the event count, which is what history-by-history
+    uncertainty estimation needs. Every entry is additive, so merging runs,
+    threads or split jobs is a plain sum; the statistics themselves are derived
+    on demand rather than stored.
+    """
+
+    def set_data(self, data, **kwargs):
+        """The input data must behave like a dictionary."""
+        self.reset_data()
+        self.data.update(data)
+
+    def reset_data(self):
+        self.data = Box()
+        self.data.deposited_nominal_charge = 0.0
+        self.data.deposited_dynamic_charge = 0.0
+        self.data.deposited_nominal_charge_squared = 0.0
+        self.data.deposited_dynamic_charge_squared = 0.0
+        self.data.number_of_events = 0
+        # Returning the payload lets callers work with a value that is known
+        # not to be None, which self.data alone is not.
+        return self.data
+
+    @classmethod
+    def get_known_entry_names(cls):
+        charge_data_item = cls()
+        charge_data_item.reset_data()
+        return tuple(charge_data_item.data.keys())
+
+    def __getattr__(self, item):
+        # Like StatisticsDataItem, this is the semantic access layer: the raw
+        # moments live in the Box payload while the statistics are derived
+        # properties on this class.
+        if item not in ("data", "__setstate__", "__getstate__"):
+            try:
+                return self.data[item]
+            except (TypeError, KeyError):
+                pass
+        raise AttributeError(f"No such attribute '{item}'")
+
+    @staticmethod
+    def _history_statistics(sum_x, sum_x2, n):
+        """History-by-history statistics from the first and second moments.
+
+        Returns a dict with, for the per-event charge distribution:
+            - ``mean``: mean net charge per event (sum_x / n)
+            - ``std``: sample standard deviation of the per-event charge (Bessel-corrected)
+            - ``sem``: standard error of the mean (std / sqrt(n))
+            - ``total``: total net charge (sum_x)
+            - ``total_uncertainty``: absolute uncertainty on ``total``
+            - ``relative_uncertainty``: total_uncertainty / |total|
+        """
+        stats = {
+            "mean": 0.0,
+            "std": 0.0,
+            "sem": 0.0,
+            "total": sum_x,
+            "total_uncertainty": 0.0,
+            "relative_uncertainty": 0.0,
+        }
+        if n < 1:
+            return stats
+        stats["mean"] = sum_x / n
+        if n < 2:
+            return stats
+        mean = stats["mean"]
+        # Sum of squared deviations = sum_x2 - (sum_x)^2 / n, clamped to >= 0
+        sum_sq_dev = max(sum_x2 - sum_x * sum_x / n, 0.0)
+        variance = sum_sq_dev / (n - 1)
+        std = variance**0.5
+        sem = std / n**0.5
+        total_uncertainty = n * sem
+        stats.update(
+            mean=mean,
+            std=std,
+            sem=sem,
+            total_uncertainty=total_uncertainty,
+            relative_uncertainty=(
+                total_uncertainty / abs(sum_x) if sum_x != 0.0 else 0.0
+            ),
+        )
+        return stats
+
+    def statistics(self, kind="nominal"):
+        """History-by-history statistics for one kind ('nominal'/'dynamic')."""
+        if kind == "nominal":
+            return self._history_statistics(
+                self.data.deposited_nominal_charge,
+                self.data.deposited_nominal_charge_squared,
+                self.data.number_of_events,
+            )
+        elif kind == "dynamic":
+            return self._history_statistics(
+                self.data.deposited_dynamic_charge,
+                self.data.deposited_dynamic_charge_squared,
+                self.data.number_of_events,
+            )
+        else:
+            fatal(f"Unknown charge kind '{kind}'. Use 'nominal' or 'dynamic'. ")
+
+    @property
+    def nominal_statistics(self):
+        return self.statistics("nominal")
+
+    @property
+    def dynamic_statistics(self):
+        return self.statistics("dynamic")
+
+    def get_processed_output(self):
+        nominal = self.statistics("nominal")
+        dynamic = self.statistics("dynamic")
+        d = {}
+        d["number_of_events"] = {"value": self.data.number_of_events, "unit": None}
+        d["nominal_charge"] = {"value": nominal["total"], "unit": "eplus"}
+        d["nominal_charge_uncertainty"] = {
+            "value": nominal["total_uncertainty"],
+            "unit": "eplus",
+        }
+        d["dynamic_charge"] = {"value": dynamic["total"], "unit": "eplus"}
+        d["dynamic_charge_uncertainty"] = {
+            "value": dynamic["total_uncertainty"],
+            "unit": "eplus",
+        }
+        # The second moments are not recoverable from the derived statistics
+        # above, so persist them explicitly. They are what load() needs to
+        # rebuild this data item, e.g. when merging split jobs from disk.
+        d["nominal_charge_squared"] = {
+            "value": self.data.deposited_nominal_charge_squared,
+            "unit": None,  # should be eplus**2, but keep None
+        }
+        d["dynamic_charge_squared"] = {
+            "value": self.data.deposited_dynamic_charge_squared,
+            "unit": None,  # should be eplus**2, but keep None
+        }
+        d["nominal_statistics"] = {"value": nominal, "unit": None}
+        d["dynamic_statistics"] = {"value": dynamic, "unit": None}
+        return d
+
+    def __str__(self):
+        nominal = self.statistics("nominal")
+        dynamic = self.statistics("dynamic")
+        return (
+            f"  Nominal: {nominal['total']} +/- {nominal['total_uncertainty']} e\n"
+            f"  Dynamic: {dynamic['total']} +/- {dynamic['total_uncertainty']} e\n"
+            f"  (N events: {self.data.number_of_events})"
+        )
+
+    def inplace_merge_with(self, *other):
+        data = self.data if self.data is not None else self.reset_data()
+        # All entries are moments or counts, so merging is a plain sum.
+        for o in other:
+            for key in data:
+                data[key] += o.data[key]
+        return self
+
+    def merge_with(self, other):
+        merged = type(self)()
+        if self.data is not None:
+            merged.set_data(self.data)
+        return merged.inplace_merge_with(other)
+
+    def write(self, path, encoder="json", **kwargs):
+        with open(path, "w+") as f:
+            if encoder == "json":
+                dump_json(self.get_processed_output(), f, indent=4)
+            else:
+                f.write(self.__str__())
+
+    def load(self, path, **kwargs):
+        """Rebuild the payload from a json file written by write().
+
+        Only the moments and the event count are read back; the statistics in
+        the file are derived quantities and are recomputed on demand.
+        """
+        with open(path, "r") as input_file:
+            processed_output = json.load(input_file)
+
+        def entry_value(key):
+            try:
+                entry = processed_output[key]
+            except KeyError:
+                fatal(
+                    f"Cannot load deposited charge data from {path}: "
+                    f"the file has no entry '{key}'. Files written by GATE "
+                    f"versions before the second moments were persisted "
+                    f"cannot be loaded. "
+                )
+            value = entry["value"]
+            unit = entry["unit"]
+            if unit in g4_units:
+                value *= g4_units[unit]
+            return value
+
+        self.set_data(
+            {
+                "deposited_nominal_charge": entry_value("nominal_charge"),
+                "deposited_dynamic_charge": entry_value("dynamic_charge"),
+                "deposited_nominal_charge_squared": entry_value(
+                    "nominal_charge_squared"
+                ),
+                "deposited_dynamic_charge_squared": entry_value(
+                    "dynamic_charge_squared"
+                ),
+                "number_of_events": entry_value("number_of_events"),
+            }
+        )
+
+
 class RootDataItem(DataItem):
     """Metadata-backed handle for ROOT actor output.
 
@@ -2079,6 +2290,45 @@ class StatisticsItemContainer(DataItemContainer):
             return
         if item in self._known_stats_entry_names:
             setattr(self._stats_item.data, item, value)
+            return
+        if item not in ("__setstate__", "__getstate__"):
+            _raise_pre_interface_convenience_deprecation(
+                type(self).__name__, f"setattr({item})"
+            )
+        object.__setattr__(self, item, value)
+
+
+class DepositedChargeItemContainer(DataItemContainer):
+
+    _data_item_classes = (DepositedChargeDataItem,)
+    primary_item_identifiers = (0,)
+
+    @property
+    def _charge_item(self):
+        try:
+            return self.data[0]
+        except (AttributeError, IndexError):
+            raise AttributeError(
+                "Deposited charge item container has no primary data item."
+            )
+
+    @property
+    def _known_charge_entry_names(self):
+        return self._data_item_classes[0].get_known_entry_names()
+
+    def __getattr__(self, item):
+        if item in ("data", "belongs_to", "__setstate__", "__getstate__"):
+            raise AttributeError(f"No such attribute '{item}'")
+        if item in self._known_charge_entry_names:
+            return getattr(self._charge_item, item)
+        return super().__getattr__(item)
+
+    def __setattr__(self, item, value):
+        if item in ("data", "belongs_to"):
+            object.__setattr__(self, item, value)
+            return
+        if item in self._known_charge_entry_names:
+            setattr(self._charge_item.data, item, value)
             return
         if item not in ("__setstate__", "__getstate__"):
             _raise_pre_interface_convenience_deprecation(

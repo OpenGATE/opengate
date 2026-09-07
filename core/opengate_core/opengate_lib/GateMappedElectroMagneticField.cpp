@@ -8,16 +8,13 @@
 #include "GateMappedElectroMagneticField.h"
 
 GateMappedElectroMagneticField::GateMappedElectroMagneticField(
-    const G4VSolid *solid, std::vector<G4ThreeVector> translations,
-    std::vector<G4RotationMatrix> rotations, double deltaChordMM,
+    const G4LogicalVolume *logicalVolume,
     GateGridInterpolator::GridDefinition gridDefB,
     GateGridInterpolator::FieldValues fieldValuesB,
     GateGridInterpolator::GridDefinition gridDefE,
     GateGridInterpolator::FieldValues fieldValuesE,
     GateGridInterpolator::InterpolationMethod interpMethod)
-    : G4ElectroMagneticField(),
-      GateFieldBase(solid, std::move(translations), std::move(rotations),
-                    deltaChordMM),
+    : G4ElectroMagneticField(), GateFieldBase(logicalVolume),
       m_interpolator_B(gridDefB, std::move(fieldValuesB), interpMethod),
       m_interpolator_E(gridDefE, std::move(fieldValuesE), interpMethod) {}
 

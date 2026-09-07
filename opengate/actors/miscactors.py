@@ -5,13 +5,14 @@ from anytree import Node, RenderTree
 
 from ..base import process_cls
 from ..exception import fatal, warning
-from ..utility import g4_best_unit_tuple, g4_units
 from .actoroutput import (
     ActorOutputBase,
     ActorOutputSingleImage,
     ActorOutputStatisticsActor,
+    ActorOutputUsingDataItemContainer,
 )
 from .base import ActorBase
+from .dataitems import DepositedChargeItemContainer
 
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
@@ -350,6 +351,84 @@ def _setter_hook_particles(self, value):
         return list(value)
 
 
+class ActorOutputDepositedChargeActor(ActorOutputUsingDataItemContainer):
+    """Structured deposited-charge output with history-by-history statistics."""
+
+    data_container_class = DepositedChargeItemContainer
+
+    # hints for IDE
+    encoder: str
+
+    user_info_defaults = {
+        "encoder": (
+            "json",
+            {
+                "doc": "How should the output be encoded?",
+                "allowed_values": ("json", "legacy"),
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        self.default_suffix = "json"
+        super().__init__(*args, **kwargs)
+        self.set_write_to_disk(False)
+        self.set_active(True)
+
+    @property
+    def _charge_item(self):
+        if self.merged_data is None:
+            return None
+        return self.merged_data.get_data_item_object(0)
+
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if self.get_output_filename() not in ("", None, "auto"):
+            self.set_write_to_disk(True)
+
+    def _charge_item_of(self, which):
+        container = self.get_data_container(which)
+        if container is None:
+            return None
+        return container.get_data_item_object(0)
+
+    def charge_statistics(self, kind="nominal", which="merged"):
+        """History-by-history statistics for the merged result (which='merged')
+        or for a specific run (which=run_index, requires keep_data_per_run=True).
+        """
+        charge_item = self._charge_item_of(which)
+        if charge_item is None:
+            return None
+        return charge_item.statistics(kind)
+
+    @property
+    def nominal_charge_statistics(self):
+        """History-by-history statistics for the merged nominal deposited charge."""
+        return self.charge_statistics("nominal")
+
+    @property
+    def dynamic_charge_statistics(self):
+        """History-by-history statistics for the merged dynamic deposited charge."""
+        return self.charge_statistics("dynamic")
+
+    def get_processed_output(self, which="merged"):
+        charge_item = self._charge_item_of(which)
+        if charge_item is None:
+            return {}
+        return charge_item.get_processed_output()
+
+    def __str__(self):
+        if self._charge_item is None:
+            return "No data found. "
+        return str(self._charge_item)
+
+    def write_data(self, which="all", item="all", **kwargs):
+        # write_data() recurses through self.write_data() for which="all", so
+        # the encoder must be injected only once, not re-added on every level.
+        kwargs.setdefault("encoder", self.encoder)
+        super().write_data(which=which, item=item, **kwargs)
+
+
 class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
     """Actor which accumulates the net electric charge deposited in a volume,
     defined as the sum of the charge of charged particles dying in the volume
@@ -361,10 +440,14 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
             - Dynamic deposited charge: uses the effective charge of the particles, accounting for ionisation.
     """
 
+    user_output_config = {
+        "charge": {
+            "actor_output_class": ActorOutputDepositedChargeActor,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self.deposited_nominal_charge = 0.0
-        self.deposited_dynamic_charge = 0.0
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -373,10 +456,14 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
             {
                 "StartSimulationAction",
                 "EndSimulationAction",
+                "BeginOfRunActionMasterThread",
                 "BeginOfRunAction",
+                "BeginOfEventAction",
                 "PreUserTrackingAction",
                 "PostUserTrackingAction",
-                "EndOfSimulationWorkerAction",
+                "EndOfEventAction",
+                "EndOfRunAction",
+                "EndOfRunActionMasterThread",
             }
         )
 
@@ -385,15 +472,42 @@ class DepositedChargeActor(ActorBase, g4.GateDepositedChargeActor):
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
+    def StartSimulationAction(self):
+        # inform actor output that this simulation is starting
+        for u in self.user_output.values():
+            if u.get_active(item="any"):
+                u.start_of_simulation()
+
+    def EndOfRunActionMasterThread(self, run_index):
+        # Hand the per-run moments to the output object. The C++ accumulators
+        # are reset at the beginning of every run, so this is per-run data;
+        # end_of_run() below folds it into the merged result and drops the
+        # per-run container unless keep_data_per_run is set.
+        self.user_output.charge.store_data(
+            run_index,
+            {
+                "deposited_nominal_charge": self.GetDepositedNominalCharge(),
+                "deposited_dynamic_charge": self.GetDepositedDynamicCharge(),
+                "deposited_nominal_charge_squared": self.GetDepositedNominalChargeSquared(),
+                "deposited_dynamic_charge_squared": self.GetDepositedDynamicChargeSquared(),
+                "number_of_events": self.GetNumberOfEvents(),
+            },
+        )
+        # inform actor output that this run is over
+        for u in self.user_output.values():
+            if u.get_active(item="all"):
+                u.end_of_run(run_index)
+        return 0
+
     def EndSimulationAction(self):
-        self.deposited_nominal_charge = self.GetDepositedNominalCharge()
-        self.deposited_dynamic_charge = self.GetDepositedDynamicCharge()
+        # inform actor output that this simulation is over and write data
+        for u in self.user_output.values():
+            if u.get_active(item="any"):
+                u.end_of_simulation()
 
     def __str__(self):
         return (
-            f"DepositedChargeActor {self.name}:"
-            f"  Nominal: {self.deposited_nominal_charge} e"
-            f"  Dynamic: {self.deposited_dynamic_charge} e"
+            f"DepositedChargeActor {self.name}:\n" + self.user_output.charge.__str__()
         )
 
 
@@ -526,6 +640,7 @@ class DebugActor(ActorBase, g4.GateDebugActor):
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
+process_cls(ActorOutputDepositedChargeActor)
 process_cls(DepositedChargeActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)

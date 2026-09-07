@@ -60,11 +60,11 @@ Magnetic fields
    field.gradient = 10 * tesla / m   # field gradient (T/m)
    box.add_field(field)
 
-**CustomMagneticField** -- Arbitrary magnetic field defined by a Python callback. The function receives ``(x, y, z, t)`` in Geant4 internal units and must return ``[Bx, By, Bz]``.
+**CustomMagneticField** -- Arbitrary magnetic field defined by a Python callback. The function receives ``(x, y, z)`` in Geant4 internal units and must return ``[Bx, By, Bz]``.
 
 .. code-block:: python
 
-   def my_B_field(x, y, z, t): # <- relative to the volume's local coordinate system
+   def my_B_field(x, y, z): # <- relative to the volume's local coordinate system
        # Spatially varying field
        return [0, (1 + x * z / m**2) * tesla, 0] # <- relative to the volume's local coordinate system
 
@@ -115,11 +115,11 @@ Electric fields
    field.field_vector = [1e6 * volt / m, 0, 0]   # [Ex, Ey, Ez] <- relative to the volume's local coordinate system
    box.add_field(field)
 
-**CustomElectricField** -- Arbitrary electric field defined by a Python callback. The function receives ``(x, y, z, t)`` in Geant4 internal units and must return ``[Ex, Ey, Ez]``.
+**CustomElectricField** -- Arbitrary electric field defined by a Python callback. The function receives ``(x, y, z)`` in Geant4 internal units and must return ``[Ex, Ey, Ez]``.
 
 .. code-block:: python
 
-   def my_E_field(x, y, z, t): # <- relative to the volume's local coordinate system
+   def my_E_field(x, y, z): # <- relative to the volume's local coordinate system
        return [1e6 * volt / m, 0, 0] # <- relative to the volume's local coordinate system
 
    field = fields.CustomElectricField(name="E_custom")
@@ -160,7 +160,7 @@ Combined magnetic and electric fields.
 
 .. code-block:: python
 
-   def my_EM_field(x, y, z, t):
+   def my_EM_field(x, y, z):
        return [0, 1 * tesla, 0, 1e6 * volt / m, 0, 0]
 
    field = fields.CustomElectroMagneticField(name="EM_custom")
@@ -184,7 +184,7 @@ Combined magnetic and electric fields.
 Integration and accuracy parameters
 --------------------------------
 
-All field types inherit the following parameters that control the numerical integration of the equation of motion. The defaults are suitable for most cases, but they can be tuned for better accuracy or performance.
+All field types inherit the following parameters that control the numerical integration of the equation of motion. The defaults are the Geant4 defaults (``G4FieldDefaults``); they can be tuned for better accuracy or performance.
 
 .. list-table::
    :header-rows: 1
@@ -198,21 +198,21 @@ All field types inherit the following parameters that control the numerical inte
      - Stepping algorithm used for integrating the equation of motion. See :ref:`steppers` for available options.
    * - ``step_minimum``
      - 0.01 mm
-     - Minimum step size for the chord finder.
+     - Position error accepted over a step.
    * - ``delta_chord``
-     - 0.001 mm
+     - 0.25 mm
      - Maximum sagitta (miss distance between the chord approximation and the true curved trajectory).
    * - ``delta_one_step``
-     - 0.001 mm
+     - 0.01 mm
      - Positional accuracy per integration step.
    * - ``delta_intersection``
-     - 0.0001 mm
+     - 0.001 mm
      - Positional accuracy at volume boundaries.
    * - ``min_epsilon_step``
-     - 1e-7
+     - 5e-5
      - Minimum relative integration accuracy.
    * - ``max_epsilon_step``
-     - 1e-5
+     - 1e-3
      - Maximum relative integration accuracy.
 
 Example:
@@ -277,6 +277,8 @@ Use ``add_field()`` to attach a field to a volume. The volume must already be ad
 **Unique names.** Field names must be unique across the simulation. Two different field objects with the same name will raise an error.
 
 **Propagation to daughter volumes.** A field attached to a volume automatically propagates to all of its daughter volumes. A daughter volume can override this by attaching its own field. In that case, the parent's field stops at the daughter's boundary and the daughter's field is used inside. This mirrors standard Geant4 behaviour.
+
+**Frame of an inherited field.** A field is always evaluated in the local frame of the volume it is *attached to*, not of the volume the particle happens to be in. So if a daughter inherits its mother's field and is rotated with respect to that mother, the field keeps the mother's orientation: it does not rotate with the daughter. A daughter that attaches its own field uses its own frame instead.
 
 **Behaviour with repeated placements.** When a volume with a field is repeatedly placed (i.e. a logical volume with several physical placements), each physical instance will have the field in its own local coordinate system.
 

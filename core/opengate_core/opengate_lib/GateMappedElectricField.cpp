@@ -8,14 +8,12 @@
 #include "GateMappedElectricField.h"
 
 GateMappedElectricField::GateMappedElectricField(
-    const G4VSolid *solid, std::vector<G4ThreeVector> translations,
-    std::vector<G4RotationMatrix> rotations, double deltaChordMM,
+    const G4LogicalVolume *logicalVolume,
     GateGridInterpolator::GridDefinition gridDef,
     GateGridInterpolator::FieldValues fieldValues,
     GateGridInterpolator::InterpolationMethod interpMethod)
     : G4ElectroMagneticField(),
-      GateMappedFieldBase(solid, std::move(translations), std::move(rotations),
-                          deltaChordMM, gridDef, std::move(fieldValues),
+      GateMappedFieldBase(logicalVolume, gridDef, std::move(fieldValues),
                           interpMethod) {}
 
 void GateMappedElectricField::GetFieldValue(const G4double Point[4],
