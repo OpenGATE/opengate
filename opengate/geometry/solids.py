@@ -132,10 +132,13 @@ class BooleanSolid(SolidBase):
                 "The provided dictionary does not contain an entry 'creator_volumes'."
             )
         for i, cv in enumerate(creator_volumes):
-            try:
-                vol = self.volume_manager.volumes[cv["user_info"]["name"]]
-            except KeyError:
+            if self.volume_manager is None:
                 vol = create_gate_object_from_dict(cv)
+            else:
+                try:
+                    vol = self.volume_manager.volumes[cv["user_info"]["name"]]
+                except KeyError:
+                    vol = create_gate_object_from_dict(cv)
 
             self.creator_volumes[i] = vol
             self.creator_volumes[i].from_dictionary(cv)
