@@ -1555,6 +1555,9 @@ class VolumeManager(GateObject):
             field = field_types[field_type](name=v["user_info"]["name"])
             field.from_dictionary(v)
             self.fields[field.name] = field
+        # Before, create the parrallel world volumes, so that they are available for the volumes to be created
+        for k in d["parallel_world_volumes"]:
+            self.add_parallel_world(k)
         # First create all volumes
         for k, v in d["volumes"].items():
             # the world volume is always created in __init__
