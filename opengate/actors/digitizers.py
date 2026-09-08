@@ -531,10 +531,11 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
 
     def set_param_gauss(self):
         if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
+            if not np.isclose(self.blur_sigma, self.blur_fwhm * fwhm_to_sigma):
+                fatal(
+                    f"Error, use blur_sigma or blur_fwhm, not both "
+                    f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
+                )
         if self.blur_fwhm is not None:
             self.blur_sigma = self.blur_fwhm * fwhm_to_sigma
         if self.blur_sigma is None:
@@ -885,10 +886,13 @@ class DigitizerSpatialBlurringActor(
 
     def initialize_blurring_parameters(self):
         if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
+            if not np.allclose(
+                self.blur_sigma, np.asarray(self.blur_fwhm) * fwhm_to_sigma
+            ):
+                fatal(
+                    f"Error, use blur_sigma or blur_fwhm, not both "
+                    f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
+                )
         if not hasattr(self.blur_sigma, "__len__"):
             self.blur_sigma = [self.blur_sigma] * 3
         if not hasattr(self.blur_fwhm, "__len__"):
