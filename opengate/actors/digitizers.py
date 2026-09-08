@@ -466,12 +466,6 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
                 "doc": "FIXME",
             },
         ),
-        "blur_fwhm": (
-            None,
-            {
-                "doc": "FIXME",
-            },
-        ),
         "blur_reference_value": (
             0,
             {
@@ -503,6 +497,14 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    @property
+    def blur_fwhm(self):
+        return self.blur_sigma / fwhm_to_sigma
+
+    @blur_fwhm.setter
+    def blur_fwhm(self, value):
+        self.blur_sigma = value * fwhm_to_sigma
+
     def resolve_and_validate_config(self, context=None):
         super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
@@ -523,13 +525,6 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
             self.set_param_linear()
 
     def set_param_gauss(self):
-        if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
-        if self.blur_fwhm is not None:
-            self.blur_sigma = self.blur_fwhm * fwhm_to_sigma
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
         self.blur_reference_value = -1
@@ -547,7 +542,6 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
                 f"Error, use positive blur_resolution "
                 f"(current value =  {self.blur_resolution}"
             )
-        self.blur_fwhm = -1
         self.blur_sigma = -1
         if self.blur_slope is None:
             self.blur_slope = 0
@@ -804,7 +798,6 @@ class DigitizerSpatialBlurringActor(
     skip_attributes: List
     clear_every: int
     blur_attribute: str
-    blur_fwhm: float
     blur_sigma: float
     keep_in_solid_limits: bool
     use_truncated_Gaussian: bool
@@ -840,12 +833,6 @@ class DigitizerSpatialBlurringActor(
                 "doc": "Which attribute to blur, e.g. PostPosition.",
             },
         ),
-        "blur_fwhm": (
-            None,
-            {
-                "doc": "FWHM for the blurring.",
-            },
-        ),
         "blur_sigma": (
             None,
             {
@@ -876,18 +863,19 @@ class DigitizerSpatialBlurringActor(
         g4.GateDigitizerSpatialBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    @property
+    def blur_fwhm(self):
+        return self.blur_sigma / fwhm_to_sigma
+
+    @blur_fwhm.setter
+    def blur_fwhm(self, value):
+        if not hasattr(value, "__len__"):
+            value = [value] * 3
+        self.blur_sigma = np.array(value) * fwhm_to_sigma
+
     def initialize_blurring_parameters(self):
-        if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
         if not hasattr(self.blur_sigma, "__len__"):
             self.blur_sigma = [self.blur_sigma] * 3
-        if not hasattr(self.blur_fwhm, "__len__"):
-            self.blur_fwhm = [self.blur_fwhm] * 3
-        if self.blur_fwhm is not None:
-            self.blur_sigma = np.array(self.blur_fwhm) * fwhm_to_sigma
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
