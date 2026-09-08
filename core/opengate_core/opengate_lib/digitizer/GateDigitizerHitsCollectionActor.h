@@ -53,6 +53,11 @@ protected:
   bool fDebug{};
   bool fKeepZeroEdep{};
   int fClearEveryNEvents{};
+
+  struct threadLocalHitsCollectionT {
+    int fCollectionClearCounter{};
+  };
+  G4Cache<threadLocalHitsCollectionT> fThreadLocalData;
 };
 
 #endif // GateHitsCollectionActor_h

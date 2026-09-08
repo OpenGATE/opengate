@@ -70,6 +70,7 @@ protected:
   struct threadLocalVDigitizerT {
     GateDigiAttributesFiller *fDigiAttributeFiller{};
     GateDigiCollectionIterator fInputIter;
+    int fOutputCollectionClearCounter{};
   };
   G4Cache<threadLocalVDigitizerT> fThreadLocalVDigitizerData;
 };
