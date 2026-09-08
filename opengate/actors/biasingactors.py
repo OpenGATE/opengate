@@ -422,7 +422,7 @@ class ScatterSplittingFreeFlightActor(
 
     # Do NOT work with GammaGeneralProc
     processes = ["compt", "phot", "conv", "Rayl"]
-    particles = ["gamma"]
+    # particles = ["gamma"]
 
     user_output_config = {
         "info": {
@@ -448,6 +448,7 @@ class ScatterSplittingFreeFlightActor(
         # check, angular_acceptance validation, and the derived splitting-factor
         # defaults below are configuration-resolution concerns and should
         # probably move into resolve_and_validate_config().
+        self.user_info.particles = ["gamma"]
         if self.user_info.attached_to != "world":
             warning(
                 f"ScatterSplittingFreeFlightActor actors can only be attached to the world volume, "
