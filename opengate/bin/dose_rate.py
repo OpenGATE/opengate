@@ -33,11 +33,17 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Total simulated activity in Bq (overrides JSON). In vrt mode, this applies to gamma.",
 )
 @click.option(
+    "--radionuclide",
+    "-r",
+    default=None,
+    type=str,
+    help="Radionuclide name (e.g. Lu177, Y90, Ac225) or ion 'Z A' (e.g. '89 225') (overrides JSON).",
+)
+@click.option(
     "--e-factor",
-    default=10.0,
+    default=None,
     type=float,
-    show_default=True,
-    help="In vrt mode, factor by which electron activity is reduced (activity_e = activity / e_factor).",
+    help="In vrt mode, factor by which electron activity is reduced (default: from JSON or 10.0).",
 )
 @click.option(
     "--threads",
@@ -67,7 +73,17 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     metavar="DIR_E DIR_GAMMA",
     help="Merge precomputed electron and gamma simulation folders and exit.",
 )
-def go(json_param, mode, activity, e_factor, threads, output_folder, visu, merge_only):
+def go(
+    json_param,
+    mode,
+    activity,
+    radionuclide,
+    e_factor,
+    threads,
+    output_folder,
+    visu,
+    merge_only,
+):
     # Handle merge-only mode first
     if merge_only:
         dir_e, dir_gamma = merge_only
@@ -76,10 +92,11 @@ def go(json_param, mode, activity, e_factor, threads, output_folder, visu, merge
             if output_folder
             else pathlib.Path("output_merged")
         )
+        ef = e_factor if e_factor is not None else 10.0
         print(
-            f"Merging VRT dose rate outputs from {dir_e} and {dir_gamma} into {out_dir} (e_factor={e_factor})..."
+            f"Merging VRT dose rate outputs from {dir_e} and {dir_gamma} into {out_dir} (e_factor={ef})..."
         )
-        merged = merge_vrt_dose_rate(dir_e, dir_gamma, out_dir, e_factor=e_factor)
+        merged = merge_vrt_dose_rate(dir_e, dir_gamma, out_dir, e_factor=ef)
         print(f"Merged {len(merged)} image(s):")
         for f in merged:
             print(f"  {f}")
@@ -112,6 +129,9 @@ def go(json_param, mode, activity, e_factor, threads, output_folder, visu, merge
                 param[key] = str((json_dir / p).resolve())
 
     # Apply overrides from CLI
+    if radionuclide is not None:
+        param.radionuclide = radionuclide
+
     if activity is not None:
         param.activity_bq = activity
     elif not hasattr(param, "activity_bq") or param.activity_bq is None:
@@ -129,19 +149,54 @@ def go(json_param, mode, activity, e_factor, threads, output_folder, visu, merge
     elif not hasattr(param, "visu"):
         param.visu = False
 
+    if e_factor is not None:
+        param.e_factor = e_factor
+    elif "e_factor" in param and param.e_factor is not None:
+        param.e_factor = float(param.e_factor)
+    elif "e-factor" in param and param["e-factor"] is not None:
+        param.e_factor = float(param["e-factor"])
+    else:
+        param.e_factor = 10.0
+    e_factor = float(param.e_factor)
+
     if not hasattr(param, "verbose"):
         param.verbose = True
     if not hasattr(param, "density_tolerance_gcm3"):
         param.density_tolerance_gcm3 = 0.05
 
-    # Determine mode: CLI takes precedence, then JSON, then default to "vrt"
+    # Determine if radionuclide is an alpha emitter or generic ion 'Z A' (incompatible with VRT)
+    is_non_vrt_rad = False
+    if hasattr(param, "radionuclide"):
+        rad_val = param.radionuclide
+        if isinstance(rad_val, (list, tuple)):
+            is_non_vrt_rad = True
+        elif isinstance(rad_val, str):
+            rad_str = rad_val.strip()
+            if rad_str in ["Ac225", "Ra223", "Bi213", "Pb212"]:
+                is_non_vrt_rad = True
+            elif rad_str.startswith("ion") or (
+                len(rad_str.split()) > 1 and rad_str.split()[0].isdigit()
+            ):
+                is_non_vrt_rad = True
+
+    # Determine mode: CLI takes precedence, then JSON, then default
     if mode is None:
         if hasattr(param, "mode") and param.mode:
             mode = param.mode
+        elif is_non_vrt_rad:
+            mode = "analog"
         else:
             mode = "vrt"
     if mode == "":
         mode = "analog"
+
+    if mode == "vrt" and is_non_vrt_rad:
+        click.echo(
+            f"Error: VRT mode is designed for beta/gamma emitters (e.g. Lu177, Y90). "
+            f"For '{param.radionuclide}', please use --mode analog.",
+            err=True,
+        )
+        sys.exit(1)
 
     # Determine output folder
     if output_folder:

@@ -10,6 +10,80 @@ from opengate.sources.utility import set_source_energy_spectrum
 from opengate.utility import g4_best_unit, g4_units
 
 
+def get_ion_z_a_e(rad):
+    """
+    Parse a radionuclide specification into (Z, A, E).
+    Accepts:
+      - Dictionary lookup: 'Lu177', 'Y90', 'In111', 'I131', 'Ac225', etc.
+      - Numeric format: '89 225', 'ion 89 225', '89, 225', '89-225', [89, 225]
+      - Element notation: 'Ac225', 'Ac-225', '225Ac', 'Tb161'
+    """
+    rad_list = {
+        "Lu177": {"Z": 71, "A": 177},
+        "Y90": {"Z": 39, "A": 90},
+        "In111": {"Z": 49, "A": 111},
+        "I131": {"Z": 53, "A": 131},
+        "Ac225": {"Z": 89, "A": 225},
+        "Ra223": {"Z": 88, "A": 223},
+        "Bi213": {"Z": 83, "A": 213},
+        "Pb212": {"Z": 82, "A": 212},
+        "Tb161": {"Z": 65, "A": 161},
+    }
+    if isinstance(rad, (list, tuple)):
+        z = int(rad[0])
+        a = int(rad[1])
+        e = int(rad[2]) if len(rad) > 2 else 0
+        return z, a, e
+
+    if not isinstance(rad, str):
+        raise ValueError(f"Unsupported radionuclide specification: {rad}")
+
+    rad_str = rad.strip()
+    if rad_str in rad_list:
+        return rad_list[rad_str]["Z"], rad_list[rad_str]["A"], 0
+
+    if rad_str.startswith("ion"):
+        parts = rad_str.split()
+        z = int(parts[1])
+        a = int(parts[2])
+        e = int(parts[3]) if len(parts) > 3 else 0
+        return z, a, e
+
+    # Format: "89 225" or "89, 225" or "89-225"
+    import re
+
+    m = re.match(r"^(\d+)[,\s_-]+(\d+)(?:[,\s_-]+(\d+))?$", rad_str)
+    if m:
+        z = int(m.group(1))
+        a = int(m.group(2))
+        e = int(m.group(3)) if m.group(3) else 0
+        return z, a, e
+
+    import opengate_core as g4
+
+    # Element symbol + mass: "Ac225", "Ac-225"
+    m = re.match(r"^([a-zA-Z]+)[-_]?(\d+)$", rad_str)
+    if m:
+        elem = m.group(1).capitalize()
+        a = int(m.group(2))
+        z = g4.G4NistManager.Instance().GetZ(elem)
+        if z == 0:
+            raise ValueError(f"Unknown element symbol '{elem}' in radionuclide '{rad}'")
+        return z, a, 0
+
+    # Mass + element symbol: "225Ac"
+    m = re.match(r"^(\d+)[-_]?([a-zA-Z]+)$", rad_str)
+    if m:
+        a = int(m.group(1))
+        elem = m.group(2).capitalize()
+        z = g4.G4NistManager.Instance().GetZ(elem)
+        if z == 0:
+            raise ValueError(f"Unknown element symbol '{elem}' in radionuclide '{rad}'")
+        return z, a, 0
+
+    raise ValueError(f"Cannot parse radionuclide name or ion definition '{rad}'")
+
+
 def create_simulation(param):
     """
     param is dict with:
@@ -71,22 +145,15 @@ def create_simulation(param):
             )
         ct.dump_label_image = param.output_folder / "labels.mhd"
 
-    # some radionuclides choice
-    # (user of this function can still change
-    # the source in the output sim)
-    rad_list = {
-        "Lu177": {"Z": 71, "A": 177, "name": "Lutetium 177"},
-        "Y90": {"Z": 39, "A": 90, "name": "Yttrium 90"},
-        "In111": {"Z": 49, "A": 111, "name": "Indium 111"},
-        "I131": {"Z": 53, "A": 131, "name": "Iodine 131"},
-    }
-
     # Activity source from an image
     source = sim.add_source("VoxelSource", "vox")
     source.attached_to = ct.name
     source.particle = "ion"
-    source.ion.Z = rad_list[param.radionuclide]["Z"]
-    source.ion.A = rad_list[param.radionuclide]["A"]
+    z, a, e = get_ion_z_a_e(param.radionuclide)
+    source.ion.Z = z
+    source.ion.A = a
+    if e:
+        source.ion.E = e
     source.activity = param.activity_bq * Bq
     source.image = param.activity_image
     source.direction.type = "iso"
