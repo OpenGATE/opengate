@@ -129,6 +129,7 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
         fMaterialMuHandler =
             GateMaterialMuHandler::GetInstance(fDatabase, 5 * CLHEP::MeV);
       }
+      fMaterialMuHandler->Initialize();
     }
   }
 

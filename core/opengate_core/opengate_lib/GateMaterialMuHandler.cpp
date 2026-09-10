@@ -9,6 +9,7 @@
 #include "GateHelpers.h"
 #include "GateMuDatabase.h"
 #include "GateMuTables.h"
+#include <G4AutoLock.hh>
 #include <G4Gamma.hh>
 #include <G4ProcessManager.hh>
 #include <G4ProcessVector.hh>
@@ -16,14 +17,15 @@
 #include <G4VAtomDeexcitation.hh>
 #include <G4VEmProcess.hh>
 
-// GateMaterialMuHandler *GateMaterialMuHandler::fSingletonMaterialMuHandler =
-// nullptr;
+G4Mutex sMaterialMuHandlerMutex = G4MUTEX_INITIALIZER;
+
 std::map<std::tuple<std::string, double>,
          std::shared_ptr<GateMaterialMuHandler>>
     GateMaterialMuHandler::fInstances;
 
 std::shared_ptr<GateMaterialMuHandler>
 GateMaterialMuHandler::GetInstance(std::string database, double energy_max) {
+  G4AutoLock mutex(&sMaterialMuHandlerMutex);
   // Create a key based on database and energy_max
   auto key = std::make_tuple(database, energy_max);
 
@@ -49,55 +51,64 @@ GateMaterialMuHandler::GateMaterialMuHandler() {
   fEnergyNumber = 40;
   fAtomicShellEnergyMin = 1. * CLHEP::keV;
   fPrecision = 0.01;
-  fLastCouple = nullptr;
-  fLastMuTable = nullptr;
 }
 
 GateMaterialMuHandler::~GateMaterialMuHandler() { delete[] fElementsTable; }
 
-void GateMaterialMuHandler::CheckLastCall(const G4MaterialCutsCouple *couple) {
+void GateMaterialMuHandler::CheckLastCall(const G4MaterialCutsCouple *) {
   if (!fIsInitialized) {
     Initialize();
   }
-  if (couple != fLastCouple) {
-    fLastCouple = couple;
-    fLastMuTable = fCoupleTable[fLastCouple];
-  }
-}
-
-double GateMaterialMuHandler::GetDensity(const G4MaterialCutsCouple *couple) {
-  CheckLastCall(couple);
-  return fLastMuTable->GetDensity();
-}
-
-double GateMaterialMuHandler::GetMuEnOverRho(const G4MaterialCutsCouple *couple,
-                                             double energy) {
-  CheckLastCall(couple);
-  return fLastMuTable->GetMuEnOverRho(energy);
-}
-
-double GateMaterialMuHandler::GetMuEn(const G4MaterialCutsCouple *couple,
-                                      double energy) {
-  CheckLastCall(couple);
-  return fLastMuTable->GetMuEn(energy);
-}
-
-double GateMaterialMuHandler::GetMuOverRho(const G4MaterialCutsCouple *couple,
-                                           double energy) {
-  CheckLastCall(couple);
-  return fLastMuTable->GetMuOverRho(energy);
-}
-
-double GateMaterialMuHandler::GetMu(const G4MaterialCutsCouple *couple,
-                                    double energy) {
-  CheckLastCall(couple);
-  return fLastMuTable->GetMu(energy);
 }
 
 GateMuTable *
 GateMaterialMuHandler::GetMuTable(const G4MaterialCutsCouple *couple) {
-  CheckLastCall(couple);
-  return fLastMuTable;
+  if (!fIsInitialized) {
+    Initialize();
+  }
+  thread_local const GateMaterialMuHandler *lastHandler = nullptr;
+  thread_local const G4MaterialCutsCouple *lastCouple = nullptr;
+  thread_local GateMuTable *lastTable = nullptr;
+  if (this == lastHandler && couple == lastCouple && lastTable != nullptr) {
+    return lastTable;
+  }
+  auto it = fCoupleTable.find(couple);
+  if (it != fCoupleTable.end()) {
+    lastHandler = this;
+    lastCouple = couple;
+    lastTable = it->second;
+    return lastTable;
+  }
+  return nullptr;
+}
+
+double GateMaterialMuHandler::GetDensity(const G4MaterialCutsCouple *couple) {
+  auto *muTable = GetMuTable(couple);
+  return muTable ? muTable->GetDensity() : 0.0;
+}
+
+double GateMaterialMuHandler::GetMuEnOverRho(const G4MaterialCutsCouple *couple,
+                                             double energy) {
+  auto *muTable = GetMuTable(couple);
+  return muTable ? muTable->GetMuEnOverRho(energy) : 0.0;
+}
+
+double GateMaterialMuHandler::GetMuEn(const G4MaterialCutsCouple *couple,
+                                      double energy) {
+  auto *muTable = GetMuTable(couple);
+  return muTable ? muTable->GetMuEn(energy) : 0.0;
+}
+
+double GateMaterialMuHandler::GetMuOverRho(const G4MaterialCutsCouple *couple,
+                                           double energy) {
+  auto *muTable = GetMuTable(couple);
+  return muTable ? muTable->GetMuOverRho(energy) : 0.0;
+}
+
+double GateMaterialMuHandler::GetMu(const G4MaterialCutsCouple *couple,
+                                    double energy) {
+  auto *muTable = GetMuTable(couple);
+  return muTable ? muTable->GetMu(energy) : 0.0;
 }
 
 inline double interpolation(double Xa, double Xb, double Ya, double Yb,
@@ -106,6 +117,7 @@ inline double interpolation(double Xa, double Xb, double Ya, double Yb,
 }
 
 void GateMaterialMuHandler::Initialize() {
+  G4AutoLock mutex(&sMaterialMuHandlerMutex);
   if (fIsInitialized)
     return;
 
