@@ -20,13 +20,13 @@ public:
 
   void PutValue(int index, double energy, double mu, double mu_en) const;
 
-  double GetMuEn(double energy);
+  double GetMuEn(double energy) const;
 
-  double GetMuEnOverRho(double energy);
+  double GetMuEnOverRho(double energy) const;
 
-  double GetMu(double energy);
+  double GetMu(double energy) const;
 
-  double GetMuOverRho(double energy);
+  double GetMuOverRho(double energy) const;
 
   const G4MaterialCutsCouple *GetMaterialCutsCouple() const;
 
@@ -48,10 +48,6 @@ public:
   double *fEnergy;
   double *fMu;
   double *fMuEn;
-  double fLastEnergyMu;
-  double fLastEnergyMuEn;
-  double fLastMu;
-  double fLastMuEn;
   G4int fSize;
 };
 
