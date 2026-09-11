@@ -1054,8 +1054,13 @@ class ActorEngine(EngineBase):
 
     def stop_simulation(self):
         # consider the priority value of the actors
+        # Phase 1: Complete all Geant4 / C++ simulation hooks and flush files
         for actor in self.actor_manager.sorted_actors:
             actor.EndSimulationAction()
+
+        # Phase 2: Python-side output finalization, metadata capture, and image transfer
+        for actor in self.actor_manager.sorted_actors:
+            actor.finalize_simulation()
 
 
 class FilterEngine(EngineBase):

@@ -98,8 +98,6 @@ void GateDigitizerPileupActor::DigitInitialize(
   a.push_back("TotalEnergyDeposit");
   a.push_back("PostPosition");
   GateVDigitizerWithOutputActor::DigitInitialize(a);
-
-  fOutputDigiCollection->RootInitializeTupleForWorker();
 }
 
 void GateDigitizerPileupActor::EndOfEventAction(const G4Event *) {

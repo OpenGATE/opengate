@@ -254,35 +254,36 @@ void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillUValue(
 template <> void GateTDigiAttribute<double>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   const auto v = Values()[index];
-  ram->FillNtupleDColumn(fTupleId, fDigiAttributeId, v);
+  ram->FillNtupleDColumn(GetRootTupleId(), fDigiAttributeId, v);
 }
 
 template <> void GateTDigiAttribute<int>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   const auto v = Values()[index];
-  ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
+  ram->FillNtupleIColumn(GetRootTupleId(), fDigiAttributeId, v);
 }
 
 template <> void GateTDigiAttribute<int64_t>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   const auto v = Values()[index];
-  ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, static_cast<G4int>(v));
+  ram->FillNtupleIColumn(GetRootTupleId(), fDigiAttributeId,
+                         static_cast<G4int>(v));
 }
 
 template <>
 void GateTDigiAttribute<std::string>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   const auto v = Values()[index];
-  ram->FillNtupleSColumn(fTupleId, fDigiAttributeId, v);
+  ram->FillNtupleSColumn(GetRootTupleId(), fDigiAttributeId, v);
 }
 
 template <>
 void GateTDigiAttribute<G4ThreeVector>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   auto v = Values()[index];
-  ram->FillNtupleDColumn(fTupleId, fDigiAttributeId, v[0]);
-  ram->FillNtupleDColumn(fTupleId, fDigiAttributeId + 1, v[1]);
-  ram->FillNtupleDColumn(fTupleId, fDigiAttributeId + 2, v[2]);
+  ram->FillNtupleDColumn(GetRootTupleId(), fDigiAttributeId, v[0]);
+  ram->FillNtupleDColumn(GetRootTupleId(), fDigiAttributeId + 1, v[1]);
+  ram->FillNtupleDColumn(GetRootTupleId(), fDigiAttributeId + 2, v[2]);
 }
 
 template <>
@@ -290,7 +291,7 @@ void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillToRoot(
     size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   const auto v = Values()[index]->fID;
-  ram->FillNtupleSColumn(fTupleId, fDigiAttributeId, v);
+  ram->FillNtupleSColumn(GetRootTupleId(), fDigiAttributeId, v);
 }
 
 template <> std::vector<double> &GateTDigiAttribute<double>::GetDValues() {
