@@ -26,6 +26,7 @@ __pycache__/
 *.so
 .env
 .venv/
+.python-version
 env/
 venv/
 build/

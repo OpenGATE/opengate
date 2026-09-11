@@ -37,7 +37,8 @@ void GateDigiCollectionsRootManager::OpenFile(const int tupleId,
     if (G4Threading::IsMultithreadedApplication()) {
       auto *run = G4RunManager::GetRunManager()->GetCurrentRun();
       if (run) {
-        if (run->GetRunID() == 0 && tupleId == 0)
+        if (G4Threading::IsMasterThread() && run->GetRunID() == 0 &&
+            tupleId == 0)
           ram->SetNtupleMerging(true);
       } else
         ram->SetNtupleMerging(true);
@@ -73,7 +74,7 @@ int GateDigiCollectionsRootManager::DeclareNewTuple(const std::string &name) {
 
 void GateDigiCollectionsRootManager::AddNtupleRow(const int tupleId) {
   auto *ram = G4RootAnalysisManager::Instance();
-  ram->AddNtupleRow(tupleId);
+  ram->AddNtupleRow(threadLocalData.Get().fTupleIdMap.at(tupleId));
 }
 
 void GateDigiCollectionsRootManager::Write(const int tupleId) const {
@@ -126,14 +127,18 @@ void GateDigiCollectionsRootManager::CreateRootTuple(GateDigiCollection *hc) {
   ram->SetVerboseLevel(0);
   OpenFile(hc->GetTupleId(), hc->GetFilename());
   auto id = ram->CreateNtuple(hc->GetName(), hc->GetTitle());
+  threadLocalData.Get().fTupleIdMap[hc->GetTupleId()] = id;
 
   // Important ! This allows to write to several root files
-  ram->SetNtupleFileName(hc->GetTupleId(), hc->GetFilename());
+  if (hc->GetTupleId() > 0) {
+    ram->SetNtupleFileName(id, hc->GetFilename());
+  }
   for (auto *att : hc->GetDigiAttributes()) {
     // (depends on the type -> todo in the DigiAttribute ?)
     // WARNING: the id can be different from tupleId in HC and in att
     // because it is created at all runs (mandatory).
     // So id must be used to create columns, not tupleID in att.
+    att->SetRootTupleId(id);
     CreateNtupleColumn(id, att);
   }
   ram->FinishNtuple(id);

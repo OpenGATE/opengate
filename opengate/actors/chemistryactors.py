@@ -284,7 +284,7 @@ class ActorOutputChemicalCountingActor(ActorOutputBase):
             dump_json(self.get_processed_output(), f, indent=4)
 
     def write_data_if_requested(self, **kwargs):
-        if self.write_to_disk is True:
+        if self.get_write_to_disk(item="all"):
             self.write_data(**kwargs)
 
 
@@ -292,7 +292,7 @@ class ActorOutputChemicalCounter(ActorOutputUsingDataItemContainer):
     data_container_class = SingleTimeCountSeries
 
     def write_data_if_requested(self, **kwargs):
-        if self.write_to_disk is True:
+        if self.get_write_to_disk(item="all"):
             self.write_data(**kwargs)
 
 
