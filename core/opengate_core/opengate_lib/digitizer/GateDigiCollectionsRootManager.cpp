@@ -37,8 +37,7 @@ void GateDigiCollectionsRootManager::OpenFile(const int tupleId,
     if (G4Threading::IsMultithreadedApplication()) {
       auto *run = G4RunManager::GetRunManager()->GetCurrentRun();
       if (run) {
-        if (G4Threading::IsMasterThread() && run->GetRunID() == 0 &&
-            tupleId == 0)
+        if (run->GetRunID() == 0 && tupleId == 0)
           ram->SetNtupleMerging(true);
       } else
         ram->SetNtupleMerging(true);

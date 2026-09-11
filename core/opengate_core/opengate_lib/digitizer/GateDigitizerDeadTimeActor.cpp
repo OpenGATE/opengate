@@ -70,8 +70,6 @@ void GateDigitizerDeadTimeActor::DigitInitialize(
 
   auto a = attributes_not_in_filler;
   GateVDigitizerWithOutputActor::DigitInitialize(a);
-
-  fOutputDigiCollection->RootInitializeTupleForWorker();
 }
 
 void GateDigitizerDeadTimeActor::EndOfEventAction(const G4Event *) {
