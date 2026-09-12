@@ -56,6 +56,7 @@ opengate_jobs_status = "opengate.bin.opengate_jobs_status:go"
 opengate_jobs_merge = "opengate.bin.opengate_jobs_merge:go"
 opengate_jobs_clean = "opengate.bin.opengate_jobs_clean:go"
 opengate_job_runner = "opengate.bin.opengate_job_runner:go"
+opengate_dose_rate = "opengate.bin.dose_rate:go"
 
 dose_rate = "opengate.bin.dose_rate:go"
 split_spect_projections = "opengate.bin.split_spect_projections:go"

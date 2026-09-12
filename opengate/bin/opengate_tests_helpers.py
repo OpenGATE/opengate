@@ -166,7 +166,9 @@ def get_available_tests(all_file_paths):
                 reason_to_ignore = string_to_ignore
                 break
 
-        if not torch_avail and filename in torch_tests:
+        if not torch_avail and (
+            filename in torch_tests or os.path.basename(filename) in torch_tests
+        ):
             reason_to_ignore = "Torch not avail"
             eval_this_file = False
         if os.name == "nt" and "_mt" in filename:

@@ -9,6 +9,7 @@
 #define GateVDigiAttribute_h
 
 #include "../GateUniqueVolumeID.h"
+#include <G4Cache.hh>
 #include <G4Step.hh>
 
 class GateVDigiAttribute {
@@ -62,6 +63,10 @@ public:
 
   void SetTupleId(int id) { fTupleId = id; }
 
+  void SetRootTupleId(int id) { threadLocalData.Get() = id; }
+
+  int GetRootTupleId() const { return threadLocalData.Get(); }
+
   std::string GetDigiAttributeName() const { return fDigiAttributeName; }
 
   virtual std::string Dump(int i) const = 0;
@@ -89,6 +94,7 @@ protected:
 
   // Index of the DigiCollection in the root tree
   G4int fTupleId;
+  G4Cache<G4int> threadLocalData;
 };
 
 #endif // GateVDigiAttribute_h

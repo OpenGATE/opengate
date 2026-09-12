@@ -55,6 +55,7 @@ protected:
     //  This is required to manage the Write process :
     //  only one is mandatory for all DigiCollections.
     std::map<int, bool> fTupleShouldBeWritten;
+    std::map<int, int> fTupleIdMap;
     bool fFileHasBeenWrittenByWorker;
     bool fFileHasBeenWrittenByMaster;
   };

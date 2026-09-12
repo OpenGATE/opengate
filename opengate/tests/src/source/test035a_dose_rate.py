@@ -44,9 +44,6 @@ if __name__ == "__main__":
     MeV = gate.g4_units.MeV
     source.energy.mono = 1 * MeV
 
-    print("Phys list cuts:")
-    print(sim.physics_manager.dump_production_cuts())
-
     # run
     sim.run(start_new_process=True)
 

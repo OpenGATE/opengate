@@ -264,7 +264,7 @@ class CustomMagneticField(MagneticField):
         "field_function": (
             None,
             {
-                "doc": "Python function that takes [x, y, z, t] and returns [Bx, By, Bz], all in local volume coordinates.",
+                "doc": "Python function that takes [x, y, z] and returns [Bx, By, Bz], all in local volume coordinates.",
             },
         ),
     }
@@ -272,7 +272,7 @@ class CustomMagneticField(MagneticField):
     def _create_inner_field(self):
         """Create the custom magnetic field using the Python trampoline.
 
-        field_function receives (x, y, z, t) in the local coordinate frame of
+        field_function receives (x, y, z) in the local coordinate frame of
         the attached volume and must return [Bx, By, Bz] in that same local
         frame.  The base class rotates the result to world coordinates.
         """
@@ -284,7 +284,7 @@ class CustomMagneticField(MagneticField):
                 inner_self._callback = callback
 
             def GetFieldValue(inner_self, point):
-                return inner_self._callback(*point)
+                return inner_self._callback(*point[:3])
 
         return _PyMagneticField(self.field_function)
 
@@ -357,7 +357,7 @@ class CustomElectricField(ElectricField):
         "field_function": (
             None,
             {
-                "doc": "Python function that takes [x, y, z, t] and returns [Ex, Ey, Ez], all in local volume coordinates.",
+                "doc": "Python function that takes [x, y, z] and returns [Ex, Ey, Ez], all in local volume coordinates.",
             },
         ),
     }
@@ -371,7 +371,7 @@ class CustomElectricField(ElectricField):
                 inner_self._callback = callback
 
             def GetFieldValue(inner_self, point):
-                return inner_self._callback(*point)
+                return inner_self._callback(*point[:3])
 
             def DoesFieldChangeEnergy(inner_self):
                 return True
@@ -423,7 +423,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
         "field_function": (
             None,
             {
-                "doc": "Python function that takes [x, y, z, t] and returns [Bx, By, Bz, Ex, Ey, Ez], all in local volume coordinates.",
+                "doc": "Python function that takes [x, y, z] and returns [Bx, By, Bz, Ex, Ey, Ez], all in local volume coordinates.",
             },
         ),
     }
@@ -437,7 +437,7 @@ class CustomElectroMagneticField(ElectroMagneticField):
                 inner_self._callback = callback
 
             def GetFieldValue(inner_self, point):
-                return inner_self._callback(*point)
+                return inner_self._callback(*point[:3])
 
             def DoesFieldChangeEnergy(inner_self):
                 return True
@@ -517,7 +517,7 @@ def _validate_field_function(
         raise ValueError(f"field_function must be provided for {class_name}")
     if not callable(func):
         raise TypeError("field_function must be a callable function")
-    result = list(func(0, 0, 0, 0))
+    result = list(func(0, 0, 0))
     if len(result) != n_components:
         raise ValueError(
             f"{class_name}: field_function must return {n_components} components, "

@@ -5,7 +5,7 @@
 #   See LICENSE.md for further details
 # --------------------------------------------------
 
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.12.0)
 
 # remove warning about project version
 cmake_policy(SET CMP0048 NEW)
@@ -73,7 +73,7 @@ endif (ITK_FOUND)
 add_subdirectory(external/fmt EXCLUDE_FROM_ALL)
 
 # Create the geant4 python module
-file(GLOB all_SRCS
+file(GLOB all_SRCS CONFIGURE_DEPENDS
         "${PROJECT_SOURCE_DIR}/opengate_core/g4_bindings/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/digitizer/*.cpp"

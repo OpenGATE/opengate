@@ -109,8 +109,6 @@ public:
   int fEnergyNumber;
   double fAtomicShellEnergyMin;
   double fPrecision;
-  const G4MaterialCutsCouple *fLastCouple;
-  GateMuTable *fLastMuTable;
 };
 
 #endif

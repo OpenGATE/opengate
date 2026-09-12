@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import itk
 import numpy as np
-
 import opengate as gate
 from opengate.contrib.phantoms import gammex467
 from opengate.tests import utility

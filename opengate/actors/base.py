@@ -855,5 +855,11 @@ class ActorBase(GateObject):
         """Default virtual method for inheritance"""
         pass
 
+    def finalize_simulation(self):
+        """Finalize actor outputs after all Geant4/C++ actions and file I/O are complete."""
+        for user_output in self.user_output.values():
+            if hasattr(user_output, "end_of_simulation"):
+                user_output.end_of_simulation()
+
 
 process_cls(ActorBase)

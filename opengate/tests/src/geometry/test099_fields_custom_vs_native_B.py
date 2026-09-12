@@ -63,7 +63,7 @@ if __name__ == "__main__":
     box_custom.material = "G4_Galactic"
     box_custom.translation = [80 * g4_cm, 0, 0]
 
-    def custom_uniform_B(x, y, z, t):
+    def custom_uniform_B(x, y, z):
         return [0, By, 0]
 
     custom_field = fields.CustomMagneticField(
