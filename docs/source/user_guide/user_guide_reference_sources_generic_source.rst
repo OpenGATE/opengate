@@ -171,7 +171,8 @@ before ``sim.run()``:
     source.visualization.color = "red"
     source.visualization.size = 3
 
-The visualization of the source is only available with ``"qt"``.
+The visualization of the source is only available with ``"qt"`` and single
+thread mode.
 
 The ``count`` parameter controls the number of sampled positions. Values
 larger than 10000 are reduced to 2000. The ``size`` parameter controls the
