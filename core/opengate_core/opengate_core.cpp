@@ -554,6 +554,10 @@ void init_GatePhaseSpaceSource(py::module &);
 
 void init_GateGANPairSource(py::module &);
 
+void init_GateWindowTurboSource(py::module &);
+
+void init_GateVoxelWTSource(py::module &);
+
 // Gate misc
 
 void init_GateExceptionHandler(py::module &);
@@ -798,6 +802,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateGANSource(m);
   init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);
+  init_GateWindowTurboSource(m);
+  init_GateVoxelWTSource(m);
   init_GateSPSPosDistribution(m);
   init_GateSPSVoxelsPosDistribution(m);
   init_GateRunAction(m);
