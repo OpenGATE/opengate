@@ -12,7 +12,7 @@ import opengate_core as g4
 
 from ..base import DynamicGateObject, process_cls
 from . import solids
-from ..utility import ensure_filename_is_str
+from ..utility import ensure_filename_is_str, validate_color
 from ..exception import fatal, warning
 from ..image import write_itk_image
 from ..image import update_image_py_to_cpp
@@ -164,6 +164,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 "doc": (
                     "4 component vector defining the volume's color in visual rendering. "
                     "The first 3 entries are RBG, the 4th is visible/invisible (1 or 0). "
+                    "Can also use Geant4 color name strings, e.g. 'red', 'blue', 'cyan' etc. "
                 )
             },
         ),
@@ -464,7 +465,9 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.g4_vis_attributes.SetForceWireframe(True)
         elif self.style == "solid":
             self.g4_vis_attributes.SetForceSolid(True)
-        self.g4_vis_attributes.SetColor(*self.color)
+        self.g4_vis_attributes.SetColor(
+            *validate_color(self.color, f"Color error for volume {self.name}: ")
+        )
         self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
