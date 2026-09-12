@@ -171,7 +171,7 @@ Example:
    source.image = "activity_0.mhd"
    source.direction.type = "iso"
    source.energy.mono = 1 * MeV
-   source.n = [2000, 2000, 2000]
+   source.number_of_primaries = [2000, 2000, 2000]
 
    source.add_dynamic_parametrisation(
        image=[

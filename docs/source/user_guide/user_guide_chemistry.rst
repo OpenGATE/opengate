@@ -536,7 +536,7 @@ This combines the main pieces in one small script:
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 1
+    source.number_of_primaries = 1
 
     chem_actor = sim.add_actor("ChemicalCountingActor", "chem_actor")
     chem_actor.attached_to = target
