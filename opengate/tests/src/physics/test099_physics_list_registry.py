@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import opengate_core as g4
+import opengate as gate
 
 from opengate.physics import (
     PhysicsListBuilder,
     create_reference_physics_list_class,
     reference_physics_list_base_class_names,
+    reference_physics_list_em_extensions,
+    reference_physics_list_special_builders,
 )
 from opengate.tests.utility import print_test, test_ok
 
@@ -56,6 +59,20 @@ def check_pybind_reference_classes_against_factory(factory):
 def check_gate_reference_registry_against_factory(factory):
     is_ok = True
 
+    registered_names = set(PhysicsListBuilder.available_g4_reference_physics_lists)
+    expected_names = {
+        f"{base_name}{suffix}"
+        for base_name in factory.AvailablePhysLists()
+        for suffix in ("", *reference_physics_list_em_extensions)
+    }
+    missing_names = sorted(expected_names - registered_names)
+    b = len(missing_names) == 0
+    print_test(
+        b,
+        f"GATE registers all factory reference lists with supported EM options. Missing: {missing_names}",
+    )
+    is_ok = b and is_ok
+
     for name in PhysicsListBuilder.available_g4_reference_physics_lists:
         b = factory.IsReferencePhysList(name)
         print_test(
@@ -89,6 +106,41 @@ def check_gate_reference_classes_can_be_synthesized():
     return is_ok
 
 
+def check_special_reference_lists_with_em_options():
+    # Shielding sets particle cuts in its constructor and needs the default region.
+    run_manager = g4.G4RunManager()
+    sim = gate.Simulation()
+    sim.g4_verbose_level = 0
+    is_ok = True
+    for base, spec in reference_physics_list_special_builders.items():
+        for suffix in ("", *reference_physics_list_em_extensions):
+            name = f"{base}{suffix}"
+            try:
+                physics_list = (
+                    sim.physics_manager.physics_list_builder.create_physics_list(name)
+                )
+                b = isinstance(physics_list, getattr(g4, spec["base"]))
+                em_constructor = reference_physics_list_em_extensions.get(suffix)
+                if em_constructor:
+                    b = (
+                        isinstance(
+                            physics_list.GetPhysics(0), getattr(g4, em_constructor)
+                        )
+                        and b
+                    )
+                if spec.get("ctor_args", (None, None, False))[2]:
+                    b = physics_list.GetPhysics("LightIonQMD") is not None and b
+                if spec.get("add_thermal_neutrons"):
+                    b = physics_list.GetPhysics("ThermalNeutrons") is not None and b
+                print_test(b, f"GATE constructs '{name}' with the requested physics")
+                is_ok = b and is_ok
+            except Exception as e:
+                print_test(False, f"GATE failed to construct '{name}': {e}")
+                is_ok = False
+    del run_manager
+    return is_ok
+
+
 if __name__ == "__main__":
     factory = g4.G4PhysListFactory()
 
@@ -96,5 +148,7 @@ if __name__ == "__main__":
     is_ok = check_pybind_reference_classes_against_factory(factory) and is_ok
     is_ok = check_gate_reference_registry_against_factory(factory) and is_ok
     is_ok = check_gate_reference_classes_can_be_synthesized() and is_ok
+
+    is_ok = check_special_reference_lists_with_em_options() and is_ok
 
     test_ok(is_ok)

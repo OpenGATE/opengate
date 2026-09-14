@@ -274,13 +274,15 @@ def _build_available_reference_physics_list_names():
     available_names = []
     em_suffixes = tuple(reference_physics_list_em_extensions.keys())
 
-    for base_name in reference_physics_list_base_class_names:
+    for base_name in (
+        *reference_physics_list_base_class_names,
+        *reference_physics_list_special_builders,
+    ):
         available_names.append(base_name)
         for suffix in em_suffixes:
             if suffix is not None:
                 available_names.append(f"{base_name}{suffix}")
 
-    available_names.extend(reference_physics_list_special_builders.keys())
     return available_names
 
 
