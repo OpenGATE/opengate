@@ -246,8 +246,7 @@ def check_builder_diagnostics():
 
 
 def check_import_time_warning():
-    code = textwrap.dedent(
-        """
+    code = textwrap.dedent("""
         import warnings
         import opengate_core as g4
         factory = g4.G4PhysListFactory()
@@ -271,8 +270,7 @@ def check_import_time_warning():
         assert len(registry_warnings) == 1, registry_warnings
         assert registry_warnings[0].category is RuntimeWarning
         assert "NewGeant4List" in str(registry_warnings[0].message)
-    """
-    )
+    """)
     result = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True
     )
