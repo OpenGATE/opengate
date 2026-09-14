@@ -22,6 +22,11 @@ You can use the following python command to get a list of all physics lists avai
 
     print(sim.physics_manager.dump_available_physics_lists())
 
+The supported EM suffixes include ``__SS`` (``G4EmStandardPhysicsSS``, single
+scattering) and ``_WVI`` (``G4EmStandardPhysicsWVI``, Wentzel VI mixed scattering).
+For example, use ``FTFP_BERT__SS`` or ``ShieldingLIQMD_WVI``. Both constructors
+are also available as standalone physics lists by their full constructor names.
+
 
 You can also activate additional sets of processes bundled in so-called "special physics constructors". To see which are available and which are active, use:
 

@@ -62,6 +62,8 @@ namespace py = pybind11;
 #include <G4EmLowEPPhysics.hh>
 #include <G4EmPenelopePhysics.hh>
 #include <G4EmStandardPhysicsGS.hh>
+#include <G4EmStandardPhysicsSS.hh>
+#include <G4EmStandardPhysicsWVI.hh>
 #include <G4GenericBiasingPhysics.hh>
 #include <G4OpticalPhysics.hh>
 
@@ -199,6 +201,8 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics_option4)
 
   ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysicsGS)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysicsSS)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysicsWVI)
   ADD_PHYSICS_CONSTRUCTOR(G4EmLowEPPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePolarizedPhysics)

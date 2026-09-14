@@ -237,6 +237,8 @@ reference_physics_list_em_extensions = {
     "_LIV": "G4EmLivermorePhysics",
     "_PEN": "G4EmPenelopePhysics",
     "__GS": "G4EmStandardPhysicsGS",
+    "__SS": "G4EmStandardPhysicsSS",
+    "_WVI": "G4EmStandardPhysicsWVI",
     "__LE": "G4EmLowEPPhysics",
 }
 
@@ -347,6 +349,8 @@ class PhysicsListBuilder(GateObject):
         "G4EmStandardPhysics_option3",
         "G4EmStandardPhysics_option4",
         "G4EmStandardPhysicsGS",
+        "G4EmStandardPhysicsSS",
+        "G4EmStandardPhysicsWVI",
         "G4EmLowEPPhysics",
         "G4EmLivermorePhysics",
         "G4EmLivermorePolarizedPhysics",
