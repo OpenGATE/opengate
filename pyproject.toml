@@ -22,7 +22,7 @@ include = ["opengate*"]
 namespaces = false
 
 [project]
-name = "opengate"
+name = "opengate-rtion"
 dynamic = ["version", "readme", "dependencies"]
 authors = [{ name = "Opengate collaboration", email = "david.sarrut@creatis.insa-lyon.fr" }]
 description = "Simulation for Medical Physics"

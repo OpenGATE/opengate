@@ -169,7 +169,7 @@ else:
     package_data = {"opengate_core": ["plugins/*/*.so"] + ["plugins/*.so"]}
 
 setuptools.setup(
-    name="opengate-core",
+    name="opengate-core-rtion",
     version=version,
     author="Opengate collaboration",
     author_email="david.sarrut@creatis.insa-lyon.fr",
