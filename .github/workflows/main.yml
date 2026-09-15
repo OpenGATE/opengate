@@ -4,13 +4,13 @@ on:
   push:
     paths-ignore:
       - 'docs/**'
-    branches: [ master ]
+    branches: [ master, gateRTionv2_rc ]
     tags:
       - '*'
   pull_request:
     paths-ignore:
       - 'docs/**'
-    branches: [ master ]
+    branches: [ master, gateRTionv2_rc ]
   schedule:
     - cron: '0 0 * * 0,3'
   workflow_dispatch:
