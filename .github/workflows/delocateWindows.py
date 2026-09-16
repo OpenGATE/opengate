@@ -98,7 +98,7 @@ args = parser.parse_args()
 wheel_name = args.WHEEL_FILE
 print(wheel_name)
 print(os.path.join(wheel_name, "opengate_core-*-win_amd64.whl"))
-wheel_name = glob.glob(os.path.join(wheel_name, "opengate_core-*-win_amd64.whl"))[0]
+wheel_name = glob.glob(os.path.join(wheel_name, "opengate_core_rtion-*-win_amd64.whl"))[0]
 print(wheel_name)
 repaired_wheel = os.path.join(
     os.path.abspath(args.WHEEL_DIR), os.path.basename(wheel_name)
