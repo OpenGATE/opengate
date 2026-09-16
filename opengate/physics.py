@@ -3,6 +3,7 @@ from xml.etree import ElementTree as ET
 from box import Box
 
 from enum import Enum
+import warnings
 import xml.etree.ElementTree as ET
 
 import opengate_core as g4
@@ -237,6 +238,8 @@ reference_physics_list_em_extensions = {
     "_LIV": "G4EmLivermorePhysics",
     "_PEN": "G4EmPenelopePhysics",
     "__GS": "G4EmStandardPhysicsGS",
+    "__SS": "G4EmStandardPhysicsSS",
+    "_WVI": "G4EmStandardPhysicsWVI",
     "__LE": "G4EmLowEPPhysics",
 }
 
@@ -274,13 +277,15 @@ def _build_available_reference_physics_list_names():
     available_names = []
     em_suffixes = tuple(reference_physics_list_em_extensions.keys())
 
-    for base_name in reference_physics_list_base_class_names:
+    for base_name in (
+        *reference_physics_list_base_class_names,
+        *reference_physics_list_special_builders,
+    ):
         available_names.append(base_name)
         for suffix in em_suffixes:
             if suffix is not None:
                 available_names.append(f"{base_name}{suffix}")
 
-    available_names.extend(reference_physics_list_special_builders.keys())
     return available_names
 
 
@@ -345,6 +350,8 @@ class PhysicsListBuilder(GateObject):
         "G4EmStandardPhysics_option3",
         "G4EmStandardPhysics_option4",
         "G4EmStandardPhysicsGS",
+        "G4EmStandardPhysicsSS",
+        "G4EmStandardPhysicsWVI",
         "G4EmLowEPPhysics",
         "G4EmLivermorePhysics",
         "G4EmLivermorePolarizedPhysics",
@@ -400,6 +407,69 @@ class PhysicsListBuilder(GateObject):
             )
         return created_physics_list_classes
 
+    @classmethod
+    def check_reference_physics_list_registry(cls, *, emit_warning=True):
+        """Compare the registry with the linked Geant4 without constructing lists.
+
+        Return nonempty mismatch categories. Unsupported Geant4 EM options are
+        reported separately, rather than expanding every missing combination.
+        """
+        factory = g4.G4PhysListFactory()
+        factory_bases = {str(name) for name in factory.AvailablePhysLists()}
+        factory_suffixes = {str(name) for name in factory.AvailablePhysListsEM()} - {""}
+        gate_suffixes = set(reference_physics_list_em_extensions)
+        names = cls.available_g4_reference_physics_lists
+        registered_names = set(names)
+        expected_names = {
+            f"{base}{suffix}"
+            for base in factory_bases
+            for suffix in {""} | (factory_suffixes & gate_suffixes)
+        }
+        required_bindings = (
+            set(reference_physics_list_base_class_names)
+            | {
+                builder["base"]
+                for builder in reference_physics_list_special_builders.values()
+            }
+            | {name for name in reference_physics_list_em_extensions.values() if name}
+        )
+        mismatches = {
+            "missing registry names": sorted(expected_names - registered_names),
+            "names unrecognized by Geant4": sorted(
+                name
+                for name in registered_names
+                if not factory.IsReferencePhysList(name)
+            ),
+            "Geant4 EM options unsupported by GATE": sorted(
+                factory_suffixes - gate_suffixes
+            ),
+            "GATE EM options unrecognized by Geant4": sorted(
+                gate_suffixes - factory_suffixes
+            ),
+            "missing C++ bindings": sorted(
+                name for name in required_bindings if not hasattr(g4, name)
+            ),
+            "duplicate registry names": sorted(
+                name for name in registered_names if names.count(name) > 1
+            ),
+        }
+        mismatches = {label: values for label, values in mismatches.items() if values}
+        if mismatches and emit_warning:
+            details = "\n".join(
+                f"* {label}: {', '.join(values)}"
+                for label, values in mismatches.items()
+            )
+            # GATE's logger has no output handler yet during module import.
+            warnings.warn(
+                "GATE PhysicsListBuilder registry differs from the linked Geant4:\n"
+                f"{details}\n"
+                "Accepted physics-list names are determined by PhysicsListBuilder. "
+                "Use sim.physics_manager.dump_info_physics_lists() to list them.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        return mismatches
+
     @requires_fatal("simulation")
     def create_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
@@ -408,9 +478,9 @@ class PhysicsListBuilder(GateObject):
             )
         else:
             s = (
-                f"Cannot find the physic list: {physics_list_name}\n"
+                f"Unknown physics list: {physics_list_name}\n"
                 f"{self.dump_info_physics_lists()}"
-                f"Default is {self.physics_manager.user_info_defaults['physics_list_name']}\n"
+                f"Default is {self.physics_manager.user_info_defaults['physics_list_name'][0]}\n"
                 f"Help : https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html"
             )
             fatal(s)
@@ -432,13 +502,11 @@ class PhysicsListBuilder(GateObject):
         return physics_list
 
     def dump_info_physics_lists(self):
-        g4_factory = g4.G4PhysListFactory()
+        names = "\n".join(sorted(self.created_physics_list_classes))
         s = (
             "\n**** INFO about GATE physics lists ****\n"
-            f"* Known Geant4 lists are: {g4_factory.AvailablePhysLists()}\n"
-            f"* With EM options: {g4_factory.AvailablePhysListsEM()[1:]}\n"
-            f"* Or the following simple physics lists with a single PhysicsConstructor: \n"
-            f"* {self.available_g4_physics_constructors} \n"
+            "Physics-list names accepted by PhysicsListBuilder:\n"
+            f"{names}\n"
             "**** ----------------------------- ****\n\n"
         )
         return s
@@ -1195,5 +1263,6 @@ class OpticalSurface(GateObject):
 
 
 process_cls(PhysicsListBuilder)
+PhysicsListBuilder.check_reference_physics_list_registry()
 process_cls(Region)
 process_cls(OpticalSurface)
