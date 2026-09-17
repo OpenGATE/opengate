@@ -53,7 +53,7 @@ def add_iec_phantom(
 
     # Inside space for the water, same as the shell, with 3 mm less
     thickness = 3 * mm
-    thickness_z = 10 * mm
+    thickness_z = 3 * mm  # 10 * mm <-> /gate/topshell1/geometry/setHeight 0.3 cm
     interior, top_interior, _ = add_iec_body(
         simulation, f"{name}_interior", thickness, thickness_z
     )
@@ -79,7 +79,9 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     deg = g4_units.deg
 
     # total length
-    length = 21.4 * cm
+    length = (
+        22 * cm
+    )  # 21.4 * cm <-> /gate/upperinterior/geometry/setHeight 21.4 cm & /gate/topshell1/geometry/setHeight 0.3 cm & /gate/bottomshell1/geometry/setHeight 0.3 cm
 
     # top
     top_shell = opengate.geometry.volumes.TubsVolume(name=f"{name}_top_shell")
@@ -184,7 +186,9 @@ def add_iec_all_spheres(
     It can be modified.
     """
     v = f"{name}_interior"
-    h_relative = 2.7 * cm
+    h_relative = (
+        3.7 * cm
+    )  # 2.7 * cm <-> /gate/sphere10/placement/setTranslation 2.86 8.45367 3.7 cm
     r = 11.45367 * cm / 2
     ang = 360 / 6 * deg
     if starting_angle is False:
@@ -244,7 +248,9 @@ def add_iec_one_sphere(
     cap.rmax = 0.25 * cm
     cap.rmin = 0 * cm
     # 21.4/2 = 10.7 interior height (top_interior)
-    h = 21.4 / 2 * cm - thickness_z
+    h = (
+        22 / 2 * cm - thickness_z
+    )  # 21.4 / 2 * cm - thickness_z <-> 21.4 is interior height in GATE 9
     cap.dz = (h - h_relative - rad - sph_thick) / 2.0
     cap.translation[2] = h_relative + rad + sph_thick + cap.dz
 
