@@ -261,7 +261,7 @@ jobs:
 #          python-version: 3.9
 #    - name: Set up Homebrew
 #      id: set-up-homebrew
-#      uses: Homebrew/actions/setup-homebrew@master
+#      uses: Homebrew/actions/setup-homebrew@main
 #    - name: Start SSH session
 #      uses: luchihoratiu/debug-via-ssh@main
 #      with:

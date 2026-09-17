@@ -22,6 +22,28 @@ You can use the following python command to get a list of all physics lists avai
 
     print(sim.physics_manager.dump_available_physics_lists())
 
+This output lists the exact names accepted by GATE's ``PhysicsListBuilder``,
+including supported EM suffixes for special lists such as ``ShieldingLIQMD_EMZ``.
+When ``opengate`` is imported, GATE compares its reference-list registry with the
+linked Geant4 library and warns about discrepancies. The check does not construct
+physics lists or change the registry. Any Geant4 EM options that GATE does not
+support are reported separately from missing registry entries or bindings.
+
+The supported EM suffixes include ``__SS`` (``G4EmStandardPhysicsSS``, single
+scattering) and ``_WVI`` (``G4EmStandardPhysicsWVI``, Wentzel VI mixed scattering).
+For example, use ``FTFP_BERT__SS`` or ``ShieldingLIQMD_WVI``. Both constructors
+are also available as standalone physics lists by their full constructor names.
+
+To repeat the check and obtain a dictionary of discrepancies without emitting a
+warning:
+
+.. code-block:: python
+
+    from opengate.physics import PhysicsListBuilder
+    differences = PhysicsListBuilder.check_reference_physics_list_registry(
+        emit_warning=False
+    )
+
 
 You can also activate additional sets of processes bundled in so-called "special physics constructors". To see which are available and which are active, use:
 
@@ -70,7 +92,7 @@ Specific electromagnetic parameters can be turned on or off like this:
 Production cuts
 ---------------
 
-Geant4 allows you to tune the conditions under which it should actually produce anbd track secodnary particles, i.e. particles produced as the results of interactions of an existing particles with the target (or from fragmentation). More specifically, you can set the production cut in terms of range for a given particle. For example, a 10 mm cut applied to electrons means that secondary electrons are only produced if their energy gives them a range of at least 10 mm in the material where they are. As a rule of thumb: the higher the cut value the faster but also the less accurate the simulation.
+Geant4 allows you to tune the conditions under which it should actually produce and track secodnary particles, i.e. particles produced as the results of interactions of an existing particles with the target (or from fragmentation). More specifically, you can set the production cut in terms of range for a given particle. For example, a 10 mm cut applied to electrons means that secondary electrons are only produced if their energy gives them a range of at least 10 mm in the material where they are. As a rule of thumb: the higher the cut value the faster but also the less accurate the simulation.
 
 You can set production cuts globally, i.e. apply them to the entire world, either like this:
 
