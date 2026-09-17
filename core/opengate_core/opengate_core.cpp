@@ -566,8 +566,15 @@ void init_GateVolumeVoxelizer(py::module &);
 
 void init_GateImageBox(py::module &m);
 
+#ifdef USE_GDML
+void init_G4GDMLParser(py::module &);
+#endif
+
 PYBIND11_MODULE(opengate_core, m) {
 
+#ifdef USE_GDML
+  init_G4GDMLParser(m);
+#endif
   init_G4ThreeVector(m);
   init_G4AffineTransform(m);
   init_G4String(m);
