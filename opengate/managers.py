@@ -149,6 +149,7 @@ from .geometry.volumes import (
     PolyhedraVolume,
     RepeatParametrisedVolume,
     SphereVolume,
+    TetrahedralMeshVolume,
     TesselatedVolume,
     TrapVolume,
     TrdVolume,
@@ -1452,6 +1453,7 @@ class VolumeManager(GateObject):
         "BooleanVolume": BooleanVolume,
         "RepeatParametrisedVolume": RepeatParametrisedVolume,
         "TesselatedVolume": TesselatedVolume,
+        "TetrahedralMeshVolume": TetrahedralMeshVolume,
     }
 
     def __init__(self, simulation, *args, **kwargs) -> None:
