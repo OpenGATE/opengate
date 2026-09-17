@@ -246,7 +246,7 @@ def set_g4_data_path():
     g4_lib_folder = None
 
     if s == "Linux" or s == "Windows":
-        g4_lib_folder = Path(__file__).resolve().parent.parent / "opengate_core.libs"
+        g4_lib_folder = Path(__file__).resolve().parent.parent / "opengate_core_rtion.libs"
     elif s == "Darwin":
         g4_lib_folder = Path(__file__).resolve().parent / ".dylibs"
 

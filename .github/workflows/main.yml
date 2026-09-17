@@ -203,10 +203,10 @@ jobs:
     - name: Separate the wheels
       run: |
           mkdir dist_opengate_core dist_opengate dist_opengate_core_novis
-          mv dist/opengate_core_novis-* dist_opengate_core_novis/ || true
-          mv dist/opengate_core_ci* dist_opengate_core/ || true
-          mv dist/opengate_core-* dist_opengate_core/
-          mv dist/opengate-* dist_opengate/
+          mv dist/opengate_core_rtion-* dist_opengate_core_novis/ || true
+          mv dist/opengate_core_rtion_ci* dist_opengate_core/ || true
+          mv dist/opengate_core_rtion* dist_opengate_core/
+          mv dist/opengate_rtion* dist_opengate/
     - name: Publish to PyPI opengate_core_novis
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@release/v1

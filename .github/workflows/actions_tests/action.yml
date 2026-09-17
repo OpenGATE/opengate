@@ -48,17 +48,17 @@ runs:
           pip install SimpleITK
           pip install "gaga_phsp>=0.7.6"
           pip install pytomography
-          pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
-          pip install dist/opengate-*.whl
+          pip install dist/opengate_core_rtion-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
+          pip install dist/opengate_rtion-*.whl
           export GIT_SSL_NO_VERIFY=1
           if [[ ${{ matrix.os }} == "ubuntu-24.04" ]]; then
               path=`opengate_library_path.py -p site_packages`
-              export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
+              export LD_LIBRARY_PATH="${path}/opengate_core_rtion.libs":${LD_LIBRARY_PATH}
           fi
           if [[ ${{ matrix.os }} == "windows-2025" ]]; then
               path=`opengate_library_path.py -p site_packages`
-              export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
-              export PATH="${path}\\opengate_core.libs":${PATH}
+              export LD_LIBRARY_PATH="${path}/opengate_core_rtion.libs":${LD_LIBRARY_PATH}
+              export PATH="${path}\\opengate_core_rtion.libs":${PATH}
           fi
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
