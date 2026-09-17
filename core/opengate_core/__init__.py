@@ -7,13 +7,13 @@ import sys
 if os.name == "nt":
     os.environ["PATH"] = (
         os.path.abspath(
-            os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core.libs")
+            os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core_rtion.libs")
         )
         + os.pathsep
         + os.environ["PATH"]
     )
     os.add_dll_directory(
-        os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core.libs")
+        os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core_rtion.libs")
     )
 pathCurrentFile = os.path.abspath(__file__)
 if sys.platform == "win32":
