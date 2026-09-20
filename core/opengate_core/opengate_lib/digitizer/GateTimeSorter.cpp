@@ -14,12 +14,26 @@
 #include <memory>
 #include <utility>
 
+// Static variable that allows a time sorter to determine whether it is the most
+// upstream time sorter instance in the sequence of actors in the simulation.
+std::atomic<GateTimeSorter *> GateTimeSorter::sMostUpstreamInstance{nullptr};
+
 GateTimeSorter::GateTimeSorter(const std::string &name) : fName(name) {
   fNumWorkingThreads =
       std::max(1, G4Threading::GetNumberOfRunningWorkerThreads());
   fNumActiveWorkingThreads.store(fNumWorkingThreads);
   fMaxGlobalTimePerThread =
       std::make_unique<PaddedAtomicDouble[]>(fNumWorkingThreads);
+}
+
+GateTimeSorter::~GateTimeSorter() {
+  // Reset the static so that subsequent simulation runs can elect a new
+  // upstream instance. Without this, sMostUpstreamInstance would keep pointing
+  // to a destroyed object and the compare-and-swap (CAS) in IsFirstUpstream()
+  // would never succeed again (expected == nullptr would always fail).
+  GateTimeSorter *expected = this;
+  sMostUpstreamInstance.compare_exchange_strong(
+      expected, nullptr, std::memory_order_acq_rel, std::memory_order_relaxed);
 }
 
 void GateTimeSorter::Init(GateDigiCollection *input) {
@@ -129,19 +143,37 @@ void GateTimeSorter::SetMaxSize(size_t maxSize) {
   fMaxSize = maxSize;
 }
 
+void GateTimeSorter::SetBufferThreadSyncThreshold(size_t size) {
+  if (fProcessingStarted) {
+    Fatal("SetBufferThreadSyncThreshold() cannot be called after Ingest() has "
+          "been called.");
+  }
+  fThreadSync.activationThreshold = size;
+}
+
+void GateTimeSorter::SetThreadSyncEnabled(bool enabled) {
+  if (fProcessingStarted) {
+    Fatal("SetThreadSyncEnabled() cannot be called after Ingest() has "
+          "been called.");
+  }
+  fThreadSync.enabled = enabled;
+}
+
 void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
   // This method is intended to be called by an actor in its EndOfEventAction()
   // method. The work function provided by the actor may then be called for
   // downstream processing of the time-sorted digis.
-  // There are two stages:
+  // There are three stages:
   // 1. The time sorter ingests the digis that are provided by the actor by
   // copying them into an ingestion buffer. This ingestion must be synchronized
   // with a mutex, because all threads must copy their digis sequentially into
   // the same buffer.
-  // 2. The actual time-sorting, followed by the work provided by the actor,
+  // 2. From time to time, the threads in a multi-threaded simulation require
+  // synchronization to reduce memory consumption in the time sorter.
+  // 3. The actual time-sorting, followed by the work provided by the actor,
   // happens next when a certain number of ingestions has happened since the
   // previous time sorting. This condition avoid incurring the overhead of stage
-  // 2 after every ingestion of (typically very few) digis.
+  // 3 after every ingestion of (typically very few) digis.
 
   // Phase 1
 
@@ -151,6 +183,25 @@ void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
   }
 
   // Phase 2
+
+  // GlobalTime divergence between threads leads to increased memory consumption
+  // in the time sorter. A thread synchronization barrier reduces GlobalTime
+  // divergence by occasionally forcing the faster progressing threads to wait
+  // for the slower ones to catch up. The thread synchronization should be
+  // active in only one time sorter instance, to avoid deadlock. It should be
+  // active in the most upstream time sorter instance, since only there the
+  // GlobalTime observed by a thread is related to the primary events simulated
+  // by that same thread (digis may switch from one thread's input collection to
+  // another thread's output collection while being processed in the time
+  // sorter). The first time sorter to ingest at least one digi will be marked
+  // as the most upstream time sorter.
+
+  if (ThreadSyncRequired()) {
+    SetupBarrierIfNeeded();
+    WaitAtBarrierIfNeeded();
+  }
+
+  // Phase 3
 
   // If the number of ingestions has not yet reached the threshold, then
   // increment the counter and return.
@@ -174,7 +225,12 @@ void GateTimeSorter::OnEndOfEventAction(std::function<void(void)> work) {
                                                    std::memory_order_acquire,
                                                    std::memory_order_relaxed)) {
       Process(); // executes time-sorting logic
-      work();    // executes the work provided by the actor
+      if (ThreadSyncRequired()) {
+        fThreadSync.sortedIndicesSize.store(fSortedIndicesA->size(),
+                                            std::memory_order_release);
+        fThreadSync.barrierSetupAllowed.store(true, std::memory_order_release);
+      }
+      work(); // executes the work provided by the actor
       fProcessingOngoing.store(false, std::memory_order_release);
     }
   }
@@ -190,6 +246,12 @@ void GateTimeSorter::OnEndOfRunAction(
   // anyThreadWork.
   // lastThreadWork allows the calling actor to execute logic that is intended
   // to run after the GateTimeSorter has finalized all digi sorting.
+
+  if (ThreadSyncRequired()) {
+    // Disable thread synchronization at the end of a run.
+    fThreadSync.barrierBypassed.store(true, std::memory_order_release);
+    fThreadSync.barrierConditionVariable.notify_all();
+  }
   if (fNumActiveWorkingThreads.fetch_sub(1, std::memory_order_acq_rel) <= 1) {
     Process();
     Flush();
@@ -276,6 +338,127 @@ bool GateTimeSorter::Ingest() {
   }
 
   return true;
+}
+
+bool GateTimeSorter::IsFirstUpstream() {
+  // The most upstream time sorter is the one that has succeeded in replacing
+  // the nullptr value with its own this pointer.
+  if (fIsFirstUpstream.load(std::memory_order_relaxed)) {
+    return true;
+  }
+  // Once any instance is elected, there is no point retrying the CAS.
+  if (sMostUpstreamInstance.load(std::memory_order_relaxed) != nullptr) {
+    return false;
+  }
+  // Try to replace nullptr by the this pointer value and return true if it
+  // succeeded.
+  GateTimeSorter *expected = nullptr;
+  if (sMostUpstreamInstance.compare_exchange_strong(
+          expected, this, std::memory_order_acq_rel,
+          std::memory_order_relaxed)) {
+    fIsFirstUpstream.store(true, std::memory_order_release);
+    return true;
+  }
+  return false;
+}
+
+bool GateTimeSorter::ThreadSyncRequired() {
+  return fNumWorkingThreads > 1 && fThreadSync.enabled && IsFirstUpstream();
+}
+
+void GateTimeSorter::SetupBarrierIfNeeded() {
+  // * barrierSetupAllowed: set to true as soon as Process() has been executed
+  //     after all threads have reached the barrier, indicating that
+  //     sortedIndicesSize has been reduced.
+  // * barrierSetupClaimed: ensures that only one thread can set up the barrier.
+  // * barrierSetupComplete: indicates that the barrier is active.
+
+  auto &ts = fThreadSync;
+  // As soon as the number of buffered digis reaches the activation threshold,
+  // one thread activates the barrier.
+  if (ts.barrierSetupAllowed.load(std::memory_order_relaxed) &&
+      !ts.barrierSetupClaimed.load(std::memory_order_relaxed) &&
+      ts.sortedIndicesSize.load(std::memory_order_relaxed) >=
+          fThreadSync.activationThreshold) {
+    bool expected = false;
+    if (ts.barrierSetupClaimed.compare_exchange_strong(
+            expected, true, std::memory_order_acq_rel,
+            std::memory_order_relaxed)) {
+      // Determine the highest GlabalTime value across all threads.
+      auto maxIt = std::max_element(
+          fMaxGlobalTimePerThread.get(),
+          fMaxGlobalTimePerThread.get() + fNumWorkingThreads,
+          [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
+            return a.value.load() < b.value.load();
+          });
+      // Store target before the release on fBarrierSetupComplete so that
+      // threads that acquire fBarrierSetupComplete == true are guaranteed
+      // to see it.
+      const double maxTime = maxIt->value.load();
+      ts.barrierGlobalTimeTarget.store(maxTime, std::memory_order_relaxed);
+      ts.barrierSetupComplete.store(true, std::memory_order_release);
+    }
+  }
+}
+
+void GateTimeSorter::WaitAtBarrierIfNeeded() {
+  auto &ts = fThreadSync;
+  // If the barrier has been set up and this thread's GlobalTime has reached
+  // the current target value, then wait until every other thread has also
+  // reached it.
+  if (ts.barrierSetupComplete.load(std::memory_order_acquire)) {
+    const int tid = std::max(0, G4Threading::G4GetThreadId());
+    const double threadTime =
+        fMaxGlobalTimePerThread[tid].value.load(std::memory_order_relaxed);
+    const double targetTime =
+        ts.barrierGlobalTimeTarget.load(std::memory_order_acquire);
+
+    if (threadTime >= targetTime) {
+      std::unique_lock<std::mutex> cvLock(ts.barrierConditionVariableMutex);
+
+      // Re-check under lock: the barrier may have been released while we
+      // were between the outer fBarrierSetupComplete check and here.
+      if (ts.barrierSetupComplete.load(std::memory_order_relaxed)) {
+        const int generation =
+            ts.barrierGeneration.load(std::memory_order_relaxed);
+        const int numArrived =
+            ts.numThreadsAtBarrier.fetch_add(1, std::memory_order_relaxed) + 1;
+
+        if (numArrived >= fNumWorkingThreads) {
+          // Last thread to arrive: reset state and release all waiters.
+          ts.numThreadsAtBarrier.store(0, std::memory_order_relaxed);
+          ts.barrierSetupComplete.store(false, std::memory_order_relaxed);
+          ts.barrierSetupClaimed.store(false, std::memory_order_relaxed);
+          ts.barrierSetupAllowed.store(false, std::memory_order_relaxed);
+
+          // Reset sorting window to allow number of buffered digis to decrease
+          // in the next call to Process().  Do this before unlocking so woken
+          // threads see the updated value during Process().
+          auto [minIt, maxIt] = std::minmax_element(
+              fMaxGlobalTimePerThread.get(),
+              fMaxGlobalTimePerThread.get() + fNumWorkingThreads,
+              [](const PaddedAtomicDouble &a, const PaddedAtomicDouble &b) {
+                return a.value.load() < b.value.load();
+              });
+          fSortingWindow.store(fMinimumSortingWindow + maxIt->value.load() -
+                               minIt->value.load());
+
+          ts.barrierGeneration.fetch_add(1, std::memory_order_relaxed);
+          cvLock.unlock();
+          // Last thread has arrived so all can resume their work.
+          ts.barrierConditionVariable.notify_all();
+        } else {
+          // Park the thread until the barrier is released or the run ends.
+          // cvLock is already held; wait() releases it while parked.
+          ts.barrierConditionVariable.wait(cvLock, [&] {
+            return ts.barrierGeneration.load(std::memory_order_relaxed) !=
+                       generation ||
+                   ts.barrierBypassed.load(std::memory_order_relaxed);
+          });
+        }
+      }
+    }
+  }
 }
 
 void GateTimeSorter::Process() {
