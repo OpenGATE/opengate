@@ -32,17 +32,24 @@ Component Overview
 
 ``GateTimeSorter`` (``GateTimeSorter.h/.cpp``)
     A self-contained merge-sorter.  It is not a GATE actor but a helper object
-    owned by ``GateCoincidenceSorterActor``.  It manages several internal digi
-    collections (see `Data-Flow Diagram`_) and exposes three operations that
-    callers use via the higher-level wrappers ``OnEndOfEventAction()`` and
-    ``OnEndOfRunAction()``:
+    owned by a digitizer actor.  ``GateDigitizerDeadTimeActor``,
+    ``GateDigitizerPileupActor``, and ``GateCoincidenceSorterActor`` each have
+    their own ``GateTimeSorter`` instance, and several of these actors can be
+    chained one after another in the same digitizer pipeline.  It manages
+    several internal digi collections (see `Data-Flow Diagram`_) and exposes
+    operations that callers use via the higher-level wrappers
+    ``OnEndOfEventAction()`` and ``OnEndOfRunAction()``:
 
     * ``Ingest()``  — copies the calling thread's digis into a shared
       ingestion buffer.  Always mutex-protected; deliberately minimal.
+    * A thread-synchronization barrier (optional, see
+      `Phase 2 — Thread Synchronization Barrier`_) that periodically forces
+      threads to catch up with each other, bounding the memory growth caused
+      by ``GlobalTime`` divergence between threads.  Active only in the
+      *most upstream* ``GateTimeSorter`` instance of the pipeline.
     * ``Process()`` — sorts the buffered digis and drains the oldest ones to
-      the output collection.  Only one thread executes this at a time, and
-      only the thread currently tracking the highest ``GlobalTime`` is
-      selected (see `Phase 2 — Sorting and Output`_).
+      the output collection.  Only one thread executes this at a time,
+      selected via a compare-and-swap race (see `Phase 3 — Sorting and Output`_).
     * ``Flush()``   — drains all remaining sorted digis at end-of-run,
       without applying the sorting window.
 
@@ -113,6 +120,11 @@ memory-reclamation paths.
     |   swapped                                                          |
     +--------------------------------------------------------------------+
 
+Not shown above: between ``Ingest()`` and the drain step, the (optional)
+thread-synchronization barrier periodically shrinks ``fSortingWindow`` from
+the outside, which is what keeps ``fSortedCollectionA``/``fSortedIndicesA``
+bounded in the long run (see `Phase 2 — Thread Synchronization Barrier`_).
+
 
 GateTimeSorter: Design and Threading Model
 ------------------------------------------
@@ -142,7 +154,71 @@ window extension.  Threads therefore block each other for only a very short
 time.
 
 
-Phase 2 — Sorting and Output
+Phase 2 — Thread Synchronization Barrier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``GlobalTime`` divergence between threads is the main driver of memory growth
+in ``GateTimeSorter``: ``fSortingWindow`` extends to cover the full spread of
+``fMaxGlobalTimePerThread`` (see `The Sorting Window`_), and a wide window
+keeps digis buffered in ``fSortedCollectionA``/``fSortedIndicesA`` for longer.
+A thread-synchronization barrier bounds this growth by occasionally forcing
+threads that have progressed further to wait for the slower ones to catch up,
+which shrinks the observed divergence and, in turn, ``fSortingWindow``.
+
+This mechanism must run in only *one* place in the digitizer pipeline — if
+two chained actors both maintained a barrier, a thread parked at the
+downstream barrier could prevent another thread from ever reaching the
+upstream one, causing a deadlock.  It is therefore active only when all of
+the following hold, checked by ``ThreadSyncRequired()``:
+
+* the simulation is multi-threaded (``fNumWorkingThreads > 1``);
+* it is enabled by the user (``thread_sync_enabled``, default ``true``);
+* this instance is the *most upstream* ``GateTimeSorter`` in the pipeline —
+  determined by ``IsFirstUpstream()``, which has every constructed
+  ``GateTimeSorter`` race to replace the static
+  ``sMostUpstreamInstance`` pointer (initially ``nullptr``) with its own
+  ``this`` via CAS.  The first instance to ingest a digi wins the race and
+  every subsequent call short-circuits via a cached ``fIsFirstUpstream``
+  flag.  The destructor resets ``sMostUpstreamInstance`` back to ``nullptr``
+  if it still points to the instance being destroyed, so a new simulation run
+  can elect a fresh upstream instance.
+
+Each call to ``OnEndOfEventAction()`` (after ``Ingest()``) calls
+``SetupBarrierIfNeeded()`` followed by ``WaitAtBarrierIfNeeded()``:
+
+``SetupBarrierIfNeeded()``
+    Once ``fSortedIndicesA`` has grown to ``sorting_buffer_size`` digis
+    (``fThreadSync.activationThreshold``, default 50 000) since the barrier
+    was last released, one thread wins a CAS on ``barrierSetupClaimed``,
+    computes the highest ``GlobalTime`` currently reached by any thread
+    (``fMaxGlobalTimePerThread``), stores it as ``barrierGlobalTimeTarget``,
+    and publishes the barrier with a release store to ``barrierSetupComplete``.
+
+``WaitAtBarrierIfNeeded()``
+    Any thread whose own ``fMaxGlobalTimePerThread[tid]`` has already reached
+    ``barrierGlobalTimeTarget`` blocks on ``barrierConditionVariable`` until
+    every working thread has arrived.  The last thread to arrive resets the
+    barrier state (``numThreadsAtBarrier``, ``barrierSetupComplete``,
+    ``barrierSetupClaimed``, ``barrierSetupAllowed``), recomputes
+    ``fSortingWindow`` from the now much smaller spread of
+    ``fMaxGlobalTimePerThread`` — this is what actually lets
+    ``Process()`` drain more digis on the next call — advances
+    ``barrierGeneration``, and notifies all waiters.  Waiting threads recheck
+    their captured ``barrierGeneration`` value against the current one to
+    guard against spurious and lost wakeups.
+
+``barrierSetupAllowed`` is only set back to ``true`` once ``Process()`` has
+run after a barrier release (see below), which prevents a new barrier from
+being set up again at (approximately) the same target before the reduced
+``fSortingWindow`` has had a chance to take effect.
+
+At ``OnEndOfRunAction()``, before decrementing ``fNumActiveWorkingThreads``,
+the calling thread sets ``barrierBypassed`` and notifies all waiters, so that
+any thread still parked at the barrier when the run ends is released instead
+of deadlocking against threads that have already left the event loop.
+
+
+Phase 3 — Sorting and Output
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 After returning from ``Ingest()``, ``OnEndOfEventAction()`` increments the
@@ -170,6 +246,13 @@ If the CAS succeeds, the thread calls ``Process()`` and ``work()``:
 .. code-block:: cpp
 
     Process(); // executes time-sorting logic
+    if (ThreadSyncRequired()) {
+      // Publish the (now smaller) buffer size and re-allow a new barrier
+      // to be set up on a subsequent call.
+      fThreadSync.sortedIndicesSize.store(fSortedIndicesA->size(),
+                                          std::memory_order_release);
+      fThreadSync.barrierSetupAllowed.store(true, std::memory_order_release);
+    }
     work();    // actor lambda: ProcessTimeSortedSingles + DetectCoincidences
     fProcessingOngoing.store(false, std::memory_order_release);
 
@@ -223,8 +306,12 @@ thread observes a new maximum ``GlobalTime`` difference across threads:
                          + max(fMaxGlobalTimePerThread)
                          - min(fMaxGlobalTimePerThread))
 
-The window grows monotonically and never shrinks, so a temporary burst of
-thread divergence leaves a permanent safety margin.
+Outside of the barrier, the window grows monotonically and never shrinks, so
+a temporary burst of thread divergence leaves a permanent safety margin. The
+only place where ``fSortingWindow`` is reduced is the release of the
+thread-synchronization barrier (see `Phase 2 — Thread Synchronization Barrier`_),
+which recomputes it from the divergence observed *after* threads have caught
+up with each other.
 
 
 End of Run — Flush
@@ -248,7 +335,11 @@ reads and writes ``fIngestionBufferB``, ``fSortedCollectionA``,
 and ``fMostRecentTimeDeparted``
 **without holding any mutex**, and reads ``fSortingWindow`` via an atomic
 load (``fSortingWindow`` is ``std::atomic<double>`` because ``Ingest()``
-writes to it concurrently).  This section explains why that is safe.
+and the thread-synchronization barrier both write to it concurrently).  This
+section explains why that is safe.  The thread-synchronization barrier itself
+does use blocking primitives (a mutex and a condition variable); its
+thread-safety is discussed separately in
+`Thread-Safety of the Synchronization Barrier`_.
 
 
 Exclusive Ownership of ``fIngestionBufferB`` After the Swap
@@ -328,6 +419,45 @@ Concurrent access is safe because:
   store, immediately visible to any subsequent atomic load in ``Process()``.
 
 
+Thread-Safety of the Synchronization Barrier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Unlike the rest of ``GateTimeSorter``, the barrier (see
+`Phase 2 — Thread Synchronization Barrier`_) genuinely blocks threads using a
+mutex and a condition variable.  This is acceptable because it only runs in
+the single, most-upstream ``GateTimeSorter`` instance and only after a large
+number of digis has accumulated, so it is far off the per-event hot path.
+
+* **Upstream election.** ``sMostUpstreamInstance`` is a
+  ``std::atomic<GateTimeSorter *>``, initialised to ``nullptr``.  Every
+  instance's first call to ``IsFirstUpstream()`` races to CAS it from
+  ``nullptr`` to ``this``; the winner caches the result in
+  ``fIsFirstUpstream`` so later calls avoid the atomic entirely. The
+  destructor CASes the pointer back from ``this`` to ``nullptr``, but only if
+  it still holds this instance's address — protecting against a later
+  instance having already claimed the slot for a subsequent run.
+* **Single barrier setup per cycle.** ``barrierSetupClaimed`` is a
+  compare-and-swap gate: only the thread that flips it from ``false`` to
+  ``true`` computes ``barrierGlobalTimeTarget`` and publishes the barrier.
+  The release store to ``barrierSetupComplete`` happens after the target is
+  written, and every thread reads ``barrierSetupComplete`` with acquire
+  ordering before reading the target, so the target is always seen correctly
+  once the barrier is visible.
+* **No lost or spurious wakeups.** Waiting threads capture the current
+  ``barrierGeneration`` before parking and re-check it inside the condition
+  variable's predicate. Because the last thread to arrive increments
+  ``barrierGeneration`` under the same mutex used for waiting, a wakeup is
+  only acted upon once the generation has actually advanced (or the run has
+  ended, see below), which rules out both premature wakeups and wakeups lost
+  between the predicate check and the call to ``wait()``.
+* **No deadlock at end of run.** ``OnEndOfRunAction()`` sets
+  ``barrierBypassed`` and notifies all waiters before any thread decrements
+  ``fNumActiveWorkingThreads``. Waiting threads also wake up when
+  ``barrierBypassed`` becomes true, so a thread that reaches the barrier for
+  the last time it will ever call ``OnEndOfEventAction()`` cannot be left
+  parked forever.
+
+
 GateCoincidenceSorterActor: Consuming the Sorted Stream
 -------------------------------------------------------
 
@@ -335,7 +465,13 @@ GateCoincidenceSorterActor: Consuming the Sorted Stream
 (sorting window = ``fSortingTime``) and two ``TemporaryStorage`` objects
 (``fCurrentStorage`` and ``fFutureStorage``).  Each ``TemporaryStorage`` holds
 a ``GateDigiCollection`` of time-sorted singles together with the
-``GlobalTime`` of the earliest and latest digi it currently contains.
+``GlobalTime`` of the earliest and latest digi it currently contains.  It also
+forwards the user-facing ``thread_sync_enabled`` and ``sorting_buffer_size``
+parameters to the time sorter via ``SetThreadSyncEnabled()`` and
+``SetBufferThreadSyncThreshold()`` (see
+`Phase 2 — Thread Synchronization Barrier`_).  ``GateDigitizerDeadTimeActor``
+and ``GateDigitizerPileupActor`` expose the same two parameters and wire them
+up identically for their own ``GateTimeSorter`` instance.
 
 At each ``EndOfEventAction``, the actor passes a lambda to
 ``fTimeSorter->OnEndOfEventAction()``.  When the time sorter decides that the
@@ -395,14 +531,21 @@ Thread Lifecycle Summary
      - All workers
      - ``Ingest()`` — acquires ``fIngestionMutex`` briefly (copy, atomic store
        to per-thread max, occasional ``fSortingWindow`` extension).  Returns
-       early if no digis; otherwise increment ``fNumIngestions`` (relaxed
-       atomic).  If threshold reached: attempt CAS on ``fProcessingOngoing``
-       (atomic, non-blocking).  If CAS succeeds: ``Process()`` — acquires
-       ``fIngestionMutex`` for buffer swap only, then fully lock-free —
-       followed by actor lambda (lock-free).
+       early if no digis.  If this is the most-upstream, multi-threaded,
+       thread-sync-enabled time sorter: ``SetupBarrierIfNeeded()`` /
+       ``WaitAtBarrierIfNeeded()`` — one thread may configure the barrier
+       (CAS), then any thread that has reached the target ``GlobalTime`` may
+       block on a condition variable until all threads have arrived.
+       Otherwise increment ``fNumIngestions`` (relaxed atomic).  If threshold
+       reached: attempt CAS on ``fProcessingOngoing`` (atomic, non-blocking).
+       If CAS succeeds: ``Process()`` — acquires ``fIngestionMutex`` for
+       buffer swap only, then fully lock-free — followed by actor lambda
+       (lock-free).
    * - ``EndOfRunAction``
      - All workers
-     - Decrement ``fNumActiveWorkingThreads`` (atomic).  Last thread:
+     - If thread sync is active: set ``barrierBypassed`` and notify all
+       waiters, so no thread remains parked at the barrier.
+       Decrement ``fNumActiveWorkingThreads`` (atomic).  Last thread:
        ``Process()`` then ``Flush()`` (both single-threaded at this point)
        then ``lastThreadWork()``.
        All threads: ``anyThreadWork()``.
