@@ -6,15 +6,30 @@ GATE 10 has its own test runner (`opengate_tests`). It is **not** pytest. Each t
 standalone `testXXX_*.py` script that returns/prints a status; the runner executes them,
 collects results and writes a JSON dashboard.
 
+**Two prerequisites, both verified as easy to get wrong** (details in
+`skills/environment-setup`):
+
+1. **The environment must be the one the user designated** — `OPEN_GATE_ENV` from
+   `user_secrets.json` (root of the repo, git-ignored; see `skills/environment-setup` §0),
+   a non-volatile path — and it must be **activated**, not merely referenced by absolute
+   path. The runner shells out to the literal command `python <test>`; an un-activated venv
+   makes every single test fail with `ModuleNotFoundError: No module named 'opengate'`.
+2. **The environment must be consistent** — a stale compiled `opengate_core` fails at
+   import before the runner even starts (`skills/environment-setup` §4.6).
+
 ---
 
 ## 1. Entry point and where tests live
 
 ```bash
-opengate_tests [OPTIONS]      # console script -> opengate/bin/opengate_tests.py
+cd "$OPEN_GATE_REPO"                     # user's path, from user_secrets.json
+export OPEN_GATE_ENV="$(python3 -c 'import json;print(json.load(open("user_secrets.json"))["OPEN_GATE_ENV"])')"
+source "$OPEN_GATE_ENV/bin/activate"     # MUST activate — see environment-setup §3.1
+opengate_tests [OPTIONS]                 # console script -> opengate/bin/opengate_tests.py
 ```
 
-Tests: `opengate/tests/src/`, split into sub-directories:
+Tests: `$OPEN_GATE_REPO/opengate/tests/src/`, split into sub-directories (458 test files
+in this tree: 368 to run, 90 ignored):
 
 ```
 actors/ advanced_tests/ chemistry/ external/ geometry/ misc/ physics/ source/
@@ -39,31 +54,55 @@ From `opengate/bin/opengate_tests.py`:
 | `--print_last_test/-l` | Print the highest `testNNN` number and exit (useful for adding a new test). |
 | `--g4_version/-v` | Developer override for the Geant4 version string check, e.g. `-v v11.4.2`. |
 
-Examples:
+Examples (verified against this tree — see the `-t` path warning below):
 
 ```bash
-opengate_tests -t source/test008_dose_actor.py           # one test
-opengate_tests -t source/test008_dose_actor.py -t actors/test019_dose_actor_simple.py
-opengate_tests -i 15 -e 20                               # numeric slice
+opengate_tests -t actors/test008_dose_actor.py           # one test
+opengate_tests -t actors/test008_dose_actor.py -t misc/test011_mt.py
+opengate_tests -i 1 -e 12 -n 4                           # numeric slice, 4 processes
 opengate_tests -f                                        # only last-run failures
 opengate_tests -p sp -n 1                                # serial, deterministic, easy to debug
-opengate_tests -l                                        # highest test id
+opengate_tests -l                                        # highest test id (114 here)
 ```
 
-**Never** run the whole suite as a first move: it is long, needs many cores, downloads
-Geant4 + test data on first run, and the output is unreadable. Slice it.
+**`-t` paths are relative to `opengate/tests/src` and must include the subdirectory**
+(`actors/…`, `source/…`, `misc/…`). A path outside that folder aborts the whole run with
+`Exception: Explicit test paths must point inside the OpenGATE tests/src folder`, and a
+path that does not exist there aborts with `…were not found among available tests`. There
+is no `source/test008_dose_actor.py` — `test008_dose_actor.py` lives in `actors/`. Find
+the real path first:
+
+```bash
+find "$OPEN_GATE_REPO/opengate/tests/src" -name 'test008*.py'
+```
+
+**Activate the environment before running** — the runner spawns each test as the literal
+shell command `python <test path>` (`opengate/bin/opengate_tests_helpers.py`), so an
+un-activated venv makes every test fail with `ModuleNotFoundError: No module named
+'opengate'`. See `skills/environment-setup` §3.1.
+
+**Never** run the whole suite as a first move: it is long (458 test files here; 368 to
+run, 90 ignored), needs many cores, downloads Geant4 + test data on first run, and the
+output is unreadable. Slice it.
 
 ## 3. Running a single test standalone
 
-For interactive debugging, a test can be executed directly:
+For interactive debugging, a test can be executed directly (from `$OPEN_GATE_REPO`, with
+the environment activated):
 
 ```bash
-python opengate/tests/src/source/test008_dose_actor.py
+source "$OPEN_GATE_ENV/bin/activate"
+cd "$OPEN_GATE_REPO"
+python opengate/tests/src/actors/test008_dose_actor.py
 ```
 
 The script prints `OK`/error lines and may write into `opengate/tests/output/`. This is
 fine for debugging a single case, but **report suite results only from `opengate_tests`**,
 which is what CI runs and what the dashboard tracks.
+
+When invoked through the runner, each test's output is also captured to
+`opengate/tests/log/<test name>.log` (e.g. `opengate/tests/log/test008_dose_actor.log`),
+which is the fastest place to read a failure.
 
 ## 4. Interpreting results
 

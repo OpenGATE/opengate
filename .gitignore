@@ -83,5 +83,10 @@ opengate/tests/log
 a.txt
 *.so
 
+# --- LOCAL MACHINE CONFIG (never committed) ---
+# Per-machine absolute paths and credentials read by agents/humans.
+user_secrets.json
+user_secrets.*.json
+
 
 .clangd

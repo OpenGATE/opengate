@@ -26,6 +26,7 @@ Then open the specific skill you need from [`skills/`](skills/).
 | `core/setup.py`, `core/pyproject.toml` | Metadata + CMake build of `opengate_core`. |
 | `VERSION` | Single source of truth of the version; `opengate` requires `opengate-core==<same version>`. |
 | `AGENTS.md`, `skills/` | Agent instructions and skills (this directory). |
+| `user_secrets.json` | **Git-ignored, per-machine** absolute paths (`OPEN_GATE_REPO`, `OPEN_GATE_ENV`, `OPEN_GATE_DEPS`). Read by agents before building/running. Create it and ask the user for the values — see `skills/environment-setup` §0.1. |
 
 Two-package design: `opengate` (Python, fast to install) depends on `opengate_core`
 (C++, ships Geant4 + ITK binaries in the published wheels). A **developer install must
@@ -34,25 +35,32 @@ match local C++ changes.
 
 ## 2. Golden rules
 
-1. **Never run tests against a half-installed tree.** Use a dedicated virtual
-   environment and *always* run the suite via the `opengate_tests` entry point
-   (never bare `python testXXX.py` loops, never `pytest` — this repo uses its own runner).
-   See [`skills/environment-setup/SKILL.md`](skills/environment-setup/SKILL.md).
-2. **Submodules first.** `git submodule update --init --recursive` before building or
-   running tests. Missing `opengate/tests/data` = most tests fail for the wrong reason.
-3. **`--recurse-submodules` on clone**, `git lfs` must be installed (test data is large binary).
-4. **Formatting is enforced** by `pre-commit` (black for Python, clang-format for C++,
+1. **Never run tests against a half-installed tree.** Use the user-designated virtual
+   environment on **non-volatile** storage (`$OPEN_GATE_ENV`) and *always* run the suite
+   via the `opengate_tests` entry point (never bare `python testXXX.py` loops, never
+   `pytest` — this repo uses its own runner). Paths come from `user_secrets.json` (see
+   below); never invent them. See [`skills/environment-setup/SKILL.md`](skills/environment-setup/SKILL.md).
+2. **Machine-specific values live in `user_secrets.json`** at the root of the repo. It is
+   **git-ignored — never commit it**, never paste its contents into a committed file, test,
+   doc page or commit message. If it is missing, create it from the template in
+   [`skills/environment-setup/SKILL.md`](skills/environment-setup/SKILL.md) §0.1 **and ask
+   the user for the real values** (never guess a path).
+3. **Submodules first.** `git submodule update --init --recursive` in `$OPEN_GATE_REPO`
+   before building or running tests. Missing `opengate/tests/data` = most tests fail for
+   the wrong reason.
+4. **`--recurse-submodules` on clone**, `git lfs` must be installed (test data is large binary).
+5. **Formatting is enforced** by `pre-commit` (black for Python, clang-format for C++,
    trailing whitespace). Run it before committing — see [`skills/code-style/SKILL.md`](skills/code-style/SKILL.md).
-5. **Version bump = 3 places**: `VERSION` at root, and the release must republish both
+6. **Version bump = 3 places**: `VERSION` at root, and the release must republish both
    `opengate` and `opengate_core` (`opengate-core==10.1.1` is a hard pin in `setup.py`).
-6. **Never commit generated artifacts**: `opengate/tests/output*/`, `opengate/tests/log/`,
+7. **Never commit generated artifacts**: `opengate/tests/output*/`, `opengate/tests/log/`,
    `dist/`, `build/`, `*.egg-info`, images/root files (see `.gitignore`).
-7. **Keep `skills/status/found-bugs.md` up to date** whenever you discover a bug you do
+8. **Keep `skills/status/found-bugs.md` up to date** whenever you discover a bug you do
    not immediately fix, and `skills/status/task-list.md` when you plan/close work.
-8. **Do not run the whole suite casually**: it takes tens of minutes, downloads Geant4
+9. **Do not run the whole suite casually**: it takes tens of minutes, downloads Geant4
    data on first run, and needs ~all cores. Use `--start_id/--end_id`/`-t` filters.
-9. **Cite real evidence.** Do not claim a test passed unless you ran it (or read the CI
-   result). Do not invent Geant4/actor parameter names — grep the code and docs first.
+10. **Cite real evidence.** Do not claim a test passed unless you ran it (or read the CI
+    result). Do not invent Geant4/actor parameter names — grep the code and docs first.
 
 ## 3. Skills index
 
@@ -68,25 +76,39 @@ match local C++ changes.
 
 ## 4. Quick start (30-second version)
 
-```bash
-# 1. clone with submodules (git-lfs required)
-git clone --recurse-submodules https://github.com/OpenGATE/opengate
-cd opengate
+**Before anything else, get the machine's paths from `user_secrets.json`** (root of the
+repo, git-ignored). If it does not exist, create it from the template in
+[`skills/environment-setup/SKILL.md`](skills/environment-setup/SKILL.md) §0.1 and **ask the
+user for the real values**. The environment **must be on non-volatile storage** (not
+`/tmp`, a tmpfs, or a container layer): the C++ build and the downloaded Geant4 data take
+minutes and GBs and must survive a reboot. **Reuse an existing environment if one already
+works**; only create one when none does. `skills/environment-setup` §0 is machine-agnostic
+— it never hard-codes a path.
 
-# 2. dedicated env (see skills/environment-setup for the full, reliable path)
-python3 -m venv .venv && source .venv/bin/activate
-python -m pip install --upgrade pip
+```bash
+# 0. load the user's paths from user_secrets.json (create it first if missing)
+cd "$OPEN_GATE_REPO"
+export OPEN_GATE_ENV="$(python3 -c 'import json;print(json.load(open("user_secrets.json"))["OPEN_GATE_ENV"])')"
+
+# 1. submodules (git-lfs required)
+git lfs install && git submodule update --init --recursive
+
+# 2. environment — create only if no usable one exists (environment-setup §0.3–0.4)
+uv venv "$OPEN_GATE_ENV"            # or: python3 -m venv "$OPEN_GATE_ENV"
+source "$OPEN_GATE_ENV/bin/activate"
 
 # 3. Python package, editable (uses the pip-provided opengate_core wheel)
-python -m pip install -e .
+python -m pip install -e .         # uv env: VIRTUAL_ENV="$OPEN_GATE_ENV" uv pip install -e .
 
-# 4. smoke test (first run downloads Geant4 + test data — can take a while)
-opengate_tests -t source/test008_dose_actor.py
+# 4. smoke test — KEEP THE ENV ACTIVATED (the runner spawns `python <test>`),
+#    and the -t path is relative to opengate/tests/src INCLUDING the subdirectory
+#    (first run downloads Geant4 data on import — can take several minutes)
+opengate_tests -t actors/test008_dose_actor.py
 ```
 
 For anything involving `core/` (C++), Qt visualization, or a *reproducible* full-suite
 run, follow [`skills/environment-setup/SKILL.md`](skills/environment-setup/SKILL.md)
-which builds Geant4/ITK and `opengate_core` from source.
+which builds Geant4/ITK and `opengate_core` (ask the user for the deps prefix too).
 
 ## 5. Hierarchy of truth
 
