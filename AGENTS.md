@@ -78,6 +78,8 @@ match local C++ changes.
 
 ## 3. Skills index
 
+Map of the `skills/` directory: [`skills/README.md`](skills/README.md).
+
 | Skill | Use it when |
 | --- | --- |
 | [`skills/environment-setup/`](skills/environment-setup/SKILL.md) | You need a working virtual dev environment where **all tests** run (venv, Geant4/ITK, `pip install -e .`, optional extras). |
@@ -86,6 +88,7 @@ match local C++ changes.
 | [`skills/code-style/`](skills/code-style/SKILL.md) | Before every commit: formatting, naming, imports, docstrings. |
 | [`skills/architecture/`](skills/architecture/SKILL.md) | You add/modify engines, managers, actors, sources, physics — the object lifecycle in GATE 10. |
 | [`skills/documentation/`](skills/documentation/SKILL.md) | You add a user/developer guide page or build the Sphinx docs. |
+| [`skills/engineering/`](skills/engineering/) | You are acting in a role: `python-gate-developer`, `geant4-physics-expert`, `simulation-debugger`, `test-writer`. |
 | [`skills/status/`](skills/status/task-list.md) | You need the shared task list, the bug log, or the project status snapshot. |
 
 ## 4. Quick start (30-second version)

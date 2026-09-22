@@ -40,6 +40,7 @@ Columns: **id · status · area · task · evidence**.
 | T-016 | done | `AGENTS.md` | Encode the git safety rules: `master` is read-only for agents (sync only), every change on a fresh branch cut from the up-to-date local `master`, never commit without user approval. | `AGENTS.md` golden rules 1–2 and new §6 (sync, branch creation, rebase policy). |
 | T-017 | done | environment | Relink `opengate_core` against the rebuilt Geant4 v11.4.2 so the suite is CI-comparable. | Relink via `uv pip` succeeded; runner now prints `Geant4 version is OK`. First attempt failed (`python -m pip` on a `uv` venv). |
 | T-018 | done | `core/setup.py` | Remove the hardcoded `-j4` / `--parallel 4` and default to all cores, with an `OPEN_GATE_BUILD_JOBS` override. | See B-007. |
+| T-022 | done | `skills/README.md`, `skills/engineering/` | Add a skills README (map of the directory, role-vs-task split, conventions, how to add a skill) and four role-based engineering skills: `python-gate-developer.md`, `geant4-physics-expert.md`, `simulation-debugger.md`, `test-writer.md`. | `skills/README.md` added; `skills/engineering/` created; both listed in the `AGENTS.md` skills index and the `project-status.md` asset table. |
 
 ## Blocked
 
