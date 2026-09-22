@@ -35,31 +35,45 @@ match local C++ changes.
 
 ## 2. Golden rules
 
-1. **Never run tests against a half-installed tree.** Use the user-designated virtual
+1. **Never commit on `master`.** Do all work on a dedicated branch, and make sure it is
+   **based on the up-to-date local `master`** before you start (see §6). `master` must stay
+   byte-identical to upstream; if you find yourself on `master` with changes, move them to a
+   branch (`git switch -c <name>`) before doing anything else.
+2. **Never commit without explicit user approval.** Stage and show what would be committed,
+   then ask. Do not `git commit`, `git rebase`, `git push`, `git reset --hard` or otherwise
+   rewrite/advance history on your own initiative — the user validates the changes first.
+3. **Never run tests against a half-installed tree.** Use the user-designated virtual
    environment on **non-volatile** storage (`$OPEN_GATE_ENV`) and *always* run the suite
    via the `opengate_tests` entry point (never bare `python testXXX.py` loops, never
    `pytest` — this repo uses its own runner). Paths come from `user_secrets.json` (see
    below); never invent them. See [`skills/environment-setup/SKILL.md`](skills/environment-setup/SKILL.md).
-2. **Machine-specific values live in `user_secrets.json`** at the root of the repo. It is
+4. **Machine-specific values live in `user_secrets.json`** at the root of the repo. It is
    **git-ignored — never commit it**, never paste its contents into a committed file, test,
    doc page or commit message. If it is missing, create it from the template in
    [`skills/environment-setup/SKILL.md`](skills/environment-setup/SKILL.md) §0.1 **and ask
    the user for the real values** (never guess a path).
-3. **Submodules first.** `git submodule update --init --recursive` in `$OPEN_GATE_REPO`
+5. **Submodules first.** `git submodule update --init --recursive` in `$OPEN_GATE_REPO`
    before building or running tests. Missing `opengate/tests/data` = most tests fail for
    the wrong reason.
-4. **`--recurse-submodules` on clone**, `git lfs` must be installed (test data is large binary).
-5. **Formatting is enforced** by `pre-commit` (black for Python, clang-format for C++,
+6. **`--recurse-submodules` on clone**, `git lfs` must be installed (test data is large binary).
+7. **Formatting is enforced** by `pre-commit` (black for Python, clang-format for C++,
    trailing whitespace). Run it before committing — see [`skills/code-style/SKILL.md`](skills/code-style/SKILL.md).
-6. **Version bump = 3 places**: `VERSION` at root, and the release must republish both
+8. **Version bump = 3 places**: `VERSION` at root, and the release must republish both
    `opengate` and `opengate_core` (`opengate-core==10.1.1` is a hard pin in `setup.py`).
-7. **Never commit generated artifacts**: `opengate/tests/output*/`, `opengate/tests/log/`,
+9. **Never commit generated artifacts**: `opengate/tests/output*/`, `opengate/tests/log/`,
    `dist/`, `build/`, `*.egg-info`, images/root files (see `.gitignore`).
-8. **Keep `skills/status/found-bugs.md` up to date** whenever you discover a bug you do
-   not immediately fix, and `skills/status/task-list.md` when you plan/close work.
-9. **Do not run the whole suite casually**: it takes tens of minutes, downloads Geant4
-   data on first run, and needs ~all cores. Use `--start_id/--end_id`/`-t` filters.
-10. **Cite real evidence.** Do not claim a test passed unless you ran it (or read the CI
+10. **Do not let tests pollute the tree.** Running the suite can leave untracked files in
+    the repository root (e.g. `simulation.json`, see B-006). Check `git status` after every
+    run and remove them — never include them in a commit.
+11. **Keep `skills/status/found-bugs.md` up to date** whenever you discover a bug you do
+    not immediately fix, and `skills/status/task-list.md` when you plan/close work.
+12. **Distinguish repository bugs from environment issues.** A wrong Geant4/ITK version, a
+    stale compiled build or an un-activated venv is **not** a repo bug — fix the environment
+    (see `skills/environment-setup`). Only log a repository bug once the environment has been
+    proven correct.
+13. **Do not run the whole suite casually**: it takes tens of minutes, downloads Geant4
+    data on first run, and needs ~all cores. Use `--start_id/--end_id`/`-t` filters.
+14. **Cite real evidence.** Do not claim a test passed unless you ran it (or read the CI
     result). Do not invent Geant4/actor parameter names — grep the code and docs first.
 
 ## 3. Skills index
@@ -119,3 +133,68 @@ When sources disagree, trust them in this order:
 3. `.github/workflows/` (how the maintainers actually build & test);
 4. `docs/source/` (may lag behind, especially `DesignGuidelines.md` which is marked **OBSOLETE**);
 5. this file and `skills/` (may lag behind the code — fix them if you spot drift).
+
+## 6. Git workflow — do this before starting any work
+
+**`master` is read-only for agents.** Never commit, merge into, rebase onto, or push
+`master`. The only thing an agent may do with it is **sync it from the remotes**, and every
+change an agent makes must live on a **fresh branch based on the up-to-date local `master`**.
+
+This repo has two remotes; check yours with `git remote -v`:
+
+| Remote | Role |
+| --- | --- |
+| `origin` | the user's fork (where the agent's branches are pushed, only with user approval) |
+| `opengate` | upstream `OpenGATE/opengate` (the source of truth) |
+
+### 6.1 Sync (run at the start of every session and before creating a branch)
+
+```bash
+cd "$OPEN_GATE_REPO"
+
+# 1. never work on master: get off it first if you are on it
+[ "$(git branch --show-current)" = master ] && git switch -   # or: git switch <your-branch>
+
+# 2. update the local master from the remotes (fast-forward only, no history rewrite)
+git fetch origin
+git fetch opengate
+git switch master
+git merge --ff-only origin/master      # local master must match origin/master
+git merge --ff-only opengate/master    # and upstream (both should already be identical)
+```
+
+Verify all three are in sync — each count must be `0 0`:
+
+```bash
+git rev-list --left-right --count master...origin/master        # expect: 0  0
+git rev-list --left-right --count master...opengate/master      # expect: 0  0
+git rev-list --left-right --count origin/master...opengate/master  # expect: 0  0
+```
+
+If a `--ff-only` merge refuses, **stop and ask the user**: local `master` has diverged from
+upstream, and resolving that is the user's decision (do not rebase or reset it yourself).
+
+### 6.2 Create the branch — always fresh, always from master
+
+```bash
+git switch -c <type>-<short-topic> master     # e.g. fix-doseactor-scaling
+```
+
+Rules:
+
+- **One branch per task**, cut from the current `master` tip. Never reuse an old branch for a
+  new task, and never branch off another working branch.
+- If you are already on a branch, verify it is based on the *current* master tip before adding
+  commits:
+  ```bash
+  git merge-base --is-ancestor master HEAD && echo "based on master: OK"
+  git log --oneline master..HEAD          # your commits — should be only your own work
+  ```
+- If `master` has advanced since you branched, **rebase onto it** rather than merging:
+  ```bash
+  git rebase master        # only if the branch has no shared/upstream commits, and only
+                           # after telling the user — see golden rules
+  ```
+- **Never** `git push --force` to `master` or to a shared branch.
+- Commit only what your task needs; stage explicitly (`git add <paths>`), never `git add -A`
+  blindly.

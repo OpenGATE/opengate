@@ -112,7 +112,7 @@ Then answer three questions:
 2. **Is it for *this* repo?** `opengate.__file__` must resolve inside `$OPEN_GATE_REPO`
    (an editable install) — or the user must confirm a wheel install is intended.
 3. **Is it consistent?** Both packages present, same version as `VERSION`, and the
-   compiled `opengate_core` newer than the C++ sources (§3.3, §4.6).
+   compiled `opengate_core` newer than the C++ sources (§3.4, §4.6).
 
 If it passes all three, set `OPEN_GATE_ENV` to it and skip to §6/§7. If it fails, tell the
 user *which* check failed (and log it in `skills/status/found-bugs.md` if it looks like a
@@ -136,7 +136,13 @@ creating anything**. Never create an environment, a Geant4/ITK build, or the tes
 download inside a volatile directory.
 
 A `uv`-created environment has **no `pip`** (see §3.1); note which tool you used, since
-every install command below has two forms.
+every install command below has two forms. **Watch out**: the very first command that
+references an install (`python -m pip ...`) will fail with `No module named pip` and exit
+non-zero if you picked the wrong form — check the exit status, do not assume a silent
+`&&`-chained script succeeded.
+
+**Never put build logs or build outputs under `/tmp`** (volatile): write long-running
+build logs next to the environment or another user-provided non-volatile path.
 
 ---
 
@@ -252,7 +258,56 @@ command passes (`1/1`) on a correctly built environment.
 **imports `opengate`**, so it fails with the same stale-`opengate_core` traceback until
 the environment is consistent — it is not an independent health check.
 
-### 3.3 Version consistency check (do this after installing)
+### 3.3 Check the **Geant4** version too (an environment property, not a repo bug)
+
+Appendix: A wrong Geant4 version is an **environment problem** — the repository is fine;
+fix the environment. Before trusting any result, confirm the linked Geant4 matches the
+project's pin (`GEANT4_VERSION` in `.github/workflows/main.yml`, currently `v11.4.2`):
+
+```bash
+opengate_tests -l 2>&1 | head -5     # prints Detected / Required Geant4 version
+```
+
+Read it carefully — the runner only **warns**:
+
+```
+Detected Geant4 version: geant4-11-04 [MT]
+Required Geant4 version: v11.4.2
+11 4 2
+11 4 0
+Geant4 version is not ok. This means the environment is not completely up to date
+```
+
+Note Geant4's own encoding: **`geant4-11-04` means 11.4.0**; patch 2 is spelled
+`geant4-11-04-patch-02` (`G4VERSION_NUMBER 1142`). So a bare `geant4-11-04` is *not* the
+required 11.4.2 — it is the older 11.4.0. If you see `Geant4 version is not ok`, the
+environment is **not** equivalent to CI: tests may fail for environment reasons, and any
+physics-sensitive comparison is unreliable. **Fix the environment** (do not change the repo):
+update the Geant4 checkout to the pinned tag, rebuild it, then relink `opengate_core`
+(§4.1, §4.3, §4.6) before drawing conclusions from a failing suite.
+
+Diagnose which Geant4 you actually have:
+
+```bash
+cd <geant4-source>              # the checkout CMAKE_HOME_DIRECTORY points at
+git describe --tags            # e.g. 'v11.4.0' when the pin is v11.4.2
+grep '#define G4VERSION_NUMBER' source/global/management/include/G4Version.hh
+# 1140 -> 11.4.0 ; 1142 -> 11.4.2
+```
+
+This was a live finding on the current development environment (B-004 in
+`skills/status/found-bugs.md`, classified there as an environment issue): the linked
+Geant4 was 11.4.0 (`G4VERSION_NUMBER 1140`, `Geant4ConfigVersion.cmake` →
+`set(PACKAGE_VERSION "11.4.0")`, checkout at tag `v11.4.0`) while CI pins 11.4.2.
+The fix is `git fetch origin tag v11.4.2 && git checkout v11.4.2`, rebuild Geant4, then
+relink `opengate_core`.
+
+The check itself is also defective (B-005, a genuine repo bug): `get_required_g4_version()`
+reads a CI job name that does not exist and silently falls back to a hard-coded `v11.4.2`,
+so the "Required" line is not really coming from `main.yml`. Compare against `main.yml`
+yourself.
+
+### 3.4 Package version consistency check
 
 `uv pip list` / `pip list` must show both packages at the same version as `VERSION`,
 and both editable installs must point at your working tree:
@@ -327,6 +382,26 @@ still shows `v5.2.1`. Either works locally — use the CI version if you need to
 
 ### 4.3 `opengate_core` (C++ bindings)
 
+The build is driven by `core/setup.py` (setuptools + a custom `CMakeBuild`), **not** by
+scikit-build-core. Two things are worth knowing before you run it:
+
+1. **How Geant4/ITK are located.** `setup.py` reads `core/config.json` (git-ignored,
+   `.gitignore:61`) and passes `-DGeant4_DIR=<G4INSTALL>` / `-DITK_DIR=<ITKDIR>`. The file is
+   absent by default, in which case it passes those as **empty** values and CMake falls back
+   to discovering Geant4/ITK through `CMAKE_PREFIX_PATH` — which is why the command below sets
+   it. The explicit, recommended way is to create the file:
+
+   ```json
+   { "G4INSTALL": "$OPEN_GATE_DEPS/geant4.11-build", "ITKDIR": "$OPEN_GATE_DEPS/itk-build" }
+   ```
+
+   (real absolute paths, no `$VARS`). The `G4INSTALL` / `ITKDIR` *environment* variables are
+   also read, but **only as the defaults** — a present `config.json` overrides them.
+2. **Parallelism comes from `os.cpu_count()`.** `setup.py` passes `-j<cpu_count>` to
+   `cmake --build`, overridable with `OPEN_GATE_BUILD_JOBS=<n>` (e.g. to leave cores free).
+   Until B-007 was fixed this was hardcoded to `-j4`; if you are on an older commit, expect
+   only 4 jobs and add the override or build directly (below).
+
 ```bash
 cd "$OPEN_GATE_REPO/core"
 export CMAKE_PREFIX_PATH="$OPEN_GATE_DEPS/geant4.11-build/:$OPEN_GATE_DEPS/itk-build/:${CMAKE_PREFIX_PATH}"
@@ -336,7 +411,64 @@ python -m pip install -v -e .        # uv env: VIRTUAL_ENV="$OPEN_GATE_ENV" uv p
 
 On Windows use `;` as the `CMAKE_PREFIX_PATH` separator, not `:`.
 
-This runs CMake and compiles the module in place; the build tree lands in `core/build/`.
+The command creates (or reuses) `core/build/cmake.<platform>-<impl>-<pyver>/` and compiles
+the module in place. It **reuses the same directory across runs**, so most of the build is
+already incremental — but note `setup.py` always re-runs `cmake` first, which re-configures
+against whatever `Geant4_DIR`/`ITK_DIR` resolve to.
+
+#### Make repeat builds faster (ccache / ninja / ccmake)
+
+A cold compile is many minutes. Three supported speed-ups (all three tools were available on
+the reference machine — verify on yours first):
+
+```bash
+which ccache ccmake ninja
+```
+
+**Configuring/building the existing tree directly** is the most reliable speed-up: the cache
+survives between runs, so only changed translation units rebuild, and you control parallelism.
+This is also how to relink quickly after swapping Geant4/ITK (§4.6):
+
+```bash
+cd "$OPEN_GATE_REPO/core/build/cmake.linux-x86_64-cpython-3.14"   # adjust to your platform tag
+cmake -DGeant4_DIR="$OPEN_GATE_DEPS/geant4.11-build" \
+      -DITK_DIR="$OPEN_GATE_DEPS/itk-build" .          # pick up the new deps
+make -j $(nproc)                                          # incremental, all cores
+```
+
+**ccache** avoids recompiling identical translation units even after a clean build, and
+compliments the above. It must be enabled *before* configuring — a build with no compiler
+launcher ignores it entirely:
+
+```bash
+cd "$OPEN_GATE_REPO/core/build/cmake.linux-x86_64-cpython-3.14"
+cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache .
+make -j $(nproc)
+ccache -s          # hit rate should climb on subsequent builds
+```
+
+Verify whether ccache is actually wired in — an empty launcher means **no**, even when
+`ccache` is installed:
+
+```bash
+grep -E 'CMAKE_CXX_COMPILER_LAUNCHER|CMAKE_CXX_COMPILER:' "$OPEN_GATE_REPO"/core/build/cmake.*/CMakeCache.txt
+# CMAKE_CXX_COMPILER:STRING=/usr/bin/c++      <- no launcher: ccache unused
+```
+
+To make the launcher stick for the pip-driven build too, configure it once in the build
+directory (as above) and then re-run the pip install: the cached launcher is honoured when
+CMake reuses that directory.
+
+**Ninja** (`-G Ninja`) builds faster than Make and computes staleness more precisely, but it
+changes the recorded generator: only use it on a **fresh** build directory
+(`rm -rf "$OPEN_GATE_REPO"/core/build`) and expect one full compile.
+
+**ccmake** is a terminal UI for inspecting/editing the cache — handy to confirm
+`Geant4_DIR`/`ITK_DIR` after a change:
+
+```bash
+ccmake "$OPEN_GATE_REPO/core/build/cmake.linux-x86_64-cpython-3.14"   # c=configure g=generate t=advanced
+```
 
 ### 4.4 `opengate` (Python)
 
@@ -393,7 +525,19 @@ cd "$OPEN_GATE_REPO" && git log -1 --format=%cd   # compare with the source tree
 (`opengate/bin/opengate_tests_helpers.py`) only warns about the Geant4 version and checks
 the data folder, never the freshness of `opengate_core`.
 
-Fix (from `core/`), then re-run the smoke test:
+Fix (from `core/`), then re-run the smoke test. Use the **incremental** path (§4.3): the
+build tree already exists, so re-configuring and re-running `make` rebuilds only what changed
+— far faster than a fresh `pip install`, and it uses all cores instead of the pinned `-j4`:
+
+```bash
+cd "$OPEN_GATE_REPO/core/build/cmake.linux-x86_64-cpython-3.14"   # adjust platform tag
+cmake -DGeant4_DIR="$OPEN_GATE_DEPS/geant4.11-build" \
+      -DITK_DIR="$OPEN_GATE_DEPS/itk-build" .
+make -j $(nproc)
+```
+
+If the cache is missing or you also want the editable install refreshed, fall back to the
+full command:
 
 ```bash
 cd "$OPEN_GATE_REPO/core"
@@ -418,7 +562,7 @@ omitted if the cache already points at Geant4/ITK builds (check with
 `grep -E 'Geant4_DIR|ITK_DIR' "$OPEN_GATE_REPO"/core/build/*/CMakeCache.txt`).
 
 After the rebuild, also refresh `opengate` itself so the two versions match `VERSION`
-(§3.3), then confirm:
+(§3.4), then confirm:
 
 ```bash
 source "$OPEN_GATE_ENV/bin/activate"
@@ -497,7 +641,9 @@ opengate_tests -t actors/test008_dose_actor.py      # one fast, representative t
       real filesystem, not `tmpfs`).
 - [ ] `opengate.__file__` points into `$OPEN_GATE_REPO`.
 - [ ] `opengate_core.__file__` matches the install you intended (source build vs wheel).
-- [ ] Both packages report the same version as `VERSION` (§3.3); if not, refresh the
+- [ ] The **Geant4** version matches the CI pin (`opengate_tests -l | head -5`) — a
+      mismatch is only a warning, and it invalidates comparison with CI (§3.3, B-004).
+- [ ] Both packages report the same version as `VERSION` (§3.4); if not, refresh the
       install — a version-skewed editable `opengate_core` is the stale-`.so` case (§4.6).
 - [ ] `ls "$OPEN_GATE_REPO/opengate/tests/data"` is non-empty.
 - [ ] One targeted test passes (expect `1/1 … 'True'`).
@@ -515,7 +661,7 @@ True
 
 | Symptom | Cause / fix |
 | --- | --- |
-| `No module named pip` / no `bin/pip` | `uv`-created venv: use `uv pip` (§3.1). |
+| `No module named pip` / no `bin/pip` | `uv`-created venv: use `uv pip` (§3.1). Also the cause of a sweepingly red build log that contains no compiler error — always check the exit code. |
 | Every test fails with `ModuleNotFoundError: No module named 'opengate'`, including the auto-probe `misc/test001_g4threevector.py` | Venv not activated. The runner shells out to the literal command `python <test>` (§3.1). |
 | `AttributeError: module 'opengate_core' has no attribute 'Gate...Actor'` | Stale compiled extension — rebuild `opengate_core` (§4.6). |
 | `RuntimeWarning: … registry differs from the linked Geant4` | Same stale binary as above (§4.6) unless you genuinely edited the physics registry. |

@@ -7,6 +7,18 @@ whether to fix it now.
 This log is for *newly discovered* defects. Things already tracked upstream belong in
 GitHub issues — link them, do not duplicate their content.
 
+## Two categories — do not confuse them
+
+| Category | Meaning | Where it is fixed |
+| --- | --- | --- |
+| **Repository bug** | A defect in the code, tests, docs or CI of **this** project. | A commit in this repository. |
+| **Environment issue** | The local machine's setup is wrong or outdated (Geant4/ITK version, stale compiled build, missing extras, wrong venv). **Nothing in the repo is broken.** | Fix the environment — see `skills/environment-setup`. Do **not** "fix" the repo for it. |
+
+A failing or warning-laden run is **not** evidence of a repository bug until the environment
+has been proven correct (see the checklist in `skills/environment-setup`). Most confusing
+failures here are environment issues: a wrong Geant4 version, a stale compiled
+`opengate_core`, an un-activated venv.
+
 ---
 
 ## Entry template
@@ -14,8 +26,10 @@ GitHub issues — link them, do not duplicate their content.
 ```markdown
 ### B-NNN — <one-line summary>
 - **Status**: open | confirmed | workaround | fixing | fixed (commit) | wontfix
+- **Category**: repository bug | environment issue
 - **Severity**: blocker | high | medium | low
-- **Area**: e.g. `opengate/actors/doseactors.py`, `core/…`, `.github/workflows/…`
+- **Area**: e.g. `opengate/actors/doseactors.py`, `core/…`, `.github/workflows/…`,
+  or `<machine>/environment` for environment issues.
 - **Symptom**: what the user/agent sees (exact error message).
 - **Reproduce**: exact commands, minimal snippet, seeds.
 - **Environment**: commit hash, OS, Python, Geant4/ITK versions, dev env or wheel.
@@ -31,11 +45,22 @@ inline — quote the first error line and the failing assertion.
 
 ## Open
 
+### Repository bugs
+
 | id | severity | area | summary | status | related |
 | --- | --- | --- | --- | --- | --- |
-| B-001 | high | `core/` build / `skills/environment-setup` | Stale compiled `opengate_core` made `import opengate` fail with a misleading `AttributeError`; the test runner did not detect it. | fixed locally (rebuilt) — underlying UX gap still open | T-005, T-008 |
+| B-007 | medium | `core/setup.py` | The CMake build hardcoded a parallelism of **4** (`-j4` / `--parallel 4`), so a cold `opengate_core` build never used the machine's cores. | **fixed in this branch** | T-018 |
 | B-002 | medium | `opengate/bin/opengate_tests_helpers.py` | The runner hardcodes `python <test>` instead of `sys.executable`, so an un-activated venv fails all tests with `ModuleNotFoundError: opengate`. | confirmed, open | T-007 |
-| B-003 | low | `skills/` (our own docs) | The skills shipped a wrong `-t` example path (`source/test008_dose_actor.py`), a `pip`-only install recipe for a `uv` venv, and omitted the activation requirement. | fixed in this branch | T-006 |
+| B-005 | low | `opengate/bin/opengate_tests_helpers.py` | `get_required_g4_version()` reads `jobs.build_wheel.env.GEANT4_VERSION`, a job that **does not exist**, so the required version silently falls back to a hard-coded `v11.4.2`. | confirmed, open | T-013 |
+| B-006 | low | tests / `.gitignore` | A full-suite run leaves an untracked `simulation.json` in the repo root. | confirmed, open | T-015 |
+| B-001 | medium | `opengate/bin/opengate_tests_helpers.py` | `check_environment()` does not detect a stale `opengate_core` nor a missing venv activation, so a broken environment looks like hundreds of failing tests. | open (UX gap) | T-008 |
+| B-003 | low | `skills/` (our own docs) | The skills shipped a wrong `-t` example path, a `pip`-only install recipe for a `uv` venv, and omitted the activation requirement. | fixed in this branch | T-006 |
+
+### Environment issues (not repository bugs)
+
+| id | severity | area | summary | status | related |
+| --- | --- | --- | --- | --- | --- |
+| B-004 | high (for result validity) | local Geant4 build | The Geant4 checkout was at `v11.4.0` while the project pins `v11.4.2`, so the full-suite baseline was not CI-comparable. | **resolved** — Geant4 rebuilt at v11.4.2, `opengate_core` relinked; runner now prints `Geant4 version is OK` | T-012, T-017 |
 
 ---
 
@@ -45,6 +70,7 @@ inline — quote the first error line and the failing assertion.
 
 ### B-001 — Stale compiled `opengate_core` breaks `import opengate` with a misleading `AttributeError`
 - **Status**: fixed locally (rebuilt); the detection gap is still open (T-008)
+- **Category**: environment issue (stale local build) + repository UX gap (detection)
 - **Severity**: high (makes the entire suite unrunnable, with a message that misleads)
 - **Area**: `core/opengate_core/*.so` (build artefact) vs. `opengate/actors/digitizers.py`
 - **Symptom**:
@@ -68,6 +94,7 @@ inline — quote the first error line and the failing assertion.
 
 ### B-002 — Test runner hardcodes `python`, breaking un-activated venvs
 - **Status**: confirmed, open (T-007)
+- **Category**: repository bug (robustness), surfaced by an environment mistake
 - **Severity**: medium (opaque mass failure; trivially avoided once known)
 - **Area**: `opengate/bin/opengate_tests_helpers.py:344` (and `:381`)
 - **Symptom**: every test fails, including the automatic first-run probe:
@@ -90,12 +117,86 @@ inline — quote the first error line and the failing assertion.
 
 ### B-003 — Skill documents disagreed with the code in three places
 - **Status**: fixed in this branch
-- **Severity**: low (our own docs, but they cost real time to debug)
+- **Category**: repository bug (our own docs)
+- **Severity**: low (they cost real time to debug)
 - **Area**: `skills/environment-setup/SKILL.md`, `skills/running-tests/SKILL.md`, `AGENTS.md`
 - **Symptoms**: (1) the example `opengate_tests -t source/test008_dose_actor.py` aborts with `Exception: Explicit test paths must point inside the OpenGATE tests/src folder` — the file is `actors/test008_dose_actor.py`; (2) `python -m pip …` fails with `No module named pip` on a `uv`-created venv; (3) the activation requirement was not stated, which is what triggers B-002.
 - **Suspected cause**: written from reading the tree, not from running it. `-t` paths are resolved relative to `opengate/tests/src` **including** the subdirectory (`select_tests_by_explicit_paths`).
 - **Workaround / fix**: all three corrected this branch, each now citing the observed failure.
 - **Related**: T-006.
+
+### B-004 — [ENVIRONMENT, not a repo bug] Geant4 11.4.0 installed where CI pins 11.4.2
+- **Status**: open — must be fixed by upgrading the **local Geant4 build** (T-012)
+- **Classification**: **environment configuration issue, not a defect in this repository.**
+  The Geant4 checkout simply sits on an older release; no source change here is needed.
+- **Severity**: high *for the validity of local results* — a full-suite run in this
+  environment is not comparable with CI.
+- **Area**: the Geant4 source/build referenced by `$OPEN_GATE_DEPS`, linked into
+  `opengate_core`.
+- **Symptom**: every `opengate_tests` run prints the warning
+  `Geant4 version is not ok. This means the environment is not completely up to date`
+  (`Detected: geant4-11-04 [MT]`, `Required: v11.4.2`).
+- **Cause**: the Geant4 checkout is at tag **`v11.4.0`** (branch `geant4-11.4-release`, commit
+  `b4a16de652`, header `#define G4VERSION_NUMBER 1140`). Geant4 spells 11.4.0 as
+  `geant4-11-04` and patch 2 as `geant4-11-04-patch-02` (`G4VERSION_NUMBER 1142`), so the
+  detected string is correct and the build is genuinely one patch release behind.
+- **Fix**: update the Geant4 source to `v11.4.2`, rebuild it, then relink `opengate_core`
+  (see the environment guide for the build and relink steps).
+- **Note**: this was initially logged as a repository bug; it is not. Only B-005 below is an
+  actual code defect.
+- **Related**: T-012.
+
+### B-005 — Required Geant4 version is read from a non-existent CI job
+- **Status**: confirmed, open (T-013)
+- **Category**: repository bug (real code defect)
+- **Severity**: low (the hard-coded fallback happens to be correct today)
+- **Area**: `opengate/bin/opengate_tests_helpers.py`, `get_required_g4_version()`
+- **Symptom**: the function is supposed to read the pinned version from `main.yml`, but:
+  ```python
+  g4 = githubworfklow["jobs"]["build_wheel"]["env"]["GEANT4_VERSION"]
+  ```
+  raises `KeyError: 'build_wheel'` — the job names are `build_opengate_wheel`,
+  `build_opengate_core_wheel_pr`, … — so the `except`/fallback path returns the hard-coded
+  `"v11.4.2"` instead of the real CI pin. (Note the pre-existing typo `githubworfklow`.)
+- **Reproduce**: parse `.github/workflows/main.yml` and index `jobs.build_wheel.env`.
+- **Impact**: if CI's `GEANT4_VERSION` is bumped, the test runner keeps validating against
+  the stale literal, so the check can no longer protect the suite.
+- **Suggested fix**: read the **workflow-level** `env` block (`GEANT4_VERSION` at the top of
+  `main.yml`), which is where the pin actually lives, and keep the fallback.
+- **Related**: B-004, T-013.
+
+### B-006 — Full-suite run leaves an untracked `simulation.json` in the repository root
+- **Status**: confirmed, open (T-015)
+- **Category**: repository bug (test hygiene / missing ignore rule)
+- **Severity**: low (pollutes `git status`; risks being committed by accident)
+- **Area**: the test that serialises the simulation dump + `.gitignore`
+- **Symptom**: after a full `opengate_tests` run, `git status` reports an untracked
+  `simulation.json` at the repository root (a serialised simulation dump beginning
+  `{"user_info": {…}}`). `git check-ignore` does **not** match it, and the file is dated
+  during the run.
+- **Reproduce**: run `opengate_tests` from `$OPEN_GATE_REPO`, then `git status --short`.
+- **Impact**: an agent following "never commit generated artifacts" must notice it by hand;
+  otherwise it can slip into a commit.
+- **Suggested fix**: make the offending test write under `opengate/tests/output*/` (already
+  ignored), or add the produced filename to `.gitignore`.
+- **Related**: T-015.
+
+### B-007 — `core/setup.py` hardcoded a build parallelism of 4
+- **Status**: **fixed in this branch** (uncommitted at time of writing)
+- **Category**: repository bug
+- **Severity**: medium (build time, not correctness)
+- **Area**: `core/setup.py`, `CMakeBuild.build_extension()`
+- **Symptom**: `opengate_core` never compiled with more than 4 jobs, so a cold build took
+  many minutes even on a 16+ core machine; `make -j $(nproc)` in the build directory was
+  visibly faster than the supported `pip install -e .` path.
+- **Cause**: `build_args += ["--", "-j4"]` (Unix) and `build_args += ["--parallel", "4"]`
+  (Windows, non-Visual-Studio generator).
+- **Fix**: default to `os.cpu_count()`, overridable with `OPEN_GATE_BUILD_JOBS`. Both the Unix
+  and Windows branches now use the computed value.
+- **Verification**: the value is computed at build time; re-running a build should now spawn
+  `os.cpu_count()` compile processes. Confirm with `nproc` against the number of `cc1plus`
+  processes during a build.
+- **Related**: T-018, and `skills/environment-setup` §4.3.
 
 ---
 

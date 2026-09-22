@@ -37,10 +37,16 @@ not assumed. **Machine-specific absolute paths are not recorded here** — they 
 - **No `pip`** in a `uv` venv (`No module named pip`, no `bin/pip`): use `uv pip` with
   `VIRTUAL_ENV="$OPEN_GATE_ENV"`, or plain `python -m pip` on a stdlib venv.
 - **Both packages editable** at `$OPEN_GATE_REPO` and `$OPEN_GATE_REPO/core`.
-- **Geant4/ITK builds were reused, not rebuilt**: two pre-existing build trees under
-  `$OPEN_GATE_DEPS`, already the values of `Geant4_DIR` / `ITK_DIR` in
-  `core/build/cmake.linux-x86_64-cpython-3.14/CMakeCache.txt`. The from-scratch source
-  build (`skills/environment-setup` §4.1–4.2) was therefore **not** exercised (T-003).
+- **Geant4 now matches the pin**: the checkout was originally at `v11.4.0` (runner warned
+  `Geant4 version is not ok`); it was updated to tag `v11.4.2`, rebuilt, and `opengate_core`
+  relinked. The runner now reports **`Geant4 version is OK`**
+  (`geant4-11-04-patch-02`, `G4VERSION_NUMBER 1142`). This was an environment issue (B-004),
+  not a repository bug.
+- **Geant4/ITK builds were reused, not rebuilt from scratch**: two pre-existing build trees
+  under `$OPEN_GATE_DEPS`, which `core/config.json` does not pin (the file is absent, so
+  `setup.py` passes empty `Geant4_DIR`/`ITK_DIR` and CMake resolves them via
+  `CMAKE_PREFIX_PATH`). The from-scratch source build (`skills/environment-setup` §4.1–4.2)
+  was therefore **not** exercised (T-003).
 - **Geant4 data** downloads on the first `import opengate_core` into
   `core/opengate_core/geant4_data/` (6 archives, several minutes of apparent silence —
   not a hang).
@@ -62,8 +68,40 @@ the run).
 
 ## Last observed local run
 
-Not CI — a local run on the reference environment above, branch `agentic-skills`
-(commit `8f049324`), after rebuilding `opengate_core` (root cause in B-001):
+Not CI — a local run on the reference environment above, branch `agentic-skills`, after
+rebuilding `opengate_core` (root cause in B-001):
+
+### Full-suite baseline (368 tests, ~17.6 min)
+
+Command: `opengate_tests` (no filters), commit `8f049324`, log kept outside the repo in a
+non-volatile scratch dir. Result: **366/368 passed, 2 failed**.
+
+| Metric | Value |
+| --- | --- |
+| Tests available / run / ignored | 458 / **368** / 90 |
+| Passed | **366** |
+| Failed | **2** |
+| Dependency split | 354 in round 1, then 14 with mutual dependencies |
+| Wall time | 17.6 min |
+| Final summary line | `False` (i.e. not all passed) |
+| Per-test logs | `opengate/tests/log/*.log` |
+
+Failures:
+
+| Test | Time | Note |
+| --- | --- | --- |
+| `geometry/test102_gammex467.py` | 44.1 s | geometry; plausibly Geant4-version sensitive |
+| `geometry/test107_macaco1_mt.py` | 142.5 s | geometry + multithreaded |
+
+**Validity caveat**: this baseline was taken with the environment linking **Geant4 11.4.0**
+while the project pins **11.4.2** (B-004, an *environment* issue — see
+`skills/status/found-bugs.md`). Both failures are in geometry tests, the most likely place
+for a Geant4 patch-level difference to show up. The environment has since been corrected
+(Geant4 rebuilt at v11.4.2, `opengate_core` relinked, runner reports `Geant4 version is OK`),
+so the 2 failures are **unconfirmed** until the suite is re-run on the corrected environment
+(T-014). The 366 passes are reasonable evidence the tree is broadly healthy.
+
+### Targeted verification runs
 
 | Command | Result |
 | --- | --- |
@@ -77,8 +115,8 @@ single-test runs report a 2-test progression (`30` for `-i 1 -e 12` includes it)
 Two prerequisites were required and are easy to get wrong — the venv must be **activated**
 (B-002) and `opengate_core` must be **freshly compiled** (B-001).
 
-Not exercised locally: the torch / `gaga_phsp` / `pytomography` tests (T-009), the full
-~368-test run, Windows/macOS, and the from-scratch source build (T-003).
+Not exercised locally: the torch / `gaga_phsp` / `pytomography` tests (T-009), Windows/macOS,
+and the from-scratch source build (T-003).
 
 ## Test suite shape
 

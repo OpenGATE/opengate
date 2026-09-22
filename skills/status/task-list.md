@@ -30,12 +30,19 @@ Columns: **id · status · area · task · evidence**.
 | T-004 | todo | ops | Decide how generated session logs (`opengate/tests/log/`, `output_dashboard/`) are shared between agents without being committed. | — |
 | T-007 | todo | `opengate/bin/opengate_tests_helpers.py` | The runner hardcodes `python <test>` instead of `sys.executable`, so an un-activated venv fails every test opaquely. Consider using `sys.executable` (a `FIXME` already exists at line ~341). | See B-002. Needs a Windows-safe quoting approach per that comment. |
 | T-008 | todo | `opengate/bin/opengate_tests_helpers.py` | `check_environment()` does not detect a stale `opengate_core`; the suite reports 458 tests discovered and then every one fails. A version/`hasattr` preflight would fail fast. | See B-001. |
+| T-011 | todo | `skills/*`, `AGENTS.md` | Verify no absolute dev-machine path survives in any committed file. | `grep -rn "/Data/\|/home/" AGENTS.md skills/` must return only placeholders. |
+| T-013 | todo | `opengate/bin/opengate_tests_helpers.py` | `get_required_g4_version()` indexes the non-existent `jobs.build_wheel` and silently falls back to a literal; read the workflow-level `env.GEANT4_VERSION` instead. | See B-005. |
+| T-014 | todo | tests | Re-run the full suite on the corrected environment (Geant4 11.4.2) and confirm whether `geometry/test102_gammex467.py` and `geometry/test107_macaco1_mt.py` still fail. If they do, they become genuine repository bugs. | Baseline was 366/368 on Geant4 11.4.0; the 2 failures are unconfirmed. |
+| T-019 | todo | `core/setup.py` | Consider mirroring the parallelism fix into a documented env var for CI, and check whether `core/config.json` should be auto-created from `CMAKE_PREFIX_PATH` so the Geant4/ITK wiring is explicit. | See `skills/environment-setup` §4.3 and B-007. |
+| T-015 | todo | tests / `.gitignore` | A full-suite run leaves an untracked `simulation.json` in the repo root; make the test write to an ignored path or add an ignore rule. | See B-006. |
+| T-016 | done | `AGENTS.md` | Encode the git safety rules: `master` is read-only for agents (sync only), every change on a fresh branch cut from the up-to-date local `master`, never commit without user approval. | `AGENTS.md` golden rules 1–2 and new §6 (sync, branch creation, rebase policy). |
+| T-017 | done | environment | Relink `opengate_core` against the rebuilt Geant4 v11.4.2 so the suite is CI-comparable. | Relink via `uv pip` succeeded; runner now prints `Geant4 version is OK`. First attempt failed (`python -m pip` on a `uv` venv). |
+| T-018 | done | `core/setup.py` | Remove the hardcoded `-j4` / `--parallel 4` and default to all cores, with an `OPEN_GATE_BUILD_JOBS` override. | See B-007. |
 
 ## Blocked
 
 | id | status | area | task | blocker |
 | --- | --- | --- | --- | --- |
-| T-011 | todo | `skills/*`, `AGENTS.md` | Verify no absolute dev-machine path survives in any committed file. A grep for the local root is the acceptance test. | Run: `grep -rn "/Data/\|/home/" AGENTS.md skills/` — must return only placeholders. |
 | T-009 | blocked | tests | Run the optional-dependency tests (torch / gaga_phsp / pytomography). 90 of 458 files are ignored, plus 11 more for missing `torch`. | Those extras are not installed in the user's designated environment. |
 
 ## Archive (completed)
