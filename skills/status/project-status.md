@@ -93,13 +93,29 @@ Failures:
 | `geometry/test102_gammex467.py` | 44.1 s | geometry; plausibly Geant4-version sensitive |
 | `geometry/test107_macaco1_mt.py` | 142.5 s | geometry + multithreaded |
 
-**Validity caveat**: this baseline was taken with the environment linking **Geant4 11.4.0**
-while the project pins **11.4.2** (B-004, an *environment* issue — see
-`skills/status/found-bugs.md`). Both failures are in geometry tests, the most likely place
-for a Geant4 patch-level difference to show up. The environment has since been corrected
-(Geant4 rebuilt at v11.4.2, `opengate_core` relinked, runner reports `Geant4 version is OK`),
-so the 2 failures are **unconfirmed** until the suite is re-run on the corrected environment
-(T-014). The 366 passes are reasonable evidence the tree is broadly healthy.
+**Validity caveat — now resolved.** This baseline was taken with **two** environment faults,
+neither of which was a repository bug:
+
+1. **Geant4 11.4.0** instead of the pinned 11.4.2 (B-004) — since fixed by rebuilding Geant4
+   at v11.4.2 and relinking `opengate_core`; the runner now prints `Geant4 version is OK`.
+2. **A stale `opengate/tests/data` submodule**, four commits behind the pointer recorded in
+   this repo (B-009) — since fixed by `git submodule update --init`; the submodule is now at
+   `9fabbdddf`.
+
+**Both baseline failures were caused by fault 2 and are now green.** Re-run on the corrected
+environment (Geant4 11.4.2, correct submodule):
+
+```
+Running: geometry/test102_gammex467.py    OK   18.1 s
+Running: geometry/test107_macaco1_mt.py   OK   60.6 s
+Summary pass: 2/2 passed the tests
+True
+```
+
+Both logs end with “Great, tests are ok.”, including test107's physics assertion (FWHM within
+tolerance). **No repository bug was found.** So the 366/368 baseline should be read as an
+environment artifact, and a fresh full-suite run on the corrected tree is expected to be
+green (T-014).
 
 ### Targeted verification runs
 

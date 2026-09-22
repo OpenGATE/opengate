@@ -185,6 +185,29 @@ ls "$OPEN_GATE_REPO/core/external/pybind11" | head  # must not be empty
 ls "$OPEN_GATE_REPO/core/external/fmt" | head       # must not be empty
 ```
 
+### 2.1 Check the submodule is at the *recorded* commit, not just populated
+
+A populated submodule can still be **behind** the commit this repo pins, in which case
+reference data for some tests is missing and those tests fail with misleading comparison
+errors while the test-data folder looks fine. This produced the only two failures in the
+reference full-suite baseline (B-008/B-009). Compare the two hashes:
+
+```bash
+cd "$OPEN_GATE_REPO"
+echo "expected: $(git ls-tree HEAD opengate/tests/data | awk '{print $3}')"
+echo "actual  : $(git -C opengate/tests/data rev-parse HEAD)"
+```
+
+If they differ, fix it:
+
+```bash
+git submodule update --init --recursive opengate/tests/data
+```
+
+`git status` will **not** warn you: `git` does not track empty directories, and
+`utility.create_output_ref()` creates the reference folder with `exist_ok=True`, so a missing
+dataset leaves an empty directory behind rather than a clear error.
+
 ## 3. Fast path — Python development
 
 
@@ -645,7 +668,9 @@ opengate_tests -t actors/test008_dose_actor.py      # one fast, representative t
       mismatch is only a warning, and it invalidates comparison with CI (§3.3, B-004).
 - [ ] Both packages report the same version as `VERSION` (§3.4); if not, refresh the
       install — a version-skewed editable `opengate_core` is the stale-`.so` case (§4.6).
-- [ ] `ls "$OPEN_GATE_REPO/opengate/tests/data"` is non-empty.
+- [ ] `ls "$OPEN_GATE_REPO/opengate/tests/data"` is non-empty, **and** the submodule HEAD
+      matches `git ls-tree HEAD opengate/tests/data` (§2.1) — otherwise reference-data tests
+      fail confusingly.
 - [ ] One targeted test passes (expect `1/1 … 'True'`).
 - [ ] `pip list` / `uv pip list` recorded in your report if you are filing a bug.
 

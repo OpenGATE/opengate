@@ -48,7 +48,8 @@ inline — quote the first error line and the failing assertion.
 ### Repository bugs
 
 | id | severity | area | summary | status | related |
-| --- | --- | --- | --- | --- | --- |
+| --- | --- | --- |
+| B-008 | low | `opengate/tests/utility.py` | `create_output_ref()` creates the reference directory with `exist_ok=True`, so when the test-data submodule is behind, the directory exists but is empty and the test fails with a misleading comparison error instead of “reference data missing”. | confirmed, open | T-021 |
 | B-007 | medium | `core/setup.py` | The CMake build hardcoded a parallelism of **4** (`-j4` / `--parallel 4`), so a cold `opengate_core` build never used the machine's cores. | **fixed in this branch** | T-018 |
 | B-002 | medium | `opengate/bin/opengate_tests_helpers.py` | The runner hardcodes `python <test>` instead of `sys.executable`, so an un-activated venv fails all tests with `ModuleNotFoundError: opengate`. | confirmed, open | T-007 |
 | B-005 | low | `opengate/bin/opengate_tests_helpers.py` | `get_required_g4_version()` reads `jobs.build_wheel.env.GEANT4_VERSION`, a job that **does not exist**, so the required version silently falls back to a hard-coded `v11.4.2`. | confirmed, open | T-013 |
@@ -60,7 +61,8 @@ inline — quote the first error line and the failing assertion.
 
 | id | severity | area | summary | status | related |
 | --- | --- | --- | --- | --- | --- |
-| B-004 | high (for result validity) | local Geant4 build | The Geant4 checkout was at `v11.4.0` while the project pins `v11.4.2`, so the full-suite baseline was not CI-comparable. | **resolved** — Geant4 rebuilt at v11.4.2, `opengate_core` relinked; runner now prints `Geant4 version is OK` | T-012, T-017 |
+| B-004 | high (for result validity) | local Geant4 build | The Geant4 checkout was at `v11.4.0` while the project pins `v11.4.2`, so the full-suite baseline was not CI-comparable. | **resolved** — Geant4 rebuilt at v11.4.2, `opengate_core` relinked; runner prints `Geant4 version is OK` | T-012, T-017 |
+| B-009 | high (for result validity) | local `opengate/tests/data` submodule | The test-data submodule was checked out four commits behind the pointer recorded in the parent repo, so reference data for several tests was missing — producing the only 2 failures in the 366/368 baseline. | **resolved** — submodule updated to `9fabbdddf`; the same 2 tests now pass (`2/2`, `True`). Not a repository bug. | T-014, T-020 |
 
 ---
 
@@ -181,6 +183,32 @@ inline — quote the first error line and the failing assertion.
   ignored), or add the produced filename to `.gitignore`.
 - **Related**: T-015.
 
+### B-008 — Missing reference data looks like a failing test, not a missing dataset
+- **Status**: confirmed, open (T-021)
+- **Category**: repository bug (error-reporting quality)
+- **Severity**: low (misdiagnosis trap; the data itself is fine upstream)
+- **Area**: `opengate/tests/utility.py`, `create_output_ref()` (and the tests using it)
+- **Symptom**: with the test-data submodule behind, `geometry/test102_gammex467.py` fails
+  with a data-comparison error and `geometry/test107_macaco1_mt.py` fails on a missing
+  reference, even though nothing is wrong with the code or the Geant4 build. The log shows
+  the reference directory existing but empty:
+  ```
+  Exception: Error while reading the file 'output_ref/test102_gammex467/gammex467.mhd'
+  ```
+- **Reproduce**: check out `opengate/tests/data` at an older commit
+  (`git -C opengate/tests/data checkout 1f89d1f`) and run the two tests above.
+- **Root cause of the confusion**: `create_output_ref()` calls
+  `mkdir(parents=True, exist_ok=True)`, so a missing dataset yields a **present but empty**
+  directory rather than an obvious “reference data missing” state. Note `git` never tracks
+  empty directories, so `git status` inside the submodule looks clean too.
+- **Confirmed not a repository bug**: after `git submodule update --init opengate/tests/data`
+  (now at `9fabbdddf`), both tests pass — `Summary pass: 2/2`, `True`, logs ending with
+  “Great, tests are ok.”, including the test107 physics assertion
+  (FWHM within tolerance).
+- **Suggested improvement**: have the reference-data helper assert that the expected files
+  exist and raise a clear “reference data missing — update the submodule” error.
+- **Related**: B-009 (the environment cause), T-014, T-021.
+
 ### B-007 — `core/setup.py` hardcoded a build parallelism of 4
 - **Status**: **fixed in this branch** (uncommitted at time of writing)
 - **Category**: repository bug
@@ -215,7 +243,7 @@ Distinguish these from real bugs; they waste the most time:
 | Symptom | Likely cause | Check |
 | --- | --- | --- |
 | Import error for `opengate_core` | wrong venv / missing local build | `skills/environment-setup` §7 |
-| Many tests failing on missing input files | `opengate/tests/data` submodule not initialized | `ls opengate/tests/data` |
+| Many tests failing on missing input files | `opengate/tests/data` submodule not initialized **or behind the recorded pointer** (B-008/B-009) | `ls opengate/tests/data`; then `git submodule update --init --recursive` and compare `git -C opengate/tests/data rev-parse HEAD` with `git ls-tree HEAD opengate/tests/data` |
 | Import error for `torch` / `gaga_phsp` / `pytomography` | optional extras not installed | `skills/environment-setup` §5 |
 | `cannot allocate memory in static TLS block` | Geant4 TLS model | `skills/environment-setup` §4.5 |
 | Test passes alone, fails in the suite | resource contention (`-n all`) or test interdependence | rerun with `-p sp -n 1`, then with `-f` |

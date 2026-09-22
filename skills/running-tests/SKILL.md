@@ -108,6 +108,13 @@ which is the fastest place to read a failure.
 
 - The runner prints a summary; interleaved per-test logs appear on failure unless
   `--no_log_on_fail` is set.
+- Each test's full output is also written to `opengate/tests/log/<test name>.log` — the
+  fastest place to read a failure when the screen output is long.
+- **Before believing a failure, rule out the environment**: a stale `opengate/tests/data`
+  submodule, a wrong Geant4 version, or a stale `opengate_core` all produce failures that
+  look like code bugs (see `skills/environment-setup` §2.1, §3.3, §4.6). A reference-data
+  failure reads like `Error while reading the file 'output_ref/…'` — check the submodule
+  commit before anything else.
 - The JSON dashboard is written to `opengate/tests/output_dashboard/dashboard_output*.json`.
   Keys are test paths, values are `[status, ...]` — an empty/`""` status means "not run
   yet", which is exactly what `-f` reads to re-run failures.
