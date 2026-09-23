@@ -107,7 +107,26 @@ if __name__ == "__main__":
 - **Declare optional dependencies** in the docstring; the suite skips such tests when the extra
   is absent (e.g. 11 files are skipped for missing `torch`).
 
-## 7. Verify, and be honest about what you did not verify
+## 7. When you write a *scratch reproduction* (not a test), the same rules apply
+Triaging an upstream issue means writing a throwaway script. Treat it with the same suspicion as a
+test, because a broken scratch script looks exactly like the bug you are hunting — and it is the
+fastest way to log a **false** repository bug.
+
+- **Validate the harness against a known answer before using it.** Transmission through an *empty*
+  air world must be ~100 %; if your parallel beam gives 0 %, the bug is in your script. (Real
+  example: `direction.type = "beam2d"` with `sigma=[0,0]` is not a parallel beam — it recorded
+  1 of 50 000 primaries. `momentum` + `momentum=[0,0,1]` recorded 50 003 of 50 000.)
+- **Read the child process's traceback.** With `sim.run(start_new_process=True)` the parent often
+  reports only `The queue is empty. The spawned process probably died or crashed.`, while the real
+  cause (e.g. an invalid source config) is in the child's traceback.
+- **A clean exit is not a result.** `⚠️ Empty output, no particles stored` means zero recorded —
+  that is a harness signal, not evidence about the code under test.
+- **State the statistics** when you compare two configurations. A ratio computed from single-digit
+  counts (e.g. 2 vs 8 events) is noise; say so rather than reporting the ratio.
+- Full catalogue of these traps: [`simulation-debugger.md`](simulation-debugger.md) §5.1 and
+  [`gate-physics-expert.md`](gate-physics-expert.md) §4.1.
+
+## 8. Verify, and be honest about what you did not verify
 
 ```bash
 source "$OPEN_GATE_ENV/bin/activate"
@@ -124,7 +143,7 @@ opengate_tests -t <subdir>/testNNN_your_test.py -p mp   # must also work under m
   [`../environment-setup/geant4-itk.md`](../environment-setup/geant4-itk.md) §7) — do not
   weaken the assertion to accommodate a broken environment.
 
-## 8. Definition of done
+## 9. Definition of done
 
 - [ ] Correct subdirectory, next free `testNNN_` number, snake_case topic.
 - [ ] Demonstrated to fail without the change and pass with it.
@@ -133,4 +152,5 @@ opengate_tests -t <subdir>/testNNN_your_test.py -p mp   # must also work under m
 - [ ] Writes only to `opengate/tests/output*/`.
 - [ ] Passes under `-p mp`.
 - [ ] Runtime acceptable; optional deps documented.
+- [ ] Any scratch reproduction was validated against a known-case answer before its result was used.
 - [ ] The command and result quoted in your report — never "should pass".

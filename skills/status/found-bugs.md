@@ -56,6 +56,9 @@ inline — quote the first error line and the failing assertion.
 | B-006 | low | tests / `.gitignore` | A full-suite run leaves an untracked `simulation.json` in the repo root. | confirmed, open | T-015 |
 | B-001 | medium | `opengate/bin/opengate_tests_helpers.py` | `check_environment()` does not detect a stale `opengate_core` nor a missing venv activation, so a broken environment looks like hundreds of failing tests. | open (UX gap) | T-008 |
 | B-003 | low | `skills/` (our own docs) | The skills shipped a wrong `-t` example path, a `pip`-only install recipe for a `uv` venv, and omitted the activation requirement. | fixed in this branch | T-006 |
+| U-003 | medium | `opengate/managers.py`, `core/…/GateImageBox.h`, `core/…/GateVoxelSource.cpp` | Three upstream code defects **confirmed in the tree**: #1096 loguru `logger.remove()`, #800 Geant4 private-header include, #1032 latent `VoxelSource` double free. | confirmed, open upstream, not fixed here | T-032 |
+| U-006 | medium | `core/…/digitizer/GateDigiCollectionsRootManager.cpp`, `core/…/digitizer/GateDigiCollection.cpp` | Upstream #1143: **confirmed** serial ROOT write-out in MT — unlocked singleton, `SetNtupleMerging(true)` with the default 4000-entry basket, `AddNtupleRow` called per row. Performance-only, no wrong results. | confirmed, open upstream, not fixed here | T-032 |
+| U-009 | low | `opengate/tests/src/contrib/test075_siemens_cios_alpha.py`, `source/test044_pbs_rot_transl.py` | Upstream test-quality debt: #844 (test asserts nothing), #933 (failure misread as flakiness; not in the Linux CI set). | open upstream | T-032 |
 
 ### Environment issues (not repository bugs)
 
@@ -63,6 +66,31 @@ inline — quote the first error line and the failing assertion.
 | --- | --- | --- | --- | --- | --- |
 | B-004 | high (for result validity) | local Geant4 build | The Geant4 checkout was at `v11.4.0` while the project pins `v11.4.2`, so the full-suite baseline was not CI-comparable. | **resolved** — Geant4 rebuilt at v11.4.2, `opengate_core` relinked; runner prints `Geant4 version is OK` | T-012, T-017 |
 | B-009 | high (for result validity) | local `opengate/tests/data` submodule | The test-data submodule was checked out four commits behind the pointer recorded in the parent repo, so reference data for several tests was missing — producing the only 2 failures in the 366/368 baseline. | **resolved** — submodule updated to `9fabbdddf`; the same 2 tests now pass (`2/2`, `True`). Not a repository bug. | T-014, T-020 |
+
+### Upstream GitHub issues (triaged — see §"Upstream issue triage" below)
+
+| Upstream | title (short) | triage verdict | category | logged as |
+| --- | --- | --- | --- | --- |
+| [#1104](https://github.com/OpenGATE/opengate/issues/1104) | `source.start_time=0` silently overridden | **no longer reproduces — already fixed** | repository bug (fixed) | U-001 |
+| [#849](https://github.com/OpenGATE/opengate/issues/849) | Wrong interpolation in `GateGenericSource::UpdateActivityWithTAC` | **no longer reproduces — already fixed** | repository bug (fixed) | U-001 |
+| [#1059](https://github.com/OpenGATE/opengate/issues/1059) | `> 2^31` primaries crash mid-simulation | **already fixed** — `GetPlatformMaxPrimariesPerRun()` + warning + test098 | repository bug (fixed) | U-010 |
+| [#1107](https://github.com/OpenGATE/opengate/issues/1107) | Tubs vs Hexagon transmits ~25 % fewer photons | **NOT REPRODUCED** — ratio `1.0000` over 3 seeds | not a defect (as reported) | U-002 |
+| [#857](https://github.com/OpenGATE/opengate/issues/857) | `RepeatParametrisedVolume` deletes ROOT output files | **NOT REPRODUCED** — repeater is innocent | not a defect (as reported) | U-004 |
+| [#1035](https://github.com/OpenGATE/opengate/issues/1035) | `DigitizerHitsCollectionActor` ROOT file not finalized | **NOT REPRODUCED** — `End == size`, `uproot` reads `Hits;1` | not a defect (as reported) | U-004 |
+| [#1115](https://github.com/OpenGATE/opengate/issues/1115) | `ShieldingLIQMD_HP_EMZ` not working in 10.1.1 | **NOT REPRODUCED** — configures and runs on 10.1.1/Geant4 11.4.2 | not a defect (as reported) | U-006 |
+| [#1135](https://github.com/OpenGATE/opengate/issues/1135) | TLEDoseActor score spikes in 8-thread runs | **real race — fixed on master, in NO release tag** | repository bug (fixed on master) | U-006 |
+| [#1143](https://github.com/OpenGATE/opengate/issues/1143) | Mutex contention on ROOT write-out | **CONFIRMED present** — cause identified in the code | repository bug | U-006 |
+| [#800](https://github.com/OpenGATE/opengate/issues/800) | `GateImageBox.h` includes a Geant4 **private** header | **confirmed present in the tree** | repository bug | U-003 |
+| [#1032](https://github.com/OpenGATE/opengate/issues/1032) | `VoxelSource` potential double free in MT | **confirmed present in the tree** | repository bug | U-003 |
+| [#616](https://github.com/OpenGATE/opengate/issues/616) | `scale_itk_image` overrides the original ITK image | **confirmed fixed in the tree** (`array_from_image` = a copy) | repository bug (fixed) | U-005 |
+| [#1145](https://github.com/OpenGATE/opengate/issues/1145) | PET crosstalk not implemented in Python | **confirmed: not in the tree** (feature gap) | feature request | U-007 |
+| [#1096](https://github.com/OpenGATE/opengate/issues/1096) | `logger.remove()` kills the user's loguru handlers | **confirmed present in the tree** | repository bug | U-003 |
+| [#942](https://github.com/OpenGATE/opengate/issues/942) | `Cannot import opengate_core` (missing Qt6 .so) | **environment / packaging issue** | environment issue | U-008 |
+| [#938](https://github.com/OpenGATE/opengate/issues/938) | same Qt6 `cannot open shared object file`, `[novis]` does not help | **environment / packaging issue** | environment issue | U-008 |
+| [#1000](https://github.com/OpenGATE/opengate/issues/1000) | ITK build fails on Linux with GCC 15 | **environment/doc gap** (`geant4-itk.md`) | environment issue | U-008 |
+| [#844](https://github.com/OpenGATE/opengate/issues/844) | `test075_siemens_cios_alpha.py` is not a proper test | **confirmed** (test does not assert) | repository bug (tests) | U-009 |
+| [#933](https://github.com/OpenGATE/opengate/issues/933) | flakiness on `source/test044_pbs_rot_transl.py` | **open upstream, test design** | repository bug (tests) | U-009 |
+| [#1141](https://github.com/OpenGATE/opengate/issues/1141) | “Geant4 version is not ok” on `opengate_tests` | **already known — this is B-004/B-005** | environment + runner bug | B-004, B-005 |
 
 ---
 
@@ -239,6 +267,263 @@ inline — quote the first error line and the failing assertion.
   exist and raise a clear “reference data missing — update the submodule” error.
 - **Related**: B-009 (the environment cause), T-014, T-021.
 
+### U-001 — Upstream start-time / TAC-interpolation bugs are already fixed in this tree
+- **Status**: verified fixed — nothing to do, **do not re-log as open**
+- **Category**: repository bug (already resolved upstream in this tree)
+- **Upstream**: [#1104](https://github.com/OpenGATE/opengate/issues/1104) and
+  [#849](https://github.com/OpenGATE/opengate/issues/849) — both still shown **open** on GitHub,
+  so they look like live defects; they are not.
+- **Area**: `opengate/sources/base.py` `SourceBase.initialize_start_end_time` (line 117), and
+  `core/opengate_core/opengate_lib/GateGenericSource.cpp` `UpdateActivityWithTAC` (line 108).
+- **What the report says**: (a) #1104 — `if not self.start_time:` treats `start_time = 0.0` as
+  unset, so every job of a split simulation resets the decay clock to its own run start.
+  (b) #849 — the TAC bin index is one too high and the two interpolation weights are swapped.
+- **Checked in the current tree** (`996572b64`): `base.py:117` reads `if self.start_time is None:`
+  — exactly the fix #1104 asks for (`git log -L 112,121:opengate/sources/base.py` → commit
+  `100401286` “Fix start_time/stop_time default handling in SourceBase”). `GateGenericSource.cpp`
+  now clamps with `if (i == 0) { fActivity = fTAC_Activities[0]; return; }`, then `i -= 1`
+  (the “move to the lower bin edge” correction) and weights
+  `fTAC_Activities[i] * (t[i+1]-time)/dt + fTAC_Activities[i+1] * (time-t[i])/dt` — the same
+  algebra as the “GOOD INTERPOLATION” in the report.
+- **Action**: nothing in the repo. The upstream issues can be closed; the *only* reason to touch
+  them here is the `end_time` sibling, which was fixed in the same commit.
+- **Related**: —
+
+### U-002 — `Tubs` vs area-matched `Hexagon` transmission gap: **NOT REPRODUCED**
+- **Status**: **dismissed as reported** — my controlled reproduction gives ratio **1.0000**
+- **Category**: not a defect (on the evidence available here)
+- **Severity**: n/a (was logged as high if real; the measurement below says it is not real)
+- **Upstream**: [#1107](https://github.com/OpenGATE/opengate/issues/1107) (opened 2026-07-28,
+  OpenGATE 10.1.0, Python 3.10, Ubuntu 22.04)
+- **What the report claims**: two holes of *exactly* matched open cross-sectional area
+  (0.5261 mm²), one `Tubs` one `Hexagon`, in tungsten; a parallel 140 keV beam gives 10.69 % vs
+  8.02 % transmission under normal incidence (ratio 0.750, expected ≈ 1.0), stable at ~0.73–0.75
+  across 9 isolation variants.
+- **What I ran** (commit `996572b64`, Geant4 11.4.2, Python 3.12, macOS x86_64, 1 thread):
+  a boolean `Box(G4_W) − hole` for each shape, each hole sized **from the same target area**
+  (`Tubs` `rmax = sqrt(A/pi) = 0.40922 mm`; `Hexagon` circumradius `0.45 mm`, i.e. across-flats
+  `0.77942 mm`), a **true parallel beam** along +Z (`direction.type = "momentum"`,
+  `momentum = [0,0,1]`), and a `PhaseSpaceActor` on a 10×10 mm plane immediately behind the block.
+- **Result**: `tubs = 500032`, `hex = 500026` out of 500 000 primaries each → **ratio 1.0000**.
+  Re-run with seeds 1, 2 and 3: **ratio 1.0000 each time**. No gap of any size, let alone 25 %.
+- **Harness validation** (mandatory — see U-004's note): the same beam through an *empty* air
+  world transmits ~100 % (50 003/50 000), so the 0.0 % failures I first saw were my own bug, not
+  the code's. The final numbers come from a harness that passes that check.
+- **Likely explanation of the original report**: the reporter's `Hexagon` radius convention.
+  GATE's `Hexagon.radius` is the **circumradius**; using it as the across-flats changes the open
+  area by a factor of **3**. Alternatively their beam was not truly parallel (see
+  [`engineering/gate-physics-expert.md`](../engineering/gate-physics-expert.md) §4.1 — `beam2d`
+  with `sigma=0` is *not* a parallel beam). Either way the effect is in the *setup*, not in
+  `G4Tubs`/`G4Polyhedra` construction.
+- **Caveat**: I did not run the reporter's attached script and did not reproduce their exact
+  9-variant lattice. My conclusion covers the *geometric* claim (equal-area holes transmit
+  equally), which is what the issue is about.
+- **Related**: [`engineering/gate-geometry-expert.md`](../engineering/gate-geometry-expert.md) §4.2
+  (the area formulas and the circumradius trap).
+
+### U-003 — Three upstream code defects confirmed in the tree (not fixed here)
+- **Status**: confirmed present at commit `996572b64`; **not fixed in this change** (out of scope)
+- **Category**: repository bug
+- **Severity**: [#1096](https://github.com/OpenGATE/opengate/issues/1096) medium (silently
+  discards the *user's* logging), [#800](https://github.com/OpenGATE/opengate/issues/800) medium
+  (blocks source builds without Geant4 private headers), [#1032](https://github.com/OpenGATE/opengate/issues/1032)
+  medium (latent double free, MT-only)
+- **Confirmed here**:
+  - [#1096](https://github.com/OpenGATE/opengate/issues/1096) — `_setter_hook_verbose_level` calls
+    a bare `logger.remove()` (`opengate/managers.py:1772`) when `log_handler_id == -1`. Loguru's
+    `remove()` with no argument removes **every** handler, including handlers the user added
+    themselves, so `logger.add('run.log')` is silently dropped on the first simulation. The fix is
+    to remove only the id GATE itself added (it already does this in the `else` branch, line 1776).
+  - [#800](https://github.com/OpenGATE/opengate/issues/800) — `core/opengate_core/opengate_lib/GateImageBox.h:35`
+    has `#include <private/G4OpenGLSceneHandler.hh>`, a Geant4 **internal** header that is not
+    installed by a normal Geant4 installation. It is guarded by `USE_VISU`/`G4VERSION_NUMBER`,
+    so a no-visu build is unaffected, but any build enabling Qt/OpenGL against a stripped Geant4
+    fails. Reported as breaking builds; no in-tree workaround.
+  - [#1032](https://github.com/OpenGATE/opengate/issues/1032) — `GateSingleParticleSource`'s
+    destructor `delete`s `fPositionGenerator`, and `GateVoxelSource.cpp` hands it a
+    `fVoxelPositionGenerator` via `SetPosGenerator`, which the caller still owns. Benign only
+    while that destructor never runs on a worker thread — i.e. a latent double free, not yet a
+    crash. Upstream labels it `bug`.
+- **Action**: not fixed here. Each needs its own branch, a test that fails first, and (for #800)
+  a confirmed skip-if-no-private-headers path.
+- **Related**: this is the same *class* as the local-logging work in
+  [`engineering/simulation-debugger.md`](../engineering/simulation-debugger.md).
+  ([#1059](https://github.com/OpenGATE/opengate/issues/1059) was in this group and is now
+  **fixed** — see U-010.)
+
+### U-004 — Two upstream actor-output claims: **NOT REPRODUCED**
+- **Status**: **both dismissed as reported** at commit `996572b64`
+- **Category**: not a defect (on the evidence available here)
+- **Severity**: n/a (were logged as high if real)
+- **Upstream**: [#857](https://github.com/OpenGATE/opengate/issues/857) (opened 2025-12-04) and
+  [#1035](https://github.com/OpenGATE/opengate/issues/1035) (opened 2026-05-23).
+- **What they claim**:
+  - #857 — merely *constructing* a `RepeatParametrisedVolume` (never added to the volume manager)
+    causes every digitizer `.root` file to be deleted at the end of the run, while `stat.txt`
+    survives.
+  - #1035 — a `DigitizerHitsCollectionActor` `.root` file is left **unfinalized** (ROOT header
+    `End == 252`, `uproot.open(f).keys() == []`) with a complex phantom and/or several modules.
+- **#857 — what I ran**: the reporter's own two-case script (with and without the
+  `RepeatParametrisedVolume(...)` construction line), each writing to its own temp dir.
+  **Result: the ROOT file was absent in BOTH cases** — so the repeater is *not* the cause.
+  The real reason was that the source (a 100 kBq point source in a 1 m air world) produced **zero
+  hits** in the 10 cm detector, and GATE then reports
+  `⚠️ Empty output, no particles stored in …root` and correctly writes no file. Once the source
+  actually irradiates the detector, the `.root` file is produced and readable
+  (`uproot keys: ['Hits;1']`). **The repeater does not delete anything.**
+- **#1035 — what I ran**: a NEMA-like phantom (water cylinder + 22 mm sphere) plus a 35×5×315 mm
+  CZT module, a 140.5 keV source inside the phantom, **2 threads** and 20 000 primaries, exactly
+  the trigger conditions reported. **Result: the file is correctly finalized** — ROOT header
+  `End` equals the file size (not 252) and `uproot.open(...).keys()` returns `['Hits;1']`.
+  **Not reproduced.**
+- **Honest caveat**: #1035's reporter sees the failure only in *their* larger geometry (more
+  modules / more primaries). My reduced case is a faithful trigger but not a bit-for-bit copy of
+  theirs, so I can say "not reproduced here" — not "impossible".
+- **Harness note (this is why the section exists)**: my first #857 attempt produced exactly the
+  symptom the issue describes — *no ROOT file* — and it was **my own harness**, not the code. Only
+  after validating the harness (does the same beam deposit energy in the detector at all?) did the
+  real picture appear. The traps I hit are now catalogued in
+  [`engineering/simulation-debugger.md`](../engineering/simulation-debugger.md) §5.1.
+- **Note on the related closed issues**: `#1034`/`#1033` (same title as #1035) and `#1109` (“Actor
+  on Repeated Volume…”) were all closed as completed, so this area has changed since the reports.
+- **Related**: B-006 (another “test leaves/takes files” hygiene bug), T-015.
+
+### U-005 — `scale_itk_image()` aliasing: **already fixed in the tree**
+- **Status**: **fixed** — the code now takes a copy, which is what the issue asked for
+- **Category**: repository bug (already resolved)
+- **Severity**: n/a
+- **Upstream**: [#616](https://github.com/OpenGATE/opengate/issues/616)
+- **Checked in the tree**: `opengate/image.py:361` — `scale_itk_image` now starts with
+  `imgarr = itk.array_from_image(img)`, i.e. a **copy**; the report's premise
+  (`array_view_from_image`, which aliases) no longer holds. The neighbouring functions remain
+  inconsistent — `add_constant_to_itk_image` (line 408) explicitly `.copy()`s a view, while
+  `divide_itk_images` (line 377) uses two views without copying — but a divide writes to a *new*
+  output image, so it is not an aliasing bug.
+- **Action**: nothing here. The reporters said they would open the PR; upstream can close it.
+- **Related**: —
+
+### U-006 — Physics/performance claims: one dismissed, two resolved via upstream analysis
+- **Status**: #1115 **NOT REPRODUCED**; #1135 **explained & fixed on master**; #1143 **confirmed present, cause identified**
+- **Category**: #1115 not a defect; #1135 a real race, **already fixed in this tree**; #1143 a real
+  design issue, **still present**
+- **Upstream**: [#1115](https://github.com/OpenGATE/opengate/issues/1115),
+  [#1135](https://github.com/OpenGATE/opengate/issues/1135),
+  [#1143](https://github.com/OpenGATE/opengate/issues/1143)
+- **#1115 — what I ran**: `ShieldingLIQMD_HP_EMZ` (and `ShieldingLIQMD_HP`, `Shielding_HP_EMZ`,
+  `Shielding_EMZ`) as `sim.physics_manager.physics_list_name`, then a full 1-thread run
+  (20 mm air world, 1 MeV gammas, 1000 primaries) on **GATE 10.1.1 + Geant4 11.4.2**. All four
+  configured, initialized and ran to completion; the baseline `G4EmStandardPhysics_option4` behaved
+  identically. **Not reproduced** on the pinned Geant4.
+- **#1135 — resolved by reading the issue thread, not by re-running it**: the maintainers' comments
+  identify the cause as **thread races in the TLE bookkeeping** (`GateTLEDoseActor` accumulating
+  per-thread partial sums), producing rare *upward* spikes in individual voxels while the co-scored
+  `DoseActor` (a different accumulation path) stays clean. It was **fixed on `master`** by commit
+  `a92a62bf1` (“fix thread race issue”).
+- **#1135 — verified in this tree**: `git cat-file -t a92a62bf1` → commit, and
+  `git merge-base --is-ancestor a92a62bf1 HEAD` → **true**, so the fix **is present here**
+  (64 commits after it). The fix is real and inspectable: the racy shared
+  `fLastEnergy`/`fLastMu` members were replaced by **`thread_local` caches** — see
+  `core/opengate_core/opengate_lib/GateMaterialMuHandler.cpp:69-71`
+  (`thread_local … lastHandler / lastCouple / lastTable`).
+- **#1135 — the caveat that matters most**: `git tag --contains a92a62bf1` returns **nothing**;
+  the newest release tag is `10.1.1` and it does **not** contain the fix. So “I am on 10.1.1 and
+  still see the spikes” is expected, and the issue must **not** be closed as “fixed in the latest
+  release” — it is fixed **on master only**. This also means re-running it *here* would have been
+  misleading: this tree is `master`+64, so it would have looked clean and I would have wrongly
+dismissed a real bug. **The lesson: a claim about a released version cannot be tested on a tree
+  that is ahead of that release** (see
+  [`engineering/simulation-debugger.md`](../engineering/simulation-debugger.md) §5.1).
+- **#1143 — confirmed present, mechanism read in the code**: the comments describe serial ROOT
+  write-out in MT. Verified in the tree:
+  - `GateDigiCollectionsRootManager.cpp:41-43` calls `ram->SetNtupleMerging(true)` in MT mode,
+    with the adjacent comment (lines 30-32) that `SetBasketEntries`/`SetBasketSize`
+    “does not seem to work (default is 4000)” — the small basket size is what makes the mutex
+    contention hot;
+  - the singleton is created **without a lock** (`if (fInstance == nullptr) fInstance = new …`,
+    line 18) — a genuine lazy-init race;
+  - `GateDigiCollection.cpp:125` calls `am->AddNtupleRow(fTupleId)` **per row**, so every hit
+    crosses the shared analysis-manager lock;
+  - `opengate/coordinators.py:121` (`RootMergeCoordinator`) merges split-job outputs and is **not**
+    a solution for the per-thread `_nt_` files.
+  `git log -L` shows the `SetNtupleMerging` call dates from **2023** (`d19e408f2`), i.e. this is a
+  long-standing design choice, not a regression.
+- **Action**: #1135 needs no code work here — it is fixed on master; the useful action is to
+  **say so upstream and note that no release contains it** (a backport/release decision for the
+  maintainers). #1143 is a genuine open defect: it needs its own branch, a benchmark measuring
+  write-out scaling against thread count, and a fix (raise the basket size / batch rows per event
+  instead of per row / guard the singleton). Neither is fixed in this change.
+- **Related**: B-001 (the `PhysicsListBuilder registry differs from the linked Geant4` warning),
+  [`engineering/geant4-physics-expert.md`](../engineering/geant4-physics-expert.md).
+
+### U-010 — `> 2^31` primaries: **already fixed in the tree**
+- **Status**: **fixed** — the crash was replaced by an explicit limit, a warning and a test
+- **Category**: repository bug (already resolved)
+- **Upstream**: [#1059](https://github.com/OpenGATE/opengate/issues/1059)
+- **What the report said**: `GateSourceManager.cpp` emitted `/run/beamOn INT32_MAX` with
+  `fMaxPrimariesPerRun = INT32_MAX`, so more than `2^31` primaries in one run overflow the `G4int`
+  taken by `G4RunManager::BeamOn` and the process dies *mid-simulation*.
+- **Checked in the tree**: the limit is now **platform-aware** —
+  `g4.GateSourceManager.GetPlatformMaxPrimariesPerRun()` (`opengate/engines.py:71`) — and reaching
+  it triggers `GateSourceManager::WarnPrimaryLimitReached()`
+  (`core/opengate_core/opengate_lib/GateSourceManager.cpp:105`), which emits a `JustWarning`
+  G4Exception explaining that the run is being stopped **before** generating more primaries instead
+  of aborting. There is a `max_primaries_per_run` user option, documentation in
+  `user_guide_sources.rst`, and a regression test.
+- **Verified**: `opengate_tests -t source/test098_stop_simulation_at_max_primaries.py` →
+  `Summary pass: 1/1`, `True` (run on this machine, commit `996572b64`).
+- **Action**: none. Upstream can close #1059.
+- **Related**: U-003 (the other C++ defects, still open).
+
+### U-007 — PET crosstalk: feature gap, not a bug
+- **Status**: open upstream, **confirmed absent from the Python API**
+- **Category**: feature request (explicitly *not* a bug — do not log it as one)
+- **Upstream**: [#1145](https://github.com/OpenGATE/opengate/issues/1145) (opened 2026-09-23)
+- **Content**: GATE 9's C++ digitizer has a PET optical-crosstalk model; the reporter asks whether
+  the Python API exposes it, or whether `DigitizerSpatialBlurringActor` can substitute (they
+  suspect not, for discrete crystals).
+- **Verdict**: this is a *missing capability*, and the honest answer is “not implemented in the
+  Python layer”. Nothing to fix in this triage; if the user wants it, it is a new actor/feature
+  piece, not a defect. Related open upstream items: `#885` (ComptonCameraActor request), `#877`.
+- **Related**: [`engineering/gate-physics-expert.md`](../engineering/gate-physics-expert.md)
+
+### U-008 — Upstream issues that are environment problems, not code defects
+- **Status**: open upstream — **do not “fix” the repo for these**
+- **Category**: environment issue / documentation gap
+- **Upstream**: [#942](https://github.com/OpenGATE/opengate/issues/942) and
+  [#938](https://github.com/OpenGATE/opengate/issues/938) (both: `Cannot import opengate_core`,
+  `libQt6Core-*.so.6.6.2: cannot open shared object file`, and reinstalling with `[novis]` does not
+  help), [#1000](https://github.com/OpenGATE/opengate/issues/1000) (building ITK 5.2.1 fails on
+  GCC 15 — `-include cstdint` / `-std=gnu11` needed), [#1141](https://github.com/OpenGATE/opengate/issues/1141)
+  (“Geant4 version is not ok”).
+- **Why they are not repository bugs**: #942/#938 are a *wheel/install* problem — a Qt6 runtime
+  dependency of the installed wheel is missing on the user's machine, so the C++ module cannot be
+  dlopen'd; the correct response is to install the Qt6 runtime (or use the `novis` extra
+  *correctly*), not to change the sources. #1000 is a toolchain-too-new problem with a proven
+  workaround. #1141 is **exactly this log's B-004/B-005**: the reporter's Geant4 is
+  `geant4-11-04-patch-02` while the runner prints `Required: v11.4.0` and then `11 4 2` on the next
+  line — a self-contradicting message produced by B-005's broken `get_required_g4_version()`.
+- **Action**: keep the environment guidance in
+  [`environment-setup/geant4-itk.md`](../environment-setup/geant4-itk.md) correct; nothing here
+  needs a code change except B-005 (already logged, fix prepared). The ITK/GCC-15 flags are worth
+  a one-line note in that same skill if the user builds ITK from source.
+- **Related**: B-004, B-005, [`environment-setup/geant4-itk.md`](../environment-setup/geant4-itk.md)
+
+### U-009 — Upstream test-quality issues worth remembering when writing tests
+- **Status**: open upstream — neither fixed here
+- **Category**: repository bug (tests)
+- **Upstream**: [#844](https://github.com/OpenGATE/opengate/issues/844)
+  (`test075_siemens_cios_alpha.py` “does not test anything”, plus companion
+  [#885](https://github.com/OpenGATE/opengate/issues/885) “test075… and spekpy issue”) and
+  [#933](https://github.com/OpenGATE/opengate/issues/933) (reported as flaky; the reporter's own
+  edit concludes it is *not* flakiness but a plain failure, and that the test is **not in the Linux
+  CI set**).
+- **Why it matters**: both are exactly the failure modes
+  [`engineering/test-writer.md`](../engineering/test-writer.md) exists to prevent — a test that
+  asserts nothing, and a test that passes only because CI never runs it. If you touch the SPECT
+  contrib models or the PBS source, check whether these two files are in the run set.
+- **Related**: [`engineering/test-writer.md`](../engineering/test-writer.md), [#993](https://github.com/OpenGATE/opengate/issues/993)
+  (“Check if actor output is correctly handled in all voxel deposit actors”).
+
 ### B-007 — `core/setup.py` hardcoded a build parallelism of 4
 - **Status**: **fixed in this branch** (uncommitted at time of writing)
 - **Category**: repository bug
@@ -267,6 +552,49 @@ inline — quote the first error line and the failing assertion.
 
 ---
 
+## Upstream issue triage (how this file relates to GitHub)
+
+The rule in the header stands: **things already tracked upstream belong in GitHub issues — link
+them, do not duplicate their content.** This section records only *triage*, i.e. what an agent
+verified against the local tree, so the next agent does not re-open the same investigation.
+
+- Source of truth: <https://github.com/OpenGATE/opengate/issues> (112 open at the time of this
+  triage, 2026).
+- Every entry below names the upstream number, the **verdict**, and *what was actually checked*.
+- **A verdict is one of three, and they are not interchangeable:**
+  - **NOT REPRODUCED** — a controlled reproduction was run here and did *not* show the reported
+    behaviour. This is a real, if negative, result.
+  - **NOT VERIFIED** — nobody reproduced it in this environment; it is a lead, not a finding.
+    Never quote it as confirmed.
+  - **CONFIRMED** — read in the code and/or reproduced; a defect.
+- **Two rules that decide whether a claim can be tested here at all:**
+  1. **Read the issue's comments before re-running anything.** Maintainers often post the root
+     cause and the fixing commit; re-deriving it wastes a session (#1135 and #1143 were both
+     fully diagnosed in their threads).
+  2. **A claim about a *released* version cannot be tested on a tree ahead of that release.**
+     #1135 is fixed on `master` but in no tag, so a run in this tree looks clean and would wrongly
+     dismiss a real bug. Check `git tag --contains <fix>` before concluding anything.
+- **Every reproduction must be validated against a known answer first** — see
+  [`engineering/simulation-debugger.md`](../engineering/simulation-debugger.md) §5.1. A harness that
+  gives 0 % transmission through air cannot measure a 25 % difference, and reporting its output as
+  a confirmed bug is the most expensive mistake in this file.
+- When an upstream issue is fixed in a release, move its row out of this section rather than
+  silently deleting it (the “already fixed” rows below are the reason a triage section exists at
+  all: **five** of the newest-looking issues were already dead).
+
+### The short version
+| Bucket | Upstream | What to do |
+| --- | --- | --- |
+| **NOT REPRODUCED** — controlled run says no | #1107, #857, #1035, #1115 | report back upstream; do not fix |
+| Already fixed in the tree, still open upstream | #1104, #849, #1059, #616 | nothing here; upstream can close them |
+| **Fixed on `master` but in NO release tag** | #1135 | tell upstream; backport is a release decision (U-006) |
+| Confirmed present in the tree, not fixed here | #1096, #800, #1032, #1143 | one branch each, test first (U-003, U-006) |
+| Confirmed **absent** (missing feature, not a bug) | #1145 | not a defect (U-007) |
+| Environment / toolchain, not the repo | #942, #938, #1000, #1141 | fix the machine or the docs (U-008) |
+| Test-quality debt | #844, #933 | relevant when you write tests (U-009) |
+
+---
+
 ## Common false positives (check before logging)
 
 Distinguish these from real bugs; they waste the most time:
@@ -274,6 +602,9 @@ Distinguish these from real bugs; they waste the most time:
 | Symptom | Likely cause | Check |
 | --- | --- | --- |
 | Import error for `opengate_core` | wrong venv / missing local build | `skills/environment-setup` §7 |
+| Import error for `opengate_core` mentioning `libQt6Core-*.so` | Qt6 runtime missing for the installed wheel (upstream #938/#942) | U-008 — install Qt6 or use the correct no-visu install; do **not** patch the sources |
+| `Geant4 version is not ok` printed by `opengate_tests` | local Geant4 is behind the pin (**or** the B-005 mis-parse) | B-004, B-005 |
+| A bug report you cannot find in the code any more | it may already be fixed though the issue is still open upstream | U-001 |
 | Many tests failing on missing input files | `opengate/tests/data` submodule not initialized **or behind the recorded pointer** (B-008/B-009) | `ls opengate/tests/data`; then `git submodule update --init --recursive` and compare `git -C opengate/tests/data rev-parse HEAD` with `git ls-tree HEAD opengate/tests/data` |
 | Import error for `torch` / `gaga_phsp` / `pytomography` | optional extras not installed | `skills/environment-setup` §5 |
 | `cannot allocate memory in static TLS block` | Geant4 TLS model | `skills/environment-setup` §4.5 |

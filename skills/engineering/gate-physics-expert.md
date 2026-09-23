@@ -96,6 +96,42 @@ source wrong is the most common reason a correct detector model gives wrong abso
 - Randomness is controlled by `sim.random_seed` (`"auto"` or an integer); log the resolved
   `current_random_seed` when reporting a result.
 
+### 4.1 Building a beam harness — five traps that cost real debugging time
+Every item below was hit **in this repository** while reproducing upstream #1107. Each one
+produced a *plausible-looking but meaningless* result rather than a crash, so none of them is
+self-evident from the output. Build the harness with these in mind, and **sanity-check it
+before you believe any number it prints**.
+
+| Trap | What happens | Fix |
+| --- | --- | --- |
+| `direction.type = "beam2d"` is **not** a parallel beam | Needs a Gaussian divergence `sigma` (`GateGenericSource.cpp`: `SetBeamSigmaInAngX/Y`). With `sigma=[0,0]` it recorded **1 of 50 000** primaries. | For a parallel beam along an axis use `direction.type = "momentum"` + `direction.momentum = [0,0,1]` (verified: **50 003 of 50 000** through a scorer in an air world). |
+| `number_of_primaries` **and** `activity` together | `fatal`: `Cannot use both the two parameters 'number_of_primaries' and 'activity' at the same time.` (raised in the *subprocess*, so the parent only reports `The queue is empty…`). | Set exactly one. Prefer `number_of_primaries` for a controlled test. |
+| Boolean operands are also **placed** | `G4PVPlacement::CheckOverlaps()` → `Overlap is detected for volume box:0 … fully encapsulating volume hole:0`, then `fatal: Some volumes overlap… Aborting.` | Set `operand.build_physical_volume = False` on **both** the raw base volume and the hole before `subtract_volumes(box, hole)`. |
+| Scoring plane too thin / too far | The `PhaseSpaceActor` records nothing; the log says only `Empty output, no particles stored`. | Place the scorer immediately behind the block and make it thick enough to be crossed (`0.05 mm` beat `0.01 mm` here). |
+| A **point** source in a large world | Almost no primaries reach the scorer (`iso` from a point → **5 records / 50 000**) because of solid angle. | Use a `box`-position beam whose footprint covers the feature under test. |
+
+Two further rules that follow from the above:
+
+- **`start_new_process=True` needs a `if __name__ == "__main__":` guard** on macOS (spawn).
+  Without it the child re-imports the module and dies with
+  `RuntimeError: An attempt has been made to start a new process before the current process has finished its bootstrapping phase.`
+- **Validate the harness against a known answer first.** Before comparing `Tubs` to `Hexagon`,
+  run the same beam through an *empty* world and assert ~100 % transmission. A harness that
+  transmits 0 % through air cannot measure a 25 % difference.
+
+### 4.2 Instantiating a physics list outside a simulation aborts
+`create_reference_physics_list_class("X")(0)` calls `SetParticleCuts` with no region set up:
+
+```
+G4VUserPhysicsList::SetParticleCuts : No Default Region
+*** G4Exception : Run0254 *** Fatal Exception *** Aborting execution ***
+```
+
+This is **not** a defect in the list — a physics list can only be instantiated inside a running
+simulation. To check a list name is constructible, build the *class* and run a minimal
+simulation (`Simulation` + world + source + `sim.run()`), as in
+`opengate/tests/src/physics/`.
+
 ## 5. Actors — the GATE layer that turns tracks into numbers
 
 Actors attach scoring to volumes. Two families:

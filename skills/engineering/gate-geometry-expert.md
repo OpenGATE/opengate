@@ -83,6 +83,51 @@ Rules that pay off:
 - GATE 10 lengths/angles are numbers **with units** (`gate.g4_units.mm`, `.cm`, `.deg`, …).
   Mixing a bare number where a length is expected is a silent scale error (§7).
 
+### 4.1 Boolean volumes — the operand must NOT be placed
+`subtract_volumes(a, b)` / `unite_volumes` / `intersect_volumes` create a **new** volume from two
+others. The operands keep their own `build_physical_volume` flag, so if you created them with
+`sim.add_volume(...)` they are **also placed in the world** — and the result is an overlap:
+
+```
+G4Exception : GeomVol1002
+Overlap is detected for volume box:0 (G4Box)
+  apparently fully encapsulating volume hole:0 (G4Tubs) at the same level!
+☠️ Fatal: Some volumes overlap with the volume "box".
+```
+
+**Fix — clear the flag on *both* operands before combining them:**
+
+```python
+box = sim.add_volume("Box", "box")
+box.material = "G4_W"
+box.build_physical_volume = False      # operand only: never placed on its own
+hole = sim.add_volume("Tubs", "hole")
+hole.rmax = 0.4 * mm
+hole.build_physical_volume = False     # operand only: never placed on its own
+block = subtract_volumes(box, hole, new_name="block")   # the real volume
+block.mother = "world"
+block.material = "G4_W"
+```
+
+The overlap is reported as a **warning** first (`G4ExceptionSeverity.JustWarning`) and only
+aborts at the *overlap check* stage, so a casual run can look like it merely warned.
+
+### 4.2 Area-matched shapes: the premise is a formula, not an eyeball
+When comparing two shapes “of equal area” (e.g. the upstream `Tubs`-vs-`Hexagon` report, #1107),
+compute the area from the **same** parameter GATE uses, and state the formula:
+
+| Shape | GATE parameter | Area |
+| --- | --- | --- |
+| `Tubs` | `rmax` (with `rmin=0`) | `pi * rmax**2` |
+| `Hexagon` | `radius` = **circumradius** | `(3*sqrt(3)/2) * radius**2` = `(sqrt(3)/2) * a**2`, `a` = across-flats = `sqrt(3)*radius` |
+
+Getting `radius` wrong (circumradius vs. across-flats) changes the area by **3×**, which produces a
+large fake “shape effect”. For the #1107 target area `0.5261 mm^2`: `Tubs` `rmax = 0.40922 mm`,
+`Hexagon` circumradius `0.45 mm` (across-flats `0.77942 mm`).
+
+Before concluding that a *shape* changes transmission, verify the geometry premise independently
+(pure-Python ray tracing of the same 2D footprints is enough — that is what the reporter did).
+
 ## 5. Materials
 
 - Material names are **Geant4 NIST names** (`"G4_WATER"`, `"G4_AIR"`, `"G4_LEAD"`, …) unless you
