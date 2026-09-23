@@ -73,7 +73,7 @@ If your Python change needs a new binding:
 - **the compiled `.so` only updates when you rebuild** — an editable install does *not* pick up
   C++ changes, and the failure mode is a misleading
   `AttributeError: module 'opengate_core' has no attribute 'Gate…'`
-  ([`../environment-setup/SKILL.md`](../environment-setup/SKILL.md) §4.6);
+  ([`../environment-setup/geant4-itk.md`](../environment-setup/geant4-itk.md) §7);
 - rebuild via the **incremental** path (re-run `cmake` + `make` in `core/build/cmake.*`), not a
   full reinstall;
 - build parallelism is now `os.cpu_count()`, overridable with `OPEN_GATE_BUILD_JOBS`

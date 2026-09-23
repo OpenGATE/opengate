@@ -82,12 +82,12 @@ Map of the `skills/` directory: [`skills/README.md`](skills/README.md).
 
 | Skill | Use it when |
 | --- | --- |
-| [`skills/environment-setup/`](skills/environment-setup/SKILL.md) | You need a working virtual dev environment where **all tests** run (venv, Geant4/ITK, `pip install -e .`, optional extras) — or you are **releasing a version**, touching wheels/packaging metadata, or editing `.github/workflows/` (all in §6). |
+| [`skills/environment-setup/`](skills/environment-setup/SKILL.md) | You need a working virtual dev environment where **all tests** run (venv, Geant4/ITK, `pip install -e .`, optional extras) — or you are **releasing a version**, touching wheels/packaging metadata, or editing `.github/workflows/` (deep-dive: [`build-and-ci.md`](skills/environment-setup/build-and-ci.md)). |
 | [`skills/running-tests/`](skills/running-tests/SKILL.md) | You must run, filter, debug or interpret the test suite and its dashboard output. |
 | [`skills/code-style/`](skills/code-style/SKILL.md) | Before every commit: formatting, naming, imports, docstrings. |
 | [`skills/architecture/`](skills/architecture/SKILL.md) | You add/modify engines, managers, actors, sources, physics — the object lifecycle in GATE 10. |
 | [`skills/documentation/`](skills/documentation/SKILL.md) | You add a user/developer guide page or build the Sphinx docs. |
-| [`skills/engineering/`](skills/engineering/SKILL.md) | You are acting in a role: `python-gate-developer`, `geant4-physics-expert`, `gate-physics-expert`, `geant4-geometry-expert`, `gate-geometry-expert`, `simulation-debugger`, `test-writer`. |
+| [`skills/engineering/`](skills/engineering/SKILL.md) | You are acting in a role: `python-gate-developer`, `geant4-physics-expert`, `gate-physics-expert`, `gate-chemistry-expert`, `geant4-geometry-expert`, `gate-geometry-expert`, `simulation-debugger`, `test-writer`. |
 | [`skills/status/`](skills/status/task-list.md) | You need the shared task list, the bug log, or the project status snapshot. |
 
 ## 4. Quick start (30-second version)

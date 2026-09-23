@@ -13,14 +13,14 @@ engineer-level reasoning about geometry soundness.
 
 ## 1. When you are in this skill and not the GATE one
 
-| Symptom / need | Skill |
-| --- | --- |
-| Add or move a volume with `sim.volume_manager` | [`gate-geometry-expert.md`](gate-geometry-expert.md) |
-| Add a new solid/shape type, or a new geometry binding | **this skill** + [`../architecture/SKILL.md`](../architecture/SKILL.md) |
-| A G4 overlap / navigation error with a G4 class name in the message | **this skill** |
-| Explain *why* GATE's repeated-volume or region model behaves as it does | **this skill** |
-| Change material handling in `core/` | **this skill** |
-| A physics effect you cannot explain from the geometry you wrote | both, in this order |
+| Symptom / need                                                          | Skill                                                                   |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Add or move a volume with `sim.volume_manager`                          | [`gate-geometry-expert.md`](gate-geometry-expert.md)                    |
+| Add a new solid/shape type, or a new geometry binding                   | **this skill** + [`../architecture/SKILL.md`](../architecture/SKILL.md) |
+| A G4 overlap / navigation error with a G4 class name in the message     | **this skill**                                                          |
+| Explain *why* GATE's repeated-volume or region model behaves as it does | **this skill**                                                          |
+| Change material handling in `core/`                                     | **this skill**                                                          |
+| A physics effect you cannot explain from the geometry you wrote         | both, in this order                                                     |
 
 ## 2. Establish the environment before discussing G4 behaviour
 
@@ -40,14 +40,14 @@ verified you are linked against (`../environment-setup/SKILL.md` §3.3).
 
 Geant4 geometry is a strict hierarchy. GATE's `VolumeBase` produces exactly these G4 objects:
 
-| Geant4 concept | GATE object | Where |
-| --- | --- | --- |
-| `G4VSolid` (a shape, no placement) | `SolidBase` subclasses | `opengate/geometry/solids.py` |
-| `G4LogicalVolume` (shape + material + daughters) | the logical volume of a `VolumeBase` | `opengate/geometry/volumes.py` |
-| `G4VPhysicalVolume` (a placement of a logical volume in a mother) | the physical volume of a `VolumeBase` (via `g4_physical_volume`) | `opengate/geometry/volumes.py` |
-| `G4Region` (set of logical volumes with shared production cuts) | a GATE region | `VolumeManager` |
-| `G4Field` / `G4FieldManager` | a field attached by name (`field` user parameter) | `opengate/geometry/fields.py` |
-| `G4VUserDetectorConstruction` | built by GATE's engine, not by the user | `opengate/engines.py` + `core/` |
+| Geant4 concept                                                    | GATE object                                                      | Where                           |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------- |
+| `G4VSolid` (a shape, no placement)                                | `SolidBase` subclasses                                           | `opengate/geometry/solids.py`   |
+| `G4LogicalVolume` (shape + material + daughters)                  | the logical volume of a `VolumeBase`                             | `opengate/geometry/volumes.py`  |
+| `G4VPhysicalVolume` (a placement of a logical volume in a mother) | the physical volume of a `VolumeBase` (via `g4_physical_volume`) | `opengate/geometry/volumes.py`  |
+| `G4Region` (set of logical volumes with shared production cuts)   | a GATE region                                                    | `VolumeManager`                 |
+| `G4Field` / `G4FieldManager`                                      | a field attached by name (`field` user parameter)                | `opengate/geometry/fields.py`   |
+| `G4VUserDetectorConstruction`                                     | built by GATE's engine, not by the user                          | `opengate/engines.py` + `core/` |
 
 Key consequences you must internalise:
 
@@ -64,12 +64,12 @@ Key consequences you must internalise:
 
 Geometry-relevant C++ lives under `core/opengate_core/opengate_lib/`:
 
-| File(s) | Purpose |
-| --- | --- |
-| `GateGeometryUtils`, `GateHelpersGeometry` | GATE-level geometry helpers exposed to Python |
-| `GateUniqueVolumeID`, `GateUniqueVolumeIDManager` | stable identity for a placement |
-| `GateVolumeVoxelizer` | voxelise a volume (used by imaging/dose workflows) |
-| `pyGate*.cpp` | the pybind11 wrapper registering each class in `core/opengate_core.cpp` |
+| File(s)                                           | Purpose                                                                 |
+| ------------------------------------------------- | ----------------------------------------------------------------------- |
+| `GateGeometryUtils`, `GateHelpersGeometry`        | GATE-level geometry helpers exposed to Python                           |
+| `GateUniqueVolumeID`, `GateUniqueVolumeIDManager` | stable identity for a placement                                         |
+| `GateVolumeVoxelizer`                             | voxelise a volume (used by imaging/dose workflows)                      |
+| `pyGate*.cpp`                                     | the pybind11 wrapper registering each class in `core/opengate_core.cpp` |
 
 Rules:
 
@@ -79,7 +79,7 @@ Rules:
   `core/opengate_core/opengate_core.cpp`**, then rebuild. An editable install does **not** pick up
   C++ changes — the `.so` is stale until you rebuild, and the failure is a misleading
   `AttributeError: module 'opengate_core' has no attribute 'Gate…'`
-  (`../environment-setup/SKILL.md` §4.6).
+  (`../environment-setup/geant4-itk.md` §7).
 - Rebuild with the **incremental** path (`cmake` + `make` in `core/build/cmake.*`), parallelism via
   `os.cpu_count()` / `OPEN_GATE_BUILD_JOBS` (B-007).
 

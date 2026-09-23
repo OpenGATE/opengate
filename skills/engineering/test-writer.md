@@ -120,7 +120,8 @@ opengate_tests -t <subdir>/testNNN_your_test.py -p mp   # must also work under m
   test that only passes serially is testing an unrealistic path.
 - Read the failure in `opengate/tests/log/<test name>.log`, not the screen summary.
 - If the test fails for environment reasons, fix the environment first
-  ([`../environment-setup/SKILL.md`](../environment-setup/SKILL.md) §2.1, §3.3, §4.6) — do not
+  ([`../environment-setup/SKILL.md`](../environment-setup/SKILL.md) §2.1, §3.3,
+  [`../environment-setup/geant4-itk.md`](../environment-setup/geant4-itk.md) §7) — do not
   weaken the assertion to accommodate a broken environment.
 
 ## 8. Definition of done

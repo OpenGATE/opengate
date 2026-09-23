@@ -5,8 +5,9 @@ playbook.
 
 The files in this directory are **role skills**: they answer "how should I think about this?"
 rather than "what command do I run?". The task-oriented skills live one level up:
-[`../environment-setup/SKILL.md`](../environment-setup/SKILL.md) (env **and** build/CI/release,
-§6),
+[`../environment-setup/SKILL.md`](../environment-setup/SKILL.md) (the dev environment, with
+[`geant4-itk.md`](../environment-setup/geant4-itk.md) for compiling the native deps and
+[`build-and-ci.md`](../environment-setup/build-and-ci.md) for packaging/CI),
 [`../running-tests/SKILL.md`](../running-tests/SKILL.md),
 [`../code-style/SKILL.md`](../code-style/SKILL.md),
 [`../architecture/SKILL.md`](../architecture/SKILL.md),
@@ -25,6 +26,7 @@ whole `skills/` tree is in [`../README.md`](../README.md).
 | [`python-gate-developer.md`](python-gate-developer.md) | You write or refactor `opengate/**` Python code | Python API design, managers/actors/sources, the C++ boundary, serialisation | physics validity, test design |
 | [`geant4-physics-expert.md`](geant4-physics-expert.md) | You choose a physics list / cut, or judge whether a result is physically plausible | Geant4 physics lists, EM models, cuts, statistics, realism | the GATE configuration layer, code structure |
 | [`gate-physics-expert.md`](gate-physics-expert.md) | You configure the physics manager, **sources**, or **actors** | The GATE physics layer: physics manager, sources, actors, filters, biasing, normalisation | raw Geant4 model internals |
+| [`gate-chemistry-expert.md`](gate-chemistry-expert.md) | You run or configure **Geant4-DNA chemistry** (chemistry list, chemistry world, scavengers, chemistry actors/counters) | The GATE chemistry layer: chemistry manager/list/world, track-structure EM regions, chemistry actors and counters | the general physics/source/actor machinery (see `gate-physics-expert`), raw Geant4-DNA model internals |
 | [`geant4-geometry-expert.md`](geant4-geometry-expert.md) | You work at the raw G4 geometry layer, or add a geometry binding | G4 solids, logical/physical volumes, materials, navigation, overlaps, C++ bindings | the GATE user-facing volume API |
 | [`gate-geometry-expert.md`](gate-geometry-expert.md) | You add or move volumes, solids, materials, regions or fields | The GATE geometry layer: volume tree, solids, materials, placement/repetition, regions | raw G4 navigation internals |
 | [`simulation-debugger.md`](simulation-debugger.md) | A simulation crashes, hangs, or gives implausible output | Triage, reproduction, lifecycle-localised diagnosis | writing the fix's tests |
@@ -38,7 +40,7 @@ read one, not two:
 | Layer | Physics | Geometry |
 | --- | --- | --- |
 | **Geant4** (the model beneath GATE) | [`geant4-physics-expert.md`](geant4-physics-expert.md) | [`geant4-geometry-expert.md`](geant4-geometry-expert.md) |
-| **GATE** (the API built on it) | [`gate-physics-expert.md`](gate-physics-expert.md) | [`gate-geometry-expert.md`](gate-geometry-expert.md) |
+| **GATE** (the API built on it) | [`gate-physics-expert.md`](gate-physics-expert.md) (+ [`gate-chemistry-expert.md`](gate-chemistry-expert.md) for Geant4-DNA chemistry) | [`gate-geometry-expert.md`](gate-geometry-expert.md) |
 
 - The **`geant4-*`** skills explain *why* the underlying engine behaves as it does — patch-level
   physics, G4 object model, navigation, overlaps, the C++ layer in `core/`.
@@ -66,7 +68,8 @@ Worked examples:
 | Add a new dose scorer | `gate-physics-expert` (what to score, normalisation) → `python-gate-developer` (the class) → `test-writer` |
 | Move a detector / add a phantom | `gate-geometry-expert` (tree, materials) → `geant4-geometry-expert` if an overlap or binding is involved → `test-writer` |
 | Change the physics list for a hadron therapy study | `geant4-physics-expert` (list choice, cuts) → `gate-physics-expert` (how to set it) → `test-writer` |
-| A simulation gives plausible-but-wrong numbers | `simulation-debugger` (classify) → the matching expert skill (is it physics or geometry?) |
+| Add or debug a Geant4-DNA chemistry run | `gate-chemistry-expert` (list, chemistry world, DNA EM region, counters) → `test-writer` |
+| A simulation gives plausible-but-wrong numbers | `simulation-debugger` (classify) → the matching expert skill (is it physics, chemistry or geometry?) |
 
 ## 4. Conventions every role skill follows
 

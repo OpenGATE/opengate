@@ -23,22 +23,23 @@ opengate_tests -t geometry/test001_g4geometry_geometrymapping.py   # or any geom
 ```
 
 If it prints `Geant4 version is not ok`, or a `PhysicsListBuilder registry differs…` warning,
-stop and fix the environment (`../environment-setup/SKILL.md` §3.3, §4.6) before touching the
+stop and fix the environment (`../environment-setup/SKILL.md` §3.3,
+`../environment-setup/geant4-itk.md` §7) before touching the
 geometry.
 
 ## 2. Where geometry lives in this repo
 
-| Concern | Location |
-| --- | --- |
-| Volume tree, placement, repetition, regions | `opengate/geometry/volumes.py` (`VolumeBase` and subclasses) |
-| Solids (shapes) | `opengate/geometry/solids.py` (`SolidBase` + one class per shape) |
-| Materials and HU/voxel material tables | `opengate/geometry/materials.py` |
-| Electromagnetic fields attached to volumes | `opengate/geometry/fields.py` |
-| Geometry helpers | `opengate/geometry/utility.py`, `volume_info.py` |
-| User-facing manager / checks | `VolumeManager` in `opengate/managers.py` |
+| Concern                                             | Location                                                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Volume tree, placement, repetition, regions         | `opengate/geometry/volumes.py` (`VolumeBase` and subclasses)                               |
+| Solids (shapes)                                     | `opengate/geometry/solids.py` (`SolidBase` + one class per shape)                          |
+| Materials and HU/voxel material tables              | `opengate/geometry/materials.py`                                                           |
+| Electromagnetic fields attached to volumes          | `opengate/geometry/fields.py`                                                              |
+| Geometry helpers                                    | `opengate/geometry/utility.py`, `volume_info.py`                                           |
+| User-facing manager / checks                        | `VolumeManager` in `opengate/managers.py`                                                  |
 | C++ side (G4 helpers, unique volume IDs, voxelizer) | `core/opengate_core/opengate_lib/GateGeometry*, GateUniqueVolumeID*, GateVolumeVoxelizer*` |
-| User docs | `docs/source/user_guide/user_guide_reference_volumes.rst`, `…_fields.rst` |
-| Tests | `opengate/tests/src/geometry/` |
+| User docs                                           | `docs/source/user_guide/user_guide_reference_volumes.rst`, `…_fields.rst`                  |
+| Tests                                               | `opengate/tests/src/geometry/`                                                             |
 
 **Read `user_info_defaults` of the class you are using rather than guessing a parameter name.**
 Every geometry object declares its parameters there (name, doc, default, setter hook); that dict

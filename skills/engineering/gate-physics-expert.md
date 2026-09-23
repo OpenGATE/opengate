@@ -23,21 +23,22 @@ python -c "from opengate_core import GateInfo; print(GateInfo.get_G4Version())"
 
 GATE pins Geant4 `v11.4.2`. A `Geant4 version is not ok` line, or a
 `PhysicsListBuilder registry differs from the linked Geant4` warning, means the environment — not
-the physics — is wrong: fix it (`../environment-setup/SKILL.md` §3.3, §4.6) before interpreting
+the physics — is wrong: fix it (`../environment-setup/SKILL.md` §3.3,
+`../environment-setup/geant4-itk.md` §7) before interpreting
 any result.
 
 ## 2. Where the GATE physics layer lives
 
-| Concern | Location |
-| --- | --- |
-| Physics lists, EM extensions, cuts, `PhysicsManager` | `opengate/physics.py` + `PhysicsManager` in `opengate/managers.py` |
-| Sources (primaries) | `opengate/sources/**` (`generic.py`, `phspsources.py`, `voxelsources.py`, `gansources.py`, `beamsources.py`, `phidsources.py`, `lastvertexsources.py`) |
-| Actors (scoring) | `opengate/actors/**` (`doseactors.py`, `digitizers.py`, `phspactors.py`, `arbitraryactors.py`, `biasingactors.py`, `coincidences.py`, `chemistryactors.py`) |
-| Filters (track-level selection) | `opengate/actors/filters.py` |
-| Actor output plumbing | `opengate/actors/actoroutput.py`, `dataitems.py` |
-| C++ side | `core/opengate_core/opengate_lib/` (`GateSourceManager`, physics builder, `Gate…Actor` classes) |
-| User docs | `docs/source/user_guide/user_guide_physics.rst`, `…_reference_actors.rst`, `…_reference_sources*.rst`, `…_reference_filters.rst` |
-| Tests | `opengate/tests/src/physics/`, `…/source/`, `…/actors/`, `…/chemistry/` |
+| Concern                                              | Location                                                                                                                                                    |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Physics lists, EM extensions, cuts, `PhysicsManager` | `opengate/physics.py` + `PhysicsManager` in `opengate/managers.py`                                                                                          |
+| Sources (primaries)                                  | `opengate/sources/**` (`generic.py`, `phspsources.py`, `voxelsources.py`, `gansources.py`, `beamsources.py`, `phidsources.py`, `lastvertexsources.py`)      |
+| Actors (scoring)                                     | `opengate/actors/**` (`doseactors.py`, `digitizers.py`, `phspactors.py`, `arbitraryactors.py`, `biasingactors.py`, `coincidences.py`, `chemistryactors.py`) |
+| Filters (track-level selection)                      | `opengate/actors/filters.py`                                                                                                                                |
+| Actor output plumbing                                | `opengate/actors/actoroutput.py`, `dataitems.py`                                                                                                            |
+| C++ side                                             | `core/opengate_core/opengate_lib/` (`GateSourceManager`, physics builder, `Gate…Actor` classes)                                                             |
+| User docs                                            | `docs/source/user_guide/user_guide_physics.rst`, `…_reference_actors.rst`, `…_reference_sources*.rst`, `…_reference_filters.rst`                            |
+| Tests                                                | `opengate/tests/src/physics/`, `…/source/`, `…/actors/`, `…/chemistry/`                                                                                     |
 
 **Read `user_info_defaults` of the object you are using** rather than guessing a parameter name —
 that dict is the authoritative API and what gets serialised.
@@ -122,7 +123,7 @@ Rules that prevent most actor mistakes:
   model the readout. Dead time and pile-up are *rate-dependent* — their effect changes with
   activity, so test them at the rates you care about.
 - **Never invent a binding.** A `Gate…Actor` class must exist in `core/` **and** in the rebuilt
-  `.so`; a missing one means a stale build (`../environment-setup/SKILL.md` §4.6).
+  `.so`; a missing one means a stale build (`../environment-setup/geant4-itk.md` §7).
 
 ## 6. Cuts, regions and biasing
 

@@ -169,8 +169,9 @@ and the from-scratch source build (T-003).
 | `AGENTS.md` | entry point, golden rules, skills index |
 | `user_secrets.json` (root, **git-ignored**) | per-machine paths: `OPEN_GATE_REPO`, `OPEN_GATE_ENV`, `OPEN_GATE_DEPS` |
 | `skills/README.md` | map of the skills directory, role-vs-task split |
-| `skills/environment-setup` | how to obtain a virtual dev env (reuse-first, non-volatile) where **all** tests run |
-| `skills/environment-setup` | dev environment (§0–§5, §7–§9) **and** build/wheels/CI/release (§6) |
+| `skills/environment-setup` | dev environment (index: §0–§3, §5, §7–§9) |
+| `skills/environment-setup/geant4-itk.md` | build Geant4/ITK and rebuild the `opengate_core` extension |
+| `skills/environment-setup/build-and-ci.md` | packaging, releasing, CI topology, reproduce CI locally |
 | `skills/running-tests` | the `opengate_tests` runner, filters, dashboard |
 | `skills/code-style` | pre-commit / black / clang-format, conventions |
 | `skills/architecture` | managers/engines/actors/sources lifecycle |
@@ -179,6 +180,7 @@ and the from-scratch source build (T-003).
 | `skills/engineering/python-gate-developer` | role: Python API design, C++ boundary, serialisation |
 | `skills/engineering/geant4-physics-expert` | role: Geant4 physics — lists, EM models, cuts, stats |
 | `skills/engineering/gate-physics-expert` | role: GATE physics layer — physics manager, sources, actors, normalisation |
+| `skills/engineering/gate-chemistry-expert` | role: GATE chemistry layer — Geant4-DNA chemistry lists, chemistry world, chemistry actors/counters |
 | `skills/engineering/geant4-geometry-expert` | role: raw G4 geometry — solids, volumes, navigation, overlaps |
 | `skills/engineering/gate-geometry-expert` | role: GATE geometry layer — volume tree, solids, materials, regions |
 | `skills/engineering/simulation-debugger` | role: triage, reproduction, lifecycle-localised diagnosis |

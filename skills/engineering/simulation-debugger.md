@@ -13,11 +13,11 @@ bugs wastes hours and can produce a wrong "fix".
 
 | Evidence | Verdict | Action |
 | --- | --- | --- |
-| `AttributeError: module 'opengate_core' has no attribute 'Gate…'` | stale compiled `opengate_core` | [environment-setup](../environment-setup/SKILL.md) §4.6 |
+| `AttributeError: module 'opengate_core' has no attribute 'Gate…'` | stale compiled `opengate_core` | [geant4-itk](../environment-setup/geant4-itk.md) §7 |
 | `Geant4 version is not ok` | wrong Geant4 | [environment-setup](../environment-setup/SKILL.md) §3.3 |
 | Everything fails with `ModuleNotFoundError: 'opengate'` | venv not activated | [environment-setup](../environment-setup/SKILL.md) §3.1 |
 | `Error while reading the file 'output_ref/…'` | test-data submodule behind the recorded commit | [environment-setup](../environment-setup/SKILL.md) §2.1 |
-| `cannot allocate memory in static TLS block` | Geant4 TLS model | [environment-setup](../environment-setup/SKILL.md) §4.5 |
+| `cannot allocate memory in static TLS block` | Geant4 TLS model | [geant4-itk](../environment-setup/geant4-itk.md) §6 |
 | Import error for `torch`/`gaga_phsp`/`pytomography` | optional extras absent | [environment-setup](../environment-setup/SKILL.md) §5 |
 | Reproducible from a clean env, on the pinned Geant4 | **code bug** | continue below |
 
