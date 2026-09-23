@@ -170,13 +170,17 @@ and the from-scratch source build (T-003).
 | `user_secrets.json` (root, **git-ignored**) | per-machine paths: `OPEN_GATE_REPO`, `OPEN_GATE_ENV`, `OPEN_GATE_DEPS` |
 | `skills/README.md` | map of the skills directory, role-vs-task split |
 | `skills/environment-setup` | how to obtain a virtual dev env (reuse-first, non-volatile) where **all** tests run |
+| `skills/environment-setup` | dev environment (§0–§5, §7–§9) **and** build/wheels/CI/release (§6) |
 | `skills/running-tests` | the `opengate_tests` runner, filters, dashboard |
-| `skills/build-and-ci` | wheels, CI topology, version bump |
 | `skills/code-style` | pre-commit / black / clang-format, conventions |
 | `skills/architecture` | managers/engines/actors/sources lifecycle |
 | `skills/documentation` | Sphinx pages and local build |
+| `skills/engineering/SKILL.md` | index: which role to pick, the two layered pairs, conventions |
 | `skills/engineering/python-gate-developer` | role: Python API design, C++ boundary, serialisation |
-| `skills/engineering/geant4-physics-expert` | role: physics lists, cuts, statistics, realism |
+| `skills/engineering/geant4-physics-expert` | role: Geant4 physics — lists, EM models, cuts, stats |
+| `skills/engineering/gate-physics-expert` | role: GATE physics layer — physics manager, sources, actors, normalisation |
+| `skills/engineering/geant4-geometry-expert` | role: raw G4 geometry — solids, volumes, navigation, overlaps |
+| `skills/engineering/gate-geometry-expert` | role: GATE geometry layer — volume tree, solids, materials, regions |
 | `skills/engineering/simulation-debugger` | role: triage, reproduction, lifecycle-localised diagnosis |
 | `skills/engineering/test-writer` | role: test placement, assertions, tolerances |
 | `skills/status/` | this snapshot, `task-list.md`, `found-bugs.md` |

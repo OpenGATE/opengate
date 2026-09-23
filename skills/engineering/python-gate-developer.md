@@ -26,6 +26,9 @@ existing class and mirror it.
 
 ## 2. Hard rules
 
+Full mechanics and rationale: [`../architecture/SKILL.md`](../architecture/SKILL.md) §3
+(actors), §7 (serialisation). These are the rules; that page shows the code.
+
 - **No Geant4 object is created during the user phase.** Managers validate; engines build.
 - **`__init__` takes no mandatory argument but the name**; parameters are set afterwards.
 - **Actors: Python base class first, then the C++ base**, and call superclasses explicitly
@@ -42,6 +45,9 @@ existing class and mirror it.
   not `print`.
 - **Everything you add becomes serialised state.** Keep it JSON-friendly
   (`opengate/serialization.py`); recreate runtime-only state in `__initcpp__`.
+
+Formatting of all of the above is [`../code-style/SKILL.md`](../code-style/SKILL.md)'s job —
+run `pre-commit` rather than matching style by eye.
 
 ## 3. Adding a user-facing parameter
 

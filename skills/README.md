@@ -13,17 +13,20 @@ Each file is self-contained: read the one you need, not the whole directory.
 ```
 skills/
 ├── README.md                      ← this file
-├── environment-setup/SKILL.md     get a working dev env where ALL tests run
+├── environment-setup/SKILL.md     get a working dev env where ALL tests run; §6 = build/CI/release
 ├── running-tests/SKILL.md         the opengate_tests runner, filters, dashboard
-├── build-and-ci/SKILL.md          wheels, CI topology, version bump
 ├── code-style/SKILL.md            pre-commit / black / clang-format, conventions
 ├── architecture/SKILL.md          managers / engines / actors / sources lifecycle
 ├── documentation/SKILL.md         Sphinx pages and local build
 ├── engineering/
-│   ├── python-gate-developer.md   write Python API code that fits the design
-│   ├── geant4-physics-expert.md   physics lists, cuts, statistics, realism
-│   ├── simulation-debugger.md     diagnose crashes / hangs / implausible output
-│   └── test-writer.md             write tests that actually catch regressions
+│   ├── SKILL.md                    pick a role + map of the role skills
+│   ├── python-gate-developer.md    write Python API code that fits the design
+│   ├── geant4-physics-expert.md    Geant4 physics: lists, EM models, cuts, statistics
+│   ├── gate-physics-expert.md      GATE physics layer: sources, actors, filters
+│   ├── geant4-geometry-expert.md   raw Geant4 geometry: solids, volumes, navigation
+│   ├── gate-geometry-expert.md     GATE geometry layer: volume tree, solids, materials
+│   ├── simulation-debugger.md      diagnose crashes / hangs / implausible output
+│   └── test-writer.md              write tests that actually catch regressions
 └── status/
     ├── task-list.md               shared work list (id, status, area, evidence)
     ├── found-bugs.md              bug log: repository bugs vs environment issues
@@ -36,31 +39,64 @@ skills/
 | --- | --- |
 | No environment yet, or "tests fail for no reason" | [`environment-setup/SKILL.md`](environment-setup/SKILL.md) |
 | Need to run, filter, or interpret tests | [`running-tests/SKILL.md`](running-tests/SKILL.md) |
-| Touching `core/`, wheels, `pyproject.toml`, or `.github/workflows/` | [`build-and-ci/SKILL.md`](build-and-ci/SKILL.md) |
+| **Releasing**, changing packaging/wheels, or editing `.github/workflows/` | [`environment-setup/SKILL.md`](environment-setup/SKILL.md) §6 |
+| **Building `core/` C++ or Geant4/ITK on your machine** | [`environment-setup/SKILL.md`](environment-setup/SKILL.md) §4 |
 | About to commit | [`code-style/SKILL.md`](code-style/SKILL.md) |
 | Adding an actor / source / engine / manager | [`architecture/SKILL.md`](architecture/SKILL.md) |
 | Adding or changing a docs page | [`documentation/SKILL.md`](documentation/SKILL.md) |
 | Writing or refactoring `opengate/**` Python code | [`engineering/python-gate-developer.md`](engineering/python-gate-developer.md) |
 | Choosing a physics list, cuts, or judging a result | [`engineering/geant4-physics-expert.md`](engineering/geant4-physics-expert.md) |
+| Configuring the physics manager, sources, or actors | [`engineering/gate-physics-expert.md`](engineering/gate-physics-expert.md) |
+| Adding/moving volumes, solids, materials, fields | [`engineering/gate-geometry-expert.md`](engineering/gate-geometry-expert.md) |
+| G4-level geometry, overlaps, navigation, new bindings | [`engineering/geant4-geometry-expert.md`](engineering/geant4-geometry-expert.md) |
+| Not sure which engineering role fits | [`engineering/SKILL.md`](engineering/SKILL.md) |
 | A simulation crashes, hangs, or gives implausible output | [`engineering/simulation-debugger.md`](engineering/simulation-debugger.md) |
 | Adding a test | [`engineering/test-writer.md`](engineering/test-writer.md) |
 | Planning work, logging a bug, checking project state | [`status/`](status/task-list.md) |
 
+### Easily-confused pairs — one owner per fact
+
+These skills look overlapping from their titles but own different questions. When in doubt,
+read the **owner** column, and follow its links rather than duplicating the content.
+
+| Question | Owner | Not the owner |
+| --- | --- | --- |
+| "My local setup is broken / how do I make the suite run?" | [`environment-setup`](environment-setup/SKILL.md) §0–§5, §7–§9 | — |
+| "How do I ship this / why does CI build wheels?" | [`environment-setup`](environment-setup/SKILL.md) §6 | — |
+| "How must the code *look* (format, naming, imports)?" | [`code-style`](code-style/SKILL.md) | `architecture`, `python-gate-developer` |
+| "How must the code *behave* (lifecycle, `__initcpp__`, managers vs engines)?" | [`architecture`](architecture/SKILL.md) | `code-style` |
+
+Boundary rules the skills themselves enforce:
+
+- **Environment and build/CI/release are one skill** (`environment-setup`): §0–§5 set up your
+  machine, §6 covers packaging, releasing and the workflows. The former `build-and-ci` skill
+  was merged into §6 to remove the duplicated CI-recipe text.
+- The **C++/Geant4 build procedure** is §4.3; §6.5 keeps only the packaging consequences.
+- The **object-lifecycle rules** are owned by `architecture` §3/§7; the role skills restate
+  them for self-containment and link back for the rationale.
+
 ## The engineering roles
 
-Four role-oriented skills layer *on top of* the task-oriented ones above. They answer "how
-should I think about this?" rather than "what command do I run?".
+Seven role-oriented skills layer *on top of* the task-oriented ones above. They answer "how
+should I think about this?" rather than "what command do I run?". **Start with
+[`engineering/SKILL.md`](engineering/SKILL.md)** — it maps them, explains the two layered pairs,
+and says which role to pick.
 
 | Role | Owns | Does **not** cover |
 | --- | --- | --- |
 | [`python-gate-developer.md`](engineering/python-gate-developer.md) | Python API design, managers/actors/sources, the C++ boundary, serialisation | physics validity, test design |
-| [`geant4-physics-expert.md`](engineering/geant4-physics-expert.md) | Physics lists, cuts, EM models, statistics, physical plausibility | code structure, build issues |
+| [`geant4-physics-expert.md`](engineering/geant4-physics-expert.md) | Geant4 physics lists, EM models, cuts, statistics, physical plausibility | the GATE configuration layer, code structure |
+| [`gate-physics-expert.md`](engineering/gate-physics-expert.md) | The GATE physics layer: physics manager, **sources**, **actors**, filters, biasing, normalisation | raw Geant4 model internals |
+| [`geant4-geometry-expert.md`](engineering/geant4-geometry-expert.md) | Raw G4 geometry: solids, logical/physical volumes, materials, navigation, overlaps, C++ bindings | the GATE user-facing volume API |
+| [`gate-geometry-expert.md`](engineering/gate-geometry-expert.md) | The GATE geometry layer: volume tree, solids, materials, placement/repetition, regions, fields | raw G4 navigation internals |
 | [`simulation-debugger.md`](engineering/simulation-debugger.md) | Triage, reproduction, lifecycle-localised diagnosis | writing the fix's tests |
 | [`test-writer.md`](engineering/test-writer.md) | Test placement, assertions, tolerances, demonstrating failure | the code under test |
 
-They are deliberately complementary: a physics change is *designed* with the physics skill,
-*implemented* with the developer skill, *proved* with the test-writer skill, and *triaged* with
-the debugger skill when it goes wrong.
+The two physics skills and the two geometry skills are **layered, not duplicated**:
+`geant4-*-expert` covers the Geant4 model beneath GATE; `gate-*-expert` covers the GATE API
+built on top of it (including actors and sources for physics). A change is *designed* with the
+matching expert skill, *implemented* with the developer skill, *proved* with the test-writer
+skill, and *triaged* with the debugger skill when it goes wrong.
 
 ## Conventions every skill follows
 
@@ -94,3 +130,7 @@ the debugger skill when it goes wrong.
 3. **Add it to the tables in this README and to the skills index in
    [`../AGENTS.md`](../AGENTS.md)** — an undocumented skill is invisible.
 4. Keep it self-contained: another agent may read it in isolation.
+5. **Check the file is actually trackable** — a skill directory whose name begins with
+   `build` is silently ignored by `.gitignore`'s `build*/` rule (B-011). Verify with
+   `git check-ignore -v skills/<topic>/SKILL.md` (no output = fine) and confirm it appears in
+   `git status`. A skill that cannot be committed does not exist for anyone else.

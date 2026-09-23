@@ -38,6 +38,9 @@ dist/
 # --- C++ / CMAKE ---
 # Exclude all build directories except for the base folder if needed
 build*/
+# `build*/` also matches documentation directories whose name starts with "build"
+# (e.g. skills/build-and-ci/). Keep those tracked.
+!skills/build*-*/
 CMakeFiles/
 CMakeCache.txt
 CMakeUserPresets.json

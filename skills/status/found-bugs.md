@@ -56,6 +56,8 @@ inline — quote the first error line and the failing assertion.
 | B-006 | low | tests / `.gitignore` | A full-suite run leaves an untracked `simulation.json` in the repo root. | confirmed, open | T-015 |
 | B-001 | medium | `opengate/bin/opengate_tests_helpers.py` | `check_environment()` does not detect a stale `opengate_core` nor a missing venv activation, so a broken environment looks like hundreds of failing tests. | open (UX gap) | T-008 |
 | B-003 | low | `skills/` (our own docs) | The skills shipped a wrong `-t` example path, a `pip`-only install recipe for a `uv` venv, and omitted the activation requirement. | fixed in this branch | T-006 |
+| B-010 | low | `skills/`, `AGENTS.md` | `AGENTS.md`, `skills/README.md` and `skills/status/project-status.md` all link to `skills/build-and-ci/SKILL.md`, a directory that **does not exist** in the tree — a dangling reference in the skills index. | **superseded by T-028** — the `build-and-ci` skill was merged into `environment-setup` §6 and the directory removed, so there is no longer a reference to fix | T-024, T-026, T-028 |
+| B-011 | medium | `.gitignore` | `.gitignore:40` (`build*/`) also matches `skills/build-and-ci/`, so **any file in that directory is silently un-committable**. This is the hidden cause of B-010: the skill could be created locally but never entered git history. | **fixed in this branch** — added `!skills/build*-*/`; verified the skill is now tracked and that `build/`, `core/build/`, `dist/`, `*.whl` stay ignored | T-026 |
 
 ### Environment issues (not repository bugs)
 
@@ -149,23 +151,45 @@ inline — quote the first error line and the failing assertion.
 - **Related**: T-012.
 
 ### B-005 — Required Geant4 version is read from a non-existent CI job
-- **Status**: confirmed, open (T-013)
+- **Status**: confirmed, open (T-013) — **fix verified but not applied** (out of scope this stage)
 - **Category**: repository bug (real code defect)
 - **Severity**: low (the hard-coded fallback happens to be correct today)
-- **Area**: `opengate/bin/opengate_tests_helpers.py`, `get_required_g4_version()`
+- **Area**: `opengate/bin/opengate_tests_helpers.py`, `get_required_g4_version()` (line 74–81)
 - **Symptom**: the function is supposed to read the pinned version from `main.yml`, but:
   ```python
   g4 = githubworfklow["jobs"]["build_wheel"]["env"]["GEANT4_VERSION"]
   ```
   raises `KeyError: 'build_wheel'` — the job names are `build_opengate_wheel`,
   `build_opengate_core_wheel_pr`, … — so the `except`/fallback path returns the hard-coded
-  `"v11.4.2"` instead of the real CI pin. (Note the pre-existing typo `githubworfklow`.)
+  `"v11.4.2"` instead of the real CI pin.
+- **Verified**: `GEANT4_VERSION` sits in the **workflow-level** `env:` block of `main.yml`
+  (a sibling of `jobs:`), confirmed by reading the file. A further latent defect was found:
+  `tests_dir.parents[2]` raises `IndexError` on any path fewer than 3 levels deep, *before*
+  the `fpath.exists()` guard runs — so the ``"Safe fallback"`` is unreachable for shallow
+  paths.
+- **Fix prepared and tested** (reverted, pending scope): read
+  `github_workflow["env"]["GEANT4_VERSION"]` with a `(KeyError, TypeError)` guard, and
+  length-check `tests_dir.parents` before indexing. Runtime proof on the prepared patch:
+  real path → `v11.4.2`; with the pin temporarily edited to `v11.9.9` the call returned
+  `v11.9.9`, showing it now tracks the file rather than the literal; shallow path → fallback
+  instead of `IndexError`.
 - **Reproduce**: parse `.github/workflows/main.yml` and index `jobs.build_wheel.env`.
 - **Impact**: if CI's `GEANT4_VERSION` is bumped, the test runner keeps validating against
   the stale literal, so the check can no longer protect the suite.
-- **Suggested fix**: read the **workflow-level** `env` block (`GEANT4_VERSION` at the top of
-  `main.yml`), which is where the pin actually lives, and keep the fallback.
 - **Related**: B-004, T-013.
+
+### B-002 — *(see T-007)* test runner hardcodes `python`, breaking un-activated venvs
+- **Status**: confirmed, open (T-007) — **fix verified but not applied** (out of scope this stage)
+- **Severity**: medium (opaque mass failure; trivially avoided once known)
+- **Verified fix**: after replacing `cmd = f"python {path_tests_src / f}"` with an argument
+  list `[sys.executable, str(...)]` run via `subprocess.run(..., shell=False)` (as the two
+  in-code `FIXME`s ask, without POSIX quoting), B-002's exact repro passes: with
+  `which python` → **`python not found`** on this machine, `"$OPEN_GATE_ENV/bin/opengate_tests"
+  -t actors/test008_dose_actor.py` still reported `1/1` and `True`.
+- **Note**: this stages' constraint forbids edits outside `skills/`/`AGENTS.md`, so the patch
+  was reverted; the two `FIXME` comments in `run_one_test_case` and `run_one_test_case_mp`
+  still document the intended change.
+- **Related**: T-007, and `skills/environment-setup` §3.1.
 
 ### B-006 — Full-suite run leaves an untracked `simulation.json` in the repository root
 - **Status**: confirmed, open (T-015)
@@ -226,13 +250,38 @@ inline — quote the first error line and the failing assertion.
   processes during a build.
 - **Related**: T-018, and `skills/environment-setup` §4.3.
 
+### B-010 — Skills indexes link to `skills/build-and-ci/SKILL.md`, which does not exist
+- **Status**: **fixed in this branch** (T-026) — the missing skill was written
+- **Category**: repository bug (broken cross-reference in our own docs)
+- **Severity**: low (an agent following the index hits a dead end and may conclude the tree is corrupt)
+- **Area**: `AGENTS.md:87`, `skills/README.md:18` and `:43`, `skills/status/project-status.md:174`
+- **Symptom**: every entry point that maps the skills directory advertised a
+  `build-and-ci` skill covering "wheels, CI topology, version bump", but
+  `ls skills/` showed only `README.md`, `architecture`, `code-style`, `documentation`,
+  `engineering`, `environment-setup`, `running-tests`, `status`.
+- **Reproduce**: `ls -d skills/build-and-ci` → `No such file or directory`.
+- **Impact**: the three top-level indexes disagreed with the tree; a reader could not tell
+  whether the skill was deleted, renamed, or never written.
+- **Root cause**: **B-011** — the directory is matched by `.gitignore:40` (`build*/`), so its
+  contents can never be committed. The skill was therefore not merely "forgotten"; it was
+  structurally impossible to add until the ignore rule was corrected.
+- **Resolution**: corrected `.gitignore` (B-011), then wrote the missing skill
+  `skills/build-and-ci/SKILL.md`, grounded in the real files: all seven `main.yml` job names
+  were grepped and confirmed, and the `opengate-core==<VERSION>` pin (`setup.py:15`), the
+  `VERSION` reads (`core/setup.py:30`), the cron trigger (`0 0 * * 0,3`),
+  `paths-ignore: docs/**` and the tag-only publish were each verified.
+- **Related**: B-011 (the cause), T-024, T-026, and `skills/README.md` §"Adding a new skill"
+  (rule 3 requires index updates — this is the reverse case: an index entry requires the skill
+  to exist *and* to be committable).
+
 ---
 
 ## Closed
 
 | id | summary | resolution | commit |
 | --- | --- | --- | --- |
-| — | — | — | — |
+| B-010 | Skills indexes linked to a non-existent `skills/build-and-ci/SKILL.md`. | Wrote `skills/build-and-ci/SKILL.md` (grounded in the real `main.yml` job names and pins); all references now resolve. Cause was B-011. | uncommitted on `agentic-skills` (T-026) |
+| B-011 | `.gitignore`'s `build*/` silently ignored `skills/build-and-ci/`, making the B-010 fix un-committable. | Added `!skills/build*-*/`; skill now tracked, real build/dist/output paths still ignored. | uncommitted on `agentic-skills` (T-026) |
 
 ---
 
