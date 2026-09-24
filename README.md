@@ -25,16 +25,16 @@ source opengate_env/bin/activate
 pip install --upgrade pip
 ```
 
-Then install the package opengate. The associated package ```opengate_core``` is automatically downloaded. ```opengate_core``` installs Geant4 librairies.
+Then install the package opengate-rtion. The associated package ```opengate_core_rtion``` is automatically downloaded. ```opengate_core_rtion``` installs Geant4 librairies.
 
 ```
-pip install opengate
+pip install opengate-rtion
 ```
 
 If you already installed the packages and want to upgrade to the latest version:
 
 ```
-pip install --upgrade opengate
+pip install --upgrade opengate-rtion
 ```
 
 Once installed, you can run all tests:
