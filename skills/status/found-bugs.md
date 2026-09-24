@@ -66,6 +66,7 @@ inline — quote the first error line and the failing assertion.
 | --- | --- | --- | --- | --- | --- |
 | B-004 | high (for result validity) | local Geant4 build | The Geant4 checkout was at `v11.4.0` while the project pins `v11.4.2`, so the full-suite baseline was not CI-comparable. | **resolved** — Geant4 rebuilt at v11.4.2, `opengate_core` relinked; runner prints `Geant4 version is OK` | T-012, T-017 |
 | B-009 | high (for result validity) | local `opengate/tests/data` submodule | The test-data submodule was checked out four commits behind the pointer recorded in the parent repo, so reference data for several tests was missing — producing the only 2 failures in the 366/368 baseline. | **resolved** — submodule updated to `9fabbdddf`; the same 2 tests now pass (`2/2`, `True`). Not a repository bug. | T-014, T-020 |
+| B-012 | high (blocks 11 tests) | local `$OPEN_GATE_ENV` (`torch` vs `numpy` ABI) | `torch 2.2.2` was installed against `numpy 2.4.4`, so every NumPy↔torch bridge call raised `RuntimeError: Numpy is not available` and the 11 torch-dependent tests were skipped. | **resolved** — coherent set found by search. Not a repository bug, and **no portable version list exists**: the correct pair is per-platform. | T-034 |
 
 ### Upstream GitHub issues (triaged — see §"Upstream issue triage" below)
 
@@ -161,6 +162,50 @@ inline — quote the first error line and the failing assertion.
 - **Suspected cause**: written from reading the tree, not from running it. `-t` paths are resolved relative to `opengate/tests/src` **including** the subdirectory (`select_tests_by_explicit_paths`).
 - **Workaround / fix**: all three corrected this branch, each now citing the observed failure.
 - **Related**: T-006.
+
+### B-012 — [ENVIRONMENT, not a repo bug] `torch` and `numpy` ABI mismatch blocks every torch test
+- **Status**: **resolved** — coherent set found and installed; 9/9 torch tests pass
+- **Category**: environment issue (package ABI mismatch), **not** a repository bug
+- **Severity**: high *for test coverage* — 11 test files were silently skipped (`--> Torch not avail`)
+- **Area**: `$OPEN_GATE_ENV` on `macOS-15.8-x86_64` (Intel Mac), Python 3.12
+- **Symptom**: plain tensors worked, but *any* NumPy↔torch bridge call failed, which is what every
+  GAN/`garf` test needs:
+  ```
+  A module that was compiled using NumPy 1.x cannot be run in NumPy 2.x …
+  RuntimeError: Numpy is not available        # on torch.from_numpy / .numpy()
+  ```
+  Triggered by `torch.from_numpy(np.arange(3.0)).numpy()` with `torch 2.2.2` against
+  `numpy 2.4.4`.
+- **Cause**: `torch` is compiled against a specific NumPy C-ABI; `torch 2.2.2` is a NumPy-1.x build
+  and cannot interoperate with NumPy ≥ 2. The obvious fix — upgrade `torch` — **is not available
+  on this platform**: PyTorch publishes no Intel-macOS (`x86_64`) wheel newer than `2.2.2`
+  (`uv pip install --dry-run --upgrade torch` offers nothing newer), whereas Linux and Apple
+  Silicon have current NumPy-2 builds.
+- **Why CI never sees it**: `.github/workflows/actions_tests/action.yml` installs torch only on
+  `ubuntu-24.04` (`PLATFORM=x86_`), **`macos-15` (`PLATFORM=arm` — Apple Silicon)** and
+  `windows-2025` — all platforms where PyTorch still ships current wheels. This is a
+  developer-machine-only failure that CI structurally cannot reproduce.
+- **Fix applied** (resolver-driven, **not** copied from anywhere — see
+  [`environment-setup/SKILL.md`](../environment-setup/SKILL.md) §5.2 for the procedure):
+  `numpy==1.26.4` + `pandas==2.3.3` + `scipy==1.12.0` + `torch==2.2.2`. Asking only for
+  `numpy<2 torch` is not enough: `pandas 3.x` / `scipy ≥1.13` pull NumPy ≥ 2 back in, so the whole
+  partner set must be dry-run together.
+- **Verification**: bridge OK (`torch.from_numpy(...).numpy()`); `opengate`, `opengate_core`,
+  `gaga_phsp 0.7.6`, `garf 2.10` all import; **`opengate_tests` now discovers 376 files instead of
+  368**. Torch suite: `test081_simulation_optigan_with_random_seed.py` → `1/1`, `True`; the 7-test
+  GAN/`garf` batch (`test034`, `test038_gan_phsp_spect_gan_{aa,se,ze,mt}`, `test040`,
+  `test047`) → `Summary pass: 8/8`, `True` including the MT variant.
+- **Portability warning — this is the important part**: the four versions above are
+  **machine-specific** and must never be copied to another machine. Record the *platform* with
+  them, and re-derive the set with the §5.2 procedure.
+- **The follow-on lesson (this is the one worth keeping)**: after fixing `torch` I reported the
+  `pytomography`/`hist` tests as “still uncovered” — but they were simply **not installed**, and CI
+  installs both (`actions_tests/action.yml`). The skill's §5 listed the extras without a complete
+  inventory and without any verification step, so a partial install looked like success. §5.0 now
+  takes the list from CI and §5.1 audits the whole test tree and must print `NOTHING MISSING`.
+  `pytomography`, `hist`, `pyvista` and `pymedphys` were then installed and
+  `external/pytomography/test094d_reconstruction.py` → `1/1`, `True` (128.8 s).
+- **Related**: T-034, T-009, [`environment-setup/SKILL.md`](../environment-setup/SKILL.md) §5.0–§5.2.
 
 ### B-004 — [ENVIRONMENT, not a repo bug] Geant4 11.4.0 installed where CI pins 11.4.2
 - **Status**: open — must be fixed by upgrading the **local Geant4 build** (T-012)
@@ -607,6 +652,7 @@ Distinguish these from real bugs; they waste the most time:
 | A bug report you cannot find in the code any more | it may already be fixed though the issue is still open upstream | U-001 |
 | Many tests failing on missing input files | `opengate/tests/data` submodule not initialized **or behind the recorded pointer** (B-008/B-009) | `ls opengate/tests/data`; then `git submodule update --init --recursive` and compare `git -C opengate/tests/data rev-parse HEAD` with `git ls-tree HEAD opengate/tests/data` |
 | Import error for `torch` / `gaga_phsp` / `pytomography` | optional extras not installed | `skills/environment-setup` §5 |
+| `RuntimeError: Numpy is not available` (or `A module that was compiled using NumPy 1.x…`) in a GAN/`garf` test — torch imports fine, plain tensors work, but `.numpy()` / `from_numpy()` fails | `torch`/`numpy` **ABI mismatch** for this platform (B-012) | `skills/environment-setup` §5.2 — find the set by search for *this* platform; the versions are **not** portable |
 | `cannot allocate memory in static TLS block` | Geant4 TLS model | `skills/environment-setup` §4.5 |
 | Test passes alone, fails in the suite | resource contention (`-n all`) or test interdependence | rerun with `-p sp -n 1`, then with `-f` |
 | Stochastic assertion failing at low statistics | test design, not code | inspect the tolerance, not the simulation |

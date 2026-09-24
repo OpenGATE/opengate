@@ -387,25 +387,172 @@ The two facts you need most often, stated here so you do not have to open it:
   draw a conclusion; the symptom is a misleading `AttributeError` for a binding that *does*
   exist in the sources ([`geant4-itk.md`](geant4-itk.md) §7).
 
-## 5. Optional extras some tests need
+## 5. Optional extras — install ALL of them, then verify
 
 Several tests fail at import time without these; that is expected and not a regression.
 Installing them is optional and requires the user's agreement (torch is a large download).
 
+> **Read this before installing.** The failure mode of this section is **installing only the
+> package you happened to think of**. `torch` is the one people remember because it is the
+> biggest, but the suite also needs `gaga_phsp`, `garf`, `pytomography`, `hist`, `pyvista` and
+> `pymedphys`. Installing a subset leaves you with tests that are still skipped or still fail,
+> and it is easy to misread that as a code problem. **Install the whole set, then run the audit
+> in §5.1 to prove the environment is complete.**
+
+### 5.0 The authoritative list — take it from CI, not from memory
+
+`.github/workflows/actions_tests/action.yml` is what actually runs the suite in CI. Read it and
+install exactly what it installs:
+
 ```bash
-source "$OPEN_GATE_ENV/bin/activate"     # uv env: use `uv pip install` with VIRTUAL_ENV
-python -m pip install torch             # CPU wheel is enough
-# Linux CPU-only, lighter:
-# python -m pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
-python -m pip install gaga_phsp         # >=0.7.6 in CI ('gaga-phsp' also resolves)
-python -m pip install garf
-python -m pip install pytomography hist
+cd "$OPEN_GATE_REPO" && grep -nE "pip install" .github/workflows/actions_tests/action.yml
 ```
 
-Not every test needs them: in this tree 11 of 458 test files are skipped just for missing
-`torch` (reported as `--> Torch not avail`, `is_torch_available()` in
-`opengate/bin/opengate_tests_helpers.py`). Check what the environment already has before
-installing anything.
+At the time of writing that is (plus `SimpleITK`, and `torch` — see §5.2 for how to choose its
+version, which is platform-dependent):
+
+```bash
+source "$OPEN_GATE_ENV/bin/activate"     # uv env: use `uv pip install` with VIRTUAL_ENV
+uv pip install --upgrade torch
+uv pip install "gaga_phsp>=0.7.6"        # 'gaga-phsp' also resolves
+uv pip install garf                      # needed by the garf/actor tests
+uv pip install pytomography hist         # needed by external/pytomography/*
+uv pip install pyvista                   # needed by the pyvista-based tests
+uv pip install pymedphys                 # needed by the contrib 'test075...' tests
+uv pip install SimpleITK
+```
+
+Any install may legitimately pull its own transitive dependencies (e.g. `pytomography` brings
+`kornia`, `fft-conv-pytorch`, `torchrbf`) — that is expected, not a surprise.
+
+### 5.1 Verify the environment is actually complete (do this every time)
+
+Do **not** decide by eye which packages are needed. Ask the test tree what it imports and check
+each one is importable — this catches the package you did not think of:
+
+```bash
+cd "$OPEN_GATE_REPO" && source "$OPEN_GATE_ENV/bin/activate"
+python - <<'PY'
+import ast, sys, pathlib, collections, importlib.util
+src = pathlib.Path("opengate/tests/src")
+local = {"opengate", "opengate_core", "utility", "gate", "tests"} | {p.stem for p in src.rglob("*.py")}
+third = collections.defaultdict(set)
+for f in src.rglob("*.py"):
+    try:
+        tree = ast.parse(f.read_text(encoding="utf-8", errors="ignore"))
+    except SyntaxError:
+        continue
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                third[a.name.split(".")[0]].add(f.name)
+        elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+            third[n.module.split(".")[0]].add(f.name)
+missing = [(m, sorted(fs)) for m, fs in sorted(third.items())
+           if m not in local and m not in sys.stdlib_module_names
+           and importlib.util.find_spec(m) is None]
+print("NOTHING MISSING" if not missing else "")
+for m, fs in missing:
+    print(f"MISSING {m}: {fs}")
+PY
+```
+
+Expected output on a complete environment: **`NOTHING MISSING`**. Known false positives, safe to
+ignore — these are **local modules of the test tree**, not PyPI packages (confirm with
+`grep -rn "module <name>\|import <name>" opengate/tests/src | head`):
+
+| Reported as missing | What it really is |
+| --- | --- |
+| `actors` | a **directory** under `opengate/tests/src/` imported by one visu test |
+| `test043_garf_helpers` | a sibling helper module imported by the `test043_garf_*_wip.py` files |
+| `coresi` | `opengate/contrib/compton_camera/coresi_helpers.py`, a local module |
+
+Everything else in that list is a real gap — install it (§5.0). Do not proceed while a *real*
+package is still missing: its tests will be skipped or fail, and you will be tempted to blame the
+code.
+
+Then confirm the *count*: the runner reports how many files it will execute, and installing the
+extras should raise it. On the machine where this was written the count went **368 → 376** once
+the extras were in place:
+
+```bash
+opengate_tests -t misc/test001_g4threevector.py | head -5    # look at the discovered-file count
+```
+
+A test that is still skipped prints its reason in the log (`--> Torch not avail`,
+`--> pytomography not avail`): read it rather than assuming.
+
+### 5.2 `torch` and `numpy` have a **per-platform** compatibility constraint — search, never copy a version list
+
+**There is no portable “known good” set of `torch`/`numpy` versions for this project.** The
+correct combination depends on the machine, so a version list copied from another session is a
+bug waiting to happen. Determine it on the machine you are on.
+
+**Why it is platform-specific.** `torch` is compiled against a specific NumPy C-ABI. A `torch`
+wheel built against NumPy 1.x does **not** interoperate with NumPy ≥ 2: importing still succeeds
+and plain tensors still work, but *any* bridge call fails, which is what breaks the GAN/`garf`
+tests:
+
+```
+A module that was compiled using NumPy 1.x cannot be run in NumPy 2.x …
+RuntimeError: Numpy is not available      # on torch.from_numpy / .numpy() / DataLoader
+```
+
+Whether you can escape that by upgrading `torch` depends entirely on the platform, because
+PyTorch publishes wheels per OS/architecture — and **drops them for architectures it no longer
+builds**, e.g. there is **no Intel-macOS (`x86_64`) wheel newer than `torch 2.2.2`**, whereas Linux
+and Apple Silicon have current releases on NumPy 2.
+
+**The procedure — do this instead of copying versions:**
+
+```bash
+source "$OPEN_GATE_ENV/bin/activate"
+
+# 1. What platform am I on, and is torch's numpy bridge actually broken?
+python -c "import platform,sys;print(platform.platform(), platform.machine(), sys.version.split()[0])"
+python -c "import torch,numpy as np;print(torch.__version__, np.__version__);\
+print(torch.from_numpy(np.arange(3.0)).numpy())"      # fails => ABI mismatch
+
+# 2. What is the NEWEST torch this platform can have? (dry-run changes nothing)
+uv pip install --dry-run --upgrade torch
+
+# 3. If a newer torch exists -> upgrade torch, keep numpy 2:
+uv pip install --upgrade torch
+
+# 4. If torch is already at its newest -> you must go DOWN to numpy 1.x.
+#    Ask the resolver which numpy/partners are mutually consistent (no guesswork):
+uv pip install --dry-run "numpy<2" torch
+uv pip install --dry-run "numpy<2" torch pandas scipy      # partner downgrades it implies
+
+# 5. Apply what the resolver agreed on, then RE-VERIFY the bridge (step 1).
+```
+
+Rules that follow:
+
+- **Let the resolver decide the partners.** On Intel macOS the coherent set was
+  `numpy 1.26.x` + `torch 2.2.2` **+ `pandas 2.x` + `scipy 1.12.x`** — `pandas 3` and `scipy ≥1.13`
+  pull NumPy ≥ 2 back in, so asking only for `numpy<2 torch` silently fails or diverges. Always
+  dry-run the *whole* set (step 4) and read what `uv` proposes.
+- **Never leave a half-applied downgrade.** `uv` may abort the resolve and leave the environment
+  untouched; check the exit status and the resulting `uv pip list`, then re-run step 1.
+- **Re-verify the bridge after every change** — a successful install is not a working pair.
+- **Record what you found, not what you hoped:** put the *platform* next to the versions, or the
+  next agent will copy them onto a machine where they are wrong (this is the trap that produced
+  B-012).
+- If the downgrade is unacceptable for other work on that machine, use a **separate throwaway
+  environment** for the torch tests rather than degrading the main one.
+
+**Known-observed example (so you can recognise the pattern, *not* to copy the versions):** on
+`macOS-15.8-x86_64` (Intel) with Python 3.12, the newest available `torch` was `2.2.2`, and the
+coherent set was `numpy 1.26.4` + `pandas 2.3.3` + `scipy 1.12.0` + `torch 2.2.2`. On Apple
+Silicon and Linux the same project takes a current `torch` with NumPy 2 and needs **no** downgrade.
+The platform half of that sentence is the part that matters.
+
+**Why CI does not catch this:** `.github/workflows/actions_tests/action.yml` installs torch on
+`ubuntu-24.04` (`PLATFORM=x86_`), **`macos-15` (`PLATFORM=arm` — Apple Silicon)** and
+`windows-2025`, i.e. only on platforms where PyTorch still ships current wheels. An Intel-Mac
+developer therefore hits a failure CI structurally cannot reproduce — check the platform before
+suspecting a `torch`-related test failure is a regression.
 
 Additionally CI installs `SimpleITK` explicitly and, on Linux/Windows, extends the
 library path using the helper script:
