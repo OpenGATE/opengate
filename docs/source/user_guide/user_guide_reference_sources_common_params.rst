@@ -11,13 +11,13 @@ a source description to the simulation, you do:
 .. code:: python
 
    source1 = sim.add_source('GenericSource', 'source1')
-   source1.n = 100
+   source1.number_of_primaries = 100
 
    source2 = sim.add_source('VoxelSource', 'source2')
    source2.activity = 10 * g4_units.Bq
 
 There are several source types, each one with different parameter. In
-this example, ``source1.n`` indicates that this source will generate 100
+this example, ``source1.number_of_primaries`` indicates that this source will generate 100
 Events. The second source manages the time and will generate 10 Events
 per second, so according to the simulation run timing, a different
 number of Events will be generated.
@@ -59,11 +59,11 @@ A minimal working example would be:
 .. code:: python
 
    source = sim.add_source("GenericSource", "mySource")
-   source.n = [10000, 150000, 36]
+   source.number_of_primaries = [10000, 150000, 36]
 
    sim.run_timing_intervals = [[0, 1 * sec], [2 * sec, 2.5 * sec], [4 * sec, 5 * sec]]
 
-Please note that sim.run_timing_intervals must have the same length as source.n.
+Please note that ``sim.run_timing_intervals`` must have the same length as ``source.number_of_primaries``.
 By default, all particles of a given run will be emitted at a timestamp equal to the minimum time of the corresponding timing interval.
 
 Coordinate system

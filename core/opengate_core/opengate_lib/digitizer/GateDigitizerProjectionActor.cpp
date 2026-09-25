@@ -17,7 +17,7 @@ G4Mutex DigitizerProjectionActorMutex = G4MUTEX_INITIALIZER;
 
 GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
     : GateVActor(user_info, true) {
-  fActions.insert("StartSimulationAction");
+  // fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
   fActions.insert("EndOfRunAction");
@@ -51,23 +51,37 @@ void GateDigitizerProjectionActor::EnableSquaredImage(const bool b) {
   // FIXME check if weight exists ?
 }
 
-// Called when the simulation starts
-void GateDigitizerProjectionActor::StartSimulationAction() {
-  // Get the input hits collection
-  auto *hcm = GateDigiCollectionManager::GetInstance();
-  for (const auto &name : fInputDigiCollectionNames) {
-    auto *hc = hcm->GetDigiCollection(name);
-    fInputDigiCollections.push_back(hc);
-    CheckRequiredAttribute(hc, "PostPosition");
-  }
-}
+// // Called when the simulation starts
+// void GateDigitizerProjectionActor::StartSimulationAction() {
+//   // Get the input hits collection
+//   auto *hcm = GateDigiCollectionManager::GetInstance();
+//   for (const auto &name : fInputDigiCollectionNames) {
+//     auto *hc = hcm->GetDigiCollection(name);
+//     fInputDigiCollections.push_back(hc);
+//     CheckRequiredAttribute(hc, "PostPosition");
+//   }
+// }
 
 void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
+  // Get the input hits collection
+  // auto *hcm = GateDigiCollectionManager::GetInstance();
+  // for (const auto &name : fInputDigiCollectionNames) {
+  //     auto *hc = hcm->GetDigiCollection(name);
+  //     fInputDigiCollections.push_back(hc);
+  //     CheckRequiredAttribute(hc, "PostPosition");
+  // }
+
   // Set the image to the correct position/orientation
+  std::cout
+      << "GateDigitizerProjectionActor::BeginOfRunActionMasterThread: start"
+      << std::endl;
   AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
                                  fDetectorOrientationMatrix);
   AttachImageToVolume<ImageType>(fSquaredImage, fPhysicalVolumeName,
                                  G4ThreeVector(), fDetectorOrientationMatrix);
+
+  std::cout << "GateDigitizerProjectionActor::BeginOfRunActionMasterThread: end"
+            << std::endl;
 }
 
 void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
@@ -77,6 +91,10 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
     // local images
     l.fInputPos.resize(fInputDigiCollectionNames.size());
     l.fInputWeights.resize(fInputDigiCollectionNames.size());
+    std::cout << "fInputDigiCollections.size() " << fInputDigiCollections.size()
+              << std::endl;
+    std::cout << "fImage->GetLargestPossibleRegion().GetSize() "
+              << fImage->GetLargestPossibleRegion().GetSize() << std::endl;
     for (size_t slice = 0; slice < fInputDigiCollections.size(); slice++) {
       auto *att_pos =
           fInputDigiCollections[slice]->GetDigiAttribute("PostPosition");
@@ -153,7 +171,7 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
   const auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
   for (size_t channel = 0; channel < fInputDigiCollections.size(); channel++) {
-    const auto slice = channel + run * fInputDigiCollections.size();
+    const auto slice = channel;
     ProcessSlice(slice, channel);
   }
 }
@@ -237,7 +255,7 @@ GateDigitizerProjectionActor::GetRunRegion(const int run_id) const {
   auto region = fImage->GetLargestPossibleRegion();
   auto index = region.GetIndex();
   auto size = region.GetSize();
-  index[2] += run_id * fInputDigiCollections.size();
+  // index[2] += run_id * fInputDigiCollections.size();
   size[2] = fInputDigiCollections.size();
   region.SetIndex(index);
   region.SetSize(size);

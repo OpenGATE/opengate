@@ -41,7 +41,7 @@ a 120 MeV/n carbon ion beam.
    source.energy.mono = 1440 * MeV
    source.particle = "ion 6 12"  # carbon
    source.position.translation = [100 * mm, 0 * mm, 0 * cm]
-   source.n = 20000
+   source.number_of_primaries = 20000
    source.direction.partPhSp_x = [
        2.3335754 * mm,
        2.3335754 * mrad,
