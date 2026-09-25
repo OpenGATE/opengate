@@ -33,7 +33,7 @@ public:
   void InitializeCpp() override;
 
   // Called when the simulation starts (master thread only)
-  void StartSimulationAction() override;
+  // void StartSimulationAction() override;
 
   // Called every time a Run starts (master thread)
   void BeginOfRunActionMasterThread(int run_id) override;
