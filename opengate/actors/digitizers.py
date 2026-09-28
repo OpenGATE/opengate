@@ -1,18 +1,20 @@
 from typing import List
+
 import numpy as np
-from scipy.spatial.transform import Rotation
 import opengate_core as g4
+from scipy.spatial.transform import Rotation
+
 from ..base import process_cls
-from .base import ActorBase
-from ..exception import fatal
 from ..definitions import fwhm_to_sigma
-from ..utility import g4_units
+from ..exception import fatal
 from ..image import (
     align_image_with_physical_volume,
-    update_image_py_to_cpp,
     get_py_image_from_cpp_image,
+    update_image_py_to_cpp,
 )
+from ..utility import g4_units
 from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
+from .base import ActorBase
 
 
 def ene_win_peak(name, energy, energy_width_percent):
@@ -524,10 +526,11 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
 
     def set_param_gauss(self):
         if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
+            if not np.isclose(self.blur_sigma, self.blur_fwhm * fwhm_to_sigma):
+                fatal(
+                    f"Error, use blur_sigma or blur_fwhm, not both "
+                    f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
+                )
         if self.blur_fwhm is not None:
             self.blur_sigma = self.blur_fwhm * fwhm_to_sigma
         if self.blur_sigma is None:
@@ -878,10 +881,13 @@ class DigitizerSpatialBlurringActor(
 
     def initialize_blurring_parameters(self):
         if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
+            if not np.allclose(
+                self.blur_sigma, np.asarray(self.blur_fwhm) * fwhm_to_sigma
+            ):
+                fatal(
+                    f"Error, use blur_sigma or blur_fwhm, not both "
+                    f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
+                )
         if not hasattr(self.blur_sigma, "__len__"):
             self.blur_sigma = [self.blur_sigma] * 3
         if not hasattr(self.blur_fwhm, "__len__"):
@@ -1185,7 +1191,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
     def __initcpp__(self):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
-        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+        self.AddActions({"StartSimulationAction"})
 
     def resolve_and_validate_config(self, context=None):
         super().resolve_and_validate_config(context=context)
@@ -1256,6 +1262,12 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
     def StartSimulationAction(self):
         DigitizerBase.StartSimulationAction(self)
+        for actor_output in self.user_output.values():
+            if actor_output.get_active(item="any"):
+                actor_output.start_of_simulation()
+        g4.GateDigitizerProjectionActor.StartSimulationAction(self)
+
+    def BeginOfRunActionMasterThread(self, run_index):
         # for the moment, we cannot use this actor with several volumes
         if hasattr(self.attached_to, "__len__") and not isinstance(
             self.attached_to, str
@@ -1264,20 +1276,14 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
                 f"Sorry, cannot (yet) use several mothers volumes for "
                 f"DigitizerProjectionActor {self.name}"
             )
-
         # define the new size and spacing according to the nb of channels
         # and according to the volume shape
         size = self.output_size
         spacing = self.output_spacing
-        size[2] = len(self.input_digi_collections) * len(
-            self.simulation.run_timing_intervals
-        )
+        size[2] = len(self.input_digi_collections)
         spacing[2] = self.compute_thickness(self.attached_to, size[2])
 
-        # we use the image associated with run 0 for the entire simulation
-        # in the future, this actor should implement a BeginOfRunActionMasterThread
-        # to be able to work on a per-run basis
-        self.user_output.counts.create_empty_image(0, size, spacing)
+        self.user_output.counts.create_empty_image(run_index, size, spacing)
 
         # check physical_volume_index and number of repeating
         n = len(self.attached_to_volume.g4_physical_volumes)
@@ -1303,24 +1309,25 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             )
             pv = None  # avoid warning from IDE
         align_image_with_physical_volume(
-            self.attached_to_volume, self.user_output.counts.data_per_run[0].image
+            self.attached_to_volume,
+            self.user_output.counts.data_per_run[run_index].image,
         )
         self.SetPhysicalVolumeName(str(pv.GetName()))
 
         # update the cpp image and start
         update_image_py_to_cpp(
-            self.user_output.counts.data_per_run[0].image, self.fImage, True
+            self.user_output.counts.data_per_run[run_index].image, self.fImage, True
         )
 
         # uncertainty ?
         if self.user_output.squared_counts.get_active():
-            self.user_output.squared_counts.create_empty_image(0, size, spacing)
+            self.user_output.squared_counts.create_empty_image(run_index, size, spacing)
             align_image_with_physical_volume(
                 self.attached_to_volume,
-                self.user_output.squared_counts.data_per_run[0].image,
+                self.user_output.squared_counts.data_per_run[run_index].image,
             )
             update_image_py_to_cpp(
-                self.user_output.squared_counts.data_per_run[0].image,
+                self.user_output.squared_counts.data_per_run[run_index].image,
                 self.fSquaredImage,
                 True,
             )
@@ -1328,62 +1335,45 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
         # keep the initial origin
         self.start_output_origin = list(
-            self.user_output.counts.data_per_run[0].get_image_properties().origin
+            self.user_output.counts.data_per_run[run_index]
+            .get_image_properties()
+            .origin
         )
-        g4.GateDigitizerProjectionActor.StartSimulationAction(self)
+        g4.GateDigitizerProjectionActor.BeginOfRunActionMasterThread(self, run_index)
 
-    def EndSimulationAction(self):
-        # Keep this trampoline thin: do not put functional Python logic here.
-        # Concrete Python-side finalization belongs in finalize_simulation().
-        g4.GateDigitizerProjectionActor.EndSimulationAction(self)
-
-    def finalize_simulation(self):
-        """Transfer the projection image from C++ to Python and finalize outputs."""
-
-        # retrieve the image
+    def EndOfRunActionMasterThread(self, run_index):
+        # Transfer the completed C++ images into their run-specific output slots
+        # before ActorOutput performs cumulative aggregation or discards them.
         self.user_output.counts.store_data(
-            "merged", get_py_image_from_cpp_image(self.fImage)
+            run_index, get_py_image_from_cpp_image(self.fImage, view=False)
         )
 
-        # set its properties
-        info = self.user_output.counts.data_per_run[0].get_image_properties()
-        spacing = info.spacing
+        # Projection files use a neutral channel-axis spacing and origin. The
+        # physical detector thickness is only needed while scoring in C++.
+        info = self.user_output.counts.data_per_run[run_index].get_image_properties()
+        spacing = np.array(info.spacing, copy=True)
         if self.origin_as_image_center:
             origin = -info.size * spacing / 2.0 + spacing / 2.0
         else:
-            origin = self.start_output_origin
+            origin = np.array(self.start_output_origin, copy=True)
         origin[2] = 0
         spacing[2] = 1
-        self.user_output.counts.merged_data.image.SetSpacing(list(spacing))
-        self.user_output.counts.merged_data.image.SetOrigin(list(origin))
+        self.user_output.counts.set_image_properties(
+            run_index, spacing=list(spacing), origin=list(origin)
+        )
 
-        # FIXME: DigitizerProjectionActor currently uses ``data_per_run[0]`` as
-        # temporary internal scaffolding for image properties/runtime setup and
-        # later moves the actual result into ``merged_data`` before deleting
-        # the run-0 slot. This works pragmatically but blurs the actor-output
-        # semantics: per-run slots should represent true user-facing per-run
-        # output, not internal scratch state. Revisit this actor so temporary
-        # runtime bookkeeping is structurally separate from actual output slots.
-        #
-        # Related concern: this method still writes certain outputs explicitly
-        # instead of relying purely on the generic actor-output finalization
-        # path below, which suggests the projection actor does not yet align
-        # cleanly with the standard actor-output workflow.
-        # remove the image for run 0 as the result is in merged_data
-        self.user_output.counts.data_per_run.pop(0)
-        self.user_output.counts.write_data_if_requested(which="merged")
-
-        # squared ?
         if self.user_output.squared_counts.get_active():
             self.user_output.squared_counts.store_data(
-                "merged", get_py_image_from_cpp_image(self.fSquaredImage)
+                run_index, get_py_image_from_cpp_image(self.fSquaredImage, view=False)
             )
-            self.user_output.squared_counts.merged_data.image.SetSpacing(list(spacing))
-            self.user_output.squared_counts.merged_data.image.SetOrigin(list(origin))
-            self.user_output.squared_counts.data_per_run.pop(0)
-            self.user_output.squared_counts.write_data_if_requested(which="merged")
+            self.user_output.squared_counts.set_image_properties(
+                run_index, spacing=list(spacing), origin=list(origin)
+            )
 
-        DigitizerBase.finalize_simulation(self)
+        for actor_output in self.user_output.values():
+            if actor_output.get_active(item="all"):
+                actor_output.end_of_run(run_index)
+        return 0
 
 
 class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterActor):

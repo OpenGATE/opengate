@@ -143,8 +143,13 @@ def create_simulation(geom, paths, version):
 
     sec = gate.g4_units.second
     sim.running_verbose_level = gate.logger.RUN
-    # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
-    sim.run_timing_intervals = [[0, 1 * sec]]
+    sim.run_timing_intervals = [
+        [0, 0.33 * sec],
+        [0.33 * sec, 0.66 * sec],
+        [0.66 * sec, 1 * sec],
+        [1 * sec, 1.5 * sec],
+    ]
+    # sim.run_timing_intervals = [[0, 1 * sec]]
 
     # print cuts
     print(sim.physics_manager.dump_production_cuts())

@@ -186,7 +186,7 @@ Server-based execution
 Server-based multi-job execution is intended to be file-based:
 
 1. prepare a campaign folder containing ``simulation.json`` and the required
-   input files, probably locally
+   input files, probably locally. To create the ```simulation.json`` file, you can use ``sim.to_json_file()`` in your script.
 2. transfer the campaign folder to the server
 3. split the simulation on the server
 4. submit the child jobs through a scheduler

@@ -85,7 +85,7 @@ simulation:
        # tps
        n_sim = 80000  # particles to simulate per beam
        tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
-       tps.n = n_sim
+       tps.number_of_primaries = n_sim
        tps.beam_model = beamline
        tps.plan_path = ref_path / "TreatmentPlan2Spots.txt"
        tps.beam_nr = 1

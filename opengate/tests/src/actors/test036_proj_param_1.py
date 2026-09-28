@@ -33,9 +33,15 @@ if __name__ == "__main__":
         source.activity = source.activity / 1000
 
     # add a proj actor
+    keV = g4_units.keV
+    channels = [
+        {"name": f"peak222", "min": 210 * keV, "max": 230 * keV},
+        {"name": f"peak333", "min": 310 * keV, "max": 340 * keV},
+    ]
     proj = sim.add_actor("DigitizerProjectionActor", "proj")
     proj.attached_to = "crystal"
     fname = "proj1.mha"
+    proj.input_digi_collections = [x["name"] for x in channels]
     proj.output_filename = fname.replace(".mha", "-1.mha")
     proj.size = [128, 128]
     proj.spacing = [5 * mm, 5 * mm]

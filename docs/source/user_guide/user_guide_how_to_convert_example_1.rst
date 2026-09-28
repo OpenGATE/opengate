@@ -209,7 +209,7 @@ GATE 10
     source.position.translation = [1060 * mm, 0 * mm, 0 * mm]
     source.direction.type = "focused"
     source.direction.focus_point = [1000 * mm, 0 * mm, 0 * mm]
-    source.n = 720000 / sim.number_of_threads
+    source.number_of_primaries = 720000 / sim.number_of_threads
     source.visualization.count = 2000
     source.visualization.color = "red"
     source.visualization.size = 5
