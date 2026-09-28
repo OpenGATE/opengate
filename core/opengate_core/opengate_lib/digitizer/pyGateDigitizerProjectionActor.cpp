@@ -27,7 +27,7 @@ public:
 
 void init_GateDigitizerProjectionActor(py::module &m) {
 
-  py::class_<GateDigitizerProjectionActor,
+  py::class_<GateDigitizerProjectionActor, PyDigitizerProjectionActor,
              std::unique_ptr<GateDigitizerProjectionActor, py::nodelete>,
              GateVActor>(m, "GateDigitizerProjectionActor")
       .def(py::init<py::dict &>())
