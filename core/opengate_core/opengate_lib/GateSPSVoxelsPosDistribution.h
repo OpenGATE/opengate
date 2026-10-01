@@ -11,6 +11,9 @@
 #include "GateSPSPosDistribution.h"
 #include <itkImage.h>
 
+#include <cstddef>
+#include <vector>
+
 class GateSPSVoxelsPosDistribution : public GateSPSPosDistribution {
 
 public:
@@ -21,13 +24,12 @@ public:
   // Cannot inherit from GenerateOne
   G4ThreeVector VGenerateOne() override;
 
-  // typedef for vector of vector
-  typedef std::vector<double> VD;
-  typedef std::vector<VD> VD2;
-  typedef std::vector<std::vector<VD>> VD3;
-
-  void SetCumulativeDistributionFunction(const VD &vz, const VD2 &vy,
-                                         const VD3 &vx);
+  // The three CDF arrays are contiguous and use numpy ZYX order:
+  // cdfZ[nz], cdfY[nz][ny], and cdfX[nz][ny][nx]. The arrays are copied so
+  // they can safely outlive their Python owners.
+  void SetCumulativeDistributionFunction(const double *cdfZ, const double *cdfY,
+                                         const double *cdfX, std::size_t nx,
+                                         std::size_t ny, std::size_t nz);
 
   // Image type is 3D float by default (the pixel data are not used
   // nor even allocated. Only useful to convert pixel coordinates
@@ -42,9 +44,12 @@ public:
   G4RotationMatrix fGlobalRotation;
 
 protected:
-  VD3 fCDFX;
-  VD2 fCDFY;
-  VD fCDFZ;
+  // fCDFX[(z * ny + y) * nx + x]
+  // fCDFY[z * ny + y]
+  // fCDFZ[z]
+  std::vector<double> fCDFX;
+  std::vector<double> fCDFY;
+  std::vector<double> fCDFZ;
 };
 
 #endif // GateSPSVoxelsPosDistribution_h
