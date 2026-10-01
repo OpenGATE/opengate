@@ -83,6 +83,7 @@ void GateWindowTurboSource::WriteBackUserInfo() {
 }
 
 void GateWindowTurboSource::PrepareSharedBeforeRun() {
+  std::lock_guard<std::mutex> lock(fSharedCache->fMutex);
   fCurrentRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
   GateSingleParticleSourceWindowTurbo *spswt =
       reinterpret_cast<GateSingleParticleSourceWindowTurbo *>(fSPS);
@@ -92,8 +93,6 @@ void GateWindowTurboSource::PrepareSharedBeforeRun() {
     return;
   if (fSkip)
     return;
-
-  std::lock_guard<std::mutex> lock(fSharedCache->fMutex);
 
   G4double a1 = GetValueThisRun(fA1);
   G4double a2 = GetValueThisRun(fA2);

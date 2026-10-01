@@ -110,51 +110,13 @@ G4double GateSingleParticleSourceWindowTurbo::InitializeBeforeRun(
 
 void GateSingleParticleSourceWindowTurbo::InitializeUserInfo(
     py::dict &user_info) {
-  // TODO: make this run in master thread before each run
-  // and make the worker thread get info properly before each run
+  // TODO:
   // fSourceName = source_name;
   fSamplingCountInit = DictGetInt(user_info, "init_sampling_count");
   fThreadCountInit = DictGetInt(user_info, "init_number_of_threads");
+  if (fSamplingCountInit < fThreadCountInit)
+    fSamplingCountInit = fThreadCountInit;
   fSkip = DictGetBool(user_info, "skip_mode");
-
-  // fActRatio = DictGetDouble(user_info, "act_ratio");
-  // fMaxSolidAngle = DictGetDouble(user_info, "max_solid_angle");
-  // if (not isnan(fActRatio) && not isnan(fMaxSolidAngle) and fActRatio >= 0
-  // and
-  //     fActRatio <= 1 and fMaxSolidAngle >= 0 and fMaxSolidAngle <= 4 * M_PI)
-  //     {
-  //   return;
-  // } else {
-  //   fMaxSolidAngle = 0;
-  //   fActRatio = 0;
-  // }
-
-  // if (not G4Threading::IsMasterThread()) {
-  // TBD: should I check validity of act_ratio and max_solid_angle here or in
-  // python side?
-  // if (isnan(fActRatio) || isnan(fMaxSolidAngle)) {
-  // G4String error_msg =
-  //     "activity ratio or max solid angle not set for source: ";
-  // error_msg += fSourceName;
-  // G4Exception("GateSingleParticleSourceWindowTurbo::Initialize",
-  //             "InitializeError", FatalException, error_msg);
-  // }
-  // return;
-  // }
-
-  // TODO: check paramenters in python
-  // if (a1 != a1 || a2 != a2 || b1 != b1 || b2 != b2 ||
-  //     plane_distance != plane_distance || plane_phi != plane_phi) {
-  //   G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-  //               FatalException, "Not all parameters needed points are set");
-  // }
-
-  // if (a1 >= a2 || b1 >= b2) {
-  //   G4Exception("GateWindowTurboSource::SetActRatio", "SetActRatioError",
-  //               FatalException, "a1 >= a2 or b1 >= b2");
-  // }
-
-  // VerifyPhiTheta(samplingCount, 0.01);
 }
 
 void GateSingleParticleSourceWindowTurbo::SetPhiTheta(
