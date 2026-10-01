@@ -24,9 +24,6 @@ public:
   // Cannot inherit from GenerateOne
   G4ThreeVector VGenerateOne() override;
 
-  // The three CDF arrays are contiguous and use numpy ZYX order:
-  // cdfZ[nz], cdfY[nz][ny], and cdfX[nz][ny][nx]. The arrays are copied so
-  // they can safely outlive their Python owners.
   void SetCumulativeDistributionFunction(const double *cdfZ, const double *cdfY,
                                          const double *cdfX, std::size_t nx,
                                          std::size_t ny, std::size_t nz);
