@@ -412,6 +412,7 @@ void init_GateVoxelizedPromptGammaAnalogActor(py::module &m);
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
+void init_GateAMDMActor(py::module &m);
 
 void init_GateProductionAndStoppingActor(py::module &m);
 
@@ -823,6 +824,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateVoxelizedPromptGammaAnalogActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
+  init_GateAMDMActor(m);
   init_GateProductionAndStoppingActor(m);
   init_GateBeamQualityActor(m);
   init_GateEmCalculatorActor(m);

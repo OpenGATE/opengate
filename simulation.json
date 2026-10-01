@@ -1,0 +1,573 @@
+{
+    "user_info": {
+        "verbose_level": "INFO",
+        "log_sink": null,
+        "verbose_close": false,
+        "verbose_getstate": false,
+        "running_verbose_level": 0,
+        "g4_verbose_level": 1,
+        "g4_verbose": false,
+        "g4_verbose_level_tracking": -1,
+        "visu": false,
+        "visu_type": "vrml",
+        "visu_filename": null,
+        "visu_verbose": false,
+        "visu_commands": [
+            "# default visualization",
+            "#/vis/open OGLSQt",
+            "/vis/open OGLIQt",
+            "/vis/scene/create",
+            "/vis/drawVolume worlds",
+            "/vis/viewer/flush",
+            "# no verbose",
+            "/control/verbose 0",
+            "# Work but generate txt on terminal",
+            "/vis/scene/add/axes 0 0 0 50 cm",
+            "/vis/scene/add/text 10 0 0 cm  20 0 0   X # red",
+            "/vis/scene/add/text 0 10 0 cm  20 0 0   Y # green",
+            "/vis/scene/add/text 0 0 10 cm  20 0 0   Z # blue",
+            "# change orientation (for debug)",
+            "#/vis/viewer/set/upVector 0 0 1",
+            "#/vis/viewer/set/viewpointVector 0 1 0",
+            "#/vis/viewer/set/upVector 1 0 0",
+            "#/vis/viewer/set/viewpointVector 0 0 1",
+            "#/vis/viewer/set/upVector 0 1 0",
+            "#/vis/viewer/set/viewpointVector 1 0 0",
+            "/vis/sceneHandler/attach",
+            "/vis/modeling/trajectories/create/drawByParticleID",
+            "/tracking/storeTrajectory 1",
+            "/vis/scene/endOfEventAction accumulate",
+            "/vis/scene/add/trajectories",
+            "/vis/viewer/set/auxiliaryEdge true"
+        ],
+        "visu_commands_vrml": [
+            "/vis/open                             VRML2FILE",
+            "/vis/drawVolume worlds",
+            "/vis/modeling/trajectories/create/drawByParticleID",
+            "/tracking/storeTrajectory             1",
+            "/vis/scene/add/trajectories",
+            "/vis/scene/endOfEventAction           accumulate",
+            "/vis/scene/backgroundColour           0 0 0",
+            "#/vis/viewer/flush"
+        ],
+        "visu_commands_gdml": [
+            "/vis/open OGLI 600x600-0+0",
+            "/vis/viewer/set/autoRefresh false",
+            "/vis/verbose errors",
+            "/vis/drawVolume worlds",
+            "/vis/modeling/trajectories/create/drawByParticleID",
+            "/tracking/storeTrajectory             1",
+            "/vis/scene/add/trajectories",
+            "/vis/scene/endOfEventAction           accumulate",
+            "/vis/viewer/set/autoRefresh true",
+            "/vis/verbose warnings",
+            "#/vis/viewer/flush"
+        ],
+        "check_volumes_overlap": true,
+        "number_of_threads": 2,
+        "force_multithread_mode": false,
+        "random_engine": "MixMaxRng",
+        "random_seed": "auto",
+        "current_random_seed": 712304050846155017,
+        "run_timing_intervals": [
+            [
+                0.0,
+                1000000000.0
+            ]
+        ],
+        "simulation_dir": {
+            "__pathlib_path__": [
+                "."
+            ]
+        },
+        "output_dir": {
+            "__pathlib_path__": [
+                "/",
+                "opt",
+                "simulation",
+                "opengate_dev",
+                "opengate_dev_gitfuchs",
+                "opengate",
+                "tests",
+                "output",
+                "test102_debug_actor"
+            ]
+        },
+        "store_json_archive": false,
+        "json_archive_filename": {
+            "__pathlib_path__": [
+                "simulation.json"
+            ]
+        },
+        "store_input_files": false,
+        "g4_commands_before_init": [],
+        "g4_commands_after_init": [],
+        "init_only": false,
+        "progress_bar": false,
+        "progress_hook": null,
+        "progress_hook_interval": null,
+        "max_primaries_per_run": 2147483647,
+        "dyn_geom_open_close": true,
+        "dyn_geom_optimise": true,
+        "name": "simulation"
+    },
+    "object_type": "Simulation",
+    "object_type_full": "<class 'opengate.managers.Simulation'>",
+    "class_module": "opengate.managers",
+    "i_am_a_gate_object": true,
+    "volume_manager": {
+        "user_info": {
+            "name": "VolumeManager"
+        },
+        "object_type": "VolumeManager",
+        "object_type_full": "<class 'opengate.managers.VolumeManager'>",
+        "class_module": "opengate.managers",
+        "i_am_a_gate_object": true,
+        "volumes": {
+            "world": {
+                "user_info": {
+                    "mother": null,
+                    "material": "G4_AIR",
+                    "translation": [
+                        [
+                            0,
+                            0,
+                            0
+                        ]
+                    ],
+                    "color": [
+                        1,
+                        1,
+                        1,
+                        1
+                    ],
+                    "style": "default",
+                    "rotation": [
+                        {
+                            "__ndarray__": [
+                                [
+                                    1.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                [
+                                    0.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                [
+                                    0.0,
+                                    0.0,
+                                    1.0
+                                ]
+                            ],
+                            "__dtype__": "float64",
+                            "__shape__": [
+                                3,
+                                3
+                            ]
+                        }
+                    ],
+                    "build_physical_volume": true,
+                    "field": null,
+                    "dynamic_params": null,
+                    "size": [
+                        1000.0,
+                        1000.0,
+                        1000.0
+                    ],
+                    "name": "world"
+                },
+                "object_type": "BoxVolume",
+                "object_type_full": "<class 'opengate.geometry.volumes.BoxVolume'>",
+                "class_module": "opengate.geometry.volumes",
+                "i_am_a_gate_object": true
+            },
+            "fake": {
+                "user_info": {
+                    "mother": "world",
+                    "material": "G4_AIR",
+                    "translation": [
+                        {
+                            "__ndarray__": [
+                                10.0,
+                                20.0,
+                                30.0
+                            ],
+                            "__dtype__": "float64",
+                            "__shape__": [
+                                3
+                            ]
+                        }
+                    ],
+                    "color": [
+                        1,
+                        0,
+                        1,
+                        1
+                    ],
+                    "style": "default",
+                    "rotation": [
+                        {
+                            "__ndarray__": [
+                                [
+                                    1.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                [
+                                    0.0,
+                                    0.9848077530122081,
+                                    -0.17364817766693033
+                                ],
+                                [
+                                    0.0,
+                                    0.17364817766693033,
+                                    0.9848077530122081
+                                ]
+                            ],
+                            "__dtype__": "float64",
+                            "__shape__": [
+                                3,
+                                3
+                            ]
+                        }
+                    ],
+                    "build_physical_volume": true,
+                    "field": null,
+                    "dynamic_params": null,
+                    "size": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ],
+                    "name": "fake"
+                },
+                "object_type": "BoxVolume",
+                "object_type_full": "<class 'opengate.geometry.volumes.BoxVolume'>",
+                "class_module": "opengate.geometry.volumes",
+                "i_am_a_gate_object": true
+            }
+        },
+        "parallel_world_volumes": [],
+        "fields": {},
+        "material_database_filenames": [],
+        "material_database_new_materials_nb_atoms": {},
+        "material_database_new_materials_weights": {}
+    },
+    "physics_manager": {
+        "user_info": {
+            "physics_list_name": "QGSP_BERT_EMV",
+            "global_production_cuts": {
+                "all": null,
+                "gamma": null,
+                "electron": null,
+                "positron": null,
+                "proton": null
+            },
+            "apply_cuts": true,
+            "energy_range_min": null,
+            "energy_range_max": null,
+            "optical_properties_file": {
+                "__pathlib_path__": [
+                    "opengate",
+                    "data",
+                    "OpticalProperties.xml"
+                ]
+            },
+            "surface_properties_file": {
+                "__pathlib_path__": [
+                    "opengate",
+                    "data",
+                    "SurfaceProperties.xml"
+                ]
+            },
+            "user_limits_particles": [
+                "all_charged"
+            ],
+            "em_parameters": {
+                "fluo": null,
+                "auger": null,
+                "auger_cascade": null,
+                "pixe": null,
+                "deexcitation_ignore_cut": null
+            },
+            "em_switches_world": {
+                "deex": null,
+                "auger": null,
+                "pixe": null
+            },
+            "special_physics_constructors": {
+                "G4DecayPhysics": false,
+                "G4RadioactiveDecayPhysics": false,
+                "G4OpticalPhysics": false
+            },
+            "mean_energy_per_ion_pair": {},
+            "material_ionisation_potential": {},
+            "name": "physics_manager"
+        },
+        "object_type": "PhysicsManager",
+        "object_type_full": "<class 'opengate.managers.PhysicsManager'>",
+        "class_module": "opengate.managers",
+        "i_am_a_gate_object": true,
+        "regions": {},
+        "optical_surfaces": {}
+    },
+    "chemistry_manager": {
+        "user_info": {
+            "chemistry_list_name": null,
+            "time_step_model": "SBS",
+            "confine_chemistry_to_volume": null,
+            "name": "chemistry_manager"
+        },
+        "object_type": "ChemistryManager",
+        "object_type_full": "<class 'opengate.managers.ChemistryManager'>",
+        "class_module": "opengate.managers",
+        "i_am_a_gate_object": true,
+        "chemistry_list": {
+            "user_info": {
+                "list_name": null,
+                "chemical_species": [],
+                "reactions": [],
+                "dissociations": [],
+                "name": "chemistry_list"
+            },
+            "object_type": "ChemistryList",
+            "object_type_full": "<class 'opengate.chemistry.ChemistryList'>",
+            "class_module": "opengate.chemistry",
+            "i_am_a_gate_object": true
+        },
+        "chemistry_world": null
+    },
+    "actor_manager": {
+        "user_info": {
+            "name": "actor_manager"
+        },
+        "object_type": "ActorManager",
+        "object_type_full": "<class 'opengate.managers.ActorManager'>",
+        "class_module": "opengate.managers",
+        "i_am_a_gate_object": true,
+        "actors": {
+            "debug": {
+                "user_info": {
+                    "debug_flag": true,
+                    "attached_to": "fake",
+                    "mother": null,
+                    "filter": null,
+                    "filters": null,
+                    "filters_boolean_operator": "and",
+                    "priority": 100,
+                    "track_structure_em_physics": null,
+                    "name": "debug"
+                },
+                "object_type": "DebugActor",
+                "object_type_full": "<class 'opengate.actors.miscactors.DebugActor'>",
+                "class_module": "opengate.actors.miscactors",
+                "i_am_a_gate_object": true,
+                "user_output": {}
+            },
+            "Stats": {
+                "user_info": {
+                    "track_types_flag": true,
+                    "attached_to": "world",
+                    "mother": null,
+                    "filter": null,
+                    "filters": null,
+                    "filters_boolean_operator": "and",
+                    "priority": 100,
+                    "track_structure_em_physics": null,
+                    "name": "Stats"
+                },
+                "object_type": "SimulationStatisticsActor",
+                "object_type_full": "<class 'opengate.actors.miscactors.SimulationStatisticsActor'>",
+                "class_module": "opengate.actors.miscactors",
+                "i_am_a_gate_object": true,
+                "user_output": {
+                    "stats": {
+                        "user_info": {
+                            "encoder": "json",
+                            "merge_data_after_simulation": true,
+                            "keep_data_per_run": false,
+                            "belongs_to": "Stats",
+                            "keep_data_in_memory": true,
+                            "name": "stats"
+                        },
+                        "object_type": "ActorOutputStatisticsActor",
+                        "object_type_full": "<class 'opengate.actors.actoroutput.ActorOutputStatisticsActor'>",
+                        "class_module": "opengate.actors.actoroutput",
+                        "i_am_a_gate_object": true,
+                        "data_item_config": {
+                            "0": {
+                                "output_filename": "auto",
+                                "write_to_disk": true,
+                                "active": true,
+                                "suffix": "stats"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "source_manager": {
+        "user_info": {
+            "name": "source_manager"
+        },
+        "object_type": "SourceManager",
+        "object_type_full": "<class 'opengate.managers.SourceManager'>",
+        "class_module": "opengate.managers",
+        "i_am_a_gate_object": true,
+        "sources": {
+            "mysource": {
+                "user_info": {
+                    "particle": "gamma",
+                    "ion": {
+                        "Z": 0,
+                        "A": 0,
+                        "E": 0
+                    },
+                    "weight": -1,
+                    "weight_sigma": -1,
+                    "user_particle_life_time": -1,
+                    "tac_times": null,
+                    "tac_activities": null,
+                    "direction_relative_to_attached_volume": false,
+                    "position": {
+                        "type": "sphere",
+                        "radius": 10.0,
+                        "sigma_x": 0,
+                        "sigma_y": 0,
+                        "size": [
+                            0,
+                            0,
+                            0
+                        ],
+                        "translation": [
+                            0,
+                            0,
+                            0
+                        ],
+                        "rotation": {
+                            "__ndarray__": [
+                                [
+                                    1.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                [
+                                    0.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                [
+                                    0.0,
+                                    0.0,
+                                    1.0
+                                ]
+                            ],
+                            "__dtype__": "float64",
+                            "__shape__": [
+                                3,
+                                3
+                            ]
+                        },
+                        "confine": null,
+                        "dz": null
+                    },
+                    "direction": {
+                        "type": "iso",
+                        "theta": [
+                            0,
+                            3.141592653589793
+                        ],
+                        "phi": [
+                            0,
+                            6.283185307179586
+                        ],
+                        "momentum": [
+                            0,
+                            0,
+                            1
+                        ],
+                        "focus_point": [
+                            0,
+                            0,
+                            0
+                        ],
+                        "sigma": [
+                            0,
+                            0
+                        ],
+                        "angular_acceptance": {
+                            "policy": null,
+                            "skip_policy": "SkipEvents",
+                            "max_rejection": 10000,
+                            "target_volumes": [],
+                            "enable_intersection_check": false,
+                            "enable_angle_check": false,
+                            "angle_check_reference_vector": [
+                                0,
+                                0,
+                                1
+                            ],
+                            "angle_check_proximity_distance": 0.0,
+                            "angle_tolerance_proximal": 1.5707963267948966,
+                            "angle_tolerance_min": 0.0,
+                            "angle_tolerance_max": 0.10471975511965978
+                        },
+                        "accolinearity_flag": false,
+                        "accolinearity_fwhm": 0.008726646259971648,
+                        "histogram_theta_weights": [],
+                        "histogram_theta_angles": [],
+                        "histogram_phi_weights": [],
+                        "histogram_phi_angles": []
+                    },
+                    "energy": {
+                        "type": "mono",
+                        "mono": 1.0,
+                        "sigma_gauss": 0,
+                        "is_cdf": false,
+                        "min_energy": null,
+                        "max_energy": null,
+                        "spectrum_type": null,
+                        "spectrum_weights": [],
+                        "spectrum_energies": [],
+                        "histogram_weight": [],
+                        "histogram_energy": [],
+                        "spectrum_energy_bin_edges": [],
+                        "spectrum_histogram_interpolation": null
+                    },
+                    "polarization": [],
+                    "visualization": {
+                        "count": 2000,
+                        "color": "yellow",
+                        "size": 2
+                    },
+                    "attached_to": "world",
+                    "mother": null,
+                    "start_time": 0.0,
+                    "end_time": 1000000000.0,
+                    "number_of_primaries": {
+                        "__ndarray__": [
+                            2
+                        ],
+                        "__dtype__": "int64",
+                        "__shape__": [
+                            1
+                        ]
+                    },
+                    "n": 0,
+                    "activity": 0,
+                    "half_life": -1,
+                    "dynamic_params": null,
+                    "name": "mysource"
+                },
+                "object_type": "GenericSource",
+                "object_type_full": "<class 'opengate.sources.generic.GenericSource'>",
+                "class_module": "opengate.sources.generic",
+                "i_am_a_gate_object": true
+            }
+        }
+    },
+    "auxiliary_attributes": {}
+}
