@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Supplied-table acceptance, checked against independently recorded transport steps."""
+
 from pathlib import Path
 import hashlib
 import numpy as np
@@ -25,19 +26,31 @@ if __name__ == "__main__":
     actor.InitializeUserInfo(actor.user_info)
     for charge in range(1, 11):
         group = table[table[:, 0] == charge]
-        queries = [0.0, group[0, 1], (group[0, 1] + group[1, 1]) / 2,
-                   group[-1, 1], group[-1, 1] + 100]
+        queries = [
+            0.0,
+            group[0, 1],
+            (group[0, 1] + group[1, 1]) / 2,
+            group[-1, 1],
+            group[-1, 1] + 100,
+        ]
         for energy in queries:
-            expected_lookup = [np.interp(energy, group[:, 1], group[:, c])
-                               for c in range(2, 22)]
-            np.testing.assert_allclose(actor.Lookup(charge, energy), expected_lookup,
-                                       rtol=1e-13, atol=1e-13)
+            expected_lookup = [
+                np.interp(energy, group[:, 1], group[:, c]) for c in range(2, 22)
+            ]
+            np.testing.assert_allclose(
+                actor.Lookup(charge, energy), expected_lookup, rtol=1e-13, atol=1e-13
+            )
     # Public PhaseSpaceActor records every step independently of AMDM scoring.
     audit = sim.add_actor("PhaseSpaceActor", "steps")
     audit.attached_to = "phantom"
     audit.steps_to_store = "all"
-    audit.attributes = ["PDGCode", "PostKineticEnergy", "PreKineticEnergy",
-                        "TotalEnergyDeposit", "Weight"]
+    audit.attributes = [
+        "PDGCode",
+        "PostKineticEnergy",
+        "PreKineticEnergy",
+        "TotalEnergyDeposit",
+        "Weight",
+    ]
     audit.output_filename = "steps.root"
     sim.run(start_new_process=True)
     steps = uproot.open(audit.get_output_path())["steps"].arrays(library="numpy")
@@ -49,20 +62,29 @@ if __name__ == "__main__":
     assert mask.any() and np.all(code[positive] == 1000060120), np.unique(code)
     energies = steps["PostKineticEnergy"][mask] / 12.0
     weights = steps["TotalEnergyDeposit"][mask] * steps["Weight"][mask]
-    assert weights.sum() > 0 and np.ptp(energies) > 1, "must exercise energy-dependent lookup"
+    assert (
+        weights.sum() > 0 and np.ptp(energies) > 1
+    ), "must exercise energy-dependent lookup"
     group = table[table[:, 0] == 6]
-    expected = np.column_stack([np.interp(energies, group[:, 1], group[:, c])
-                                for c in range(2, 22)])
+    expected = np.column_stack(
+        [np.interp(energies, group[:, 1], group[:, c]) for c in range(2, 22)]
+    )
     expected_delta = (expected[:, 10:] * weights[:, None]).sum(axis=0)
-    expected_gamma = (expected[:, :10] * expected[:, 10:] * weights[:, None]).sum(axis=0)
+    expected_gamma = (expected[:, :10] * expected[:, 10:] * weights[:, None]).sum(
+        axis=0
+    )
     energy, raw_delta, raw_gamma, delta, gamma = arrays(actor)
     # Independent step recording, unit conversion and np.interp oracle: allow
     # only floating-point summation order error, not Monte Carlo disagreement.
     np.testing.assert_allclose(energy.sum(), weights.sum(), rtol=1e-11, atol=1e-8)
-    np.testing.assert_allclose(raw_delta.sum(axis=(1, 2, 3)), expected_delta, rtol=1e-11, atol=1e-8)
-    np.testing.assert_allclose(raw_gamma.sum(axis=(1, 2, 3)), expected_gamma, rtol=1e-11, atol=1e-8)
+    np.testing.assert_allclose(
+        raw_delta.sum(axis=(1, 2, 3)), expected_delta, rtol=1e-11, atol=1e-8
+    )
+    np.testing.assert_allclose(
+        raw_gamma.sum(axis=(1, 2, 3)), expected_gamma, rtol=1e-11, atol=1e-8
+    )
     scored = energy > 0
-    np.testing.assert_allclose(delta[:, scored].sum(axis=0), 1., rtol=0, atol=1e-12)
+    np.testing.assert_allclose(delta[:, scored].sum(axis=0), 1.0, rtol=0, atol=1e-12)
     assert np.all(delta >= 0) and np.all(delta <= 1 + 1e-12)
     assert np.all(gamma >= 0) and np.isfinite(gamma).all()
     assert np.all(delta[:, ~scored] == 0) and np.all(gamma[:, ~scored] == 0)

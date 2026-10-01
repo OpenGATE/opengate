@@ -1,35 +1,51 @@
 #!/usr/bin/env python3
 """Analytical bin scoring, public configuration, geometry and output contract."""
+
 import itk
 import numpy as np
 import opengate as gate
 from opengate.exception import GateDeprecationError
 from opengate.tests import utility
 from test110_amdm_helpers import (
-    GAMMA, DELTA, constant_lut, arrays, output_dir, make_sim,
-    assert_constant_scoring, check_outputs,
+    GAMMA,
+    DELTA,
+    constant_lut,
+    arrays,
+    output_dir,
+    make_sim,
+    assert_constant_scoring,
+    check_outputs,
 )
-
 
 if __name__ == "__main__":
     scored = []
-    for coordinate, hit, raw, weight in [("local", "pre", True, 1.0),
-                                          ("global", "post", False, 2.0),
-                                          (None, "middle", True, 1.0),
-                                          ("global", "random", True, 1.0)]:
+    for coordinate, hit, raw, weight in [
+        ("local", "pre", True, 1.0),
+        ("global", "post", False, 2.0),
+        (None, "middle", True, 1.0),
+        ("global", "random", True, 1.0),
+    ]:
         directory = output_dir(f"scoring_{coordinate}_{hit}")
-        sim, actor = make_sim(directory, coordinate=coordinate, hit_type=hit, weight=weight)
+        sim, actor = make_sim(
+            directory, coordinate=coordinate, hit_type=hit, weight=weight
+        )
         actor.storeMergingData = raw
         sim.run(start_new_process=True)
         total = assert_constant_scoring(actor)
         check_outputs(sim, actor, samples=80)
         scored.append(total)
-        assert actor.user_output.amdm.merged_data.get_data_item_object(0).number_of_samples == 80
+        assert (
+            actor.user_output.amdm.merged_data.get_data_item_object(0).number_of_samples
+            == 80
+        )
     # The same seeded fully-contained beam gives linear scaling with track weight.
     # Hit position cannot change its total deposit in a grid covering the target.
     np.testing.assert_allclose(scored[1], 2 * scored[0], rtol=1e-12, atol=1e-9)
-    sim, actor = make_sim(output_dir("image_coordinates"),
-                          coordinate="attached_to_image", image_volume=True)
+    sim, actor = make_sim(
+        output_dir("image_coordinates"),
+        coordinate="attached_to_image",
+        image_volume=True,
+    )
     sim.run(start_new_process=True)
     assert_constant_scoring(actor)
     check_outputs(sim, actor, samples=80)
@@ -75,7 +91,7 @@ if __name__ == "__main__":
         directory = output_dir("excluded_" + particle)
         lut = constant_lut(directory, {1: (GAMMA, DELTA)})
         sim, actor = make_sim(directory, lut=lut, particle=particle)
-        sim.source_manager.sources["ions"].energy.mono = .5
+        sim.source_manager.sources["ions"].energy.mono = 0.5
         sim.run(start_new_process=True)
         for array in arrays(actor):
             assert np.all(array == 0)
@@ -85,7 +101,7 @@ if __name__ == "__main__":
     lut = directory / "positron_lut.txt"
     lut.write_text("1 1 2 7 13 .25 .75 0\n1 10 5 11 17 .25 .75 0\n")
     sim, actor = make_sim(directory, lut=lut, particle="e+")
-    sim.source_manager.sources["ions"].energy.mono = .5
+    sim.source_manager.sources["ions"].energy.mono = 0.5
     sim.run(start_new_process=True)
     assert_constant_scoring(actor, gamma=[5, 11, 17])
     # Disk controls do not disable the internal denominators needed by derived views.
@@ -95,5 +111,7 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
     assert_constant_scoring(actor)
     assert not list(sim.output_dir.glob("*.mhd"))
-    print("Analytical scoring, zero denominators, metadata and configuration checks passed")
+    print(
+        "Analytical scoring, zero denominators, metadata and configuration checks passed"
+    )
     utility.test_ok(True)

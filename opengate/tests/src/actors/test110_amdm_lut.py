@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Independent expectations for the bound C++ AMDM lookup and validation."""
+
 from pathlib import Path
 import numpy as np
 import opengate as gate
@@ -25,15 +26,17 @@ if __name__ == "__main__":
     assert AMDMActor.has_been_processed() and ActorOutputAMDM.has_been_processed()
     path = directory / "lookup.txt"
     # Unequal groups and a singleton final charge are valid.
-    path.write_text("  # comment\n\n1 1 2 8 .2 .8\n1 3 6 4 .6 .4 # inline\n"
-                    "8 .9 3 9 .3 .7\n8 4 7 1 .7 .3\n10 2 11 13 .1 .9\n")
+    path.write_text(
+        "  # comment\n\n1 1 2 8 .2 .8\n1 3 6 4 .6 .4 # inline\n"
+        "8 .9 3 9 .3 .7\n8 4 7 1 .7 .3\n10 2 11 13 .1 .9\n"
+    )
     actor = lookup_actor(path)
-    np.testing.assert_array_equal(actor.Lookup(1, 1), [2, 8, .2, .8])
-    np.testing.assert_allclose(actor.Lookup(1, 2), [4, 6, .4, .6], rtol=0, atol=1e-15)
-    np.testing.assert_array_equal(actor.Lookup(1, .01), [2, 8, .2, .8])
-    np.testing.assert_array_equal(actor.Lookup(1, 99), [6, 4, .6, .4])
+    np.testing.assert_array_equal(actor.Lookup(1, 1), [2, 8, 0.2, 0.8])
+    np.testing.assert_allclose(actor.Lookup(1, 2), [4, 6, 0.4, 0.6], rtol=0, atol=1e-15)
+    np.testing.assert_array_equal(actor.Lookup(1, 0.01), [2, 8, 0.2, 0.8])
+    np.testing.assert_array_equal(actor.Lookup(1, 99), [6, 4, 0.6, 0.4])
     for energy in [0, 2, 999, float("inf")]:
-        np.testing.assert_array_equal(actor.Lookup(10, energy), [11, 13, .1, .9])
+        np.testing.assert_array_equal(actor.Lookup(10, energy), [11, 13, 0.1, 0.9])
     for charge in [0, 2, 9, 11]:
         assert actor.Lookup(charge, 2) == []
     assert actor.Lookup(1, float("nan")) == []
@@ -61,13 +64,18 @@ if __name__ == "__main__":
             assert message in str(error), (name, error)
         else:
             raise AssertionError(f"accepted malformed LUT: {name}")
-    for bad_path, bins, message in [(directory / "missing.txt", 2, "cannot open"),
-                                    (path, 3, "column count"), (path, 0, "positive")]:
+    for bad_path, bins, message in [
+        (directory / "missing.txt", 2, "cannot open"),
+        (path, 3, "column count"),
+        (path, 0, "positive"),
+    ]:
         try:
             lookup_actor(bad_path, bins)
         except ValueError as error:
             assert message in str(error), error
         else:
             raise AssertionError((bad_path, bins))
-    print("Exact, interpolated, clamped, missing-charge and malformed LUT checks passed")
+    print(
+        "Exact, interpolated, clamped, missing-charge and malformed LUT checks passed"
+    )
     utility.test_ok(True)

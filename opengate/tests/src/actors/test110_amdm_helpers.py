@@ -30,13 +30,23 @@ def constant_lut(directory, entries=None):
         stream.write("  # charge energy[MeV/n] gamma[keV/um] delta\n\n")
         for charge, (gamma, delta) in sorted(entries.items()):
             for energy in [1.0, 10.0]:
-                stream.write(" ".join(map(str, [charge, energy, *gamma, *delta])) + "\n")
+                stream.write(
+                    " ".join(map(str, [charge, energy, *gamma, *delta])) + "\n"
+                )
     return path
 
 
-def make_sim(directory, lut=None, threads=1, weight=1.0, hit_type="pre",
-             coordinate="local", particle="ion 6 12", primaries=80,
-             image_volume=False):
+def make_sim(
+    directory,
+    lut=None,
+    threads=1,
+    weight=1.0,
+    hit_type="pre",
+    coordinate="local",
+    particle="ion 6 12",
+    primaries=80,
+    image_volume=False,
+):
     directory = Path(directory)
     sim = gate.Simulation()
     sim.output_dir = directory
@@ -51,6 +61,7 @@ def make_sim(directory, lut=None, threads=1, weight=1.0, hit_type="pre",
     phantom = sim.add_volume("Image" if image_volume else "Box", "phantom")
     if image_volume:
         from opengate.image import create_3d_image
+
         image = create_3d_image([5, 5, 5], [8, 8, 8], origin=[19, -11, 4])
         image.SetDirection(Rotation.from_euler("y", 15, degrees=True).as_matrix())
         image_path = directory / "volume.mhd"
@@ -80,17 +91,25 @@ def make_sim(directory, lut=None, threads=1, weight=1.0, hit_type="pre",
     source.number_of_primaries = primaries
     source.weight = weight
     source.position.type = "point"
-    source.position.translation = (np.asarray(phantom.translation)
-                                   + phantom.rotation @ actor.translation).tolist()
+    source.position.translation = (
+        np.asarray(phantom.translation) + phantom.rotation @ actor.translation
+    ).tolist()
     source.direction.type = "momentum"
     source.direction.momentum = (phantom.rotation @ actor.rotation @ [0, 0, 1]).tolist()
     return sim, actor
 
 
 def arrays(actor, which="merged"):
-    return tuple(itk.array_from_image(interface.get_data(which=which))
-                 for interface in (actor.restrictedEdep, actor.raw_delta,
-                                   actor.raw_gamma, actor.delta, actor.gamma))
+    return tuple(
+        itk.array_from_image(interface.get_data(which=which))
+        for interface in (
+            actor.restrictedEdep,
+            actor.raw_delta,
+            actor.raw_gamma,
+            actor.delta,
+            actor.gamma,
+        )
+    )
 
 
 def expected_metadata(sim, actor):
@@ -115,8 +134,9 @@ def check_image(path, dimension, actor, origin, direction, samples=None):
     """Parse the header/payload independently with SimpleITK and compare to ITK."""
     path = Path(path)
     assert path.is_file(), path
-    header = dict(line.split(" = ", 1) for line in path.read_text().splitlines()
-                  if " = " in line)
+    header = dict(
+        line.split(" = ", 1) for line in path.read_text().splitlines() if " = " in line
+    )
     assert int(header["NDims"]) == dimension
     assert header["ElementType"] == "MET_DOUBLE"
     assert int(header.get("ElementNumberOfChannels", "1")) == 1
@@ -139,8 +159,12 @@ def check_image(path, dimension, actor, origin, direction, samples=None):
     assert image.GetSize() == tuple(size)
     np.testing.assert_allclose(image.GetSpacing(), spacing, rtol=0, atol=1e-12)
     np.testing.assert_allclose(image.GetOrigin(), expected_origin, rtol=0, atol=1e-10)
-    np.testing.assert_allclose(np.array(image.GetDirection()).reshape(dimension, dimension),
-                               expected_direction, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(
+        np.array(image.GetDirection()).reshape(dimension, dimension),
+        expected_direction,
+        rtol=0,
+        atol=1e-12,
+    )
     data = sitk.GetArrayFromImage(image)
     assert data.dtype == np.float64
     assert data.shape == tuple(reversed(size)), (path, data.shape)
@@ -150,7 +174,9 @@ def check_image(path, dimension, actor, origin, direction, samples=None):
         assert payload.stat().st_size == data.size * 8
     if samples is not None:
         # Current actor outputs record sample counts beside the image.
-        metadata = json.loads(path.with_name(path.stem + "-samples.mhd.json").read_text())
+        metadata = json.loads(
+            path.with_name(path.stem + "-samples.mhd.json").read_text()
+        )
         assert metadata["number_of_samples"] == samples
     return data
 
@@ -173,7 +199,9 @@ def check_outputs(sim, actor, which="merged", samples=None):
         assert path.parent.resolve() == Path(sim.output_dir).resolve()
         if interface.active and interface.write_to_disk:
             data = check_image(path, dimension, actor, origin, direction, samples)
-            np.testing.assert_array_equal(data, itk.array_from_image(interface.get_data(which)))
+            np.testing.assert_array_equal(
+                data, itk.array_from_image(interface.get_data(which))
+            )
             result.append(data)
         else:
             assert not path.exists(), path
@@ -186,11 +214,19 @@ def assert_constant_scoring(actor, gamma=GAMMA, delta=DELTA):
     assert np.any(energy == 0), "test must include empty voxels"
     for b in range(actor.AMDM_Bins):
         # Accumulation error only: constants make these exact scientific identities.
-        np.testing.assert_allclose(raw_delta[b], delta[b] * energy, rtol=1e-12, atol=1e-12)
-        np.testing.assert_allclose(raw_gamma[b], gamma[b] * raw_delta[b], rtol=1e-12, atol=1e-12)
-        np.testing.assert_allclose(normalized_delta[b][energy > 0], delta[b], rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(
+            raw_delta[b], delta[b] * energy, rtol=1e-12, atol=1e-12
+        )
+        np.testing.assert_allclose(
+            raw_gamma[b], gamma[b] * raw_delta[b], rtol=1e-12, atol=1e-12
+        )
+        np.testing.assert_allclose(
+            normalized_delta[b][energy > 0], delta[b], rtol=1e-12, atol=1e-12
+        )
         expected_gamma = gamma[b] if delta[b] != 0 else 0
-        np.testing.assert_allclose(normalized_gamma[b][energy > 0], expected_gamma, rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(
+            normalized_gamma[b][energy > 0], expected_gamma, rtol=1e-12, atol=1e-12
+        )
         assert np.all(normalized_delta[b][energy == 0] == 0)
         assert np.all(normalized_gamma[b][energy == 0] == 0)
     return energy.sum()

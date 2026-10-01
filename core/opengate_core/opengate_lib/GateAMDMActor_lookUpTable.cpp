@@ -53,7 +53,8 @@ void GateAMDMLookUpTable::Read(const std::string &filename, int bins) {
       fail("energy keys must be positive (MeV/n)");
     auto &group = data[charge];
     if (!group.empty() && columns[1] <= group.back().energy)
-      fail("energy keys must be unique and strictly increasing within a charge");
+      fail(
+          "energy keys must be unique and strictly increasing within a charge");
     group.push_back({columns[1], {columns.begin() + 2, columns.end()}});
     previousCharge = charge;
   }
@@ -65,7 +66,7 @@ void GateAMDMLookUpTable::Read(const std::string &filename, int bins) {
 }
 
 bool GateAMDMLookUpTable::Find(int charge, double energy,
-                             std::vector<double> &values) const {
+                               std::vector<double> &values) const {
   values.clear();
   auto found = fData.find(charge);
   if (found == fData.end() || std::isnan(energy))
@@ -84,10 +85,12 @@ bool GateAMDMLookUpTable::Find(int charge, double energy,
       values = upper->values;
     } else {
       const auto &lower = *std::prev(upper);
-      const double fraction = (energy - lower.energy) / (upper->energy - lower.energy);
+      const double fraction =
+          (energy - lower.energy) / (upper->energy - lower.energy);
       values.resize(lower.values.size());
       for (size_t b = 0; b < values.size(); ++b)
-        values[b] = lower.values[b] + fraction * (upper->values[b] - lower.values[b]);
+        values[b] =
+            lower.values[b] + fraction * (upper->values[b] - lower.values[b]);
     }
   }
   return true;

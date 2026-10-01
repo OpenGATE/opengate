@@ -2228,7 +2228,9 @@ class AMDMActor(VoxelDepositActor, g4.GateAMDMActor):
         ),
         "AMDM_Bins": (
             10,
-            {"doc": "Positive integer bin count; LUT must have 2 + 2*AMDM_Bins columns."},
+            {
+                "doc": "Positive integer bin count; LUT must have 2 + 2*AMDM_Bins columns."
+            },
         ),
         "storeMergingData": (
             False,
@@ -2324,17 +2326,23 @@ class AMDMActor(VoxelDepositActor, g4.GateAMDMActor):
             fatal("AMDM size must contain three positive integers")
         for name in ("spacing", "translation"):
             value = np.asarray(getattr(self, name), dtype=float)
-            if value.shape != (3,) or not np.all(np.isfinite(value)) or (
-                name == "spacing" and np.any(value <= 0)
+            if (
+                value.shape != (3,)
+                or not np.all(np.isfinite(value))
+                or (name == "spacing" and np.any(value <= 0))
             ):
                 fatal(
                     f"AMDM {name} must contain three finite values"
                     + (" greater than zero" if name == "spacing" else "")
                 )
         rotation = np.asarray(self.rotation, dtype=float)
-        if rotation.shape != (3, 3) or not np.all(np.isfinite(rotation)) or not (
-            np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-10, rtol=0)
-            and np.isclose(np.linalg.det(rotation), 1, atol=1e-10, rtol=0)
+        if (
+            rotation.shape != (3, 3)
+            or not np.all(np.isfinite(rotation))
+            or not (
+                np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-10, rtol=0)
+                and np.isclose(np.linalg.det(rotation), 1, atol=1e-10, rtol=0)
+            )
         ):
             fatal("AMDM rotation must be a proper orthonormal 3x3 matrix")
         if not isinstance(self.LUTfilename, (str, Path)) or not str(self.LUTfilename):

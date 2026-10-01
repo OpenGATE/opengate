@@ -12,7 +12,8 @@
 #include <limits>
 #include <stdexcept>
 
-GateAMDMActor::GateAMDMActor(py::dict &user_info) : GateVActor(user_info, true) {}
+GateAMDMActor::GateAMDMActor(py::dict &user_info)
+    : GateVActor(user_info, true) {}
 
 void GateAMDMActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
@@ -20,7 +21,8 @@ void GateAMDMActor::InitializeUserInfo(py::dict &user_info) {
   fHitType = DictGetStr(user_info, "hit_type");
   if (fHitType != "random" && fHitType != "pre" && fHitType != "post" &&
       fHitType != "middle")
-    throw std::invalid_argument("AMDM hit_type must be random, pre, post or middle");
+    throw std::invalid_argument(
+        "AMDM hit_type must be random, pre, post or middle");
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
   fRotation = DictGetG4RotationMatrix(user_info, "rotation");
   fTable.Read(DictGetStr(user_info, "LUTfilename"), fBins);
@@ -42,12 +44,13 @@ void GateAMDMActor::BeginOfRunActionMasterThread(int) {
   ComputeTransformationFromVolumeToWorld(fPhysicalVolumeName, volumeTranslation,
                                          volumeRotation, true);
   G4ThreeVector center;
-  const auto size = cpp_amdm_restricted_edep_image->GetLargestPossibleRegion().GetSize();
+  const auto size =
+      cpp_amdm_restricted_edep_image->GetLargestPossibleRegion().GetSize();
   const auto spacing = cpp_amdm_restricted_edep_image->GetSpacing();
   for (unsigned int i = 0; i < 3; ++i)
     center[i] = -(size[i] - 1.0) * spacing[i] / 2.0;
-  const auto spatialOrigin = volumeTranslation +
-      volumeRotation * (fRotation * center + fTranslation);
+  const auto spatialOrigin =
+      volumeTranslation + volumeRotation * (fRotation * center + fTranslation);
   const auto spatialRotation = volumeRotation * fRotation;
   ImageType::PointType origin3;
   ImageType::DirectionType direction3;
@@ -99,7 +102,8 @@ void GateAMDMActor::SteppingAction(G4Step *step) {
   for (unsigned int i = 0; i < 3; ++i)
     point[i] = position[i];
   ImageType::IndexType index;
-  if (!cpp_amdm_restricted_edep_image->TransformPhysicalPointToIndex(point, index))
+  if (!cpp_amdm_restricted_edep_image->TransformPhysicalPointToIndex(point,
+                                                                     index))
     return;
   const auto *track = step->GetTrack();
   const int charge = static_cast<int>(track->GetDefinition()->GetPDGCharge());
@@ -109,14 +113,15 @@ void GateAMDMActor::SteppingAction(G4Step *step) {
   const double kineticEnergy = track->GetKineticEnergy() / CLHEP::MeV;
   // Preserve legacy applicability, including its zero-baryon rule: positive
   // energy / 0 samples the upper endpoint; 0 / 0 contributes nothing.
-  const double energy = mass == 0
-      ? (kineticEnergy > 0 ? std::numeric_limits<double>::infinity()
-                           : std::numeric_limits<double>::quiet_NaN())
-      : kineticEnergy / mass;
+  const double energy =
+      mass == 0 ? (kineticEnergy > 0 ? std::numeric_limits<double>::infinity()
+                                     : std::numeric_limits<double>::quiet_NaN())
+                : kineticEnergy / mass;
   auto values = Lookup(charge, energy);
   if (values.empty())
     return;
-  const double edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * track->GetWeight();
+  const double edep =
+      step->GetTotalEnergyDeposit() / CLHEP::MeV * track->GetWeight();
   ImageType4D::IndexType index4;
   for (unsigned int i = 0; i < 3; ++i)
     index4[i] = index[i];

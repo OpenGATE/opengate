@@ -27,7 +27,8 @@ public:
   std::vector<double> Lookup(int charge, double energy) const;
 
   ImageType::Pointer cpp_amdm_restricted_edep_image;
-  ImageType4D::Pointer cpp_amdm_delta_image; // raw sums, never normalized in place
+  ImageType4D::Pointer
+      cpp_amdm_delta_image; // raw sums, never normalized in place
   ImageType4D::Pointer cpp_amdm_gamma_image;
   int NbOfEvent = 0;
 
