@@ -19,6 +19,30 @@ build (§5 there); this file owns the *compilation*.
 You need: a C++17 compiler, CMake, ~30 GB of disk, and patience (parallel `make -j N`).
 Optional: Qt6 (install it **before** Geant4 if you want `opengate_visu`).
 
+**macOS:** the dependency source depends on the **architecture**.
+
+| Architecture | Prefix | Qt6 / deps source |
+| --- | --- | --- |
+| **Intel** (`x86_64`) | `/usr/local` | **MacPorts** (`/opt/local`) — Homebrew no longer supports Intel macOS, so `brew` is a dead end here |
+| **Apple Silicon** (`arm64`) | `/opt/homebrew` | Homebrew is fine and still supported |
+
+Only the Intel case is special. If you are on Intel and find `/usr/local/opt/qtbase` or any
+other `/usr/local` reference in the libraries, read
+[macOS Intel: use MacPorts, not Homebrew](#macos-intel-use-macports-not-homebrew-verified-failure-mode)
+before doing anything else. On Apple Silicon the standard `brew` recipes apply and this
+whole section can be skipped.
+
+Tell the two apart with `uname -m` (`x86_64` = Intel, `arm64` = Apple Silicon) — note that
+`sysconfig.get_platform()` reports `macosx-*` and does **not** reveal the arch.
+
+Install `ccache` up front — see §4 for why it must be enabled *before* configuring:
+
+```bash
+sudo port install ccache      # macOS Intel
+brew install ccache           # macOS Apple Silicon, or Linuxbrew
+sudo apt install ccache       # Debian/Ubuntu
+```
+
 **Ask the user for `$OPEN_GATE_DEPS` first** (`SKILL.md` §0) — a non-volatile prefix, never `/tmp`.
 Geant4 and ITK are each multi-GB builds that must survive reboots. Use subdirectories
 named exactly `geant4.11-build` and `itk-build` inside it, because the commands below and
@@ -55,6 +79,124 @@ make -j $(nproc)
 Set `GEANT4_USE_QT` and `GEANT4_USE_OPENGL_X11` to `OFF` if Qt is not installed.
 `GEANT4_BUILD_TLS_MODEL=global-dynamic` avoids the `cannot allocate memory in static
 TLS block` error on some Linux distros at a ~10 % speed cost.
+
+### macOS Intel: use MacPorts, not Homebrew (verified failure mode)
+
+**This section applies to Intel macOS only** (`uname -m` = `x86_64`). On Apple Silicon
+(`arm64`) Homebrew is supported and the usual `brew` install is fine.
+
+On Intel, Homebrew no longer supports the platform, so a `brew`-installed Qt can disappear
+(or fail to install) and silently break a previously working environment. When that happens
+the whole chain is broken at once — Geant4, ITK *and* `opengate_core` all record absolute
+paths into `/usr/local/opt/...` at configure time, so deleting one Homebrew formula leaves
+dangling references in every library. (On Apple Silicon the equivalent prefix would be
+`/opt/homebrew`, which is a different failure mode and not covered here.)
+
+Symptoms (all point at the same cause):
+
+```
+ImportError: dlopen(.../opengate_core.cpython-312-darwin.so): Library not loaded:
+  /usr/local/opt/qtbase/lib/QtWidgets.framework/Versions/A/QtWidgets
+ld: library 'fftw3_threads' not found            # ITK with ITK_USE_SYSTEM_FFTW=ON
+otool -L <lib> | grep /usr/local                 # any hit = stale Homebrew reference
+```
+
+Install the replacements once (needs `sudo`) and check the layout:
+
+```bash
+sudo port install qt610-qtbase fftw-3 fftw-3-single xercesc3 ccache
+ls -d /opt/local/libexec/qt6/lib/cmake/Qt6            # Qt6 CMake package
+ls /opt/local/lib/libfftw3_threads.dylib /opt/local/lib/libxerces-c.dylib
+```
+
+MacPorts splits Qt under `/opt/local/libexec/qt6` (not `/opt/local/lib`), and its
+`xercesc3` ships **no** CMake package config — both facts cause configure failures unless
+handled explicitly:
+
+| Problem | Fix |
+| --- | --- |
+| `Failed to find XercesC (missing: XercesC_VERSION)` | pass `-DXercesC_INCLUDE_DIR=/opt/local/include -DXercesC_LIBRARY=/opt/local/lib/libxerces-c.dylib` |
+| `Could not find ... Qt6OpenGLWidgets` | add **both** `/opt/local` and `/opt/local/libexec/qt6` to `CMAKE_PREFIX_PATH` (a bare `/opt/local` is not enough) |
+| stale cache keeps the old Homebrew paths | configure into a **fresh** build dir (`mv build build.homebrew.bak && mkdir build`) |
+
+Reconfigure and rebuild Geant4 against MacPorts (a clean directory is required — an existing
+cache keeps resolving `Qt6_DIR=/usr/local/lib/cmake/Qt6`):
+
+```bash
+cd "$OPEN_GATE_DEPS/geant4"
+mv build build.homebrew.bak && mkdir build && cd build
+cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
+      -DCMAKE_PREFIX_PATH="/opt/local;/opt/local/libexec/qt6" \
+      -DCMAKE_INSTALL_PREFIX="$OPEN_GATE_DEPS/geant4/install" \
+      -DGEANT4_INSTALL_DATADIR="$OPEN_GATE_DEPS/geant4/data" \
+      -DXercesC_INCLUDE_DIR=/opt/local/include \
+      -DXercesC_LIBRARY=/opt/local/lib/libxerces-c.dylib \
+      -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON -DGEANT4_USE_OPENGL_X11=OFF \
+      -DGEANT4_BUILD_MULTITHREADED=ON -DGEANT4_BUILD_TLS_MODEL=global-dynamic ..
+make -j $(sysctl -n hw.ncpu)
+```
+
+The Geant4 source tree is the checkout root itself (`../`), not a `v11.4.2/` subdirectory.
+Confirm the relink before moving on — **every** line must read `/opt/local`:
+
+```bash
+for L in $(find "$OPEN_GATE_DEPS/geant4/build/BuildProducts" -name '*.dylib'); do
+  otool -L "$L" | grep -q '/usr/local' && echo "STILL BROKEN: $L"
+done                                              # expect: no output
+```
+
+#### ITK: point FFTW at MacPorts — but **not** with a global prefix path
+
+ITK is usually built with `ITK_USE_SYSTEM_FFTW=ON`, so it hard-codes
+double-and-single-precision FFTW paths from the old prefix into `ITKConfig.cmake`. Passing
+`CMAKE_PREFIX_PATH=/opt/local` to fix that **breaks the build** in a non-obvious way:
+
+```
+.../itkzlib-ng/adler32.c:11:23: error: expected ';' after top level declarator
+```
+
+ITK's `UseITK.cmake` does `include_directories(BEFORE ${ITK_INCLUDE_DIRS})`, and
+`ITK_INCLUDE_DIRS` absorbs the FFTW include dir. A global `/opt/local/include` then lands
+**ahead of ITK's bundled zlib-ng**, so `<zlib.h>` resolves to MacPorts' instead and `Z_EXPORT`
+/ `PREFIX` stay undefined. `ITK_USE_SYSTEM_ZLIB=OFF` is set — the system zlib must not win.
+
+Keep only `fftw3.h` in a private directory and pass **no** `CMAKE_PREFIX_PATH`:
+
+```bash
+mkdir -p "$OPEN_GATE_DEPS/itk-fftw-include"
+cp /opt/local/include/fftw3.h "$OPEN_GATE_DEPS/itk-fftw-include/"
+
+cd "$OPEN_GATE_DEPS/itk/build"
+cmake -DCMAKE_PREFIX_PATH= \
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+      -DFFTWD_BASE_LIB=/opt/local/lib/libfftw3.dylib \
+      -DFFTWD_THREADS_LIB=/opt/local/lib/libfftw3_threads.dylib \
+      -DFFTWF_BASE_LIB=/opt/local/lib/libfftw3f.dylib \
+      -DFFTWF_THREADS_LIB=/opt/local/lib/libfftw3f_threads.dylib \
+      -DFFTW_INCLUDE_PATH="$OPEN_GATE_DEPS/itk-fftw-include" .
+make -j $(sysctl -n hw.ncpu)
+```
+
+Verify the shadowing is gone before compiling — the **first** `-I` must be the private dir:
+
+```bash
+grep '^C_INCLUDES' "$OPEN_GATE_DEPS"/itk/build/Modules/ThirdParty/ZLIB/src/itkzlib-ng/CMakeFiles/zlib.dir/flags.make
+# C_INCLUDES = -I$OPEN_GATE_DEPS/itk-fftw-include -I... itkzlib-ng ...   <- correct
+# C_INCLUDES = -I/opt/local/include ...                                 <- wrong: zlib-ng will fail
+```
+
+ITK builds **static** libraries (`.a`), so unlike Geant4 it has no runtime dylib rebinding
+to verify — only the link-time FFTW paths above. Finally rebuild `opengate_core` (§4) with
+ccache enabled, then confirm **zero** stale-prefix references and that the extension imports:
+
+```bash
+SO="$OPEN_GATE_REPO/core/opengate_core/opengate_core.cpython-$(python -c 'import sys;print(f"{sys.version_info.major}{sys.version_info.minor}")')-darwin.so"
+otool -L "$SO" | grep -c '/usr/local'                       # expect: 0
+cd /tmp && python -c "import opengate_core as g4; print(g4.GateInfo.get_G4Version())"
+```
+
+Do **not** work around this by installing the `opengate-core` wheel: it is a frozen binary
+and stops tracking local C++ changes, defeating the point of the editable install (§7).
 
 The version is pinned by the workflow (`env.GEANT4_VERSION` in
 `.github/workflows/main.yml`); the runner warns when the linked Geant4 differs
@@ -267,6 +409,9 @@ opengate_tests -t actors/test008_dose_actor.py     # expect: 1/1 passed, 'True'
 
 - [ ] `$OPEN_GATE_DEPS` came from the user (`user_secrets.json`), is on non-volatile storage,
       and existing Geant4/ITK builds were checked for reuse first.
+- [ ] macOS: on **Intel**, Qt6/FFTW/XercesC come from MacPorts and no compiled library
+      references the removed Homebrew prefix (`otool -L` shows no `/usr/local`). On **Apple
+      Silicon**, `/opt/homebrew` references are expected and fine.
 - [ ] Geant4 is built at the version pinned in the workflow, with `global-dynamic` TLS (or the
       §6 workaround is applied and recorded).
 - [ ] ITK is built and its version is stated (CI pin vs. developer-guide version).
