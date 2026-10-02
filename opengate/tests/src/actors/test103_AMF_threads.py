@@ -17,8 +17,17 @@ def array(output):
     return itk.array_from_image(output.get_data())
 
 
-def run_case(output, threads, seed=123456789, *, forced=False, multiple=False,
-             no_hit=False, in_process=False, event_count=64):
+def run_case(
+    output,
+    threads,
+    seed=123456789,
+    *,
+    forced=False,
+    multiple=False,
+    no_hit=False,
+    in_process=False,
+    event_count=64,
+):
     """Run and check a synthetic serial or threaded AMF transport case.
 
     Optional cases exercise independent actor instances, empty scoring
@@ -37,8 +46,10 @@ def run_case(output, threads, seed=123456789, *, forced=False, multiple=False,
     instances = [actor]
     if multiple:
         # One instance in the same volume and a third in a separate volume.
-        for name, radius, volume in (("same_volume", .15, "water"),
-                                     ("other_volume", .5, "water2")):
+        for name, radius, volume in (
+            ("same_volume", 0.15, "water"),
+            ("other_volume", 0.5, "water2"),
+        ):
             if volume == "water2":
                 box = sim.add_volume("Box", volume)
                 box.material = "G4_WATER"
@@ -65,10 +76,12 @@ def run_case(output, threads, seed=123456789, *, forced=False, multiple=False,
             instances.append(item)
     sim.run(start_new_process=not in_process)
     if in_process:
-        for call, message in ((lambda: actor.SetNucleusRadius(1), "configuration"),
-                              (actor.InitializeCpp, "initialization"),
-                              (lambda: actor.BeginOfRunActionMasterThread(0), "run start"),
-                              (lambda: actor.EndOfRunActionMasterThread(0), "finalization")):
+        for call, message in (
+            (lambda: actor.SetNucleusRadius(1), "configuration"),
+            (actor.InitializeCpp, "initialization"),
+            (lambda: actor.BeginOfRunActionMasterThread(0), "run start"),
+            (lambda: actor.EndOfRunActionMasterThread(0), "finalization"),
+        ):
             try:
                 call()
             except RuntimeError as error:
@@ -82,7 +95,9 @@ def run_case(output, threads, seed=123456789, *, forced=False, multiple=False,
         for interface in actor.interfaces_to_user_output.values():
             assert np.all(array(interface) == 0)
         return dict(threads=threads, events=events, empty=True)
-    np.testing.assert_allclose(array(actor.dose), array(dose.dose), rtol=1e-12, atol=1e-25)
+    np.testing.assert_allclose(
+        array(actor.dose), array(dose.dose), rtol=1e-12, atol=1e-25
+    )
     for item in instances:
         d = array(item.dose)
         assert d.sum() > 0
@@ -98,25 +113,38 @@ def run_case(output, threads, seed=123456789, *, forced=False, multiple=False,
         expected[np.exp(-lam * y) <= 1e-10] = 0
         expected *= (50 / np.log(10)) / expected.sum()
         np.testing.assert_allclose(spectrum[0, 0, 0], expected, rtol=1e-10, atol=1e-12)
-        assert item.user_output.dose.merged_data.get_data_item_object(0).number_of_samples == events
+        assert (
+            item.user_output.dose.merged_data.get_data_item_object(0).number_of_samples
+            == events
+        )
         if multiple:
             for interface in item.interfaces_to_user_output.values():
                 if interface.active and interface.write_to_disk:
                     image = sitk.ReadImage(str(interface.get_output_path()))
                     assert image.GetSize() == (1, 1, 1)
-                    np.testing.assert_array_equal(sitk.GetArrayFromImage(image), array(interface))
+                    np.testing.assert_array_equal(
+                        sitk.GetArrayFromImage(image), array(interface)
+                    )
     if multiple:
-        np.testing.assert_allclose(array(instances[1].dose), array(actor.dose), rtol=1e-12)
+        np.testing.assert_allclose(
+            array(instances[1].dose), array(actor.dose), rtol=1e-12
+        )
         assert instances[1].DomainRadius != actor.DomainRadius
     # DoseActor estimates relative standard error of the whole-volume dose.
-    return dict(threads=threads, events=events, dose=float(array(actor.dose).sum()),
-                sem=float(array(dose.dose_uncertainty).ravel()[0] * array(actor.dose).sum()),
-                yd=float(array(actor.DoseAveragedLinealEnergy).ravel()[0]))
+    return dict(
+        threads=threads,
+        events=events,
+        dose=float(array(actor.dose).sum()),
+        sem=float(array(dose.dose_uncertainty).ravel()[0] * array(actor.dose).sum()),
+        yd=float(array(actor.DoseAveragedLinealEnergy).ravel()[0]),
+    )
 
 
 def main():
     """Check two-worker scoring and independent instances in one small run."""
-    paths = utility.get_default_test_paths(__file__, output_folder="test103_AMF_threads")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder="test103_AMF_threads"
+    )
     result = run_case(paths.output, 2, multiple=True, in_process=True, event_count=16)
     (paths.output / "results.json").write_text(json.dumps(result, indent=2) + "\n")
     utility.test_ok(True)

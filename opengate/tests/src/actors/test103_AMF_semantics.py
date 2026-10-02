@@ -20,7 +20,7 @@ def add_actor(sim, template, name, volume="water"):
     actor.attached_to = volume
     actor.tsed_file_name = template.tsed_file_name
     actor.size = [1, 1, 20]
-    actor.spacing = [10, 10, .5]
+    actor.spacing = [10, 10, 0.5]
     actor.hit_type = "middle"
     actor.DoseAveragedLinealEnergy.active = True
     actor.DoseAveragedLinealEnergySaturationCorrected.active = True
@@ -44,11 +44,13 @@ def add_reference(sim, actor, name):
 
 def main():
     """Check scalar-only scoring, exclusions, all hit modes and vector formats."""
-    paths = utility.get_default_test_paths(__file__, output_folder="test103_AMF_semantics")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder="test103_AMF_semantics"
+    )
     sim, base, reference = make_simulation(paths.output, weight=3.7)
     sim.world.size = [250, 250, 250]
     base.size = reference.size = [1, 1, 20]
-    base.spacing = reference.spacing = [10, 10, .5]
+    base.spacing = reference.spacing = [10, 10, 0.5]
     base.write_to_disk = False
     scalar = add_actor(sim, base, "scalar_only")
     scalar.MicrodosimetricSpectra = False
@@ -74,14 +76,18 @@ def main():
             ref.hit_type = "middle"
             actor.microdosimetric_spectra.active = False
         else:
-            actor.microdosimetric_spectra.output_filename = hit + (".mha" if hit == "pre" else ".nrrd")
+            actor.microdosimetric_spectra.output_filename = hit + (
+                ".mha" if hit == "pre" else ".nrrd"
+            )
             actor.microdosimetric_spectra.write_to_disk = True
         hits[hit] = (actor, ref)
 
     exclusions = []
-    for x, label, particle, energy in ((30, "electron", "e-", 1),
-                                     (60, "low_energy", "proton", .01),
-                                     (90, "high_charge", "ion 19 39", 3900)):
+    for x, label, particle, energy in (
+        (30, "electron", "e-", 1),
+        (60, "low_energy", "proton", 0.01),
+        (90, "high_charge", "ion 19 39", 3900),
+    ):
         box = sim.add_volume("Box", label + "_water")
         box.size = [10, 10, 10]
         box.translation = [x, 0, 0]
@@ -100,13 +106,21 @@ def main():
     # Each scorer sees the same histories, avoiding repeated Geant4 startups.
     sim.run()
     assert values(base.dose).sum() > 0
-    np.testing.assert_allclose(values(base.dose), values(reference.dose), rtol=1e-12, atol=1e-25)
+    np.testing.assert_allclose(
+        values(base.dose), values(reference.dose), rtol=1e-12, atol=1e-25
+    )
     np.testing.assert_allclose(values(scalar.dose), values(base.dose), rtol=1e-12)
-    np.testing.assert_allclose(values(scalar.DoseAveragedLinealEnergy), values(base.DoseAveragedLinealEnergy), rtol=1e-12)
+    np.testing.assert_allclose(
+        values(scalar.DoseAveragedLinealEnergy),
+        values(base.DoseAveragedLinealEnergy),
+        rtol=1e-12,
+    )
     assert not scalar.microdosimetric_spectra.active
     assert not list(paths.output.glob("scalar_only*.mhd"))
     for actor, ref in exclusions:
-        assert values(ref.dose).sum() > 0, "Excluded particles must actually deposit energy"
+        assert (
+            values(ref.dose).sum() > 0
+        ), "Excluded particles must actually deposit energy"
         for output in actor.interfaces_to_user_output.values():
             assert np.all(values(output) == 0)
 
@@ -122,9 +136,15 @@ def main():
             assert image.GetSize() == (1, 1, 20)
             assert image.GetNumberOfComponentsPerPixel() == 400
             assert "64-bit float" in image.GetPixelIDTypeAsString()
-            np.testing.assert_allclose(image.GetOrigin(), rotation @ [0, 0, -4.75] + translation, atol=1e-12)
-            np.testing.assert_allclose(image.GetDirection(), rotation.ravel(), atol=1e-12)
-            np.testing.assert_array_equal(sitk.GetArrayFromImage(image), values(actor.microdosimetric_spectra))
+            np.testing.assert_allclose(
+                image.GetOrigin(), rotation @ [0, 0, -4.75] + translation, atol=1e-12
+            )
+            np.testing.assert_allclose(
+                image.GetDirection(), rotation.ravel(), atol=1e-12
+            )
+            np.testing.assert_array_equal(
+                sitk.GetArrayFromImage(image), values(actor.microdosimetric_spectra)
+            )
         arrays[hit] = scored
     assert not np.allclose(arrays["pre"], arrays["post"], rtol=1e-3, atol=0)
     assert not np.allclose(arrays["random"], arrays["pre"], rtol=1e-3, atol=0)

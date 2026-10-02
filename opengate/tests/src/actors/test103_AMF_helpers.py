@@ -76,7 +76,7 @@ def labels():
     return (edges[1:] + edges[:-1]) / 2
 
 
-def analytical_power_spectrum(radius=.3):
+def analytical_power_spectrum(radius=0.3):
     # The selected power-only distribution is exponential in y. Its continuum
     # dose mean is 2/lambda, independently of energy, charge and stopping power.
     """Return the exponential slope and continuum dose mean for radius in um."""

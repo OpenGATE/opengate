@@ -31,7 +31,9 @@ def main():
     assert spectrum.shape == (3, 1, 3, 400)
     assert spectrum.dtype == np.float64
     # Dose density integrated in ln(y) must equal one, with the legacy bins.
-    np.testing.assert_allclose(spectrum[scored].sum(axis=-1) * np.log(10) / 50, 1, rtol=1e-12)
+    np.testing.assert_allclose(
+        spectrum[scored].sum(axis=-1) * np.log(10) / 50, 1, rtol=1e-12
+    )
     # An independent closed form gives the spectral shape and peak at 2/lambda.
     y = labels()
     closed_shape = y**2 * np.exp(-lam * y)
@@ -40,20 +42,32 @@ def main():
     # The source truncates component values below 1e-10.
     closed_shape[np.exp(-lam * y) <= 1e-10] = 0
     closed_shape *= (50 / np.log(10)) / closed_shape.sum()
-    np.testing.assert_allclose(spectrum[scored], np.tile(closed_shape, (scored.sum(), 1)), rtol=1e-10, atol=1e-12)
+    np.testing.assert_allclose(
+        spectrum[scored],
+        np.tile(closed_shape, (scored.sum(), 1)),
+        rtol=1e-10,
+        atol=1e-12,
+    )
     # Source-defined MCFMKM coefficients use discrete logarithmic-bin weights.
     # Evaluate their relationships independently from the closed spectrum.
-    z_domain = .16022 * y / (np.pi * .3**2)
-    z_nucleus = .16022 * y / (np.pi * 4.5**2)
-    alpha_y = .117 + .0615 * z_domain
-    exponent = alpha_y * z_nucleus + .0615 * z_nucleus**2
+    z_domain = 0.16022 * y / (np.pi * 0.3**2)
+    z_nucleus = 0.16022 * y / (np.pi * 4.5**2)
+    alpha_y = 0.117 + 0.0615 * z_domain
+    exponent = alpha_y * z_nucleus + 0.0615 * z_nucleus**2
     correction = -np.expm1(-exponent) / exponent
     expected_alpha = np.average(alpha_y * correction, weights=closed_shape)
-    expected_beta = .0615 * np.average(correction, weights=closed_shape)**2
-    np.testing.assert_allclose(np.asarray(actor.Alpha_MCFMKM.get_data())[scored], expected_alpha, rtol=1e-12)
-    np.testing.assert_allclose(np.asarray(actor.Beta_MCFMKM.get_data())[scored], expected_beta, rtol=1e-12)
+    expected_beta = 0.0615 * np.average(correction, weights=closed_shape) ** 2
+    np.testing.assert_allclose(
+        np.asarray(actor.Alpha_MCFMKM.get_data())[scored], expected_alpha, rtol=1e-12
+    )
+    np.testing.assert_allclose(
+        np.asarray(actor.Beta_MCFMKM.get_data())[scored], expected_beta, rtol=1e-12
+    )
     assert sim.get_actor("stats").counts.events == 8
-    assert actor.user_output.dose.merged_data.get_data_item_object(0).number_of_samples == 8
+    assert (
+        actor.user_output.dose.merged_data.get_data_item_object(0).number_of_samples
+        == 8
+    )
 
     for name in actor.user_output:
         output = actor.interfaces_to_user_output[name]
@@ -72,11 +86,18 @@ def main():
         np.testing.assert_array_equal(array, itk.array_from_image(output.get_data()))
         header = output.get_output_path().read_text()
         assert "ElementType = MET_DOUBLE" in header
-        payload_name = next(line.split("=", 1)[1].strip() for line in header.splitlines() if line.startswith("ElementDataFile"))
+        payload_name = next(
+            line.split("=", 1)[1].strip()
+            for line in header.splitlines()
+            if line.startswith("ElementDataFile")
+        )
         payload = output.get_output_path().with_name(payload_name)
         assert payload.stat().st_size == 3 * 1 * 3 * components * 8
     label_file = paths.output / "spectrum_histo_x_labels.txt"
-    assert label_file.read_text().splitlines()[0] == "#Histogram x-axis labels (lineal energy in keV/um)"
+    assert (
+        label_file.read_text().splitlines()[0]
+        == "#Histogram x-axis labels (lineal energy in keV/um)"
+    )
     np.testing.assert_allclose(np.loadtxt(label_file), y, rtol=5e-6)
     assert not (paths.output / "microdosimetric_spectra.dat").exists()
     utility.test_ok(True)
