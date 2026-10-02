@@ -85,11 +85,15 @@ class VoxelSource(GenericSource):
         Compute the Cumulative Distribution Function of the image
         Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
         """
+        import numpy as np
+
         if self._cdf_x is None or self._cdf_y is None or self._cdf_z is None:
             self._cdf_x, self._cdf_y, self._cdf_z = compute_image_3D_CDF(
                 self._current_itk_image
             )
-
+            self._cdf_x = np.array(self._cdf_x)
+            self._cdf_y = np.array(self._cdf_y)
+            self._cdf_z = np.array(self._cdf_z)
         # set CDF to the position generator
         pg = g4_source.GetSPSVoxelPosDistribution()
         pg.SetCumulativeDistributionFunction(self._cdf_z, self._cdf_y, self._cdf_x)

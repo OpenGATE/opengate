@@ -322,7 +322,7 @@ def compute_image_3D_CDF(image):
     # a segfault in some cases (linux + multithread + multiple sources)
     # It is unclear why, but for now we use array_from_image that copy the data
     # array = itk.array_view_from_image(image)
-    array = itk.array_from_image(image)
+    array = itk.array_from_image(image).astype(np.float64)
 
     # normalize
     array = array / np.sum(array)

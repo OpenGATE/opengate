@@ -166,7 +166,6 @@ class SourceEngine(EngineBase):
         for source in source_manager.sources.values():
             g4_source = source.get_next_g4_source()
             if g4_source is not None:
-                source.initialize_g4_source(g4_source, self.run_timing_intervals)
                 ms.AddSource(g4_source)
             else:
                 source.initialize(self.run_timing_intervals)
