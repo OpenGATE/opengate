@@ -110,6 +110,7 @@ void GateAMDMActor::SteppingAction(G4Step *step) {
   if (charge <= 0)
     return;
   const int mass = track->GetDefinition()->GetBaryonNumber();
+  // GetKineticEnergy is the track's post-step sample at this scoring callback.
   const double kineticEnergy = track->GetKineticEnergy() / CLHEP::MeV;
   // Preserve legacy applicability, including its zero-baryon rule: positive
   // energy / 0 samples the upper endpoint; 0 / 0 contributes nothing.
@@ -128,6 +129,8 @@ void GateAMDMActor::SteppingAction(G4Step *step) {
   // One actor-owned lock protects all shared accumulator updates.
   std::lock_guard<std::mutex> lock(fScoringMutex);
   ImageAddValue<ImageType>(cpp_amdm_restricted_edep_image, index, edep);
+  // LUT values are gamma[0..bins) followed by delta[0..bins).
+  // Keep both numerators raw; Python derives ratios only after worker scoring.
   for (int b = 0; b < fBins; ++b) {
     index4[3] = b;
     const double delta = values[fBins + b] * edep;

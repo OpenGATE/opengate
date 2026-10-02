@@ -2280,10 +2280,12 @@ class AMDMActor(VoxelDepositActor, g4.GateAMDMActor):
     }
 
     def __init__(self, *args, **kwargs):
+        """Create the voxel actor, output interfaces and C++ scoring instance."""
         VoxelDepositActor.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
+        """Construct C++ state and register AMDM's engine lifecycle callbacks."""
         g4.GateAMDMActor.__init__(self, self.user_info)
         self.AddActions(
             {
@@ -2298,14 +2300,23 @@ class AMDMActor(VoxelDepositActor, g4.GateAMDMActor):
 
     @property
     def output_filename(self):
+        """Return the configured normalized-delta filename."""
         return self.delta.output_filename
 
     @output_filename.setter
     def output_filename(self, filename):
+        """Configure all AMDM output filenames from one shared basename."""
         # Keep the legacy hyphenated names when setting the actor-wide basename.
         self.user_output.amdm.set_output_filename(filename, item="all")
 
     def initialize(self):
+        """Validate voxel/LUT parameters and initialize the C++ accumulators.
+
+        Run after the engine resolves volume attachment. Invalid geometry,
+        bin counts or table inputs raise the framework/C++ validation errors.
+        Raw file activation follows storeMergingData without changing the
+        internal sums or explicit write_to_disk settings.
+        """
         VoxelDepositActor.initialize(self)
         self.check_user_input()
         if not isinstance(self.attached_to, str):
@@ -2350,10 +2361,16 @@ class AMDMActor(VoxelDepositActor, g4.GateAMDMActor):
         self.LUTfilename = str(self.LUTfilename)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+        # Derived outputs always need raw data, even when raw files are disabled.
         self.raw_delta.active = self.storeMergingData
         self.raw_gamma.active = self.storeMergingData
 
     def BeginOfRunActionMasterThread(self, run_index):
+        """Allocate zero raw buffers and attach the scoring grid for this run.
+
+        run_index identifies the framework run. This master callback precedes
+        worker scoring and repeats allocation/attachment for each interval.
+        """
         from ..image import create_3d_image, create_4d_image
 
         images = [create_3d_image(self.size, self.spacing, pixel_type="double")]
@@ -2373,6 +2390,12 @@ class AMDMActor(VoxelDepositActor, g4.GateAMDMActor):
         g4.GateAMDMActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
+        """Copy completed raw buffers, set metadata, and merge the run output.
+
+        Workers have finished before this callback. Copies keep retained runs
+        independent of the next run's buffers; normalization stays deferred
+        to the output container. Return the inherited callback result.
+        """
         self.user_output.amdm.store_data(
             run_index,
             *(

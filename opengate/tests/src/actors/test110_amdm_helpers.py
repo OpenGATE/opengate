@@ -16,6 +16,7 @@ DELTA = np.array([0.25, 0.75, 0.0])
 
 
 def output_dir(name):
+    """Create a named AMDM test output directory without changing reference data."""
     paths = utility.get_default_test_paths(__file__)
     path = paths.output / "test110_amdm" / name
     path.mkdir(parents=True, exist_ok=True)
@@ -23,6 +24,11 @@ def output_dir(name):
 
 
 def constant_lut(directory, entries=None):
+    """Write a synthetic constant three-bin LUT with two energy keys per charge.
+
+    entries maps charge to (gamma, delta) arrays; omitted entries use the
+    distinct carbon-bin constants, including a zero-dose third bin.
+    """
     if entries is None:
         entries = {6: (GAMMA, DELTA)}
     path = Path(directory) / "synthetic_lut.txt"
@@ -47,6 +53,12 @@ def make_sim(
     primaries=80,
     image_volume=False,
 ):
+    """Build a small fixed-seed ion simulation and return (simulation, AMDM actor).
+
+    Use a rotated, translated water target and scoring grid to exercise spatial
+    metadata. Optional settings select weights, threads, coordinate/hit modes,
+    particle/run contributions, or a generated native ImageVolume fixture.
+    """
     directory = Path(directory)
     sim = gate.Simulation()
     sim.output_dir = directory
@@ -100,6 +112,7 @@ def make_sim(
 
 
 def arrays(actor, which="merged"):
+    """Copy energy, raw delta/gamma and normalized delta/gamma arrays for a run."""
     return tuple(
         itk.array_from_image(interface.get_data(which=which))
         for interface in (
@@ -113,6 +126,7 @@ def arrays(actor, which="merged"):
 
 
 def expected_metadata(sim, actor):
+    """Calculate spatial origin/direction independently for the selected frame."""
     center = -(np.asarray(actor.size) - 1) * np.asarray(actor.spacing) / 2
     origin = actor.rotation @ center + actor.translation
     direction = actor.rotation
@@ -182,6 +196,11 @@ def check_image(path, dimension, actor, origin, direction, samples=None):
 
 
 def check_outputs(sim, actor, which="merged", samples=None):
+    """Assert enabled image contents/names/metadata and disabled file absence.
+
+    Return arrays read from enabled files for the merged output or run index.
+    Check sample sidecars when the expected event count is provided.
+    """
     origin, direction = expected_metadata(sim, actor)
     result = []
     for interface, dimension, suffix in [
@@ -209,6 +228,11 @@ def check_outputs(sim, actor, which="merged", samples=None):
 
 
 def assert_constant_scoring(actor, gamma=GAMMA, delta=DELTA):
+    """Assert constant-bin raw/normalized identities and return restricted MeV.
+
+    Require both scored and empty voxels and verify zero-denominator results.
+    Tolerances allow accumulation roundoff only, not stochastic disagreement.
+    """
     energy, raw_delta, raw_gamma, normalized_delta, normalized_gamma = arrays(actor)
     assert energy.sum() > 0, "simulation must score nonzero restricted energy"
     assert np.any(energy == 0), "test must include empty voxels"

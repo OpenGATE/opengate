@@ -8,9 +8,6 @@ grid. Gamma (also called yd in the table) is expressed in keV/µm; delta is
 dimensionless. The actor uses the material and particle transport of the
 simulation without changing the physics model.
 
-Discussion
-----------
-
 The abridged microdosimetric distribution methodology (AMDM) was published by
 Parisi, Beltran and Furutani in `10.1002/acm2.14049
 <https://doi.org/10.1002/acm2.14049>`_. It was subsequently used in OpenGATE10
@@ -179,8 +176,23 @@ retention to keep results. Set ``keep_data_in_memory=False`` to release the
 outputs at simulation close; use the files thereafter. Set output filenames to
 None or an empty string only with the corresponding disk writes disabled.
 
-Lookup and scoring
-------------------
+AMDM_LUT.txt
+------------
+
+``LUTfilename`` selects a user-supplied plain-text lookup table. The name
+``AMDM_LUT.txt`` is the default relative filename; it does not identify an
+automatically deployed table. The development copy used by the acceptance test
+is ``opengate/tests/src/actors/fixtures/test110_amdm/AMDM_LUT.txt``. Production
+studies supply their own table and explicitly configure its path.
+
+File format
+~~~~~~~~~~~
+
+Each data row describes one particle charge and kinetic energy per nucleon:
+
+.. code-block:: text
+
+   charge  energy_MeV_per_nucleon  gamma_1 ... gamma_N  delta_1 ... delta_N
 
 The LUT has two key columns (positive integral charge and positive energy in
 MeV/n), then one gamma/yd column per bin in keV/µm, then one dimensionless delta
@@ -188,12 +200,64 @@ column per bin. All entries must be finite numbers. Charge groups must be
 ordered; energy keys must be unique and strictly increasing within each group.
 Groups may have different sizes and energy ranges, including a single entry.
 Blank lines, whitespace, and comments starting with ``#`` are accepted.
-Validation checks the schema; it does not require a particular gamma/delta
-model or force the delta values to sum to one.
+For N bins, every row must contain exactly ``2 + 2*N`` numeric values and
+``AMDM_Bins`` must equal N. For example, this artificial two-bin table illustrates
+the format, not a physically calculated LUT:
+
+.. code-block:: text
+
+   # charge  E[MeV/n]  gamma1[keV/um]  gamma2[keV/um]  delta1  delta2
+   6         1         2              7              0.25    0.75
+   6         10        3              9              0.20    0.80
+
+The reader checks the schema but does not enforce nonnegative gamma/delta
+values or a unit sum of delta. Store the bin edges, microscopic scoring-site
+geometry/material, particle/isotope assumptions and spectrum-generation method
+alongside the table; these are not encoded in its numeric columns. Charge is
+the only species key, so the table cannot distinguish isotopes sharing a charge.
 
 Bin values interpolate linearly in energy within the particle's charge group.
 Values below/above its energy range clamp to that group's first/last row.
 Missing charges contribute neither to the restricted energy nor to the bins.
+
+Calculating a table
+~~~~~~~~~~~~~~~~~~~
+
+For each charge and energy key, obtain a microdosimetric lineal-energy spectrum
+for the chosen material and microscopic scoring site using a suitable
+microdosimetric calculation, such as the PHITS microdosimetric function used in
+the published methodology. Choose the same lineal-energy bin edges for every
+row. The actor consumes these precomputed spectra summaries; this port does not
+include a spectrum simulator or an automatic LUT generator.
+
+Let ``d(y)`` be the dose probability density, normalized so its integral is one,
+and let ``[y_low, y_high)`` be a bin, with y in keV/µm. Calculate the two entries
+using Equations 6 and 7 of `Parisi et al.
+<https://doi.org/10.1002/acm2.14049>`_:
+
+.. math::
+
+   \delta_b = \int_{y_{b,\mathrm{low}}}^{y_{b,\mathrm{high}}} d(y)\,dy,
+   \qquad
+   \gamma_b =
+   \frac{\int_{y_{b,\mathrm{low}}}^{y_{b,\mathrm{high}}} y\,d(y)\,dy}
+        {\delta_b}.
+
+For a dose histogram, sum its dose weights within each AMDM bin: delta is that
+sum divided by the total dose weight, and gamma is the dose-weighted mean y
+within the bin. If the input is a probability *density*, include histogram
+widths in the sums. If it is a frequency spectrum, convert it to a dose spectrum
+by weighting with y and normalizing first. Write zero gamma for an empty bin
+to keep every entry finite. Gamma is a calculated mean, not the bin midpoint.
+
+Check nonnegative values, delta sums near one when bins cover the full spectrum,
+gamma within its bin, statistical convergence and interpolation accuracy.
+Cover the expected particle charges and energy range, then write rows ordered
+by charge and energy, with all gamma values before all delta values. Endpoint
+clamping and missing-charge exclusion make adequate table coverage necessary.
+
+Lookup and scoring
+------------------
 
 For compatibility with the source actor, the LUT query uses the track's kinetic
 energy at the scoring callback (post-step energy), divided by its baryon number.
@@ -275,28 +339,5 @@ For moving geometry, outputs are merged by voxel index in the grid attached to
 the volume, following current actor conventions. A merged global image has the
 first contributing run's coordinates; it is not a resampling of all runs into a
 fixed world grid. Retain per-run outputs to inspect their individual poses.
-
-Validation and migration
-------------------------
-
-Use ``sim.add_actor("AMDMActor", "amdm")`` and ``attached_to``. Replace obsolete
-``output`` with ``output_filename`` and ``sim.output_dir``. Initialization and
-callbacks use the current framework; wrong fluence references, duplicate LUT
-allocation, unchecked endpoint iterators, process-exit errors and destructive
-normalization were repaired. Zero denominators now explicitly yield zero.
-
-Tests in ``tests/src/actors/test110_amdm_*.py`` exercise independently known
-constant-bin results, interpolation and malformed tables, full output headers
-and payloads, zero bins, coordinates, track weights, unequal run contributions,
-raw-first merging and single/multithread aggregates. The supplied-LUT test uses
-the development fixture ``tests/src/actors/fixtures/test110_amdm/AMDM_LUT.txt``
-with SHA-256
-``93d42113b9f48e3ec069000f5983e4568f7bca2e873d1cb06186d08f949771ab``;
-it compares the ten raw bins to independently recorded PhaseSpaceActor steps
-and NumPy interpolation. This is analytical/transport-step acceptance evidence.
-No independently trusted legacy output image was found for a legacy numerical
-comparison. The fixture is a test input, not a generated output reference or a
-production LUT selected automatically by the actor. The original root-level
-development file is not required to run the tests.
 
 .. autoclass:: opengate.actors.doseactors.AMDMActor

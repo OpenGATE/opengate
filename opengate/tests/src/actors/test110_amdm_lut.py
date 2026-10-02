@@ -12,6 +12,7 @@ from test110_amdm_helpers import output_dir
 
 
 def lookup_actor(path, bins=2):
+    """Construct a public AMDM actor and load a LUT without starting transport."""
     sim = gate.Simulation()
     actor = sim.add_actor("AMDMActor", "lookup")
     actor.AMDM_Bins = bins
