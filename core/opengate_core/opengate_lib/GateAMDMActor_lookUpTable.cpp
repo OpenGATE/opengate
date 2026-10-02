@@ -13,7 +13,8 @@ void GateAMDMLookUpTable::Read(const std::string &filename, int bins) {
   std::ifstream input(filename);
   if (!input)
     throw std::invalid_argument("AMDM cannot open LUT: " + filename);
-  // Parse transactionally: failed reinitialization must not leave a partial LUT.
+  // Parse transactionally: failed reinitialization must not leave a partial
+  // LUT.
   std::map<int, std::vector<Row>> data;
   std::string line;
   int previousCharge = 0;

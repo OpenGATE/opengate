@@ -12,22 +12,27 @@
 #include <itkImage.h>
 #include <mutex>
 
-/** Score weighted AMDM raw sums on a shared spatial grid with a separate bin axis. */
+/** Score weighted AMDM raw sums on a shared spatial grid with a separate bin
+ * axis. */
 class GateAMDMActor : public GateVActor {
 public:
   using ImageType = itk::Image<double, 3>;
   using ImageType4D = itk::Image<double, 4>;
-  /** Construct an MT-capable actor from the current Python user-info dictionary. */
+  /** Construct an MT-capable actor from the current Python user-info
+   * dictionary. */
   explicit GateAMDMActor(py::dict &user_info);
-  /** Read voxel settings and validate/load the charge-energy LUT before scoring. */
+  /** Read voxel settings and validate/load the charge-energy LUT before
+   * scoring. */
   void InitializeUserInfo(py::dict &user_info) override;
   /** Initialize the base actor and create the 3D/4D ITK image holders. */
   void InitializeCpp() override;
-  /** Reset the event count and attach fresh buffers to the current volume pose. */
+  /** Reset the event count and attach fresh buffers to the current volume pose.
+   */
   void BeginOfRunActionMasterThread(int run_id) override;
   /** Count an event under the same actor-owned lock used for worker scoring. */
   void BeginOfEventAction(const G4Event *) override;
-  /** Accumulate a step's weighted MeV, delta*MeV and gamma*delta*MeV raw sums. */
+  /** Accumulate a step's weighted MeV, delta*MeV and gamma*delta*MeV raw sums.
+   */
   void SteppingAction(G4Step *) override;
   /** Return the physical-volume name used for run-time geometry attachment. */
   std::string GetPhysicalVolumeName() const { return fPhysicalVolumeName; }

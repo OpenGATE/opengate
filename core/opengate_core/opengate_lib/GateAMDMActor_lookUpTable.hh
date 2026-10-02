@@ -16,7 +16,8 @@ public:
   void Read(const std::string &filename, int bins);
   /** Fill values with gamma bins followed by delta bins at energy in MeV/n.
    * Interpolate linearly within a group and clamp at its endpoints. Return
-   * false and clear values for a missing charge or NaN energy; infinities clamp.
+   * false and clear values for a missing charge or NaN energy; infinities
+   * clamp.
    */
   bool Find(int charge, double energy, std::vector<double> &values) const;
 
