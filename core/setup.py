@@ -91,6 +91,16 @@ class CMakeBuild(build_ext):
         # cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-self-assign -Wno-extra-semi"']
         cmake_args += ["-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"]
 
+        # Number of parallel compile jobs. Historically this was pinned to 4, which made
+        # a cold build needlessly slow on any modern machine. Default to all available
+        # cores and allow an explicit override via the standard environment variable.
+        try:
+            num_jobs = int(os.environ.get("OPEN_GATE_BUILD_JOBS", ""))
+            if num_jobs < 1:
+                raise ValueError
+        except ValueError:
+            num_jobs = os.cpu_count() or 4
+
         if platform.system() == "Windows":
             cmake_args += [
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
@@ -103,11 +113,11 @@ class CMakeBuild(build_ext):
                 cmake_args += ["-A", "x64"]
                 build_args += ["--", "/m"]
             else:
-                build_args += ["--parallel", "4"]
+                build_args += ["--parallel", str(num_jobs)]
         else:
             cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-pedantic"']
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
-            build_args += ["--", "-j4"]
+            build_args += ["--", f"-j{num_jobs}"]
 
         env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
             env.get("CXXFLAGS", ""), self.distribution.get_version()
