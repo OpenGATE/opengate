@@ -6,11 +6,12 @@ import numpy as np
 import SimpleITK as sitk
 
 from opengate.tests import utility
-from test097_AMF_helpers import make_simulation, analytical_power_spectrum, labels
+from test103_AMF_helpers import make_simulation, analytical_power_spectrum, labels
 
 
 def main():
-    paths = utility.get_default_test_paths(__file__, output_folder="test097_AMF")
+    """Verify public scoring, analytical expectations and scalar/vector files."""
+    paths = utility.get_default_test_paths(__file__, output_folder="test103_AMF")
     sim, actor, reference_dose = make_simulation(paths.output)
     sim.run(start_new_process=True)
     dose = np.asarray(actor.dose.get_data())

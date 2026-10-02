@@ -5,10 +5,11 @@ import numpy as np
 import opengate as gate
 
 from opengate.tests import utility
-from test097_AMF_helpers import make_simulation
+from test103_AMF_helpers import make_simulation
 
 
 def expect_error(call, message):
+    """Require the callable to raise an error containing the requested message."""
     try:
         call()
     except Exception as error:
@@ -18,7 +19,8 @@ def expect_error(call, message):
 
 
 def main():
-    paths = utility.get_default_test_paths(__file__, output_folder="test097_AMF_validation")
+    """Check defaults, configuration errors and unsupported run/job operations."""
+    paths = utility.get_default_test_paths(__file__, output_folder="test103_AMF_validation")
     sim, actor, _ = make_simulation(paths.output)
     assert actor.DomainRadius == .3 * gate.g4_units.um
     assert actor.NucleusRadius == 4.5 * gate.g4_units.um
@@ -44,7 +46,10 @@ def main():
                                   ("MicrodosimetricSpectra", 1, "bool"),
                                   ("size", [1, 1, 0], "positive"),
                                   ("size", [1, 1, 1.5], "integers"),
+                                  ("size", [1e100, 1, 1], "too large"),
                                   ("spacing", [1, 0, 1], "positive"),
+                                  ("spacing", [1e200, 1e200, 1], "voxel volume"),
+                                  ("spacing", [1e-200, 1e-200, 1e-200], "voxel volume"),
                                   ("translation", [1, 2], "three finite"),
                                   ("rotation", np.zeros((3, 3)), "orthogonal"),
                                   ("rotation", np.full((3, 3), "bad"), "orthogonal"),
@@ -56,15 +61,25 @@ def main():
     old = sim.run_timing_intervals
     sim.run_timing_intervals = [[0, 1], [1, 2]]
     expect_error(actor.check_user_input, "one run interval")
+    sim.number_of_threads = 4
+    expect_error(actor.check_user_input, "one run interval")
+    sim.number_of_threads = 1
     sim.run_timing_intervals = old
     sim.number_of_threads = 2
-    expect_error(actor.check_user_input, "sequential")
+    actor.check_user_input()
     sim.number_of_threads = 1
     sim.force_multithread_mode = True
-    expect_error(actor.check_user_input, "sequential")
+    actor.check_user_input()
     sim.force_multithread_mode = False
     expect_error(lambda: actor.user_output.dose.plan_merge(), "merging finalized")
     expect_error(lambda: actor.import_user_output_from_actor(actor, actor), "merging finalized")
+    # Exercise the C++ checks independently of Python configuration validation.
+    for size, spacing, message in (([1e100, 1, 1], [1, 1, 1], "dimensions"),
+                                   ([1e6, 1e6, 1e6], [1, 1, 1], "overflow"),
+                                   ([1, 1, 1], [1e200, 1e200, 1], "voxel volume")):
+        actor.size, actor.spacing = size, spacing
+        actor.InitializeUserInfo(actor.user_info)
+        expect_error(actor.InitializeCpp, message)
     utility.test_ok(True)
 
 

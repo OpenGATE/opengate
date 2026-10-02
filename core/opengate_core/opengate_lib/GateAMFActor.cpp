@@ -11,13 +11,37 @@
 #include <fstream>
 #include <sstream>
 
-GateAMFActor::GateAMFActor(py::dict &user_info) : GateVActor(user_info, false) {
+// Calculator copies share const coefficient data; mutable integration buffers
+// and the reusable spectrum belong to one worker. No worker touches ITK pixels.
+struct GateAMFActor::WorkerData {
+  MicrodosimetricCalculator calculator;
+  AMFRawAccumulator raw;
+  VectorPixelType spectrum;
+  G4EmCalculator emcalc;
+  std::vector<double> labels;
+  unsigned long events = 0;
+  int threadId;
+  bool finished = false;
+  /** Copy calculator scratch, share immutable fits and allocate this worker's sums. */
+  WorkerData(const MicrodosimetricCalculator &model, size_t voxels,
+             const std::array<bool, 4> &flags, bool spectra)
+      : calculator(model), raw(voxels, flags, spectra),
+        threadId(G4Threading::G4GetThreadId()) {
+    spectrum.SetSize(AMFRawAccumulator::bins);
+    model.get_Histo_X_Labels(labels);
+  }
+};
+
+GateAMFActor::GateAMFActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfEventAction");
+  fActions.insert("BeginOfRunAction");
+  fActions.insert("EndOfRunAction");
 }
 GateAMFActor::~GateAMFActor() = default;
 
 void GateAMFActor::InitializeUserInfo(py::dict &user_info) {
+  if (fInitialized) Fatal("AMF: repeated initialization");
   GateVActor::InitializeUserInfo(user_info);
   fHitType = DictGetStr(user_info, "hit_type");
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
@@ -33,6 +57,21 @@ void GateAMFActor::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateAMFActor::InitializeCpp() {
+  if (fInitialized || !calculator) Fatal("AMF: missing or repeated initialization");
+  // Check before double->size_t conversion or ITK region multiplication.
+  size_t pixels = 1;
+  constexpr size_t maxPixels = std::numeric_limits<std::ptrdiff_t>::max() / (nybin * sizeof(double));
+  for (int i = 0; i < 3; ++i) {
+    const double dimension = fImageSize[i], spacing = fImageSpacing[i];
+    if (!std::isfinite(dimension) || dimension < 1 || dimension > maxPixels ||
+        dimension != std::floor(dimension) || !std::isfinite(spacing) || spacing <= 0)
+      Fatal("AMF: invalid image dimensions or spacing");
+    const auto extent = static_cast<size_t>(dimension);
+    if (extent > maxPixels / pixels) Fatal("AMF: image dimensions overflow address space");
+    pixels *= extent;
+  }
+  const double volume = fImageSpacing[0] * fImageSpacing[1] * fImageSpacing[2];
+  if (!std::isfinite(volume) || volume <= 0) Fatal("AMF: invalid voxel volume");
   GateVActor::InitializeCpp();
   auto allocate = [this]() {
     auto image = Image3DType::New();
@@ -45,6 +84,8 @@ void GateAMFActor::InitializeCpp() {
     image->FillBuffer(0);
     return image;
   };
+  fMomentFlags = {fdoseAveragedLinealEnergy, fdoseAveragedLinealEnergySaturationCorrected,
+                  fAlphaMCFMKMFlag, fBetaMCFMKMFlag};
   cpp_amf_dose_image = allocate();
   if (fdoseAveragedLinealEnergy) cpp_amf_dose_averaged_lineal_energy = allocate();
   if (fdoseAveragedLinealEnergySaturationCorrected)
@@ -60,10 +101,12 @@ void GateAMFActor::InitializeCpp() {
     VectorPixelType zero; zero.SetSize(nybin); zero.Fill(0);
     cpp_amf_microdosimetric_spectra->FillBuffer(zero);
   }
+  fInitialized = true;
 }
 
 void GateAMFActor::BeginOfRunActionMasterThread(int run_id) {
-  if (run_id != 0 || fFinalized) Fatal("AMFActor supports one run interval only");
+  if (!fInitialized || run_id != 0 || fStarted) Fatal("AMF: duplicate or unsupported run start");
+  fStarted = true;
   NbOfEvent = 0;
   auto attach = [this](Image3DType::Pointer image) {
     if (image) AttachImageToVolume<Image3DType>(image, fPhysicalVolumeName, fTranslation, fImageRotation);
@@ -79,13 +122,41 @@ void GateAMFActor::BeginOfRunActionMasterThread(int run_id) {
   fVoxelVolume = spacing[0] * spacing[1] * spacing[2];
 }
 
+void GateAMFActor::BeginOfRunAction(const G4Run *) {
+  auto &local = fWorkerCache.Get();
+  if (!fStarted || local) Fatal("AMF: duplicate or unprepared worker run");
+  auto worker = std::make_unique<WorkerData>(*calculator,
+      cpp_amf_dose_image->GetLargestPossibleRegion().GetNumberOfPixels(),
+      fMomentFlags, fMicrodosimetricSpectra);
+  local = worker.get();
+  std::lock_guard<std::mutex> guard(fRegistrationMutex);
+  fWorkers.push_back(std::move(worker));
+}
+
+void GateAMFActor::BeginOfEventAction(const G4Event *) {
+  auto *local = fWorkerCache.Get();
+  if (!local || local->finished) Fatal("AMF: event outside worker run");
+  ++local->events;
+}
+
+void GateAMFActor::EndOfRunAction(const G4Run *) {
+  auto *local = fWorkerCache.Get();
+  if (!local || local->finished) Fatal("AMF: duplicate worker run end");
+  local->finished = true;
+}
+
 double GateAMFActor::getDose(G4Step *step) const {
   return step->GetTotalEnergyDeposit() / CLHEP::joule * step->GetTrack()->GetWeight() /
       (step->GetPreStepPoint()->GetMaterial()->GetDensity() / (CLHEP::kg / CLHEP::mm3) * fVoxelVolume);
 }
-double GateAMFActor::GetStoppingPower(G4Step *step) const {
-  G4EmCalculator emcalc;
-  return emcalc.ComputeTotalDEDX(step->GetTrack()->GetKineticEnergy(),
+double GateAMFActor::GetStoppingPower(G4Step *step) {
+  auto &emcalc = fWorkerCache.Get()->emcalc;
+  // Match the kinetic energy used for AMF interpolation. Track energy is the
+  // post-step energy; it vanishes on absorption and selects the zero-stopping
+  // fallback even when the scored ion had substantial energy during the step.
+  const double energy = (step->GetPreStepPoint()->GetKineticEnergy() +
+                         step->GetPostStepPoint()->GetKineticEnergy()) * .5;
+  return emcalc.ComputeTotalDEDX(energy,
        step->GetTrack()->GetDefinition(), step->GetPreStepPoint()->GetMaterial()) / (CLHEP::keV / CLHEP::um);
 }
 void GateAMFActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
@@ -115,19 +186,25 @@ void GateAMFActor::SteppingAction(G4Step *step) {
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, inside, index);
   if (!inside) return;
-  VectorPixelType spectrum;
+  auto *worker = fWorkerCache.Get();
+  if (!worker) Fatal("AMF: scoring outside worker run");
+  auto &local = *worker;
+  if (local.finished) Fatal("AMF: scoring after worker run end");
+  auto &spectrum = local.spectrum;
+  const auto offset = static_cast<size_t>(cpp_amf_dose_image->ComputeOffset(index));
   double yd = 0, ys = 0;
-  calculator->calculateDoseWeightedMicrodosimetricFunctionFast(
+  local.calculator.calculateDoseWeightedMicrodosimetricFunctionFast(
       spectrum, charge, mass, energy, GetStoppingPower(step), dose, yd, ys);
   if (fMicrodosimetricSpectra)
-    ImageAddValue<ImageVectorType>(cpp_amf_microdosimetric_spectra, index, spectrum);
+    for (size_t i = 0; i < nybin; ++i) local.raw.spectra[offset * nybin + i] += spectrum[i];
   if (fdoseAveragedLinealEnergy)
-    ImageAddValue<Image3DType>(cpp_amf_dose_averaged_lineal_energy, index, yd);
+    local.raw.moments[0][offset] += yd;
   if (fdoseAveragedLinealEnergySaturationCorrected)
-    ImageAddValue<Image3DType>(cpp_amf_dose_averaged_lineal_energy_saturation_corrected, index, ys);
+    local.raw.moments[1][offset] += ys;
   if (fAlphaMCFMKMFlag || fBetaMCFMKMFlag) {
-    auto labels = GetHistogramLabels();
+    const auto &labels = local.labels;
     const double density = step->GetPreStepPoint()->GetMaterial()->GetDensity() / (CLHEP::g / CLHEP::cm3);
+    // 0.16022 converts y/(pi*rho*r^2), with y in keV/um, to specific energy in Gy.
     const double domain = CLHEP::pi * density * fdomainRadiusInUm * fdomainRadiusInUm;
     const double nucleus = CLHEP::pi * density * fNucleusRadiusInUm * fNucleusRadiusInUm;
     double alpha = 0, c = 0, total = 0;
@@ -136,52 +213,56 @@ void GateAMFActor::SteppingAction(G4Step *step) {
       const double a = fAlphaNotinGyminus1 + fBetaRefinGyminus2 * .16022 * y / domain;
       const double t = a * .16022 * y / nucleus + fBetaRefinGyminus2 * std::pow(.16022 * y / nucleus, 2);
       if (t == 0) continue;
-      const double correction = (1 - std::exp(-t)) / t;
+      // expm1 avoids loss of significance in 1-exp(-t) for small exponents.
+      const double correction = -std::expm1(-t) / t;
       alpha += a * correction * spectrum[i];
       c += correction * spectrum[i];
       total += spectrum[i];
     }
     if (!std::isfinite(total) || total <= 0) Fatal("AMF: invalid biological normalization");
     if (fAlphaMCFMKMFlag)
-      ImageAddValue<Image3DType>(cpp_amf_alpha_mcfmkm_image, index, alpha * dose / total);
+      local.raw.moments[2][offset] += alpha * dose / total;
+    // Mix sqrt(beta) with dose; squaring happens only after all workers merge.
     if (fBetaMCFMKMFlag)
-      ImageAddValue<Image3DType>(cpp_amf_beta_mcfmkm_image, index, std::sqrt(fBetaRefinGyminus2 * std::pow(c / total, 2)) * dose);
+      local.raw.moments[3][offset] += std::sqrt(fBetaRefinGyminus2 * std::pow(c / total, 2)) * dose;
   }
-  ImageAddValue<Image3DType>(cpp_amf_dose_image, index, dose);
+  local.raw.dose[offset] += dose;
 }
 
 int GateAMFActor::EndOfRunActionMasterThread(int run_id) {
-  if (run_id != 0 || fFinalized) Fatal("AMF: duplicate or unsupported run finalization");
+  if (!fStarted || run_id != 0 || fFinalized)
+    Fatal("AMF: duplicate or unsupported run finalization");
+  // GateSourceManager invokes this after beamOn joins all workers. Stable
+  // thread order avoids registration-order variation in the raw reduction.
+  std::sort(fWorkers.begin(), fWorkers.end(), [](const auto &a, const auto &b) {
+    return a->threadId < b->threadId;
+  });
+  AMFRawAccumulator merged(cpp_amf_dose_image->GetLargestPossibleRegion().GetNumberOfPixels(),
+                           fMomentFlags, fMicrodosimetricSpectra);
+  NbOfEvent = 0;
+  for (const auto &worker : fWorkers) {
+    if (!worker->finished) Fatal("AMF: worker not finished before master merge");
+    merged.Merge(worker->raw);
+    worker->raw.ReleaseBuffers();
+    if (worker->events > static_cast<unsigned long>(INT_MAX - NbOfEvent))
+      Fatal("AMF: event counter overflow");
+    NbOfEvent += static_cast<int>(worker->events);
+  }
+  merged.Finalize();
+  std::copy(merged.dose.begin(), merged.dose.end(), cpp_amf_dose_image->GetBufferPointer());
+  std::array<Image3DType::Pointer, 4> images = {
+      cpp_amf_dose_averaged_lineal_energy,
+      cpp_amf_dose_averaged_lineal_energy_saturation_corrected,
+      cpp_amf_alpha_mcfmkm_image, cpp_amf_beta_mcfmkm_image};
+  for (size_t i = 0; i < images.size(); ++i)
+    if (images[i]) std::copy(merged.moments[i].begin(), merged.moments[i].end(), images[i]->GetBufferPointer());
   if (fMicrodosimetricSpectra)
-    divideVectorImageByScalarImage(cpp_amf_microdosimetric_spectra, cpp_amf_dose_image);
-  for (auto image : {cpp_amf_dose_averaged_lineal_energy,
-                    cpp_amf_dose_averaged_lineal_energy_saturation_corrected,
-                    cpp_amf_alpha_mcfmkm_image, cpp_amf_beta_mcfmkm_image})
-    if (image) divideImage3DByImage3D(image, cpp_amf_dose_image);
-  if (fBetaMCFMKMFlag) squareImage(cpp_amf_beta_mcfmkm_image);
+    std::copy(merged.spectra.begin(), merged.spectra.end(), cpp_amf_microdosimetric_spectra->GetBufferPointer());
   fFinalized = true;
   return 0;
 }
 std::vector<double> GateAMFActor::GetHistogramLabels() const {
   std::vector<double> labels; calculator->get_Histo_X_Labels(labels); return labels;
-}
-void GateAMFActor::divideImage3DByImage3D(Image3DType::Pointer numerator, Image3DType::Pointer denominator) {
-  itk::ImageRegionIterator<Image3DType> n(numerator, numerator->GetLargestPossibleRegion());
-  itk::ImageRegionIterator<Image3DType> d(denominator, denominator->GetLargestPossibleRegion());
-  for (n.GoToBegin(), d.GoToBegin(); !n.IsAtEnd(); ++n, ++d) n.Set(d.Get() ? n.Get() / d.Get() : 0);
-}
-void GateAMFActor::divideVectorImageByScalarImage(ImageVectorType::Pointer numerator, Image3DType::Pointer denominator) {
-  itk::ImageRegionIterator<ImageVectorType> n(numerator, numerator->GetLargestPossibleRegion());
-  itk::ImageRegionIterator<Image3DType> d(denominator, denominator->GetLargestPossibleRegion());
-  for (n.GoToBegin(), d.GoToBegin(); !n.IsAtEnd(); ++n, ++d) {
-    auto value = n.Get();
-    if (d.Get()) value /= d.Get(); else value.Fill(0);
-    n.Set(value);
-  }
-}
-void GateAMFActor::squareImage(Image3DType::Pointer image) {
-  itk::ImageRegionIterator<Image3DType> it(image, image->GetLargestPossibleRegion());
-  for (it.GoToBegin(); !it.IsAtEnd(); ++it) it.Set(it.Get() * it.Get());
 }
 
 // Constructor with all parameters
@@ -189,7 +270,7 @@ MicrodosimetricCalculator::MicrodosimetricCalculator(size_t nybin_val, double ce
                             double nucleusRadius, double betaRef, int iunit_val, int mparased_val)
     : nybin(nybin_val), CelDiam(celDiam), fDomainRadius(domainRadius),
         fNucleusRadius(nucleusRadius), fBetaRef(betaRef), iunit(iunit_val), mparased(mparased_val),
-        factor(0.0), unitconv(0.0), binsperDecade(0.0), y0(0.0), ypower(-3.0) {
+        factor(0.0), ypower(-3.0), unitconv(0.0), binsperDecade(0.0), y0(0.0) {
     if (nybin != 400 || iunit != 2 || mparased != 9 ||
         !std::isfinite(CelDiam) || CelDiam < .003 || CelDiam > 1.0 ||
         !std::isfinite(fDomainRadius) || fDomainRadius <= 0 ||
@@ -219,9 +300,13 @@ inline int MicrodosimetricCalculator::buildIonParamCombos(
             for (int ic = ic1; ic <= ic1 + 1; ++ic) {
                 double Rc = (ic == ic1) ? (1.0 - ratioc) : ratioc;
                 double w  = Rp * Re * Rc;
+                // Exact grid coordinates give zero weight to unused corners.
+                // Their validated finite coefficients contribute exactly zero;
+                // omitting their 400 evaluations changes no interpolation term.
+                if (w == 0.0) continue;
 
                 int index = ((ip - 1) * 96) + ((ie - 1) * 8) + (ic - 1);
-                const auto& row = IonData[index];
+                const auto& row = (*IonData)[index];
 
                 IonParamCombo& c = combos[idx++];
                 c.weight = w;
@@ -254,7 +339,7 @@ inline int MicrodosimetricCalculator::buildIonParamCombos(
             }
         }
     }
-    return idx; // should always be 8
+    return idx; // one to eight nonzero interpolation corners
 }
 
 inline double MicrodosimetricCalculator::sedmeanFast(
@@ -327,7 +412,7 @@ void MicrodosimetricCalculator::calculateDoseWeightedMicrodosimetricFunctionFast
     double& LinealEnergy_Dose,
     double& LinealEnergy_Dose_saturation_correctedS)
 {
-    if (IonData.size() != ROWS) Fatal("AMF: coefficient data has not been loaded");
+    if ((!IonData || IonData->size() != ROWS)) Fatal("AMF: coefficient data has not been loaded");
     if (!std::isfinite(izz) || izz < 1 || izz > 18 ||
         !std::isfinite(iAA) || iAA <= 0 ||
         !std::isfinite(energyPerNucleon) || energyPerNucleon < .025 ||
@@ -354,8 +439,7 @@ void MicrodosimetricCalculator::calculateDoseWeightedMicrodosimetricFunctionFast
     int ic1, ie1, ip1;
     double ratioc, ratioe, ratiop;
 
-    getAparaion(CelDiam, energyPerNucleon, static_cast<int>(iAA),
-                static_cast<int>(izz),
+    getAparaion(CelDiam, energyPerNucleon, static_cast<int>(izz),
                 ratioc, ratioe, ratiop, ic1, ie1, ip1);
 
     // Precompute parameter combinations once
@@ -407,6 +491,7 @@ void MicrodosimetricCalculator::calculateDoseWeightedMicrodosimetricFunctionFast
         !std::isfinite(sum2)) Fatal("AMF: coefficient distribution has no finite positive normalization");
 
     // Normalization factor (already precomputed binsperDecade in initialize())
+    // q(y)=y*d(y) integrates over ln(y), so its bin sum is 50/ln(10).
     const double normalization_factor =
         (binsperDecade / std::log(10.0)) / sumYdy;
 
@@ -459,18 +544,22 @@ void MicrodosimetricCalculator::initialize() {
         unitconv = 4.0 / 3.0 * M_PI * std::pow(CelDiam / 2.0, 3) * 1.0e-15 / 1.602e-13;
     }
 
-    // // Calculate y0
+    // The retained saturation formula assumes unit microscopic target density.
     y0 = (M_PI * fDomainRadius * std::pow(fNucleusRadius, 2)) / (std::sqrt(fBetaRef * (std::pow(fDomainRadius, 2) + std::pow(fNucleusRadius, 2))) * 0.16022);
+
+    if (!std::isfinite(y0) || y0 <= 0)
+        Fatal("AMF: nonfinite or nonpositive saturation parameter");
 
     for (size_t i = 0; i < nybin; ++i) {
         double ymid_val = (yhig[i] + yhig[i + 1]) / 2.0;
         ymid[i] = ymid_val;
         ywid[i] = yhig[i + 1] - yhig[i];
-        Z[i] = 1 - std::exp(-std::pow(ymid_val, 2) / std::pow(y0, 2));
+        const double ratio = ymid_val / y0;
+        Z[i] = -std::expm1(-ratio * ratio);
         histo_x_labels[i] = ymid_val;
     }
 
-    // // Calculate the bins per decade
+    // Logarithmic integration uses this factor when normalizing q(y).
     binsperDecade = nybin / (std::log10(yhig.back() / yhig[0]));
 }
 
@@ -489,13 +578,13 @@ void MicrodosimetricCalculator::calculateDoseWeightedMicrodosimetricFunction(Vec
 
     double factor;
     double sum0 = 0.0, sum1 = 0.0, sum2 = 0.0;
-    double Apara[mparased] = {0.0};
+    double Apara[9] = {0.0};
     int ic1, ie1, ip1;
     double ratioc, ratioe, ratiop;
     double erg = energyPerNucleon * iAA;
     double depev = std::min(dEdx * CelDiam * 1.0e3, erg * 1.0e6);
 
-    getAparaion(CelDiam, energyPerNucleon, iAA, izz, ratioc, ratioe, ratiop, ic1, ie1, ip1);
+    getAparaion(CelDiam, energyPerNucleon, izz, ratioc, ratioe, ratiop, ic1, ie1, ip1);
     sedmean(1.0, depev, ic1, ie1, ip1, ratioc, ratioe, ratiop, Apara);
     factor = (iunit == 0) ? 1.0 : 1.0e6 / Apara[8];
 
@@ -546,7 +635,8 @@ void MicrodosimetricCalculator::calculateDoseWeightedMicrodosimetricFunction(Vec
 
 
 
-void MicrodosimetricCalculator::getAparaion(const double& CelDiam, const double& energyPerNucleon, const int& iAA, const int& izz, double& ratioc, double& ratioe, double& ratiop, int& ic1, int& ie1, int& ip1) {
+void MicrodosimetricCalculator::getAparaion(const double& CelDiam, const double& energyPerNucleon, const int& izz, double& ratioc, double& ratioe, double& ratiop, int& ic1, int& ie1, int& ip1) {
+    // Keep two valid neighbors even at endpoints; a 0/1 fraction performs clamping.
     auto bracket = [](const auto &grid, double value, bool logarithmic,
                       int &lower, double &fraction) {
         size_t upper = 1;
@@ -564,7 +654,7 @@ void MicrodosimetricCalculator::getAparaion(const double& CelDiam, const double&
 }
 
 
-inline double MicrodosimetricCalculator::sedfunc(double x, double depev, const double Apara[], size_t size) {
+inline double MicrodosimetricCalculator::sedfunc(double x, double depev, const double Apara[], size_t) {
     double getfirst = 0.0, getsecond = 0.0, getthird = 0.0;
 
     if (Apara[0] > 0.0) {
@@ -607,7 +697,7 @@ inline double MicrodosimetricCalculator::sedmean(double x, double depev, int ic1
                 double Rc = (ic == ic1) ? (1.0 - ratioc) : ratioc;
                 int index = ((ip-1) * 96) + ((ie-1) * 8) + (ic-1);
                 for (int i = 0; i < mparased; i++) {
-                    Apara[i] = IonData[index][i];
+                    Apara[i] = (*IonData)[index][i];
                 }
                 double wei = Rp * Re * Rc;
                 double sedfuncResult = sedfunc(x, depev, Apara, mparased);
@@ -651,5 +741,5 @@ void MicrodosimetricCalculator::loadIonData() {
         if (parsed.size() > ROWS) Fatal("AMF: expected exactly 576 coefficient rows");
     }
     if (file.bad() || parsed.size() != ROWS) Fatal("AMF: expected exactly 576 coefficient rows");
-    IonData = std::move(parsed);
+    IonData = std::make_shared<const Model>(std::move(parsed));
 }

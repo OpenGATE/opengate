@@ -7,6 +7,10 @@ import opengate as gate
 
 
 def write_coefficients(path, rows=None):
+    """Write a synthetic 576-row AMF table and return its Path.
+
+    Default rows define a power-only distribution for analytical tests,
+    not a physical fit. Supplied rows are written without modification."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if rows is None:
@@ -17,6 +21,10 @@ def write_coefficients(path, rows=None):
 
 
 def make_simulation(output, *, particle="proton", energy=100, weight=1):
+    """Return a seeded water simulation, AMF actor and independent DoseActor.
+
+    The compact fixture uses synthetic coefficients and eight primaries;
+    energy is the total particle kinetic energy in MeV."""
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     sim = gate.Simulation()
@@ -63,6 +71,7 @@ def make_simulation(output, *, particle="proton", energy=100, weight=1):
 
 
 def labels():
+    """Return the 400 arithmetic lineal-energy bin midpoints in keV/um."""
     edges = np.logspace(-3, 5, 401)
     return (edges[1:] + edges[:-1]) / 2
 
@@ -70,5 +79,6 @@ def labels():
 def analytical_power_spectrum(radius=.3):
     # The selected power-only distribution is exponential in y. Its continuum
     # dose mean is 2/lambda, independently of energy, charge and stopping power.
+    """Return the exponential slope and continuum dose mean for radius in um."""
     lam = np.log(2) * (4 * radius / 3)
     return lam, 2 / lam

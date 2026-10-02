@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+from math import prod
 from numbers import Real
 from scipy.spatial.transform import Rotation
 from pathlib import Path
@@ -37,6 +38,7 @@ class AMFImageDataItem(ItkImageDataItem):
     """Preserve VectorImage components across simulation subprocesses."""
 
     def __getstate__(self):
+        """Serialize vector pixels and spatial metadata for subprocess transfer."""
         import itk
 
         state = self.__dict__.copy()
@@ -50,6 +52,7 @@ class AMFImageDataItem(ItkImageDataItem):
         return state
 
     def __setstate__(self, state):
+        """Restore an ITK vector image without losing its component count."""
         import itk
 
         data = state.get("data")
@@ -72,12 +75,14 @@ class ActorOutputAMFImage(ActorOutputSingleImage):
     data_container_class = SingleAMFImage
 
     def plan_merge(self, mode="as_configured"):
+        """Reject job merging because AMF outputs contain finalized dose means."""
         fatal("AMFActor does not support merging finalized outputs from jobs")
 
     def end_of_run(self, run_index):
         # AMF supports a single finalized run. Keep its container directly;
         # the generic summation/ITK duplicator is unnecessary (and the Python
         # ITK duplicator convenience function does not handle double vectors).
+        """Retain the single finalized run without generic image addition."""
         if run_index != 0:
             fatal("AMFActor supports one run interval only")
         if self.merge_data_after_simulation:
@@ -2272,7 +2277,7 @@ class AMFActor(VoxelDepositActor, g4.GateAMFActor):
     """Analytical microdosimetric function for ion steps.
 
     Supply a validated 576 by 9 tsed coefficient file. The implementation retains
-    the source branch's numerical model and supports one sequential run only.
+    the source branch's numerical model and supports one run with worker-local scoring.
     See AMF_PORTING_REPORT.md for physical assumptions and publication differences.
     """
 
@@ -2306,18 +2311,22 @@ class AMFActor(VoxelDepositActor, g4.GateAMFActor):
     }
 
     def __init__(self, *args, **kwargs):
+        """Construct the voxel actor and its C++ AMF scoring instance."""
         VoxelDepositActor.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
+        """Create or restore the C++ actor and register master lifecycle callbacks."""
         g4.GateAMFActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction",
                          "BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
     def check_user_input(self):
+        """Validate one-run attachment, coefficient input, geometry and biology.
+
+        Radii and coefficients use OpenGATE units; invalid configurations
+        raise a framework error before C++ image allocation."""
         VoxelDepositActor.check_user_input(self)
-        if self.simulation.number_of_threads != 1 or self.simulation.force_multithread_mode:
-            fatal("AMFActor supports sequential mode only; multiple threads are unsupported")
         if len(self.simulation.run_timing_intervals) != 1:
             fatal("AMFActor supports one run interval only")
         if not isinstance(self.attached_to, str):
@@ -2341,6 +2350,13 @@ class AMFActor(VoxelDepositActor, g4.GateAMFActor):
                 fatal(f"AMFActor {name} must be positive")
             if name == "size" and np.any(value != np.floor(value)):
                 fatal("AMFActor size must contain integers")
+        # Bound ITK region products and vector allocations before conversion.
+        if prod(int(x) for x in self.size) > np.iinfo(np.intp).max // (400 * 8):
+            fatal("AMFActor size is too large for a 400-component double image")
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            voxel_volume = np.prod(np.asarray(self.spacing, dtype=float))
+        if not np.isfinite(voxel_volume) or voxel_volume <= 0:
+            fatal("AMFActor spacing must give a finite positive voxel volume")
         rotation = np.asarray(self.rotation)
         if (rotation.shape != (3, 3) or rotation.dtype.kind not in "iuf"
                 or not np.all(np.isfinite(rotation))
@@ -2352,6 +2368,10 @@ class AMFActor(VoxelDepositActor, g4.GateAMFActor):
         self.tsed_file_name = str(Path(self.tsed_file_name).resolve())
 
     def initialize(self):
+        """Resolve output paths and freeze AMF configuration before C++ allocation.
+
+        An explicit legacy spectrum filename overrides the output interface.
+        Scalars remain computable when spectrum storage is disabled."""
         VoxelDepositActor.initialize(self)
         self.check_user_input()
         self.microdosimetric_spectra.active = bool(self.MicrodosimetricSpectra and self.microdosimetric_spectra.active)
@@ -2380,9 +2400,14 @@ class AMFActor(VoxelDepositActor, g4.GateAMFActor):
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
+        """Attach scoring images and start the sole supported run on the master."""
         g4.GateAMFActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
+        """Merge workers, fetch finalized images and retain run sample counts.
+
+        The spectrum is a double 3D vector image with 400 components,
+        sharing the scalar outputs' spatial coordinate system."""
         import itk
 
         g4.GateAMFActor.EndOfRunActionMasterThread(self, run_index)
@@ -2411,6 +2436,10 @@ class AMFActor(VoxelDepositActor, g4.GateAMFActor):
         return VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
     def EndSimulationAction(self):
+        """Complete image output and write lineal-energy labels in keV/um.
+
+        Labels are written only when the spectrum is active and written
+        to disk; the sidecar uses the resolved spectrum filename stem."""
         VoxelDepositActor.EndSimulationAction(self)
         if self.microdosimetric_spectra.active and self.microdosimetric_spectra.write_to_disk:
             path = self.microdosimetric_spectra.get_output_path()
@@ -2419,6 +2448,10 @@ class AMFActor(VoxelDepositActor, g4.GateAMFActor):
                        header="Histogram x-axis labels (lineal energy in keV/um)", comments="#")
 
     def import_user_output_from_actor(self, *actor, **kwargs):
+        """Transfer one subprocess actor result; reject addition of job results.
+
+        Finalized dose means and square-root-mixed beta cannot be merged
+        through generic image summation."""
         if len(actor) != 1:
             fatal("AMFActor does not support merging finalized outputs from jobs")
         return ActorBase.import_user_output_from_actor(self, *actor, **kwargs)

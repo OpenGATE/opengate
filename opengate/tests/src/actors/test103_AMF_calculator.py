@@ -10,10 +10,11 @@ from scipy.special import expit
 from scipy.stats import truncnorm
 
 from opengate.tests import utility
-from test097_AMF_helpers import write_coefficients, analytical_power_spectrum
+from test103_AMF_helpers import write_coefficients, analytical_power_spectrum
 
 
 def expect_error(call, message):
+    """Require the callable to raise an error containing the requested message."""
     try:
         call()
     except (RuntimeError, ValueError, TypeError) as error:
@@ -23,13 +24,15 @@ def expect_error(call, message):
 
 
 def calculator(path, radius=.3):
+    """Load a synthetic table into a 400-bin calculator with radius in um."""
     result = g4._AMFCalculator(400, 2 * radius, radius, 4.5, .0615, 2, 9)
     result.load(str(path))
     return result
 
 
 def main():
-    paths = utility.get_default_test_paths(__file__, output_folder="test097_AMF_calculator")
+    """Check analytical components, interpolation boundaries and invalid tables."""
+    paths = utility.get_default_test_paths(__file__, output_folder="test103_AMF_calculator")
     paths.output.mkdir(parents=True, exist_ok=True)
     path = write_coefficients(paths.output / "power.dat")
     calc = calculator(path)
