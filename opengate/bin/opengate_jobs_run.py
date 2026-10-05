@@ -61,7 +61,8 @@ def _resolve_backend_configuration(campaign_dir, backend, backend_options_json):
     "--backend",
     default=None,
     type=click.Choice(
-        ["local_pool", "local_sequential", "htcondor", "slurm"], case_sensitive=False
+        ["local_pool", "local_sequential", "htcondor", "slurm", "pbs"],
+        case_sensitive=False,
     ),
     help="Execution backend to use. If omitted, the command looks for jobs_backend_options.json in CAMPAIGN_DIR.",
 )

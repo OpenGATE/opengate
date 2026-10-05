@@ -49,6 +49,7 @@ MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 JOB_EXECUTION_ALLOWED_STATUSES = ("running", "completed", "failed", "skipped")
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
+PBS_SUBMIT_FILENAME = "pbs_jobs.sh"
 
 
 def _prepare_package_root(path, overwrite=False):
@@ -1641,6 +1642,44 @@ def _submit_job_folders_to_slurm(
             )
 
 
+def _submit_job_folders_to_pbs(
+    split_root_folder,
+    job_folders,
+    backend_options,
+    skipped_completed_jobs,
+):
+    for job_folder in job_folders:
+        command = [backend_options["submit_binary"]]  # -> qsub
+        command.extend(
+            backend_options.get("command_line_args", [])
+        )  # + set the path to the job folder
+        command.append("-v")
+        command.append("JOBDIR=" + str(job_folder))
+        command.append(str(backend_options["submit_filename"]))  # ->pbs filename
+        try:
+            print(command)
+            completed_process = subprocess.run(
+                command,
+                cwd=split_root_folder,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError as error:
+            raise GateJobsBackendError(
+                f"PBS submission command not found: {backend_options['submit_binary']}."
+            ) from error
+
+        if completed_process.returncode != 0:
+            raise GateJobsBackendError(
+                "qsub submission failed.\n"
+                f"Command: {' '.join(command)}\n"
+                f"Return code: {completed_process.returncode}\n"
+                f"stdout:\n{completed_process.stdout}\n"
+                f"stderr:\n{completed_process.stderr}"
+            )
+
+
 def _run_jobs_campaign(job_folders, backend, backend_options):
     """Run the detached campaign-level orchestration for a selected backend.
 
@@ -1724,7 +1763,7 @@ def _validate_jobs_backend_options(backend, backend_options):
         validated_options["submit_binary"] = str(validated_options["submit_binary"])
         return validated_options
 
-    if backend == "slurm":
+    if backend == "slurm" or backend == "pbs":
         allowed_top_level_keys = {
             "command_line_args",
             "submit_filename",
@@ -1732,19 +1771,32 @@ def _validate_jobs_backend_options(backend, backend_options):
         }
         unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
         if len(unknown_keys) > 0:
-            raise GateJobsBackendError(
-                f"The slurm backend received unknown option groups: {sorted(unknown_keys)}."
-            )
+            if backend == "slurm":
+                raise GateJobsBackendError(
+                    f"The slurm backend received unknown option groups: {sorted(unknown_keys)}."
+                )
+            elif backend == "pbs":
+                raise GateJobsBackendError(
+                    f"The pbs backend received unknown option groups: {sorted(unknown_keys)}."
+                )
 
         validated_options = dict(backend_options)
         validated_options.setdefault("command_line_args", [])
-        validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
+        if backend == "slurm":
+            validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
+        elif backend == "pbs":
+            validated_options.setdefault("submit_filename", PBS_SUBMIT_FILENAME)
         validated_options.setdefault("submit_binary", "sbatch")
 
         if not isinstance(validated_options["command_line_args"], (list, tuple)):
-            raise GateJobsBackendError(
-                "The slurm backend requires command_line_args to be a list or tuple."
-            )
+            if backend == "slurm":
+                raise GateJobsBackendError(
+                    "The slurm backend requires command_line_args to be a list or tuple."
+                )
+            elif backend == "pbs":
+                raise GateJobsBackendError(
+                    "The pbs backend requires command_line_args to be a list or tuple."
+                )
 
         validated_options["command_line_args"] = [
             str(argument) for argument in validated_options["command_line_args"]
@@ -1868,6 +1920,26 @@ def jobs_run(
                 "detach=False is only supported for local jobs backends."
             )
         _submit_job_folders_to_slurm(
+            split_root_folder,
+            selected_job_folders,
+            backend_options,
+            len(skipped_completed_jobs),
+        )
+        return {
+            "backend": backend,
+            "manifest_path": str(manifest_path),
+            "campaign_dir": str(split_root_folder),
+            "submitted_jobs": len(selected_job_folders),
+            "skipped_completed_jobs": len(skipped_completed_jobs),
+            "campaign_process_pid": None,
+        }
+
+    if backend == "pbs":
+        if detach is False:
+            raise GateJobsBackendError(
+                "detach=False is only supported for local jobs backends."
+            )
+        _submit_job_folders_to_pbs(
             split_root_folder,
             selected_job_folders,
             backend_options,
