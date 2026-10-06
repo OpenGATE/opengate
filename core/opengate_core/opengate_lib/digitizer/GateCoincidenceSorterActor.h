@@ -63,6 +63,8 @@ protected:
   TransaxialPlane fTransaxialPlane{TransaxialPlane::XY};
   int fGroupVolumeDepth;
   double fSortingTime;
+  int fSortingBufferSyncThreshold;
+  bool fThreadSyncEnabled;
 
   struct TemporaryStorage {
     TemporaryStorage(GateDigiCollection *input, GateDigiCollection *output,

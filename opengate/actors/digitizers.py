@@ -620,6 +620,18 @@ class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeAc
                 "doc": "Time interval during which digis are buffered for time-sorting",
             },
         ),
+        "thread_sync_enabled": (
+            True,
+            {
+                "doc": "Thread synchronization is applied to limit sorting buffer size",
+            },
+        ),
+        "sorting_buffer_size": (
+            5e4,
+            {
+                "doc": "Sorting buffer size (digis) at which thread synchronization is applied",
+            },
+        ),
         "skip_attributes": (
             [],
             {
@@ -740,6 +752,18 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
             1e3,
             {
                 "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "thread_sync_enabled": (
+            True,
+            {
+                "doc": "Thread synchronization is applied to limit sorting buffer size",
+            },
+        ),
+        "sorting_buffer_size": (
+            5e4,
+            {
+                "doc": "Sorting buffer size (digis) at which thread synchronization is applied",
             },
         ),
         "skip_attributes": (
@@ -1465,6 +1489,18 @@ class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterAc
             1e3,
             {
                 "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "thread_sync_enabled": (
+            True,
+            {
+                "doc": "Thread synchronization is applied to limit sorting buffer size",
+            },
+        ),
+        "sorting_buffer_size": (
+            5e4,
+            {
+                "doc": "Sorting buffer size (digis) at which thread synchronization is applied",
             },
         ),
         "skip_attributes": (
