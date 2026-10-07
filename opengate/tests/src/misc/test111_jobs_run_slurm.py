@@ -84,14 +84,14 @@ if __name__ == "__main__":
                 "import pathlib, sys; print(pathlib.Path(sys.argv[-1]).name)",
             ],
             "submit_filename": "gate_slurm.sh",
-            #"job_folders_filename": "gate_slurm_job_folders.txt",
-            #"submit_script_renderer": render_test_slurm_submit_script,
-            #"submit_script_renderer_kwargs": {
+            # "job_folders_filename": "gate_slurm_job_folders.txt",
+            # "submit_script_renderer": render_test_slurm_submit_script,
+            # "submit_script_renderer_kwargs": {
             #    "job_runner_command": "opengate_job_runner",
             #    "partition": "cpu",
             #    "cpus_per_task": "4",
             #    "mem": "8G",
-            #},
+            # },
         },
     )
 
