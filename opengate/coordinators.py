@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from .exception import GateMergeError
+from .profiling import Profilable, profile_method
+from .rootio import RootMergeFileWriter
 
 
 def _progress_bar(coordinator, total, label):
@@ -33,15 +35,17 @@ class _CoordinatorOutputMergeContext:
         return self._load_mode if self._load_mode is not None else default
 
 
-class StandardMergeCoordinator:
+class StandardMergeCoordinator(Profilable):
     """Execute and finalize merge for standard non-ROOT actor outputs."""
 
     def __init__(self):
+        self.initialize_profiler(name="StandardMergeCoordinator")
         self._output_groups = {}
         self._source_infos = {}
         self._source_simulations_by_job_index = {}
         self._source_simulation_loader = None
 
+    @profile_method("configure")
     def configure_from_context(
         self, standard_context, target_simulation, source_simulation_loader=None
     ):
@@ -99,6 +103,7 @@ class StandardMergeCoordinator:
             self._source_simulations_by_job_index[job_index] = child_simulation
         return self._source_simulations_by_job_index[job_index]
 
+    @profile_method("execute")
     def execute_merge(self):
         # progress: one line per actor (all its outputs)
         totals = {}
@@ -154,6 +159,7 @@ class StandardMergeCoordinator:
             bar.update(done)
             bar.close()
 
+    @profile_method("finalize")
     def finalize_merge(self):
         for (actor_name, output_name), group in self._output_groups.items():
             try:
@@ -170,15 +176,17 @@ class StandardMergeCoordinator:
                 ) from error
 
 
-class RootMergeCoordinator:
+class RootMergeCoordinator(Profilable):
     """Grouped ROOT merge executor for split-job merge finalization."""
 
     def __init__(self):
+        self.initialize_profiler(name="RootMergeCoordinator")
         self._root_output_groups = {}
         self._source_infos = {}
         self._source_simulations_by_job_index = {}
         self._source_simulation_loader = None
 
+    @profile_method("configure")
     def configure_from_context(
         self, root_context, target_simulation, source_simulation_loader=None
     ):
@@ -237,6 +245,7 @@ class RootMergeCoordinator:
             self._source_simulations_by_job_index[job_index] = child_simulation
         return self._source_simulations_by_job_index[job_index]
 
+    @profile_method("execute")
     def execute_merge(self):
         for grouped_outputs in self._root_output_groups.values():
             for grouped_output in grouped_outputs:
@@ -264,6 +273,7 @@ class RootMergeCoordinator:
                     bar.update(n)
                     bar.close()
 
+    @profile_method("finalize")
     def finalize_merge(self):
         from .rootio import RootMergeFileWriter
 

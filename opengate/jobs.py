@@ -30,6 +30,12 @@ from .exception import (
 )
 from .runtiming import assert_run_timing
 from .utility import g4_units
+from .profiling import (
+    PROFILE_SCHEMA_VERSION,
+    Profiler,
+    Profilable,
+    profile_method,
+)
 from .serialization import (
     dump_json,
     load_json,
@@ -83,6 +89,86 @@ JOBS_CANCEL_BINARIES = {"slurm": "scancel", "pbs": "qdel", "htcondor": "condor_r
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
 PBS_SUBMIT_FILENAME = "pbs_jobs.sh"
+PROFILING_DIRNAME = "profiling"
+CAMPAIGN_PROFILE_FILENAME = "campaign_profile.json"
+SPLIT_PROFILE_FILENAME = "split.json"
+JOB_PROFILE_FILENAME_TEMPLATE = "attempt_{attempt:04d}.json"
+
+
+def _profiling_descriptor(enabled):
+    return {
+        "enabled": bool(enabled),
+        "directory": PROFILING_DIRNAME,
+        "aggregate_filename": CAMPAIGN_PROFILE_FILENAME,
+        "schema_version": PROFILE_SCHEMA_VERSION,
+    }
+
+
+def _campaign_profiling_enabled(manifest, requested=None):
+    if requested is True:
+        return True
+    return bool(manifest.get("profiling", {}).get("enabled", False))
+
+
+def _write_profile_fragment(profiler, path):
+    if profiler.enabled is False:
+        return None
+    # A manager may share an inventory with a higher-level controller whose
+    # enclosing stage timer is still active. Persist completed records only;
+    # the controller can contribute its enclosing timer in a later fragment.
+    return profiler.to_json_file(path, require_complete=False)
+
+
+def _replace_json_file(path, data):
+    """Atomically replace a JSON sidecar that may be polled concurrently."""
+    path = Path(path)
+    temporary_path = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    with temporary_path.open("w") as output_file:
+        dump_json(data, output_file)
+    os.replace(temporary_path, path)
+
+
+def _enable_campaign_profiling(campaign_dir, manifest_path, manifest):
+    """Persist profiling intent in the campaign and all child job metadata."""
+    descriptor = _profiling_descriptor(True)
+    manifest["profiling"] = descriptor
+    _replace_json_file(manifest_path, manifest)
+    for job_item in manifest.get("jobs", []):
+        job_folder = Path(campaign_dir) / job_item["folder_name"]
+        metadata_path = job_folder / job_item.get(
+            "metadata_filename", JOB_METADATA_FILENAME
+        )
+        with metadata_path.open() as input_file:
+            metadata = load_json(input_file)
+        metadata["profiling"] = {
+            **descriptor,
+            "scope": f"run.job{job_item['job_index']:04d}",
+        }
+        _replace_json_file(metadata_path, metadata)
+
+
+def _aggregate_campaign_profile(campaign_dir, manifest):
+    if _campaign_profiling_enabled(manifest) is False:
+        return None
+    campaign_dir = Path(campaign_dir)
+    descriptor = manifest["profiling"]
+    profiling_dir = campaign_dir / descriptor["directory"]
+    aggregate_path = profiling_dir / descriptor["aggregate_filename"]
+    aggregate = Profiler(
+        name="campaign",
+        enabled=True,
+        metadata={"simulation_id": manifest.get("simulation_id")},
+    )
+    fragment_paths = list(profiling_dir.glob("*.json"))
+    fragment_paths.extend(
+        campaign_dir.glob(f"job*/{PROFILING_DIRNAME}/*.json")
+    )
+    for fragment_path in sorted(fragment_paths):
+        if fragment_path == aggregate_path:
+            continue
+        aggregate.merge(Profiler.from_json_file(fragment_path))
+    aggregate.to_json_file(aggregate_path)
+    return aggregate
 
 
 def _prepare_package_root(path, overwrite=False):
@@ -834,7 +920,7 @@ def _transfer_input_files_between_simulations(
     return updated_dict, sorted(p.name for p in transferred_path_map.values())
 
 
-class JobsSplitManager:
+class JobsSplitManager(Profilable):
     """Stateful owner of the split-campaign workflow.
 
     A split campaign is both procedural and stateful: it has ordered stages,
@@ -855,8 +941,23 @@ class JobsSplitManager:
         link_files=True,
         overwrite_existing_job_folders=False,
         write_resolved_simulation=True,
+        profiling=None,
+        profiler=None,
         **options,
     ):
+        self.initialize_profiler(name="JobsSplitManager")
+        if profiler is not None:
+            self.attach_profiler(profiler)
+        input_profiler = getattr(simulation, "profiler", None)
+        if profiling is True or (
+            input_profiler is not None and input_profiler.enabled
+        ):
+            self.profiler.enable()
+        if profiler is None and input_profiler is not None and input_profiler.enabled:
+            self.profiler.merge(
+                input_profiler.to_dictionary(require_complete=False),
+                prefix="input_simulation",
+            )
         self.input_simulation = simulation
         self.simulation_folder = simulation_folder
         self.simulation_file = simulation_file
@@ -967,6 +1068,7 @@ class JobsSplitManager:
                         "the merged output."
                     )
 
+    @profile_method("prepare_master_simulation")
     def prepare_master_simulation(self):
         if self.is_prepared is True:
             return
@@ -1004,6 +1106,7 @@ class JobsSplitManager:
         self.resolved_master_simulation_dict = self.master_simulation.to_dictionary()
         self.is_prepared = True
 
+    @profile_method("plan_split")
     def plan_split(self):
         if self.is_planned is True:
             return
@@ -1026,6 +1129,7 @@ class JobsSplitManager:
         self.created_at = datetime.now().isoformat()
         self.is_planned = True
 
+    @profile_method("package_master_campaign")
     def package_master_campaign(self):
         if self.is_packaged is True:
             return
@@ -1069,9 +1173,11 @@ class JobsSplitManager:
             ),
             "prefer_resolved_simulation": bool(self.write_resolved_simulation),
             "jobs": [],
+            "profiling": _profiling_descriptor(self.profiler.enabled),
         }
         self.is_packaged = True
 
+    @profile_method("materialize_child_jobs")
     def materialize_child_jobs(self):
         if self.is_materialized is True:
             return
@@ -1096,6 +1202,10 @@ class JobsSplitManager:
                 self.master_simulation.current_random_seed,
                 self.number_of_jobs,
             )
+            child_metadata["profiling"] = {
+                **_profiling_descriptor(self.profiler.enabled),
+                "scope": f"run.job{job_definition['job_index']:04d}",
+            }
             job_folder.mkdir(parents=True, exist_ok=False)
             child_simulation_dict = child_simulation.to_dictionary()
             updated_child_simulation_dict, input_files = (
@@ -1128,6 +1238,7 @@ class JobsSplitManager:
 
         self.is_materialized = True
 
+    @profile_method("write_manifest")
     def write_manifest(self):
         if self.is_finalized is True:
             return
@@ -1143,11 +1254,19 @@ class JobsSplitManager:
         self.is_finalized = True
 
     def split(self):
-        self.prepare_master_simulation()
-        self.plan_split()
-        self.package_master_campaign()
-        self.materialize_child_jobs()
-        self.write_manifest()
+        with self.profiler.measure("total"):
+            self.prepare_master_simulation()
+            self.plan_split()
+            self.package_master_campaign()
+            self.materialize_child_jobs()
+            self.write_manifest()
+        if self.profiler.enabled:
+            profiling_dir = Path(self.campaign_dir) / PROFILING_DIRNAME
+            _write_profile_fragment(
+                self.profiler,
+                profiling_dir / SPLIT_PROFILE_FILENAME,
+            )
+            _aggregate_campaign_profile(self.campaign_dir, self.jobs_manifest)
         return self
 
     def format_summary(self):
@@ -1172,6 +1291,8 @@ def jobs_split(
     link_files=True,
     overwrite_existing_job_folders=False,
     write_resolved_simulation=True,
+    profiling=None,
+    profiler=None,
     **options,
 ):
     """Split a simulation into job folders in campaign_dir.
@@ -1195,6 +1316,8 @@ def jobs_split(
         link_files=link_files,
         overwrite_existing_job_folders=overwrite_existing_job_folders,
         write_resolved_simulation=write_resolved_simulation,
+        profiling=profiling,
+        profiler=profiler,
         **options,
     )
     jobs_split_manager.split()
@@ -1816,14 +1939,32 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
     submitted_at = _now_isoformat()
     started_at = _now_isoformat()
     scheduler_job_id = None
+    profiler = Profiler(name="child_job")
+    execution_token = None
+    profile_path = None
 
     try:
         metadata = _load_job_metadata(job_folder)
-        # keep the submission time and the scheduler job id
+        # Keep submission metadata written by a scheduler backend.
         previous = load_job_execution_status(job_folder)
         if previous is not None and previous.get("status") == "submitted":
             submitted_at = previous.get("submitted_at") or submitted_at
             scheduler_job_id = previous.get("scheduler_job_id")
+        profiling_descriptor = metadata.get("profiling", {})
+        if profiling_descriptor.get("enabled", False):
+            profiler.enable()
+            profiler = profiler.scope(profiling_descriptor.get("scope"))
+            profiler.set_value("job_id", metadata.get("job_id"))
+            profiler.set_value("job_index", metadata.get("job_index"))
+            profiler.set_value("backend", backend)
+            profile_dir = job_folder / profiling_descriptor.get(
+                "directory", PROFILING_DIRNAME
+            )
+            existing_attempts = list(profile_dir.glob("attempt_*.json"))
+            profile_path = profile_dir / JOB_PROFILE_FILENAME_TEMPLATE.format(
+                attempt=len(existing_attempts) + 1
+            )
+            execution_token = profiler.start("total")
         _write_job_execution_status(
             job_folder,
             metadata,
@@ -1851,24 +1992,27 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
         simulation_path = job_folder / metadata.get(
             "simulation_filename", JOB_SIMULATION_FILENAME
         )
-        sim = create_sim_from_json(simulation_path)
-        sim.simulation_dir = job_folder
-        sim.output_dir = job_folder / "output"
-        # progress of the job, read by the progress bar of the campaign
-        # and by the status (lost jobs)
-        sim.progress_hook = JobProgressWriter(
-            progress_path,
-            interval=(
-                JOB_PROGRESS_INTERVAL
-                if backend in LOCAL_JOBS_BACKENDS
-                else JOB_PROGRESS_INTERVAL_CLUSTER
-            ),
-        )
-        if backend in ("local_pool", "local_sequential"):
-            # the local jobs share the terminal: one progress bar for the whole
-            # campaign (SplitRunMergeController.wait), not one per job
-            sim.progress_bar = False
-        sim.run(start_new_process=start_new_process)
+        with profiler.measure("rehydrate_simulation"):
+            sim = create_sim_from_json(simulation_path)
+            sim.simulation_dir = job_folder
+            sim.output_dir = job_folder / "output"
+            sim.attach_profiler(profiler, scope="simulation")
+            # Progress of the job, read by campaign status/progress reporting.
+            sim.progress_hook = JobProgressWriter(
+                progress_path,
+                interval=(
+                    JOB_PROGRESS_INTERVAL
+                    if backend in LOCAL_JOBS_BACKENDS
+                    else JOB_PROGRESS_INTERVAL_CLUSTER
+                ),
+            )
+            if backend in LOCAL_JOBS_BACKENDS:
+                # Local jobs share the terminal; the controller owns the bar.
+                sim.progress_bar = False
+        with profiler.measure("simulation_run"):
+            sim.run(start_new_process=start_new_process)
+        profiler.stop(execution_token)
+        _write_profile_fragment(profiler, profile_path)
 
         finished_at = _now_isoformat()
         _write_job_execution_status(
@@ -1893,6 +2037,17 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
         _mark_running_jobs_as_interrupted([job_folder])
         raise
     except Exception as error:
+        if execution_token is not None:
+            try:
+                profiler.stop(
+                    execution_token,
+                    outcome="failed",
+                    metadata={"error_type": type(error).__name__},
+                )
+            except KeyError:
+                pass
+        if profile_path is not None:
+            _write_profile_fragment(profiler, profile_path)
         finished_at = _now_isoformat()
         error_message = f"{type(error).__name__}: {error}"
         traceback_str = traceback.format_exc()
@@ -2313,7 +2468,15 @@ def _run_jobs_campaign(job_folders, backend, backend_options):
         _mark_running_jobs_as_interrupted(job_folders)
         raise
 
-    raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+        raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+    finally:
+        if job_folders:
+            campaign_dir = Path(job_folders[0]).resolve().parent
+            manifest_path = campaign_dir / JOBS_MANIFEST_FILENAME
+            if manifest_path.exists():
+                with manifest_path.open() as input_file:
+                    manifest = load_json(input_file)
+                _aggregate_campaign_profile(campaign_dir, manifest)
 
 
 def _run_jobs_campaign_process(job_folders, backend, backend_options):
@@ -2445,7 +2608,7 @@ def _validate_jobs_backend_options(backend, backend_options):
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
 
-def jobs_run(
+def _jobs_run_impl(
     split_path,
     backend=DEFAULT_LOCAL_JOBS_BACKEND,
     backend_options=None,
@@ -2898,7 +3061,66 @@ def jobs_cancel(campaign_dir, backend_options=None):
     }
 
 
-class SplitRunMergeController:
+def jobs_run(
+    split_path,
+    backend=DEFAULT_LOCAL_JOBS_BACKEND,
+    backend_options=None,
+    number_of_workers=None,
+    force_rerun_completed=False,
+    allow_rerun_running=False,
+    detach=True,
+    profiling=None,
+):
+    """Launch a campaign and optionally persist execution timing fragments.
+
+    Local backends detach orchestration by default. Set ``detach=False`` to
+    execute the campaign synchronously in the caller. For ``local_pool``, a
+    worker count below the job count executes simulations in multiple waves;
+    equal job and worker counts are normally preferable.
+
+    Profiling can be enabled while splitting or at this stage. Once enabled,
+    the campaign manifest carries the intent so local and scheduler-launched
+    child processes write independent attempt profiles.
+    """
+    manifest_path, manifest = _load_jobs_manifest(split_path)
+    campaign_dir = manifest_path.parent
+    profiling_enabled = _campaign_profiling_enabled(manifest, profiling)
+    if profiling_enabled and not _campaign_profiling_enabled(manifest):
+        _enable_campaign_profiling(campaign_dir, manifest_path, manifest)
+
+    profiler = Profiler(
+        name="jobs_run",
+        enabled=profiling_enabled,
+        metadata={"simulation_id": manifest.get("simulation_id")},
+    ).scope("run.submission")
+    profiler.set_value("backend", backend)
+    profiler.set_value("detach", bool(detach))
+    fragment_path = (
+        campaign_dir
+        / PROFILING_DIRNAME
+        / f"run_{uuid.uuid4().hex}.json"
+    )
+    try:
+        with profiler.measure("total"):
+            result = _jobs_run_impl(
+                split_path,
+                backend=backend,
+                backend_options=backend_options,
+                number_of_workers=number_of_workers,
+                force_rerun_completed=force_rerun_completed,
+                allow_rerun_running=allow_rerun_running,
+                detach=detach,
+            )
+    finally:
+        if profiler.enabled:
+            _write_profile_fragment(profiler, fragment_path)
+            _aggregate_campaign_profile(campaign_dir, manifest)
+    if profiler.enabled:
+        result["profile_path"] = str(fragment_path)
+    return result
+
+
+class SplitRunMergeController(Profilable):
     """Local orchestration handle for split-run-merge workflows.
 
     The controller is an API-layer wrapper around the functional split/run/merge
@@ -2916,6 +3138,10 @@ class SplitRunMergeController:
         merge=True,
         cleanup=False,
     ):
+        self.initialize_profiler(name="SplitRunMergeController")
+        simulation_profiler = getattr(simulation, "profiler", None)
+        if simulation_profiler is not None and simulation_profiler.enabled:
+            self.attach_profiler(simulation_profiler, scope="multijob")
         self.simulation = simulation
         self._campaign_dir = (
             None if campaign_dir is None else Path(campaign_dir).resolve()
@@ -3010,8 +3236,14 @@ class SplitRunMergeController:
         self.refresh()
         return self.stage == "failed"
 
+    @profile_method("split")
     def split(self, number_of_jobs, **split_options):
         try:
+            split_options = dict(split_options)
+            split_options.setdefault("profiling", self.profiler.enabled)
+            split_options.setdefault(
+                "profiler", self.profiler.scope("split_manager")
+            )
             self.jobs_split_manager = jobs_split(
                 simulation=self.simulation,
                 campaign_dir=self._campaign_dir,
@@ -3028,6 +3260,7 @@ class SplitRunMergeController:
             self._set_error(error)
             raise
 
+    @profile_method("run")
     def run(self, **run_options):
         """Launch the already split campaign through the configured backend.
 
@@ -3047,6 +3280,7 @@ class SplitRunMergeController:
             run_options["backend"] = JOBS_BACKEND_ALIASES.get(
                 run_options["backend"], run_options["backend"]
             )
+            run_options.setdefault("profiling", self.profiler.enabled)
             if (
                 run_options["backend"] == "local_pool"
                 and "number_of_workers" not in run_options
@@ -3062,6 +3296,7 @@ class SplitRunMergeController:
             self._set_error(error)
             raise
 
+    @profile_method("wait")
     def wait(self, poll_interval=1.0, timeout=None):
         if self._campaign_dir is None:
             fatal("SplitRunMergeController.wait() requires split() to be called first.")
@@ -3146,12 +3381,18 @@ class SplitRunMergeController:
             lines.append(format_jobs_failure_report(self._campaign_dir))
         return "\n".join(lines)
 
+    @profile_method("merge")
     def merge(self, **merge_options):
         if self._campaign_dir is None:
             fatal(
                 "SplitRunMergeController.merge() requires split() to be called first."
             )
         try:
+            merge_options = dict(merge_options)
+            merge_options.setdefault("profiling", self.profiler.enabled)
+            merge_options.setdefault(
+                "profiler", self.profiler.scope("merge_manager")
+            )
             self.merge_manager = jobs_merge(
                 self._campaign_dir,
                 target_simulation=self.simulation,
@@ -3166,12 +3407,16 @@ class SplitRunMergeController:
             self._set_error(error)
             raise
 
+    @profile_method("clean")
     def clean(self, **clean_options):
         if self._campaign_dir is None:
             fatal(
                 "SplitRunMergeController.clean() requires split() to be called first."
             )
         try:
+            clean_options = dict(clean_options)
+            if self.profiler.enabled:
+                clean_options.setdefault("remove_profiling", False)
             self._status["clean_result"] = jobs_clean_split(
                 self._campaign_dir, **clean_options
             )
@@ -3195,23 +3440,47 @@ class SplitRunMergeController:
         merge_options=None,
         clean_options=None,
     ):
-        if merge_after_run is None:
-            merge_after_run = self.merge_after_run
-        if cleanup_after_run is None:
-            cleanup_after_run = self.cleanup_after_run
+        execution_token = self.profiler.start("execute")
+        try:
+            if merge_after_run is None:
+                merge_after_run = self.merge_after_run
+            if cleanup_after_run is None:
+                cleanup_after_run = self.cleanup_after_run
 
-        self.split(number_of_jobs=number_of_jobs, **(split_options or {}))
-        self.run(**(run_options or {}))
+            self.split(number_of_jobs=number_of_jobs, **(split_options or {}))
+            self.run(**(run_options or {}))
 
-        if wait_for_result:
-            self.wait(poll_interval=poll_interval, timeout=timeout)
-            if self.stage in ("failed", "interrupted"):
-                return self
-            if merge_after_run:
-                self.merge(**(merge_options or {}))
-            if cleanup_after_run:
-                self.clean(**(clean_options or {}))
-        return self
+            if wait_for_result:
+                self.wait(poll_interval=poll_interval, timeout=timeout)
+                if self.stage in ("failed", "interrupted"):
+                    return self
+                if merge_after_run:
+                    self.merge(**(merge_options or {}))
+                if cleanup_after_run:
+                    self.clean(**(clean_options or {}))
+            return self
+        except Exception as error:
+            self.profiler.stop(
+                execution_token,
+                outcome="failed",
+                metadata={"error_type": type(error).__name__},
+            )
+            raise
+        finally:
+            if execution_token is not None:
+                try:
+                    self.profiler.stop(execution_token)
+                except KeyError:
+                    pass
+            if self.profiler.enabled and self._campaign_dir is not None:
+                manifest_path, manifest = _load_jobs_manifest(self._campaign_dir)
+                _write_profile_fragment(
+                    self.profiler,
+                    manifest_path.parent
+                    / PROFILING_DIRNAME
+                    / "controller.json",
+                )
+                _aggregate_campaign_profile(manifest_path.parent, manifest)
 
 
 def _get_master_simulation_paths_from_manifest(manifest_path, manifest):
@@ -3552,7 +3821,7 @@ def _check_merge_output_dir(output_dir):
         )
 
 
-class JobsMergeManager:
+class JobsMergeManager(Profilable):
     """Campaign-level orchestrator for merging split simulation results.
 
     Phase 1 supports sequential orchestration over leaf job folders only. The
@@ -3566,10 +3835,27 @@ class JobsMergeManager:
         split_path,
         output_dir_override=None,
         target_simulation=None,
+        profiling=None,
+        profiler=None,
         **options,
     ):
         self.manifest_path, self.manifest = _load_jobs_manifest(split_path)
         self.campaign_dir = self.manifest_path.parent
+        if profiling is True and not _campaign_profiling_enabled(self.manifest):
+            _enable_campaign_profiling(
+                self.campaign_dir, self.manifest_path, self.manifest
+            )
+        self.initialize_profiler(name="JobsMergeManager")
+        if profiler is not None:
+            self.attach_profiler(profiler)
+        elif (
+            target_simulation is not None
+            and getattr(target_simulation, "profiler", None) is not None
+            and target_simulation.profiler.enabled
+        ):
+            self.attach_profiler(target_simulation.profiler, scope="merge")
+        if _campaign_profiling_enabled(self.manifest, profiling):
+            self.profiler.enable()
         self.output_dir_override = (
             None if output_dir_override is None else Path(output_dir_override).resolve()
         )
@@ -3635,6 +3921,7 @@ class JobsMergeManager:
     def merge_finalized(self):
         return self._merge_finalized
 
+    @profile_method("load_campaign_metadata")
     def load_campaign_metadata(self):
         self.leaf_sources = _collect_leaf_merge_sources(
             self.manifest_path, self.manifest
@@ -3675,6 +3962,7 @@ class JobsMergeManager:
                 f"Differences:\n{difference_lines}"
             )
 
+    @profile_method("prepare_target_simulation")
     def prepare_target_simulation(self):
         if self.master_simulation is None:
             # only the actors are merged: no volumes, physics, sources
@@ -3745,6 +4033,7 @@ class JobsMergeManager:
     def build_merge_plan(self):
         return self.plan_merge().to_dict()
 
+    @profile_method("plan_merge")
     def plan_merge(self, mode="as_configured"):
         if self.master_simulation is None:
             self.prepare_target_simulation()
@@ -3809,12 +4098,18 @@ class JobsMergeManager:
             bar.close()
 
         self.standard_merge_coordinator = StandardMergeCoordinator()
+        self.standard_merge_coordinator.attach_profiler(
+            self.profiler, scope="standard_coordinator"
+        )
         self.standard_merge_coordinator.configure_from_context(
             merge_context.get_standard_view(),
             self.master_simulation,
             source_simulation_loader=self.load_source_simulation,
         )
         self.root_merge_coordinator = RootMergeCoordinator()
+        self.root_merge_coordinator.attach_profiler(
+            self.profiler, scope="root_coordinator"
+        )
         self.root_merge_coordinator.configure_from_context(
             merge_context.get_root_view(),
             self.master_simulation,
@@ -3976,6 +4271,7 @@ class JobsMergeManager:
             output_file.write("\n")
         return summary_path
 
+    @profile_method("execute_merge")
     def execute_merge(self):
         if self._merge_planned is not True:
             raise GateMergeError(
@@ -3996,6 +4292,7 @@ class JobsMergeManager:
         self.master_simulation.execute_merge()
         self._merge_executed = True
 
+    @profile_method("finalize_merge")
     def finalize_merge(self):
         if self._merge_planned is not True:
             raise GateMergeError(
@@ -4054,21 +4351,25 @@ class JobsMergeManager:
         }
 
     def merge(self):
-        if self.master_simulation is None:
-            self.prepare_target_simulation()
-        if len(self.leaf_sources) == 0 and len(self.original_run_to_sources_map) == 0:
-            self.load_campaign_metadata()
+        with self.profiler.measure("total"):
+            if self.master_simulation is None:
+                self.prepare_target_simulation()
+            if (
+                len(self.leaf_sources) == 0
+                and len(self.original_run_to_sources_map) == 0
+            ):
+                self.load_campaign_metadata()
 
-        self._merge_start_time = time.perf_counter()
-        if self._merge_planned is not True:
-            self.plan_merge()
-        if self._merge_executed is not True:
-            self.execute_merge()
-        if self._merge_finalized is not True:
-            self.finalize_merge()
-        self.write_merge_provenance()
-        # the simulations of the jobs are no longer needed (memory)
-        self._source_simulations_by_folder = {}
+            self._merge_start_time = time.perf_counter()
+            if self._merge_planned is not True:
+                self.plan_merge()
+            if self._merge_executed is not True:
+                self.execute_merge()
+            if self._merge_finalized is not True:
+                self.finalize_merge()
+            self.write_merge_provenance()
+            # The simulations of the jobs are no longer needed (memory).
+            self._source_simulations_by_folder = {}
         return self._merge_result
 
     def _progress_bar(self, total, label):
@@ -4197,6 +4498,18 @@ def jobs_merge(
     merge_manager.load_campaign_metadata()
     if execute:
         merge_manager.merge()
+    if merge_manager.profiler.enabled:
+        profile_path = (
+            merge_manager.campaign_dir
+            / PROFILING_DIRNAME
+            / f"merge_{uuid.uuid4().hex}.json"
+        )
+        _write_profile_fragment(merge_manager.profiler, profile_path)
+        _aggregate_campaign_profile(
+            merge_manager.campaign_dir, merge_manager.manifest
+        )
+        if merge_manager._merge_result is not None:
+            merge_manager._merge_result["profile_path"] = str(profile_path)
     return merge_manager
 
 
@@ -4207,13 +4520,14 @@ def jobs_clean_split(
     remove_execution_status=True,
     remove_manifest=False,
     remove_resolved_simulation=False,
+    remove_profiling=True,
 ):
     """Remove temporary split-job artifacts while keeping the packaged root.
 
     The default behavior is conservative with respect to the master campaign
     description: keep ``simulation.json``, keep ``simulation_resolved.json``,
     keep the top-level output directory, and remove the per-job execution
-    folders plus transient status sidecars.
+    folders plus transient status and profiling sidecars.
     """
     manifest_path, manifest = _load_jobs_manifest(campaign_dir)
     campaign_dir = manifest_path.parent
@@ -4239,6 +4553,12 @@ def jobs_clean_split(
         if backend_status_path.exists():
             backend_status_path.unlink()
             removed_paths.append(str(backend_status_path))
+
+    if remove_profiling:
+        profiling_dir = campaign_dir / PROFILING_DIRNAME
+        if profiling_dir.exists():
+            shutil.rmtree(profiling_dir)
+            removed_paths.append(str(profiling_dir))
 
     if remove_manifest:
         if manifest_path.exists():
