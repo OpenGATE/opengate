@@ -20,6 +20,7 @@ from .physics import (
 from .base import GateSingletonFatal
 from .logger import logger
 from .utility import g4_units
+from .profiling import Profilable
 
 
 def _translate_track_structure_em_physics_to_geant4(track_structure_em_physics):
@@ -1450,6 +1451,7 @@ class SimulationOutput:
         self.current_random_seed = None
         self.user_hook_log = UserHookLog()
         self.warnings = None
+        self.profiler_snapshot = None
 
     def __str__(self):
         s = f"SimulationOutput: \n"
@@ -1529,13 +1531,15 @@ class SimulationOutput:
         return self.sources_by_thread[thread][name]
 
 
-class SimulationEngine(GateSingletonFatal):
+class SimulationEngine(GateSingletonFatal, Profilable):
     """
     Main class to execute a Simulation. Can only be created once per process because Geant4 dictates so.
     """
 
     def __init__(self, simulation, new_process=False):
         self.simulation = simulation
+        self.initialize_profiler(name="SimulationEngine")
+        self.attach_profiler(simulation.profiler, scope="engine")
         self.verbose_getstate = simulation.verbose_getstate
         self.verbose_close = simulation.verbose_close
 
@@ -1697,7 +1701,8 @@ class SimulationEngine(GateSingletonFatal):
         #    self.simulation.reset_warnings()
 
         # initialization
-        self.initialize()
+        with self.profiler.measure("initialize"):
+            self.initialize()
 
         # things to do after init and before run
         self.apply_all_g4_commands_after_init()
@@ -1724,25 +1729,29 @@ class SimulationEngine(GateSingletonFatal):
             return output
 
         # go
-        self.start_and_stop()
+        with self.profiler.measure("transport"):
+            self.start_and_stop()
 
-        # start visualisation if vrml or gdml
-        self.visu_engine.start_visualisation()
-        if self.user_hook_after_run:
-            logger.info("Simulation: User hook after run")
-            self.user_hook_after_run(self)
+        with self.profiler.measure("finalize_outputs"):
+            # start visualisation if vrml or gdml
+            self.visu_engine.start_visualisation()
+            if self.user_hook_after_run:
+                logger.info("Simulation: User hook after run")
+                self.user_hook_after_run(self)
 
-        # prepare the output
-        output.store_actors(self)
-        output.store_sources(self)
-        output.store_hook_log(self)
-        output.current_random_seed = self.current_random_seed
-        output.expected_number_of_events = self.source_engine.expected_number_of_events
-        output.warnings = self.simulation.warnings
+            # prepare the output
+            output.store_actors(self)
+            output.store_sources(self)
+            output.store_hook_log(self)
+            output.current_random_seed = self.current_random_seed
+            output.expected_number_of_events = (
+                self.source_engine.expected_number_of_events
+            )
+            output.warnings = self.simulation.warnings
 
-        # save the output and restore the sys.stdout
-        output.log_output = self.simulation.log_output.getvalue()
-        sys.stdout = original_stdout
+            # save the output and restore the sys.stdout
+            output.log_output = self.simulation.log_output.getvalue()
+            sys.stdout = original_stdout
 
         return output
 

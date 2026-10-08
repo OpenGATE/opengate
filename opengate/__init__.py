@@ -166,6 +166,7 @@ import opengate.numerical
 # because users will frequently use them
 from opengate.managers import Simulation
 from opengate.managers import create_sim_from_json
+from opengate.profiling import Profiler
 from opengate.jobs import (
     package_simulation,
     JobsSplitManager,

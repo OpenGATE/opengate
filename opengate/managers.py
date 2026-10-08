@@ -54,6 +54,7 @@ from .serialization import (
     _find_metaimage_payload_files,
     _rewrite_path_against_reference,
 )
+from .profiling import Profilable, profile_method
 from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.gansources import GANPairsSource, GANSource
@@ -1894,7 +1895,7 @@ def _setter_hook_output_dir(simulation, value):
     return Path(value)
 
 
-class Simulation(GateObject):
+class Simulation(GateObject, Profilable):
     """
     Main class that store a simulation.
     It contains:
@@ -2236,6 +2237,7 @@ class Simulation(GateObject):
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
         super().__init__(name=name, **kwargs)
+        self.initialize_profiler(name=name)
 
         # list to store warning messages issued somewhere in the simulation
         self._user_warnings = []
@@ -2260,6 +2262,10 @@ class Simulation(GateObject):
 
     def __setstate__(self, state):
         super().__setstate__(state)
+        if not hasattr(self, "profiler"):
+            # Circular GateObject graphs may invoke this hook before user_info
+            # is fully restored, so do not access the generated name property.
+            self.initialize_profiler(name="Simulation")
         if hasattr(self, "auxiliary_attributes"):
             for auxiliary_attribute in self.auxiliary_attributes.values():
                 auxiliary_attribute.simulation = self
@@ -2958,13 +2964,22 @@ class Simulation(GateObject):
         Returns:
             obj:SimulationOutput : The output of the simulation run.
         """
-        self.resolve_and_validate_config()
-        with SimulationEngine(self) as se:
+        with self.profiler.measure("resolve_and_validate_config"):
+            self.resolve_and_validate_config()
+        se = SimulationEngine(self)
+        try:
             se.new_process = start_new_process
             se.init_only = self.init_only
             output = se.run_engine()
+        finally:
+            with self.profiler.measure("engine.close"):
+                se.close()
+        output.profiler_snapshot = self.profiler.to_dictionary(
+            require_complete=False
+        )
         return output
 
+    @profile_method("run")
     def run(
         self,
         start_new_process=False,
@@ -3046,24 +3061,29 @@ class Simulation(GateObject):
             """
 
             logger.info("Dispatching simulation to subprocess ...")
-            output = dispatch_to_subprocess(self._run_simulation_engine, True)
+            with self.profiler.measure("subprocess.dispatch_and_wait"):
+                output = dispatch_to_subprocess(self._run_simulation_engine, True)
+            if output.profiler_snapshot is not None:
+                self.profiler.merge(output.profiler_snapshot)
 
-            # Recover output from unpickled actors coming from the subprocess queue
-            for actor in self.actor_manager.actors.values():
-                actor.recover_user_output(output.get_actor(actor.name))
+            with self.profiler.measure("subprocess.recover_output"):
+                # Recover output from unpickled actors coming from the subprocess queue
+                for actor in self.actor_manager.actors.values():
+                    actor.recover_user_output(output.get_actor(actor.name))
 
-            # FIXME: temporary workaround to copy from output the additional
-            # information of the source (such as fTotalSkippedEvents)
-            for source in self.source_manager.sources.values():
-                # WARNING: when multithread, the sources are stored in
-                # simulation_output.sources_by_thread
-                # The sources of thread=0 are also available in simulation_output.sources
-                # and they are retrieved here by get_source
-                try:
-                    s = output.get_source(source.name)
-                except:
-                    continue
-                source.recover_user_output(s)
+                # FIXME: temporary workaround to copy from output the additional
+                # information of the source (such as fTotalSkippedEvents)
+                for source in self.source_manager.sources.values():
+                    # WARNING: when multithread, the sources are stored in
+                    # simulation_output.sources_by_thread
+                    # The sources of thread=0 are also available in
+                    # simulation_output.sources and they are retrieved here by
+                    # get_source.
+                    try:
+                        source_from_output = output.get_source(source.name)
+                    except Exception:
+                        continue
+                    source.recover_user_output(source_from_output)
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process
