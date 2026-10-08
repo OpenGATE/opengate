@@ -465,9 +465,8 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.g4_vis_attributes.SetForceWireframe(True)
         elif self.style == "solid":
             self.g4_vis_attributes.SetForceSolid(True)
-        self.g4_vis_attributes.SetColor(
-            *validate_color(self.color, f"Color error for volume {self.name}: ")
-        )
+        self.color = validate_color(self.color, f"Color error for volume {self.name}: ")
+        self.g4_vis_attributes.SetColor(*self.color)
         self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
