@@ -6,6 +6,7 @@ from opengate.actors.coincidences import CoincidenceSorter
 import os
 import sys
 
+
 def main(dependency="test096_pet_castor_ge.py"):
     paths = utility.get_default_test_paths(
         __file__, gate_folder="", output_folder="test096_pet_castor_interface"
@@ -64,6 +65,6 @@ def main(dependency="test096_pet_castor_ge.py"):
 
     print(f"File {output_filename} saved")
 
+
 if __name__ == "__main__":
     main()
-
