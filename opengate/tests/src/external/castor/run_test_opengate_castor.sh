@@ -5,9 +5,9 @@ cd /home/.github/workflows
 /opt/python/cp312-cp312/bin/pip install opengate_core-*.whl
 /opt/python/cp312-cp312/bin/pip install opengate-*.whl
 cd /opt/_internal/cpython-3.12.12/lib/python3.12/site-packages/opengate/tests/src/external/castor
-/opt/python/cp312-cp312/bin/python test096_pet_castor.py
-/opt/python/cp312-cp312/bin/python test096_pet_castor_ref.py
-/opt/python/cp312-cp312/bin/python test096_pet_castor_coinc.py
+/opt/python/cp312-cp312/bin/python test096_pet_castor_ge.py
+/opt/python/cp312-cp312/bin/python test096_pet_castor_ref_ge.py
+/opt/python/cp312-cp312/bin/python test096_pet_castor_coinc_ge.py
 cd /opt/_internal/cpython-3.12.12/lib/python3.12/site-packages/opengate/tests/output/test096_pet_castor_interface
 
 #Convert Gate root output to Castor
