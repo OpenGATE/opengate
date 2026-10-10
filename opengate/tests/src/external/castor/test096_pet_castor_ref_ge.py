@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.contrib.pet.philipsvereos as vereos
+import opengate.contrib.pet.ge_signa as pet_ge_signa
 import opengate.contrib.pet.castor_helpers as castor
 from scipy.spatial.transform import Rotation
 from test096_pet_castor_helpers import *
@@ -44,18 +44,19 @@ if __name__ == "__main__":
     world.material = "G4_AIR"
 
     # create the pet and move it
-    pet = vereos.add_pet(sim, "pet")
-    pet.translation = [3 * cm, 4 * cm, 2 * cm]
-    pet.rotation = Rotation.from_euler("yx", (20, 10), degrees=True).as_matrix()
+    pet = pet_ge_signa.add_pet(sim, "pet")
 
     # get the crystal volume
-    crystal = sim.volume_manager.get_volume("pet_crystal")
-    die = sim.volume_manager.get_volume("pet_die")
-    stack = sim.volume_manager.get_volume("pet_stack")
-    module = sim.volume_manager.get_volume("pet_module")
+    crystal = sim.volume_manager.get_volume("crystal")
+    optical = sim.volume_manager.get_volume("optical")
+    block = sim.volume_manager.get_volume("block")
+    unit = sim.volume_manager.get_volume("unit")
+    module = sim.volume_manager.get_volume("module")
+
     n_crystal = len(crystal.translation)
-    n_die = len(die.translation)
-    n_stack = len(stack.translation)
+    n_optical = len(optical.translation)
+    n_block = len(block.translation)
+    n_unit = len(unit.translation)
     n_module = len(module.translation)
 
     # set a (fake) digitizer
