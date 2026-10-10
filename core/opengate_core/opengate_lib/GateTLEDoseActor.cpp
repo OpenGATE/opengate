@@ -20,7 +20,9 @@
 #include <itkAddImageFilter.h>
 #include <vector>
 
-G4Mutex SetPixelTLEMutex = G4MUTEX_INITIALIZER;
+// The edep/dose images are also written by GateDoseActor::SteppingAction
+// (non-TLE steps), so the same mutex must protect both paths.
+extern G4Mutex SetPixelMutex;
 G4Mutex SetEkinMaxMutex = G4MUTEX_INITIALIZER;
 
 GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
@@ -74,14 +76,23 @@ void GateTLEDoseActor::SetTLETrackInformationOnSecondaries(G4Step *step,
   }
 }
 
+G4EmCalculator &GateTLEDoseActor::GetEmCalc() {
+  auto &l = fThreadLocalData.Get();
+  if (!l.fEmCalc) {
+    l.fEmCalc = std::make_unique<G4EmCalculator>();
+  }
+  return *l.fEmCalc;
+}
+
 G4double GateTLEDoseActor::FindEkinMaxForTLE() {
   G4MaterialTable *matTable = G4Material::GetMaterialTable();
   G4int nbOfMaterials = G4Material::GetNumberOfMaterials();
   G4double ekinMax = 0;
+  auto &emCalc = GetEmCalc();
   for (G4int i = 0; i < nbOfMaterials; i++) {
     G4Material *currentMat = (*matTable)[i];
-    G4double ekin = fEmCalc->GetKinEnergy(fTLEThreshold,
-                                          G4Electron::Definition(), currentMat);
+    G4double ekin = emCalc.GetKinEnergy(fTLEThreshold, G4Electron::Definition(),
+                                        currentMat);
     if (i == 0) {
       ekinMax = ekin;
     }
@@ -101,7 +112,7 @@ void GateTLEDoseActor::InitializeCSDAForNewGamma(G4bool isFirstStep,
     G4double energy = pre_step->GetKineticEnergy();
     const G4Material *currentMat = pre_step->GetMaterial();
     l.fCsda =
-        fEmCalc->GetCSDARange(energy, G4Electron::Definition(), currentMat);
+        GetEmCalc().GetCSDARange(energy, G4Electron::Definition(), currentMat);
     l.fPreviousMatName = currentMat->GetName();
   }
 }
@@ -110,9 +121,8 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
   // EM calc does not work at the beginning of the simulation
   {
     G4AutoLock mutex(&SetEkinMaxMutex);
-    if (fEmCalc == 0) {
+    if (!fMaterialMuHandler) {
       G4double ekinMax = 0;
-      fEmCalc = new G4EmCalculator;
       if ((fTLEThresholdType == 0) || (fTLEThresholdType == 1)) {
         if (fTLEThreshold != std::numeric_limits<double>::infinity()) {
           ekinMax = FindEkinMaxForTLE();
@@ -212,8 +222,8 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
                 pre_step->GetMaterialCutsCouple(), energy);
             sec_ekin = energy * mu_en_over_rho / mu_over_rho;
           }
-          l.fCsda = fEmCalc->GetCSDARange(sec_ekin, G4Electron::Definition(),
-                                          currentMat);
+          l.fCsda = GetEmCalc().GetCSDARange(sec_ekin, G4Electron::Definition(),
+                                             currentMat);
           l.fPreviousMatName = currentMat->GetName();
           l.fPreviousEnergy = energy;
         }
@@ -280,12 +290,16 @@ void GateTLEDoseActor::ScoreTLEDepositStep(G4Step *step) {
   const auto event_id =
       G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   if (isInside) {
-    G4AutoLock mutex(&SetPixelTLEMutex); // mutex is bound to the if-scope
-    if (fDoseFlag) {
-      ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
-    }
-    ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+    // all ImageAddValue calls in a mutex-scope
+    {
+      G4AutoLock mutex(&SetPixelMutex);
+      if (fDoseFlag) {
+        ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+      }
+      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+    } // mutex scope
 
+    // ScoreSquaredValue() is thread-safe because it contains a mutex
     if (fEdepSquaredFlag || fDoseSquaredFlag) {
       if (fEdepSquaredFlag) {
         ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
