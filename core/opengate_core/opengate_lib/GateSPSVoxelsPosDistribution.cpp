@@ -19,15 +19,19 @@ GateSPSVoxelsPosDistribution::GateSPSVoxelsPosDistribution() {
 }
 
 void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(
-    const VD &vz, const VD2 &vy, const VD3 &vx) {
-  // Warning: this is a COPY of all cumulative distribution functions
-  fCDFZ = vz;
-  fCDFY = vy;
-  fCDFX = vx;
+    const double *cdfZ, const double *cdfY, const double *cdfX, std::size_t nx,
+    std::size_t ny, std::size_t nz) {
+  fCDFZ.assign(cdfZ, cdfZ + nz);
+  fCDFY.assign(cdfY, cdfY + nz * ny);
+  fCDFX.assign(cdfX, cdfX + nz * ny * nx);
 }
 
 G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
   // G4UniformRand: default boundaries ]0.1[ for operator()().
+  const auto imageSize = cpp_image->GetLargestPossibleRegion().GetSize();
+  const auto nx = static_cast<int>(imageSize[0]);
+  const auto ny = static_cast<int>(imageSize[1]);
+  const auto nz = static_cast<int>(imageSize[2]);
 
   // Get Cumulative Distribution Function for Z
   auto i = 0;
@@ -35,24 +39,25 @@ G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
     auto p = G4UniformRand();
     const auto lower = std::lower_bound(fCDFZ.begin(), fCDFZ.end(), p);
     i = std::distance(fCDFZ.begin(), lower);
-  } while (i >= (int)fCDFX.size());
+  } while (i >= nz);
 
   // Get Cumulative Distribution Function for Y, knowing Z
   auto j = 0;
   do {
     auto p = G4UniformRand();
-    const auto lower = std::lower_bound(fCDFY[i].begin(), fCDFY[i].end(), p);
-    j = std::distance(fCDFY[i].begin(), lower);
-  } while (j >= (int)fCDFX[i].size());
+    const auto begin = fCDFY.begin() + i * ny;
+    const auto lower = std::lower_bound(begin, begin + ny, p);
+    j = std::distance(begin, lower);
+  } while (j >= ny);
 
   // Get Cumulative Distribution Function for X, knowing X and Y
   auto k = 0;
   do {
     auto p = G4UniformRand();
-    const auto lower =
-        std::lower_bound(fCDFX[i][j].begin(), fCDFX[i][j].end(), p);
-    k = std::distance(fCDFX[i][j].begin(), lower);
-  } while (k >= (int)fCDFX[i][j].size());
+    const auto begin = fCDFX.begin() + (i * ny + j) * nx;
+    const auto lower = std::lower_bound(begin, begin + nx, p);
+    k = std::distance(begin, lower);
+  } while (k >= nx);
 
   // convert to physical coordinate
   // (warning to the numpy order Z Y X)
