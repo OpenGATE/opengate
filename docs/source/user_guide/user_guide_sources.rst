@@ -49,7 +49,7 @@ Alternatively, you can specify the fixed number of primary particles to be gener
 
 .. code-block:: python
 
-    source1.n = 100
+    source1.number_of_primaries = 100
 
 Note, however, that certain functionality regarding simulations with multiple runs is currently not supported when sources specify the fixed number of particles as above.
 

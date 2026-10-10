@@ -258,7 +258,7 @@ def add_flattening_filter(sim, linac_name):
     ff_base.color = yellow
     ff_base.material = "flattening_filter_material_stain_steel"
 
-    cons_1 = volumes.ConsVolume(name=f"{linac_name}_flattening_filter_cons_1")
+    cons_1 = volumes.ConsVolume(name=f"{linac_name}_flattening_filter_cons_1_bis")
     cons_1.rmin1 = 77 / 2 * mm
     cons_1.rmax1 = 93 / 2 * mm
     cons_1.rmin2 = 77 / 2 * mm
