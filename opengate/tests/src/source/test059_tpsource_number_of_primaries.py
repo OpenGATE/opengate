@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 from opengate.tests import utility
 import opengate as gate
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
@@ -73,6 +74,10 @@ if __name__ == "__main__":
         ([600, 400], [[0, 1], [1, 3]], True, 1),
         ([600, 400], [[0, 1], [1, 3]], False, 2),
     ]
+
+    # multi-thread is not available on Windows
+    if os.name == "nt":
+        cases = [c for c in cases if c[3] == 1]
 
     is_ok = True
     for n, intervals, sorted_spot_generation, number_of_threads in cases:
