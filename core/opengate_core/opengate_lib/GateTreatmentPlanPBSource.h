@@ -25,10 +25,9 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
   void GeneratePrimaries(G4Event *event, double time) override;
-  double PrepareNextTime(double current_simulation_time,
-                         unsigned long NumberOfGeneratedEvents) override;
+  // The number of primaries per run and the time of the events are managed
+  // by GateVSource, like for the other sources (PrepareNextTime)
   void PrepareNextRun() override;
-  double CalcNextTime(double current_simulation_time) override;
 
   // unsigned long fNumberOfGeneratedEvents;
   py::list GetGeneratedPrimaries();
@@ -74,5 +73,6 @@ protected:
   void InitializeIon(py::dict &user_info);
   void InitRandomEngine();
   void InitNbPrimariesVec();
+  int SampleSpot();
 };
 #endif // GateTreatmentPlanPBSource_h

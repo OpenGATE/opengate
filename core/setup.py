@@ -125,8 +125,10 @@ class CMakeBuild(build_ext):
 
         print(f"Build folder : {self.build_temp}")
 
-        print("Try to open config.json file")
-        fn = "config.json"
+        # the config file is given by the OPENGATE_CONFIG env variable
+        # (see the make-*.sh scripts), or is config.json by default
+        fn = env.get("OPENGATE_CONFIG", "config.json")
+        print(f"Try to open config file: {fn}")
         sconfig = {"G4INSTALL": "", "ITKDIR": ""}
         if "G4INSTALL" in env:
             sconfig["G4INSTALL"] = env["G4INSTALL"]
