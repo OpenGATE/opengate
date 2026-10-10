@@ -1,0 +1,10 @@
+{
+  "backend": "pbs",
+  "backend_options": {
+    "submit_binary": "qsub",
+    "submit_filename": "opengate_job.pbs",
+    "command_line_args": [
+      "-V"
+    ]
+  }
+}

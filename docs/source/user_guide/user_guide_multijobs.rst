@@ -7,7 +7,7 @@ their output again. This is useful in two main situations:
 - local execution on a workstation, where several jobs can run in parallel on
   the same machine
 - server execution, where the split jobs are submitted to a scheduler such as
-  Slurm or HTCondor
+  Slurm, HTCondor or PBS.
 
 This section focuses on the current user-facing workflow in GATE 10.
 
@@ -186,8 +186,8 @@ Server-based execution
 Server-based multi-job execution is intended to be file-based:
 
 1. prepare a campaign folder containing ``simulation.json`` and the required
-   input files, probably locally
-2. transfer the campaign folder to the server
+   input files, probably locally. To create the ```simulation.json`` file, you can use ``sim.to_json_file()`` in your script instead of ``sim.run(...)``.
+2. transfer the campaign folder to the server. Be aware of the paths used in the .json file for material database or other input files. They should be valid on the server.
 3. split the simulation on the server
 4. submit the child jobs through a scheduler
 5. inspect job status
@@ -245,6 +245,9 @@ backend options from a JSON file:
 As a convenience, the command also looks for a default file named
 ``jobs_backend_options.json`` inside the campaign folder when no
 ``--backend-options-json`` or ``--backend`` argument is provided.
+
+You can find examples you can adapt in the ``contrib/cluster`` folder for slurm and pbs backends.
+The backend options are usually site-specific and should be adapted to the target server.
 
 
 .. Example: Slurm
