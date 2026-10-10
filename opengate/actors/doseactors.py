@@ -6,6 +6,7 @@ from pathlib import Path
 
 import opengate_core as g4
 from .base import ActorBase
+from .amdmoutput import ActorOutputAMDM
 from ..exception import fatal
 from ..utility import g4_units
 from ..image import (
@@ -2210,6 +2211,208 @@ class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
         self.InitializeCpp()
 
 
+class AMDMActor(VoxelDepositActor, g4.GateAMDMActor):
+    """Score AMDM bin-wise delta and gamma using a charge/energy LUT.
+
+    Raw sums are merged before normalization. The bin axis has unit spacing
+    and zero origin. Delta is dimensionless and gamma is in keV/µm.
+    """
+
+    user_info_defaults = {
+        "LUTfilename": (
+            "AMDM_LUT.txt",
+            {
+                "doc": "AMDM LUT path, with energy in MeV/n and gamma in keV/µm.",
+                "is_input_file": True,
+            },
+        ),
+        "AMDM_Bins": (
+            10,
+            {
+                "doc": "Positive integer bin count; LUT must have 2 + 2*AMDM_Bins columns."
+            },
+        ),
+        "storeMergingData": (
+            False,
+            {
+                "doc": "Write the raw delta and gamma sums for external merging.",
+                "allowed_values": (True, False),
+            },
+        ),
+    }
+
+    user_output_config = {
+        "amdm": {
+            "actor_output_class": ActorOutputAMDM,
+            "interfaces": {
+                "restrictedEdep": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": True,
+                },
+                "raw_delta": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                    "write_to_disk": True,
+                },
+                "raw_gamma": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 2,
+                    "active": False,
+                    "write_to_disk": True,
+                },
+                "delta": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "delta",
+                    "active": True,
+                    "write_to_disk": True,
+                },
+                "gamma": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "gamma",
+                    "active": True,
+                    "write_to_disk": True,
+                },
+            },
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        """Create the voxel actor, output interfaces and C++ scoring instance."""
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        """Construct C++ state and register AMDM's engine lifecycle callbacks."""
+        g4.GateAMDMActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "StartSimulationAction",
+                "EndSimulationAction",
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfEventAction",
+                "SteppingAction",
+            }
+        )
+
+    @property
+    def output_filename(self):
+        """Return the configured normalized-delta filename."""
+        return self.delta.output_filename
+
+    @output_filename.setter
+    def output_filename(self, filename):
+        """Configure all AMDM output filenames from one shared basename."""
+        # Keep the legacy hyphenated names when setting the actor-wide basename.
+        self.user_output.amdm.set_output_filename(filename, item="all")
+
+    def initialize(self):
+        """Validate voxel/LUT parameters and initialize the C++ accumulators.
+
+        Run after the engine resolves volume attachment. Invalid geometry,
+        bin counts or table inputs raise the framework/C++ validation errors.
+        Raw file activation follows storeMergingData without changing the
+        internal sums or explicit write_to_disk settings.
+        """
+        VoxelDepositActor.initialize(self)
+        self.check_user_input()
+        if not isinstance(self.attached_to, str):
+            fatal("AMDMActor requires one attached_to volume")
+        if (
+            isinstance(self.AMDM_Bins, (bool, np.bool_))
+            or not isinstance(self.AMDM_Bins, (int, np.integer))
+            or self.AMDM_Bins <= 0
+        ):
+            fatal("AMDM_Bins must be a positive integer")
+        size = np.asarray(self.size)
+        if (
+            size.shape != (3,)
+            or not np.all(np.isfinite(size))
+            or np.any(size <= 0)
+            or np.any(size != np.floor(size))
+        ):
+            fatal("AMDM size must contain three positive integers")
+        for name in ("spacing", "translation"):
+            value = np.asarray(getattr(self, name), dtype=float)
+            if (
+                value.shape != (3,)
+                or not np.all(np.isfinite(value))
+                or (name == "spacing" and np.any(value <= 0))
+            ):
+                fatal(
+                    f"AMDM {name} must contain three finite values"
+                    + (" greater than zero" if name == "spacing" else "")
+                )
+        rotation = np.asarray(self.rotation, dtype=float)
+        if (
+            rotation.shape != (3, 3)
+            or not np.all(np.isfinite(rotation))
+            or not (
+                np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-10, rtol=0)
+                and np.isclose(np.linalg.det(rotation), 1, atol=1e-10, rtol=0)
+            )
+        ):
+            fatal("AMDM rotation must be a proper orthonormal 3x3 matrix")
+        if not isinstance(self.LUTfilename, (str, Path)) or not str(self.LUTfilename):
+            fatal("AMDM LUTfilename must be a nonempty file path")
+        self.LUTfilename = str(self.LUTfilename)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        # Derived outputs always need raw data, even when raw files are disabled.
+        self.raw_delta.active = self.storeMergingData
+        self.raw_gamma.active = self.storeMergingData
+
+    def BeginOfRunActionMasterThread(self, run_index):
+        """Allocate zero raw buffers and attach the scoring grid for this run.
+
+        run_index identifies the framework run. This master callback precedes
+        worker scoring and repeats allocation/attachment for each interval.
+        """
+        from ..image import create_3d_image, create_4d_image
+
+        images = [create_3d_image(self.size, self.spacing, pixel_type="double")]
+        for _ in range(2):
+            image = create_4d_image(
+                list(self.size) + [self.AMDM_Bins], list(self.spacing) + [1.0]
+            )
+            image.FillBuffer(0.0)
+            images.append(image)
+        cpp_images = (
+            self.cpp_amdm_restricted_edep_image,
+            self.cpp_amdm_delta_image,
+            self.cpp_amdm_gamma_image,
+        )
+        for image, cpp_image in zip(images, cpp_images):
+            update_image_py_to_cpp(image, cpp_image, copy_data=True)
+        g4.GateAMDMActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        """Copy completed raw buffers, set metadata, and merge the run output.
+
+        Workers have finished before this callback. Copies keep retained runs
+        independent of the next run's buffers; normalization stays deferred
+        to the output container. Return the inherited callback result.
+        """
+        self.user_output.amdm.store_data(
+            run_index,
+            *(
+                get_py_image_from_cpp_image(image, view=False)
+                for image in (
+                    self.cpp_amdm_restricted_edep_image,
+                    self.cpp_amdm_delta_image,
+                    self.cpp_amdm_gamma_image,
+                )
+            ),
+        )
+        self._update_output_coordinate_system("amdm", run_index)
+        self.user_output.amdm.set_number_of_samples(run_index, self.NbOfEvent)
+        return VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+
+
+process_cls(AMDMActor)
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
 process_cls(TLEDoseActor)
