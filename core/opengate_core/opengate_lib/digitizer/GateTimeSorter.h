@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <queue>
 
@@ -16,11 +17,14 @@ class GateDigiAttributesFiller;
 class GateTimeSorter {
 public:
   GateTimeSorter(const std::string &name);
+  ~GateTimeSorter();
 
   void Init(GateDigiCollection *input);
 
   void SetSortingWindow(double duration);
   void SetMaxSize(size_t size);
+  void SetBufferThreadSyncThreshold(size_t size);
+  void SetThreadSyncEnabled(bool enabled);
 
   void OnEndOfEventAction(std::function<void(void)> work);
   void OnEndOfRunAction(std::function<void(void)> anyThreadWork,
@@ -32,6 +36,10 @@ public:
 
 private:
   bool Ingest();
+  bool IsFirstUpstream();
+  bool ThreadSyncRequired();
+  void SetupBarrierIfNeeded();
+  void WaitAtBarrierIfNeeded();
   void Process();
   void Flush();
 
@@ -102,6 +110,28 @@ private:
   double fMaxDropDelta{};
   std::optional<double> fMostRecentTimeArrived;
   std::optional<double> fMostRecentTimeDeparted;
+
+  static std::atomic<GateTimeSorter *> sMostUpstreamInstance;
+  std::atomic<bool> fIsFirstUpstream{false};
+
+  struct ThreadSync {
+    bool enabled{true};
+    size_t activationThreshold{50'000};
+
+    std::atomic<bool> barrierSetupAllowed{true};
+    std::atomic<bool> barrierSetupClaimed{false};
+    std::atomic<bool> barrierSetupComplete{false};
+    std::atomic<bool> barrierBypassed{false};
+    std::atomic<double> barrierGlobalTimeTarget{0.0};
+    std::atomic<int> numThreadsAtBarrier{0};
+    std::atomic<int> barrierGeneration{0};
+
+    std::atomic<size_t> sortedIndicesSize{0};
+    std::mutex barrierConditionVariableMutex;
+    std::condition_variable barrierConditionVariable;
+  };
+
+  ThreadSync fThreadSync;
 };
 
 #endif // GateTimeSorter_h

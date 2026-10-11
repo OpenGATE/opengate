@@ -12,6 +12,7 @@
 #include "GateMaterialMuHandler.h"
 #include <G4Cache.hh>
 #include <G4EmCalculator.hh>
+#include <memory>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -37,6 +38,9 @@ public:
 
   G4double FindEkinMaxForTLE();
 
+  // G4EmCalculator is stateful: one instance per thread
+  G4EmCalculator &GetEmCalc();
+
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
   void ScoreTLEDepositStep(G4Step *step);
@@ -50,12 +54,12 @@ public:
 
   std::string fDatabase;
 
-  G4EmCalculator *fEmCalc = nullptr;
   G4String fStrTLEThresholdType;
   G4int fTLEThresholdType;
   int fLegacyTLETrackDataSlotID{-1};
 
   struct threadLocalT {
+    std::unique_ptr<G4EmCalculator> fEmCalc;
     bool fIsTLEGamma = false;
     bool fIsTLESecondary = false;
     bool fIsFirstStep = false;
