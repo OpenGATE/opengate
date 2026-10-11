@@ -10,6 +10,14 @@ from opengate.contrib.beamlines.ionbeamline import BeamlineModelLUT
 from opengate.contrib.tps.ionbeamtherapy import SpotInfo
 from opengate.tests import utility
 
+# units
+m = gate.g4_units.m
+cm = gate.g4_units.cm
+mm = gate.g4_units.mm
+nm = gate.g4_units.nm
+rad = gate.g4_units.rad
+mrad = gate.g4_units.mrad
+MeV = gate.g4_units.MeV
 
 def root_load_key(data_ref, keys_ref, m_ref, key: str):
     index = keys_ref.index(key)
@@ -37,7 +45,7 @@ def filter_outliers(v_data):
     return np.array(v_data)[~mask]
 
 
-if __name__ == "__main__":
+def run_simulation(root_output_file, energy = 150 * MeV):
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test059")
     output_path = paths.output
@@ -55,15 +63,6 @@ if __name__ == "__main__":
     ui.number_of_threads = 1
     # ui.random_seed = 12365478910c
     ui.random_engine = "MersenneTwister"
-
-    # units
-    m = gate.g4_units.m
-    cm = gate.g4_units.cm
-    mm = gate.g4_units.mm
-    nm = gate.g4_units.nm
-    rad = gate.g4_units.rad
-    mrad = gate.g4_units.mrad
-    MeV = gate.g4_units.MeV
 
     # add a material database
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
@@ -100,7 +99,7 @@ if __name__ == "__main__":
         "PrePosition",
         "PreDirection",
     ]
-    phsp_x0.output_filename = "PhSpace_x_0.root"
+    phsp_x0.output_filename = root_output_file
     F = GateFilterBuilder()
     phsp_x0.filter = F.ParticleName == "proton"
 
@@ -122,8 +121,7 @@ if __name__ == "__main__":
     beamline.conv_x = 0
     beamline.conv_y = 0
 
-    # fak treatment plan with one spot, in (0,0), at 150 MeV
-    energy = 150 * MeV
+    # fake treatment plan with one spot, in (0,0), at 150 MeV
     beam_data = dict()
     spot1 = SpotInfo(0, 0, 1e3, energy)
     spot1.beamFraction = 1
@@ -151,8 +149,11 @@ if __name__ == "__main__":
     sim.run(start_new_process=False)
     print(stat)
 
-    # test:
-    data_ref, keys_ref, m_ref = gatetools.phsp.load(phsp_x0.get_output_path_string())
+
+def run_tests(root_input_file, energy):
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test059")
+    output_path = paths.output
+    data_ref, keys_ref, m_ref = gatetools.phsp.load(output_path / root_input_file)
     x_list_0, dir_x_list_0, y_list_0, dir_y_list_0, particle_name_0, energy_0 = (
         root_load_keys(
             data_ref,
@@ -197,3 +198,9 @@ if __name__ == "__main__":
     ok = ok and np.isclose(beam_divergence, expected_beam_divergence, atol=5e-2)
 
     utility.test_ok(ok)
+
+if __name__ == "__main__":
+    rootfile="PhaseSpace_x_0.root"
+    energy = 150 * MeV
+    run_simulation(rootfile,energy)
+    run_tests(rootfile,energy)
