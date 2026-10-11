@@ -58,8 +58,8 @@ runs:
           activate-environment: opengate_core
           python-version: ${{ inputs.python-version }}
     - name: Set up Homebrew
-      if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
-      id: set-up-homebrew
+      if: (inputs.os == 'macos-15')
+      id: set-up-homebrew-mac
       uses: Homebrew/actions/setup-homebrew@main
     - name: Create opengate_core Wheel Linux
       if: (inputs.os == 'ubuntu-24.04') || (inputs.os == 'ubuntu-24.04-arm')
