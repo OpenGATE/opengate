@@ -44,8 +44,40 @@ def filter_outliers(v_data):
     mask = find_outliers(v_data)
     return np.array(v_data)[~mask]
 
+class lut_test_range:
 
-def run_simulation(root_output_file, energy = 150 * MeV):
+    energy=[100*MeV,200*MeV]
+    energy_sigma=[0.1*MeV,0.5*MeV]
+    sigma_x=[2 * mm, 4 * mm]
+    theta_x=[3 * mrad, 3 * mrad]
+    epsilon_x=[0.02 * mm * rad, 0.03 * mm * rad]
+    sigma_y=[2 * mm, 4 * mm]
+    theta_y=[3 * mrad, 3 * mrad]
+    epsilon_y=[0.02 * mm * rad, 0.03 * mm * rad]
+    MU_to_N=[1,1]
+
+    @classmethod
+    def create_beamline_LUT_for_test(cls):
+        # beamline model
+        beamline = BeamlineModelLUT()
+        beamline.name = None
+        beamline.radiation_types = "proton"
+        beamline.distance_nozzle_iso = 0
+        beamline.energy_mean_lut = [cls.energy, cls.energy]
+        beamline.energy_sigma_lut = [cls.energy, cls.energy_sigma]
+        beamline.sigma_x_lut = [cls.energy, cls.sigma_x]
+        beamline.theta_x_lut = [cls.energy, cls.theta_x]
+        beamline.epsilon_x_lut = [cls.energy, cls.epsilon_x]
+        beamline.sigma_y_lut = [cls.energy, cls.sigma_y]
+        beamline.theta_y_lut = [cls.energy, cls.theta_y]
+        beamline.epsilon_y_lut = [cls.energy, cls.epsilon_y]
+        beamline.MU_to_N_lut = [cls.energy, cls.MU_to_N]
+        beamline.conv_x = 0
+        beamline.conv_y = 0
+        return beamline
+
+
+def run_simulation(root_output_file, beamline, spot_energy = 150 * MeV):
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test059")
     output_path = paths.output
@@ -103,27 +135,27 @@ def run_simulation(root_output_file, energy = 150 * MeV):
     F = GateFilterBuilder()
     phsp_x0.filter = F.ParticleName == "proton"
 
-    # beamline model
-    beamline = BeamlineModelLUT()
-    beamline.name = None
-    beamline.radiation_types = "proton"
-    beamline.distance_nozzle_iso = 0
+    # # beamline model
+    # beamline = BeamlineModelLUT()
+    # beamline.name = None
+    # beamline.radiation_types = "proton"
+    # beamline.distance_nozzle_iso = 0
 
-    beamline.energy_mean_lut = [[100, 200], [100, 200]]
-    beamline.energy_sigma_lut = [[100, 200], [0.1, 0.5]]
-    beamline.sigma_x_lut = [[100, 200], [2 * mm, 4 * mm]]
-    beamline.theta_x_lut = [[100, 200], [3 * mrad, 3 * mrad]]
-    beamline.epsilon_x_lut = [[100, 200], [0.02 * mm * rad, 0.03 * mm * rad]]
-    beamline.sigma_y_lut = [[100, 200], [2 * mm, 4 * mm]]
-    beamline.theta_y_lut = [[100, 200], [3 * mrad, 3 * mrad]]
-    beamline.epsilon_y_lut = [[100, 200], [0.02 * mm * rad, 0.03 * mm * rad]]
-    beamline.MU_to_N_lut = [[100, 200], [1, 1]]
-    beamline.conv_x = 0
-    beamline.conv_y = 0
+    # beamline.energy_mean_lut = [[100, 200], [100, 200]]
+    # beamline.energy_sigma_lut = [[100, 200], [0.1, 0.5]]
+    # beamline.sigma_x_lut = [[100, 200], [2 * mm, 4 * mm]]
+    # beamline.theta_x_lut = [[100, 200], [3 * mrad, 3 * mrad]]
+    # beamline.epsilon_x_lut = [[100, 200], [0.02 * mm * rad, 0.03 * mm * rad]]
+    # beamline.sigma_y_lut = [[100, 200], [2 * mm, 4 * mm]]
+    # beamline.theta_y_lut = [[100, 200], [3 * mrad, 3 * mrad]]
+    # beamline.epsilon_y_lut = [[100, 200], [0.02 * mm * rad, 0.03 * mm * rad]]
+    # beamline.MU_to_N_lut = [[100, 200], [1, 1]]
+    # beamline.conv_x = 0
+    # beamline.conv_y = 0
 
     # fake treatment plan with one spot, in (0,0), at 150 MeV
     beam_data = dict()
-    spot1 = SpotInfo(0, 0, 1e3, energy)
+    spot1 = SpotInfo(0, 0, 1e3, spot_energy)
     spot1.beamFraction = 1
     beam_data["n_fields"] = 1
     beam_data["plan_name"] = ""
@@ -150,7 +182,7 @@ def run_simulation(root_output_file, energy = 150 * MeV):
     print(stat)
 
 
-def run_tests(root_input_file, energy):
+def run_tests(root_input_file, spot_energy):
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test059")
     output_path = paths.output
     data_ref, keys_ref, m_ref = gatetools.phsp.load(output_path / root_input_file)
@@ -171,27 +203,27 @@ def run_tests(root_input_file, energy):
     )
 
     ok = True
-    expected_E_mean = energy
+    expected_E_mean = spot_energy
     e_mean = np.mean(filter_outliers(energy_0))
     print(f"{expected_E_mean = }, {e_mean = }.")
     ok = ok and np.isclose(e_mean, expected_E_mean, atol=5e-2)
 
     expected_E_sigma = gate.numerical.piecewise_linear_interpolation(
-        energy, [100, 200], [0.1, 0.5]
+        spot_energy, lut_test_range.energy, lut_test_range.energy_sigma
     )
     e_sigma = np.std(filter_outliers(energy_0))
     print(f"{expected_E_sigma = }, {e_sigma = }.")
     ok = ok and np.isclose(e_sigma, expected_E_sigma, atol=5e-3)
 
     expected_beam_size = gate.numerical.piecewise_linear_interpolation(
-        energy, [100, 200], [2 * mm, 4 * mm]
+        spot_energy, lut_test_range.energy, lut_test_range.sigma_x
     )
     beam_size = np.std(filter_outliers(x_list_0))
     print(f"{expected_beam_size = }, {beam_size = }.")
     ok = ok and np.isclose(beam_size, expected_beam_size, atol=5e-2)
 
     expected_beam_divergence = gate.numerical.piecewise_linear_interpolation(
-        energy, [100, 200], [3 * mrad, 3 * mrad]
+        spot_energy, lut_test_range.energy, lut_test_range.theta_x
     )
     beam_divergence = np.std(filter_outliers(dir_x_list_0))
     print(f"{expected_beam_divergence = }, {beam_divergence = }.")
@@ -201,6 +233,7 @@ def run_tests(root_input_file, energy):
 
 if __name__ == "__main__":
     rootfile="PhaseSpace_x_0.root"
-    energy = 150 * MeV
-    run_simulation(rootfile,energy)
-    run_tests(rootfile,energy)
+    spot_energy = 150 * MeV
+    beamline = lut_test_range.create_beamline_LUT_for_test()
+    run_simulation(rootfile, beamline, spot_energy)
+    run_tests(rootfile, spot_energy)
