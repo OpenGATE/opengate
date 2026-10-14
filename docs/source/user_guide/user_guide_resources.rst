@@ -20,4 +20,10 @@ Teaching Resources and Examples
 - Example of SPECT system matrix `here <https://github.com/leontiou/PERSPECT/tree/main/GATE10>`_
 
 
+GATE technical meetings: 
+------------------------
+
+- `October 1, 2026: Focus on new multi-job functionality <https://gate-meeting-material.s3.mesocentre.uca.fr/2026/GATE_technical_meeting_1-10-2026-Recording.mp4>`_
+
+
 
