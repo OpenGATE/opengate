@@ -19,6 +19,7 @@ rad = gate.g4_units.rad
 mrad = gate.g4_units.mrad
 MeV = gate.g4_units.MeV
 
+
 def root_load_key(data_ref, keys_ref, m_ref, key: str):
     index = keys_ref.index(key)
     values = [data_ref_i[index] for data_ref_i in data_ref]
@@ -44,17 +45,18 @@ def filter_outliers(v_data):
     mask = find_outliers(v_data)
     return np.array(v_data)[~mask]
 
+
 class lut_test_range:
 
-    energy=[100*MeV,200*MeV]
-    energy_sigma=[0.1*MeV,0.5*MeV]
-    sigma_x=[2 * mm, 4 * mm]
-    theta_x=[3 * mrad, 3 * mrad]
-    epsilon_x=[0.02 * mm * rad, 0.03 * mm * rad]
-    sigma_y=[2 * mm, 4 * mm]
-    theta_y=[3 * mrad, 3 * mrad]
-    epsilon_y=[0.02 * mm * rad, 0.03 * mm * rad]
-    MU_to_N=[1,1]
+    energy = [100 * MeV, 200 * MeV]
+    energy_sigma = [0.1 * MeV, 0.5 * MeV]
+    sigma_x = [2 * mm, 4 * mm]
+    theta_x = [3 * mrad, 3 * mrad]
+    epsilon_x = [0.02 * mm * rad, 0.03 * mm * rad]
+    sigma_y = [2 * mm, 4 * mm]
+    theta_y = [3 * mrad, 3 * mrad]
+    epsilon_y = [0.02 * mm * rad, 0.03 * mm * rad]
+    MU_to_N = [1, 1]
 
     @classmethod
     def create_beamline_LUT_for_test(cls):
@@ -77,7 +79,7 @@ class lut_test_range:
         return beamline
 
 
-def run_simulation(root_output_file, beamline, spot_energy = 150 * MeV):
+def run_simulation(root_output_file, beamline, spot_energy=150 * MeV):
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test059")
     output_path = paths.output
@@ -231,8 +233,9 @@ def run_tests(root_input_file, spot_energy):
 
     utility.test_ok(ok)
 
+
 if __name__ == "__main__":
-    rootfile="PhaseSpace_x_0.root"
+    rootfile = "PhaseSpace_x_0.root"
     spot_energy = 150 * MeV
     beamline = lut_test_range.create_beamline_LUT_for_test()
     run_simulation(rootfile, beamline, spot_energy)
