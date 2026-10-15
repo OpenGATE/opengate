@@ -45,6 +45,12 @@ class VoxelSource(GenericSource):
         self._cdf_x = None
         self._cdf_y = None
         self._cdf_z = None
+        # ids() of the thread-local g4 sources which already received the CDF.
+        # The CDF is set on every thread-local source once, on the main thread
+        # (see SourceEngine.create_master_source_manager); re-applying it from
+        # the Geant4 worker threads is a pure waste of GIL time and stalls MT
+        # initialization for large images (see #1163).
+        self._cdf_applied_g4_sources = set()
 
     def create_changers(self):
         changers = super().create_changers()
@@ -91,9 +97,22 @@ class VoxelSource(GenericSource):
                 self._current_itk_image
             )
 
+        # The C++ setter copies all three CDFs and holds the GIL for the whole
+        # copy. On a multi-million-voxel image this takes seconds per source, so
+        # it must not be repeated on every Geant4 worker thread: the sources are
+        # already initialised on the main thread in
+        # SourceEngine.create_master_source_manager(). Re-applying here would
+        # serialise the workers on the GIL and starve the Python physics
+        # constructor (UserLimitsPhysics) running on the same threads, which
+        # makes G4MTRunManager::Initialize() appear to hang. See #1163.
+        g4_source_id = id(g4_source)
+        if g4_source_id in self._cdf_applied_g4_sources:
+            return
+
         # set CDF to the position generator
         pg = g4_source.GetSPSVoxelPosDistribution()
         pg.SetCumulativeDistributionFunction(self._cdf_z, self._cdf_y, self._cdf_x)
+        self._cdf_applied_g4_sources.add(g4_source_id)
 
     def update_activity_image(self, filename):
         # read source image
@@ -106,6 +125,8 @@ class VoxelSource(GenericSource):
         self._cdf_x = None
         self._cdf_y = None
         self._cdf_z = None
+        # The cached CDFs changed, so every thread-local source needs the new CDF
+        self._cdf_applied_g4_sources = set()
 
         # update all thread-local sources
         for g4_source in self.g4_thread_sources:
