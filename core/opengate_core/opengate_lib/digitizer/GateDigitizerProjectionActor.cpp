@@ -51,10 +51,11 @@ void GateDigitizerProjectionActor::EnableSquaredImage(const bool b) {
   // FIXME check if weight exists ?
 }
 
-// Called when the simulation starts
+// Resolve the input collections once. Their contents change for each event,
+// but the collection objects and their attribute schema are simulation-wide.
 void GateDigitizerProjectionActor::StartSimulationAction() {
-  // Get the input hits collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
+  fInputDigiCollections.clear();
   for (const auto &name : fInputDigiCollectionNames) {
     auto *hc = hcm->GetDigiCollection(name);
     fInputDigiCollections.push_back(hc);
@@ -62,7 +63,8 @@ void GateDigitizerProjectionActor::StartSimulationAction() {
   }
 }
 
-void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
+void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(
+    int /*run_id*/) {
   // Set the image to the correct position/orientation
   AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
                                  fDetectorOrientationMatrix);
@@ -153,7 +155,7 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
   const auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
   for (size_t channel = 0; channel < fInputDigiCollections.size(); channel++) {
-    const auto slice = channel + run * fInputDigiCollections.size();
+    const auto slice = channel;
     ProcessSlice(slice, channel);
   }
 }
@@ -233,11 +235,10 @@ void GateDigitizerProjectionActor::ScoreSquaredValue(
 }
 
 GateDigitizerProjectionActor::ImageType::RegionType
-GateDigitizerProjectionActor::GetRunRegion(const int run_id) const {
+GateDigitizerProjectionActor::GetRunRegion(const int /*run_id*/) const {
   auto region = fImage->GetLargestPossibleRegion();
   auto index = region.GetIndex();
   auto size = region.GetSize();
-  index[2] += run_id * fInputDigiCollections.size();
   size[2] = fInputDigiCollections.size();
   region.SetIndex(index);
   region.SetSize(size);

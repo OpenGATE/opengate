@@ -16,7 +16,7 @@ Optical photon polarization is not yet implemented. A random polarization is the
     source.particle = 'opticalphoton'
     source.position.type = 'point'
     source.position.translation = [0, 0, 0]
-    source.n = 100
+    source.number_of_primaries = 100
     source.energy.mono = 1.9*eV
     source.mother = 'world
     source.direction.type = "iso"
