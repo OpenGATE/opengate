@@ -1,0 +1,14 @@
+C SyntheticSphere 1.000 g/cm3
+m100 1000 -0.1119
+      8000 -0.8881
+C
+C SyntheticCube 2.200 g/cm3
+m200 14000 -0.4674
+      8000 -0.5326
+C
+C SyntheticTetrahedron 0.300 g/cm3
+m300 1000 -0.103
+      6000 -0.105
+      7000 -0.031
+      8000 -0.761
+C
