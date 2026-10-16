@@ -8,6 +8,7 @@
 #ifndef OPENGATE_CORE_OPENGATEHELPERSDICT_H
 #define OPENGATE_CORE_OPENGATEHELPERSDICT_H
 
+#include <G4Colour.hh>
 #include <G4DataVector.hh>
 #include <G4RotationMatrix.hh>
 #include <G4ThreeVector.hh>
@@ -61,6 +62,11 @@ DictGetVecG4RotationMatrix(py::dict &user_info, const std::string &key);
 
 std::vector<G4ThreeVector> DictGetVecG4ThreeVector(py::dict &user_info,
                                                    const std::string &key);
+
+G4Colour DictGetColour(py::dict &user_info, const std::string &key);
+
+std::vector<G4Colour> DictGetVecColour(py::dict &user_info,
+                                       const std::string &key);
 
 bool IsIn(const std::string &s, std::vector<std::string> &v);
 
