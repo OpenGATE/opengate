@@ -17,8 +17,16 @@ void init_GateSPSVoxelsPosDistribution(py::module &m) {
   py::class_<GateSPSVoxelsPosDistribution, GateSPSPosDistribution>(
       m, "GateSPSVoxelsPosDistribution")
       .def(py::init())
+      // The setter copies all three CDFs (std::vector), which for a
+      // multi-million-voxel image takes seconds. Geant4 worker threads call it
+      // during their initialisation; without releasing the GIL those copies are
+      // serialised and block the Python physics constructor
+      // (UserLimitsPhysics) running on the same threads, which makes
+      // G4MTRunManager::Initialize() appear to hang. The copy touches no Python
+      // API, so the GIL can be released for its whole duration. See #1163.
       .def("SetCumulativeDistributionFunction",
-           &GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
+           &GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction,
+           py::call_guard<py::gil_scoped_release>())
       .def("VGenerateOne", &GateSPSVoxelsPosDistribution::VGenerateOne)
       .def_readwrite("cpp_edep_image",
                      &GateSPSVoxelsPosDistribution::cpp_image);
