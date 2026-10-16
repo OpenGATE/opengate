@@ -115,6 +115,7 @@ from .actors.doseactors import (
     BeamQualityActor,
     DoseActor,
     EmCalculatorActor,
+    AMDMActor,
     FluenceActor,
     LETActor,
     ProductionAndStoppingActor,
@@ -177,6 +178,7 @@ actor_types = {
     "REActor": REActor,
     "BeamQualityActor": BeamQualityActor,
     "EmCalculatorActor": EmCalculatorActor,
+    "AMDMActor": AMDMActor,
     "FluenceActor": FluenceActor,
     # misc
     "VoxelizedPromptGammaTLEActor": VoxelizedPromptGammaTLEActor,
