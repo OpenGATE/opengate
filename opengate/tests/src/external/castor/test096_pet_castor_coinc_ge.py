@@ -6,26 +6,17 @@ from opengate.actors.coincidences import CoincidenceSorter
 import os
 import sys
 
-if __name__ == "__main__":
+
+def main(dependency="test096_pet_castor_ge.py"):
     paths = utility.get_default_test_paths(
         __file__, gate_folder="", output_folder="test096_pet_castor_interface"
     )
 
-    # check or create the root file
-    root_filename = paths.output / "output_ref.root"
-    if not os.path.exists(root_filename):
-        dependency = "test096_pet_castor.py"
-        # ignore on windows
-        if os.name == "nt":
-            utility.test_ok(True)
-            sys.exit(0)
-        cmd = "python " + str(paths.current / dependency)
-        r = os.system(cmd)
-
     # open the root file
+    root_filename = paths.output_ref / "output_ref.root"
     print(f"Opening {root_filename}")
     root_file = uproot.open(root_filename)
-    root_folder = root_filename.parent
+    root_folder = paths.output
 
     # consider the singles and hits trees
     hits_tree = root_file["hits"]
@@ -43,11 +34,11 @@ if __name__ == "__main__":
     policy = "TakeAllGoods"
 
     sorter = CoincidenceSorter()
-    sorter.window = 3 * ns
+    sorter.window = 4.57 * ns
     sorter.multiples_policy = policy
     sorter.transaxial_plane = "XY"
-    sorter.min_transaxial_distance = 0 * mm
-    sorter.max_axial_distance = 190 * mm
+    sorter.min_transaxial_distance = 20 * mm
+    sorter.max_axial_distance = 300 * mm
 
     coincidences = sorter.run(root_filename, "singles")
 
@@ -73,3 +64,7 @@ if __name__ == "__main__":
         )
 
     print(f"File {output_filename} saved")
+
+
+if __name__ == "__main__":
+    main()

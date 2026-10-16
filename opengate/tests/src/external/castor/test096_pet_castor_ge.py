@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.contrib.pet.philipsvereos as vereos
+import opengate.contrib.pet.ge_signa as pet_ge_signa
 import opengate.contrib.pet.castor_helpers as castor
 from scipy.spatial.transform import Rotation
 from test096_pet_castor_helpers import *
@@ -39,28 +39,30 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+    world.size = [1.0 * m, 1.0 * m, 0.5 * m]
     world.material = "G4_AIR"
 
-    # create the pet and move it
-    pet = vereos.add_pet(sim, "pet")
-    pet.translation = [3 * cm, 4 * cm, 2 * cm]
-    pet.rotation = Rotation.from_euler("yx", (20, 10), degrees=True).as_matrix()
+    # create the pet
+    pet = pet_ge_signa.add_pet(sim, "pet")
 
     # get the crystal volume
-    crystal = sim.volume_manager.get_volume("pet_crystal")
-    die = sim.volume_manager.get_volume("pet_die")
-    stack = sim.volume_manager.get_volume("pet_stack")
-    module = sim.volume_manager.get_volume("pet_module")
+    crystal = sim.volume_manager.get_volume("crystal")
+    optical = sim.volume_manager.get_volume("optical")
+    block = sim.volume_manager.get_volume("block")
+    unit = sim.volume_manager.get_volume("unit")
+    module = sim.volume_manager.get_volume("module")
+
     n_crystal = len(crystal.translation)
-    n_die = len(die.translation)
-    n_stack = len(stack.translation)
+    n_optical = len(optical.translation)
+    n_block = len(block.translation)
+    n_unit = len(unit.translation)
     n_module = len(module.translation)
 
-    # set a (fake) digitizer
-    hits_actor, blur_actor = add_test_digitizer(sim, crystal)
-    blur_actor.keep_in_solid_limits = True
-    blur_actor.use_truncated_Gaussian = False
+    # set a digitizer
+    output_root = output_path / "output_ref.root"
+    singles = pet_ge_signa.add_digitizer(
+        sim, pet.name, output_root, singles_name="singles"
+    )
 
     # source and physics
     stats = test_add_physics_and_stats(sim, "pet")
@@ -87,10 +89,11 @@ if __name__ == "__main__":
     events = stats.counts.events
     print(f"Number of simulated events : {events}")
     print(f"Number of crystals : {n_crystal}")
-    print(f"Number of dies     : {n_die}")
-    print(f"Number of stacks   : {n_stack}")
+    print(f"Number of opticals     : {n_optical}")
+    print(f"Number of blocks   : {n_block}")
+    print(f"Number of units   : {n_unit}")
     print(f"Number of modules  : {n_module}")
-    total_crystals = n_crystal * n_die * n_stack * n_module
+    total_crystals = n_crystal * n_optical * n_block * n_unit * n_module
 
     # get the castor_config
     castor_config = param["castor_config"]
@@ -103,14 +106,14 @@ if __name__ == "__main__":
     """
 
     # 1) read all hits/singles in the root file
-    fn = hits_actor.get_output_path()
+    fn = singles.get_output_path()
     print()
-    is_ok = assert_positions(fn, "hits", castor_config, check_pos=True)
-    print()
+    # is_ok = assert_positions(fn, "hits", castor_config, check_pos=True)
+    # print()
     # don't check the position for the singles as Position is replaced by weighted centroid
     is_ok = assert_positions(fn, "singles", castor_config) and is_ok
-    print()
+    # print()
     # don't check the position for the singles as Position is replaced by blured position
-    is_ok = assert_positions(fn, "singles_blur", castor_config) and is_ok
+    # is_ok = assert_positions(fn, "singles_blur", castor_config) and is_ok
 
     utility.test_ok(is_ok)
