@@ -418,11 +418,20 @@ class ScatterSplittingFreeFlightActor(
             False,
             {"doc": "Print debug information during the stepping action of the actor."},
         ),
+        "particles": (
+            [
+                "gamma",
+            ],
+            {
+                "doc": "For scatter splitting free flight, only gamma is supported",
+                "override": True,
+                "read_only": True,
+            },
+        ),
     }
 
     # Do NOT work with GammaGeneralProc
     processes = ["compt", "phot", "conv", "Rayl"]
-    particles = ["gamma"]
 
     user_output_config = {
         "info": {

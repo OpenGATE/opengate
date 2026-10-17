@@ -1,0 +1,10 @@
+{
+  "backend": "slurm",
+  "backend_options": {
+    "submit_binary": "sbatch",
+    "submit_filename": "/sps/creatis/tbaudier/ane/opengate_veriton/opengate_job.slurm",
+    "command_line_args": [
+      "--export=ALL"
+    ]
+  }
+}

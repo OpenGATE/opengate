@@ -18,6 +18,8 @@ class GateJSONEncoder(json.JSONEncoder):
                 "__dtype__": str(obj.dtype),
                 "__shape__": obj.shape,
             }
+        elif isinstance(obj, np.generic):
+            return obj.item()
         elif isinstance(obj, Path):
             path_parts = PurePath(obj).parts
             if len(path_parts) == 0:
