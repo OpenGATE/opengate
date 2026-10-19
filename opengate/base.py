@@ -658,9 +658,13 @@ class GateObject:
         for k in self.user_info.keys():
             if k not in ["name", "_name"]:
                 try:
-                    self.user_info[k] = other_obj.user_info[k]
+                    v = other_obj.user_info[k]
                 except KeyError:
-                    pass
+                    continue
+                # copy containers, so that both objects do not share the same list
+                if isinstance(v, (list, dict)):
+                    v = copy.copy(v)
+                self.user_info[k] = v
 
     def to_dictionary(self):
         d = {
