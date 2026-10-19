@@ -15,7 +15,7 @@ from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
 from ..image import write_itk_image
-from ..image import update_image_py_to_cpp
+from ..image import update_image_py_to_cpp, check_image_direction_is_identity
 from .utility import (
     vec_np_as_g4,
     rot_np_as_g4,
@@ -1186,10 +1186,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def load_input_image(self, path=None):
         if path is None:
-            itk_image = itk.imread(ensure_filename_is_str(self.image))
+            path = self.image
+            itk_image = itk.imread(ensure_filename_is_str(path))
+            check_image_direction_is_identity(
+                itk_image, f"the image volume '{self.name}' ({path})"
+            )
             self.itk_image = itk_image
         else:
             itk_image = itk.imread(ensure_filename_is_str(path))
+            check_image_direction_is_identity(
+                itk_image, f"the image volume '{self.name}' ({path})"
+            )
         return itk_image
 
     def create_attenuation_image(self, database, energy):
