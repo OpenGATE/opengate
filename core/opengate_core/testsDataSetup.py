@@ -2,6 +2,7 @@ import os
 import shutil
 import zipfile
 import requests
+from time import sleep
 import colored
 from pathlib import Path
 from .g4DataSetup import *
@@ -71,6 +72,26 @@ def check_tests_data_folder():
 
 
 # Download opengate tests data:
+def get_json_with_retries(url, retries=5, delay=30, timeout=60):
+    """
+    GET a json document, retrying with an increasing delay (30 s, 60 s, 120 s ...)
+    when the server (gitlab.in2p3.fr) is temporarily unreachable.
+    """
+    for attempt in range(retries):
+        try:
+            r = requests.get(url=url, timeout=timeout)
+            r.raise_for_status()
+            return r.json()
+        except (requests.exceptions.RequestException, ValueError) as e:
+            if attempt == retries - 1:
+                print(f"Exceeded maximum retries for {url}.")
+                raise e
+            wait = delay * 2**attempt
+            print(f"Request attempt {attempt + 1} to {url} failed: {e}")
+            print(f"Retrying in {wait} seconds...")
+            sleep(wait)
+
+
 def download_tests_data(data_location: Path):
     data_location.mkdir(parents=True, exist_ok=True)
     with (data_location.parent / "HEAD").open("r") as f:
@@ -79,16 +100,14 @@ def download_tests_data(data_location: Path):
         "https://gitlab.in2p3.fr/api/v4/projects/15155/repository/commits/"
         + checkout_data_git
     )
-    r = requests.get(url=url)
-    js = r.json()
+    js = get_json_with_retries(url)
     id_pipeline = str(js["last_pipeline"]["id"])
     url = (
         "https://gitlab.in2p3.fr/api/v4/projects/15155/pipelines/"
         + id_pipeline
         + "/jobs"
     )
-    r = requests.get(url=url)
-    js = r.json()[0]
+    js = get_json_with_retries(url)[0]
     id_pipeline = str(js["id"])
     url = (
         "https://gitlab.in2p3.fr/api/v4/projects/15155/jobs/"
@@ -99,7 +118,7 @@ def download_tests_data(data_location: Path):
     # download the archive (with resume if the connexion failed)
     filename = url.split("/")[-1]
     out = data_location / filename
-    download_with_resume(url, out)
+    download_with_resume(url, out, retries=6, delay=30)
 
     if filename == "artifacts":
         with zipfile.ZipFile(data_location / filename, "r") as zip_ref:
