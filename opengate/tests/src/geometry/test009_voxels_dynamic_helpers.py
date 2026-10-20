@@ -10,7 +10,7 @@ import numpy as np
 from opengate.actors.simulation_stats_helpers import sum_stats, write_stats
 from opengate.geometry.materials import read_voxel_materials
 from opengate.image import write_itk_image
-from opengate.jobs import jobs_status
+from opengate.jobs import jobs_status, format_jobs_failure_report
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
@@ -128,6 +128,7 @@ def wait_for_completed_jobs(split_root, expected_count, timeout=180):
 
     deadline = time.time() + timeout
     last_statuses = []
+    status_data = {}
     while time.time() < deadline:
         status_data = jobs_status(split_root)
         last_statuses = [
@@ -135,10 +136,17 @@ def wait_for_completed_jobs(split_root, expected_count, timeout=180):
         ]
         if last_statuses.count("completed") == expected_count:
             return status_data
+        # no need to wait until the timeout if a job already failed
+        if "failed" in last_statuses:
+            raise RuntimeError(
+                f"A split job failed. Observed statuses: {last_statuses}\n"
+                f"{format_jobs_failure_report(status_data)}"
+            )
         time.sleep(0.5)
     raise RuntimeError(
         f"Timed out waiting for {expected_count} completed jobs. "
-        f"Observed statuses: {last_statuses}"
+        f"Observed statuses: {last_statuses}\n"
+        f"{format_jobs_failure_report(status_data)}"
     )
 
 

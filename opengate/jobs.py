@@ -2210,15 +2210,31 @@ class SplitRunMergeController:
         start_time = time.perf_counter()
         while True:
             self.refresh()
-            if self.stage in ("completed", "failed", "merged", "cleaned"):
+            if self.stage == "failed":
+                warning(
+                    f"Split jobs failed in '{self._campaign_dir}':\n"
+                    f"{self.format_failure_report()}"
+                )
+                return self._status
+            if self.stage in ("completed", "merged", "cleaned"):
                 return self._status
             if timeout is not None and (time.perf_counter() - start_time) > timeout:
                 error = GateJobsBackendError(
-                    f"Timed out while waiting for split jobs in '{self._campaign_dir}'."
+                    f"Timed out while waiting for split jobs in '{self._campaign_dir}':\n"
+                    f"{self.format_failure_report()}"
                 )
                 self._set_error(error)
                 raise error
             time.sleep(poll_interval)
+
+    def format_failure_report(self):
+        """Describe the child jobs that did not complete, with their error message."""
+        lines = []
+        if self._status.get("error") is not None:
+            lines.append(f"Controller error: {self._status['error']}")
+        if self._campaign_dir is not None and self.manifest_path.exists():
+            lines.append(format_jobs_failure_report(self._campaign_dir))
+        return "\n".join(lines)
 
     def merge(self, **merge_options):
         if self._campaign_dir is None:
@@ -3258,6 +3274,43 @@ def _format_bytes(size_bytes):
     else:
         val = size_bytes / (1024 * 1024 * 1024)
         return f"{val:.1f} GB"
+
+
+def format_jobs_failure_report(campaign_dir_or_status):
+    """Describe the child jobs of a campaign that did not complete.
+
+    For each such job, give its status and the error message (with traceback)
+    recorded by the job runner. A job still reported as 'running' while the
+    campaign is over usually means its process died without reporting, e.g.
+    after a native crash.
+    """
+    if isinstance(campaign_dir_or_status, dict):
+        status_data = campaign_dir_or_status
+    else:
+        status_data = jobs_status(campaign_dir_or_status)
+    lines = []
+    for job in status_data.get("jobs", []):
+        execution_status = job.get("execution_status")
+        if execution_status == "completed":
+            continue
+        folder = Path(status_data.get("campaign_dir", ".")) / str(
+            job.get("folder_name")
+        )
+        lines.append(f"Job {job.get('job_id')} [{execution_status}] in {folder}")
+        execution_status_data = job.get("execution_status_data") or {}
+        error_message = execution_status_data.get("error_message")
+        if error_message:
+            lines += ["    " + line for line in str(error_message).splitlines()]
+        elif execution_status is None:
+            lines.append("    The job has not started (no execution status file).")
+        elif execution_status == "running":
+            lines.append(
+                "    No error recorded: the job is still running, or its process "
+                "died without reporting (e.g. a native crash)."
+            )
+    if not lines:
+        return "All jobs completed."
+    return "\n".join(lines)
 
 
 def jobs_status(campaign_dir):
