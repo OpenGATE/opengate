@@ -28,6 +28,7 @@ from .runtiming import assert_run_timing
 from .serialization import (
     dump_json,
     load_json,
+    load_json_with_retry,
     _apply_path_modifier_recursively,
     _collect_input_file_values_from_gate_object_dictionary,
     _find_metaimage_payload_files,
@@ -1135,6 +1136,33 @@ def _get_job_execution_status_path(job_folder):
     return Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME
 
 
+# Status files are rewritten by the job processes while other processes poll
+# them. On Windows, a file cannot be replaced while another process has it open
+# (and cannot be opened while it is being replaced): both raise PermissionError.
+# These conflicts last a few milliseconds, so retry for a short while.
+STATUS_FILE_RETRY_ATTEMPTS = 50
+STATUS_FILE_RETRY_DELAY_S = 0.1
+
+
+def _replace_with_retry(source_path, target_path):
+    for attempt in range(STATUS_FILE_RETRY_ATTEMPTS):
+        try:
+            os.replace(source_path, target_path)
+            return
+        except PermissionError:
+            if attempt == STATUS_FILE_RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(STATUS_FILE_RETRY_DELAY_S)
+
+
+def _load_status_file(status_path):
+    return load_json_with_retry(
+        status_path,
+        attempts=STATUS_FILE_RETRY_ATTEMPTS,
+        delay_s=STATUS_FILE_RETRY_DELAY_S,
+    )
+
+
 def _dump_json_atomic(output_path, data):
     """Write JSON atomically so status readers never observe a truncated file."""
     output_path = Path(output_path)
@@ -1146,7 +1174,7 @@ def _dump_json_atomic(output_path, data):
             dump_json(data, output_file)
             output_file.flush()
             os.fsync(output_file.fileno())
-        os.replace(temporary_output_path, output_path)
+        _replace_with_retry(temporary_output_path, output_path)
     finally:
         if temporary_output_path.exists():
             temporary_output_path.unlink()
@@ -1283,8 +1311,7 @@ def load_jobs_backend_status(split_root_folder):
     status_path = _get_jobs_backend_status_path(split_root_folder)
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return _load_status_file(status_path)
 
 
 def _write_jobs_backend_status(
@@ -1323,8 +1350,7 @@ def load_job_execution_status(job_folder):
     status_path = _get_job_execution_status_path(job_folder)
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return _load_status_file(status_path)
 
 
 def _write_job_execution_status(
