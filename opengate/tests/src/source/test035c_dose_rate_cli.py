@@ -9,7 +9,10 @@ from click.testing import CliRunner
 from opengate.bin.dose_rate import go
 from opengate.tests import utility
 
-if __name__ == "__main__":
+
+# Test 3 merges the outputs of test035b: the dependency makes the test runner
+# start this test only after test035b has finished (otherwise they may run in parallel)
+def main(dependency="test035b_dose_rate_vrt.py"):
     paths = utility.get_default_test_paths(__file__, "", output_folder="test035c")
     dr_data = paths.data / "dose_rate_data"
 
@@ -129,3 +132,7 @@ if __name__ == "__main__":
             print(f"  Simulation produced: {[f.name for f in out_sim.glob('*.mhd')]}")
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

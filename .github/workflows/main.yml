@@ -38,7 +38,8 @@ jobs:
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
@@ -46,8 +47,8 @@ jobs:
         architecture: 'x64'
     - name: Create opengate Wheel
       run: |
-          rm -rf $GITHUB_WORKSPACE/opengate/tests/data
-          cp $GITHUB_WORKSPACE/.git/modules/gam-tests/data/HEAD $GITHUB_WORKSPACE/opengate/tests/
+          # commit of the test data submodule, used by the tests to download the data
+          git rev-parse HEAD:opengate/tests/data > $GITHUB_WORKSPACE/opengate/tests/HEAD
           pip install build
           python -m build
     - name: Upload wheels
@@ -74,7 +75,8 @@ jobs:
         else
           export GIT_SSL_NO_VERIFY=1
         fi
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - uses: ./.github/workflows/actions_build
       with:
         os: ${{ matrix.os }}
@@ -86,6 +88,7 @@ jobs:
         path: dist/
 
   build_opengate_core_wheel_ci_or_tag:
+    if: (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')) || (github.event_name == 'schedule')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -106,7 +109,8 @@ jobs:
         else
           export GIT_SSL_NO_VERIFY=1
         fi
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - uses: ./.github/workflows/actions_build
       with:
         os: ${{ matrix.os }}
@@ -118,6 +122,7 @@ jobs:
         path: dist/
 
   build_opengate_core_novis_wheel:
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -131,7 +136,8 @@ jobs:
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:

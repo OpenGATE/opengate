@@ -242,7 +242,11 @@ def compare_merged_root_with_reference(
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test013_hl")
+    # own output folder: test013_half_life.py writes in "test013_hl" and both
+    # tests may run at the same time (this one starts by removing its folder)
+    paths = utility.get_default_test_paths(
+        __file__, output_folder="test013_hl_jobs_split"
+    )
     shutil.rmtree(paths.output, ignore_errors=True)
     is_ok = True
     sec = gate.g4_units.s
