@@ -96,6 +96,20 @@ def download_tests_data(data_location: Path):
     data_location.mkdir(parents=True, exist_ok=True)
     with (data_location.parent / "HEAD").open("r") as f:
         checkout_data_git = str(f.readline()).strip()
+
+    # An already downloaded archive (the GitLab job artifacts zip) can be given
+    # with this environment variable, e.g. by the CI, to avoid downloading it again
+    archive = os.environ.get("OPENGATE_TESTS_DATA_ARCHIVE")
+    if archive:
+        archive = Path(archive)
+        if not archive.is_file():
+            raise FileNotFoundError(
+                f"OPENGATE_TESTS_DATA_ARCHIVE is set but the file does not exist: {archive}"
+            )
+        print(f"Use the test data archive {archive}")
+        extract_tests_data_archive(archive, data_location, checkout_data_git)
+        return
+
     url = (
         "https://gitlab.in2p3.fr/api/v4/projects/15155/repository/commits/"
         + checkout_data_git
@@ -116,15 +130,16 @@ def download_tests_data(data_location: Path):
     )
 
     # download the archive (with resume if the connexion failed)
-    filename = url.split("/")[-1]
-    out = data_location / filename
+    out = data_location / "artifacts"
     download_with_resume(url, out, retries=6, delay=30)
+    extract_tests_data_archive(out, data_location, checkout_data_git)
+    os.remove(out)
 
-    if filename == "artifacts":
-        with zipfile.ZipFile(data_location / filename, "r") as zip_ref:
-            zip_ref.extractall(data_location)
-    os.remove(data_location / filename)
 
+def extract_tests_data_archive(archive: Path, data_location: Path, checkout_data_git):
+    # the GitLab job artifacts zip contains artifact_zip/<commit>.zip with the data
+    with zipfile.ZipFile(archive, "r") as zip_ref:
+        zip_ref.extractall(data_location)
     with zipfile.ZipFile(
         data_location / "artifact_zip" / f"{checkout_data_git}.zip",
         "r",
