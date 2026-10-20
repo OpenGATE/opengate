@@ -12,6 +12,10 @@ runs:
       pattern: dist-*
       merge-multiple: true
       path: dist/
+  - uses: actions/download-artifact@v8
+    with:
+      name: opengate-tests-data
+      path: tests_data/
   - name: Set up Python ${{ matrix.python-version }}
     uses: actions/setup-python@v6
     with:
@@ -55,6 +59,9 @@ runs:
           # crashes (otherwise a native crash loses all the buffered output)
           export PYTHONUNBUFFERED=1
           export PYTHONFAULTHANDLER=1
+          # use the test data archive prepared by the prepare_test_data job
+          # instead of downloading it from gitlab.in2p3.fr
+          export OPENGATE_TESTS_DATA_ARCHIVE="$GITHUB_WORKSPACE/tests_data/artifacts"
           if [[ ${{ matrix.os }} == "ubuntu-24.04" ]]; then
               path=`opengate_library_path.py -p site_packages`
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
