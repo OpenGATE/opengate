@@ -104,6 +104,9 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
 fi
 
 python -m cibuildwheel --output-dir dist
+# delocate copies QtCore out of its framework bundle, which makes Qt crash at
+# start-up with pip installed wheels: put it back in a framework bundle
+python $GITHUB_WORKSPACE/.github/workflows/actions_build/fix_macos_qt_framework.py dist/*.whl
 cd dist
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_15_0/macosx_10_9}' {} \;

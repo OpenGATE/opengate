@@ -71,6 +71,12 @@ runs:
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
               export PATH="${path}\\opengate_core.libs":${PATH}
           fi
+          if [[ ${{ matrix.os }} == "macos-15" ]]; then
+              # the Qt UI must start from the installed wheel (it used to crash,
+              # see fix_macos_qt_framework.py)
+              QT_QPA_PLATFORM=offscreen python -c "import opengate_core as g4; assert g4.G4UIExecutive().IsGUI()" || exit -1
+              echo "Qt UI started from the installed wheel"
+          fi
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
           sha=${{ github.sha }}
