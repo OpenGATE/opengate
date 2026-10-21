@@ -393,14 +393,34 @@ def read_mac_file_to_commands(filename):
         return commands
 
 
+def strip_windows_extended_path_prefix(filename, is_windows=None):
+    """Remove the Windows extended-length prefix (\\\\?\\) from a path string.
+
+    On Windows, Path.resolve() may return paths starting with \\\\?\\ (this
+    happens intermittently, e.g. when another process briefly holds the file or
+    folder). With this prefix, Windows does not normalise the path: a '/' later
+    added by another library (e.g. Geant4 when it creates a ROOT file) makes the
+    path invalid. Other operating systems are not concerned.
+    """
+    if is_windows is None:
+        is_windows = os.name == "nt"
+    if not is_windows or not isinstance(filename, str):
+        return filename
+    if filename.startswith("\\\\?\\UNC\\"):
+        return "\\\\" + filename[len("\\\\?\\UNC\\") :]
+    if filename.startswith("\\\\?\\"):
+        return filename[len("\\\\?\\") :]
+    return filename
+
+
 def ensure_filename_is_str(filename):
     # Some software packages, e.g. itk, do not support Path -> convert to str
     if isinstance(filename, Path):
-        return str(filename)
+        return strip_windows_extended_path_prefix(str(filename))
     elif filename is None:
         return ""
     else:
-        return filename
+        return strip_windows_extended_path_prefix(filename)
 
 
 def insert_suffix_before_extension(file_path, suffix, suffix_separator="-"):

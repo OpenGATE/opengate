@@ -10,6 +10,8 @@
 #include <G4RootAnalysisManager.hh>
 #include <G4Run.hh>
 #include <G4RunManager.hh>
+#include <filesystem>
+#include <fstream>
 
 GateDigiCollectionsRootManager *GateDigiCollectionsRootManager::fInstance =
     nullptr;
@@ -42,7 +44,36 @@ void GateDigiCollectionsRootManager::OpenFile(const int tupleId,
       } else
         ram->SetNtupleMerging(true);
     }
-    ram->OpenFile(filename);
+    CheckFileCanBeCreated(filename);
+    if (!ram->OpenFile(filename)) {
+      std::ostringstream oss;
+      oss << "Cannot open the ROOT output file '" << filename << "'.";
+      Fatal(oss.str());
+    }
+  }
+}
+
+void GateDigiCollectionsRootManager::CheckFileCanBeCreated(
+    const std::string &filename) {
+  // Geant4 creates the ROOT file only later, when the first ntuple is created.
+  // If the file cannot be created, Geant4 only issues a warning and then
+  // crashes (null pointer, access violation on Windows). So we check first,
+  // and stop with a clear error. Only the master thread does it: in MT mode,
+  // the workers use their own file names.
+  if (!G4Threading::IsMasterThread())
+    return;
+  const bool existed = std::filesystem::exists(filename);
+  std::ofstream test_file(filename, std::ios::app);
+  if (!test_file) {
+    std::ostringstream oss;
+    oss << "Cannot create the ROOT output file '" << filename
+        << "'. Check that the output folder exists and is writable.";
+    Fatal(oss.str());
+  }
+  test_file.close();
+  if (!existed) {
+    std::error_code ec;
+    std::filesystem::remove(filename, ec);
   }
 }
 

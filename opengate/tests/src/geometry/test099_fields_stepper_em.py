@@ -12,6 +12,7 @@ Test 2  Magnetic-only steppers (NystromRK4, ExactHelixStepper) paired with
         ValueError.
 """
 
+import pathlib
 import numpy as np
 import uproot
 
@@ -38,7 +39,9 @@ REF_STEPPER = "DormandPrince745"
 VISU = False
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     T = 100 * g4_MeV
     L = 500 * g4_mm

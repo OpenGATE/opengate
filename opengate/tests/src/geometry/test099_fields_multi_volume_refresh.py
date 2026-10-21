@@ -26,6 +26,7 @@ Checks:
 
 """
 
+import pathlib
 import numpy as np
 import uproot
 from scipy.spatial.transform import Rotation
@@ -58,7 +59,9 @@ VISU = False
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     sim = gate.Simulation()
     sim.g4_verbose = False
