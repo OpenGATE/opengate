@@ -108,6 +108,24 @@ future version of Gate 10 might provide an option to do this
 automatically. If you are motivated, you can implement that feature and
 contribute it to the opengate package.
 
+The direction matrix of the input image (the rotation or flip stored in
+its header, e.g. ``TransformMatrix`` in a mhd file) is not supported
+either: the voxels are always placed along the axes of the volume. To
+avoid silently mirroring or rotating the geometry, the simulation stops
+with an error if the image direction is not the identity. In that case,
+resample the image to an identity direction first, or, if the voxels are
+already stored in the expected order, simply reset the direction, for
+example:
+
+.. code:: python
+
+   import itk
+   import numpy as np
+
+   img = itk.imread("ct.mhd")
+   img.SetDirection(np.eye(3))
+   itk.imwrite(img, "ct_identity.mhd")
+
 There is a helper function ``HounsfieldUnit_to_material`` to create an
 interval-material list that can be used as input to the
 ``voxel_materials`` parameter, specifically for CT images expressed in

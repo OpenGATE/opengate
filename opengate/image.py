@@ -111,6 +111,27 @@ def create_image_like_info(info, allocate=True):
     return img
 
 
+def check_image_direction_is_identity(image, description):
+    """
+    The direction matrix (rotation or flip stored in the image header) is not
+    taken into account by ImageVolume and VoxelSource: the voxels are always
+    placed along the Geant4 axes. Ignoring it would silently mirror or rotate
+    the geometry or the activity, so we stop with an error instead (see #421).
+    """
+    direction = np.array(image.GetDirection())
+    n = direction.shape[0]
+    if not np.allclose(direction, np.eye(n)):
+        fatal(
+            f"The image used by {description} has a direction matrix that is not "
+            f"the identity:\n{np.round(direction, 6)}\n"
+            f"Image rotations and flips are not supported: the image would be "
+            f"interpreted without them, so the geometry or the activity would be "
+            f"silently mirrored or rotated. Please resample the image to an "
+            f"identity direction first (or simply reset the direction if the "
+            f"voxels are already in the expected order)."
+        )
+
+
 def get_info_from_image(image):
     info = Box()
     info.size = np.array(itk.size(image)).astype(int)

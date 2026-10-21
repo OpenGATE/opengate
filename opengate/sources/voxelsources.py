@@ -6,6 +6,7 @@ from ..image import (
     get_info_from_image,
     update_image_py_to_cpp,
     compute_image_3D_CDF,
+    check_image_direction_is_identity,
 )
 from ..utility import ensure_filename_is_str, warning
 from ..base import process_cls
@@ -97,6 +98,9 @@ class VoxelSource(GenericSource):
     def update_activity_image(self, filename):
         # read source image
         self._current_itk_image = itk.imread(ensure_filename_is_str(filename))
+        check_image_direction_is_identity(
+            self._current_itk_image, f"the voxel source '{self.name}' ({filename})"
+        )
 
         # Reset CDF cache
         self._cdf_x = None
@@ -116,6 +120,10 @@ class VoxelSource(GenericSource):
     def initialize_g4_source(self, g4_source, run_timing_intervals):
         if self._current_itk_image is None:
             self._current_itk_image = itk.imread(ensure_filename_is_str(self.image))
+            check_image_direction_is_identity(
+                self._current_itk_image,
+                f"the voxel source '{self.name}' ({self.image})",
+            )
         self.set_transform_from_user_info(g4_source)
         self.cumulative_distribution_functions(g4_source)
         # initialise standard options (particle energy, etc.)
