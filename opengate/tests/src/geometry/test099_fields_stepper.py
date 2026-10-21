@@ -15,6 +15,7 @@ See test099_fields_stepper_em.py for non-pure-B field coverage and
 magnetic-only stepper guard tests.
 """
 
+import pathlib
 import numpy as np
 import uproot
 
@@ -39,7 +40,9 @@ ALL_STEPPERS = list(fields._stepper_map.keys())
 VISU = False
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     By = 5 * g4_tesla
     T = 10 * g4_MeV
