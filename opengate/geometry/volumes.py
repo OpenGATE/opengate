@@ -529,31 +529,33 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
 
     @requires_fatal("volume_manager")
-    def set_max_step_size(self, max_step_size):
+    def set_max_step_size(self, max_step_size, particles=None):
         self.volume_manager.simulation.physics_manager.set_max_step_size(
-            self.name, max_step_size
+            self.name, max_step_size, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_max_track_length(self, max_track_length):
+    def set_max_track_length(self, max_track_length, particles=None):
         self.volume_manager.simulation.physics_manager.set_max_track_length(
-            self.name, max_track_length
+            self.name, max_track_length, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_min_ekine(self, min_ekine):
+    def set_min_ekine(self, min_ekine, particles=None):
         self.volume_manager.simulation.physics_manager.set_min_ekine(
-            self.name, min_ekine
+            self.name, min_ekine, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_max_time(self, max_time):
-        self.volume_manager.simulation.physics_manager.set_max_time(self.name, max_time)
+    def set_max_time(self, max_time, particles=None):
+        self.volume_manager.simulation.physics_manager.set_max_time(
+            self.name, max_time, particles=particles
+        )
 
     @requires_fatal("volume_manager")
-    def set_min_range(self, min_range):
+    def set_min_range(self, min_range, particles=None):
         self.volume_manager.simulation.physics_manager.set_min_range(
-            self.name, min_range
+            self.name, min_range, particles=particles
         )
 
     @requires_fatal("volume_manager")

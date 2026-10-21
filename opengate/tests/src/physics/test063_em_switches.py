@@ -13,13 +13,13 @@ def combined_user_hook_after_run(simulation_engine):
 
 def check_hook_output(sim):
     # Check if G4 set flags correctly
-    print(sim.user_hook_log[0])
-    print(sim.user_hook_log[1])
-    em_parameters_from_hook = sim.user_hook_log[0]
+    print(sim.user_hook_log.em_switches)
+    print(sim.user_hook_log.active_regions)
+    em_parameters_from_hook = sim.user_hook_log.em_switches
     for k, v in sim.physics_manager.em_parameters.items():
         assert v == em_parameters_from_hook[k]
 
-    em_regions_from_hook = sim.user_hook_log[1]
+    em_regions_from_hook = sim.user_hook_log.active_regions
     for r in sim.physics_manager.regions.values():
         assert r.em_switches.deex == em_regions_from_hook[r.name][0]
         assert r.em_switches.auger == em_regions_from_hook[r.name][1]

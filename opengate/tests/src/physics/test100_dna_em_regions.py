@@ -11,10 +11,10 @@ EXPLICIT_REGION_NAME = "dna_region_explicit"
 
 
 def check_dna_regions(sim):
-    hook_output = sim.user_hook_log[0]
+    hook_output = sim.user_hook_log.dna_regions
     dna_regions = hook_output["dna_regions"]
     volume_regions = hook_output["volume_regions"]
-    model_checks = sim.user_hook_log[1]
+    model_checks = sim.user_hook_log.dna_region_models
 
     target_auto_region = f"{TARGET_AUTO_NAME}_region"
 

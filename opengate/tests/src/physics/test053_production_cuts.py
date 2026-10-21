@@ -134,7 +134,7 @@ def simulate(number_of_threads=1, start_new_process=False):
 
     print("Checking production cuts:")
     retrieved_global_cut_proton = None
-    for item in sim.user_hook_log:
+    for item in sim.user_hook_log.items():
         if item[0] == "world":
             retrieved_global_cut_proton = item[1]["proton"]
             retrieved_global_cut_positron = item[1]["positron"]
@@ -152,7 +152,7 @@ def simulate(number_of_threads=1, start_new_process=False):
             assert retrieved_global_cut_positron == DEFAULT_CUT
             assert retrieved_global_cut_gamma == DEFAULT_CUT
 
-    for item in sim.user_hook_log:
+    for item in sim.user_hook_log.items():
         print(f"Volume {item[0]}:")
         value_dict = item[1]
         if item[0] != "world":
@@ -214,17 +214,12 @@ def check_production_cuts(simulation_engine):
             cut_positron = pc.GetProductionCut("e+")
             cut_electron = pc.GetProductionCut("e-")
             cut_gamma = pc.GetProductionCut("gamma")
-            simulation_engine.user_hook_log.append(
-                (
-                    volume_name,
-                    {
-                        "proton": cut_proton,
-                        "positron": cut_positron,
-                        "electron": cut_electron,
-                        "gamma": cut_gamma,
-                    },
-                )
-            )
+            simulation_engine.user_hook_log[volume_name] = {
+                "proton": cut_proton,
+                "positron": cut_positron,
+                "electron": cut_electron,
+                "gamma": cut_gamma,
+            }
             print(f"In hook: found production cut for protons {cut_proton}")
 
 

@@ -8,12 +8,10 @@ from opengate.tests import utility
 
 def collect_run_counts(simulation_engine):
     current_run = simulation_engine.g4_RunManager.GetCurrentRun()
-    simulation_engine.user_hook_log.append(
-        {
-            "number_of_events": current_run.GetNumberOfEvent(),
-            "number_of_events_to_be_processed": current_run.GetNumberOfEventToBeProcessed(),
-        }
-    )
+    simulation_engine.user_hook_log["run_counts"] = {
+        "number_of_events": current_run.GetNumberOfEvent(),
+        "number_of_events_to_be_processed": current_run.GetNumberOfEventToBeProcessed(),
+    }
 
 
 def main():
@@ -47,7 +45,7 @@ def main():
     sim.run_timing_intervals = [(0, 1 * sec)]
     sim.run()
 
-    run_info = sim.user_hook_log[0]
+    run_info = sim.user_hook_log.run_counts
     produced_events = run_info["number_of_events"]
     requested_events = run_info["number_of_events_to_be_processed"]
     platform_limit = opengate_core.GateSourceManager.GetPlatformMaxPrimariesPerRun()
