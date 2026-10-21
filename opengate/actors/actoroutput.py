@@ -328,6 +328,12 @@ class ActorOutputBase(GateObject):
         ),
     }
 
+    def configure_like(self, other_obj):
+        # the output must keep belonging to its own actor (see #505)
+        belongs_to = self.belongs_to
+        super().configure_like(other_obj)
+        self.belongs_to = belongs_to
+
     @classmethod
     def get_default_interface_class(cls):
         if cls._default_interface_class is None:
