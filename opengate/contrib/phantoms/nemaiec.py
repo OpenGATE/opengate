@@ -30,16 +30,59 @@ def create_material(simulation):
     )
 
 
+# Dimensions of the two available versions of the IEC phantom, named after their
+# total (outer) length. Both follow the NEMA rule that the sphere centres are
+# 70 mm below the inside of the lid; they differ by the thickness of the top
+# and bottom walls.
+# - iec_214: the GATE 10 version (default since 2023).
+# - iec_220: the GATE 9 version (GateContrib NEMA_IEC_2001.mac), also used by
+#   GATE 10 before 2023.
+iec_versions = {
+    "iec_214": {
+        "length": 214,  # total outer length (mm)
+        "wall_z": 10,  # thickness of the top and bottom walls (mm)
+        "sphere_z": 27,  # z of the sphere centres, from the phantom centre (mm)
+    },
+    "iec_220": {
+        "length": 220,
+        "wall_z": 3,
+        "sphere_z": 37,
+    },
+}
+default_iec_version = "iec_214"
+
+
+def get_iec_dimensions(version=default_iec_version):
+    """Return the dimensions (in Geant4 units) of a version of the IEC phantom:
+    total length, thickness of the top and bottom walls, and z position of the
+    sphere centres relative to the phantom centre."""
+    if version not in iec_versions:
+        fatal(
+            f"Unknown IEC phantom version '{version}'. "
+            f"Available versions are: {list(iec_versions.keys())}"
+        )
+    mm = g4_units.mm
+    return {k: v * mm for k, v in iec_versions[version].items()}
+
+
 def add_iec_phantom(
     simulation,
     name="iec",
     check_overlap=False,
     sphere_starting_angle=False,
     toggle_sphere_order=False,
+    version=default_iec_version,
 ):
+    """Add the NEMA IEC body phantom.
+
+    version: 'iec_214' (default, GATE 10, total length 214 mm, 10 mm top and
+    bottom walls) or 'iec_220' (GATE 9, total length 220 mm, 3 mm walls).
+    See iec_versions.
+    """
     # https://www.nuclemed.be/product.php?cat=102&prod=297 ???
     # unit
     mm = g4_units.mm
+    dims = get_iec_dimensions(version)
     create_material(simulation)
 
     # check overlap only for debug
@@ -47,15 +90,16 @@ def add_iec_phantom(
     simulation.check_volumes_overlap = check_overlap
 
     # Outside structure
-    iec, _, _ = add_iec_body(simulation, name)
+    iec, _, _ = add_iec_body(simulation, name, length=dims["length"])
     iec.material = iec_plastic
     iec.color = red
 
     # Inside space for the water, same as the shell, with 3 mm less
+    # (and with the top and bottom walls of this version)
     thickness = 3 * mm
-    thickness_z = 10 * mm
+    thickness_z = dims["wall_z"]
     interior, top_interior, _ = add_iec_body(
-        simulation, f"{name}_interior", thickness, thickness_z
+        simulation, f"{name}_interior", thickness, thickness_z, length=dims["length"]
     )
     interior.mother = iec.name
     interior.material = water
@@ -66,20 +110,27 @@ def add_iec_phantom(
 
     # spheres
     add_iec_all_spheres(
-        simulation, name, thickness_z, sphere_starting_angle, toggle_sphere_order
+        simulation,
+        name,
+        thickness_z,
+        sphere_starting_angle,
+        toggle_sphere_order,
+        sphere_z=dims["sphere_z"],
+        length=dims["length"],
     )
 
     simulation.check_volumes_overlap = original_check_overlap_flag
     return iec
 
 
-def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
+def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0, length=None):
     cm = g4_units.cm
     nm = g4_units.nm
     deg = g4_units.deg
 
     # total length
-    length = 21.4 * cm
+    if length is None:
+        length = get_iec_dimensions()["length"]
 
     # top
     top_shell = opengate.geometry.volumes.TubsVolume(name=f"{name}_top_shell")
@@ -112,7 +163,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     tiny = 1 * nm
 
     # Bottom box
-    # length = Z = sup-inf = is 21.4
+    # length = Z = sup-inf (214 or 220 mm, see iec_versions)
     # bottom radius = Y = ant-post = 8 cm
     # width = X = left-right = in between the two bottom rounded  = 14 * cm
     # X total is 14 + 8 + 8 = 30 cm (main radius is 15cm)
@@ -168,7 +219,13 @@ def add_iec_central_cylinder(sim, name, top_interior):
 
 
 def add_iec_all_spheres(
-    simulation, name, thickness_z, starting_angle=False, reverse_order=False
+    simulation,
+    name,
+    thickness_z,
+    starting_angle=False,
+    reverse_order=False,
+    sphere_z=None,
+    length=None,
 ):
     """
     Starting angle : in deg. Indicate the (angle) position of the first smallest sphere.
@@ -184,7 +241,10 @@ def add_iec_all_spheres(
     It can be modified.
     """
     v = f"{name}_interior"
-    h_relative = 2.7 * cm
+    dims = get_iec_dimensions()
+    h_relative = dims["sphere_z"] if sphere_z is None else sphere_z
+    if length is None:
+        length = dims["length"]
     r = 11.45367 * cm / 2
     ang = 360 / 6 * deg
     if starting_angle is False:
@@ -207,12 +267,13 @@ def add_iec_all_spheres(
             3.5 * mm,
             [px, py, h_relative],
             thickness_z,
+            length,
         )
         a += ang
 
 
 def add_iec_one_sphere(
-    sim, name, vol, diam, sph_thick, cap_thick, position, thickness_z
+    sim, name, vol, diam, sph_thick, cap_thick, position, thickness_z, length=None
 ):
     mm = g4_units.mm
     cm = g4_units.cm
@@ -243,8 +304,10 @@ def add_iec_one_sphere(
     cap.material = "G4_WATER"
     cap.rmax = 0.25 * cm
     cap.rmin = 0 * cm
-    # 21.4/2 = 10.7 interior height (top_interior)
-    h = 21.4 / 2 * cm - thickness_z
+    # top of the interior (the capillary goes from the sphere to the lid)
+    if length is None:
+        length = get_iec_dimensions()["length"]
+    h = length / 2 - thickness_z
     cap.dz = (h - h_relative - rad - sph_thick) / 2.0
     cap.translation[2] = h_relative + rad + sph_thick + cap.dz
 
@@ -607,19 +670,21 @@ def get_default_sphere_centers_and_volumes_old():
     return centers, volumes
 
 
-def get_default_sphere_centers_and_volumes():
+def get_default_sphere_centers_and_volumes(version=default_iec_version):
     """
     Global spheres centers in the phantom, to avoid using the phantom in same cases.
-    Were computed with 23/08/2023 version.
+    Were computed with 23/08/2023 version (iec_214); for iec_220 only the z of
+    the centres differs.
     No translation. To be recomputed with compute_sphere_centers_and_volumes
     """
+    z = get_iec_dimensions(version)["sphere_z"] / g4_units.mm
     centers = [
-        [-28.634175, 84.59584593, 27.0],
-        [28.634175, 84.59584593, 27.0],
-        [57.26835, 35.0, 27.0],
-        [28.634175, -14.59584593, 27.0],
-        [-28.634175, -14.59584593, 27.0],
-        [-57.26835, 35.0, 27.0],
+        [-28.634175, 84.59584593, z],
+        [28.634175, 84.59584593, z],
+        [57.26835, 35.0, z],
+        [28.634175, -14.59584593, z],
+        [-28.634175, -14.59584593, z],
+        [-57.26835, 35.0, z],
     ]
     volumes = [
         523.5987755982989,

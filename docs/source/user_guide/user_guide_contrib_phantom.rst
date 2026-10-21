@@ -21,6 +21,23 @@ The rotation should be adapted according to your need. The order of the 6 sphere
 
 .. image:: ../figures/iec_6spheres.png
 
+Two versions of the phantom are available, selected with the parameter `version` of `add_iec_phantom`, and named after their total (outer) length:
+
+=========== ============ ==================== =============== ==================
+version     total length top and bottom walls interior length sphere centres (z)
+=========== ============ ==================== =============== ==================
+``iec_214`` 214 mm       10 mm                194 mm          +27 mm
+``iec_220`` 220 mm       3 mm                 214 mm          +37 mm
+=========== ============ ==================== =============== ==================
+
+``iec_214`` is the default (GATE 10). ``iec_220`` corresponds to the GATE 9 macro (GateContrib ``NEMA_IEC_2001.mac``) and can be used to reproduce GATE 9 simulations. In both versions, the sphere centres are 70 mm below the inside of the lid, as specified by NEMA, and the z positions above are relative to the centre of the phantom.
+
+.. code-block:: python
+
+    iec_phantom = gate_iec.add_iec_phantom(sim, 'iec_phantom', version='iec_220')
+
+The functions that return the default sphere centres also take this parameter, e.g. ``gate_iec.get_default_sphere_centers_and_volumes(version='iec_220')``.
+
 Examples can be found in `test015 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test015_iec_phantom_1.py>`_ (and others).
 
 Phantom: cylinder phantom for PET NECR
