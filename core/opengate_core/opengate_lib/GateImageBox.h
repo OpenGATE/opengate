@@ -17,8 +17,10 @@
 
 namespace py = pybind11;
 
-// Convert the macro value to a string for displaying
-#if USE_VISU > 0
+// The image slices are drawn with G4OpenGLSceneHandler, a private Geant4 header
+// that is only available in a Geant4 build tree (see CMakeLists.txt, #800).
+// Without it, the image volume is displayed as a plain box.
+#if USE_VISU > 0 && defined(USE_G4_OPENGL_PRIVATE_HEADERS)
 #include <G4Version.hh>
 /**
  * Only Geant4 >= 9.6.0 had the G4OpenGLSceneHandler::GetObjectTransformation()
