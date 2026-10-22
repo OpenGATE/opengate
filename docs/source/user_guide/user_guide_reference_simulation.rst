@@ -54,6 +54,14 @@ GATE 10 can visualize your simulation is different ways, namely using the native
 
 .. autoproperty:: opengate.Simulation.visu_type
 
+To check which visualisation types work on your computer, run:
+
+.. code-block:: bash
+
+    opengate_check_visu
+
+It writes a VRML and a GDML file, starts a Geant4 Qt session and creates the Qt OpenGL viewer, and checks that ``pyvista`` and ``pyg4ometry`` (the viewers of the vrml and gdml files) are installed. No window is opened: Qt runs offscreen. With ``opengate_check_visu --display``, the Qt checks use the real display, and a Qt window opens for a few seconds. Each check runs in its own process, so a crash is reported as a failure, with the end of its output.
+
 Qt
 ^^
 
