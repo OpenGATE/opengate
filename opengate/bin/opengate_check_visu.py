@@ -131,14 +131,18 @@ def child_env(display):
 
 
 def run_check_in_process(name, tmp_dir, display, timeout):
+    # the child runs in tmp_dir: 'python -m' puts the current folder first in
+    # sys.path, so a folder named like a package (e.g. a stale opengate_core
+    # in the source folder) would otherwise be imported instead of the package
     cmd = [sys.executable, "-m", "opengate.bin.opengate_check_visu"]
     cmd += ["--run-check", name, "--tmp-dir", str(tmp_dir)]
     if name == "qt_viewer":
-        return run_qt_viewer_check(cmd, display, timeout)
+        return run_qt_viewer_check(cmd, tmp_dir, display, timeout)
     try:
         r = subprocess.run(
             cmd,
             env=child_env(display),
+            cwd=tmp_dir,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -152,13 +156,14 @@ def run_check_in_process(name, tmp_dir, display, timeout):
     return r.returncode == 0, describe_exit(r.returncode, r.stdout), output
 
 
-def run_qt_viewer_check(cmd, display, timeout):
+def run_qt_viewer_check(cmd, tmp_dir, display, timeout):
     """The Qt session never ends by itself: the check is ok if the process is
     still alive a few seconds after the viewer has been created and the
     geometry drawn (it is in the Qt event loop), and is then stopped."""
     p = subprocess.Popen(
         cmd,
         env=child_env(display),
+        cwd=tmp_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
