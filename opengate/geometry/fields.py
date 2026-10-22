@@ -114,6 +114,15 @@ class FieldBase(GateObject):
                 f"Stepper '{self.stepper}' only supports pure magnetic fields. "
                 "Choose a general-purpose stepper for electric or EM fields."
             )
+        if (
+            self.stepper in _not_for_pure_magnetic_steppers
+            and not self.field_changes_energy
+        ):
+            raise ValueError(
+                f"Stepper '{self.stepper}' cannot be used with a pure magnetic field: "
+                f"{_not_for_pure_magnetic_steppers[self.stepper]} "
+                "Choose another stepper, e.g. 'DormandPrince745' (default)."
+            )
 
     def _build_field_manager(self, inner_field, gate_field, equation_cls, n_vars):
         """Build equation/stepper/driver/chord_finder/fm, record runtime objects, return fm."""
@@ -527,6 +536,19 @@ def _validate_field_function(
 
 # Steppers that only work with pure magnetic fields
 _magnetic_only_steppers = {"NystromRK4", "ExactHelixStepper"}
+
+# Steppers that must not be used with pure magnetic fields (6 integration
+# variables), with the reason.
+_not_for_pure_magnetic_steppers = {
+    # In Geant4 (11.4.2 and master), G4BogackiShampine45 allocates its mid-point
+    # buffer (fMidVector) with the number of integration variables (6 for a
+    # magnetic field), but its Stepper() always writes element 7 of the output,
+    # so DistChord() writes past the end of that buffer and corrupts the memory
+    # (heap corruption detected on Windows, crash under a guarded allocator).
+    # With electric or EM fields (8 variables), the buffer is large enough.
+    "BogackiShampine45": "with 6 integration variables, Geant4's G4BogackiShampine45 "
+    "writes past the end of an internal buffer (memory corruption, Geant4 bug).",
+}
 
 # Stepper factory
 _stepper_map = {

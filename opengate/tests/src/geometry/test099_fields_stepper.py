@@ -35,7 +35,10 @@ from opengate.tests.src.geometry.test099_fields_helpers import (
 )
 
 REF_STEPPER = "DormandPrince745"
-ALL_STEPPERS = list(fields._stepper_map.keys())
+# BogackiShampine45 is refused for pure magnetic fields (Geant4 memory bug)
+ALL_STEPPERS = [
+    s for s in fields._stepper_map if s not in fields._not_for_pure_magnetic_steppers
+]
 
 VISU = False
 
@@ -152,5 +155,20 @@ if __name__ == "__main__":
             f"dKE={dKE / g4_MeV:.6f} MeV  OK={ok_cross}"
         )
         is_ok = is_ok and ok_cross
+
+    # BogackiShampine45 is refused for pure magnetic fields (Geant4 memory bug),
+    # but accepted for EM fields (8 integration variables)
+    b_field = fields.UniformMagneticField(name="B_bs45")
+    b_field.stepper = "BogackiShampine45"
+    try:
+        b_field._validate_stepper()
+        refused = False
+    except ValueError as e:
+        refused = "BogackiShampine45" in str(e)
+    em_field = fields.UniformElectroMagneticField(name="EM_bs45")
+    em_field.stepper = "BogackiShampine45"
+    em_field._validate_stepper()
+    print(f"BogackiShampine45 refused for a pure magnetic field: {refused}")
+    is_ok = is_ok and refused
 
     utility.test_ok(is_ok)
