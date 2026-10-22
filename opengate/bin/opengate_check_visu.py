@@ -26,6 +26,11 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 # geometry drawn, just before the events are simulated and the Qt session starts
 QT_READY_MARKER = "OPENGATE_CHECK_VISU_QT_READY"
 
+# printed by Qt when the platform cannot create OpenGL widgets (for example the
+# offscreen platform on Linux): the viewer is then not created, the check
+# cannot tell anything
+QT_NO_OPENGL_MESSAGE = "QOpenGLWidget is not supported on this platform"
+
 
 def build_simulation(visu_type, visu_filename=None):
     import opengate as gate
@@ -185,6 +190,8 @@ def run_qt_viewer_check(cmd, display, timeout):
         p.wait()
     reader.join(timeout=2)
     output = "".join(lines)
+    if not display and QT_NO_OPENGL_MESSAGE in output:
+        return None, "no OpenGL with the offscreen Qt, use --display", output
     if ready_time is None:
         if alive:
             return False, f"viewer not created after {timeout} s", output
@@ -297,7 +304,7 @@ def go(display, timeout, verbose, run_check, tmp_dir):
                 for line in tail:
                     print(f"       | {line}")
 
-    if not display and results["qt_viewer"][0] is not None:
+    if not display and "qt_viewer" not in skipped:
         print()
         print(
             "Note: the Qt checks ran offscreen. Use --display to check them "
