@@ -143,7 +143,12 @@ def download_g4_one_data_folder(i, package, total_number):
             print("I need to remove it.")
             shutil.rmtree(extract_to_path)
         print("Extracting the data archive (tar) ...")
-        tar.extractall(path=data_location)
+        # Do not extract files outside data_location (absolute paths, '..'):
+        # the 'data' filter refuses them (default since Python 3.14, see #340)
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(path=data_location, filter="data")
+        else:
+            tar.extractall(path=data_location)
         print("done")
     os.remove(package_archive)
 

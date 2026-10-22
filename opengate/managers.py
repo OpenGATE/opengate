@@ -1059,30 +1059,60 @@ class PhysicsManager(GateObject):
     # with a region. If it does not yet have one, created it.
     # Outlook: These setter methods might be linked to properties
     # implemented in a future version of the Volume class
-    def set_max_step_size(self, volume_name, max_step_size):
+    def set_max_step_size(self, volume_name, max_step_size, particles=None):
+        """Set the user limit 'max_step_size' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_step_size"] = max_step_size
+        self._add_user_limits_particles(particles)
 
-    def set_max_track_length(self, volume_name, max_track_length):
+    def set_max_track_length(self, volume_name, max_track_length, particles=None):
+        """Set the user limit 'max_track_length' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_track_length"] = max_track_length
+        self._add_user_limits_particles(particles)
 
-    def set_min_ekine(self, volume_name, min_ekine):
+    def set_min_ekine(self, volume_name, min_ekine, particles=None):
+        """Set the user limit 'min_ekine' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_ekine"] = min_ekine
+        self._add_user_limits_particles(particles)
 
-    def set_max_time(self, volume_name, max_time):
+    def set_max_time(self, volume_name, max_time, particles=None):
+        """Set the user limit 'max_time' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_time"] = max_time
+        self._add_user_limits_particles(particles)
 
-    def set_min_range(self, volume_name, min_range):
+    def set_min_range(self, volume_name, min_range, particles=None):
+        """Set the user limit 'min_range' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
+        self._add_user_limits_particles(particles)
+
+    def _add_user_limits_particles(self, particles):
+        """Add particles (a name or a list of names, e.g. 'proton' or
+        ['gamma', 'e-']) to user_limits_particles. Warning: user_limits_particles
+        is global, i.e. the user limits of all regions apply to these particles
+        (Geant4 attaches the step limiter per particle type, not per region)."""
+        if particles is None:
+            return
+        if not isinstance(particles, (list, set, tuple)):
+            particles = [particles]
+        current = list(self.user_limits_particles)
+        for p in particles:
+            if p not in current:
+                current.append(p)
+        self.user_limits_particles = current
 
     def set_track_structure_em_physics(self, volume_name, track_structure_em_physics):
         volume_name = self._normalize_volume_name(volume_name)
@@ -1775,23 +1805,8 @@ class VolumeManager(GateObject):
 
 
 def _setter_hook_verbose_level(self, verbose_level):
-    # print(f"_setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
-    if self.log_handler_id == -1:
-        # Remove the default logger configuration
-        logger.remove()
-    else:
-        # Remove the current logger configuration
-        try:
-            logger.remove(self.log_handler_id)
-        except:
-            pass
-
-    self.log_handler_id = logger.add(
-        sys.stdout,
-        colorize=True,
-        level=verbose_level,
-        format=("{level.icon}<level>{message}</level>"),  # Message formatting
-    )
+    # Replace the opengate handler only: the user's own loguru handlers are kept
+    self.log_handler_id = set_opengate_log_handler(verbose_level)
     return verbose_level
 
 
