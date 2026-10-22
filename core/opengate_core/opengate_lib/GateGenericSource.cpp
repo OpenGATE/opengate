@@ -717,6 +717,9 @@ void GateGenericSource::Visualize() const {
 
   G4VisManager *vis_manager = G4VisManager::GetInstance();
   auto *scene = vis_manager->GetCurrentScene();
+  // no scene with the visualisation types without a Geant4 viewer (gdml)
+  if (scene == nullptr)
+    return;
 
   auto *pos = fSPS->GetPosDist();
 
