@@ -115,5 +115,9 @@ if __name__ == "__main__":
     #   -> Use only with low source activity, i.e. few events in the phase levels may cause memory issues.
     optigan.run_optigan(create_output_graphs=False)
 
-    is_ok = all(t is True for t in sim.user_hook_log)
+    is_ok = all(
+        ok is True
+        for checks in sim.user_hook_log.material_properties.values()
+        for ok in checks.values()
+    )
     tu.test_ok(is_ok)

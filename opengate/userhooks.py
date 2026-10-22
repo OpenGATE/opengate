@@ -52,6 +52,7 @@ def check_production_cuts(simulation_engine):
 
 def user_hook_dump_material_properties(simulation_engine):
     print("*** In user hook dump_material_properties ***")
+    results = {}
     for vol in simulation_engine.simulation.volume_manager.volumes.values():
         material_name = vol.g4_material.GetName()
         material_dict = opengate.physics.load_optical_properties_from_xml(
@@ -63,31 +64,36 @@ def user_hook_dump_material_properties(simulation_engine):
         if mpt is not None and material_dict is not None:
             const_prop_names = mpt.GetMaterialConstPropertyNames()
             vector_prop_names = mpt.GetMaterialPropertyNames()
-            if not set(material_dict["constant_properties"].keys()).issubset(
+            constant_ok = set(material_dict["constant_properties"].keys()).issubset(
                 set([str(n) for n in const_prop_names])
-            ):
+            )
+            if not constant_ok:
                 print(
                     "NOT all constant_properties from file found in G4MaterialPropertiesTable"
                 )
-                simulation_engine.user_hook_log.append(False)
-            else:
-                simulation_engine.user_hook_log.append(True)
-            if not set(material_dict["vector_properties"].keys()).issubset(
+            vector_ok = set(material_dict["vector_properties"].keys()).issubset(
                 set([str(n) for n in vector_prop_names])
-            ):
+            )
+            if not vector_ok:
                 print(
                     "NOT all vector_properties from file found in G4MaterialPropertiesTable"
                 )
-                simulation_engine.user_hook_log.append(False)
-            else:
-                simulation_engine.user_hook_log.append(True)
+            results[vol.name] = {
+                "constant_properties": constant_ok,
+                "vector_properties": vector_ok,
+            }
         elif mpt is None and material_dict is not None:
             print(
                 f"Geant4 does not find any MaterialPropertiesTable for this material "
                 f"although it is defined in the optical_properties_file "
                 f"{simulation_engine.simulation.physics_manager.optical_properties_file}"
             )
-            simulation_engine.user_hook_log.extend([False, False])
+            results[vol.name] = {
+                "constant_properties": False,
+                "vector_properties": False,
+            }
+    # for each volume with optical properties: are they all found in Geant4?
+    simulation_engine.user_hook_log["material_properties"] = results
     print("*** ------------------------------------- ***")
 
 
@@ -102,7 +108,7 @@ def user_hook_em_switches(simulation_engine):
     switches["deexcitation_ignore_cut"] = (
         simulation_engine.physics_engine.g4_em_parameters.DeexcitationIgnoreCut()
     )
-    simulation_engine.user_hook_log.append(switches)
+    simulation_engine.user_hook_log["em_switches"] = switches
     print("Found the following em parameters via the user hook:")
     for k, v in switches.items():
         print(f"{k}: {v}")
@@ -119,7 +125,7 @@ def user_hook_active_regions(simulation_engine):
         print(f"Region {r}:")
         print(f"    deexcitation activated: {s[0]}")
         print(f"    auger activated: {s[1]}")
-    simulation_engine.user_hook_log.append(active_regions)
+    simulation_engine.user_hook_log["active_regions"] = active_regions
 
 
 def user_hook_dna_regions(simulation_engine):
@@ -142,12 +148,10 @@ def user_hook_dna_regions(simulation_engine):
     for region_name, dna_type in dna_regions.items():
         print(f"Region {region_name}: {dna_type}")
 
-    simulation_engine.user_hook_log.append(
-        {
-            "dna_regions": dna_regions,
-            "volume_regions": volume_regions,
-        }
-    )
+    simulation_engine.user_hook_log["dna_regions"] = {
+        "dna_regions": dna_regions,
+        "volume_regions": volume_regions,
+    }
 
 
 def user_hook_dna_region_models(simulation_engine):
@@ -168,7 +172,7 @@ def user_hook_dna_region_models(simulation_engine):
     for volume_name, model_name in model_checks.items():
         print(f"Volume {volume_name}: {model_name}")
 
-    simulation_engine.user_hook_log.append(model_checks)
+    simulation_engine.user_hook_log["dna_region_models"] = model_checks
 
 
 def progress_status(filename):
