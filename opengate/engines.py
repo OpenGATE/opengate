@@ -177,7 +177,10 @@ class SourceEngine(EngineBase):
         # Copy visualization parameters
         for k, v in self.simulation_engine.simulation.user_info.items():
             if "visu" in k:
-                self.source_manager_options[k] = v
+                # the visu filename may be a Path, the C++ side needs a str
+                self.source_manager_options[k] = (
+                    str(v) if isinstance(v, os.PathLike) else v
+                )
 
         # Copy verbosity parameters
         for k, v in self.simulation_engine.simulation.user_info.items():
@@ -1310,7 +1313,7 @@ class VisualisationEngine(EngineBase):
 
     def initialize_visualisation_vrml(self):
         if self.simulation.visu_filename is not None:
-            os.environ["G4VRMLFILE_FILE_NAME"] = self.simulation.visu_filename
+            os.environ["G4VRMLFILE_FILE_NAME"] = str(self.simulation.visu_filename)
         else:
             self.current_visu_filename = f"gate_visu_{os.getpid()}.wrl"
             os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
