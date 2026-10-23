@@ -94,6 +94,12 @@ if __name__ == "__main__":
     utility.print_test(b, f"VRML file written: {vrml}")
     is_ok = is_ok and b
 
+    # with VRML, the image volume is written as a single box, without voxels
+    content = vrml.read_text() if b else ""
+    b = "SOLID: patient:0" in content and "patient_Z" not in content
+    utility.print_test(b, "VRML: the image volume is a box, the voxels are not written")
+    is_ok = is_ok and b
+
     image = itk.GetArrayFromImage(itk.imread(str(paths.data / "patient-4mm.mhd")))
     expected = np.clip((image[image.shape[0] // 2] + 200) / 1000, 0, 1)
     s = np.array(patient.get_visu_slices(image)[0])
