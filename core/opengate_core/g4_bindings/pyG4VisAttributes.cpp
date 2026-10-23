@@ -19,5 +19,6 @@ void init_G4VisAttributes(py::module &m) {
               G4double alpha) { va.SetColor(red, green, blue, alpha); })
       .def("SetVisibility", &G4VisAttributes::SetVisibility)
       .def("SetForceWireframe", &G4VisAttributes::SetForceWireframe)
-      .def("SetForceSolid", &G4VisAttributes::SetForceSolid);
+      .def("SetForceSolid", &G4VisAttributes::SetForceSolid)
+      .def("SetDaughtersInvisible", &G4VisAttributes::SetDaughtersInvisible);
 }

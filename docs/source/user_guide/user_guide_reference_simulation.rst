@@ -63,7 +63,7 @@ If you set `visu_type='qt'`, you can customize the Geant4 visualization commands
 
 .. autoproperty:: opengate.Simulation.visu_commands
 
-.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume`, the visualization displays the middle slices of the image. See `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others).
+.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume`, the visualization displays the middle slices of the image. See `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others). The voxels themselves are not drawn (nor visited by Geant4 when drawing, which keeps the viewer fast with large images). The intensity window of the slices is set with ``visu_window = [min, max]``, in the units of the image (e.g. ``ct.visu_window = [-200, 800]`` for a CT in HU): values below ``min`` are black, above ``max`` are white. By default, it goes from the 0.5 to the 99.9 percentiles of the image, so that a few extreme voxels (e.g. metal) do not make the slices dark. The slices are only drawn with the Qt (OpenGL) viewer, and only when opengate_core is compiled against a Geant4 build tree; otherwise the image is displayed as a box.
 
 VRML
 ^^^^

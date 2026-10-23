@@ -60,9 +60,14 @@ private:
   GLubyte *convertToRGB(std::vector<PixelType> slice) const;
   GLuint genOpenGLTexture(const GLubyte *rgb, int width, int height) const;
 
+  bool TexturesAreValid() const;
+
   mutable GLuint texture_xy;
   mutable GLuint texture_xz;
   mutable GLuint texture_yz;
+  // the OpenGL context in which the textures have been created: a new viewer
+  // (e.g. at each run) has a new context, where they must be created again
+  mutable const void *texture_context;
 #endif
   size_t position_x;
   size_t position_y;

@@ -1,6 +1,6 @@
 import re
 import os
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import itk
@@ -906,6 +906,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     voxel_materials: List
     image: str
     dump_label_image: str
+    visu_window: Optional[List[float]]
 
     user_info_defaults = {
         "voxel_materials": (
@@ -928,6 +929,16 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             {
                 "doc": "Path at which the image containing material labels should be saved. "
                 "Set to None to dump no image."
+            },
+        ),
+        "visu_window": (
+            None,
+            {
+                "doc": "Intensity window [min, max] of the image slices shown in the "
+                "Qt visualisation, in the units of the image (e.g. HU for a CT): "
+                "values below min are black, above max are white. "
+                "If None, the window goes from the 0.5 to the 99.9 percentiles of "
+                "the image intensities.",
             },
         ),
     }
@@ -1080,27 +1091,49 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.half_spacing = 0.5 * self.spacing
         self.construct_material()
         self.construct_solid()
-        self.construct_slices()
+        # the slices are only displayed by the visualisation
+        if self.simulation is not None and self.simulation.visu:
+            self.construct_slices()
         self.construct_logical_volume()
         self.g4_voxel_param = self.create_image_parametrisation()
         self.construct_physical_volume()
 
+    def get_visu_window(self, image_array):
+        if self.visu_window is not None:
+            if len(self.visu_window) != 2 or self.visu_window[0] >= self.visu_window[1]:
+                fatal(
+                    f"The visu_window of the image volume '{self.name}' must be "
+                    f"[min, max] with min < max, while it is {self.visu_window}"
+                )
+            return float(self.visu_window[0]), float(self.visu_window[1])
+        # robust default: a few extreme voxels (e.g. metal in a CT) must not
+        # squeeze all the other intensities into a few grey levels
+        low, high = np.percentile(image_array, [0.5, 99.9])
+        if high <= low:
+            low, high = np.min(image_array), np.max(image_array)
+        if high <= low:
+            high = low + 1
+        return float(low), float(high)
+
+    def get_visu_slices(self, image_array):
+        """The three middle slices (xy, xz, yz) of the image (numpy array, in
+        z, y, x order), windowed in [0, 1] with visu_window."""
+        low, high = self.get_visu_window(image_array)
+
+        def window(s):
+            s = np.clip((s.astype(np.float64) - low) / (high - low), 0, 1)
+            return list(s.reshape(-1))
+
+        nz, ny, nx = image_array.shape
+        return (
+            window(image_array[nz // 2, :, :]),
+            window(image_array[:, ny // 2, :]),
+            window(image_array[:, :, nx // 2]),
+        )
+
     def construct_slices(self):
         image_array = itk.GetArrayFromImage(self.itk_image)
-        min_pixel = np.min(image_array)
-        interval_pixel = np.max(image_array) - min_pixel
-        self.slice_xy = (
-            image_array[int(self.size_pix[2] / 2), :, :] - min_pixel
-        ) / interval_pixel
-        self.slice_xy = list(self.slice_xy.reshape(1, -1)[0])
-        self.slice_xz = (
-            image_array[:, int(self.size_pix[1] / 2), :] - min_pixel
-        ) / interval_pixel
-        self.slice_xz = list(self.slice_xz.reshape(1, -1)[0])
-        self.slice_yz = (
-            image_array[:, :, int(self.size_pix[0] / 2)] - min_pixel
-        ) / interval_pixel
-        self.slice_yz = list(self.slice_yz.reshape(1, -1)[0])
+        self.slice_xy, self.slice_xz, self.slice_yz = self.get_visu_slices(image_array)
         image_dict = {
             "slice_xy": self.slice_xy,
             "slice_xz": self.slice_xz,
@@ -1159,6 +1192,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
         self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
         self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        # the visualisation draws the image box and its slices (GateImageBox),
+        # never the voxels: do not let Geant4 visit the (millions of) voxels
+        # each time the scene is drawn, it makes the Qt viewer very slow
+        self.g4_vis_attributes.SetDaughtersInvisible(True)
+        self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
     def create_material_to_label_lut(self, material=None, voxel_materials=None):
         if voxel_materials is None:
