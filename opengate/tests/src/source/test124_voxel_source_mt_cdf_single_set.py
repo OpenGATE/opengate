@@ -17,6 +17,10 @@ thread-local source. A regression that re-introduces the per-worker call makes
 this count larger and fails the test.
 
 Statistics: 200 histories, seed 123456 (the assertion does not depend on them).
+
+Also checks the CDFs given to the C++ side (flat arrays, see #1155): the values
+of compute_image_3D_CDF are the same as with the former (loop) version, and
+the C++ setter refuses arrays with inconsistent shapes.
 """
 
 import numpy as np
@@ -27,8 +31,73 @@ from opengate.tests import utility
 import opengate_core as g4
 
 
+def reference_3D_CDF(array):
+    """The former (loop) version of compute_image_3D_CDF, as reference."""
+    array = array / np.sum(array)
+    sumx = np.sum(array, axis=2)
+    sumxy = np.sum(sumx, axis=1)
+    cdf_x = []
+    for i in range(array.shape[0]):
+        cdf_x.append([])
+        for j in range(array.shape[1]):
+            t = np.cumsum(array[i][j])
+            if t[-1] != 0:
+                t = t / t[-1]
+            cdf_x[i].append(t)
+    cdf_y = []
+    for i in range(len(sumx)):
+        t = np.cumsum(sumx[i])
+        if t[-1] != 0:
+            t = t / t[-1]
+        cdf_y.append(t)
+    cdf_z = np.cumsum(sumxy) / np.sum(sumxy)
+    return np.array(cdf_x), np.array(cdf_y), cdf_z
+
+
+def check_cdf():
+    is_ok = True
+    # random activity, with empty rows and planes (zero CDFs)
+    rng = np.random.default_rng(42)
+    arr = rng.random((7, 5, 6))
+    arr[2] = 0
+    arr[4, 1] = 0
+    img = itk.image_from_array(arr.astype(np.float32))
+    cdf_x, cdf_y, cdf_z = gate.image.compute_image_3D_CDF(img)
+    ref_x, ref_y, ref_z = reference_3D_CDF(arr.astype(np.float32).astype(np.float64))
+    b = (
+        cdf_x.shape == (7, 5, 6)
+        and cdf_y.shape == (7, 5)
+        and cdf_z.shape == (7,)
+        and cdf_x.dtype == np.float64
+        and np.allclose(cdf_x, ref_x, rtol=0, atol=1e-12)
+        and np.allclose(cdf_y, ref_y, rtol=0, atol=1e-12)
+        and np.allclose(cdf_z, ref_z, rtol=0, atol=1e-12)
+    )
+    utility.print_test(b, "CDFs: same values as the former loop version")
+    is_ok = is_ok and b
+
+    # inconsistent shapes are refused by the C++ setter
+    pg = g4.GateSPSVoxelsPosDistribution()
+    for name, args in [
+        ("cdf_y with a wrong nz", (cdf_z, cdf_y[:-1], cdf_x)),
+        ("cdf_x with a wrong ny", (cdf_z, cdf_y, cdf_x[:, :-1])),
+        ("cdf_x as 2D", (cdf_z, cdf_y, cdf_y)),
+        ("empty", (cdf_z[:0], cdf_y[:0], cdf_x[:0])),
+    ]:
+        try:
+            pg.SetCumulativeDistributionFunction(*args)
+            b = False
+        except ValueError:
+            b = True
+        utility.print_test(b, f"CDFs refused: {name}")
+        is_ok = is_ok and b
+    pg.SetCumulativeDistributionFunction(cdf_z, cdf_y, cdf_x)
+    return is_ok
+
+
 def main():
-    paths = utility.get_default_test_paths(__file__, output_folder="test115_mt")
+    cdf_ok = check_cdf()
+    paths = utility.get_default_test_paths(__file__, output_folder="test124_mt")
 
     number_of_threads = 4
 
@@ -108,7 +177,7 @@ def main():
             f"A larger count means worker threads re-apply the CDF.",
         )
 
-        utility.test_ok(is_ok)
+        utility.test_ok(is_ok and cdf_ok)
     finally:
         g4.GateSPSVoxelsPosDistribution.SetCumulativeDistributionFunction = real_setter
 

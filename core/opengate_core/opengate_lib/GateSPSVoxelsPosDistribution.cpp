@@ -21,6 +21,9 @@ GateSPSVoxelsPosDistribution::GateSPSVoxelsPosDistribution() {
 void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(
     const double *cdfZ, const double *cdfY, const double *cdfX, std::size_t nx,
     std::size_t ny, std::size_t nz) {
+  fNx = nx;
+  fNy = ny;
+  fNz = nz;
   fCDFZ.assign(cdfZ, cdfZ + nz);
   fCDFY.assign(cdfY, cdfY + nz * ny);
   fCDFX.assign(cdfX, cdfX + nz * ny * nx);
@@ -28,10 +31,10 @@ void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(
 
 G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
   // G4UniformRand: default boundaries ]0.1[ for operator()().
-  const auto imageSize = cpp_image->GetLargestPossibleRegion().GetSize();
-  const auto nx = static_cast<int>(imageSize[0]);
-  const auto ny = static_cast<int>(imageSize[1]);
-  const auto nz = static_cast<int>(imageSize[2]);
+  // (the sizes of the CDFs, i.e. of the activity image)
+  const auto nx = static_cast<int>(fNx);
+  const auto ny = static_cast<int>(fNy);
+  const auto nz = static_cast<int>(fNz);
 
   // Get Cumulative Distribution Function for Z
   auto i = 0;

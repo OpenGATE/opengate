@@ -45,11 +45,8 @@ class VoxelSource(GenericSource):
         self._cdf_x = None
         self._cdf_y = None
         self._cdf_z = None
-        # ids() of the thread-local g4 sources which already received the CDF.
-        # The CDF is set on every thread-local source once, on the main thread
-        # (see SourceEngine.create_master_source_manager); re-applying it from
-        # the Geant4 worker threads is a pure waste of GIL time and stalls MT
-        # initialization for large images (see #1163).
+        # indices (in g4_thread_sources) of the thread-local g4 sources which
+        # already received the CDFs (see cumulative_distribution_functions)
         self._cdf_applied_g4_sources = set()
 
     def create_changers(self):
@@ -92,32 +89,34 @@ class VoxelSource(GenericSource):
         Compute the Cumulative Distribution Function of the image
         Composed of: CDF_Z = 1D, CDF_Y = 2D, CDF_X = 3D
         """
-        import numpy as np
-
         if self._cdf_x is None or self._cdf_y is None or self._cdf_z is None:
             self._cdf_x, self._cdf_y, self._cdf_z = compute_image_3D_CDF(
                 self._current_itk_image
             )
-            self._cdf_x = np.array(self._cdf_x)
-            self._cdf_y = np.array(self._cdf_y)
-            self._cdf_z = np.array(self._cdf_z)
 
-        # The C++ setter copies all three CDFs and holds the GIL for the whole
-        # copy. On a multi-million-voxel image this takes seconds per source, so
-        # it must not be repeated on every Geant4 worker thread: the sources are
-        # already initialised on the main thread in
-        # SourceEngine.create_master_source_manager(). Re-applying here would
-        # serialise the workers on the GIL and starve the Python physics
-        # constructor (UserLimitsPhysics) running on the same threads, which
-        # makes G4MTRunManager::Initialize() appear to hang. See #1163.
-        g4_source_id = id(g4_source)
-        if g4_source_id in self._cdf_applied_g4_sources:
+        # Each thread-local source is initialised twice in MT: on the main thread
+        # (SourceEngine.create_master_source_manager) and again by its Geant4
+        # worker thread. The CDFs are only copied the first time: for large
+        # images, the copies on all the workers at the same time stalled the MT
+        # initialisation (see #1163).
+        # (no reference to the g4 sources is kept here: they must be deleted
+        # with g4_thread_sources, on the main thread, at the end)
+        index = next(
+            (i for i, s in enumerate(self.g4_thread_sources) if s is g4_source), None
+        )
+        if index is not None and index in self._cdf_applied_g4_sources:
             return
 
         # set CDF to the position generator
         pg = g4_source.GetSPSVoxelPosDistribution()
         pg.SetCumulativeDistributionFunction(self._cdf_z, self._cdf_y, self._cdf_x)
-        self._cdf_applied_g4_sources.add(g4_source_id)
+        if index is not None:
+            self._cdf_applied_g4_sources.add(index)
+
+    def pre_create_g4_sources(self, num_instances):
+        # new thread-local sources: none of them has the CDFs yet
+        self._cdf_applied_g4_sources = set()
+        super().pre_create_g4_sources(num_instances)
 
     def update_activity_image(self, filename):
         # read source image
@@ -130,7 +129,7 @@ class VoxelSource(GenericSource):
         self._cdf_x = None
         self._cdf_y = None
         self._cdf_z = None
-        # The cached CDFs changed, so every thread-local source needs the new CDF
+        # the CDFs changed: every thread-local source needs the new ones
         self._cdf_applied_g4_sources = set()
 
         # update all thread-local sources

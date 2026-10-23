@@ -47,6 +47,9 @@ protected:
   std::vector<double> fCDFX;
   std::vector<double> fCDFY;
   std::vector<double> fCDFZ;
+  std::size_t fNx = 0;
+  std::size_t fNy = 0;
+  std::size_t fNz = 0;
 };
 
 #endif // GateSPSVoxelsPosDistribution_h

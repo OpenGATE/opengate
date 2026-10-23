@@ -21,6 +21,14 @@ void SetCumulativeDistributionFunction(GateSPSVoxelsPosDistribution &source,
                                        const CDFArray &cdfZ,
                                        const CDFArray &cdfY,
                                        const CDFArray &cdfX) {
+  // the CDFs are cdfZ[z], cdfY[z, y] and cdfX[z, y, x] (numpy order)
+  if (cdfZ.ndim() != 1 || cdfY.ndim() != 2 || cdfX.ndim() != 3 ||
+      cdfY.shape(0) != cdfZ.shape(0) || cdfX.shape(0) != cdfZ.shape(0) ||
+      cdfX.shape(1) != cdfY.shape(1) || cdfX.size() == 0) {
+    throw py::value_error(
+        "SetCumulativeDistributionFunction: the CDFs must be non-empty arrays "
+        "of shape (nz), (nz, ny) and (nz, ny, nx)");
+  }
   // The copy of the CDFs takes time for large images, and the Geant4 worker
   // threads may call this during their initialisation: the GIL is released
   // for the copy, so that it does not block the Python code running on the
@@ -29,7 +37,7 @@ void SetCumulativeDistributionFunction(GateSPSVoxelsPosDistribution &source,
   py::gil_scoped_release release;
   source.SetCumulativeDistributionFunction(cdfZ.data(), cdfY.data(),
                                            cdfX.data(), cdfX.shape(2),
-                                           cdfX.shape(1), cdfY.shape(0));
+                                           cdfX.shape(1), cdfZ.shape(0));
 }
 
 } // namespace
