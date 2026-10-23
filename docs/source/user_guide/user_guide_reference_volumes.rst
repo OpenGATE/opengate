@@ -96,6 +96,27 @@ above, voxels with label 3 correspond to “G4_ADIPOSE_TISSUE_ICRP”,
 voxels with label 4 correspond to “G4_TISSUE_SOFT_ICRP”, and so forth.
 See test `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry>`_ as an example simulation using an Image volume.
 
+.. _image-volume-visualisation:
+
+Visualisation
+~~~~~~~~~~~~~
+
+With the Qt visualisation (``sim.visu_type = "qt"``), an image volume is
+displayed as its box and its three middle slices; the voxels are not drawn.
+The intensity window of the slices is set with ``visu_window = [min, max]``,
+in the units of the image: values below ``min`` are black, values above
+``max`` are white. For example, for a CT in HU:
+
+.. code:: python
+
+   patient.visu_window = [-200, 800]
+
+By default (``None``), the window goes from the 0.5 to the 99.9 percentiles of
+the image values, so that a few extreme voxels (e.g. metal implants) do not
+make the whole slice dark. With the VRML and GDML visualisations, the image
+volume is displayed as a plain box. See the visualisation section of
+:doc:`user_guide_reference_simulation` for the requirements.
+
 The frame of reference of an Image is linked to the bounding box and
 treated like other Geant4 volumes, i.e. by default, the center of the
 image box is positioned at the origin of the mother volume’s frame of
