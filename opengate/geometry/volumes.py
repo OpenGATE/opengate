@@ -912,7 +912,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         "voxel_materials": (
             [[-np.inf, np.inf, "G4_AIR"]],
             {
-                "doc": "FIXME",
+                "doc": "Lookup table from the image values to the materials: a list of "
+                "[min, max, material_name], each one for the voxels with a value in "
+                "the half-closed interval [min, max). The voxels outside all the "
+                "intervals get the default material of the volume (``material``). "
+                "The intervals must not overlap.",
             },
         ),
         "image": (
