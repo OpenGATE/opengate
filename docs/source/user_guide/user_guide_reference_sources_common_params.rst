@@ -76,6 +76,11 @@ will follow the given volume.
 Using ``source.direction_relative_to_attached_volume = True`` will make
 your source direction change following the rotation of that volume.
 
+All primary particles must start inside the world volume (or on its surface).
+If a source generates a particle outside the world, the simulation stops with
+an error that gives the name of the source and the position: move the source
+inside the world, or enlarge the world (``sim.world.size``).
+
 
 Reference
 ---------

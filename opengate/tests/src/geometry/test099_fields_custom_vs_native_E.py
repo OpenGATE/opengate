@@ -46,7 +46,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output
 
     world = sim.world
-    world.size = [3 * g4_m, 1 * g4_m, 1 * g4_m]
+    world.size = [3 * g4_m, 1 * g4_m, 2.5 * g4_m]
     world.material = "G4_Galactic"
 
     # Box with native field

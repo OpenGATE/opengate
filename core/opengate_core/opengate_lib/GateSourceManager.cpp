@@ -18,6 +18,7 @@
 #pragma warning(pop)
 #endif
 #include <CLHEP/Units/SystemOfUnits.h>
+#include <G4Box.hh>
 #include <G4Exception.hh>
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
@@ -115,6 +116,46 @@ void GateSourceManager::WarnPrimaryLimitReached() {
      << "The run is being stopped before generating additional primaries.";
   G4Exception("GateSourceManager::GeneratePrimaries", "GateSourceManager0001",
               JustWarning, ed);
+}
+
+void GateSourceManager::CheckPrimaryVerticesInsideWorld(
+    const G4Event *event, const int first_vertex,
+    const GateVSource *source) const {
+  // A primary vertex outside the world is a user error (Geant4 would stop
+  // with "Primary vertex outside of the world!", and since Geant4 11.4.3 it
+  // even crashes in G4SteppingManager::SetInitialStep). The check is one
+  // Inside() of the world solid (no transformation) per primary vertex.
+  auto &l = fThreadLocalData.Get();
+  if (l.fWorldSolid == nullptr) {
+    const auto *world = G4TransportationManager::GetTransportationManager()
+                            ->GetNavigatorForTracking()
+                            ->GetWorldVolume();
+    if (world == nullptr)
+      return;
+    l.fWorldSolid = world->GetLogicalVolume()->GetSolid();
+  }
+  for (int i = first_vertex; i < event->GetNumberOfPrimaryVertex(); i++) {
+    const auto position = event->GetPrimaryVertex(i)->GetPosition();
+    if (l.fWorldSolid->Inside(position) != kOutside)
+      continue;
+    G4ExceptionDescription ed;
+    ed << "The source '" << source->fName
+       << "' generated a primary particle at " << G4BestUnit(position, "Length")
+       << ", which is outside the world volume";
+    if (const auto *box = dynamic_cast<const G4Box *>(l.fWorldSolid)) {
+      ed << " (world size: " << G4BestUnit(2 * box->GetXHalfLength(), "Length")
+         << " x " << G4BestUnit(2 * box->GetYHalfLength(), "Length") << " x "
+         << G4BestUnit(2 * box->GetZHalfLength(), "Length") << ")";
+    }
+    ed << ". Move the source inside the world, or enlarge the world "
+          "(sim.world.size).";
+    // in the worker threads, the Geant4 output may be redirected and the
+    // exception aborts: the message is also printed here
+    if (G4Threading::IsWorkerThread())
+      std::cerr << "OPENGATE ERROR: " << ed.str() << std::endl;
+    G4Exception("GateSourceManager::GeneratePrimaries", "GateSourceManager0002",
+                FatalException, ed);
+  }
 }
 
 void GateSourceManager::Initialize(const TimeIntervals &simulation_times,
@@ -443,7 +484,9 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
   } else {
     if (TryReservePrimarySlot()) {
       // shoot particle
+      const int first_vertex = event->GetNumberOfPrimaryVertex();
       l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
+      CheckPrimaryVerticesInsideWorld(event, first_vertex, l.fNextActiveSource);
       // log (after particle creation)
       if (LogLevel_EVENT <= GateSourceManager::fVerboseLevel) {
         const auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
