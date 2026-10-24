@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     #  change world size
     world = sim.world
-    world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+    world.size = [2 * m, 2 * m, 2 * m]
 
     # create a waterbox, but do not add it to the simulation
     waterbox = sim.volume_manager.create_volume("Box", "Waterbox")

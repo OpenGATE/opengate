@@ -44,7 +44,7 @@ def create_test_phsp(
     ##########################################################################################
     #  adapt world size
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_Galactic"
 
     # virtual plane for phase space
@@ -132,7 +132,7 @@ def create_phsp_without_source(
     ##########################################################################################
     #  adapt world size
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_Galactic"
     print(world.name)
 

@@ -70,7 +70,7 @@ def build_field_simulation(
     sim.output_dir = output_dir
 
     world = sim.world
-    world.size = [1 * g4_m, 1 * g4_m, 1 * g4_m]
+    world.size = [1 * g4_m, 1 * g4_m, 2.5 * g4_m]
     world.material = "G4_Galactic"
 
     box = sim.add_volume("BoxVolume", "field_box")
