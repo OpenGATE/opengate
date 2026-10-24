@@ -143,6 +143,7 @@ from .geometry.volumes import (
     BoxVolume,
     ConsVolume,
     EllipsoidVolume,
+    GDMLVolume,
     HexagonVolume,
     ImageVolume,
     ParallelWorldVolume,
@@ -1482,6 +1483,7 @@ class VolumeManager(GateObject):
         "TrdVolume": TrdVolume,
         "BooleanVolume": BooleanVolume,
         "RepeatParametrisedVolume": RepeatParametrisedVolume,
+        "GDMLVolume": GDMLVolume,
         "TesselatedVolume": TesselatedVolume,
         "TetrahedralMeshVolume": TetrahedralMeshVolume,
     }
