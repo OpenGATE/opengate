@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import os
+from math import prod
+from numbers import Real
 from scipy.spatial.transform import Rotation
 from pathlib import Path
 
@@ -28,7 +30,68 @@ from .actoroutput import (
 )
 from .dataitems import (
     ItkImageDataItem,
+    SingleItkImage,
 )
+
+
+class AMFImageDataItem(ItkImageDataItem):
+    """Preserve VectorImage components across simulation subprocesses."""
+
+    def __getstate__(self):
+        """Serialize vector pixels and spatial metadata for subprocess transfer."""
+        import itk
+
+        state = self.__dict__.copy()
+        if self.data is not None and self.data.GetNumberOfComponentsPerPixel() > 1:
+            state["data"] = {
+                "amf_vector": itk.array_from_image(self.data),
+                "spacing": tuple(self.data.GetSpacing()),
+                "origin": tuple(self.data.GetOrigin()),
+                "direction": itk.array_from_matrix(self.data.GetDirection()),
+            }
+        return state
+
+    def __setstate__(self, state):
+        """Restore an ITK vector image without losing its component count."""
+        import itk
+
+        data = state.get("data")
+        if isinstance(data, dict) and "amf_vector" in data:
+            image = itk.image_from_array(data["amf_vector"], is_vector=True)
+            image.SetSpacing(data["spacing"])
+            image.SetOrigin(data["origin"])
+            image.SetDirection(itk.matrix_from_array(data["direction"]))
+            state["data"] = image
+        self.__dict__.update(state)
+
+
+class SingleAMFImage(SingleItkImage):
+    _data_item_classes = (AMFImageDataItem,)
+
+
+class ActorOutputAMFImage(ActorOutputSingleImage):
+    """AMF values are finalized dose means, so generic job addition is invalid."""
+
+    data_container_class = SingleAMFImage
+
+    def plan_merge(self, mode="as_configured"):
+        """Reject job merging because AMF outputs contain finalized dose means."""
+        fatal("AMFActor does not support merging finalized outputs from jobs")
+
+    def end_of_run(self, run_index):
+        # AMF supports a single finalized run. Keep its container directly;
+        # the generic summation/ITK duplicator is unnecessary (and the Python
+        # ITK duplicator convenience function does not handle double vectors).
+        """Retain the single finalized run without generic image addition."""
+        if run_index != 0:
+            fatal("AMFActor supports one run interval only")
+        if self.merge_data_after_simulation:
+            self.merged_data = self.data_per_run[run_index]
+        if not self.keep_data_per_run:
+            self.data_per_run.pop(run_index)
+
+
+process_cls(ActorOutputAMFImage)
 
 
 class VoxelDepositActor(ActorBase):
@@ -2210,6 +2273,287 @@ class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
         self.InitializeCpp()
 
 
+class AMFActor(VoxelDepositActor, g4.GateAMFActor):
+    """Analytical microdosimetric function for ion steps.
+
+    Supply a validated 576 by 9 tsed coefficient file. The implementation retains
+    the source branch's numerical model and supports one run with worker-local scoring.
+    See AMF_PORTING_REPORT.md for physical assumptions and publication differences.
+    """
+
+    user_info_defaults = {
+        "tsed_file_name": (
+            "tsed.dat",
+            {"doc": "576 rows of nine AMF coefficients.", "is_input_file": True},
+        ),
+        "microdosimetric_spectra_file_name": (
+            "microdosimetric_spectra.dat",
+            {
+                "doc": "Legacy spectrum filename. The legacy .dat default maps to .mhd; explicit paths are retained."
+            },
+        ),
+        "MicrodosimetricSpectra": (
+            True,
+            {"doc": "Enable the 400-component lineal-energy spectrum."},
+        ),
+        "DomainRadius": (
+            0.3 * g4_units.um,
+            {"doc": "Spherical domain radius, 0.0015 to 0.5 um."},
+        ),
+        "NucleusRadius": (
+            4.5 * g4_units.um,
+            {"doc": "Positive nucleus radius, with units."},
+        ),
+        "AlphaRef": (
+            0.217 / g4_units.Gy,
+            {
+                "doc": "Reference alpha; preserved legacy parameter, unused by this actor."
+            },
+        ),
+        "AlphaNot": (
+            0.117 / g4_units.Gy,
+            {"doc": "Nonnegative alpha_0, with inverse-dose units."},
+        ),
+        "BetaRef": (
+            0.0615 / g4_units.Gy**2,
+            {"doc": "Positive reference beta, with inverse-dose-squared units."},
+        ),
+    }
+
+    user_output_config = {
+        "dose": {
+            "actor_output_class": ActorOutputAMFImage,
+            "active": True,
+            "write_to_disk": False,
+        },
+        "DoseAveragedLinealEnergy": {
+            "actor_output_class": ActorOutputAMFImage,
+            "active": False,
+        },
+        "DoseAveragedLinealEnergySaturationCorrected": {
+            "actor_output_class": ActorOutputAMFImage,
+            "active": False,
+        },
+        "Alpha_MCFMKM": {"actor_output_class": ActorOutputAMFImage, "active": True},
+        "Beta_MCFMKM": {"actor_output_class": ActorOutputAMFImage, "active": True},
+        "microdosimetric_spectra": {
+            "actor_output_class": ActorOutputAMFImage,
+            "active": True,
+        },
+    }
+
+    _scalar_outputs = {
+        "dose": "cpp_amf_dose_image",
+        "DoseAveragedLinealEnergy": "cpp_amf_dose_averaged_lineal_energy",
+        "DoseAveragedLinealEnergySaturationCorrected": "cpp_amf_dose_averaged_lineal_energy_saturation_corrected",
+        "Alpha_MCFMKM": "cpp_amf_alpha_mcfmkm_image",
+        "Beta_MCFMKM": "cpp_amf_beta_mcfmkm_image",
+    }
+
+    def __init__(self, *args, **kwargs):
+        """Construct the voxel actor and its C++ AMF scoring instance."""
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        """Create or restore the C++ actor and register master lifecycle callbacks."""
+        g4.GateAMFActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "StartSimulationAction",
+                "EndSimulationAction",
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+            }
+        )
+
+    def check_user_input(self):
+        """Validate one-run attachment, coefficient input, geometry and biology.
+
+        Radii and coefficients use OpenGATE units; invalid configurations
+        raise a framework error before C++ image allocation."""
+        VoxelDepositActor.check_user_input(self)
+        if len(self.simulation.run_timing_intervals) != 1:
+            fatal("AMFActor supports one run interval only")
+        if not isinstance(self.attached_to, str):
+            fatal("AMFActor requires attachment to one volume")
+        if not isinstance(self.MicrodosimetricSpectra, bool):
+            fatal("AMFActor MicrodosimetricSpectra must be a bool")
+        for name in (
+            "DomainRadius",
+            "NucleusRadius",
+            "AlphaRef",
+            "AlphaNot",
+            "BetaRef",
+        ):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Real)
+                or not np.isfinite(value)
+            ):
+                fatal(f"AMFActor {name} must be a finite number with units")
+        radius = self.DomainRadius / g4_units.um
+        if not 0.0015 <= radius <= 0.5:
+            fatal("AMFActor DomainRadius must be between 0.0015 and 0.5 um")
+        if (
+            self.NucleusRadius <= 0
+            or self.BetaRef <= 0
+            or self.AlphaRef < 0
+            or self.AlphaNot < 0
+        ):
+            fatal(
+                "AMFActor radii and BetaRef must be positive; alpha parameters must be nonnegative"
+            )
+        for name in ("size", "spacing", "translation"):
+            value = np.asarray(getattr(self, name))
+            if (
+                value.shape != (3,)
+                or value.dtype.kind not in "iuf"
+                or not np.all(np.isfinite(value))
+            ):
+                fatal(f"AMFActor {name} requires three finite numbers")
+            if name in ("size", "spacing") and np.any(value <= 0):
+                fatal(f"AMFActor {name} must be positive")
+            if name == "size" and np.any(value != np.floor(value)):
+                fatal("AMFActor size must contain integers")
+        # Bound ITK region products and vector allocations before conversion.
+        if prod(int(x) for x in self.size) > np.iinfo(np.intp).max // (400 * 8):
+            fatal("AMFActor size is too large for a 400-component double image")
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            voxel_volume = np.prod(np.asarray(self.spacing, dtype=float))
+        if not np.isfinite(voxel_volume) or voxel_volume <= 0:
+            fatal("AMFActor spacing must give a finite positive voxel volume")
+        rotation = np.asarray(self.rotation)
+        if (
+            rotation.shape != (3, 3)
+            or rotation.dtype.kind not in "iuf"
+            or not np.all(np.isfinite(rotation))
+            or not np.allclose(rotation.T @ rotation, np.eye(3))
+            or not np.isclose(np.linalg.det(rotation), 1)
+        ):
+            fatal("AMFActor rotation must be a proper orthogonal 3 by 3 matrix")
+        if (
+            not isinstance(self.tsed_file_name, (str, Path))
+            or not Path(self.tsed_file_name).is_file()
+        ):
+            fatal(f"AMFActor coefficient file does not exist: {self.tsed_file_name}")
+        self.tsed_file_name = str(Path(self.tsed_file_name).resolve())
+
+    def initialize(self):
+        """Resolve output paths and freeze AMF configuration before C++ allocation.
+
+        An explicit legacy spectrum filename overrides the output interface.
+        Scalars remain computable when spectrum storage is disabled."""
+        VoxelDepositActor.initialize(self)
+        self.check_user_input()
+        self.microdosimetric_spectra.active = bool(
+            self.MicrodosimetricSpectra and self.microdosimetric_spectra.active
+        )
+        legacy_filename = self.microdosimetric_spectra_file_name
+        if legacy_filename != "microdosimetric_spectra.dat":
+            if not isinstance(legacy_filename, (str, Path)):
+                fatal("AMFActor microdosimetric_spectra_file_name must be a path")
+            self.microdosimetric_spectra.output_filename = str(legacy_filename)
+        elif self.microdosimetric_spectra.output_filename == "auto":
+            self.microdosimetric_spectra.output_filename = "microdosimetric_spectra.mhd"
+        if (
+            self.microdosimetric_spectra.active
+            and self.microdosimetric_spectra.write_to_disk
+        ):
+            filename = self.microdosimetric_spectra.output_filename
+            if filename and Path(filename).suffix.lower() not in (
+                ".mhd",
+                ".mha",
+                ".nrrd",
+            ):
+                fatal(
+                    "AMFActor spectra require a vector image filename (.mhd, .mha or .nrrd)"
+                )
+        self.SetMicrodosimetricSpectraFlag(self.microdosimetric_spectra.active)
+        self.SetDoseAveragedLinealEnergyFlag(self.DoseAveragedLinealEnergy.active)
+        self.SetDoseAveragedLinealEnergySaturationCorrectedFlag(
+            self.DoseAveragedLinealEnergySaturationCorrected.active
+        )
+        self.SetAlphaMCFMKMFlag(self.Alpha_MCFMKM.active)
+        self.SetBetaMCFMKMFlag(self.Beta_MCFMKM.active)
+        self.SetDomainRadius(self.DomainRadius)
+        self.SetNucleusRadius(self.NucleusRadius)
+        self.SetBetaRef(self.BetaRef)
+        self.SetAlphaRef(self.AlphaRef)
+        self.SetAlphaNot(self.AlphaNot)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def BeginOfRunActionMasterThread(self, run_index):
+        """Attach scoring images and start the sole supported run on the master."""
+        g4.GateAMFActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        """Merge workers, fetch finalized images and retain run sample counts.
+
+        The spectrum is a double 3D vector image with 400 components,
+        sharing the scalar outputs' spatial coordinate system."""
+        import itk
+
+        g4.GateAMFActor.EndOfRunActionMasterThread(self, run_index)
+        for name, member in self._scalar_outputs.items():
+            if self.user_output[name].get_active():
+                self.fetch_from_cpp_image(name, run_index, getattr(self, member))
+                self._update_output_coordinate_system(name, run_index)
+                self.user_output[name].set_number_of_samples(run_index, self.NbOfEvent)
+        if self.microdosimetric_spectra.active:
+            # No generic binding exists for itk::VectorImage<double,3>.
+            # Copy only after scoring ends, retaining a 3D vector representation.
+            image = itk.image_from_array(self.GetSpectraArray(), is_vector=True)
+            geometry = get_py_image_from_cpp_image(self.cpp_amf_dose_image)
+            # VectorImage.CopyInformation(scalar) also resets its component
+            # count. Transfer only spatial properties, retaining 400 channels.
+            image.SetSpacing(geometry.GetSpacing())
+            image.SetOrigin(geometry.GetOrigin())
+            image.SetDirection(geometry.GetDirection())
+            self.user_output.microdosimetric_spectra.store_data(run_index, image)
+            self._update_output_coordinate_system("microdosimetric_spectra", run_index)
+            self.user_output.microdosimetric_spectra.set_number_of_samples(
+                run_index, self.NbOfEvent
+            )
+        for output in self.user_output.values():
+            if output.get_active():
+                if not np.all(
+                    np.isfinite(itk.array_view_from_image(output.get_data(run_index)))
+                ):
+                    fatal("AMFActor produced nonfinite output")
+        return VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+
+    def EndSimulationAction(self):
+        """Complete image output and write lineal-energy labels in keV/um.
+
+        Labels are written only when the spectrum is active and written
+        to disk; the sidecar uses the resolved spectrum filename stem."""
+        VoxelDepositActor.EndSimulationAction(self)
+        if (
+            self.microdosimetric_spectra.active
+            and self.microdosimetric_spectra.write_to_disk
+        ):
+            path = self.microdosimetric_spectra.get_output_path()
+            np.savetxt(
+                path.with_name(path.stem + "_histo_x_labels.txt"),
+                self.GetHistogramLabels(),
+                fmt="%.6g",
+                header="Histogram x-axis labels (lineal energy in keV/um)",
+                comments="#",
+            )
+
+    def import_user_output_from_actor(self, *actor, **kwargs):
+        """Transfer one subprocess actor result; reject addition of job results.
+
+        Finalized dose means and square-root-mixed beta cannot be merged
+        through generic image summation."""
+        if len(actor) != 1:
+            fatal("AMFActor does not support merging finalized outputs from jobs")
+        return ActorBase.import_user_output_from_actor(self, *actor, **kwargs)
+
+
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
 process_cls(TLEDoseActor)
@@ -2220,3 +2564,5 @@ process_cls(BeamQualityActor)
 process_cls(FluenceActor)
 process_cls(ProductionAndStoppingActor)
 process_cls(EmCalculatorActor)
+
+process_cls(AMFActor)
