@@ -219,6 +219,13 @@ class TreatmentPlanPBSource(SourceBase):
                 "doc": "Probability distribution function. Calculated internally and used to sample the spots to irradiate."
             },
         ),
+        "generated_primaries": (
+            [],
+            {
+                "doc": "Number of primaries generated for each spot (all threads). "
+                "Output parameter, available at the end of the simulation."
+            },
+        ),
         "partPhSp_xV": (
             [],
             {
@@ -272,10 +279,26 @@ class TreatmentPlanPBSource(SourceBase):
         runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
         g4_source.InitializeUserInfo(runtime_user_info)
 
+    def gather_outputs(self, thread_sources):
+        self.generated_primaries = self._sum_generated_primaries(thread_sources)
+
+    @staticmethod
+    def _sum_generated_primaries(thread_sources):
+        counts = [
+            g4_src.GetGeneratedPrimaries()
+            for g4_src in thread_sources
+            if g4_src is not None
+        ]
+        if not counts:
+            return []
+        return np.sum(np.array(counts, dtype=int), axis=0).tolist()
+
     def get_generated_primaries(self):
+        # during the simulation: current counts of the G4 sources (all threads)
         if self.g4_thread_sources:
-            return self.g4_thread_sources[0].GetGeneratedPrimaries()
-        return []
+            return self._sum_generated_primaries(self.g4_thread_sources)
+        # after the simulation: counts gathered at the end of the run
+        return list(self.generated_primaries)
 
     def _set_pbs_param_all_spots(self):
         # initialize vectors every time, otherwise issues with MT
