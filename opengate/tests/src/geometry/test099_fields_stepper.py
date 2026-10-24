@@ -70,7 +70,7 @@ if __name__ == "__main__":
         sim.visu_commands.append("/vis/scene/add/magneticField 20 fullArrow")
 
     world = sim.world
-    world.size = [(n + 1) * spacing, 1 * g4_m, 1 * g4_m]
+    world.size = [(n + 1) * spacing, 1 * g4_m, 2.5 * g4_m]
     world.material = "G4_Galactic"
 
     for stepper_name, x in zip(ALL_STEPPERS, x_positions):

@@ -34,7 +34,7 @@ def main(argv):
 
     #  change world size
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [1 * m, 1 * m, 1.2 * m]
 
     # create voxelized waterbox
     waterbox = add_waterbox(sim)
