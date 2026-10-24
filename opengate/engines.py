@@ -12,7 +12,6 @@ from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
 from .physics import (
-    UserLimitsPhysics,
     translate_particle_name_gate_to_geant4,
     cut_particle_names,
     create_g4_optical_properties_table,
@@ -305,6 +304,9 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
+        # Translated names of the particles requested for the user limits;
+        # checked once Geant4 has created the particles (see #1163).
+        self.g4_user_limits_particles = []
 
         # We need to keep a reference to physics constructors
         # implemented on the python side
@@ -335,6 +337,7 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
+        self.g4_user_limits_particles = []
 
     def release_optical_surface_g4_references(self):
         for optical_surface in self.physics_manager.optical_surfaces.values():
@@ -390,6 +393,7 @@ class PhysicsEngine(EngineBase):
 
     def initialize_after_runmanager(self):
         """ """
+        self.check_user_limits_particles()
         # Cuts need to be set *after*
         # G4RunManager.Initialize() is called.
         # Reason: The Initialize() sequence would otherwise override
@@ -606,11 +610,64 @@ class PhysicsEngine(EngineBase):
             if r.need_user_special_cut() is True:
                 need_user_special_cut = True
 
-        if need_step_limiter or need_user_special_cut:
-            user_limits_physics = UserLimitsPhysics()
-            user_limits_physics.physics_engine = self
-            self.g4_augmented_physics_list.RegisterPhysics(user_limits_physics)
-            self.gate_physics_constructors.append(user_limits_physics)
+        if not (need_step_limiter or need_user_special_cut):
+            return
+
+        ui = self.user_info_physics_manager
+        if len(ui.user_limits_particles) == 0:
+            self.physics_manager.warn_user(
+                "No particles selected to which UserLimits (incl. step limiter) will be applied. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
+            )
+
+        # process user input parameters
+        flag_all = "all" in ui.user_limits_particles
+        flag_all_charged = "all_charged" in ui.user_limits_particles
+        particles_to_consider = [
+            translate_particle_name_gate_to_geant4(p)
+            for p in ui.user_limits_particles
+            if p not in ["all", "all_charged"]
+        ]
+
+        if not (flag_all or flag_all_charged or particles_to_consider):
+            return
+
+        # The particle names cannot be checked yet: Geant4 creates the
+        # particles in G4RunManager.Initialize(), i.e. after this method.
+        # They are checked on the main thread in check_user_limits_particles()
+        # once the particle table is complete, so that checking does not
+        # happen on the Geant4 worker threads (#1163).
+        self.g4_user_limits_particles = particles_to_consider
+
+        # The physics constructor is implemented in C++: Geant4 calls
+        # ConstructProcess on each worker thread, without the GIL, so the
+        # initialisation cannot block on the interpreter (#1163). The physics
+        # list owns the object and deletes it with itself.
+        user_limits_physics = g4.GateUserLimitsPhysics(
+            particles_to_consider, flag_all, flag_all_charged
+        )
+        self.g4_augmented_physics_list.RegisterPhysics(user_limits_physics)
+
+    def check_user_limits_particles(self):
+        """Check the requested user-limit particles once Geant4 has built them.
+
+        This must run after G4RunManager.Initialize(), which is when the
+        particle table is populated. Doing it here, on the main thread, keeps
+        the check out of the worker threads which construct the physics (#1163).
+        """
+        if len(self.g4_user_limits_particles) == 0:
+            return
+
+        known_g4_particle_names = {
+            p.GetParticleName()
+            for p in g4.G4ParticleTable.GetParticleTable().GetParticleList()
+        }
+        wrong_particle_names = [
+            p for p in self.g4_user_limits_particles if p not in known_g4_particle_names
+        ]
+        if len(wrong_particle_names) > 0:
+            fatal(
+                f"UserLimits were requested for the following unknown particles: {wrong_particle_names}"
+            )
 
     @requires_fatal("physics_manager")
     def initialize_ionisation_options(self):

@@ -32,8 +32,8 @@ void SetCumulativeDistributionFunction(GateSPSVoxelsPosDistribution &source,
   // The copy of the CDFs takes time for large images, and the Geant4 worker
   // threads may call this during their initialisation: the GIL is released
   // for the copy, so that it does not block the Python code running on the
-  // other threads (e.g. UserLimitsPhysics), see #1163. The numpy arrays are
-  // read before, and they stay alive (held by the caller) during the copy.
+  // other threads, see #1163. The numpy arrays are read before, and they stay
+  // alive (held by the caller) during the copy.
   py::gil_scoped_release release;
   source.SetCumulativeDistributionFunction(cdfZ.data(), cdfY.data(),
                                            cdfX.data(), cdfX.shape(2),
