@@ -15,8 +15,9 @@ the relevant code is split across three places:
 * ``opengate.managers.PhysicsManager`` exposes the user-facing API.
 * ``opengate.physics.Region`` stores per-region user limits and builds the
   corresponding Geant4 region objects.
-* ``opengate.physics.UserLimitsPhysics`` is a Geant4 physics constructor that
-  adds the required Geant4 processes to the selected particles.
+* ``opengate_core.GateUserLimitsPhysics`` is a Geant4 physics constructor,
+  implemented in C++, that adds the required Geant4 processes to the selected
+  particles.
 
 User-facing entry points
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,9 +99,11 @@ The physics engine checks all regions in
         need_user_special_cut = True
 
 If at least one region needs a maximum step size or another user special cut,
-GATE registers ``UserLimitsPhysics`` on the active Geant4 physics list.
+GATE creates a ``GateUserLimitsPhysics`` and registers it on the active Geant4
+physics list. Its arguments are flat values: the list of particle names, plus
+the ``"all"`` and ``"all_charged"`` flags.
 
-``UserLimitsPhysics.ConstructProcess()`` then iterates over the full Geant4
+``GateUserLimitsPhysics.ConstructProcess()`` then iterates over the full Geant4
 particle table and decides, particle by particle, whether to add:
 
 * ``G4StepLimiter("StepLimiter")`` for ``max_step_size``.
@@ -111,19 +114,28 @@ For explicit particle names and for ``"all"``, GATE adds both processes. For
 mirrors Geant4's default step-limiter constructor behaviour and avoids applying
 the other special cuts unless the user explicitly asked for the particle.
 
-The created Geant4 process objects are stored in
-``UserLimitsPhysics.g4_step_limiter_storage`` and
-``UserLimitsPhysics.g4_special_user_cuts_storage``. This storage is important:
-the objects are created from Python via pybind11, and keeping references avoids
-their garbage collection after ``ConstructProcess()`` returns.
+``ConstructProcess()`` is implemented entirely in C++ and does not call into
+Python. This matters in multi-threaded runs: Geant4 calls it on every worker
+thread from ``G4MTRunManager::Initialize()``, while the master thread may hold
+the MT barrier. A Python implementation had to re-enter the interpreter and
+acquire the GIL on each worker, which could deadlock the initialisation when
+the main thread held the GIL while waiting for the barrier (see #1163).
+
+The processes are created with ``new`` and registered in the calling thread's
+Geant4 process table, which deletes them. The physics list owns the physics
+constructor itself and deletes it with the list, hence its ``py::nodelete``
+binding. GATE keeps no Python reference to it.
 
 Validation and name translation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before processes are added, ``UserLimitsPhysics`` validates all explicitly named
-particles against ``G4ParticleTable``. Unknown particles are rejected with a
-fatal error. The special selectors ``"all"`` and ``"all_charged"`` are removed
-before validation.
+``PhysicsEngine.check_user_limits_particles()`` validates all explicitly named
+particles against ``G4ParticleTable``. Since Geant4 creates the particles in
+``G4RunManager.Initialize()``, the check runs afterwards, from
+``PhysicsEngine.initialize_after_runmanager()``, on the main thread. Unknown
+particles are rejected with a fatal error. The special selectors ``"all"`` and
+``"all_charged"`` are removed before validation and translated into the
+corresponding constructor flags.
 
 The translation helper ``translate_particle_name_gate_to_geant4()`` maps the
 historical GATE names used for production cuts to Geant4 names:
