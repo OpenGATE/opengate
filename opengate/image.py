@@ -336,6 +336,10 @@ def compute_image_3D_CDF(image):
     Compute the three CDF (Cumulative Density Function) for the given image
     Warning; numpy order is ZYX
 
+    Returns cdf_x[z, y, x], cdf_y[z, y] and cdf_z[z], as float64 numpy arrays:
+    cdf_x is the CDF along x of each row (z, y), cdf_y the CDF along y of each
+    plane z (summed along x), cdf_z the CDF along z (summed along x and y).
+
     :param image: itk image
     """
     # consider the image as a np array
@@ -343,39 +347,27 @@ def compute_image_3D_CDF(image):
     # a segfault in some cases (linux + multithread + multiple sources)
     # It is unclear why, but for now we use array_from_image that copy the data
     # array = itk.array_view_from_image(image)
-    array = itk.array_from_image(image)
+    array = itk.array_from_image(image).astype(np.float64)
 
     # normalize
     array = array / np.sum(array)
 
-    # Sum image on a single plane along X axis
+    def normalised_cumsum(a):
+        # cumulated sum along the last axis, normalised to 1 at the end, except
+        # where the sum is zero (kept as zeros)
+        t = np.cumsum(a, axis=-1)
+        last = t[..., -1:]
+        return np.divide(t, last, out=t, where=last != 0)
+
+    # X 3D CDF: along X, for each (z, y)
+    cdf_x = normalised_cumsum(array)
+    # Y 2D CDF: sum along X, then along Y, for each z
     sumx = np.sum(array, axis=2)
-    # Y axis, sum plane on a single axis along Y axis
+    cdf_y = normalised_cumsum(sumx)
+    # Z 1D CDF: sum along X and Y
     sumxy = np.sum(sumx, axis=1)
-    # X 3D CDF
-    cdf_x = []
-    for i in range(array.shape[0]):  # Z
-        cdf_x.append([])
-        for j in range(array.shape[1]):  # Y
-            # cumulated sum along X axis
-            t = np.cumsum(array[i][j])
-            # normalise if the last value (sum) is not zero
-            if t[-1] != 0:
-                t = t / t[-1]
-            cdf_x[i].append(t)
-
-    # Y 2D CDF
-    cdf_y = []
-    for i in range(len(sumx)):  # Z
-        t = np.cumsum(sumx[i])
-        if t[-1] != 0:
-            t = t / t[-1]
-        cdf_y.append(t)
-
-    # Z 1D CDF
     cdf_z = np.cumsum(sumxy) / np.sum(sumxy)
 
-    # return
     return cdf_x, cdf_y, cdf_z
 
 
