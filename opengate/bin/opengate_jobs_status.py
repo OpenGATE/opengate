@@ -14,6 +14,10 @@ def seconds(t):
     return f"{t / g4.G4UnitDefinition.GetValueOf('s'):.4g}"
 
 
+def runs_str(intervals):
+    return f"{len(intervals)} run" + ("s" if len(intervals) > 1 else "")
+
+
 def best_unit_time(t):
     return str(g4.G4BestUnit(t, "Time")).strip()
 
@@ -31,11 +35,14 @@ def format_campaign_timing(intervals, verbose=False):
         return format_all_intervals(intervals)
     start, end = intervals[0][0], intervals[-1][1]
     acquisition = sum(i[1] - i[0] for i in intervals)
-    return (
-        f"{len(intervals)} runs, timeline {seconds(start)} to {seconds(end)} s, "
-        f"total acquisition time {seconds(acquisition)} s "
-        f"(+ {seconds(end - start - acquisition)} s of gaps between runs)"
+    s = (
+        f"{runs_str(intervals)}, timeline {seconds(start)} to {seconds(end)} s, "
+        f"total acquisition time {seconds(acquisition)} s"
     )
+    gaps = end - start - acquisition
+    if gaps > 1e-9 * (end - start):
+        s += f" (+ {seconds(gaps)} s of gaps between runs)"
+    return s
 
 
 def format_job_timing(intervals, verbose=False):
@@ -46,7 +53,7 @@ def format_job_timing(intervals, verbose=False):
         return format_all_intervals(intervals)
     acquisition = sum(i[1] - i[0] for i in intervals)
     return (
-        f"{len(intervals)} runs, timeline {seconds(intervals[0][0])} to "
+        f"{runs_str(intervals)}, timeline {seconds(intervals[0][0])} to "
         f"{seconds(intervals[-1][1])} s, acquisition duration {seconds(acquisition)} s"
     )
 
