@@ -121,7 +121,8 @@ def print_jobs_status_summary(status_data, verbose=False):
             f"running={execution_counts.get('running', 0)}  "
             f"completed={execution_counts.get('completed', 0)}  "
             f"failed={execution_counts.get('failed', 0)}  "
-            f"skipped={execution_counts.get('skipped', 0)}"
+            f"skipped={execution_counts.get('skipped', 0)}  "
+            f"interrupted={execution_counts.get('interrupted', 0)}"
         )
 
     jobs = status_data["jobs"]

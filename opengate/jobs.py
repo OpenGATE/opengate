@@ -47,7 +47,13 @@ JOB_METADATA_FILENAME = "job_metadata.json"
 JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
-JOB_EXECUTION_ALLOWED_STATUSES = ("running", "completed", "failed", "skipped")
+JOB_EXECUTION_ALLOWED_STATUSES = (
+    "running",
+    "completed",
+    "failed",
+    "skipped",
+    "interrupted",
+)
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
 PBS_SUBMIT_FILENAME = "pbs_jobs.sh"
@@ -1383,6 +1389,38 @@ def _write_job_execution_status(
     return status_data
 
 
+def _mark_running_jobs_as_interrupted(job_folders):
+    """Set the status of the jobs still 'running' to 'interrupted'.
+
+    Used when the campaign is interrupted by the user (Control-C): the
+    simulation of a job stops immediately (exit in the Geant4 signal handler),
+    without writing its final status. The jobs with another status (e.g.
+    completed) are not modified. An interrupted job is run again by jobs_run().
+    Return the names of the job folders that were marked.
+    """
+    marked = []
+    for job_folder in job_folders:
+        job_folder = Path(job_folder)
+        try:
+            current = load_job_execution_status(job_folder)
+        except Exception:
+            continue
+        if current is None or current.get("status") != "running":
+            continue
+        _write_job_execution_status(
+            job_folder,
+            current,
+            backend=current.get("backend"),
+            status="interrupted",
+            submitted_at=current.get("submitted_at"),
+            started_at=current.get("started_at"),
+            finished_at=_now_isoformat(),
+            error_message="Interrupted by the user (Control-C).",
+        )
+        marked.append(job_folder.name)
+    return marked
+
+
 def _run_job_folder(job_folder, backend, start_new_process):
     """Execute one child job from its persisted job folder.
 
@@ -1435,6 +1473,11 @@ def _run_job_folder(job_folder, backend, start_new_process):
             "job_folder": str(job_folder),
             "status": "completed",
         }
+    except KeyboardInterrupt:
+        # Control-C before the Geant4 signal handler is installed, or in the
+        # process waiting for the simulation subprocess
+        _mark_running_jobs_as_interrupted([job_folder])
+        raise
     except Exception as error:
         finished_at = _now_isoformat()
         error_message = f"{type(error).__name__}: {error}"
@@ -1514,6 +1557,7 @@ def _run_job_folders_in_local_pool(
     pool = ctx.Pool(
         processes=int(n_workers),
         maxtasksperchild=1,
+        initializer=_ignore_sigint_in_pool_worker,
     )
     try:
         results = pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
@@ -1523,10 +1567,22 @@ def _run_job_folders_in_local_pool(
         pool.close()
         pool.join()
         return results
-    except Exception:
+    except BaseException:
+        # also for KeyboardInterrupt (Control-C), which is not an Exception:
+        # without terminate(), the pool is left in a broken state
         pool.terminate()
         pool.join()
         raise
+
+
+def _ignore_sigint_in_pool_worker():
+    # Control-C is handled by the campaign process (that terminates the pool);
+    # a worker waiting for a job would otherwise print a KeyboardInterrupt
+    # traceback. While a simulation is running, Control-C still stops it: the
+    # Geant4 signal handler is installed when the simulation starts.
+    import signal
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def _render_htcondor_submit_file_lines(job_folders, backend_options):
@@ -1713,13 +1769,30 @@ def _run_jobs_campaign(job_folders, backend, backend_options):
     the selected child jobs are executed after ``jobs_run()`` has detached the
     campaign from the caller process.
     """
-    if backend == "local_sequential":
-        return _run_job_folders_in_local_sequential(job_folders)
+    try:
+        if backend == "local_sequential":
+            return _run_job_folders_in_local_sequential(job_folders)
 
-    if backend == "local_pool":
-        return _run_job_folders_in_local_pool(job_folders, **backend_options)
+        if backend == "local_pool":
+            return _run_job_folders_in_local_pool(job_folders, **backend_options)
+    except KeyboardInterrupt:
+        _mark_running_jobs_as_interrupted(job_folders)
+        raise
 
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+
+
+def _run_jobs_campaign_process(job_folders, backend, backend_options):
+    """Target of the detached campaign process (see jobs_run).
+
+    On Control-C, the running jobs are marked as interrupted (by
+    _run_jobs_campaign) and the process exits quietly with the code 130
+    (the caller process reports the interruption).
+    """
+    try:
+        _run_jobs_campaign(job_folders, backend, backend_options)
+    except KeyboardInterrupt:
+        sys.exit(130)
 
 
 def _validate_jobs_backend_options(backend, backend_options):
@@ -2045,7 +2118,7 @@ def jobs_run(
             # This subprocess is only the campaign orchestrator. Backend-specific
             # job execution happens inside it, potentially with further worker
             # processes or per-job subprocesses depending on the backend.
-            target=_run_jobs_campaign,
+            target=_run_jobs_campaign_process,
             args=(
                 [str(job_folder) for job_folder in selected_job_folders],
                 backend,
@@ -2156,6 +2229,8 @@ class SplitRunMergeController:
                 return "failed"
             if execution_counts.get("running", 0) > 0:
                 return "running"
+            if execution_counts.get("interrupted", 0) > 0:
+                return "interrupted"
             if execution_counts.get("completed", 0) > 0 and execution_counts.get(
                 "completed", 0
             ) == summary_counts.get("total", 0):
@@ -2175,7 +2250,7 @@ class SplitRunMergeController:
 
     def has_finished(self):
         self.refresh()
-        return self.stage in ("completed", "merged", "cleaned", "failed")
+        return self.stage in ("completed", "merged", "cleaned", "failed", "interrupted")
 
     def has_failed(self):
         self.refresh()
@@ -2234,24 +2309,60 @@ class SplitRunMergeController:
         if self._campaign_dir is None:
             fatal("SplitRunMergeController.wait() requires split() to be called first.")
         start_time = time.perf_counter()
-        while True:
-            self.refresh()
-            if self.stage == "failed":
-                warning(
-                    f"Split jobs failed in '{self._campaign_dir}':\n"
-                    f"{self.format_failure_report()}"
-                )
-                return self._status
-            if self.stage in ("completed", "merged", "cleaned"):
-                return self._status
-            if timeout is not None and (time.perf_counter() - start_time) > timeout:
-                error = GateJobsBackendError(
-                    f"Timed out while waiting for split jobs in '{self._campaign_dir}':\n"
-                    f"{self.format_failure_report()}"
-                )
-                self._set_error(error)
-                raise error
-            time.sleep(poll_interval)
+        try:
+            while True:
+                self.refresh()
+                if self.stage == "failed":
+                    warning(
+                        f"Split jobs failed in '{self._campaign_dir}':\n"
+                        f"{self.format_failure_report()}"
+                    )
+                    return self._status
+                if self.stage in ("completed", "merged", "cleaned", "interrupted"):
+                    return self._status
+                if timeout is not None and (time.perf_counter() - start_time) > timeout:
+                    error = GateJobsBackendError(
+                        f"Timed out while waiting for split jobs in '{self._campaign_dir}':\n"
+                        f"{self.format_failure_report()}"
+                    )
+                    self._set_error(error)
+                    raise error
+                time.sleep(poll_interval)
+        except KeyboardInterrupt:
+            self._interrupted_by_user()
+
+    def _interrupted_by_user(self):
+        """Control-C while waiting for the jobs: report and exit (code 130).
+
+        The jobs stop at the same time (same terminal). The jobs still marked
+        as running are marked as interrupted (also done by the campaign
+        process, but it may already be gone). They can be run again with
+        jobs_run(campaign_dir), the completed jobs are kept.
+        """
+        job_folders = []
+        try:
+            with open(self.manifest_path, "r") as f:
+                manifest = load_json(f)
+            job_folders = [
+                self._campaign_dir / j["folder_name"] for j in manifest.get("jobs", [])
+            ]
+        except Exception:
+            pass
+        _mark_running_jobs_as_interrupted(job_folders)
+        self._stage = "interrupted"
+        counts = {}
+        try:
+            counts = jobs_status(self._campaign_dir).get("execution_counts", {})
+        except Exception:
+            pass
+        print(
+            f"\nJobs interrupted by the user (Control-C) in '{self._campaign_dir}': "
+            f"{counts.get('completed', 0)} completed, "
+            f"{counts.get('interrupted', 0)} interrupted. "
+            f"Run the remaining jobs with opengate.jobs_run('{self._campaign_dir}') "
+            f"(the completed jobs are kept)."
+        )
+        sys.exit(130)
 
     def format_failure_report(self):
         """Describe the child jobs that did not complete, with their error message."""
@@ -2321,7 +2432,7 @@ class SplitRunMergeController:
 
         if wait_for_result:
             self.wait(poll_interval=poll_interval, timeout=timeout)
-            if self.stage == "failed":
+            if self.stage in ("failed", "interrupted"):
                 return self
             if merge_after_run:
                 self.merge(**(merge_options or {}))
@@ -3413,6 +3524,7 @@ def jobs_status(campaign_dir):
             "completed": 0,
             "failed": 0,
             "skipped": 0,
+            "interrupted": 0,
         },
     }
 
