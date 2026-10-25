@@ -3228,7 +3228,7 @@ def print_jobs_merge_summary(
 from .base import (
     _get_user_info_options,
     find_all_gate_objects,
-    find_all_paths,
+    find_all_file_refs,
 )
 from .managers import create_sim_from_json
 
@@ -3246,7 +3246,9 @@ def _get_simulation_input_files_info(simulation):
                 continue
             options = _get_user_info_options(ui_name, class_name, class_module)
             if options.get("is_input_file") is True:
-                paths = find_all_paths(ui_value)
+                # same detection as the input files transferred to the jobs:
+                # a path can be given as a Path or as a str
+                paths = find_all_file_refs(ui_value)
                 for p in paths:
                     input_files_info.append(
                         {
@@ -3458,6 +3460,9 @@ def jobs_status(campaign_dir):
                         pass
 
         missing_input_files = []
+        input_check_error = None
+        # input files found for this job (path -> size), counted once
+        found_input_files = {}
         if folder_exists and metadata_exists and sim_exists:
             try:
                 child_sim = create_sim_from_json(simulation_file)
@@ -3465,25 +3470,31 @@ def jobs_status(campaign_dir):
                 for info in job_input_files:
                     val_str = info["value"]
                     val_path = Path(val_str)
-                    file_found = (
-                        (job_folder / val_path.name).exists()
-                        or (
-                            not val_path.is_absolute()
-                            and (job_folder / val_path).exists()
-                        )
-                        or (
-                            val_path.is_absolute()
-                            and val_path.exists()
-                            and not metadata_exists
-                        )
+                    candidates = [job_folder / val_path.name]
+                    if not val_path.is_absolute():
+                        candidates.append(job_folder / val_path)
+                    found_path = next((c for c in candidates if c.exists()), None)
+                    file_found = found_path is not None or (
+                        val_path.is_absolute()
+                        and val_path.exists()
+                        and not metadata_exists
                     )
+                    if found_path is not None:
+                        try:
+                            found_input_files[found_path.resolve()] = (
+                                found_path.stat().st_size
+                            )
+                        except OSError:
+                            pass
 
                     if not file_found:
                         missing_input_files.append(
                             f"[{info['class_name']}] {info['object_name']} -> {info['attribute']}: {val_str}"
                         )
-            except Exception:
-                pass
+            except Exception as error:
+                # the input files cannot be checked (e.g. the job simulation
+                # cannot be read with this version of opengate): report it
+                input_check_error = f"{type(error).__name__}: {error}"
 
         if not folder_exists:
             job_status = "missing_folder"
@@ -3524,6 +3535,10 @@ def jobs_status(campaign_dir):
                 "original_run_indices": metadata.get("original_run_indices", []),
                 "folder_size_bytes": folder_size,
                 "folder_size_str": _format_bytes(folder_size),
+                "input_check_error": input_check_error,
+                "number_of_input_files": len(found_input_files),
+                "input_files_size_bytes": sum(found_input_files.values()),
+                "input_files_size_str": _format_bytes(sum(found_input_files.values())),
                 "input_mode": "linked" if has_symlink else "copied",
                 "execution_status_filename": JOB_EXECUTION_STATUS_FILENAME,
                 "execution_status_exists": execution_status_data is not None,
