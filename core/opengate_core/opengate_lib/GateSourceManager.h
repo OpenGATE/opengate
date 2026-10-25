@@ -128,6 +128,10 @@ public:
   static void ResetPrimaryCounterForRun();
   static bool TryReservePrimarySlot();
   static void WarnPrimaryLimitReached();
+
+  // Check that the primary vertices from first_vertex are inside the world
+  void CheckPrimaryVerticesInsideWorld(const G4Event *event, int first_vertex,
+                                       const GateVSource *source) const;
   static void SetMaxPrimariesPerRun(std::uint64_t value);
   static std::uint64_t GetPlatformMaxPrimariesPerRun();
 
@@ -169,6 +173,9 @@ public:
 
     // User information data
     GateUserEventInformation *fUserEventInformation;
+
+    // Solid of the world volume (to check the primary vertices)
+    const G4VSolid *fWorldSolid = nullptr;
 
     // progress bar
     // indicators::ProgressBar *fProgressBar;

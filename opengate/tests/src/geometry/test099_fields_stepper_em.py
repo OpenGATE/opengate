@@ -67,7 +67,7 @@ if __name__ == "__main__":
         sim.visu_commands.append("/vis/scene/add/trajectories smooth")
         sim.visu_commands.append("/vis/scene/add/electricField 20 fullArrow")
 
-    sim.world.size = [(n + 1) * spacing, 1 * g4_m, 1 * g4_m]
+    sim.world.size = [(n + 1) * spacing, 1 * g4_m, 2.5 * g4_m]
     sim.world.material = "G4_Galactic"
 
     for stepper_name, x in zip(GENERAL_PURPOSE, x_positions):

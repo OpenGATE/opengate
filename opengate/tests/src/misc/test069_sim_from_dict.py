@@ -28,7 +28,7 @@ def main(a, b, c, dependency="test069_sim_as_dict.py"):
     # Assert that objects have been read back correctly
     assert "rod" in sim.volume_manager.volumes
     m = gate.g4_units.m
-    assert sim.volume_manager.world_volume.size == [1.5 * m, 1.5 * m, 1.5 * m]
+    assert sim.volume_manager.world_volume.size == [2 * m, 2 * m, 2 * m]
     assert "rod_region" in sim.physics_manager.regions
     assert pathlib.Path(archive_dir / "patient-4mm.mhd").exists()
     assert (
