@@ -9,17 +9,29 @@ from opengate.jobs import jobs_status
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-def format_timing_intervals(intervals):
+def best_unit_time(t):
+    return str(g4.G4BestUnit(t, "Time")).strip()
+
+
+def format_timing_intervals(intervals, verbose=False):
+    """
+    By default, a one-line summary: number of runs, first start, last end and
+    total active time (sum of the intervals, the gaps between runs excluded).
+    With verbose, the list of all the intervals.
+    """
     if not intervals:
         return "[]"
-    formatted = []
-    for interval in intervals:
-        start_str = str(g4.G4BestUnit(interval[0], "Time")).strip()
-        end_str = str(g4.G4BestUnit(interval[1], "Time")).strip()
-        formatted.append(f"[{start_str}, {end_str}]")
-    intervals_str = ", ".join(formatted)
     nb_runs = len(intervals)
-    return f"{intervals_str}  {nb_runs} run(s)"
+    if verbose:
+        intervals_str = ", ".join(
+            f"[{best_unit_time(i[0])}, {best_unit_time(i[1])}]" for i in intervals
+        )
+        return f"{intervals_str}  {nb_runs} run(s)"
+    active = sum(i[1] - i[0] for i in intervals)
+    return (
+        f"{nb_runs} run(s) from {best_unit_time(intervals[0][0])} to "
+        f"{best_unit_time(intervals[-1][1])} (active time {best_unit_time(active)})"
+    )
 
 
 def print_jobs_status_summary(status_data, verbose=False):
@@ -31,7 +43,7 @@ def print_jobs_status_summary(status_data, verbose=False):
     print(f" Split policy:       {status_data['policy']}")
     print(f" Prefer resolved:    {status_data.get('prefer_resolved_simulation', True)}")
     print(f" Number of jobs:     {status_data['number_of_jobs']}")
-    print(f" Time intervals:     {format_timing_intervals(intervals)}")
+    print(f" Time intervals:     {format_timing_intervals(intervals, verbose)}")
     master_str = (
         "Found"
         if status_data["master_simulation_exists"]
@@ -89,7 +101,7 @@ def print_jobs_status_summary(status_data, verbose=False):
         exec_status = job.get("execution_status")
         exec_str = exec_status.upper() if exec_status is not None else "NONE"
         job_intervals = job.get("run_timing_intervals", [])
-        timing_str = format_timing_intervals(job_intervals)
+        timing_str = format_timing_intervals(job_intervals, verbose)
         input_mode = job.get("input_mode", "copied")
         size_str = job.get("folder_size_str", "0 B")
         print(
@@ -104,7 +116,9 @@ def print_jobs_status_summary(status_data, verbose=False):
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("campaign_dir", type=click.Path(exists=True, file_okay=False))
-@click.option("-v", "--verbose", is_flag=True, help="Print verbose job metadata")
+@click.option(
+    "-v", "--verbose", is_flag=True, help="Print all the run timing intervals"
+)
 def go(campaign_dir, verbose):
     """
     Print a status summary for an OpenGATE job split campaign given its folder.
