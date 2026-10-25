@@ -26,6 +26,7 @@ import contextlib
 import io
 import json
 import shutil
+from pathlib import Path
 
 import numpy as np
 
@@ -154,7 +155,7 @@ def check_campaign(name, sim, number_of_jobs, policy, link_files=False):
         )
 
     # 5. input files (CT given as str, source image as Path; mhd + raw)
-    master_inputs = {i["value"].split("/")[-1] for i in status["master_input_files"]}
+    master_inputs = {Path(i["value"]).name for i in status["master_input_files"]}
     expected = {
         "ct_4mm.mhd",
         "ct_4mm.raw",
