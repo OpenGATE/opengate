@@ -3228,7 +3228,7 @@ def print_jobs_merge_summary(
 from .base import (
     _get_user_info_options,
     find_all_gate_objects,
-    find_all_paths,
+    find_all_file_refs,
 )
 from .managers import create_sim_from_json
 
@@ -3246,7 +3246,9 @@ def _get_simulation_input_files_info(simulation):
                 continue
             options = _get_user_info_options(ui_name, class_name, class_module)
             if options.get("is_input_file") is True:
-                paths = find_all_paths(ui_value)
+                # same detection as the input files transferred to the jobs:
+                # a path can be given as a Path or as a str
+                paths = find_all_file_refs(ui_value)
                 for p in paths:
                     input_files_info.append(
                         {
