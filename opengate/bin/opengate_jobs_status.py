@@ -4,7 +4,7 @@ import click
 import colored
 import opengate_core as g4
 from opengate.exception import color_error
-from opengate.jobs import jobs_status
+from opengate.jobs import _format_bytes as format_bytes, jobs_status
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -16,7 +16,7 @@ def best_unit_time(t):
 def format_timing_intervals(intervals, verbose=False):
     """
     By default, a one-line summary: number of runs, first start, last end and
-    total active time (sum of the intervals, the gaps between runs excluded).
+    simulated time (sum of the run durations, the gaps between runs excluded).
     With verbose, the list of all the intervals.
     """
     if not intervals:
@@ -30,7 +30,7 @@ def format_timing_intervals(intervals, verbose=False):
     active = sum(i[1] - i[0] for i in intervals)
     return (
         f"{nb_runs} run(s) from {best_unit_time(intervals[0][0])} to "
-        f"{best_unit_time(intervals[-1][1])} (active time {best_unit_time(active)})"
+        f"{best_unit_time(intervals[-1][1])} (simulated time {best_unit_time(active)})"
     )
 
 
@@ -93,7 +93,16 @@ def print_jobs_status_summary(status_data, verbose=False):
             f"skipped={execution_counts.get('skipped', 0)}"
         )
 
-    for job in status_data["jobs"]:
+    jobs = status_data["jobs"]
+    n_inputs = sum(job.get("number_of_input_files", 0) for job in jobs)
+    inputs_size = sum(job.get("input_files_size_bytes", 0) for job in jobs)
+    folders_size = sum(job.get("folder_size_bytes", 0) for job in jobs)
+    print(
+        f"  Inputs: {n_inputs} files ({format_bytes(inputs_size)}) for all the jobs, "
+        f"job folders: {format_bytes(folders_size)}"
+    )
+
+    for job in jobs:
         job_idx = job["job_index"]
         folder = job["folder_name"]
         st = job["status"].upper()
@@ -103,10 +112,18 @@ def print_jobs_status_summary(status_data, verbose=False):
         job_intervals = job.get("run_timing_intervals", [])
         timing_str = format_timing_intervals(job_intervals, verbose)
         input_mode = job.get("input_mode", "copied")
+        n_inputs = job.get("number_of_input_files", 0)
+        inputs_size_str = job.get("input_files_size_str", "0 B")
         size_str = job.get("folder_size_str", "0 B")
         print(
-            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, execution = {exec_str}, timing = {timing_str}, inputs = {input_mode} ({size_str})"
+            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, execution = {exec_str}, "
+            f"timing = {timing_str}, inputs = {n_inputs} files {input_mode} "
+            f"({inputs_size_str}), folder = {size_str}"
         )
+        input_check_error = job.get("input_check_error")
+        if input_check_error is not None:
+            err_msg = f"     Cannot check the input files: {input_check_error}"
+            print(colored.stylize(err_msg, color_error))
         missing_files = job.get("missing_input_files", [])
         if missing_files:
             for missing in missing_files:
