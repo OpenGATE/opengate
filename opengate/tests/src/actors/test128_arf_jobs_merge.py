@@ -123,7 +123,7 @@ if __name__ == "__main__":
         utility.test_ok(True)
         sys.exit(0)
 
-    paths = utility.get_default_test_paths(__file__, "gate_test043_garf", "test127")
+    paths = utility.get_default_test_paths(__file__, "gate_test043_garf", "test128")
     reference_output = paths.output / "reference"
     split_output = paths.output / "split"
     campaign_dir = paths.output / "campaign"
