@@ -57,7 +57,56 @@ jobs:
         name: dist-opengate
         path: dist/
 
+  find_core_wheels_to_reuse:
+    # a pull request that does not change opengate_core reuses the wheels of
+    # a master run (see the script); the label "build-core" forces the build
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      reuse_run_id: ${{ steps.find.outputs.reuse_run_id }}
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Find a master run with the same opengate_core
+      id: find
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EVENT_NAME: ${{ github.event_name }}
+        LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: bash .github/workflows/find_core_wheels_to_reuse.sh
+
+  reuse_opengate_core_wheels:
+    runs-on: ubuntu-24.04
+    needs: [find_core_wheels_to_reuse]
+    if: needs.find_core_wheels_to_reuse.outputs.reuse_run_id != ''
+    permissions:
+      actions: read
+    steps:
+    - name: Download the opengate_core wheels of the master run
+      uses: actions/download-artifact@v8
+      with:
+        pattern: dist-*-opengate-core
+        merge-multiple: true
+        path: dist/
+        run-id: ${{ needs.find_core_wheels_to_reuse.outputs.reuse_run_id }}
+        github-token: ${{ github.token }}
+    - name: List the wheels
+      run: ls -l dist/
+    - name: Upload wheels
+      uses: actions/upload-artifact@v7
+      with:
+        name: dist-reused-opengate-core
+        path: dist/
+        retention-days: 7
+        compression-level: 0
+
   build_opengate_core_wheel_pr:
+    needs: [find_core_wheels_to_reuse]
+    if: needs.find_core_wheels_to_reuse.outputs.reuse_run_id == ''
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -306,7 +355,9 @@ jobs:
 
   test_wheel_pr:
     runs-on: ${{ matrix.os }}
-    needs: [build_opengate_wheel, build_opengate_core_wheel_pr, prepare_test_data]
+    needs: [build_opengate_wheel, build_opengate_core_wheel_pr, reuse_opengate_core_wheels, prepare_test_data]
+    # one of build_opengate_core_wheel_pr and reuse_opengate_core_wheels is skipped
+    if: ${{ !cancelled() && !failure() }}
     strategy:
       fail-fast: false
       matrix:
