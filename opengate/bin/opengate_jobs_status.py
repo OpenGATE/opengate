@@ -9,29 +9,53 @@ from opengate.jobs import _format_bytes as format_bytes, jobs_status
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
+def seconds(t):
+    """Time in seconds, 4 significant digits (e.g. 54.85, 115.1, 0.001)"""
+    return f"{t / g4.G4UnitDefinition.GetValueOf('s'):.4g}"
+
+
 def best_unit_time(t):
     return str(g4.G4BestUnit(t, "Time")).strip()
 
 
-def format_timing_intervals(intervals, verbose=False):
+def format_campaign_timing(intervals, verbose=False):
     """
-    By default, a one-line summary: number of runs, first start, last end and
-    simulated time (sum of the run durations, the gaps between runs excluded).
+    Runs of the whole campaign: the timeline (start of the first run to the end
+    of the last one), the total acquisition time (sum of the run durations) and
+    the gaps between the runs (nothing is simulated during the gaps).
     With verbose, the list of all the intervals.
     """
     if not intervals:
-        return "[]"
-    nb_runs = len(intervals)
+        return "no runs"
     if verbose:
-        intervals_str = ", ".join(
-            f"[{best_unit_time(i[0])}, {best_unit_time(i[1])}]" for i in intervals
-        )
-        return f"{intervals_str}  {nb_runs} run(s)"
-    active = sum(i[1] - i[0] for i in intervals)
+        return format_all_intervals(intervals)
+    start, end = intervals[0][0], intervals[-1][1]
+    acquisition = sum(i[1] - i[0] for i in intervals)
     return (
-        f"{nb_runs} run(s) from {best_unit_time(intervals[0][0])} to "
-        f"{best_unit_time(intervals[-1][1])} (simulated time {best_unit_time(active)})"
+        f"{len(intervals)} runs, timeline {seconds(start)} to {seconds(end)} s, "
+        f"total acquisition time {seconds(acquisition)} s "
+        f"(+ {seconds(end - start - acquisition)} s of gaps between runs)"
     )
+
+
+def format_job_timing(intervals, verbose=False):
+    """Runs of one job: timeline and acquisition duration (sum of the runs)"""
+    if not intervals:
+        return "no runs"
+    if verbose:
+        return format_all_intervals(intervals)
+    acquisition = sum(i[1] - i[0] for i in intervals)
+    return (
+        f"{len(intervals)} runs, timeline {seconds(intervals[0][0])} to "
+        f"{seconds(intervals[-1][1])} s, acquisition duration {seconds(acquisition)} s"
+    )
+
+
+def format_all_intervals(intervals):
+    intervals_str = ", ".join(
+        f"[{best_unit_time(i[0])}, {best_unit_time(i[1])}]" for i in intervals
+    )
+    return f"{intervals_str}  {len(intervals)} run(s)"
 
 
 def print_jobs_status_summary(status_data, verbose=False):
@@ -43,7 +67,7 @@ def print_jobs_status_summary(status_data, verbose=False):
     print(f" Split policy:       {status_data['policy']}")
     print(f" Prefer resolved:    {status_data.get('prefer_resolved_simulation', True)}")
     print(f" Number of jobs:     {status_data['number_of_jobs']}")
-    print(f" Time intervals:     {format_timing_intervals(intervals, verbose)}")
+    print(f" Time intervals:     {format_campaign_timing(intervals, verbose)}")
     master_str = (
         "Found"
         if status_data["master_simulation_exists"]
@@ -94,11 +118,19 @@ def print_jobs_status_summary(status_data, verbose=False):
         )
 
     jobs = status_data["jobs"]
-    n_inputs = sum(job.get("number_of_input_files", 0) for job in jobs)
     inputs_size = sum(job.get("input_files_size_bytes", 0) for job in jobs)
     folders_size = sum(job.get("folder_size_bytes", 0) for job in jobs)
+    # the input files are the same for all jobs (one copy or link per job)
+    per_job = sorted({job.get("number_of_input_files", 0) for job in jobs})
+    per_job_str = (
+        str(per_job[0]) if len(per_job) == 1 else f"{per_job[0]} to {per_job[-1]}"
+    )
+    input_mode = (
+        "links" if any(j.get("input_mode") == "linked" for j in jobs) else "copies"
+    )
     print(
-        f"  Inputs: {n_inputs} files ({format_bytes(inputs_size)}) for all the jobs, "
+        f"  Inputs: {per_job_str} files per job ({input_mode}), "
+        f"{format_bytes(inputs_size)} for all the jobs; "
         f"job folders: {format_bytes(folders_size)}"
     )
 
@@ -110,15 +142,10 @@ def print_jobs_status_summary(status_data, verbose=False):
         exec_status = job.get("execution_status")
         exec_str = exec_status.upper() if exec_status is not None else "NONE"
         job_intervals = job.get("run_timing_intervals", [])
-        timing_str = format_timing_intervals(job_intervals, verbose)
-        input_mode = job.get("input_mode", "copied")
-        n_inputs = job.get("number_of_input_files", 0)
-        inputs_size_str = job.get("input_files_size_str", "0 B")
-        size_str = job.get("folder_size_str", "0 B")
+        timing_str = format_job_timing(job_intervals, verbose)
         print(
-            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, execution = {exec_str}, "
-            f"timing = {timing_str}, inputs = {n_inputs} files {input_mode} "
-            f"({inputs_size_str}), folder = {size_str}"
+            f"  [Job {job_idx:04d}] {folder}: status = {st_str}, "
+            f"execution = {exec_str}, {timing_str}"
         )
         input_check_error = job.get("input_check_error")
         if input_check_error is not None:
