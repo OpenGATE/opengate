@@ -53,6 +53,8 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         # self._add_user_output(ActorOutputStatisticsActor, "stats")
+        # set in StartSimulationAction (declared here, to be a known attribute)
+        self.simulation_id = None
         self.__initcpp__()
 
     def __initcpp__(self):
