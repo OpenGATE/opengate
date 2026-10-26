@@ -615,7 +615,7 @@ void GateSourceManager::StartVisualization() const {
     G4GDMLParser parser;
     parser.SetRegionExport(true);
     // replace the file of a previous simulation (fatal error otherwise)
-    parser.SetOverwriteOutputFile(true);
+    parser.SetOutputFileOverwrite(true);
     parser.Write(fVisualizationFile,
                  G4TransportationManager::GetTransportationManager()
                      ->GetNavigatorForTracking()
