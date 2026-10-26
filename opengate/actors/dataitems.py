@@ -646,6 +646,8 @@ class StatisticsDataItem(DataItem):
                 self.data.stop_time = max(stops).ctime()
             self.data.sim_start_time = min(d.sim_start_time for d in merged_data)
             self.data.sim_stop_time = max(d.sim_stop_time for d in merged_data)
+            # the threads of one job (all the jobs use the same number)
+            self.data.nb_threads = max(d.get("nb_threads", 1) for d in merged_data)
         return self
 
     def merge_with(self, other):
@@ -670,6 +672,9 @@ class StatisticsDataItem(DataItem):
             unit = entry["unit"]
             if unit in g4_units:
                 loaded_data[key] *= g4_units[unit]
+        # written as "threads" (get_processed_output), stored as "nb_threads"
+        if "threads" in loaded_data:
+            loaded_data["nb_threads"] = loaded_data["threads"]
         self.set_data(loaded_data)
 
 

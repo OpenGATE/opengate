@@ -10,6 +10,7 @@ Merge of the statistics (SimulationStatisticsActor), e.g. of several jobs:
 - duration is summed (total computing time), timespan is the wall-clock time
   from the first start to the last stop;
 - jobs is the number of merged simulations, whatever the merge order;
+- threads is the number of threads of the jobs (was 1 after a merge);
 - pps is the speed of one job, pps_timespan the speed of all the jobs;
 - the statistics of each run contain the simulated time of the run.
 """
@@ -36,6 +37,7 @@ def make_stats(
             "sim_start_time": sim_start,
             "sim_stop_time": sim_stop,
             "simulation_ids": [simulation_id],
+            "nb_threads": 4,
         }
     )
     return item
@@ -56,6 +58,7 @@ def check_merged(merged, name):
         ("sim_start_time", merged.sim_start_time, 0 * sec),
         ("sim_stop_time", merged.sim_stop_time, 30 * sec),
         ("jobs", merged.jobs, 3),
+        ("threads", merged.nb_threads, 4),
         # 600 M events in 9 h of computing (3 jobs), in 5 h of wall-clock time
         ("pps", merged.pps, 18518),
         ("pps_timespan", merged.pps_timespan, 33333),
