@@ -52,6 +52,11 @@ In the example, ``controller`` is a ``SplitRunMergeController`` object that can 
 
 Local pooled execution always uses one spawned worker process per child job.
 
+With ``sim.progress_bar = True``, a single progress bar shows the progress of all
+the jobs while ``sim.run(...)`` waits for them (the jobs do not display their own
+progress bars, they would all print in the same terminal). Each job writes its
+number of generated and expected events in ``job_progress.json``, in its folder.
+
 .. note:: ``number_of_jobs=1`` does not create a split campaign. It maps to an ordinary simulation run in a new process, i.e. it is equivalent to ``sim.run(start_new_process=True)``
 
 Split and run now, merge later

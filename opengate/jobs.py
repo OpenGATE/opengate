@@ -46,6 +46,8 @@ JOBS_MANIFEST_FILENAME = "jobs_manifest.json"
 JOBS_BACKEND_STATUS_FILENAME = "jobs_backend_status.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
 JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
+JOB_PROGRESS_FILENAME = "job_progress.json"
+JOB_PROGRESS_INTERVAL_S = 2.0
 JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 JOB_EXECUTION_ALLOWED_STATUSES = (
@@ -1424,6 +1426,121 @@ def _mark_running_jobs_as_interrupted(job_folders):
     return marked
 
 
+class JobProgressWriter:
+    """Progress hook of a child job: writes the number of generated and
+    expected events in the job folder (job_progress.json), read by the
+    progress bar of the campaign. A module-level class, so that it can be
+    pickled with the simulation (start_new_process=True).
+    """
+
+    def __init__(self, path, interval=JOB_PROGRESS_INTERVAL_S):
+        self.path = str(path)
+        self._interval = interval  # used by the progress_hook setter
+
+    def __call__(self, simulation_engine, status="running"):
+        try:
+            source_engine = simulation_engine.source_engine
+            # same managers as for the expected number of events
+            managers = [source_engine.g4_master_source_manager]
+            if (
+                simulation_engine.simulation.multithreaded
+                and len(source_engine.g4_thread_source_managers) > 0
+            ):
+                managers = source_engine.g4_thread_source_managers
+            generated = sum(int(m.GetTotalGeneratedEvents()) for m in managers)
+            expected = source_engine.expected_number_of_events
+            progress = {
+                "status": status,
+                "generated_events": generated,
+                "expected_events": expected if isinstance(expected, int) else None,
+                "updated_at": _now_isoformat(),
+            }
+            # written then renamed: the progress bar never reads a partial file
+            tmp_path = self.path + ".tmp"
+            with open(tmp_path, "w") as f:
+                json.dump(progress, f)
+            os.replace(tmp_path, self.path)
+        except Exception:
+            # the progress is only informative, it never stops the job
+            pass
+
+
+def read_job_progress(job_folder):
+    """The content of job_progress.json of a job, or None"""
+    try:
+        with open(Path(job_folder) / JOB_PROGRESS_FILENAME, "r") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _format_duration(seconds):
+    seconds = int(seconds)
+    h, m, s = seconds // 3600, (seconds % 3600) // 60, seconds % 60
+    return f"{h}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
+
+
+def _format_count(n):
+    for factor, unit in ((1e9, "G"), (1e6, "M"), (1e3, "k")):
+        if n >= factor:
+            return f"{n / factor:.1f}{unit}"
+    return str(int(n))
+
+
+class CampaignProgressBar:
+    """One progress bar for all the jobs of a local campaign, drawn on a single
+    terminal line. The fraction of a running job is its number of generated
+    events over its expected number of events (job_progress.json); a completed
+    job counts as 1. The jobs are considered of equal size (split in time)."""
+
+    width = 30
+
+    def __init__(self, campaign_dir):
+        self.campaign_dir = Path(campaign_dir)
+        self.start_time = time.perf_counter()
+        self.drawn = False
+
+    def update(self, status_data):
+        jobs = status_data.get("jobs", []) if status_data else []
+        if len(jobs) == 0:
+            return
+        fraction = 0.0
+        events = 0
+        done = 0
+        for job in jobs:
+            execution_status = job.get("execution_status")
+            progress = read_job_progress(self.campaign_dir / job["folder_name"])
+            if progress is not None:
+                events += progress.get("generated_events") or 0
+            if execution_status == "completed":
+                fraction += 1.0
+                done += 1
+            elif progress is not None and progress.get("expected_events"):
+                fraction += min(
+                    1.0, progress["generated_events"] / progress["expected_events"]
+                )
+        fraction /= len(jobs)
+        elapsed = time.perf_counter() - self.start_time
+        eta = "?"
+        if fraction > 0.0:
+            eta = _format_duration(elapsed * max(0.0, 1.0 - fraction) / fraction)
+        n = int(round(fraction * self.width))
+        line = (
+            f"\rJobs {done}/{len(jobs)} |{'#' * n}{'-' * (self.width - n)}| "
+            f"{fraction * 100:5.1f}% {_format_count(events)} events "
+            f"[{_format_duration(elapsed)} < {eta}]"
+        )
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        self.drawn = True
+
+    def close(self):
+        if self.drawn:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            self.drawn = False
+
+
 def _run_job_folder(job_folder, backend, start_new_process):
     """Execute one child job from its persisted job folder.
 
@@ -1458,6 +1575,14 @@ def _run_job_folder(job_folder, backend, start_new_process):
         sim = create_sim_from_json(simulation_path)
         sim.simulation_dir = job_folder
         sim.output_dir = job_folder / "output"
+        # progress of the job, read by the progress bar of the campaign
+        progress_path = job_folder / JOB_PROGRESS_FILENAME
+        progress_path.unlink(missing_ok=True)
+        sim.progress_hook = JobProgressWriter(progress_path)
+        if backend in ("local_pool", "local_sequential"):
+            # the local jobs share the terminal: one progress bar for the whole
+            # campaign (SplitRunMergeController.wait), not one per job
+            sim.progress_bar = False
         sim.run(start_new_process=start_new_process)
 
         finished_at = _now_isoformat()
@@ -2312,9 +2437,18 @@ class SplitRunMergeController:
         if self._campaign_dir is None:
             fatal("SplitRunMergeController.wait() requires split() to be called first.")
         start_time = time.perf_counter()
+        # one progress bar for all the jobs, if the simulation asks for a
+        # progress bar (and only in a terminal)
+        progress_bar = None
+        if getattr(self.simulation, "progress_bar", False) and sys.stdout.isatty():
+            progress_bar = CampaignProgressBar(self._campaign_dir)
         try:
             while True:
                 self.refresh()
+                if progress_bar is not None:
+                    progress_bar.update(self._status.get("jobs_status"))
+                    if self.stage not in ("split", "submitted", "running"):
+                        progress_bar.close()
                 if self.stage == "failed":
                     warning(
                         f"Split jobs failed in '{self._campaign_dir}':\n"
@@ -2332,7 +2466,12 @@ class SplitRunMergeController:
                     raise error
                 time.sleep(poll_interval)
         except KeyboardInterrupt:
+            if progress_bar is not None:
+                progress_bar.close()
             self._interrupted_by_user()
+        finally:
+            if progress_bar is not None:
+                progress_bar.close()
 
     def _interrupted_by_user(self):
         """Control-C while waiting for the jobs: report and exit (code 130).
