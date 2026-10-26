@@ -50,15 +50,15 @@ void GateAttributeComparisonFilter<T>::InitializeUserInfo(py::dict &user_info) {
   auto *att = dgm->GetDigiAttribute(fAttributeName);
   auto *vatt = dgm->CopyDigiAttribute(att);
   fAttribute = dynamic_cast<GateTDigiAttribute<T> *>(vatt);
-  fAttribute->SetSingleValueMode(true);
 
-  // Basic safety check for the cast
+  // Basic safety check for the cast (before using the attribute)
   if (!fAttribute) {
     std::ostringstream oss;
     oss << "Error: Attribute '" << fAttributeName
         << "' type mismatch in filter.";
     Fatal(oss.str());
   }
+  fAttribute->SetSingleValueMode(true);
 }
 
 template <typename T>
