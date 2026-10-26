@@ -476,6 +476,10 @@ class StatisticsDataItem(DataItem):
         self.data.init = 0
         self.data.track_types = {}
         self.data.nb_threads = 1
+        # one random identifier per simulation (i.e. per job): merging keeps
+        # the union, so the number of jobs is right whatever the merge order
+        # (e.g. runs of the same job merged first)
+        self.data.simulation_ids = []
 
     @classmethod
     def get_known_entry_names(cls):
@@ -507,6 +511,12 @@ class StatisticsDataItem(DataItem):
         if start is None or stop is None:
             return 0
         return (stop - start).total_seconds() * g4_units.s
+
+    @property
+    def jobs(self):
+        """Number of simulations (jobs) merged in these statistics (1 if
+        unknown, e.g. for statistics written by an older version)"""
+        return max(1, len(self.data.get("simulation_ids", [])))
 
     @property
     def pps(self):
@@ -548,6 +558,11 @@ class StatisticsDataItem(DataItem):
         val, unit = g4_best_unit_tuple(self.data.sim_stop_time, "Time")
         d["sim_stop_time"] = {"value": val, "unit": unit}
         d["threads"] = {"value": self.data.nb_threads, "unit": None}
+        d["jobs"] = {"value": self.jobs, "unit": None}
+        d["simulation_ids"] = {
+            "value": list(self.data.get("simulation_ids", [])),
+            "unit": None,
+        }
         d["arch"] = {"value": platform.system(), "unit": None}
         d["python"] = {"value": platform.python_version(), "unit": None}
         d["track_types"] = {"value": self.data.track_types, "unit": None}
@@ -556,6 +571,9 @@ class StatisticsDataItem(DataItem):
     def __str__(self):
         s = ""
         for k, v in self.get_processed_output().items():
+            if k == "simulation_ids":
+                # written in the file (for the merge), 'jobs' is printed
+                continue
             if k == "track_types":
                 if len(v["value"]) > 0:
                     s += "track_types\n"
@@ -595,6 +613,13 @@ class StatisticsDataItem(DataItem):
                 self.data.track_types[k] += o.data.track_types[k]
             for k in new_entries:
                 self.data.track_types[k] = o.data.track_types[k]
+
+            # a new list, not to modify the one of another item
+            ids = list(self.data.get("simulation_ids", []))
+            for i in o.data.get("simulation_ids", []):
+                if i not in ids:
+                    ids.append(i)
+            self.data.simulation_ids = ids
 
         if len(other) > 0:
             # the earliest start and the latest stop (compared as dates, not

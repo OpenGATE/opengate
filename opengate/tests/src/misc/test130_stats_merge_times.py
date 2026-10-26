@@ -9,6 +9,7 @@ Merge of the statistics (SimulationStatisticsActor), e.g. of several jobs:
 - sim_start_time / sim_stop_time cover all the merged items;
 - duration is summed (total computing time), timespan is the wall-clock time
   from the first start to the last stop;
+- jobs is the number of merged simulations, whatever the merge order;
 - the statistics of each run contain the simulated time of the run.
 """
 
@@ -20,7 +21,9 @@ sec = gate.g4_units.s
 hour = 3600 * sec
 
 
-def make_stats(start_time, stop_time, sim_start, sim_stop, duration, events):
+def make_stats(
+    start_time, stop_time, sim_start, sim_stop, duration, events, simulation_id
+):
     item = StatisticsDataItem()
     item.set_data(
         {
@@ -31,6 +34,7 @@ def make_stats(start_time, stop_time, sim_start, sim_stop, duration, events):
             "stop_time": stop_time,
             "sim_start_time": sim_start,
             "sim_stop_time": sim_stop,
+            "simulation_ids": [simulation_id],
         }
     )
     return item
@@ -50,6 +54,7 @@ def check_merged(merged, name):
         ("timespan", merged.timespan, 5 * hour),
         ("sim_start_time", merged.sim_start_time, 0 * sec),
         ("sim_stop_time", merged.sim_stop_time, 30 * sec),
+        ("jobs", merged.jobs, 3),
     ]:
         b = value == ref
         utility.print_test(b, f"{name}: {key} = {value} (expected {ref})")
@@ -67,6 +72,7 @@ def test_merge_of_data_items():
             10 * sec,
             3 * hour,
             100,
+            "job1",
         ),
         make_stats(
             "Sat Oct 24 23:00:00 2026",
@@ -75,6 +81,7 @@ def test_merge_of_data_items():
             30 * sec,
             3 * hour,
             300,
+            "job2",
         ),
         make_stats(
             "Sat Oct 24 22:00:00 2026",
@@ -83,6 +90,7 @@ def test_merge_of_data_items():
             20 * sec,
             3 * hour,
             200,
+            "job3",
         ),
     ]
 
@@ -96,6 +104,16 @@ def test_merge_of_data_items():
     merged = jobs[1].merge_with(jobs[0])
     merged.inplace_merge_with(jobs[2])
     is_ok = check_merged(merged, "starting from a job") and is_ok
+
+    # two runs of the same job, then another job: 2 jobs
+    merged = StatisticsDataItem()
+    merged.inplace_merge_with(jobs[0])
+    merged.inplace_merge_with(jobs[0].merge_with(jobs[0]))
+    b = merged.jobs == 1
+    merged.inplace_merge_with(jobs[1])
+    b = b and merged.jobs == 2 and len(jobs[0].simulation_ids) == 1
+    utility.print_test(b, f"runs of the same job: jobs = {merged.jobs} (expected 2)")
+    is_ok = is_ok and b
 
     # ctime pads the day with a space; unset times are not dates
     b = parse_ctime("Sun Oct  4 01:02:03 2026") is not None
@@ -136,7 +154,7 @@ def test_simulated_time_of_runs():
         run.set_data(stats.stats.get_data(which=i))
         merged.inplace_merge_with(run)
     b = merged.sim_start_time == 0 and merged.sim_stop_time == 6 * sec
-    b = b and merged.events == 150 and merged.timespan >= 0
+    b = b and merged.events == 150 and merged.timespan >= 0 and merged.jobs == 1
     utility.print_test(b, f"merged runs: from 0 to {merged.sim_stop_time / sec} s")
     return is_ok and b
 
