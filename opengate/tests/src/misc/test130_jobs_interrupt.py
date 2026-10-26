@@ -63,6 +63,7 @@ if __name__ == "__main__":
     if not hasattr(os, "killpg"):
         print("No process groups on this platform: test skipped")
         utility.test_ok(True)
+        sys.exit(0)
 
     campaign_dir = paths.output / "campaign"
     shutil.rmtree(paths.output, ignore_errors=True)
