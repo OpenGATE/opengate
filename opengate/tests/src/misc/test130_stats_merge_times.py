@@ -10,6 +10,7 @@ Merge of the statistics (SimulationStatisticsActor), e.g. of several jobs:
 - duration is summed (total computing time), timespan is the wall-clock time
   from the first start to the last stop;
 - jobs is the number of merged simulations, whatever the merge order;
+- pps is the speed of one job, pps_timespan the speed of all the jobs;
 - the statistics of each run contain the simulated time of the run.
 """
 
@@ -46,7 +47,7 @@ def check_merged(merged, name):
     is_ok = True
     for key, value, ref in [
         ("runs", merged.runs, 3),
-        ("events", merged.events, 600),
+        ("events", merged.events, 600_000_000),
         ("duration", merged.duration, 9 * hour),
         # earliest start and latest stop: across days, "Sun" < "Sat" as strings
         ("start_time", merged.start_time, "Sat Oct 24 21:00:00 2026"),
@@ -55,6 +56,9 @@ def check_merged(merged, name):
         ("sim_start_time", merged.sim_start_time, 0 * sec),
         ("sim_stop_time", merged.sim_stop_time, 30 * sec),
         ("jobs", merged.jobs, 3),
+        # 600 M events in 9 h of computing (3 jobs), in 5 h of wall-clock time
+        ("pps", merged.pps, 18518),
+        ("pps_timespan", merged.pps_timespan, 33333),
     ]:
         b = value == ref
         utility.print_test(b, f"{name}: {key} = {value} (expected {ref})")
@@ -71,7 +75,7 @@ def test_merge_of_data_items():
             0,
             10 * sec,
             3 * hour,
-            100,
+            100_000_000,
             "job1",
         ),
         make_stats(
@@ -80,7 +84,7 @@ def test_merge_of_data_items():
             20 * sec,
             30 * sec,
             3 * hour,
-            300,
+            300_000_000,
             "job2",
         ),
         make_stats(
@@ -89,7 +93,7 @@ def test_merge_of_data_items():
             10 * sec,
             20 * sec,
             3 * hour,
-            200,
+            200_000_000,
             "job3",
         ),
     ]

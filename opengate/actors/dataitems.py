@@ -536,6 +536,17 @@ class StatisticsDataItem(DataItem):
             return int(self.data.steps / (self.data.duration / g4_units.s))
         return 0
 
+    @property
+    def pps_timespan(self):
+        """Primaries per second of wall-clock time (timespan). For jobs run in
+        parallel, it is the speed of the whole campaign, while pps is the speed
+        of one job. Not reliable for very short simulations (timespan is known
+        to the second)."""
+        timespan = self.timespan
+        if timespan != 0:
+            return int(self.data.events / (timespan / g4_units.s))
+        return 0
+
     def get_processed_output(self):
         d = {}
         d["runs"] = {"value": self.data.runs, "unit": None}
@@ -551,6 +562,7 @@ class StatisticsDataItem(DataItem):
         d["pps"] = {"value": self.pps, "unit": None}
         d["tps"] = {"value": self.tps, "unit": None}
         d["sps"] = {"value": self.sps, "unit": None}
+        d["pps_timespan"] = {"value": self.pps_timespan, "unit": None}
         d["start_time"] = {"value": self.data.start_time, "unit": None}
         d["stop_time"] = {"value": self.data.stop_time, "unit": None}
         val, unit = g4_best_unit_tuple(self.data.sim_start_time, "Time")
