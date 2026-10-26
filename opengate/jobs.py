@@ -21,6 +21,7 @@ from .exception import (
     GateJobsBackendError,
     GateMergeError,
     GateSplitError,
+    GateUserError,
     fatal,
     warning,
 )
@@ -178,9 +179,11 @@ def _prepare_campaign_dir(campaign_dir, overwrite_existing_job_folders=False):
     ) and overwrite_existing_job_folders is False:
         blocking_entries = [str(p.name) for p in existing_job_folders]
         blocking_entries.extend(str(p.name) for p in existing_jobs_sidecar_files)
-        fatal(
-            f"campaign_dir '{campaign_dir}' already contains split-job artifacts: "
-            f"{blocking_entries}. Set overwrite_existing_job_folders=True to replace them."
+        raise GateUserError(
+            f"The campaign folder already contains split jobs: {campaign_dir}\n"
+            f"({', '.join(blocking_entries)})\n"
+            f"Remove it, choose another campaign_dir, or use "
+            f"overwrite_existing_job_folders=True in jobs_split to replace them."
         )
 
     if overwrite_existing_job_folders is True:
