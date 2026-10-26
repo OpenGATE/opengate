@@ -29,7 +29,7 @@ Once installed, we recommend checking the installation by printing GATE informat
     opengate_info
     opengate_tests
 
-The first time a simulation is executed, Geant4 data must be downloaded and installed. This step is automated but may take some time depending on your bandwidth. Note that this is only done once. Running `opengate_info` will display details and the path of the data.
+The first time a simulation is executed, Geant4 data must be downloaded and installed. This step is automated but may take some time depending on your bandwidth. Note that this is only done once. Running `opengate_info` will display details and the path of the data. Running ``opengate_check_visu`` checks which visualisation types (vrml, gdml, qt) work on your computer, without opening any window (``opengate_check_visu --display`` also checks the Qt viewer, with a window opened for a few seconds).
 
 GATE 10 is currently tested with Python 3.10 to 3.14.
 If you want to use a specific Python version, create the environment with an

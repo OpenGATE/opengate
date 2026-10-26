@@ -88,7 +88,9 @@ if __name__ == "__main__":
     except Exception as e:
         print("OK, cannot change the volume_name")
 
-    phsp.output_filename = "phsp.root"
+    # not phsp.root: test093_proc_in_vol_attribute writes it in the same
+    # folder, and the tests may run in parallel
+    phsp.output_filename = "phsp_mt.root"
     phsp.steps_to_store = "all"
 
     # go
@@ -97,7 +99,7 @@ if __name__ == "__main__":
 
     # check
     ref_root = paths.output_ref / "phsp.root"
-    test_root = paths.output / "phsp.root"
+    test_root = paths.output / "phsp_mt.root"
     print(phsp.attributes)
     keys = [att1.name, att2.name, att3.name, att4.name]
     n = len(keys)

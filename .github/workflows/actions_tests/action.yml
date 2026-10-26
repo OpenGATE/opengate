@@ -79,6 +79,9 @@ runs:
               QT_QPA_PLATFORM=offscreen python -c "import opengate_core as g4; assert g4.G4UIExecutive().IsGUI()" || exit -1
               echo "Qt UI started from the installed wheel"
           fi
+          # report the visualisation types that work on this runner (for
+          # information only: the runners have no display)
+          opengate_check_visu || echo "opengate_check_visu: some visualisation checks failed"
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
           sha=${{ github.sha }}
