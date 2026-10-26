@@ -31,6 +31,13 @@ QT_READY_MARKER = "OPENGATE_CHECK_VISU_QT_READY"
 # cannot tell anything
 QT_NO_OPENGL_MESSAGE = "QOpenGLWidget is not supported on this platform"
 
+# printed by Qt when the OpenGL context of the viewer cannot be created: the
+# window opens but stays empty (e.g. the xcbglintegrations plugins are missing)
+QT_OPENGL_CONTEXT_FAILED_MESSAGES = (
+    "QOpenGLWidget: Failed to create context",
+    "neither GLX nor EGL are enabled",
+)
+
 
 def build_simulation(visu_type, visu_filename=None):
     import opengate as gate
@@ -124,6 +131,9 @@ def child_env(display):
     env = dict(os.environ)
     env["PYTHONFAULTHANDLER"] = "1"
     env["PYTHONUNBUFFERED"] = "1"
+    # Qt sends its messages to the system journal when the output is not a
+    # terminal: keep them in the output of the check
+    env["QT_FORCE_STDERR_LOGGING"] = "1"
     if not display:
         # Qt draws in memory, no window is opened
         env["QT_QPA_PLATFORM"] = "offscreen"
@@ -197,6 +207,9 @@ def run_qt_viewer_check(cmd, tmp_dir, display, timeout):
     output = "".join(lines)
     if not display and QT_NO_OPENGL_MESSAGE in output:
         return None, "no OpenGL with the offscreen Qt, use --display", output
+    for message in QT_OPENGL_CONTEXT_FAILED_MESSAGES:
+        if message in output:
+            return False, f"no OpenGL context ({message})", output
     if ready_time is None:
         if alive:
             return False, f"viewer not created after {timeout} s", output
