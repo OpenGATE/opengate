@@ -35,6 +35,7 @@ mkdir -p opengate_core/plugins &&
 export QT_PLUGIN_DIR=$(qtpaths6 --plugin-dir) &&
 cp -r -n $QT_PLUGIN_DIR/platforms/* opengate_core/plugins/ &&
 cp -r -n $QT_PLUGIN_DIR/imageformats opengate_core/plugins/ &&
+cp -r -n $QT_PLUGIN_DIR/xcbglintegrations opengate_core/plugins/ &&
 source /software/geant4/bin/geant4make.sh &&
 . /opt/rh/gcc-toolset-14/enable
 '
@@ -61,6 +62,11 @@ LD_LIBRARY_PATH=/software/geant4/lib:/software/itk/lib
 # xcb_send_request). Both come with libX11 on any X11 desktop. The other xcb
 # libraries (xcb-cursor, xcb-icccm...) stay bundled and use the system libxcb.
 export CIBW_REPAIR_WHEEL_COMMAND_LINUX='auditwheel repair --exclude libGLX.so.0 --exclude libGLdispatch.so.0 --exclude libxcb.so.1 --exclude libX11-xcb.so.1 -w {dest_dir} {wheel}'
+
+# The xcbglintegrations plugins (GLX, EGL) are needed by the xcb platform
+# plugin to create OpenGL contexts: without them, the Qt window opens but stays
+# empty ("neither GLX nor EGL are enabled"). Qt finds them in QT_PLUGIN_PATH,
+# set by opengate_core (qt5Setup.py).
 
 # Run the build in custom docker
 cp VERSION core/VERSION
