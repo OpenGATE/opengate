@@ -607,10 +607,15 @@ void GateSourceManager::RegisterImageBox(GateImageBox *g4_solid) {
 }
 
 void GateSourceManager::StartVisualization() const {
+  // "gdml_file_only" writes the file too (it was only done for "gdml")
+  const bool gdml =
+      fVisualizationType == "gdml" || fVisualizationType == "gdml_file_only";
 #ifdef USE_GDML
-  if (fVisualizationType == "gdml") {
+  if (gdml) {
     G4GDMLParser parser;
     parser.SetRegionExport(true);
+    // replace the file of a previous simulation (fatal error otherwise)
+    parser.SetOverwriteOutputFile(true);
     parser.Write(fVisualizationFile,
                  G4TransportationManager::GetTransportationManager()
                      ->GetNavigatorForTracking()
@@ -618,7 +623,7 @@ void GateSourceManager::StartVisualization() const {
                      ->GetLogicalVolume());
   }
 #else
-  if (fVisualizationType == "gdml") {
+  if (gdml) {
     std::cout << "Error: GDML is not activated with Geant4" << std::endl;
     return;
   }
