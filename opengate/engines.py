@@ -545,7 +545,7 @@ class PhysicsEngine(EngineBase):
                         for mat in g4.G4Material.GetMaterialTable:
                             if str(mat.GetName()) == i:
                                 mat_prop = load_optical_properties_from_xml(
-                                    self.physics_manager.optical_properties_file,
+                                    self.physics_manager.get_optical_properties_file(),
                                     mat.GetName(),
                                 )
                                 if mat_prop is not None:
@@ -560,11 +560,11 @@ class PhysicsEngine(EngineBase):
                                 else:
                                     self.simulation_engine.warn_user(
                                         f"Could not load the optical material properties for material {mat.GetName()} "
-                                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}"
+                                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}"
                                     )
                 material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
-                    self.physics_manager.optical_properties_file, material_name
+                    self.physics_manager.get_optical_properties_file(), material_name
                 )
                 if material_properties is not None:
                     self.g4_optical_material_tables[str(material_name)] = (
@@ -576,7 +576,7 @@ class PhysicsEngine(EngineBase):
                 else:
                     self.simulation_engine.simulation.warn_user(
                         f"Could not load the optical material properties for material {material_name} "
-                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
+                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}."
                     )
 
     @requires_fatal("physics_manager")

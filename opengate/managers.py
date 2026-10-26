@@ -693,6 +693,15 @@ def _setter_hook_user_limits_particles(self, particle_names):
         return particle_names
 
 
+# optical properties files shipped with GATE (used by default, if needed)
+DEFAULT_OPTICAL_PROPERTIES_FILE = (
+    Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml"
+)
+DEFAULT_SURFACE_PROPERTIES_FILE = (
+    Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml"
+)
+
+
 class PhysicsManager(GateObject):
     """
     Everything related to the physics (lists, cuts, etc.) should be here.
@@ -731,20 +740,23 @@ class PhysicsManager(GateObject):
             },
         ),
         "optical_properties_file": (
-            Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
+            None,
             {
                 "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-                "Default: file shipped with GATE.",
+                f"If None (default), the file shipped with GATE ({DEFAULT_OPTICAL_PROPERTIES_FILE}) is used, "
+                "only when G4OpticalPhysics is enabled (so it is not an input file of the "
+                "simulation otherwise).",
                 "is_input_file": True,
             },
         ),
         "surface_properties_file": (
-            Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml",
+            None,
             {
                 "doc": "Path to the xml file containing the surface material properties to be used by "
-                "optical surface, i.e. G4LogicalBorderSurface."
-                f"The default file shipped with GATE located is in "
-                f"{Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
+                "optical surface, i.e. G4LogicalBorderSurface. "
+                f"If None (default), the file shipped with GATE ({DEFAULT_SURFACE_PROPERTIES_FILE}) is used, "
+                "only when optical surfaces are defined (so it is not an input file of the "
+                "simulation otherwise).",
                 "is_input_file": True,
             },
         ),
@@ -1155,10 +1167,34 @@ class PhysicsManager(GateObject):
         #         )
         #     self.user_info.user_limits_particles[pn] = True
 
+    def get_optical_properties_file(self):
+        """The optical properties file, or the default one shipped with GATE"""
+        if self.optical_properties_file is None:
+            return DEFAULT_OPTICAL_PROPERTIES_FILE
+        return self.optical_properties_file
+
+    def get_surface_properties_file(self):
+        """The surface properties file, or the default one shipped with GATE"""
+        if self.surface_properties_file is None:
+            return DEFAULT_SURFACE_PROPERTIES_FILE
+        return self.surface_properties_file
+
+    def resolve_optical_properties_files(self):
+        # The optical files are input files of the simulation (e.g. copied in
+        # each job of a split simulation) only when they are used.
+        if (
+            self.special_physics_constructors["G4OpticalPhysics"] is True
+            and self.optical_properties_file is None
+        ):
+            self.optical_properties_file = DEFAULT_OPTICAL_PROPERTIES_FILE
+        if len(self.optical_surfaces) > 0 and self.surface_properties_file is None:
+            self.surface_properties_file = DEFAULT_SURFACE_PROPERTIES_FILE
+
     def resolve_and_validate_config(self, context=None):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
+        self.resolve_optical_properties_files()
         # Chemistry actors may request region-based track-structure EM physics on the
         # volumes they are attached to. This must be resolved before the
         # physics engine configures G4 EM parameters and registers the DNA
