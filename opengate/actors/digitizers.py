@@ -12,7 +12,7 @@ from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
 )
-from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
+from .actoroutput import ActorOutputRoot, ActorOutputRunStackedImage
 
 
 def ene_win_peak(name, energy, energy_width_percent):
@@ -1179,12 +1179,13 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         ),
     }
 
+    # all runs are stacked in the same image (slices of run r: channels of run r)
     user_output_config = {
         "counts": {
-            "actor_output_class": ActorOutputSingleImage,
+            "actor_output_class": ActorOutputRunStackedImage,
         },
         "squared_counts": {
-            "actor_output_class": ActorOutputSingleImage,
+            "actor_output_class": ActorOutputRunStackedImage,
             "active": False,
         },
     }

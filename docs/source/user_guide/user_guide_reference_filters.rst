@@ -42,14 +42,22 @@ You can compare attributes (like Energy, Time, Position) using standard Python c
    # Energy filter
    f1 = F.KineticEnergy > 10 * MeV
 
-   # Position filter (X coordinate)
-   f2 = F.PostPosition_X < 0 * mm
+   # Deposited energy filter (e.g. do not store the steps without deposit)
+   f2 = F.TotalEnergyDeposit > 0
+
+   # Integer filter (primary particles only)
+   f3 = F.TrackID == 1
 
    # String/Particle filter
-   f3 = F.ParticleName == "proton"
+   f4 = F.ParticleName == "proton"
 
    # String "contains" filter (e.g., matches "proton", "anti_proton")
-   f4 = F.ParticleName.contains("proton")
+   f5 = F.ParticleName.contains("proton")
+
+The comparison follows the type of the attribute: ``F.TotalEnergyDeposit > 0``
+and ``F.TotalEnergyDeposit > 0.0`` are the same filter. Only double, integer
+and string attributes can be used; vector attributes (e.g. ``PostPosition``)
+cannot.
 
 Logical Combination
 ~~~~~~~~~~~~~~~~~~~
@@ -72,12 +80,12 @@ Available Attributes
 
 You can filter on any attribute available in the ``GateDigiAttributeManager`` (C++ class). Common attributes include:
 
-* ``KineticEnergy``, ``TotalEnergyDeposit``
-* ``GlobalTime``, ``LocalTime``
-* ``PostPosition_X``, ``PostPosition_Y``, ``PostPosition_Z``
-* ``PreDirection_X``, ``PreDirection_Y``, ``PreDirection_Z``
-* ``ParticleName``, ``CreatorProcess``
-* ``TrackID``, ``ParentID``, ``RunID``, ``EventID``
+* ``KineticEnergy``, ``PreKineticEnergy``, ``TotalEnergyDeposit`` (double)
+* ``GlobalTime``, ``LocalTime`` (double)
+* ``ParticleName``, ``TrackCreatorProcess``, ``ProcessDefinedStep``, ``TrackVolumeName`` (string)
+* ``TrackID``, ``ParentID``, ``RunID``, ``EventID``, ``PDGCode`` (integer)
+
+Vector attributes, such as positions and directions, cannot be used in a filter.
 
 Special Filters
 ---------------

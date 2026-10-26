@@ -229,8 +229,6 @@ class BremsstrahlungSplittingActor(
         ),
     }
 
-    processes = ("eBrem",)
-
     def __init__(self, *args, **kwargs):
         SplitProcessActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
@@ -260,9 +258,24 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
     processes: list
     particles: list
 
+    # 'particles' is a user info (GenericBiasingActorBase): it must be
+    # overridden here, not hidden by a class attribute (the user info property
+    # would be lost, e.g. when the simulation is restored from a dictionary)
+    user_info_defaults = {
+        "particles": (
+            [
+                "gamma",
+            ],
+            {
+                "doc": "For gamma free flight, only gamma is supported",
+                "override": True,
+                "read_only": True,
+            },
+        ),
+    }
+
     # This biased actor DOES NOT work for GammaGeneralProc
     processes = ["compt", "phot", "conv", "Rayl"]
-    particles = ["gamma"]
 
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)

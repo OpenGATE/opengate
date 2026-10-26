@@ -28,8 +28,16 @@ if __name__ == "__main__":
 
     path_reference_dose = paths.output_ref / "dose_reference_mb_40_slit_11_dose.mhd"
     path_test_dose = sim.get_actor("dose").dose.get_output_path()
-    tolerance = 0.55
-    is_ok, mae = analyze_dose(path_reference_dose, path_test_dose, tolerance)
+    # The dose voxels are 0.1 mm here (1 mm for the other test097 dose tests):
+    # the PDD is computed in a central square of 100 voxels = 10 mm (about
+    # the beam width). With the default 10 voxels (1 mm), almost no dose is
+    # deposited in the square with 5000 primaries: the MAE was random (0.37 -
+    # 0.58 for 5 seeds), the test failed at random with a 0.55 tolerance.
+    # With 10 mm: MAE 0.11 - 0.22 for 5 seeds.
+    tolerance = 0.3
+    is_ok, mae = analyze_dose(
+        path_reference_dose, path_test_dose, tolerance, mean_size=100
+    )
     utility.test_ok(
         is_ok,
         f"Analyze dose between\n"

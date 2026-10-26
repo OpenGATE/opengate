@@ -51,6 +51,8 @@ runs:
           fi
           pip install SimpleITK
           pip install "gaga_phsp>=0.7.6"
+          # garf: ARF actor (test128)
+          pip install garf
           pip install pytomography hist
           pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
           pip install dist/opengate-*.whl
