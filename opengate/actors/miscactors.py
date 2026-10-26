@@ -83,6 +83,10 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         if self.simulation is not None:
             data["run_start"] = self.simulation.run_timing_intervals[run_index][0]
             data["run_stop"] = self.simulation.run_timing_intervals[run_index][1]
+            # the simulated time of this run, so that merging the statistics
+            # of several runs gives the simulated time of all of them
+            data["sim_start_time"] = data["run_start"]
+            data["sim_stop_time"] = data["run_stop"]
             data["nb_threads"] = self.simulation.number_of_threads
         self.user_output.stats.store_data(run_index, data)
         self.user_output.stats.write_data_if_requested(which=run_index)
