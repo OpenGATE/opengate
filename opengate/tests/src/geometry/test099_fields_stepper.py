@@ -15,6 +15,7 @@ See test099_fields_stepper_em.py for non-pure-B field coverage and
 magnetic-only stepper guard tests.
 """
 
+import pathlib
 import numpy as np
 import uproot
 
@@ -34,12 +35,17 @@ from opengate.tests.src.geometry.test099_fields_helpers import (
 )
 
 REF_STEPPER = "DormandPrince745"
-ALL_STEPPERS = list(fields._stepper_map.keys())
+# BogackiShampine45 is refused for pure magnetic fields (Geant4 memory bug)
+ALL_STEPPERS = [
+    s for s in fields._stepper_map if s not in fields._not_for_pure_magnetic_steppers
+]
 
 VISU = False
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     By = 5 * g4_tesla
     T = 10 * g4_MeV
@@ -64,7 +70,7 @@ if __name__ == "__main__":
         sim.visu_commands.append("/vis/scene/add/magneticField 20 fullArrow")
 
     world = sim.world
-    world.size = [(n + 1) * spacing, 1 * g4_m, 1 * g4_m]
+    world.size = [(n + 1) * spacing, 1 * g4_m, 2.5 * g4_m]
     world.material = "G4_Galactic"
 
     for stepper_name, x in zip(ALL_STEPPERS, x_positions):
@@ -149,5 +155,20 @@ if __name__ == "__main__":
             f"dKE={dKE / g4_MeV:.6f} MeV  OK={ok_cross}"
         )
         is_ok = is_ok and ok_cross
+
+    # BogackiShampine45 is refused for pure magnetic fields (Geant4 memory bug),
+    # but accepted for EM fields (8 integration variables)
+    b_field = fields.UniformMagneticField(name="B_bs45")
+    b_field.stepper = "BogackiShampine45"
+    try:
+        b_field._validate_stepper()
+        refused = False
+    except ValueError as e:
+        refused = "BogackiShampine45" in str(e)
+    em_field = fields.UniformElectroMagneticField(name="EM_bs45")
+    em_field.stepper = "BogackiShampine45"
+    em_field._validate_stepper()
+    print(f"BogackiShampine45 refused for a pure magnetic field: {refused}")
+    is_ok = is_ok and refused
 
     utility.test_ok(is_ok)

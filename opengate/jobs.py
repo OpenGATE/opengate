@@ -28,6 +28,7 @@ from .runtiming import assert_run_timing
 from .serialization import (
     dump_json,
     load_json,
+    load_json_with_retry,
     _apply_path_modifier_recursively,
     _collect_input_file_values_from_gate_object_dictionary,
     _find_metaimage_payload_files,
@@ -1135,6 +1136,33 @@ def _get_job_execution_status_path(job_folder):
     return Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME
 
 
+# Status files are rewritten by the job processes while other processes poll
+# them. On Windows, a file cannot be replaced while another process has it open
+# (and cannot be opened while it is being replaced): both raise PermissionError.
+# These conflicts last a few milliseconds, so retry for a short while.
+STATUS_FILE_RETRY_ATTEMPTS = 50
+STATUS_FILE_RETRY_DELAY_S = 0.1
+
+
+def _replace_with_retry(source_path, target_path):
+    for attempt in range(STATUS_FILE_RETRY_ATTEMPTS):
+        try:
+            os.replace(source_path, target_path)
+            return
+        except PermissionError:
+            if attempt == STATUS_FILE_RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(STATUS_FILE_RETRY_DELAY_S)
+
+
+def _load_status_file(status_path):
+    return load_json_with_retry(
+        status_path,
+        attempts=STATUS_FILE_RETRY_ATTEMPTS,
+        delay_s=STATUS_FILE_RETRY_DELAY_S,
+    )
+
+
 def _dump_json_atomic(output_path, data):
     """Write JSON atomically so status readers never observe a truncated file."""
     output_path = Path(output_path)
@@ -1146,7 +1174,7 @@ def _dump_json_atomic(output_path, data):
             dump_json(data, output_file)
             output_file.flush()
             os.fsync(output_file.fileno())
-        os.replace(temporary_output_path, output_path)
+        _replace_with_retry(temporary_output_path, output_path)
     finally:
         if temporary_output_path.exists():
             temporary_output_path.unlink()
@@ -1283,8 +1311,7 @@ def load_jobs_backend_status(split_root_folder):
     status_path = _get_jobs_backend_status_path(split_root_folder)
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return _load_status_file(status_path)
 
 
 def _write_jobs_backend_status(
@@ -1323,8 +1350,7 @@ def load_job_execution_status(job_folder):
     status_path = _get_job_execution_status_path(job_folder)
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return _load_status_file(status_path)
 
 
 def _write_job_execution_status(
@@ -2210,15 +2236,31 @@ class SplitRunMergeController:
         start_time = time.perf_counter()
         while True:
             self.refresh()
-            if self.stage in ("completed", "failed", "merged", "cleaned"):
+            if self.stage == "failed":
+                warning(
+                    f"Split jobs failed in '{self._campaign_dir}':\n"
+                    f"{self.format_failure_report()}"
+                )
+                return self._status
+            if self.stage in ("completed", "merged", "cleaned"):
                 return self._status
             if timeout is not None and (time.perf_counter() - start_time) > timeout:
                 error = GateJobsBackendError(
-                    f"Timed out while waiting for split jobs in '{self._campaign_dir}'."
+                    f"Timed out while waiting for split jobs in '{self._campaign_dir}':\n"
+                    f"{self.format_failure_report()}"
                 )
                 self._set_error(error)
                 raise error
             time.sleep(poll_interval)
+
+    def format_failure_report(self):
+        """Describe the child jobs that did not complete, with their error message."""
+        lines = []
+        if self._status.get("error") is not None:
+            lines.append(f"Controller error: {self._status['error']}")
+        if self._campaign_dir is not None and self.manifest_path.exists():
+            lines.append(format_jobs_failure_report(self._campaign_dir))
+        return "\n".join(lines)
 
     def merge(self, **merge_options):
         if self._campaign_dir is None:
@@ -3186,7 +3228,7 @@ def print_jobs_merge_summary(
 from .base import (
     _get_user_info_options,
     find_all_gate_objects,
-    find_all_paths,
+    find_all_file_refs,
 )
 from .managers import create_sim_from_json
 
@@ -3204,7 +3246,9 @@ def _get_simulation_input_files_info(simulation):
                 continue
             options = _get_user_info_options(ui_name, class_name, class_module)
             if options.get("is_input_file") is True:
-                paths = find_all_paths(ui_value)
+                # same detection as the input files transferred to the jobs:
+                # a path can be given as a Path or as a str
+                paths = find_all_file_refs(ui_value)
                 for p in paths:
                     input_files_info.append(
                         {
@@ -3258,6 +3302,43 @@ def _format_bytes(size_bytes):
     else:
         val = size_bytes / (1024 * 1024 * 1024)
         return f"{val:.1f} GB"
+
+
+def format_jobs_failure_report(campaign_dir_or_status):
+    """Describe the child jobs of a campaign that did not complete.
+
+    For each such job, give its status and the error message (with traceback)
+    recorded by the job runner. A job still reported as 'running' while the
+    campaign is over usually means its process died without reporting, e.g.
+    after a native crash.
+    """
+    if isinstance(campaign_dir_or_status, dict):
+        status_data = campaign_dir_or_status
+    else:
+        status_data = jobs_status(campaign_dir_or_status)
+    lines = []
+    for job in status_data.get("jobs", []):
+        execution_status = job.get("execution_status")
+        if execution_status == "completed":
+            continue
+        folder = Path(status_data.get("campaign_dir", ".")) / str(
+            job.get("folder_name")
+        )
+        lines.append(f"Job {job.get('job_id')} [{execution_status}] in {folder}")
+        execution_status_data = job.get("execution_status_data") or {}
+        error_message = execution_status_data.get("error_message")
+        if error_message:
+            lines += ["    " + line for line in str(error_message).splitlines()]
+        elif execution_status is None:
+            lines.append("    The job has not started (no execution status file).")
+        elif execution_status == "running":
+            lines.append(
+                "    No error recorded: the job is still running, or its process "
+                "died without reporting (e.g. a native crash)."
+            )
+    if not lines:
+        return "All jobs completed."
+    return "\n".join(lines)
 
 
 def jobs_status(campaign_dir):
@@ -3379,6 +3460,9 @@ def jobs_status(campaign_dir):
                         pass
 
         missing_input_files = []
+        input_check_error = None
+        # input files found for this job (path -> size), counted once
+        found_input_files = {}
         if folder_exists and metadata_exists and sim_exists:
             try:
                 child_sim = create_sim_from_json(simulation_file)
@@ -3386,25 +3470,31 @@ def jobs_status(campaign_dir):
                 for info in job_input_files:
                     val_str = info["value"]
                     val_path = Path(val_str)
-                    file_found = (
-                        (job_folder / val_path.name).exists()
-                        or (
-                            not val_path.is_absolute()
-                            and (job_folder / val_path).exists()
-                        )
-                        or (
-                            val_path.is_absolute()
-                            and val_path.exists()
-                            and not metadata_exists
-                        )
+                    candidates = [job_folder / val_path.name]
+                    if not val_path.is_absolute():
+                        candidates.append(job_folder / val_path)
+                    found_path = next((c for c in candidates if c.exists()), None)
+                    file_found = found_path is not None or (
+                        val_path.is_absolute()
+                        and val_path.exists()
+                        and not metadata_exists
                     )
+                    if found_path is not None:
+                        try:
+                            found_input_files[found_path.resolve()] = (
+                                found_path.stat().st_size
+                            )
+                        except OSError:
+                            pass
 
                     if not file_found:
                         missing_input_files.append(
                             f"[{info['class_name']}] {info['object_name']} -> {info['attribute']}: {val_str}"
                         )
-            except Exception:
-                pass
+            except Exception as error:
+                # the input files cannot be checked (e.g. the job simulation
+                # cannot be read with this version of opengate): report it
+                input_check_error = f"{type(error).__name__}: {error}"
 
         if not folder_exists:
             job_status = "missing_folder"
@@ -3445,6 +3535,10 @@ def jobs_status(campaign_dir):
                 "original_run_indices": metadata.get("original_run_indices", []),
                 "folder_size_bytes": folder_size,
                 "folder_size_str": _format_bytes(folder_size),
+                "input_check_error": input_check_error,
+                "number_of_input_files": len(found_input_files),
+                "input_files_size_bytes": sum(found_input_files.values()),
+                "input_files_size_str": _format_bytes(sum(found_input_files.values())),
                 "input_mode": "linked" if has_symlink else "copied",
                 "execution_status_filename": JOB_EXECUTION_STATUS_FILENAME,
                 "execution_status_exists": execution_status_data is not None,

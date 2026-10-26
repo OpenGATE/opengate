@@ -11,6 +11,7 @@ Checks that:
   - Both results agree with the analytical cyclotron radius.
 """
 
+import pathlib
 import itertools
 
 import numpy as np
@@ -34,7 +35,9 @@ from test099_fields_helpers import (
 VISU = False
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     Ex = 1e8 * g4_volt / g4_m
     T = 10 * g4_MeV
@@ -62,7 +65,7 @@ if __name__ == "__main__":
         sim.visu_commands.append("/vis/scene/add/electricField 15 fullArrow")
 
     world = sim.world
-    world.size = [3 * g4_m, 1 * g4_m, 1 * g4_m]
+    world.size = [3 * g4_m, 1 * g4_m, 2.5 * g4_m]
     world.material = "G4_Galactic"
 
     # --- Box with UniformElectricField (reference) ---

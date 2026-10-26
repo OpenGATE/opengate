@@ -1,6 +1,6 @@
 import re
 import os
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import itk
@@ -15,7 +15,7 @@ from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
 from ..image import write_itk_image
-from ..image import update_image_py_to_cpp
+from ..image import update_image_py_to_cpp, check_image_direction_is_identity
 from .utility import (
     vec_np_as_g4,
     rot_np_as_g4,
@@ -529,31 +529,33 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
 
     @requires_fatal("volume_manager")
-    def set_max_step_size(self, max_step_size):
+    def set_max_step_size(self, max_step_size, particles=None):
         self.volume_manager.simulation.physics_manager.set_max_step_size(
-            self.name, max_step_size
+            self.name, max_step_size, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_max_track_length(self, max_track_length):
+    def set_max_track_length(self, max_track_length, particles=None):
         self.volume_manager.simulation.physics_manager.set_max_track_length(
-            self.name, max_track_length
+            self.name, max_track_length, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_min_ekine(self, min_ekine):
+    def set_min_ekine(self, min_ekine, particles=None):
         self.volume_manager.simulation.physics_manager.set_min_ekine(
-            self.name, min_ekine
+            self.name, min_ekine, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_max_time(self, max_time):
-        self.volume_manager.simulation.physics_manager.set_max_time(self.name, max_time)
+    def set_max_time(self, max_time, particles=None):
+        self.volume_manager.simulation.physics_manager.set_max_time(
+            self.name, max_time, particles=particles
+        )
 
     @requires_fatal("volume_manager")
-    def set_min_range(self, min_range):
+    def set_min_range(self, min_range, particles=None):
         self.volume_manager.simulation.physics_manager.set_min_range(
-            self.name, min_range
+            self.name, min_range, particles=particles
         )
 
     @requires_fatal("volume_manager")
@@ -904,12 +906,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     voxel_materials: List
     image: str
     dump_label_image: str
+    visu_window: Optional[List[float]]
 
     user_info_defaults = {
         "voxel_materials": (
             [[-np.inf, np.inf, "G4_AIR"]],
             {
-                "doc": "FIXME",
+                "doc": "Lookup table from the image values to the materials: a list of "
+                "[min, max, material_name], each one for the voxels with a value in "
+                "the half-closed interval [min, max). The voxels outside all the "
+                "intervals get the default material of the volume (``material``). "
+                "The intervals must not overlap.",
             },
         ),
         "image": (
@@ -926,6 +933,16 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             {
                 "doc": "Path at which the image containing material labels should be saved. "
                 "Set to None to dump no image."
+            },
+        ),
+        "visu_window": (
+            None,
+            {
+                "doc": "Intensity window [min, max] of the image slices shown in the "
+                "Qt visualisation, in the units of the image (e.g. HU for a CT): "
+                "values below min are black, above max are white. "
+                "If None, the window goes from the 0.5 to the 99.9 percentiles of "
+                "the image intensities.",
             },
         ),
     }
@@ -1078,27 +1095,49 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.half_spacing = 0.5 * self.spacing
         self.construct_material()
         self.construct_solid()
-        self.construct_slices()
+        # the slices are only displayed by the visualisation
+        if self.simulation is not None and self.simulation.visu:
+            self.construct_slices()
         self.construct_logical_volume()
         self.g4_voxel_param = self.create_image_parametrisation()
         self.construct_physical_volume()
 
+    def get_visu_window(self, image_array):
+        if self.visu_window is not None:
+            if len(self.visu_window) != 2 or self.visu_window[0] >= self.visu_window[1]:
+                fatal(
+                    f"The visu_window of the image volume '{self.name}' must be "
+                    f"[min, max] with min < max, while it is {self.visu_window}"
+                )
+            return float(self.visu_window[0]), float(self.visu_window[1])
+        # robust default: a few extreme voxels (e.g. metal in a CT) must not
+        # squeeze all the other intensities into a few grey levels
+        low, high = np.percentile(image_array, [0.5, 99.9])
+        if high <= low:
+            low, high = np.min(image_array), np.max(image_array)
+        if high <= low:
+            high = low + 1
+        return float(low), float(high)
+
+    def get_visu_slices(self, image_array):
+        """The three middle slices (xy, xz, yz) of the image (numpy array, in
+        z, y, x order), windowed in [0, 1] with visu_window."""
+        low, high = self.get_visu_window(image_array)
+
+        def window(s):
+            s = np.clip((s.astype(np.float64) - low) / (high - low), 0, 1)
+            return list(s.reshape(-1))
+
+        nz, ny, nx = image_array.shape
+        return (
+            window(image_array[nz // 2, :, :]),
+            window(image_array[:, ny // 2, :]),
+            window(image_array[:, :, nx // 2]),
+        )
+
     def construct_slices(self):
         image_array = itk.GetArrayFromImage(self.itk_image)
-        min_pixel = np.min(image_array)
-        interval_pixel = np.max(image_array) - min_pixel
-        self.slice_xy = (
-            image_array[int(self.size_pix[2] / 2), :, :] - min_pixel
-        ) / interval_pixel
-        self.slice_xy = list(self.slice_xy.reshape(1, -1)[0])
-        self.slice_xz = (
-            image_array[:, int(self.size_pix[1] / 2), :] - min_pixel
-        ) / interval_pixel
-        self.slice_xz = list(self.slice_xz.reshape(1, -1)[0])
-        self.slice_yz = (
-            image_array[:, :, int(self.size_pix[0] / 2)] - min_pixel
-        ) / interval_pixel
-        self.slice_yz = list(self.slice_yz.reshape(1, -1)[0])
+        self.slice_xy, self.slice_xz, self.slice_yz = self.get_visu_slices(image_array)
         image_dict = {
             "slice_xy": self.slice_xy,
             "slice_xz": self.slice_xz,
@@ -1157,6 +1196,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
         self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
         self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        # the visualisation draws the image box and its slices (GateImageBox),
+        # never the voxels: do not let Geant4 visit the (millions of) voxels
+        # each time the scene is drawn, it makes the Qt viewer very slow
+        self.g4_vis_attributes.SetDaughtersInvisible(True)
+        self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
     def create_material_to_label_lut(self, material=None, voxel_materials=None):
         if voxel_materials is None:
@@ -1186,10 +1230,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def load_input_image(self, path=None):
         if path is None:
-            itk_image = itk.imread(ensure_filename_is_str(self.image))
+            path = self.image
+            itk_image = itk.imread(ensure_filename_is_str(path))
+            check_image_direction_is_identity(
+                itk_image, f"the image volume '{self.name}' ({path})"
+            )
             self.itk_image = itk_image
         else:
             itk_image = itk.imread(ensure_filename_is_str(path))
+            check_image_direction_is_identity(
+                itk_image, f"the image volume '{self.name}' ({path})"
+            )
         return itk_image
 
     def create_attenuation_image(self, database, energy):

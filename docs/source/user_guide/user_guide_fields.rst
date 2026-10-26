@@ -237,7 +237,7 @@ For general fields (electric and/or magnetic components):
 - ``DormandPrince745`` (default)
 - ``ClassicalRK4``
 - ``CashKarpRKF45``
-- ``BogackiShampine45``
+- ``BogackiShampine45`` (electric and EM fields only, see below)
 - ``BogackiShampine23``
 - ``DormandPrinceRK56``
 - ``DormandPrinceRK78``
@@ -245,7 +245,12 @@ For general fields (electric and/or magnetic components):
 For purely magnetic fields, the following additional steppers are available:
 
 - ``NystromRK4``
-- ``ExactHelicalStepper``
+- ``ExactHelixStepper``
+
+``BogackiShampine45`` cannot be used with purely magnetic fields: with the 6
+integration variables of a magnetic field, Geant4's ``G4BogackiShampine45``
+writes past the end of an internal buffer, which corrupts the memory (Geant4
+bug, present in Geant4 11.4.2). GATE stops with an error in that case.
 
 Please refer to the `Geant4 documentation <https://geant4.web.cern.ch/documentation/pipelines/master/bfad_html/ForApplicationDevelopers/Detector/electroMagneticField.html>`__ for details on the characteristics and recommended use cases for each stepper type.
 

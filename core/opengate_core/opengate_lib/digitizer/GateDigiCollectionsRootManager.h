@@ -33,6 +33,8 @@ public:
 
   void OpenFile(int tupleId, const std::string &filename);
 
+  static void CheckFileCanBeCreated(const std::string &filename);
+
   void CloseFile(int tupleId);
 
   void Write(int tupleId) const;

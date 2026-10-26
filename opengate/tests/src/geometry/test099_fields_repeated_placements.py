@@ -17,6 +17,7 @@ Checks:
   3. Energy conservation (magnetic field does no work).
 """
 
+import pathlib
 import uproot
 
 import opengate as gate
@@ -52,7 +53,9 @@ VISU = False
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     sim = gate.Simulation()
     sim.g4_verbose = False

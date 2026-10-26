@@ -529,7 +529,14 @@ def fit_exponential_decay(data, start, end):
     bin_widths = np.diff(bin_borders)
     bin_centers = bin_borders[:-1] + bin_widths / 2
 
-    popt, _ = scipy.optimize.curve_fit(exponential_func, bin_centers, bin_heights)
+    # initial guess from the data, so that the fit does not overflow in exp when
+    # the times are large (the default a=b=1 does not depend on the time scale)
+    data = np.asarray(data)
+    b0 = 1.0 / max(np.mean(data) - bin_borders[0], np.finfo(float).tiny)
+    a0 = bin_heights[0] * np.exp(b0 * bin_centers[0])
+    popt, _ = scipy.optimize.curve_fit(
+        exponential_func, bin_centers, bin_heights, p0=[a0, b0]
+    )
     xx = np.linspace(start, end, 100)
     yy = exponential_func(xx, *popt)
     hl = np.log(2) / popt[1]

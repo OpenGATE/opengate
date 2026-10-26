@@ -1335,6 +1335,32 @@ class VisualisationEngine(EngineBase):
                 pass
 
 
+class UserHookLog(Box):
+    """Information stored by user hook functions, as named entries.
+
+    In a hook function:
+        simulation_engine.user_hook_log["my_entry"] = value
+    After the run:
+        sim.user_hook_log["my_entry"]  (or sim.user_hook_log.my_entry)
+
+    The log used to be a list: append() and extend() are kept for backward
+    compatibility (deprecated); they store the values under the names
+    'entry_0', 'entry_1', ...
+    """
+
+    def append(self, value):
+        warning(
+            "user_hook_log is now a dictionary: use "
+            "simulation_engine.user_hook_log['my_entry'] = value instead of append(). "
+            f"The value is stored as 'entry_{len(self)}'."
+        )
+        self[f"entry_{len(self)}"] = value
+
+    def extend(self, values):
+        for value in values:
+            self.append(value)
+
+
 class SimulationOutput:
     """
     FIXME
@@ -1348,7 +1374,7 @@ class SimulationOutput:
         self.pid = os.getpid()
         self.ppid = os.getppid()
         self.current_random_seed = None
-        self.user_hook_log = []
+        self.user_hook_log = UserHookLog()
         self.warnings = None
 
     def __str__(self):
@@ -1484,9 +1510,8 @@ class SimulationEngine(GateSingletonFatal):
         self.user_hook_after_init = simulation.user_hook_after_init
         self.user_hook_after_init_arg = simulation.user_hook_after_init_arg
         self.user_hook_after_run = simulation.user_hook_after_run
-        # a list to store short log messages
-        # produced by hook function such as user_hook_after_init
-        self.user_hook_log = []  # FIXME: turn this into dictionary
+        # named information stored by hook functions such as user_hook_after_init
+        self.user_hook_log = UserHookLog()
 
     def close_engines(self):
         if self.volume_engine:

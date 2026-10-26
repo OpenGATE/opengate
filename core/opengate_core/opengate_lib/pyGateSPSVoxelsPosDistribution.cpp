@@ -7,10 +7,40 @@
 
 #include "GateSPSPosDistribution.h"
 #include "GateSPSVoxelsPosDistribution.h"
+#include <cstddef>
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 namespace py = pybind11;
+
+namespace {
+
+using CDFArray = py::array_t<double, py::array::c_style | py::array::forcecast>;
+
+void SetCumulativeDistributionFunction(GateSPSVoxelsPosDistribution &source,
+                                       const CDFArray &cdfZ,
+                                       const CDFArray &cdfY,
+                                       const CDFArray &cdfX) {
+  // the CDFs are cdfZ[z], cdfY[z, y] and cdfX[z, y, x] (numpy order)
+  if (cdfZ.ndim() != 1 || cdfY.ndim() != 2 || cdfX.ndim() != 3 ||
+      cdfY.shape(0) != cdfZ.shape(0) || cdfX.shape(0) != cdfZ.shape(0) ||
+      cdfX.shape(1) != cdfY.shape(1) || cdfX.size() == 0) {
+    throw py::value_error(
+        "SetCumulativeDistributionFunction: the CDFs must be non-empty arrays "
+        "of shape (nz), (nz, ny) and (nz, ny, nx)");
+  }
+  // The copy of the CDFs takes time for large images, and the Geant4 worker
+  // threads may call this during their initialisation: the GIL is released
+  // for the copy, so that it does not block the Python code running on the
+  // other threads (e.g. UserLimitsPhysics), see #1163. The numpy arrays are
+  // read before, and they stay alive (held by the caller) during the copy.
+  py::gil_scoped_release release;
+  source.SetCumulativeDistributionFunction(cdfZ.data(), cdfY.data(),
+                                           cdfX.data(), cdfX.shape(2),
+                                           cdfX.shape(1), cdfZ.shape(0));
+}
+
+} // namespace
 
 void init_GateSPSVoxelsPosDistribution(py::module &m) {
 
@@ -18,7 +48,7 @@ void init_GateSPSVoxelsPosDistribution(py::module &m) {
       m, "GateSPSVoxelsPosDistribution")
       .def(py::init())
       .def("SetCumulativeDistributionFunction",
-           &GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction)
+           &SetCumulativeDistributionFunction)
       .def("VGenerateOne", &GateSPSVoxelsPosDistribution::VGenerateOne)
       .def_readwrite("cpp_edep_image",
                      &GateSPSVoxelsPosDistribution::cpp_image);

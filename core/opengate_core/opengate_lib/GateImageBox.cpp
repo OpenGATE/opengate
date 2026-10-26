@@ -8,7 +8,11 @@
 #include "GateImageBox.h"
 #include "GateHelpersDict.h"
 #include <G4VGraphicsScene.hh>
+#include <algorithm>
 #include <typeinfo>
+#ifdef GATEIMAGEBOX_USE_OPENGL
+#include <QOpenGLContext>
+#endif
 
 //-----------------------------------------------------------------------------
 GateImageBox::GateImageBox(py::dict &user_info)
@@ -26,6 +30,7 @@ GateImageBox::GateImageBox(py::dict &user_info)
   texture_xy = 0;
   texture_xz = 0;
   texture_yz = 0;
+  texture_context = nullptr;
   isInitialized = false;
 #endif
 }
@@ -46,15 +51,15 @@ void GateImageBox::SetSlices(py::dict &user_info) {
 //-----------------------------------------------------------------------------
 void GateImageBox::DescribeYourselfTo(G4VGraphicsScene &scene) const {
 #ifdef GATEIMAGEBOX_USE_OPENGL
-  if (!isInitialized) {
-    InitialiseSlice();
-  }
-  try {
-    G4OpenGLSceneHandler &opengl = dynamic_cast<G4OpenGLSceneHandler &>(scene);
-    scene.AddSolid(*this);
-    DescribeYourselfTo(opengl);
-  } catch (std::bad_cast exp) {
-    scene.AddSolid(*this);
+  auto *opengl = dynamic_cast<G4OpenGLSceneHandler *>(&scene);
+  scene.AddSolid(*this);
+  // the slices are OpenGL textures: only with an OpenGL viewer (there is no
+  // OpenGL context with the other ones, e.g. VRML)
+  if (opengl != nullptr) {
+    if (!TexturesAreValid()) {
+      InitialiseSlice();
+    }
+    DescribeYourselfTo(*opengl);
   }
 #else
   scene.AddSolid(*this);
@@ -162,7 +167,8 @@ GLubyte *GateImageBox::convertToRGB(std::vector<PixelType> slice) const {
   int i = 0;
   for (std::vector<PixelType>::iterator it = slice.begin(); it != slice.end();
        ++it) {
-    PixelType pixel = *it;
+    // the slices are windowed in [0, 1] (see ImageVolume.visu_window)
+    PixelType pixel = std::clamp(*it, 0.0, 1.0);
     pixel *= std::numeric_limits<GLubyte>::max();
 
     GLubyte gray = static_cast<GLubyte>(pixel);
@@ -213,7 +219,18 @@ void GateImageBox::InitialiseSlice() const {
     texture_yz = genOpenGLTexture(rgb, size_pix_y, size_pix_z);
     delete[] rgb;
   }
+  texture_context = QOpenGLContext::currentContext();
   isInitialized = true;
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool GateImageBox::TexturesAreValid() const {
+  // the textures belong to the OpenGL context in which they were created;
+  // with a new viewer (new context), their names are unknown, or may even be
+  // used by other textures: they are created again
+  return isInitialized && texture_context == QOpenGLContext::currentContext() &&
+         glIsTexture(texture_xy) == GL_TRUE;
 }
 //-----------------------------------------------------------------------------
 

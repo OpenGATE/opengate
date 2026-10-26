@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # main options
     # sim.visu = True
     sim.visu_type = "qt"
-    sim.random_seed = 987456
+    sim.random_seed = 123
     sim.output_dir = paths.output
     sim.progress_bar = True
     sim.number_of_threads = 1
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     #  change world size
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [1 * m, 1 * m, 1.2 * m]
 
     # insert voxelized waterbox
     spacing = 8

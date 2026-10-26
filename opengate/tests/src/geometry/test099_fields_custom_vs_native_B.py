@@ -12,6 +12,7 @@ Checks that:
     - Custom result agrees with the analytical cyclotron radius.
 """
 
+import pathlib
 import numpy as np
 import uproot
 
@@ -31,7 +32,9 @@ from test099_fields_helpers import (
 )
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     By = 5 * g4_tesla
     T = 10 * g4_MeV
@@ -44,7 +47,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output
 
     world = sim.world
-    world.size = [3 * g4_m, 1 * g4_m, 1 * g4_m]
+    world.size = [3 * g4_m, 1 * g4_m, 2.5 * g4_m]
     world.material = "G4_Galactic"
 
     # Box with native field

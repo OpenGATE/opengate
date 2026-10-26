@@ -138,7 +138,8 @@ def HU_find_max_density_difference(hu_min, hu_max, d_min, d_max, densities):
     while j < n and hu_max > densities[j]["HU"]:
         j = j + 1
     j = j - 1
-    for x in range(i, j, 1):
+    # j is the last density point inside the interval: include it
+    for x in range(i, j + 1):
         if densities[x]["density"] < d_min:
             d_min = densities[x]["density"]
         if densities[x]["density"] > d_max:

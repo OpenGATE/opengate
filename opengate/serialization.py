@@ -87,7 +87,11 @@ def load_json(*args, **kwargs):
 
 
 def load_json_with_retry(path, attempts=5, delay_s=0.05, **kwargs):
-    """Load JSON from a path with a short retry loop for transient read races."""
+    """Load JSON from a path with a short retry loop for transient read races.
+
+    PermissionError is retried too: on Windows, opening a file fails while
+    another process replaces it (os.replace).
+    """
     kwargs.setdefault("object_hook", json_obj_hook)
     path = Path(path)
     last_error = None
@@ -96,7 +100,7 @@ def load_json_with_retry(path, attempts=5, delay_s=0.05, **kwargs):
         try:
             with open(path, "r") as input_file:
                 return json.load(input_file, **kwargs)
-        except (FileNotFoundError, json.JSONDecodeError) as error:
+        except (FileNotFoundError, PermissionError, json.JSONDecodeError) as error:
             last_error = error
             if attempt == attempts - 1:
                 raise

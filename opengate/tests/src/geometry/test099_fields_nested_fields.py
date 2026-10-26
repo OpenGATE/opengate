@@ -24,6 +24,7 @@ Checks:
   - the daughter does not suppress the deflection entirely
 """
 
+import pathlib
 import numpy as np
 import uproot
 
@@ -103,7 +104,9 @@ def exit_dx(paths, name, x_offset):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     sim = gate.Simulation()
     sim.g4_verbose = False

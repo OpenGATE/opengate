@@ -17,8 +17,10 @@
 
 namespace py = pybind11;
 
-// Convert the macro value to a string for displaying
-#if USE_VISU > 0
+// The image slices are drawn with G4OpenGLSceneHandler, a private Geant4 header
+// that is only available in a Geant4 build tree (see CMakeLists.txt, #800).
+// Without it, the image volume is displayed as a plain box.
+#if USE_VISU > 0 && defined(USE_G4_OPENGL_PRIVATE_HEADERS)
 #include <G4Version.hh>
 /**
  * Only Geant4 >= 9.6.0 had the G4OpenGLSceneHandler::GetObjectTransformation()
@@ -58,9 +60,14 @@ private:
   GLubyte *convertToRGB(std::vector<PixelType> slice) const;
   GLuint genOpenGLTexture(const GLubyte *rgb, int width, int height) const;
 
+  bool TexturesAreValid() const;
+
   mutable GLuint texture_xy;
   mutable GLuint texture_xz;
   mutable GLuint texture_yz;
+  // the OpenGL context in which the textures have been created: a new viewer
+  // (e.g. at each run) has a new context, where they must be created again
+  mutable const void *texture_context;
 #endif
   size_t position_x;
   size_t position_y;

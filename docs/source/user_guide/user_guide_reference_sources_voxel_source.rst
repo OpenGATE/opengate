@@ -50,6 +50,13 @@ example ``dose_rate.py``.
 
 .. image:: ../figures/image_coord_system.png
 
+The direction matrix of the activity image (the rotation or flip stored
+in its header) is not taken into account. To avoid silently mirroring or
+rotating the activity, the simulation stops with an error if the image
+direction is not the identity. The same rule applies to the image volume
+the source is attached to (see :doc:`user_guide_reference_volumes`), so
+that the CT and the activity image are always interpreted in the same way.
+
 
 Reference
 ---------

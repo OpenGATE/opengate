@@ -6,6 +6,7 @@ from ..image import (
     get_info_from_image,
     update_image_py_to_cpp,
     compute_image_3D_CDF,
+    check_image_direction_is_identity,
 )
 from ..utility import ensure_filename_is_str, warning
 from ..base import process_cls
@@ -44,6 +45,9 @@ class VoxelSource(GenericSource):
         self._cdf_x = None
         self._cdf_y = None
         self._cdf_z = None
+        # indices (in g4_thread_sources) of the thread-local g4 sources which
+        # already received the CDFs (see cumulative_distribution_functions)
+        self._cdf_applied_g4_sources = set()
 
     def create_changers(self):
         changers = super().create_changers()
@@ -90,18 +94,43 @@ class VoxelSource(GenericSource):
                 self._current_itk_image
             )
 
+        # Each thread-local source is initialised twice in MT: on the main thread
+        # (SourceEngine.create_master_source_manager) and again by its Geant4
+        # worker thread. The CDFs are only copied the first time: for large
+        # images, the copies on all the workers at the same time stalled the MT
+        # initialisation (see #1163).
+        # (no reference to the g4 sources is kept here: they must be deleted
+        # with g4_thread_sources, on the main thread, at the end)
+        index = next(
+            (i for i, s in enumerate(self.g4_thread_sources) if s is g4_source), None
+        )
+        if index is not None and index in self._cdf_applied_g4_sources:
+            return
+
         # set CDF to the position generator
         pg = g4_source.GetSPSVoxelPosDistribution()
         pg.SetCumulativeDistributionFunction(self._cdf_z, self._cdf_y, self._cdf_x)
+        if index is not None:
+            self._cdf_applied_g4_sources.add(index)
+
+    def pre_create_g4_sources(self, num_instances):
+        # new thread-local sources: none of them has the CDFs yet
+        self._cdf_applied_g4_sources = set()
+        super().pre_create_g4_sources(num_instances)
 
     def update_activity_image(self, filename):
         # read source image
         self._current_itk_image = itk.imread(ensure_filename_is_str(filename))
+        check_image_direction_is_identity(
+            self._current_itk_image, f"the voxel source '{self.name}' ({filename})"
+        )
 
         # Reset CDF cache
         self._cdf_x = None
         self._cdf_y = None
         self._cdf_z = None
+        # the CDFs changed: every thread-local source needs the new ones
+        self._cdf_applied_g4_sources = set()
 
         # update all thread-local sources
         for g4_source in self.g4_thread_sources:
@@ -116,6 +145,10 @@ class VoxelSource(GenericSource):
     def initialize_g4_source(self, g4_source, run_timing_intervals):
         if self._current_itk_image is None:
             self._current_itk_image = itk.imread(ensure_filename_is_str(self.image))
+            check_image_direction_is_identity(
+                self._current_itk_image,
+                f"the voxel source '{self.name}' ({self.image})",
+            )
         self.set_transform_from_user_info(g4_source)
         self.cumulative_distribution_functions(g4_source)
         # initialise standard options (particle energy, etc.)

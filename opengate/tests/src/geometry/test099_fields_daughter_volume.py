@@ -23,6 +23,7 @@ If the daughter's frame were used instead of the field volume's, the extra
 45 deg would rotate B_world and split the deflection between X and Y.
 """
 
+import pathlib
 import numpy as np
 import uproot
 from scipy.spatial.transform import Rotation
@@ -53,7 +54,9 @@ VISU = False  # set True for interactive qt viewer
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     sim = gate.Simulation()
     sim.g4_verbose = False

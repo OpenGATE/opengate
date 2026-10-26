@@ -48,6 +48,11 @@ public:
   // Called every time a batch of step must be processed
   void SteppingAction(G4Step *) override;
 
+  // Called every time an event starts or ends (all threads): used to measure
+  // the duration of the event loop only (see #1086)
+  void BeginOfEventAction(const G4Event *event) override;
+  void EndOfEventAction(const G4Event *event) override;
+
   py::dict GetCounts();
   py::dict GetCountsCurrentRun();
 
@@ -64,6 +69,9 @@ protected:
     long int fCurrentRunTrackCount;
     long int fCurrentRunStepCount;
     std::map<std::string, long int> fCurrentRunTrackTypes;
+    bool fFirstEventIsSet = false;
+    std::chrono::system_clock::time_point fFirstEventStart;
+    std::chrono::system_clock::time_point fLastEventEnd;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
@@ -86,6 +94,10 @@ protected:
   std::chrono::system_clock::time_point fStartCurrentRunTime;
   std::chrono::system_clock::time_point fStopCurrentRunTime;
   bool fStartRunTimeIsSet;
+  // start of the first event and end of the last event, over all threads
+  bool fEventTimesAreSet;
+  std::chrono::system_clock::time_point fFirstEventStartTime;
+  std::chrono::system_clock::time_point fLastEventEndTime;
 };
 
 #endif // GateSimulationStatisticsActor_h
