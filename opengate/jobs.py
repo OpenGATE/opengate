@@ -26,6 +26,7 @@ from .exception import (
     warning,
 )
 from .runtiming import assert_run_timing
+from .utility import g4_units
 from .serialization import (
     dump_json,
     load_json,
@@ -47,7 +48,8 @@ JOBS_BACKEND_STATUS_FILENAME = "jobs_backend_status.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
 JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_PROGRESS_FILENAME = "job_progress.json"
-JOB_PROGRESS_INTERVAL_S = 2.0
+# in Geant4 units, as progress_hook_interval
+JOB_PROGRESS_INTERVAL = 2.0 * g4_units.s
 JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 JOB_EXECUTION_ALLOWED_STATUSES = (
@@ -1433,7 +1435,7 @@ class JobProgressWriter:
     pickled with the simulation (start_new_process=True).
     """
 
-    def __init__(self, path, interval=JOB_PROGRESS_INTERVAL_S):
+    def __init__(self, path, interval=JOB_PROGRESS_INTERVAL):
         self.path = str(path)
         self._interval = interval  # used by the progress_hook setter
 

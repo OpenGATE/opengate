@@ -2119,7 +2119,8 @@ class Simulation(GateObject):
         "progress_hook_interval": (
             None,
             {
-                "doc": "Interval in real wall-clock seconds between progress hook calls",
+                "doc": "Wall-clock time between progress hook calls, with units "
+                "(e.g. 30 * gate.g4_units.s, the default)",
             },
         ),
         "max_primaries_per_run": (
