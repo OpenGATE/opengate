@@ -12,7 +12,7 @@
 
 GateDigiAttributeLastProcessDefinedStepInVolumeActor::
     GateDigiAttributeLastProcessDefinedStepInVolumeActor(py::dict &user_info)
-    : GateVActor(user_info, false) {
+    : GateVActor(user_info, true) {
   fActions.insert("BeginOfEventAction");
   fActions.insert("SteppingAction");
 }
@@ -26,12 +26,12 @@ void GateDigiAttributeLastProcessDefinedStepInVolumeActor::InitializeUserInfo(
 
 void GateDigiAttributeLastProcessDefinedStepInVolumeActor::BeginOfEventAction(
     const G4Event *event) {
-  fLastProcess = "Transportation";
+  fThreadLocalData.Get().fLastProcess = "Transportation";
 }
 
 std::string
 GateDigiAttributeLastProcessDefinedStepInVolumeActor::GetLastProcess() const {
-  return fLastProcess;
+  return fThreadLocalData.Get().fLastProcess;
 }
 
 void GateDigiAttributeLastProcessDefinedStepInVolumeActor::SteppingAction(
@@ -42,6 +42,6 @@ void GateDigiAttributeLastProcessDefinedStepInVolumeActor::SteppingAction(
     return;
   // Store the interaction
   if (p->GetProcessName() != "Transportation") {
-    fLastProcess = p->GetProcessName();
+    fThreadLocalData.Get().fLastProcess = p->GetProcessName();
   }
 }

@@ -21,7 +21,7 @@ from ..base import process_cls
 from .actoroutput import (
     ActorOutputSingleImage,
     ActorOutputSingleMeanImage,
-    ActorOutputQuotientMeanImage,
+    ActorOutputQuotientImage,
     ActorOutputSingleImageWithVariance,
     UserInterfaceToActorOutputImage,
 )
@@ -822,7 +822,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
     user_output_config = {
         "let": {
-            "actor_output_class": ActorOutputQuotientMeanImage,
+            "actor_output_class": ActorOutputQuotientImage,
             "interfaces": {
                 "numerator": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -955,7 +955,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
     scored_quantity = "alpha"
     user_output_config = {
         f"{scored_quantity}_mix": {
-            "actor_output_class": ActorOutputQuotientMeanImage,
+            "actor_output_class": ActorOutputQuotientImage,
             "interfaces": {
                 f"{scored_quantity}_numerator": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -979,7 +979,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             },
         },
         "beta_mix": {
-            "actor_output_class": ActorOutputQuotientMeanImage,
+            "actor_output_class": ActorOutputQuotientImage,
             "interfaces": {
                 "beta_numerator": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -1323,7 +1323,7 @@ class REActor(BeamQualityActor, g4.GateBeamQualityActor):
     scored_quantity = "RE"
     user_output_config = {
         f"{scored_quantity}_mix": {
-            "actor_output_class": ActorOutputQuotientMeanImage,
+            "actor_output_class": ActorOutputQuotientImage,
             "interfaces": {
                 f"{scored_quantity}_numerator": {
                     "interface_class": UserInterfaceToActorOutputImage,
@@ -1482,6 +1482,14 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         if self.write_RBE_dose_image:
             self.compute_rbe_weighted_dose()
         VoxelDepositActor.EndSimulationAction(self)
+
+    def after_jobs_merge(self):
+        # The RBE (and RBE weighted dose) is not merged: it is computed from the
+        # merged alpha/beta mix and edep. The mMKM postprocessing of the alpha
+        # numerator is already done in each job, and it is linear in the
+        # numerator and denominator, so the merged one is correct.
+        if self.write_RBE_dose_image:
+            self.compute_rbe_weighted_dose()
 
     def _postprocess_alpha_numerator_mkm(self):
         beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
@@ -1866,10 +1874,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.actor = self.simulation.add_actor(
-            "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name + "_processes"
-        )
-        self.actor.attached_to = self.simulation.world.name
         self.list_of_processes = ["compton", "rayleigh", "secondaries", "primaries"]
         self.list_of_output_counts = [
             self.user_output.compton_counts_with_uncertainty,
@@ -1935,6 +1939,29 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 "EndOfRunAction",
             }
         )
+
+    @property
+    def last_process_actor_name(self):
+        return f"{self.name}_processes"
+
+    def resolve_and_validate_config(self, context=None):
+        VoxelDepositActor.resolve_and_validate_config(self, context=context)
+        # The scoring by process needs the last process of each track, given by
+        # a helper actor. It is only added when needed (it is called at each
+        # step in the whole world), and only once: it is already there when the
+        # simulation is created again from a json file (jobs).
+        if self.score_by_process:
+            actors = self.simulation.actor_manager.actors
+            helper = actors.get(self.last_process_actor_name)
+            if helper is None:
+                helper = self.simulation.add_actor(
+                    "DigiAttributeLastProcessDefinedStepInVolumeActor",
+                    self.last_process_actor_name,
+                )
+                helper.attached_to = self.simulation.world.name
+                # its step action must come before the one of this actor
+                helper.priority = self.priority - 1
+                helper.resolve_and_validate_config(context=context)
 
     def initialize(self):
         VoxelDepositActor.initialize(self)

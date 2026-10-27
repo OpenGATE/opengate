@@ -855,6 +855,12 @@ class ActorBase(GateObject):
         """Default virtual method for inheritance"""
         pass
 
+    def after_jobs_merge(self):
+        """Called once the outputs of the split jobs are merged (and written).
+        Actors with outputs computed from other outputs at the end of the
+        simulation (not merged themselves) compute them again here."""
+        pass
+
     def finalize_simulation(self):
         """Finalize actor outputs after all Geant4/C++ actions and file I/O are complete."""
         for user_output in self.user_output.values():
