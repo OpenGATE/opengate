@@ -32,7 +32,7 @@ def check_processes(simulation_engine):
 
 
 def main():
-    paths = utility.get_default_test_paths(__file__, output_folder="test125_mt")
+    paths = utility.get_default_test_paths(__file__, output_folder="test133_mt")
 
     sim = gate.Simulation()
     sim.number_of_threads = 8
