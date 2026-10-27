@@ -8,8 +8,8 @@ distribution function into each thread-local C++ source exactly once, on the
 main thread. Before the fix, every Geant4 worker thread re-applied the CDF in
 its own Build() callback, which copies the whole CDF while holding the GIL.
 For large activity images this serialised the workers and starved the Python
-physics constructor (UserLimitsPhysics), so G4MTRunManager::Initialize()
-appeared to hang when the worker count grew.
+physics constructor which existed at the time (UserLimitsPhysics), so
+G4MTRunManager::Initialize() appeared to hang when the worker count grew.
 
 The assertion is deterministic (no stochastic tolerance): the C++ setter is
 called exactly 1 + number_of_threads times, i.e. once per pre-created
@@ -151,8 +151,9 @@ def main():
         src.direction.type = "iso"
         src.number_of_primaries = 200
 
-        # The trigger from the issue: a region user limit, implemented as a
-        # Python G4VPhysicsConstructor which runs on every worker thread.
+        # The trigger from the issue: a region user limit. Its physics
+        # constructor is C++ now, so running it on worker threads does not
+        # enter the interpreter.
         sim.physics_manager.user_limits_particles = "electron"
         sim.physics_manager.set_min_ekine("patient", 10 * MeV)
         sim.physics_manager.set_production_cut("patient", "electron", 0.1 * mm)
