@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from .exception import GateMergeError
-from .rootio import RootMergeFileWriter
 
 
 class _CoordinatorOutputMergeContext:
@@ -211,6 +210,8 @@ class RootMergeCoordinator:
                     )
 
     def finalize_merge(self):
+        from .rootio import RootMergeFileWriter
+
         for output_path, grouped_outputs in self._root_output_groups.items():
             writer = RootMergeFileWriter(output_path)
             writer.open()

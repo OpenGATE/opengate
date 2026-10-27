@@ -59,8 +59,6 @@ from ..image import (
     itk_image_from_array,
     add_constant_to_itk_image,
 )
-from ..rootio import RootMergeFileWriter
-from ..contrib.root_helpers import root_write_tree
 
 
 def derived_data_item(*, depends_on):
@@ -1307,6 +1305,7 @@ class RootDataItem(DataItem):
 
         try:
             import uproot
+            from ..contrib.root_helpers import root_write_tree
 
             # DEBUG: dump branch payload structure before rewriting the shared
             # ROOT file. This helps diagnose cases where uproot receives an
@@ -1516,6 +1515,8 @@ class RootDataItem(DataItem):
         tree_descriptor = self.get_single_tree_descriptor()
 
         if owns_writer:
+            from ..rootio import RootMergeFileWriter
+
             writer = RootMergeFileWriter(output_path)
             writer.open()
 

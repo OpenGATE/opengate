@@ -45,4 +45,16 @@ public:
     G4MTRunManager::BeamOn(0, nullptr, -1);
     SetRunIDCounter(0);
   }
+
+  // The base G4RunManager::DoEventLoop calls ProcessOneEvent and
+  // TerminateOneEvent for each event, and both do nothing on the master in MT:
+  // the events are processed by the workers. Gate starts each run with
+  // /run/beamOn INT32_MAX (the run ends when the sources are done), so this
+  // empty loop took ~3.4 s for each run. Only the initialization of the event
+  // loop (which starts the workers) is kept; the master then waits for the
+  // workers in RunTermination, as before.
+  void DoEventLoop(G4int n_event, const char *macroFile = nullptr,
+                   G4int n_select = -1) override {
+    InitializeEventLoop(n_event, macroFile, n_select);
+  }
 };
