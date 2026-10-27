@@ -2994,7 +2994,15 @@ class JobsMergeManager:
         reference_simulation = _load_master_simulation_from_manifest(
             self.manifest_path, self.manifest
         )
-        differences = self.master_simulation.compare_with(
+        # The reference is the resolved simulation of the campaign, which may
+        # contain helper actors added during the resolution (e.g. by the
+        # FluenceActor). The target is compared after the same resolution, done
+        # on a copy (the target simulation itself is not modified).
+        resolved_target = _clone_simulation_from_dictionary(
+            type(self.master_simulation), self.master_simulation.to_dictionary()
+        )
+        resolved_target.resolve_and_validate_config(context="merge_validation")
+        differences = resolved_target.compare_with(
             reference_simulation, mode="merge_target_compatibility"
         )
         if differences:

@@ -263,15 +263,21 @@ class MeanValueDataItemMixin:
         return result
 
     def inplace_merge_with(self, other):
+        # nothing to merge (e.g. in the jobs merge, the items are loaded and
+        # merged one by one: the other items of the container are still empty),
+        # as in ItkImageDataItem.inplace_merge_with
+        if other.data is None:
+            return self
         if self.data is None:
             self.set_data(other.data)
             self.number_of_samples = other.number_of_samples
         else:
+            # (other is not modified: it may be the data of a run, kept)
+            n = self.number_of_samples + other.number_of_samples
             self *= self.number_of_samples
-            other *= other.number_of_samples
-            self += other
-            self /= self.number_of_samples + other.number_of_samples
-            self.number_of_samples = self.number_of_samples + other.number_of_samples
+            self += other * other.number_of_samples
+            self /= n
+            self.number_of_samples = n
         return self
 
 

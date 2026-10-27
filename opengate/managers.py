@@ -2774,6 +2774,9 @@ class Simulation(GateObject):
     def finalize_merge(self):
         for merge_coordinator in self._merge_coordinators:
             merge_coordinator.finalize_merge()
+        # outputs derived from the merged data (e.g. RBE) are computed again
+        for actor in self.actor_manager.actors.values():
+            actor.after_jobs_merge()
 
     def find_actors(self, sub_str, case_sensitive=False):
         return self.actor_manager.find_actors(sub_str, case_sensitive)

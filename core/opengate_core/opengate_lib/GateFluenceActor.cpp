@@ -19,7 +19,7 @@ G4Mutex SetPixelFluenceMutex = G4MUTEX_INITIALIZER;
 G4Mutex SetNbEventMutexFluence = G4MUTEX_INITIALIZER;
 
 GateFluenceActor::GateFluenceActor(py::dict &user_info)
-    : GateVActor(user_info, false) {
+    : GateVActor(user_info, true) {
   fNbOfEvent = 0;
 }
 
