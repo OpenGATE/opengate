@@ -32,6 +32,7 @@ import json
 import os
 import platform
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from collections import OrderedDict
 from box import Box
@@ -416,6 +417,37 @@ class ScalarDataItem(ArithmeticDataItem):
         raise NotImplementedError
 
 
+# The start and stop times of the statistics are written by std::ctime (C
+# locale), e.g. "Sat Oct 24 15:17:43 2026". They are parsed here without
+# strptime, which depends on the locale for the day and month names.
+_CTIME_MONTHS = (
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+)
+
+
+def parse_ctime(s):
+    """The datetime of a ctime string, or None if it is not one (e.g. unset)"""
+    try:
+        _, month, day, hms, year = str(s).split()
+        hour, minute, second = (int(x) for x in hms.split(":"))
+        return datetime(
+            int(year), _CTIME_MONTHS.index(month) + 1, int(day), hour, minute, second
+        )
+    except ValueError:
+        return None
+
+
 class StatisticsDataItem(DataItem):
     """Semantic data item for simulation statistics.
 
@@ -444,6 +476,10 @@ class StatisticsDataItem(DataItem):
         self.data.init = 0
         self.data.track_types = {}
         self.data.nb_threads = 1
+        # one random identifier per simulation (i.e. per job): merging keeps
+        # the union, so the number of jobs is right whatever the merge order
+        # (e.g. runs of the same job merged first)
+        self.data.simulation_ids = []
 
     @classmethod
     def get_known_entry_names(cls):
@@ -465,6 +501,24 @@ class StatisticsDataItem(DataItem):
         raise AttributeError(f"No such attribute '{item}'")
 
     @property
+    def timespan(self):
+        """Wall-clock time from the start to the stop of the simulation (for
+        merged outputs, e.g. of several jobs: from the first start to the last
+        stop). Unlike 'duration', it is not summed when merging. The start and
+        stop times are known to the second only."""
+        start = parse_ctime(self.data.start_time)
+        stop = parse_ctime(self.data.stop_time)
+        if start is None or stop is None:
+            return 0
+        return (stop - start).total_seconds() * g4_units.s
+
+    @property
+    def jobs(self):
+        """Number of simulations (jobs) merged in these statistics (1 if
+        unknown, e.g. for statistics written by an older version)"""
+        return max(1, len(self.data.get("simulation_ids", [])))
+
+    @property
     def pps(self):
         if self.data.duration != 0:
             return int(self.data.events / (self.data.duration / g4_units.s))
@@ -482,6 +536,17 @@ class StatisticsDataItem(DataItem):
             return int(self.data.steps / (self.data.duration / g4_units.s))
         return 0
 
+    @property
+    def pps_timespan(self):
+        """Primaries per second of wall-clock time (timespan). For jobs run in
+        parallel, it is the speed of the whole campaign, while pps is the speed
+        of one job. Not reliable for very short simulations (timespan is known
+        to the second)."""
+        timespan = self.timespan
+        if timespan != 0:
+            return int(self.data.events / (timespan / g4_units.s))
+        return 0
+
     def get_processed_output(self):
         d = {}
         d["runs"] = {"value": self.data.runs, "unit": None}
@@ -492,9 +557,12 @@ class StatisticsDataItem(DataItem):
         d["init"] = {"value": val, "unit": unit}
         val, unit = g4_best_unit_tuple(self.data.duration, "Time")
         d["duration"] = {"value": val, "unit": unit}
+        val, unit = g4_best_unit_tuple(self.timespan, "Time")
+        d["timespan"] = {"value": val, "unit": unit}
         d["pps"] = {"value": self.pps, "unit": None}
         d["tps"] = {"value": self.tps, "unit": None}
         d["sps"] = {"value": self.sps, "unit": None}
+        d["pps_timespan"] = {"value": self.pps_timespan, "unit": None}
         d["start_time"] = {"value": self.data.start_time, "unit": None}
         d["stop_time"] = {"value": self.data.stop_time, "unit": None}
         val, unit = g4_best_unit_tuple(self.data.sim_start_time, "Time")
@@ -502,6 +570,11 @@ class StatisticsDataItem(DataItem):
         val, unit = g4_best_unit_tuple(self.data.sim_stop_time, "Time")
         d["sim_stop_time"] = {"value": val, "unit": unit}
         d["threads"] = {"value": self.data.nb_threads, "unit": None}
+        d["jobs"] = {"value": self.jobs, "unit": None}
+        d["simulation_ids"] = {
+            "value": list(self.data.get("simulation_ids", [])),
+            "unit": None,
+        }
         d["arch"] = {"value": platform.system(), "unit": None}
         d["python"] = {"value": platform.python_version(), "unit": None}
         d["track_types"] = {"value": self.data.track_types, "unit": None}
@@ -510,6 +583,9 @@ class StatisticsDataItem(DataItem):
     def __str__(self):
         s = ""
         for k, v in self.get_processed_output().items():
+            if k == "simulation_ids":
+                # written in the file (for the merge), 'jobs' is printed
+                continue
             if k == "track_types":
                 if len(v["value"]) > 0:
                     s += "track_types\n"
@@ -523,7 +599,14 @@ class StatisticsDataItem(DataItem):
     def inplace_merge_with(self, *other):
         if self.data is None:
             self.reset_data()
+        # the time span covers self only if it already holds some data
+        merged_data = [o.data for o in other]
+        if self.data.runs > 0 or self.data.events > 0:
+            merged_data.append(self.data)
 
+        # 'duration' and 'init' are summed: for the outputs of several jobs run
+        # in parallel, this is the total computing time ('timespan' is the
+        # wall-clock time)
         for o in other:
             self.data.runs += o.data.runs
             self.data.events += o.data.events
@@ -543,11 +626,28 @@ class StatisticsDataItem(DataItem):
             for k in new_entries:
                 self.data.track_types[k] = o.data.track_types[k]
 
+            # a new list, not to modify the one of another item
+            ids = list(self.data.get("simulation_ids", []))
+            for i in o.data.get("simulation_ids", []):
+                if i not in ids:
+                    ids.append(i)
+            self.data.simulation_ids = ids
+
         if len(other) > 0:
-            self.data.start_time = min([o.data.start_time for o in other])
-            self.data.stop_time = max([o.data.stop_time for o in other])
-            self.data.sim_start_time = min([o.data.sim_start_time for o in other])
-            self.data.sim_stop_time = max([o.data.sim_stop_time for o in other])
+            # the earliest start and the latest stop (compared as dates, not
+            # as strings)
+            starts = [parse_ctime(d.start_time) for d in merged_data]
+            starts = [t for t in starts if t is not None]
+            if len(starts) > 0:
+                self.data.start_time = min(starts).ctime()
+            stops = [parse_ctime(d.stop_time) for d in merged_data]
+            stops = [t for t in stops if t is not None]
+            if len(stops) > 0:
+                self.data.stop_time = max(stops).ctime()
+            self.data.sim_start_time = min(d.sim_start_time for d in merged_data)
+            self.data.sim_stop_time = max(d.sim_stop_time for d in merged_data)
+            # the threads of one job (all the jobs use the same number)
+            self.data.nb_threads = max(d.get("nb_threads", 1) for d in merged_data)
         return self
 
     def merge_with(self, other):
@@ -572,6 +672,9 @@ class StatisticsDataItem(DataItem):
             unit = entry["unit"]
             if unit in g4_units:
                 loaded_data[key] *= g4_units[unit]
+        # written as "threads" (get_processed_output), stored as "nb_threads"
+        if "threads" in loaded_data:
+            loaded_data["nb_threads"] = loaded_data["threads"]
         self.set_data(loaded_data)
 
 

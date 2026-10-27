@@ -56,7 +56,7 @@ def user_hook_dump_material_properties(simulation_engine):
     for vol in simulation_engine.simulation.volume_manager.volumes.values():
         material_name = vol.g4_material.GetName()
         material_dict = opengate.physics.load_optical_properties_from_xml(
-            simulation_engine.simulation.physics_manager.optical_properties_file,
+            simulation_engine.simulation.physics_manager.get_optical_properties_file(),
             material_name,
         )
         print(f"Volume {vol.name} has material {material_name}")
@@ -86,7 +86,7 @@ def user_hook_dump_material_properties(simulation_engine):
             print(
                 f"Geant4 does not find any MaterialPropertiesTable for this material "
                 f"although it is defined in the optical_properties_file "
-                f"{simulation_engine.simulation.physics_manager.optical_properties_file}"
+                f"{simulation_engine.simulation.physics_manager.get_optical_properties_file()}"
             )
             results[vol.name] = {
                 "constant_properties": False,

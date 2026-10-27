@@ -19,6 +19,7 @@ from .physics import (
 )
 from .base import GateSingletonFatal
 from .logger import logger
+from .utility import g4_units
 
 
 def _translate_track_structure_em_physics_to_geant4(track_structure_em_physics):
@@ -176,7 +177,10 @@ class SourceEngine(EngineBase):
         # Copy visualization parameters
         for k, v in self.simulation_engine.simulation.user_info.items():
             if "visu" in k:
-                self.source_manager_options[k] = v
+                # the visu filename may be a Path, the C++ side needs a str
+                self.source_manager_options[k] = (
+                    str(v) if isinstance(v, os.PathLike) else v
+                )
 
         # Copy verbosity parameters
         for k, v in self.simulation_engine.simulation.user_info.items():
@@ -221,7 +225,7 @@ class SourceEngine(EngineBase):
             interval = float(
                 sim.progress_hook_interval
                 if sim.progress_hook_interval is not None
-                else 30.0  # sec
+                else 30.0 * g4_units.s  # (Geant4 units, as progress_hook_interval)
             )
             target_manager = (
                 self.g4_thread_source_managers[0]
@@ -546,7 +550,7 @@ class PhysicsEngine(EngineBase):
                         for mat in g4.G4Material.GetMaterialTable:
                             if str(mat.GetName()) == i:
                                 mat_prop = load_optical_properties_from_xml(
-                                    self.physics_manager.optical_properties_file,
+                                    self.physics_manager.get_optical_properties_file(),
                                     mat.GetName(),
                                 )
                                 if mat_prop is not None:
@@ -561,11 +565,11 @@ class PhysicsEngine(EngineBase):
                                 else:
                                     self.simulation_engine.warn_user(
                                         f"Could not load the optical material properties for material {mat.GetName()} "
-                                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}"
+                                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}"
                                     )
                 material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
-                    self.physics_manager.optical_properties_file, material_name
+                    self.physics_manager.get_optical_properties_file(), material_name
                 )
                 if material_properties is not None:
                     self.g4_optical_material_tables[str(material_name)] = (
@@ -577,7 +581,7 @@ class PhysicsEngine(EngineBase):
                 else:
                     self.simulation_engine.simulation.warn_user(
                         f"Could not load the optical material properties for material {material_name} "
-                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
+                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}."
                     )
 
     @requires_fatal("physics_manager")
@@ -1367,7 +1371,7 @@ class VisualisationEngine(EngineBase):
 
     def initialize_visualisation_vrml(self):
         if self.simulation.visu_filename is not None:
-            os.environ["G4VRMLFILE_FILE_NAME"] = self.simulation.visu_filename
+            os.environ["G4VRMLFILE_FILE_NAME"] = str(self.simulation.visu_filename)
         else:
             self.current_visu_filename = f"gate_visu_{os.getpid()}.wrl"
             os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename

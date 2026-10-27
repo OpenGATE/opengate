@@ -1065,7 +1065,7 @@ class OpticalSurface(GateObject):
 
             self.optical_surface_properties_dict = (
                 load_optical_surface_properties_from_xml(
-                    self.physics_manager.surface_properties_file,
+                    self.physics_manager.get_surface_properties_file(),
                     self.g4_surface_name,
                 )
             )
