@@ -6,8 +6,6 @@ import tarfile
 from pathlib import Path
 from time import sleep
 
-import requests
-
 # Data for Geant4
 # Geant4 11.4.2
 data_packages = {
@@ -66,6 +64,9 @@ def download_with_resume(url, out, retries=5, delay=10):
     request (it sends the whole file), the download restarts from the
     beginning. The file is only renamed to out if its size is the expected one.
     """
+    # (imported here: about 0.1 s, only needed to download the data)
+    import requests
+
     temp_file = str(out) + ".part"
 
     for attempt in range(retries):

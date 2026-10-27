@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import os
 from scipy.spatial.transform import Rotation
 from pathlib import Path
@@ -1122,6 +1121,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         return v_table, fragments
 
     def read_lookup_table_csv(self, table_path):
+        import pandas as pd
+
         dataset = pd.read_csv(table_path)
         particles = dataset["particle"].unique()
         fragments = []
