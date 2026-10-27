@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """CI smoke test for the synthetic MRCP tetrahedral mesh."""
 
 from pathlib import Path
