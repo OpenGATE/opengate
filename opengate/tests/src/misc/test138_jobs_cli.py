@@ -66,13 +66,13 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test138")
     shutil.rmtree(paths.output, ignore_errors=True)
     paths.output.mkdir(parents=True)
-    camp = paths.output / "camp"
-    camp.mkdir()
-    build_campaign(camp)
+    campaign = paths.output / "campaign"
+    campaign.mkdir()
+    build_campaign(campaign)
     is_ok = True
 
     # the relative output_dir is written relative to the campaign folder
-    with open(camp / "simulation.json") as f:
+    with open(campaign / "simulation.json") as f:
         output_dir = json.load(f)["user_info"]["output_dir"]
     b = output_dir == {"__pathlib_path__": ["output"]}
     is_ok = (
@@ -80,66 +80,66 @@ if __name__ == "__main__":
     )
 
     # split + run + merge in one command, local backend by default
-    r = opengate_jobs(camp, "-j", 3, "--json")
+    r = opengate_jobs("run", campaign, "-j", 3, "--json")
     result = json.loads(r.stdout) if r.returncode == 0 else {}
     merged = result.get("merge", {}).get("merged_output_dir")
     b = (
         r.returncode == 0
         and result.get("backend") == "local_pool"
         and result.get("submitted_jobs") == 3
-        and merged == str((camp / "output").resolve())
+        and merged == str((campaign / "output").resolve())
     )
     is_ok = utility.print_test(b, f"split + run + merge, merged in {merged}") and is_ok
-    e = number_of_events(camp / "output")
+    e = number_of_events(campaign / "output")
     is_ok = utility.print_test(e == n, f"merged events {e} (expected {n})") and is_ok
-    b = all((camp / f"job000{i}" / "job.log").exists() for i in (1, 2, 3))
+    b = all((campaign / f"job000{i}" / "job.log").exists() for i in (1, 2, 3))
     is_ok = utility.print_test(b, "one job.log per job folder") and is_ok
 
     # a different number of jobs needs --overwrite
-    r = opengate_jobs(camp, "-j", 2)
+    r = opengate_jobs("run", campaign, "-j", 2)
     b = r.returncode != 0 and "--overwrite" in r.stderr
     is_ok = utility.print_test(b, "already split: needs --overwrite") and is_ok
 
     # status
-    r = opengate_jobs("status", camp, "--json")
+    r = opengate_jobs("status", campaign, "--json")
     counts = json.loads(r.stdout)["execution_counts"] if r.returncode == 0 else {}
     b = counts.get("completed") == 3
     is_ok = utility.print_test(b, f"status: {counts}") and is_ok
 
     # merge in another folder
-    r = opengate_jobs("merge", camp, "-o", paths.output / "merged2")
+    r = opengate_jobs("merge", campaign, "-o", paths.output / "merged2")
     e = number_of_events(paths.output / "merged2")
     b = r.returncode == 0 and e == n
     is_ok = utility.print_test(b, f"merge -o: {e} events") and is_ok
 
     # clean: only simulation.json and the merged output are kept
-    r = opengate_jobs("clean", camp)
-    remaining = sorted(p.name for p in camp.iterdir())
+    r = opengate_jobs("clean", campaign)
+    remaining = sorted(p.name for p in campaign.iterdir())
     b = r.returncode == 0 and remaining == ["output", "simulation.json"]
     is_ok = utility.print_test(b, f"clean: remaining {remaining}") and is_ok
 
     # split, then a job fails: the run reports it and the merge refuses
-    r = opengate_jobs("split", camp, "-j", 2)
-    p = camp / "job0002" / "simulation.json"
+    r = opengate_jobs("split", campaign, "-j", 2)
+    p = campaign / "job0002" / "simulation.json"
     with open(p) as f:
         d = json.load(f)
     d["source_manager"]["sources"]["source"]["user_info"]["particle"] = "no_particle"
     with open(p, "w") as f:
         json.dump(d, f)
-    r = opengate_jobs("run", camp, "--no-merge")
+    r = opengate_jobs("run", campaign, "--no-merge")
     b = r.returncode == 1 and "job0002: failed" in r.stderr and "job.log" in r.stderr
     is_ok = utility.print_test(b, "failed job reported") and is_ok
-    r = opengate_jobs("merge", camp)
+    r = opengate_jobs("merge", campaign)
     b = r.returncode != 0 and "Not all jobs completed" in r.stderr
     is_ok = utility.print_test(b, "merge refused") and is_ok
 
     # split again, run with one worker at a time, and merge
-    r = opengate_jobs("run", camp, "-j", 2, "--overwrite", "--workers", 1, "--json")
+    r = opengate_jobs("run", campaign, "-j", 2, "--overwrite", "--workers", 1, "--json")
     result = json.loads(r.stdout) if r.returncode == 0 else {}
     b = (
         r.returncode == 0
         and result.get("jobs") == "2 completed"
-        and number_of_events(camp / "output") == n
+        and number_of_events(campaign / "output") == n
     )
     is_ok = (
         utility.print_test(b, f"--overwrite --workers 1: {result.get('jobs')}")

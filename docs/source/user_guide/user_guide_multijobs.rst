@@ -195,14 +195,14 @@ The simulation can also be written in a campaign folder and run with the
 
 .. code-block:: python
 
-   sim.to_json_file("campaign")
+   sim.to_json_file("campaign/")
 
 Then, in one command, split the simulation into 8 jobs, run them on the local
 machine (with one progress bar for all the jobs) and merge their output:
 
 .. code-block:: console
 
-   opengate_jobs campaign -j 8
+   opengate_jobs run campaign/ -j 8
 
 The merged output is written in the ``output_dir`` of the simulation. A
 relative ``output_dir`` is relative to the campaign folder, e.g.
@@ -218,9 +218,6 @@ relative ``output_dir`` is relative to the campaign folder, e.g.
   merge.
 - ``-j`` is only needed the first time (to split). To split again with another
   number of jobs, add ``--overwrite``.
-
-``opengate_jobs campaign -j 8`` is a short form of
-``opengate_jobs run campaign -j 8``.
 
 
 Server-based execution
@@ -259,11 +256,11 @@ Then the workflow is:
 
 .. code-block:: console
 
-   opengate_jobs split campaign -j 100
-   opengate_jobs run campaign --backend htcondor --backend-options htcondor_options.json
-   opengate_jobs status campaign
-   opengate_jobs merge campaign
-   opengate_jobs clean campaign
+   opengate_jobs split campaign/ -j 100
+   opengate_jobs run campaign/ --backend htcondor --backend-options htcondor_options.json
+   opengate_jobs status campaign/
+   opengate_jobs merge campaign/
+   opengate_jobs clean campaign/
 
 The campaign folder is the authoritative container throughout the workflow. It
 contains:
@@ -283,7 +280,7 @@ backend options from a JSON file:
 
 .. code-block:: console
 
-   opengate_jobs run campaign --backend htcondor --backend-options htcondor_options.json
+   opengate_jobs run campaign/ --backend htcondor --backend-options htcondor_options.json
 
 As a convenience, the command also looks for a default file named
 ``jobs_backend_options.json`` inside the campaign folder when no
@@ -373,8 +370,7 @@ subcommands:
 
 - ``opengate_jobs run``: run the jobs of a campaign through a backend (local by
   default), after splitting it if needed (``-j``); with the local backend, wait
-  for the jobs and merge their output. This is the default subcommand:
-  ``opengate_jobs campaign -j 8`` is ``opengate_jobs run campaign -j 8``
+  for the jobs and merge their output
 - ``opengate_jobs split``: split a campaign folder into child jobs
 - ``opengate_jobs status``: inspect the current campaign status
 - ``opengate_jobs merge``: merge the finished jobs (``-o`` for another output

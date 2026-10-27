@@ -137,8 +137,8 @@ There are three public layers over the same implementation:
 
 The command line tool ``opengate_jobs`` (``opengate/bin/opengate_jobs.py``)
 calls the same lower-level functions, with the subcommands ``split``, ``run``,
-``status``, ``merge`` and ``clean``; ``run`` is the default subcommand and can
-split first. This is important for server usage: the user can package a
+``status``, ``merge`` and ``clean``; ``run`` can split first, and with the
+local backend it also waits for the jobs and merges their output. This is important for server usage: the user can package a
 simulation folder, copy it to a cluster, then run ``opengate_jobs split``,
 ``opengate_jobs run --backend ...``, ``opengate_jobs merge`` and
 ``opengate_jobs clean`` without writing a custom Python driver script on the

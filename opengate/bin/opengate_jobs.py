@@ -27,34 +27,24 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 BACKENDS = ["local", "htcondor", "slurm", "pbs"]
 
 
-class DefaultRunGroup(click.Group):
-    """A group where the subcommand 'run' is the default:
-    'opengate_jobs camp -j 8' is 'opengate_jobs run camp -j 8'."""
-
-    def parse_args(self, ctx, args):
-        if args and args[0] not in self.commands and args[0] not in ("-h", "--help"):
-            args = ["run"] + list(args)
-        return super().parse_args(ctx, args)
-
-
-@click.group(cls=DefaultRunGroup, context_settings=CONTEXT_SETTINGS)
+@click.group(context_settings=CONTEXT_SETTINGS)
 def go():
     """Split a simulation into jobs, run them, follow them and merge their output.
 
     The CAMPAIGN folder contains the simulation.json of the simulation (written
-    with sim.to_json_file("CAMPAIGN")) and its input files. The most common use,
+    with sim.to_json_file("campaign/")) and its input files. The most common use,
     on a workstation (split, run with a progress bar, merge):
 
-        opengate_jobs CAMPAIGN -j 8
+        opengate_jobs run campaign/ -j 8
 
-    which is a short form of 'opengate_jobs run CAMPAIGN -j 8'. On a cluster:
+    On a cluster:
 
     \b
-        opengate_jobs split CAMPAIGN -j 100
-        opengate_jobs run CAMPAIGN --backend slurm --backend-options options.json
-        opengate_jobs status CAMPAIGN
-        opengate_jobs merge CAMPAIGN
-        opengate_jobs clean CAMPAIGN
+        opengate_jobs split campaign/ -j 100
+        opengate_jobs run campaign/ --backend slurm --backend-options options.json
+        opengate_jobs status campaign/
+        opengate_jobs merge campaign/
+        opengate_jobs clean campaign/
     """
 
 
