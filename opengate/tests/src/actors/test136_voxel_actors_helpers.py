@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Test 136: outputs of all the voxel deposit actors (issue #993), with
-2 threads, 2 runs (data kept per run) and a merge of 2 split jobs.
+"""Helpers for test136: outputs of the voxel deposit actors (issue #993),
+with 2 threads, 2 runs (data kept per run) and a merge of 2 split jobs.
 
 For each actor (one child process per actor, option --child):
 1. 2 threads, 2 runs: the merged image is the sum of the run images (for
@@ -13,6 +13,7 @@ For each actor (one child process per actor, option --child):
    for RBEActor, the RBE images are computed again after the merge
 """
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -161,8 +162,9 @@ def run_child(actor_type, base, ref_path):
         print(f"RESULT jobs RBE images computed after the merge: {b}")
 
 
-if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, None, "test136")
+def run_test(test_file, actor_types):
+    """Run the checks of the given actors, each in a child process of test_file."""
+    paths = utility.get_default_test_paths(test_file, None, "test136")
     ref_path = paths.output_ref.parent / "test087"
 
     if "--child" in sys.argv:
@@ -170,10 +172,12 @@ if __name__ == "__main__":
         sys.exit(0)
 
     is_ok = True
-    for actor_type in ACTORS:
+    for actor_type in actor_types:
+        # start from an empty folder (a campaign folder cannot be reused)
         base = paths.output / actor_type
+        shutil.rmtree(base, ignore_errors=True)
         r = subprocess.run(
-            [sys.executable, __file__, "--child", actor_type, str(base)],
+            [sys.executable, test_file, "--child", actor_type, str(base)],
             capture_output=True,
             text=True,
         )
