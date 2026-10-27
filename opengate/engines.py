@@ -20,6 +20,7 @@ from .physics import (
 )
 from .base import GateSingletonFatal
 from .logger import logger
+from .utility import g4_units
 
 
 def _translate_track_structure_em_physics_to_geant4(track_structure_em_physics):
@@ -225,7 +226,7 @@ class SourceEngine(EngineBase):
             interval = float(
                 sim.progress_hook_interval
                 if sim.progress_hook_interval is not None
-                else 30.0  # sec
+                else 30.0 * g4_units.s  # (Geant4 units, as progress_hook_interval)
             )
             target_manager = (
                 self.g4_thread_source_managers[0]

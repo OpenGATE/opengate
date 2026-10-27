@@ -1,4 +1,5 @@
 import platform
+import uuid
 
 import opengate_core as g4
 from anytree import Node, RenderTree
@@ -52,6 +53,8 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         # self._add_user_output(ActorOutputStatisticsActor, "stats")
+        # set in StartSimulationAction (declared here, to be a known attribute)
+        self.simulation_id = None
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -76,6 +79,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
+        # identifies this simulation (job) in the statistics, to count the
+        # jobs when the statistics of several jobs are merged
+        self.simulation_id = uuid.uuid4().hex
 
     def EndOfRunActionMasterThread(self, run_index):
         g4.GateSimulationStatisticsActor.EndOfRunActionMasterThread(self, run_index)
@@ -83,7 +89,12 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         if self.simulation is not None:
             data["run_start"] = self.simulation.run_timing_intervals[run_index][0]
             data["run_stop"] = self.simulation.run_timing_intervals[run_index][1]
+            # the simulated time of this run, so that merging the statistics
+            # of several runs gives the simulated time of all of them
+            data["sim_start_time"] = data["run_start"]
+            data["sim_stop_time"] = data["run_stop"]
             data["nb_threads"] = self.simulation.number_of_threads
+        data["simulation_ids"] = [self.simulation_id]
         self.user_output.stats.store_data(run_index, data)
         self.user_output.stats.write_data_if_requested(which=run_index)
         return 0
@@ -112,6 +123,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         data["sim_start_time"] = self.simulation.run_timing_intervals[0][0]
         data["sim_stop_time"] = self.simulation.run_timing_intervals[-1][1]
         data["nb_threads"] = self.simulation.number_of_threads
+        data["simulation_ids"] = [self.simulation_id]
         self.user_output.stats.store_data("merged", data)
         self.user_output.stats.write_data_if_requested(which="merged")
 

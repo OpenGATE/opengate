@@ -48,6 +48,11 @@ The SimulationStatisticsActor actor is a very basic tool that allows counting th
 
 In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
 
+- ``duration`` is the computing time of the event loop, and ``init`` the time before the first event. When statistics are merged, e.g. the outputs of several jobs, both are summed: they are then the total computing time of all jobs, and the speeds are those of one job.
+- ``jobs`` is the number of simulations (jobs) merged in the statistics (1 for a simulation that is not split).
+- ``timespan`` is the wall-clock time from ``start_time`` to ``stop_time`` (known to the second). For merged outputs, it goes from the first start to the last stop, so for jobs run in parallel it is much shorter than ``duration``. ``pps_timespan`` is the number of primaries per second of ``timespan``: for jobs run in parallel, the speed of the whole campaign (``pps`` is the speed of one job).
+- ``sim_start_time`` and ``sim_stop_time`` are the simulated time covered (the run timing intervals); the statistics of each run contain the simulated time of that run.
+
 
 Reference
 ~~~~~~~~~
