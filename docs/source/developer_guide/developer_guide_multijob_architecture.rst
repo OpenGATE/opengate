@@ -61,14 +61,21 @@ Run
 The run phase is exposed through ``gate.jobs_run(...)`` and can use different
 backends. The local backends are:
 
+``local_pool`` (the default, named ``local`` in the command line tool)
+    Run job folders through a local process pool. The process start method is
+    ``spawn`` by contract, because Geant4 state must not be inherited through
+    ``fork``. Each worker process runs one Geant4 simulation and exits. The
+    number of workers is the number of jobs by default.
+
 ``local_sequential``
     Run the job folders one after another. This backend is mainly useful for
     testing and debugging orchestration.
 
-``local_pool``
-    Run job folders through a local process pool. The process start method is
-    ``spawn`` by contract, because Geant4 state must not be inherited through
-    ``fork``. Each worker process runs one Geant4 simulation and exits.
+With the local backends, the output of each job (Python and Geant4) goes to
+``job.log`` in its folder (the file descriptors 1 and 2 are redirected), so the
+jobs do not write in the terminal, where one progress bar shows the progress of
+the whole campaign (``CampaignProgressBar``, used by
+``SplitRunMergeController.wait`` and ``gate.jobs_wait``).
 
 Scheduler backends such as HTCondor and SLURM submit the same file-based job
 folders to an external queueing system. GATE generates the submission files and
@@ -128,11 +135,15 @@ There are three public layers over the same implementation:
     Lower-level file-based entry points. These are used directly by scripts,
     tests, and command line tools.
 
-The CLI tools call the same lower-level functions. This is important for server
-usage: the user can package a simulation folder, copy it to a cluster, then run
-``opengate_jobs_split``, ``opengate_jobs_run``, ``opengate_jobs_merge``, and
-``opengate_jobs_clean`` without writing a custom Python driver script on the
-cluster.
+The command line tool ``opengate_jobs`` (``opengate/bin/opengate_jobs.py``)
+calls the same lower-level functions, with the subcommands ``split``, ``run``,
+``status``, ``merge`` and ``clean``; ``run`` is the default subcommand and can
+split first. This is important for server usage: the user can package a
+simulation folder, copy it to a cluster, then run ``opengate_jobs split``,
+``opengate_jobs run --backend ...``, ``opengate_jobs merge`` and
+``opengate_jobs clean`` without writing a custom Python driver script on the
+cluster. ``opengate_job_runner`` runs one job folder: it is the command of the
+scheduler payloads.
 
 
 Simulation stages: resolve_and_validate_config vs initialize

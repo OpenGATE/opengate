@@ -51,6 +51,8 @@ the same script, use ``merge_after_run=True`` together with
 In the example, ``controller`` is a ``SplitRunMergeController`` object that can be inspected. It is always returned by ``sim.run(...)`` when the simulation is run in multiple jobs.
 
 Local pooled execution always uses one spawned worker process per child job.
+The output of each job (the messages of GATE and Geant4) goes to the file
+``job.log`` in its folder, not to the terminal.
 
 With ``sim.progress_bar = True``, a single progress bar shows the progress of all
 the jobs while ``sim.run(...)`` waits for them (the jobs do not display their own
@@ -96,7 +98,7 @@ jobs:
 
    merge_manager = gate.jobs_merge("campaign")
    sim = merge_manager.master_simulation
-   gate.jobs_clean("campaign")  # this removes the job folders and other metadata about the split run
+   gate.jobs_clean_split("campaign")  # this removes the job folders and other metadata about the split run
 
    merge_manager.print_merge_summary()
    # ... post-process sim, actors, and merged output ...
@@ -128,10 +130,10 @@ passing the campaign folder to the next stage.
        policy="split_in_time_total",
    )
 
-   run_summary = gate.jobs_run(
-       jobs_split_manager.campaign_dir,
-       backend="local_pool",
-   )
+   # local_pool is the default backend; jobs_run returns while the jobs run
+   run_summary = gate.jobs_run(jobs_split_manager.campaign_dir)
+   # wait for the end of the jobs (with a progress bar in a terminal)
+   gate.jobs_wait(jobs_split_manager.campaign_dir)
 
    merge_manager = gate.jobs_merge(jobs_split_manager.campaign_dir)
    merged_sim = merge_manager.master_simulation
@@ -185,6 +187,42 @@ closer to the original run partition.
 .. tip:: If you use ``split_in_time_per_run`` and set the number of jobs equal to the number of run timing intervals in your simulation, you will get one job per run timing interval.
 
 
+Local multi-job execution from the command line
+-----------------------------------------------
+
+The simulation can also be written in a campaign folder and run with the
+``opengate_jobs`` command. In the script, replace ``sim.run()`` by:
+
+.. code-block:: python
+
+   sim.to_json_file("campaign")
+
+Then, in one command, split the simulation into 8 jobs, run them on the local
+machine (with one progress bar for all the jobs) and merge their output:
+
+.. code-block:: console
+
+   opengate_jobs campaign -j 8
+
+The merged output is written in the ``output_dir`` of the simulation. A
+relative ``output_dir`` is relative to the campaign folder, e.g.
+``campaign/output`` for ``sim.output_dir = "output"``.
+
+- The output of each job is in ``campaign/job000N/job.log``.
+- If some jobs fail or are interrupted (Control-C), the command reports them
+  and does not merge. Run the same command again to run only the jobs that did
+  not complete; the completed jobs are kept.
+- ``--workers N`` runs at most N jobs at the same time (all the jobs by
+  default).
+- ``--no-merge`` does not merge; ``--clean`` removes the job folders after the
+  merge.
+- ``-j`` is only needed the first time (to split). To split again with another
+  number of jobs, add ``--overwrite``.
+
+``opengate_jobs campaign -j 8`` is a short form of
+``opengate_jobs run campaign -j 8``.
+
+
 Server-based execution
 ----------------------
 
@@ -221,11 +259,11 @@ Then the workflow is:
 
 .. code-block:: console
 
-   opengate_jobs_split campaign --number-of-jobs 100
-   opengate_jobs_run campaign --backend htcondor --backend-options-json htcondor_options.json
-   opengate_jobs_status campaign
-   opengate_jobs_merge campaign
-   opengate_jobs_clean campaign
+   opengate_jobs split campaign -j 100
+   opengate_jobs run campaign --backend htcondor --backend-options htcondor_options.json
+   opengate_jobs status campaign
+   opengate_jobs merge campaign
+   opengate_jobs clean campaign
 
 The campaign folder is the authoritative container throughout the workflow. It
 contains:
@@ -240,16 +278,22 @@ contains:
 Backend options on a server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``opengate_jobs_run`` command accepts the backend explicitly and can read
+The ``opengate_jobs run`` command accepts the backend explicitly and can read
 backend options from a JSON file:
 
 .. code-block:: console
 
-   opengate_jobs_run campaign --backend htcondor --backend-options-json htcondor_options.json
+   opengate_jobs run campaign --backend htcondor --backend-options htcondor_options.json
 
 As a convenience, the command also looks for a default file named
 ``jobs_backend_options.json`` inside the campaign folder when no
-``--backend-options-json`` or ``--backend`` argument is provided.
+``--backend-options`` argument is provided. Without backend (on the command
+line or in this file), the jobs run on the local machine (``local``).
+
+With a scheduler backend, ``opengate_jobs run`` only submits the jobs and
+returns: follow them with ``opengate_jobs status campaign``, and merge them
+with ``opengate_jobs merge campaign`` once they are all completed (the merge
+refuses an incomplete campaign).
 
 You can find examples you can adapt in the ``contrib/cluster`` folder for slurm and pbs backends.
 The backend options are usually site-specific and should be adapted to the target server.
@@ -324,14 +368,22 @@ backend options should therefore be adapted to the target server.
 Command-line tools
 ------------------
 
-GATE ships with multi-job command-line tools mainly intended for handling simulations on servers:
+GATE ships with one multi-job command-line tool, ``opengate_jobs``, with the
+subcommands:
 
-- ``opengate_jobs_split``: split a campaign folder into child jobs
-- ``opengate_jobs_run``: launch a split campaign through a backend
-- ``opengate_jobs_status``: inspect the current campaign status
-- ``opengate_jobs_merge``: merge the finished jobs
-- ``opengate_jobs_clean``: remove temporary split-job artifacts
-- ``opengate_job_runner``: execute one individual child job folder
+- ``opengate_jobs run``: run the jobs of a campaign through a backend (local by
+  default), after splitting it if needed (``-j``); with the local backend, wait
+  for the jobs and merge their output. This is the default subcommand:
+  ``opengate_jobs campaign -j 8`` is ``opengate_jobs run campaign -j 8``
+- ``opengate_jobs split``: split a campaign folder into child jobs
+- ``opengate_jobs status``: inspect the current campaign status
+- ``opengate_jobs merge``: merge the finished jobs (``-o`` for another output
+  folder)
+- ``opengate_jobs clean``: remove the job folders and the jobs files
 
-The single-job runner is mainly useful for scheduler payload commands. End
-users will usually work with the campaign-level commands instead.
+Use ``opengate_jobs <subcommand> -h`` for all the options. ``--json`` prints
+the result as JSON, for scripts.
+
+``opengate_job_runner`` executes one individual child job folder: it is mainly
+useful for scheduler payload commands. End users will usually work with
+``opengate_jobs`` instead.

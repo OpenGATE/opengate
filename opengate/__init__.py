@@ -175,6 +175,7 @@ from opengate.jobs import (
     jobs_merge,
     jobs_clean_split,
     jobs_status,
+    jobs_wait,
     print_jobs_split_summary,
     print_jobs_merge_summary,
 )

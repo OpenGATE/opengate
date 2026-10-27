@@ -41,13 +41,17 @@ DEFAULT_SIMULATION_FILENAME = "simulation.json"
 DEFAULT_RESOLVED_SIMULATION_FILENAME = "simulation_resolved.json"
 DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME = "jobs_backend_options.json"
 DEFAULT_SPLIT_POLICY = "split_in_time_total"
-DEFAULT_LOCAL_JOBS_BACKEND = "local_sequential"
+DEFAULT_LOCAL_JOBS_BACKEND = "local_pool"
+# "local" is the user-facing name of the local_pool backend
+JOBS_BACKEND_ALIASES = {"local": "local_pool"}
 
 JOBS_MANIFEST_FILENAME = "jobs_manifest.json"
 JOBS_BACKEND_STATUS_FILENAME = "jobs_backend_status.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
 JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_PROGRESS_FILENAME = "job_progress.json"
+# output (Python and Geant4) of a job run by a local backend
+JOB_LOG_FILENAME = "job.log"
 # in Geant4 units, as progress_hook_interval
 JOB_PROGRESS_INTERVAL = 2.0 * g4_units.s
 JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
@@ -186,8 +190,9 @@ def _prepare_campaign_dir(campaign_dir, overwrite_existing_job_folders=False):
         raise GateUserError(
             f"The campaign folder already contains split jobs: {campaign_dir}\n"
             f"({', '.join(blocking_entries)})\n"
-            f"Remove it, choose another campaign_dir, or use "
-            f"overwrite_existing_job_folders=True in jobs_split to replace them."
+            f"Remove it, choose another campaign_dir, or replace them with "
+            f"--overwrite (opengate_jobs) or overwrite_existing_job_folders=True "
+            f"(jobs_split)."
         )
 
     if overwrite_existing_job_folders is True:
@@ -1543,8 +1548,39 @@ class CampaignProgressBar:
             self.drawn = False
 
 
+class _RedirectOutputToFile:
+    """Redirect the standard output and error of the process (file descriptors
+    1 and 2, so also the output of Geant4 and of the subprocesses) to a file.
+    Used for the local jobs: they share the terminal with the progress bar of
+    the campaign, their output goes to the log file of their folder."""
+
+    def __init__(self, path):
+        self.path = Path(path)
+
+    def __enter__(self):
+        sys.stdout.flush()
+        sys.stderr.flush()
+        self._log = open(self.path, "w")
+        self._saved = (os.dup(1), os.dup(2))
+        os.dup2(self._log.fileno(), 1)
+        os.dup2(self._log.fileno(), 2)
+        return self
+
+    def __exit__(self, *args):
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.dup2(self._saved[0], 1)
+        os.dup2(self._saved[1], 2)
+        os.close(self._saved[0])
+        os.close(self._saved[1])
+        self._log.close()
+        return False
+
+
 def _run_job_folder(job_folder, backend, start_new_process):
     """Execute one child job from its persisted job folder.
+
+    With a local backend, the output of the job goes to job.log in its folder.
 
     The caller decides whether the simulation itself should run in the current
     process or dispatch one more subprocess via
@@ -1553,6 +1589,13 @@ def _run_job_folder(job_folder, backend, start_new_process):
     detach orchestration from the caller.
     """
     job_folder = Path(job_folder).resolve()
+    if backend in ("local_pool", "local_sequential"):
+        with _RedirectOutputToFile(job_folder / JOB_LOG_FILENAME):
+            return _run_job_folder_in_process(job_folder, backend, start_new_process)
+    return _run_job_folder_in_process(job_folder, backend, start_new_process)
+
+
+def _run_job_folder_in_process(job_folder, backend, start_new_process):
     metadata = {
         "job_id": None,
         "job_index": None,
@@ -1612,6 +1655,8 @@ def _run_job_folder(job_folder, backend, start_new_process):
         finished_at = _now_isoformat()
         error_message = f"{type(error).__name__}: {error}"
         traceback_str = traceback.format_exc()
+        # also in the output of the job (job.log for the local backends)
+        print(traceback_str, file=sys.stderr)
         _write_job_execution_status(
             job_folder,
             metadata,
@@ -2063,6 +2108,7 @@ def jobs_run(
     most practical local runs, ``number_of_workers`` should therefore be equal
     to ``number_of_jobs``.
     """
+    backend = JOBS_BACKEND_ALIASES.get(backend, backend)
     manifest_path, manifest = _load_jobs_manifest(split_path)
     split_root_folder = manifest_path.parent
     status_data = jobs_status(split_root_folder)
@@ -2256,6 +2302,8 @@ def jobs_run(
             ),
         )
         campaign_process.start()
+        # kept to know, in this process, when the campaign is over (jobs_wait)
+        _campaign_processes[str(split_root_folder)] = campaign_process
 
         _write_jobs_backend_status(
             split_root_folder,
@@ -2282,6 +2330,69 @@ def jobs_run(
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
 
 
+_campaign_processes = {}
+
+
+def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
+    """Wait for the end of a local campaign launched by jobs_run() in this
+    process, with one progress bar for all the jobs (in a terminal only).
+    The campaign is over when its campaign process ends (or, for a campaign
+    launched elsewhere, when all the jobs are completed, failed or
+    interrupted). Return the final jobs_status().
+
+    On Control-C, the running jobs are marked as interrupted and
+    KeyboardInterrupt is raised again.
+    """
+    campaign_dir = Path(campaign_dir).resolve()
+    process = _campaign_processes.get(str(campaign_dir))
+    bar = None
+    if progress_bar and sys.stdout.isatty():
+        bar = CampaignProgressBar(campaign_dir)
+    start_time = time.perf_counter()
+    final_statuses = ("completed", "failed", "interrupted")
+    status_data = jobs_status(campaign_dir)
+    try:
+        while True:
+            if bar is not None:
+                bar.update(status_data)
+            if process is not None:
+                over = not process.is_alive()
+            else:
+                over = all(
+                    j.get("execution_status") in final_statuses
+                    for j in status_data["jobs"]
+                )
+            if over:
+                break
+            if timeout is not None and (time.perf_counter() - start_time) > timeout:
+                raise GateJobsBackendError(
+                    f"Timed out while waiting for the jobs in '{campaign_dir}'."
+                )
+            time.sleep(poll_interval)
+            status_data = jobs_status(campaign_dir)
+    except KeyboardInterrupt:
+        if bar is not None:
+            bar.close()
+        if process is not None:
+            # the campaign process also stops (same terminal): wait for it to
+            # terminate its pool of workers
+            process.join(timeout=30)
+            _campaign_processes.pop(str(campaign_dir), None)
+        _mark_running_jobs_as_interrupted(
+            [campaign_dir / j["folder_name"] for j in status_data["jobs"]]
+        )
+        raise
+    finally:
+        if bar is not None:
+            bar.close()
+    if process is not None:
+        process.join()
+        _campaign_processes.pop(str(campaign_dir), None)
+    # the campaign process may have ended before writing the status of the
+    # jobs it was running (e.g. killed): read it again
+    return jobs_status(campaign_dir)
+
+
 class SplitRunMergeController:
     """Local orchestration handle for split-run-merge workflows.
 
@@ -2296,7 +2407,7 @@ class SplitRunMergeController:
         simulation,
         campaign_dir=None,
         split_policy="split_in_time_total",
-        backend="local_pool",
+        backend=DEFAULT_LOCAL_JOBS_BACKEND,
         merge=True,
         cleanup=False,
     ):
@@ -2420,6 +2531,9 @@ class SplitRunMergeController:
         try:
             run_options = dict(run_options)
             run_options.setdefault("backend", self.backend)
+            run_options["backend"] = JOBS_BACKEND_ALIASES.get(
+                run_options["backend"], run_options["backend"]
+            )
             if (
                 run_options["backend"] == "local_pool"
                 and "number_of_workers" not in run_options
@@ -3588,6 +3702,8 @@ def format_jobs_failure_report(campaign_dir_or_status):
             job.get("folder_name")
         )
         lines.append(f"Job {job.get('job_id')} [{execution_status}] in {folder}")
+        if (folder / JOB_LOG_FILENAME).exists():
+            lines.append(f"    Log: {folder / JOB_LOG_FILENAME}")
         execution_status_data = job.get("execution_status_data") or {}
         error_message = execution_status_data.get("error_message")
         if error_message:
