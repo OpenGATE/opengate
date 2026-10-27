@@ -5,6 +5,10 @@ We are really happy if you want to propose a new feature or changes in
 GATE. Please contact us and share your ideas with us - this is how Gate
 was born and how it will keep growing!
 
+Before you start, please read the short `guidelines for developers
+<https://github.com/OpenGATE/opengate/blob/master/CONTRIBUTING.md>`__
+(branches, code, tests, continuous integration and documentation).
+
 Propose a pull request:
 -----------------------
 
