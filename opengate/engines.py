@@ -1189,21 +1189,33 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self._is_constructed = True
         return self.volume_manager.world_volume.g4_physical_volume
 
-    def check_overlaps(self, verbose):
+    def check_overlaps(self, verbose, max_copies):
         for volume in self.volume_manager.volumes.values():
             if volume not in self.volume_manager.all_world_volumes:
                 for pw in volume.g4_physical_volumes:
+                    # parametrised volumes: each copy is checked against all the
+                    # others, so the cost grows with the square of the number of copies
+                    n = pw.GetMultiplicity()
+                    if isinstance(pw, g4.G4PVParameterised) and n > max_copies:
+                        logger.info(
+                            f'Overlaps of the volume "{volume.name}" are not checked: '
+                            f"{n} copies, more than "
+                            f"check_volumes_overlap_max_copies = {max_copies}."
+                        )
+                        continue
                     try:
                         b = pw.CheckOverlaps(1000, 0, verbose, 1)
-                        if b:
-                            fatal(
-                                f'Some volumes overlap with the volume "{volume.name}". \n'
-                                f"Use Geant4's verbose output to know which ones. \n"
-                                f"Aborting."
-                            )
-                    # FIXME: What causes the exceptions?
-                    except:
-                        warning(f"Could not check overlap for volume {volume.name}.")
+                    except Exception as e:
+                        warning(
+                            f'Could not check overlap for volume "{volume.name}": {e}'
+                        )
+                        continue
+                    if b:
+                        fatal(
+                            f'Some volumes overlap with the volume "{volume.name}". \n'
+                            f"Use Geant4's verbose output to know which ones. \n"
+                            f"Aborting."
+                        )
 
     def ConstructSDandField(self):
         """
@@ -1972,7 +1984,9 @@ class SimulationEngine(GateSingletonFatal):
         self.initialize_g4_verbose()
 
         # check
-        self.volume_engine.check_overlaps(verbose)
+        self.volume_engine.check_overlaps(
+            verbose, self.simulation.check_volumes_overlap_max_copies
+        )
 
         # put back verbosity
         self.simulation.g4_verbose = b

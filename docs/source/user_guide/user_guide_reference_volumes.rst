@@ -394,6 +394,16 @@ The user guide on this will soon be updated and extended.
    param.offset_nb = 1
    param.offset = [0, 0, 0]
 
+When ``sim.check_volumes_overlap`` is True (the default), each copy of a
+parametrised volume is checked against its mother and against all the
+other copies, so the cost of the check grows with the square of the
+number of copies. Parametrised volumes with more than
+``sim.check_volumes_overlap_max_copies`` copies (100 by default) are not
+checked, with an info message. To check a large parametrised volume, for
+example a collimator with thousands of holes, increase this value
+(be patient: about 1 s for 100 copies, 10 s for 300), or check
+once with a smaller ``linear_repeat``.
+
 
 Reference
 ~~~~~~~~~

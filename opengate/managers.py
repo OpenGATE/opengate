@@ -1890,6 +1890,7 @@ class Simulation(GateObject):
     visu_commands_vrml: List[str]
     visu_commands_gdml: List[str]
     check_volumes_overlap: bool
+    check_volumes_overlap_max_copies: int
     number_of_threads: int
     force_multithread_mode: bool
     random_engine: str
@@ -2035,6 +2036,15 @@ class Simulation(GateObject):
             {
                 "doc": "If true, Gate will also check whether volumes overlap. "
                 "Note: Geant4 checks overlaps in any case."
+            },
+        ),
+        "check_volumes_overlap_max_copies": (
+            100,
+            {
+                "doc": "Overlaps of a parametrised volume (e.g. RepeatParametrisedVolume) "
+                "are only checked if it has at most this number of copies: each copy is "
+                "checked against all the others, so the cost grows with the square "
+                "of the number of copies.",
             },
         ),
         "number_of_threads": (
