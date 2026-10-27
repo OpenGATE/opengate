@@ -1023,6 +1023,7 @@ class ActorEngine(EngineBase):
         for actor in self.actor_manager.sorted_actors:
             logger.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
             # self.simulation_engine.action_engine.register_all_actions(actor)
+            actor.ensure_cpp_part()
             actor.initialize()
             # warning: the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
