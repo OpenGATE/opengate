@@ -378,7 +378,19 @@ class ActorBase(GateObject):
         super().__setstate__(state)
         for v in self.interfaces_to_user_output.values():
             v.belongs_to_actor = self
-        self.__initcpp__()
+        # The C++ part is not created here: an unpickled actor is usually only
+        # used for its outputs (e.g. the output of a simulation run in a
+        # subprocess). Creating it registers C++/Geant4 objects in global
+        # stores of this process (e.g. the list of biasing operators), which a
+        # forked child process then inherits, and the next simulation fails
+        # (#1213). It is created if the actor is initialized for a run.
+        self.__dict__["_cpp_part_created"] = False
+
+    def ensure_cpp_part(self):
+        """Create the C++ part of an unpickled actor, if not done yet."""
+        if self.__dict__.get("_cpp_part_created", True) is False:
+            self.__initcpp__()
+            self.__dict__["_cpp_part_created"] = True
 
     def configure_like(self, other_obj):
         super().configure_like(other_obj)
