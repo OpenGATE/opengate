@@ -83,3 +83,5 @@ The example `test015_iec_phantom_voxelize_5` demonstrates the complete voxelizat
     voxelize_iec_phantom --spacing 1 -a 1 2 3 4 5 6.6 --bg 0.1 --cyl 0.5  --no_shell -o iec_1mm.mhd --output_source iec_1mm_activity.mha
 
 This command will generate a voxelized version of the IEC phantom with a resolution of 1mm, saved in the `iec_1mm.mhd` file. Additionally, three other files related to volumes, labels, and material properties will be generated. In this example, a voxelized source of activity is also stored, with specified activities in the six spheres (1, 2, 3, 4, 5, and 6.6), background (0.1), and the central cylinder (0.5). The specified activities will then be normalized when used as a voxel source.
+
+Other options describe a given physical phantom: `--version` (`iec_214`, default, or `iec_220`), `--sphere_starting_angle` (angle in degrees of the first sphere, default 180) and `--toggle_sphere_order` (reverse order of the spheres, the first one is then the 10 mm sphere) set the layout of the spheres; `--no_central_cylinder` considers a phantom without the central (lung) insert: its volumes are water, with the background activity.

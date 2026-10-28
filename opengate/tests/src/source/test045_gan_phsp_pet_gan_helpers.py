@@ -113,7 +113,7 @@ def add_voxelized_phantom(sim, param):
         if "capillary" in l:
             mat = "G4_WATER"
         if "cylinder_hole" in l:
-            mat = "G4_LUNG_ICRP"
+            mat = gate_iec.iec_lung
         if "interior" in l:
             mat = "G4_WATER"
         if "sphere" in l:

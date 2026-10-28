@@ -89,6 +89,19 @@ def voxelize_geometry(
         return labels, image
 
 
+def split_image_extension(filename):
+    """
+    Split an image filename into the filename without extension and the
+    extension, with the double extensions (".nii.gz"). The extension is ""
+    if there is none.
+    """
+    p = Path(filename)
+    for ext in [".nii.gz"]:
+        if p.name.endswith(ext):
+            return p.parent / p.name[: -len(ext)], ext
+    return p.with_suffix(""), p.suffix
+
+
 def write_voxelized_geometry(
     self,
     labels,
@@ -99,31 +112,37 @@ def write_voxelized_geometry(
     label_filename=None,
     db_filename=None,
 ):
+    """
+    Write the voxelized geometry: the image of the labels (base_filename, with
+    its extension, e.g. .mhd, .mha, .nii.gz; .mhd if none), the volumes
+    (<base>_volumes.json), the labels to materials (<base>_labels.json) and
+    the database of the materials (<base>.db).
+    """
+    base, ext = split_image_extension(base_filename)
+
     # write labels
     if vol_filename is None:
-        vol_filename = Path(base_filename).with_suffix(".json")
-        vol_filename = str(vol_filename).replace(".json", "_volumes.json")
+        vol_filename = f"{base}_volumes.json"
     with open(vol_filename, "w") as outfile:
         json.dump(labels, outfile, indent=4)
 
     # write image
     if image_filename is None:
-        image_filename = Path(base_filename).with_suffix(".mhd")
-    itk.imwrite(image, image_filename)
+        image_filename = f"{base}{ext if ext else '.mhd'}"
+    itk.imwrite(image, str(image_filename))
 
     # create the label to material
     vm = [[m["label"], m["label"] + 1, m["material"]] for m in labels.values()]
     image_volume = self.add_volume("Image", generate_random_string(12))
     image_volume.voxel_materials = vm
     if label_filename is None:
-        label_filename = Path(base_filename).with_suffix(".json")
-        label_filename = str(label_filename).replace(".json", "_labels.json")
+        label_filename = f"{base}_labels.json"
     image_volume.write_label_to_material(label_filename)
 
     # write the database of material
     # gate_iec.create_material(sim)
     if db_filename is None:
-        db_filename = Path(base_filename).with_suffix(".db")
+        db_filename = f"{base}.db"
     image_volume.write_material_database(db_filename)
 
     self.volume_manager.remove_volume(image_volume.name)
