@@ -268,21 +268,25 @@ class WindowTurboSource(GenericSource):
             fatal(
                 "The 'back_to_back' particle type is not compatible with WindowTurboSource."
             )
-        if isinstance(self.n, list):
+        if isinstance(self.number_of_primaries, list):
             if any(n_i != 0 for n_i in self.n):
                 fatal(
-                    "The 'n' parameter must be 0 for all timing intervals in WindowTurboSource."
+                    "The 'number_of_primaries' parameter must be 0 for all timing intervals in WindowTurboSource."
                 )
-        elif isinstance(self.n, (int, float)):
-            if self.n != 0:
-                fatal("The 'n' parameter is not compatible with WindowTurboSource.")
-        elif isinstance(self.n, np.ndarray):
-            if np.any(self.n != 0):
+        elif isinstance(self.number_of_primaries, (int, float)):
+            if self.number_of_primaries != 0:
                 fatal(
-                    "The 'n' parameter must be 0 for all timing intervals in WindowTurboSource."
+                    "The 'number_of_primaries' parameter is not compatible with WindowTurboSource."
+                )
+        elif isinstance(self.number_of_primaries, np.ndarray):
+            if np.any(self.number_of_primaries != 0):
+                fatal(
+                    "The 'number_of_primaries' parameter must be 0 for all timing intervals in WindowTurboSource."
                 )
         else:
-            fatal("Invalid type for 'n' parameter in WindowTurboSource.")
+            fatal(
+                "Invalid type for 'number_of_primaries' parameter in WindowTurboSource."
+            )
 
         if self.particle != "gamma":
             warning(

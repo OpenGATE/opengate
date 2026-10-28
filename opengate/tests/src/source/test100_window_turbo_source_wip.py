@@ -66,7 +66,7 @@ def initialize(duration=10):
     return sim
 
 
-def run_window_turbo_source(activity=1000000):
+def run_window_turbo_source(activity=4000000):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
     sim = initialize(80)
@@ -100,10 +100,10 @@ def run_window_turbo_source(activity=1000000):
     print("-" * 80)
 
 
-def run_generic_source(activity=1000000):
+def run_generic_source(activity=4000000):
     Bq = gate.g4_units.Bq
 
-    sim = initialize()
+    sim = initialize(80)
     build_geometry(sim, "generic")
 
     # physic list

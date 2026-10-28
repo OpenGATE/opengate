@@ -56,11 +56,11 @@ def initialize(duration=10):
     return sim
 
 
-def run_window_turbo_source(activity=1000000):
+def run_window_turbo_source(activity=4000000):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
     NoT = 4
-    sim = initialize(1920 // NoT)
+    sim = initialize(480)
     sim.g4_verbose = False
 
     sim.progress_bar = False
@@ -92,11 +92,11 @@ def run_window_turbo_source(activity=1000000):
     print("-" * 80)
 
 
-def run_generic_source(activity=1000000):
+def run_generic_source(activity=4000000):
     Bq = gate.g4_units.Bq
     total_num = 1920
     thread_count = 10
-    duration = 1920 // thread_count
+    duration = 480
     sim = initialize(duration)
     sim.number_of_threads = thread_count
     build_geometry(sim, paths.output / f"voxel")

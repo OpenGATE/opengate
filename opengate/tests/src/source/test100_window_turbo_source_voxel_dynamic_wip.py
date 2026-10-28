@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import opengate as gate
+from opengate.tests import utility
 import numpy as np
 import SimpleITK as sitk
 
-import opengate as gate
-from opengate.tests import utility
 from test100_window_turbo_source_base import (
     build_geometry,
     calculate_profile,
@@ -55,7 +55,7 @@ def change_source_parameters(source):
     source.position.dz = 100 * mm
 
 
-def configure_voxel_wt_source(sim, image_path, activity=1000000):
+def configure_voxel_wt_source(sim, image_path, activity=4000000):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
     radius_down = 13.6

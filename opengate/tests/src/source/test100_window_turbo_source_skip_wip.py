@@ -103,11 +103,11 @@ def compare_profiles(ref, test, tolerance=8.0, fig_name=None):
     return is_ok
 
 
-def run_window_turbo_source(activity=1000000, skip_mode=False):
+def run_window_turbo_source(activity=4000000, skip_mode=False):
     Bq = gate.g4_units.Bq
     mm = gate.g4_units.mm
     NoT = 4
-    duration = 320 / NoT
+    duration = 80
     sim = initialize(duration)
     sim.g4_verbose = False
     sim.number_of_threads = NoT
@@ -148,10 +148,10 @@ def run_window_turbo_source(activity=1000000, skip_mode=False):
     print("-" * 80)
 
 
-def run_generic_source(activity=1000000):
+def run_generic_source(activity=4000000):
     Bq = gate.g4_units.Bq
 
-    sim = initialize(10)
+    sim = initialize(80)
     sim.number_of_threads = 32
     build_geometry(sim, paths.output / "generic")
 
