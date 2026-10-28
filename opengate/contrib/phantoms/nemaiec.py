@@ -12,7 +12,9 @@ from opengate.utility import fatal, g4_units
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
-iec_lung = "G4_LUNG_ICRP"
+# the lung insert: polystyrene beads and water, 0.30 g/cm3 (not G4_LUNG_ICRP:
+# lung tissue, 1.04 g/cm3), see create_material
+iec_lung = "IEC_LUNG"
 
 # colors
 red = [1, 0.7, 0.7, 0.8]
@@ -27,6 +29,13 @@ def create_material(simulation):
     gcm3 = g4_units.g_cm3
     simulation.volume_manager.material_database.add_material_nb_atoms(
         "IEC_PLASTIC", elems, nb_atoms, 1.18 * gcm3
+    )
+    # lung insert: expanded polystyrene beads (~0.03 g/cm3) and water, density
+    # 0.30 g/cm3 (NEMA NU 2 / IEC 61675-1, IAEA, manufacturers: 0.3 +- 0.1),
+    # i.e. 28 % of water in volume, mass fractions 0.928 water, 0.072
+    # polystyrene (issue #1211)
+    simulation.volume_manager.material_database.add_material_weights(
+        iec_lung, ["H", "C", "O"], [0.1094, 0.0666, 0.8240], 0.30 * gcm3
     )
 
 

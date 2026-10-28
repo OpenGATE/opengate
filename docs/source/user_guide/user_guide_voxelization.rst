@@ -28,11 +28,11 @@ This algorithm creates an empty image corresponding to the defined `extent`, ite
 The output of `voxelize_geometry` is an image in ITK format and `volume_labels`, a dictionary structure that describes the correspondence between image voxel values (or labels), the volume name in the scene, and the corresponding material. The second helper function, named `write_voxelized_geometry`, will write all necessary files for subsequent reading and usage of the voxelized image as a volume in GATE (see the next section). There are four different written files:
 
 - `volume_labels`: A JSON file containing label, volume names, and material correspondence.
-- `image`: The voxelized image in MHD file format.
+- `image`: The voxelized image, in the format given by the extension of the filename (e.g. `.mhd`, `.mha`, `.nii.gz`; `.mhd` if there is none).
 - `labels`: A list of labels with material correspondence (3 values
 - `material_database`: A list of all materials used.
 
-The `filenames` parameter will contain the automatically generated filenames for these four elements (alternatively, the user can set their own filenames).
+The `filenames` parameter will contain the automatically generated filenames for these four elements (alternatively, the user can set their own filenames): with `voxelized_scene.nii.gz`, they are `voxelized_scene_volumes.json`, `voxelized_scene.nii.gz`, `voxelized_scene_labels.json` and `voxelized_scene.db`, in the same folder.
 
 From voxelization to ImageVolumes
 ---------------------------------
@@ -83,3 +83,5 @@ The example `test015_iec_phantom_voxelize_5` demonstrates the complete voxelizat
     voxelize_iec_phantom --spacing 1 -a 1 2 3 4 5 6.6 --bg 0.1 --cyl 0.5  --no_shell -o iec_1mm.mhd --output_source iec_1mm_activity.mha
 
 This command will generate a voxelized version of the IEC phantom with a resolution of 1mm, saved in the `iec_1mm.mhd` file. Additionally, three other files related to volumes, labels, and material properties will be generated. In this example, a voxelized source of activity is also stored, with specified activities in the six spheres (1, 2, 3, 4, 5, and 6.6), background (0.1), and the central cylinder (0.5). The specified activities will then be normalized when used as a voxel source.
+
+Other options describe a given physical phantom: `--version` (`iec_214`, default, or `iec_220`), `--sphere_starting_angle` (angle in degrees of the first sphere, default 180) and `--toggle_sphere_order` (reverse order of the spheres, the first one is then the 10 mm sphere) set the layout of the spheres; `--no_central_cylinder` considers a phantom without the central (lung) insert: its volumes are water, with the background activity. `--rotation` (Euler angles xyz, degrees) and `--translation` (mm) place the phantom before the voxelization: the image is then axis aligned in this frame, e.g. the frame of the CT of an acquisition, so that it can be compared directly with the CT.

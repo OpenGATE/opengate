@@ -17,7 +17,9 @@ An analytical model of the 6 spheres IEC NEMA phantom is provided. It can be use
     iec_source = gate_iec.add_spheres_sources(sim, 'iec_phantom', 'iec_source', 'all', activities)
     iec_bg_source = gate_iec.add_background_source(sim, 'iec_phantom', 'iec_bg_source', 0.1 * BqmL)
 
-The rotation should be adapted according to your need. The order of the 6 spheres can be changed with the parameter `sphere_starting_angle` of the `add_iec_phantom` command.
+The rotation should be adapted according to your need. The layout of the 6 spheres can be changed with the parameters `sphere_starting_angle` (angle of the first sphere, default 180 deg, the 37 mm sphere) and `toggle_sphere_order` (reverse order, the first sphere is then the 10 mm one) of the `add_iec_phantom` command, to match a given physical phantom.
+
+Materials: the body and the shells of the spheres are ``IEC_PLASTIC`` (PMMA, 1.18 g/cm3), the interior and the spheres are ``G4_WATER``, and the central (lung) insert is ``IEC_LUNG``: polystyrene beads and water, 0.30 g/cm3 (``gate_iec.iec_lung``). Up to opengate 10.1.1 (before issue #1211), the insert was ``G4_LUNG_ICRP`` (lung tissue, 1.04 g/cm3); to reproduce older simulations, set the material of the volume ``<name>_center_cylinder_hole`` to ``G4_LUNG_ICRP``.
 
 .. image:: ../figures/iec_6spheres.png
 
