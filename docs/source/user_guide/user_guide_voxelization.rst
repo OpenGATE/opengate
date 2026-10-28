@@ -28,11 +28,11 @@ This algorithm creates an empty image corresponding to the defined `extent`, ite
 The output of `voxelize_geometry` is an image in ITK format and `volume_labels`, a dictionary structure that describes the correspondence between image voxel values (or labels), the volume name in the scene, and the corresponding material. The second helper function, named `write_voxelized_geometry`, will write all necessary files for subsequent reading and usage of the voxelized image as a volume in GATE (see the next section). There are four different written files:
 
 - `volume_labels`: A JSON file containing label, volume names, and material correspondence.
-- `image`: The voxelized image in MHD file format.
+- `image`: The voxelized image, in the format given by the extension of the filename (e.g. `.mhd`, `.mha`, `.nii.gz`; `.mhd` if there is none).
 - `labels`: A list of labels with material correspondence (3 values
 - `material_database`: A list of all materials used.
 
-The `filenames` parameter will contain the automatically generated filenames for these four elements (alternatively, the user can set their own filenames).
+The `filenames` parameter will contain the automatically generated filenames for these four elements (alternatively, the user can set their own filenames): with `voxelized_scene.nii.gz`, they are `voxelized_scene_volumes.json`, `voxelized_scene.nii.gz`, `voxelized_scene_labels.json` and `voxelized_scene.db`, in the same folder.
 
 From voxelization to ImageVolumes
 ---------------------------------
