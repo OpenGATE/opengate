@@ -89,10 +89,12 @@ def build_crystal(sim, head, prj_name):
         "PreStepUniqueVolumeID",
     ]
     hc.attached_to = ["head_crystal"]
+    hc.write_to_disk = False
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWeightedCentroidPosition"
     sc.group_volume = "head_crystal"
+    sc.output_filename = f"{prj_name}_singles.root"
     proj = sim.add_actor("DigitizerProjectionActor", "Projection")
     proj.attached_to = "head_crystal"
     proj.input_digi_collections = ["Singles"]
@@ -148,11 +150,11 @@ def compare_profiles(ref, test, tolerance=8.0, fig_name=None):
 
     if fig_name is not None:
         plt.figure(figsize=(10, 5))
-        plt.plot(ref / ref.sum(), label="reference")
-        plt.plot(test / test.sum(), label="test")
+        plt.plot(ref, label="reference")
+        plt.plot(test, label="test")
         plt.legend()
         plt.xlabel("Pixel")
-        plt.ylabel("Normalized counts")
+        plt.ylabel("Counts")
         plt.savefig(fig_name)
 
     return is_ok

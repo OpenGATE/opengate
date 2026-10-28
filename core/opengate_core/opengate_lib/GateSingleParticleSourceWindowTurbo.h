@@ -47,7 +47,7 @@ private:
   G4double fSinPlanePhi{NAN}, fCosPlanePhi{NAN};
   G4double fA1{NAN}, fA2{NAN}, fB1{NAN}, fB2{NAN};
   G4double fMaxSolidAngle = 0;
-  G4String fSourceName;
+  G4String fSourceName; // TODO: this is not initialized
   G4double fCurrentSolidAngle;
   G4ThreeVector fCurrentPos;
   G4bool fSkip;
