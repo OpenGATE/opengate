@@ -25,6 +25,7 @@ class VoxelWTSource(WindowTurboSource):
         self._cdf_x = None
         self._cdf_y = None
         self._cdf_z = None
+        self._cdf_applied_g4_sources = set()
 
     def create_g4_source(self):
         g4_source = g4.GateVoxelWTSource()
