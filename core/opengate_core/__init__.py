@@ -17,7 +17,6 @@ if os.name == "nt":
     )
 pathCurrentFile = os.path.abspath(__file__)
 if sys.platform == "win32":
-    print(os.path.dirname(pathCurrentFile))
     os.add_dll_directory(os.path.dirname(pathCurrentFile))
 
 from .opengate_core import *
