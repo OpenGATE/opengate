@@ -128,7 +128,9 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     # 426760*2*0.8883814158496728 = 758251.3
-    ref = 9523
+    # 9523 with the lung insert of the IEC phantom in G4_LUNG_ICRP (1.04 g/cm3),
+    # 8445 with IEC_LUNG (0.30 g/cm3, issue #1211): fewer absorbed events
+    ref = 8445
     ae = phsp.number_of_absorbed_events
     print(ae)
     err = abs(ae - ref) / ref
