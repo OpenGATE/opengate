@@ -35,9 +35,9 @@ def opengate_jobs(*args, cwd=None):
 
 def build_campaign(folder):
     sim = gate.Simulation()
-    # relative to the current folder (simulation_dir is "."), inside the
-    # campaign folder
-    sim.output_dir = os.path.relpath(folder / "output")
+    # relative to the current folder (simulation_dir is "."), which is the
+    # parent of the campaign folder, so inside the campaign folder
+    sim.output_dir = f"{folder.name}/output"
     cm = gate.g4_units.cm
     box = sim.add_volume("Box", "box")
     box.size = [10 * cm, 10 * cm, 10 * cm]
@@ -68,6 +68,8 @@ if __name__ == "__main__":
     paths.output.mkdir(parents=True)
     campaign = paths.output / "campaign"
     campaign.mkdir()
+    # as a script run in the folder that contains the campaign folder
+    os.chdir(paths.output)
     build_campaign(campaign)
     is_ok = True
 
