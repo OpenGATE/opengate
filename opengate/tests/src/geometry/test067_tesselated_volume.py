@@ -101,7 +101,7 @@ def create_simulation():
     source.position.translation = [0 * cm, 0 * cm, -30 * cm]
     source.energy.type = "gauss"
     source.energy.mono = 60 * MeV
-    source.n = 100
+    source.number_of_primaries = 100
 
     print(f"The energy is {source.energy.mono / eV} eV")
 

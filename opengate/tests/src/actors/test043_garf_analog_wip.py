@@ -28,7 +28,7 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
     keV = gate.g4_units.keV
 
-    activity = 1e6 * Bq / sim.number_of_threads
+    activity = 1e6 * Bq
 
     # world
     test43.sim_set_world(sim)

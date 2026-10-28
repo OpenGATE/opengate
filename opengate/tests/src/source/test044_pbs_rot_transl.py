@@ -94,7 +94,7 @@ def main():
     source.position.translation = [100 * mm, 20 * mm, 30 * mm]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = 20000
+    source.number_of_primaries = 20000
     source.direction.partPhSp_x = [
         2.3335754 * mm,
         2.3335754 * mrad,

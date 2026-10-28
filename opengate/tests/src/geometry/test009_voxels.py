@@ -49,8 +49,6 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.output_dir = paths.output
-    sim.store_json_archive = True
-    sim.json_archive_filename = "simulation_test009_voxels.json"
 
     # add a material database
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")

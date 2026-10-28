@@ -37,7 +37,7 @@ if __name__ == "__main__":
     source.particle = "gamma"
     source.energy.mono = 1 * MeV
     source.direction.type = "iso"
-    source.n = 1
+    source.number_of_primaries = 1
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"

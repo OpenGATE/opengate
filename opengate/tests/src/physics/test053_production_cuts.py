@@ -115,7 +115,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     source.position.radius = 1 * mm
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 1e1
+    source.number_of_primaries = 1e1
 
     print(sim.physics_manager.dump_production_cuts())
 

@@ -783,7 +783,7 @@ def add_source(sim, number_of_events):
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
 
-    source.n = number_of_events
+    source.number_of_primaries = number_of_events
 
     logger.info(
         f"Added source with spectrum from '{spectrum_path}', "

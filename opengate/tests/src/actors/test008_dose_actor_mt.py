@@ -60,8 +60,8 @@ if __name__ == "__main__":
     source.position.radius = 1 * nm
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    # source.activity = 2e5 / sim.number_of_threads * Bq
-    source.activity = 5e4 / sim.number_of_threads * Bq
+    # source.activity = 2e5 * Bq
+    source.activity = 5e4 * Bq
 
     """
     It needs at least around 2e5 particles for the multithread to be faster than mono thread

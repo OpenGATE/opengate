@@ -79,7 +79,7 @@ if __name__ == "__main__":
     sim.physics_manager.mean_energy_per_ion_pair["Body"] = mean_energy
 
     # go
-    sim.run()
+    sim.run(start_new_process=True)
 
     # test: no mean energy, should be mostly collinear
     gamma_pairs = read_gamma_pairs(root_filename1, "phsp")

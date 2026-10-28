@@ -62,7 +62,7 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 10 * mm
     source.position.translation = [0, 0, -15 * cm]
-    source.activity = activity / sim.number_of_threads
+    source.activity = activity
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
 

@@ -43,8 +43,6 @@ def run_simulation(n_runs, n_part_tot, n_threads, uncertainty_type="uncertainty"
 
     print(f"--- N runs: {len(run_timing_intervals)* n_threads}")
 
-    n_part_thread = int(n_part_tot / n_threads)
-
     # create the simulation
     sim = gate.Simulation()
 
@@ -94,7 +92,7 @@ def run_simulation(n_runs, n_part_tot, n_threads, uncertainty_type="uncertainty"
     source.position.radius = 5 * mm
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = n_part_thread  # 1 part/s
+    source.number_of_primaries = n_part_tot  # total primaries over all threads
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")

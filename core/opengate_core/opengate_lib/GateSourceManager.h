@@ -27,6 +27,13 @@
 #include <G4UIsession.hh>
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <mutex>
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 using namespace indicators;
 
@@ -105,12 +112,30 @@ public:
 
   long int GetExpectedNumberOfEvents() const;
 
+  unsigned long GetRunGeneratedEvents() const;
+  unsigned long GetTotalGeneratedEvents() const;
+
+  double GetCurrentSimulationTime() const;
+  int GetCurrentRunId() const;
+
   void ComputeExpectedNumberOfEvents();
 
+  void SetProgressReportCallback(py::function func, double interval_seconds);
+
+  void CheckProgressReport() const;
+
   static void SetRunTerminationFlag(bool flag);
+  static void ResetPrimaryCounterForRun();
+  static bool TryReservePrimarySlot();
+  static void WarnPrimaryLimitReached();
+  static void SetMaxPrimariesPerRun(std::uint64_t value);
+  static std::uint64_t GetPlatformMaxPrimariesPerRun();
 
   // fRunTerminationFlag should not be thread local
   static bool fRunTerminationFlag;
+  static std::atomic<std::uint64_t> fGeneratedPrimariesThisRun;
+  static std::atomic<bool> fPrimaryLimitWarningIssued;
+  static std::uint64_t fMaxPrimariesPerRun;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;
@@ -168,6 +193,14 @@ public:
 
   // Options (visualisation for example)
   py::dict fOptions;
+
+  // Progress report
+  double fProgressReportInterval;
+  py::function fProgressReportCallback;
+  mutable std::chrono::steady_clock::time_point
+      fLastProgressReportTime; // (mutable needed in CheckProgressReport)
+  mutable std::mutex
+      fProgressReportMutex; // (mutable needed in CheckProgressReport)
 
   bool fUserEventInformationFlag;
 };

@@ -119,12 +119,12 @@ if __name__ == "__main__":
     t_block.mother = world.name
 
     # source
-    nb_part = 1000 / sim.number_of_threads
+    nb_part = 1000
     std_dev_E = 10 * keV
     mean_E = 100 * keV
     source = sim.add_source("GenericSource", "photon_source")
     source.particle = "gamma"
-    source.n = nb_part
+    source.number_of_primaries = nb_part
     source.position.type = "box"
     source.position.size = [3 * cm, 3 * cm, 0 * cm]
     source.direction.type = "momentum"
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     is_ok = assert_uncertainty(
         array_E,
         err_array_E,
-        nb_part * sim.number_of_threads,
+        nb_part,
         mean_E,
         std_dev_E,
         Ephoton,

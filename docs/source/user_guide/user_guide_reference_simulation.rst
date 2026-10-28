@@ -117,10 +117,56 @@ This could be a problem in certain scenarios, e.g. when using interactive Python
 
 When this option is used, the Geant4 engine will be created and run in a separate process, which will be terminated after the simulation is finished. The output of the simulation will be copied back to the main process that called the ``run()`` method. This allows for the use of Gate in Python Notebooks, as long as this option is not forgotten.
 
+Progress Hook
+-------------
+
+You can attach a progress reporting hook function to monitor the progress of a running simulation at periodic intervals.
+
+Standard Use with `progress_status`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The simplest and standard way to monitor simulation progress is using the built-in helper `gate.progress_status(filename)`. This periodically outputs structured simulation metrics (status, elapsed wall time, current run index, event progress percentage, simulation time progress, total and expected events) into a JSON file:
+
+.. code-block:: python
+
+   import opengate as gate
+
+   status_file = "output/progress_status.json"
+   sim.progress_hook = gate.progress_status(status_file)
+   sim.progress_hook_interval = 0.5 * gate.g4_units.s
+
+Advanced Use with a Custom Hook
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For advanced usage, you can define a custom Python callback function and set `sim.progress_hook`. The hook accepts the simulation engine (or status string) and can optionally delegate to `gate.progress_status` while performing custom actions (such as logging to screen or sending progress notifications):
+
+.. code-block:: python
+
+   import opengate as gate
+
+   status_file = "output/progress_status.json"
+   status_reporter = gate.progress_status(status_file)
+
+   def custom_hook(sim_engine, status="running"):
+       # Perform progress reporting to JSON file
+       data = status_reporter(sim_engine, status)
+
+       # Custom action: print progress to console
+       print(
+           f"[Progress Hook] Run {data['run_index']}/{data['run_total']}, "
+           f"Events: {data['events_total']}/{data['events_expected']} ({data['events_progress']}%), "
+           f"Status: {status}"
+       )
+
+   sim.progress_hook = custom_hook
+   sim.progress_hook_interval = 0.5 * gate.g4_units.s
+
+
 User hooks
 ----------
 
 TODO
+
 
 .. [//]: # (For advanced usage, you can explicitly create the engine for the simulation with:)
 

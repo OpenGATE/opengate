@@ -56,7 +56,7 @@ if __name__ == "__main__":
     source.attached_to = waterbox.name
     source.float_value = 1234 * MeV
     source.vector_value = [1 * cm, 2 * cm, 3 * cm]
-    source.n = 666 / sim.number_of_threads
+    source.number_of_primaries = 666
 
     # actors
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

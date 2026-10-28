@@ -19,13 +19,14 @@ through a dedicated filter class for backward compatibility and cross-testing.
 The long-term direction is to prefer the generic attribute-comparison path.
 """
 
+import copy
 import sys
 import uuid
 from typing import Optional
 
 import opengate_core as g4
 
-from ..base import GateObject, process_cls
+from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..exception import fatal
 
 
@@ -66,6 +67,9 @@ class FilterBase(GateObject):
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
+
+    def resolve_and_validate_config(self, context=None):
+        pass
 
     def initialize(self):
         self.InitializeUserInfo(self.user_info)
@@ -305,6 +309,23 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
     def __initcpp__(self):
         g4.GateBooleanFilter.__init__(self)
 
+    def resolve_and_validate_config(self, context=None):
+        for subfilter in self.filters:
+            subfilter.resolve_and_validate_config(context=context)
+
+    def from_dictionary(self, d):
+        serialized_subfilters = d["user_info"].get("filters", [])
+        d_without_subfilters = copy.deepcopy(d)
+        d_without_subfilters["user_info"]["filters"] = []
+        super().from_dictionary(d_without_subfilters)
+
+        reconstructed_subfilters = []
+        for subfilter_dict in serialized_subfilters:
+            subfilter = create_gate_object_from_dict(subfilter_dict)
+            subfilter.from_dictionary(subfilter_dict)
+            reconstructed_subfilters.append(subfilter)
+        self.filters = reconstructed_subfilters
+
     def _clone_negated(self):
         clone = FilterBase._clone_negated(self)
         clone.filters = list(self.filters)
@@ -373,10 +394,9 @@ class AttributeComparisonFilter(FilterBase):
         # Create an instance of the chosen class
         return super().__new__(cls)
 
-    def initialize(self):
+    def resolve_and_validate_config(self, context=None):
         if self.user_info.attribute is None:
             fatal(f"The parameter 'attribute' is required for filter '{self.name}'.")
-        super().initialize()
 
 
 class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDouble):
@@ -423,6 +443,14 @@ filter_classes = {
 
 
 def bind_filter_to_simulation(filter_obj, simulation):
+    # FIXME: Later refactor idea: filters are lightweight actor-side
+    # configuration objects, so we likely want an explicit "one live filter
+    # object -> one actor -> one simulation" ownership contract. Today the
+    # simulation binding/registration helps prevent cross-simulation reuse, but
+    # actor ownership is not enforced directly here. A clearer model would bind
+    # filters to the owning actor explicitly and reject reuse of the same live
+    # filter object across multiple actors, while still allowing users to build
+    # equivalent filters as separate instances.
     if filter_obj is None:
         return None
     if not isinstance(filter_obj, FilterBase):

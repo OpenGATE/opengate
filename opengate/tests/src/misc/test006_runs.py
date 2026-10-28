@@ -36,7 +36,7 @@ if __name__ == "__main__":
     source1.position.radius = 10 * mm
     source1.direction.type = "momentum"
     source1.direction.momentum = [0, 0, 1]
-    source1.n = [2000, 0, 0]
+    source1.number_of_primaries = [2000, 0, 0]
 
     source2 = sim.add_source("GenericSource", "source2")
     source2.particle = "proton"
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     source3.particle = "proton"
     source3.energy.mono = 150 * MeV
     source3.position.radius = 10 * mm
-    source3.n = [0, 2400, 0]
+    source3.number_of_primaries = [0, 2400, 0]
     source3.start_time = 0.50 * sec
     source3.direction.type = "momentum"
     source3.direction.momentum = [0, 0, 1]
@@ -86,13 +86,16 @@ if __name__ == "__main__":
     print(stats)
 
     stats_ref = gate.actors.miscactors.SimulationStatisticsActor(name="stat_ref")
-    c = stats_ref.counts
-    c.runs = 3
-    c.events = 7800
-    c.tracks = 37584  # 56394
-    c.steps = 266582  # 217234
-    # stats_ref.pps = 4059.6 3 3112.2
-    c.duration = 1 / 4059.6 * 7800 * sec
+    stats_ref.user_output.stats.store_data(
+        "merged",
+        {
+            "runs": 3,
+            "events": 7800,
+            "tracks": 37584,  # 56394
+            "steps": 266582,  # 217234
+            "duration": 1 / 4059.6 * 7800 * sec,
+        },
+    )
     print("-" * 80)
     is_ok = utility.assert_stats(stats, stats_ref, 0.185)
 

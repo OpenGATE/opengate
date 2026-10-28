@@ -82,7 +82,7 @@ def add_source(n, type, z_dir):
     if type == "activity":
         source.activity = n * Bq
     if type == "n":
-        source.n = n
+        source.number_of_primaries = n
 
 
 def add_source(n, type, z_dir, i):
@@ -97,7 +97,7 @@ def add_source(n, type, z_dir, i):
     if type == "activity":
         source.activity = n * Bq
     if type == "n":
-        source.n = n
+        source.number_of_primaries = n
 
 
 def add_phsp_source(n, type, plane_name):
@@ -113,7 +113,7 @@ def add_phsp_source(n, type, plane_name):
     if type == "activity":
         source.activity = n * Bq
     if type == "n":
-        source.n = n
+        source.number_of_primaries = n
     # source.translate_position = True
     return source
 

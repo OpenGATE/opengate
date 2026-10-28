@@ -17,7 +17,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 3
     if os.name == "nt":
         sim.number_of_threads = 1
-    sim.store_json_archive = True
+    archive_filename = "simulation.json"
 
     # units
     m = gate.g4_units.m
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # debug source
     debug_source = sim.add_source("DebugSource", "debug_source")
-    debug_source.n = 3
+    debug_source.number_of_primaries = 3
     debug_source.debug_flag = True
 
     # add stat actor
@@ -48,25 +48,26 @@ if __name__ == "__main__":
 
     # start simulation in another process
     sim.run(start_new_process=True)
+    sim.to_json_file(filename=archive_filename)
 
     # print results at the end
     print(stat)
     print(debug_source)
 
-    print(f"Simulation json saved in {sim.output_dir / sim.json_archive_filename}")
+    json_path = sim.get_root_path(archive_filename)
+    print(f"Simulation json saved in {json_path}")
 
     # assertions to verify MT execution and output recovery
-    assert stat.counts.events == debug_source.n * sim.number_of_threads
+    assert stat.counts.events == debug_source.number_of_primaries
     assert stat.counts.runs == sim.number_of_threads
 
     assert hasattr(debug_source, "debug_flag")
     assert debug_source.debug_flag == True
 
     assert hasattr(debug_source, "debug_value")
-    assert debug_source.debug_value == debug_source.n * sim.number_of_threads
+    assert debug_source.debug_value == debug_source.number_of_primaries
 
     # check simulation json source_manager entry
-    json_path = sim.output_dir / sim.json_archive_filename
     assert json_path.exists()
 
     from opengate.serialization import load_json
@@ -78,7 +79,12 @@ if __name__ == "__main__":
     sources_dct = dct["source_manager"]["sources"]
     assert "debug_source" in sources_dct
     debug_src_dct = sources_dct["debug_source"]
-    assert debug_src_dct["user_info"]["n"] == [debug_source.n]
+    stored_counts = debug_src_dct["user_info"].get(
+        "number_of_primaries", debug_src_dct["user_info"].get("n")
+    )
+    if isinstance(stored_counts, dict) and "__ndarray__" in stored_counts:
+        stored_counts = stored_counts["__ndarray__"]
+    assert stored_counts == [debug_source.number_of_primaries]
     assert debug_src_dct["user_info"]["debug_flag"] == True
 
     is_ok = True

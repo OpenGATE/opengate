@@ -56,7 +56,7 @@ def create_simulation(confine_to_half_box, time_step_model):
     source.position.size = [18 * um, 18 * um, 18 * um]
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.n = 100
+    source.number_of_primaries = 100
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 

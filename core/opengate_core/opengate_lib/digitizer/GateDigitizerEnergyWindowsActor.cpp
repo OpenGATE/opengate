@@ -69,6 +69,7 @@ void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
     hc->InitDigiAttributesFromCopy(fInputDigiCollection,
                                    fUserSkipDigiAttributeNames);
     hc->RootInitializeTupleForMaster();
+    AddOutputTreeInfo(fOutputNameRoot, hc);
     fChannelDigiCollections.push_back(hc);
   }
 }

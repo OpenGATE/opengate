@@ -117,7 +117,12 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
-    sim.physics_manager.user_limits_particles.all = True
+    sim.physics_manager.user_limits_particles = [
+        "proton",
+        "gamma",
+        "electron",
+        "positron",
+    ]
 
     # add dose actor
     dose_postprocess = sim.add_actor("DoseActor", "dose_postprocess")
@@ -147,7 +152,7 @@ if __name__ == "__main__":
     nSim = 4000  # 328935  # particles to simulate per beam
     tps = sim.add_source("TreatmentPlanPBSource", "TP source")
     tps.beam_model = IR2HBL
-    tps.n = nSim
+    tps.number_of_primaries = nSim
     tps.beam_data_dict = beam_data_dict
     tps.beam_nr = 1
     tps.particle = "ion 6 12"

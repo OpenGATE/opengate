@@ -55,6 +55,7 @@ void GateARFTrainingDatasetActor::StartSimulationAction() {
   fHits->InitDigiAttribute(att_p);
   fHits->InitDigiAttribute(att_w);
   fHits->RootInitializeTupleForMaster();
+  AddOutputTreeInfo(fOutputNameRoot, fHits);
   // prepare the pointers to the attributes
   fAtt_E = fHits->GetDigiAttribute("E");
   fAtt_Theta = fHits->GetDigiAttribute("Theta");

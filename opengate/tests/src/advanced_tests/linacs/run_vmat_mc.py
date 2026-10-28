@@ -144,7 +144,7 @@ def launch_simulation(
     source = sim.get_source_user_info("phsp_source_global")
     source.phsp_file = path_phsp + phsp_name
     source.batch_size = 100000
-    source.n = np.round(rt_plan_params["weight"] * nb_part / nt)
+    source.number_of_primaries = np.round(rt_plan_params["weight"] * nb_part / nt)
     start_ID = np.random.randint(0, 10**9, 1)
     if nt > 1:
         entry_start = []

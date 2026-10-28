@@ -31,7 +31,7 @@ def create_simulation(paths, num_threads):
     # Point source
     source = sim.add_source("GenericSource", "source")
     source.particle = "back_to_back"
-    source.activity = 1e6 * Bq / sim.number_of_threads
+    source.activity = 1e6 * Bq
     source.position.type = "point"
     source.position.translation = [0 * cm, 0 * cm, 0 * cm]
     source.direction.type = "iso"

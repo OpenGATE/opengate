@@ -36,7 +36,7 @@ void GateDebugSource::UpdateActivity(const double time) {
 }
 
 double GateDebugSource::PrepareNextTime(const double current_simulation_time,
-                                        double NumberOfGeneratedEvents) {
+                                        unsigned long NumberOfGeneratedEvents) {
   DDD("GateDebugSource::PrepareNextTime", " ",
       G4BestUnit(current_simulation_time, "Time"), " ",
       NumberOfGeneratedEvents);
@@ -53,7 +53,7 @@ void GateDebugSource::GeneratePrimaries(G4Event *event,
                                         const double current_simulation_time) {
   DDD("GateDebugSource::GeneratePrimaries", " ", event->GetEventID(), " ",
       fMaxN);
-  fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
   fDebugValue += 1;
   DDD("debug value = ", fDebugValue);
 }

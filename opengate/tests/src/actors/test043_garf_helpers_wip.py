@@ -100,7 +100,7 @@ def create_sim_test_region(sim):
     sim.random_seed = 321654987
 
     # activity
-    activity = 1e3 * Bq / sim.number_of_threads
+    activity = 1e3 * Bq
 
     # add a material database
     sim.volume_manager.add_material_database(paths.gate_data / "GateMaterials.db")

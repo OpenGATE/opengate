@@ -45,7 +45,7 @@ def create_sim(output_filename, accolinearity_flag=None, accolinearity_fwhm=None
     # set the source
     source = sim.add_source("GenericSource", "b2b")
     source.particle = "back_to_back"
-    source.n = number_Events
+    source.number_of_primaries = number_Events
     source.position.type = "sphere"
     source.position.radius = 5 * mm
     source.direction.type = "iso"

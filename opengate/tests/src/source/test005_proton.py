@@ -34,7 +34,7 @@ if __name__ == "__main__":
     source.position.radius = 10 * mm
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 20000
+    source.number_of_primaries = 20000
 
     # add stat actor
     sim.add_actor("SimulationStatisticsActor", "Stats")

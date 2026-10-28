@@ -135,7 +135,7 @@ if __name__ == "__main__":
     source.position.radius = 1 * cm
     source.position.translation = [0, 0, -80 * mm]
     source.direction.type = "iso"
-    source.n = 100000
+    source.number_of_primaries = 100000
 
     water_box = sim.add_volume("Box", "water")
     water_box.size = [15 * cm, 15 * cm, 5 * cm]
@@ -209,10 +209,12 @@ if __name__ == "__main__":
                 type=type,
                 process=process,
             )
-            std_dev_phsp = std_dev_img_calculation(source.n, img_phsp, img_squared_phsp)
+            std_dev_phsp = std_dev_img_calculation(
+                source.number_of_primaries, img_phsp, img_squared_phsp
+            )
             img_uncertainty_phsp = np.divide(
                 std_dev_phsp,
-                (img_phsp / source.n),
+                (img_phsp / source.number_of_primaries),
                 out=np.zeros_like(std_dev_phsp),
                 where=(img_phsp != 0),
             )

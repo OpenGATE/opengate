@@ -72,6 +72,7 @@ void GateDigitizerAdderActor::StartSimulationAction() {
     fOutputDigiCollection->InitDigiAttribute(att);
   }
   fOutputDigiCollection->RootInitializeTupleForMaster();
+  AddOutputTreeInfo(fOutputNameRoot, fOutputDigiCollection);
 
   // check required attributes
   CheckRequiredAttribute(fInputDigiCollection, "TotalEnergyDeposit");

@@ -80,7 +80,7 @@ def add_source_generic(sim, z, a, activity_in_bq=1000):
     sec = g4_units.second
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
-    activity = activity_in_bq * Bq / sim.number_of_threads
+    activity = activity_in_bq * Bq
     s1 = sim.add_source("GenericSource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
@@ -100,7 +100,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
     # sources
-    activity = activity_in_Bq * Bq / sim.number_of_threads
+    activity = activity_in_Bq * Bq
     s1 = sim.add_source("PhotonFromIonDecaySource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"

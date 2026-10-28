@@ -22,9 +22,9 @@ def run_test_re(particle="carbon"):
     ui.random_seed = 12345678910
     ui.number_of_threads = 1
     if particle == "proton":
-        numPartSimTest = 5e2 / ui.number_of_threads
+        numPartSimTest = 5e2
     else:
-        numPartSimTest = 4000 / ui.number_of_threads
+        numPartSimTest = 4000
 
     # units
     m = gate.g4_units.m
@@ -74,7 +74,7 @@ def run_test_re(particle="carbon"):
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
     # print(dir(source.energy))
-    source.n = numPartSimTest
+    source.number_of_primaries = numPartSimTest
     # source.activity = 100 * kBq
 
     size = [50, 1, 1]

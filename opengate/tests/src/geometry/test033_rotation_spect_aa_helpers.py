@@ -81,7 +81,7 @@ def create_test(sim, version, nb_thread=1):
     source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
     source.direction.angular_acceptance.angle_tolerance_max = 10 * deg
     source.direction.angular_acceptance.skip_policy = "ZeroEnergy"
-    source.activity = ac / sim.number_of_threads
+    source.activity = ac
     sources.append(source)
 
     # source #2
@@ -98,7 +98,7 @@ def create_test(sim, version, nb_thread=1):
     source2.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
     source2.direction.angular_acceptance.angle_tolerance_max = 10 * deg
     source2.direction.angular_acceptance.skip_policy = "ZeroEnergy"
-    source2.activity = ac / sim.number_of_threads
+    source2.activity = ac
     source2.position.radius = 1 * mm
     source2.position.translation = [20 * mm, 0, -20 * mm]
     sources.append(source2)

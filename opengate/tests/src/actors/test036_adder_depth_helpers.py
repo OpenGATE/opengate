@@ -89,8 +89,8 @@ def create_simulation(geom, paths, version):
     sim.physics_manager.global_production_cuts.proton = 1 * mm
 
     # default source for tests
-    activity = 40 * kBq / sim.number_of_threads
-    # activity = 5000 * Bq / sim.number_of_threads
+    activity = 40 * kBq
+    # activity = 5000 * Bq
     source = sim.add_source("GenericSource", "src1")
     source.particle = "gamma"
     source.energy.mono = 333 * keV

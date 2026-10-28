@@ -79,7 +79,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     beam1.direction.type = "momentum"
     beam1.direction.momentum = [0, 1, 0]
     # beam1.direction.type = 'iso'
-    beam1.activity = activity / sim.number_of_threads
+    beam1.activity = activity
 
     beam2 = sim.add_source("GenericSource", "beam2")
     beam2.attached_to = waterbox.name
@@ -91,7 +91,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     beam2.direction.type = "momentum"
     beam2.direction.momentum = [0, 1, 0]
     # beam2.direction.type = 'iso'
-    beam2.activity = activity / sim.number_of_threads
+    beam2.activity = activity
 
     beam3 = sim.add_source("GenericSource", "beam3")
     beam3.attached_to = waterbox.name
@@ -103,7 +103,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     beam3.direction.type = "momentum"
     beam3.direction.momentum = [0, 1, 0]
     # beam3.direction.type = 'iso'
-    beam3.activity = activity / sim.number_of_threads
+    beam3.activity = activity
 
     # add stat actor
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")

@@ -24,7 +24,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     requested_stepsizes = {}
     requested_minekine = {}
 
-    sim.physics_manager.set_user_limits_particles("gamma")
+    sim.physics_manager.user_limits_particles = "gamma"
 
     # *** Step size in a single volume ***
     waterbox_A = sim.add_volume("Box", "waterbox_A")
@@ -120,7 +120,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     source.position.radius = 1 * mm
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 1e1
+    source.number_of_primaries = 1e1
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

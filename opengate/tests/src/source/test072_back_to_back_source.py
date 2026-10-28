@@ -113,7 +113,7 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("GenericSource", "b2b")
     source.particle = "back_to_back"
-    source.n = nbEvents
+    source.number_of_primaries = nbEvents
     source.position.type = "sphere"
     source.position.radius = 5 * mm
     source.direction.type = "iso"

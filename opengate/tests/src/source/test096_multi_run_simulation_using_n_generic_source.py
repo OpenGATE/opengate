@@ -74,7 +74,7 @@ def add_source(n, type, z_dir):
     if type == "activity":
         source.activity = n * Bq
     if type == "n":
-        source.n = n
+        source.number_of_primaries = n
 
 
 if __name__ == "__main__":

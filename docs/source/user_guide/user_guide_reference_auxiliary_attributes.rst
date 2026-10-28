@@ -216,3 +216,44 @@ Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.auxiliary_attributes.UnscatteredPrimaryAttribute
+
+
+ParticleAncestorAttribute
+-------------------------
+
+Description
+~~~~~~~~~~~
+
+Stores information (such as the vertex kinetic energy or vertex position) of the first ancestor of the current particle that matches a configured particle type (by default, ``gamma``). This information is propagated to all descendant secondaries.
+
+Optional:
+
+- ``value_to_store``: The quantity to store for the matched ancestor. Supported values are:
+
+  - ``VertexKineticEnergy`` (default)
+  - ``VertexPosition``
+
+- ``particle_name``: The particle type to search for (default: ``"gamma"``).
+
+Example:
+
+.. code-block:: python
+
+   # Store the vertex position of the first gamma ancestor
+   att1 = sim.activate_auxiliary_attribute(
+       "ParticleAncestorAttribute", "GammaPosition"
+   )
+   att1.value_to_store = "VertexPosition"
+   att1.particle_name = "gamma"
+
+   # Store the vertex kinetic energy of the first gamma ancestor
+   att2 = sim.activate_auxiliary_attribute(
+       "ParticleAncestorAttribute", "GammaVertexKineticEnergy"
+   )
+   att2.value_to_store = "VertexKineticEnergy"
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.auxiliary_attributes.ParticleAncestorAttribute
+

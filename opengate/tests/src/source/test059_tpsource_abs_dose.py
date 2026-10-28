@@ -118,7 +118,7 @@ if __name__ == "__main__":
         ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
     )
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
-    tps.n = nSim
+    tps.number_of_primaries = nSim
     tps.sorted_spot_generation = True
     tps.beam_model = IR2HBL
     tps.beam_data_dict = beam_data_dict

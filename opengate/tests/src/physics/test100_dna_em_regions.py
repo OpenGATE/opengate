@@ -135,7 +135,7 @@ if __name__ == "__main__":
     source.position.type = "point"
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.n = 1
+    source.number_of_primaries = 1
 
     sim.add_actor("SimulationStatisticsActor", "stats")
 

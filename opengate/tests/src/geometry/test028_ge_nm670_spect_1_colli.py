@@ -79,7 +79,7 @@ if __name__ == "__main__":
     beam1.position.translation = [0, 0, 0 * cm]
     beam1.direction.type = "momentum"
     beam1.direction.momentum = [0, 1, 0]
-    beam1.activity = activity / sim.number_of_threads
+    beam1.activity = activity
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

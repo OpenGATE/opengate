@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     source.position.type = "sphere"
     source.position.radius = 5 * mm
     source.position.translation = [-3 * cm, 30 * cm, -3 * cm]
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     source = sim.add_source("GenericSource", "source2")
     source.particle = "proton"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     source.position.type = "disc"
     source.position.radius = 5 * mm
     source.position.translation = [6 * cm, 5 * cm, -30 * cm]
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     source = sim.add_source("GenericSource", "s3")
     source.particle = "proton"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     source.position.type = "box"
     source.position.size = [4 * cm, 4 * cm, 4 * cm]
     source.position.translation = [8 * cm, 8 * cm, 30 * cm]
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     source = sim.add_source("GenericSource", "s4")
     source.particle = "proton"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 10000 * Bq
     source.position.type = "box"
     source.position.size = [4 * cm, 4 * cm, 4 * cm]
     source.position.translation = [-3 * cm, -3 * cm, -3 * cm]

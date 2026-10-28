@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # source and physics
     stats = test_add_physics_and_stats(sim, "pet")
-    activity = 1e3 * Bq / sim.number_of_threads
+    activity = 1e3 * Bq
     if sim.visu:
         activity = 50 * Bq
     test_add_b2b_source(sim, activity)

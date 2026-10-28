@@ -74,42 +74,44 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
         """
         ui = self.physics_engine.user_info_physics_manager
 
-        particle_keys_to_consider = []
-        # 'all' overrides individual settings
-        if ui.user_limits_particles["all"] is True:
-            particle_keys_to_consider = list(ui.user_limits_particles.keys())
-        else:
-            keys_to_exclude = ("all", "all_charged")
-            particle_keys_to_consider = [
-                p
-                for p, v in ui.user_limits_particles.items()
-                if v is True and p not in keys_to_exclude
-            ]
-
-        if len(particle_keys_to_consider) == 0:
+        if len(ui.user_limits_particles) == 0:
             self.physics_engine.simulation_engine.simulation.warn_user(
-                "user_limits_particles is False for all particles. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
+                "No particles selected to which UserLimits (incl. step limiter) will be applied. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
             )
 
-        # translate to Geant4 particle names
+        # process user input parameters
+        flag_all = "all" in ui.user_limits_particles
+        flag_all_charged = "all_charged" in ui.user_limits_particles
         particles_to_consider = [
-            translate_particle_name_gate_to_geant4(k) for k in particle_keys_to_consider
+            translate_particle_name_gate_to_geant4(p)
+            for p in ui.user_limits_particles
+            if p not in ["all", "all_charged"]
         ]
 
-        for particle in g4.G4ParticleTable.GetParticleTable().GetParticleList():
+        known_g4_particles = list(
+            g4.G4ParticleTable.GetParticleTable().GetParticleList()
+        )
+        known_g4_particle_names = [p.GetParticleName() for p in known_g4_particles]
+
+        # check for consistency of particle names
+        wrong_particle_names = [
+            p for p in particles_to_consider if p not in known_g4_particle_names
+        ]
+        if len(wrong_particle_names) > 0:
+            fatal(
+                f"UserLimits were requested for the following unknown particles: {wrong_particle_names}"
+            )
+
+        for particle in known_g4_particles:
             add_step_limiter = False
             add_user_special_cuts = False
             p_name = str(particle.GetParticleName())
 
-            if p_name in particles_to_consider:
+            if flag_all or p_name in particles_to_consider:
                 add_step_limiter = True
                 add_user_special_cuts = True
-
             # this reproduces the logic of the Geant4's G4StepLimiterPhysics class
-            if (
-                ui.user_limits_particles["all_charged"] is True
-                and particle.GetPDGCharge() != 0
-            ):
+            elif flag_all_charged and particle.GetPDGCharge() != 0:
                 add_step_limiter = True
 
             if add_step_limiter is True or add_user_special_cuts is True:
@@ -599,6 +601,20 @@ class Region(GateObject):
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
+    def resolve_and_validate_config(self, context=None):
+        if len(self.root_logical_volumes) == 0:
+            fatal(
+                f"Region '{self.name}' exists in the PhysicsManager but is not "
+                f"associated with any root logical volume. Associate at least one "
+                f"volume with region.associate_volume(...) or remove the region."
+            )
+        # Resolve associated volumes early against the simulation-side volume
+        # registry so invalid region-volume links fail during config handling
+        # rather than later during runmanager initialization. These are the same
+        # Python volume objects that will later receive their G4 logical volumes
+        # during geometry construction.
+        self.resolve_root_logical_volumes()
+
     def dump_production_cuts(self):
         s = ""
         for pname, cut in self.production_cuts.items():
@@ -606,64 +622,47 @@ class Region(GateObject):
                 s += f"{pname}: {cut}\n"
         return s
 
-    @requires_fatal("physics_engine")
-    def initialize_before_runmanager(self):
-        """Perform Python-side region setup before G4RunManager.Initialize()."""
-        # Only Python objects are touched here. The actual G4Region cannot be
-        # created yet because G4LogicalVolume objects appear during geometry
-        # construction inside G4RunManager.Initialize().
-        self.initialize_volume_dictionaries()
+    def initialize_root_logical_volume(self, volume):
+        if volume.g4_logical_volume is None:
+            fatal(
+                f"Cannot attach region '{self.name}' to volume "
+                f"'{getattr(volume, 'name', volume)}' because its "
+                f"G4LogicalVolume is not available yet."
+            )
 
-    @requires_fatal("physics_engine")
-    def initialize_during_runmanager(self):
-        """Create and attach the G4Region during geometry construction."""
-        # This runs from VolumeEngine.Construct(), i.e. after logical volumes
-        # exist but still early enough for Geant4 physics construction to see
-        # the region-based EM configuration.
-        self.initialize_g4_region()
+        if self.g4_region is None:
+            rs = g4.G4RegionStore.GetInstance()
+            self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
+        self.g4_region.AddRootLogicalVolume(volume.g4_logical_volume, True)
+        volume.g4_logical_volume.SetRegion(self.g4_region)
 
     @requires_fatal("physics_engine")
     def initialize_after_runmanager(self):
         """Finalize region-related G4 objects after G4RunManager.Initialize()."""
         self.initialize_g4_production_cuts()
         self.initialize_g4_user_limits()
-        self.initialize_g4_region()
 
-    # This method is currently necessary because the actual volume objects
-    # are only created at some point during initialization
-    @requires_fatal("physics_engine")
-    def initialize_volume_dictionaries(self):
-        if self.physics_engine is None:
-            fatal("No physics_engine defined.")
+    # Resolve region-attached volume names into Python volume objects during
+    # the config phase. Their G4 counterparts are created later during geometry
+    # construction, so only the Python-side references are established here.
+    def resolve_root_logical_volumes(self):
         for vname in self.root_logical_volumes.keys():
             self.root_logical_volumes[vname] = (
-                self.physics_engine.simulation_engine.volume_engine.get_volume(vname)
+                self.simulation.volume_manager.get_volume(vname)
             )
 
-    def initialize_g4_region(self):
-        if self._g4_region_initialized is not True:
-            rs = g4.G4RegionStore.GetInstance()
-            self.g4_region = rs.FindOrCreateRegion(self.user_info.name)
-
-            for vol in self.root_logical_volumes.values():
-                self.g4_region.AddRootLogicalVolume(vol.g4_logical_volume, True)
-                vol.g4_logical_volume.SetRegion(self.g4_region)
-
-            self._g4_region_initialized = True
-
-        if self.g4_user_limits is not None:
-            self.g4_region.SetUserLimits(self.g4_user_limits)
-
-        if self.g4_production_cuts is not None:
-            self.g4_region.SetProductionCuts(self.g4_production_cuts)
-
     def initialize_g4_production_cuts(self):
+        if self.g4_region is None:
+            fatal(
+                f"Unable to initialize production cuts in region {self.name}."
+                "The associated G4Region object is missing. "
+            )
+
         self.user_info = Box(self.user_info)
 
         if self._g4_production_cuts_initialized is True:
             return
-        if self.g4_production_cuts is None:
-            self.g4_production_cuts = g4.G4ProductionCuts()
+        self.g4_production_cuts = g4.G4ProductionCuts()
 
         # 'all' overrides individual cuts per particle
         try:
@@ -694,9 +693,16 @@ class Region(GateObject):
                     )
                     self.g4_production_cuts.SetProductionCut(global_cut, g4_pname)
 
+        self.g4_region.SetProductionCuts(self.g4_production_cuts)
         self._g4_production_cuts_initialized = True
 
     def initialize_g4_user_limits(self):
+        if self.g4_region is None:
+            fatal(
+                f"Unable to initialize user limits in region {self.name}."
+                "The associated G4Region object is missing. "
+            )
+
         if self._g4_user_limits_initialized is True:
             return
 
@@ -743,6 +749,7 @@ class Region(GateObject):
                 self.user_info["user_limits"]["min_range"]
             )
 
+        self.g4_region.SetUserLimits(self.g4_user_limits)
         self._g4_user_limits_initialized = True
 
     def initialize_em_switches(self):

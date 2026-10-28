@@ -58,6 +58,13 @@ void GateSimulationStatisticsActor::StartSimulationAction() {
   fCounts["events"] = 0;
   fCounts["tracks"] = 0;
   fCounts["steps"] = 0;
+  fCountsD.clear();
+  fCountsStr.clear();
+  fTrackTypes.clear();
+  fCountsCurrentRun.clear();
+  fCountsDCurrentRun.clear();
+  fCountsStrCurrentRun.clear();
+  fTrackTypesCurrentRun.clear();
 }
 
 py::dict GateSimulationStatisticsActor::GetCounts() {
@@ -68,6 +75,31 @@ py::dict GateSimulationStatisticsActor::GetCounts() {
       "start_time"_a = fCountsStr["start_time"],
       "stop_time"_a = fCountsStr["stop_time"], "track_types"_a = fTrackTypes);
   return dd;
+}
+
+py::dict GateSimulationStatisticsActor::GetCountsCurrentRun() {
+  auto dd = py::dict("runs"_a = fCountsCurrentRun["runs"],
+                     "events"_a = fCountsCurrentRun["events"],
+                     "tracks"_a = fCountsCurrentRun["tracks"],
+                     "steps"_a = fCountsCurrentRun["steps"],
+                     "duration"_a = fCountsDCurrentRun["duration"],
+                     "init"_a = fCountsDCurrentRun["init"],
+                     "start_time"_a = fCountsStrCurrentRun["start_time"],
+                     "stop_time"_a = fCountsStrCurrentRun["stop_time"],
+                     "track_types"_a = fTrackTypesCurrentRun);
+  return dd;
+}
+
+void GateSimulationStatisticsActor::BeginOfRunActionMasterThread(int run_id) {
+  fCountsCurrentRun.clear();
+  fCountsCurrentRun["runs"] = 0;
+  fCountsCurrentRun["events"] = 0;
+  fCountsCurrentRun["tracks"] = 0;
+  fCountsCurrentRun["steps"] = 0;
+  fCountsDCurrentRun.clear();
+  fCountsStrCurrentRun.clear();
+  fTrackTypesCurrentRun.clear();
+  fStartCurrentRunTime = std::chrono::system_clock::now();
 }
 
 void GateSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
@@ -83,13 +115,24 @@ void GateSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
         fStartRunTimeIsSet = true;
       }
     }
-    // Initialise the thread local data
-    threadLocal_t &data = threadLocalData.Get();
+  }
+  threadLocal_t &data = threadLocalData.Get();
+  if (run->GetRunID() == 0) {
+    // Historical simulation-wide counters. These accumulate across all runs
+    // and are merged only once in EndOfSimulationWorkerAction().
     data.fRunCount = 0;
     data.fEventCount = 0;
     data.fTrackCount = 0;
     data.fStepCount = 0;
+    data.fTrackTypes.clear();
   }
+  // Dedicated per-run counters. These are reset for every run and merged into
+  // the per-run storage only.
+  data.fCurrentRunCount = 0;
+  data.fCurrentRunEventCount = 0;
+  data.fCurrentRunTrackCount = 0;
+  data.fCurrentRunStepCount = 0;
+  data.fCurrentRunTrackTypes.clear();
 }
 
 void GateSimulationStatisticsActor::PreUserTrackingAction(
@@ -97,42 +140,87 @@ void GateSimulationStatisticsActor::PreUserTrackingAction(
   // Called every time a track starts
   threadLocal_t &data = threadLocalData.Get();
   data.fTrackCount++;
+  data.fCurrentRunTrackCount++;
   if (fTrackTypesFlag) {
     auto p = track->GetParticleDefinition()->GetParticleName();
     data.fTrackTypes[p]++;
+    data.fCurrentRunTrackTypes[p]++;
   }
 }
 
 void GateSimulationStatisticsActor::SteppingAction(G4Step *) {
   // Called every step
-  threadLocalData.Get().fStepCount++;
+  threadLocal_t &data = threadLocalData.Get();
+  data.fStepCount++;
+  data.fCurrentRunStepCount++;
 }
 
 void GateSimulationStatisticsActor::EndOfRunAction(const G4Run *run) {
   // Called every time a run ends
+  const int run_id = run->GetRunID();
   threadLocal_t &data = threadLocalData.Get();
   data.fRunCount++;
   data.fEventCount += run->GetNumberOfEvent();
+  data.fCurrentRunCount++;
+  data.fCurrentRunEventCount += run->GetNumberOfEvent();
+
+  G4AutoLock mutex(&GateSimulationStatisticsActorMutex);
+  fCountsCurrentRun["runs"] += data.fCurrentRunCount;
+  fCountsCurrentRun["events"] += data.fCurrentRunEventCount;
+  fCountsCurrentRun["tracks"] += data.fCurrentRunTrackCount;
+  fCountsCurrentRun["steps"] += data.fCurrentRunStepCount;
+  if (fTrackTypesFlag) {
+    for (const auto &v : data.fCurrentRunTrackTypes) {
+      fTrackTypesCurrentRun[v.first] += v.second;
+    }
+  }
 }
 
 void GateSimulationStatisticsActor::EndOfSimulationWorkerAction(
     const G4Run * /*lastRun*/) {
-  // Called every time the simulation is about to end, by ALL threads
-  // So, the data are merged (need a mutex lock)
+  // Historical merged statistics path: accumulate the simulation-wide counters
+  // exactly as before. Per-run counters are handled in EndOfRunAction().
   G4AutoLock mutex(&GateSimulationStatisticsActorMutex);
   threadLocal_t &data = threadLocalData.Get();
-  // merge all threads (need mutex)
   fCounts["runs"] += data.fRunCount;
   fCounts["events"] += data.fEventCount;
   fCounts["tracks"] += data.fTrackCount;
   fCounts["steps"] += data.fStepCount;
   if (fTrackTypesFlag) {
-    for (auto v : data.fTrackTypes) {
+    for (const auto &v : data.fTrackTypes) {
       if (fTrackTypes.count(v.first) == 0)
         fTrackTypes[v.first] = 0;
       fTrackTypes[v.first] = v.second + fTrackTypes[v.first];
     }
   }
+}
+
+int GateSimulationStatisticsActor::EndOfRunActionMasterThread(int run_id) {
+  fStopCurrentRunTime = std::chrono::system_clock::now();
+  const auto run_duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          fStopCurrentRunTime - fStartCurrentRunTime);
+  fCountsDCurrentRun["duration"] =
+      static_cast<double>(run_duration.count()) * CLHEP::microsecond;
+  fCountsDCurrentRun["init"] = 0.0;
+
+  {
+    auto t_c = std::chrono::system_clock::to_time_t(fStartCurrentRunTime);
+    std::string s = std::ctime(&t_c);
+    if (!s.empty() && s.back() == '\n') {
+      s.pop_back();
+    }
+    fCountsStrCurrentRun["start_time"] = s;
+  }
+  {
+    auto t_c = std::chrono::system_clock::to_time_t(fStopCurrentRunTime);
+    std::string s = std::ctime(&t_c);
+    if (!s.empty() && s.back() == '\n') {
+      s.pop_back();
+    }
+    fCountsStrCurrentRun["stop_time"] = s;
+  }
+  return 0;
 }
 
 void GateSimulationStatisticsActor::EndSimulationAction() {

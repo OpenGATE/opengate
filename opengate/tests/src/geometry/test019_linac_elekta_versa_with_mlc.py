@@ -111,9 +111,9 @@ if __name__ == "__main__":
     source.position.sigma_y = 0.468 * mm
     source.position.translation = [0, 0, z_linac / 2 - 5.6 * mm]
     source.direction.type = "iso"
-    source.n = 5e5 / sim.number_of_threads
+    source.number_of_primaries = 5e5
     if sim.visu:
-        source.n = 100
+        source.number_of_primaries = 100
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"

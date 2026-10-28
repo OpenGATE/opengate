@@ -48,8 +48,8 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    # source.n = 200000
-    source.activity = 100000 * Bq / sim.number_of_threads
+    # source.number_of_primaries = 200000
+    source.activity = 100000 * Bq
 
     # src
     source = sim.add_source("GenericSource", "s2")
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = [100000 / sim.number_of_threads, 0, 0]
+    source.number_of_primaries = [100000, 0, 0]
 
     # src
     source = sim.add_source("GenericSource", "s3")
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 100000 * Bq / sim.number_of_threads
+    source.activity = 100000 * Bq
     source.half_life = 0.5 * s
 
     # stats

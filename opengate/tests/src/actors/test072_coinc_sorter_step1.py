@@ -128,7 +128,7 @@ if __name__ == "__main__":
     source = sim.add_source("GenericSource", "b2b")
     source.particle = "back_to_back"
     source.activity = 200000000 * Bq  # 2000000 * Bq
-    # source.n = 1000
+    # source.number_of_primaries = 1000
     source.position.type = "sphere"
     source.position.radius = 0.0000000000000005 * mm
     # source.direction.type = "iso"

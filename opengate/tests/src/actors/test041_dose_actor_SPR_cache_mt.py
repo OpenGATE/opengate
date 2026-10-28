@@ -72,7 +72,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = 1e3
+    source.number_of_primaries = 1e3
 
     # first actor scores dose to water on the fly -> reference
     dose_spr_on_the_fly = sim.add_actor("DoseActor", "dose_spr_on_the_fly")

@@ -11,8 +11,10 @@
 #include "GateHelpersDict.h"
 #include "GateMultiFunctionalDetector.h"
 #include "GateSourceManager.h"
+#include "digitizer/GateDigiCollection.h"
 #include <G4LogicalVolumeStore.hh>
 #include <G4SDManager.hh>
+#include <algorithm>
 #include <unordered_set>
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
@@ -90,6 +92,55 @@ std::string GateVActor::GetOutputPath(std::string outputName) const {
     Fatal(msg.str());
   }
   return ""; // to avoid warning
+}
+
+void GateVActor::AddOutputTreeName(const std::string &outputName,
+                                   const std::string &treeName) {
+  auto &treeNames = fActorOutputInfos[outputName].treeNames;
+  if (std::find(treeNames.begin(), treeNames.end(), treeName) ==
+      treeNames.end()) {
+    treeNames.push_back(treeName);
+  }
+}
+
+std::vector<std::string>
+GateVActor::GetOutputTreeNames(std::string outputName) const {
+  try {
+    ActorOutputInfo_t aInfo;
+    aInfo = fActorOutputInfos.at(outputName);
+    return aInfo.treeNames;
+  } catch (std::out_of_range &) {
+    std::ostringstream msg;
+    msg << "(GetOutputTreeNames) No actor output with the name " << outputName
+        << " exists, attached to " << fAttachedToVolumeName << " " << GetName();
+    Fatal(msg.str());
+  }
+  return {}; // to avoid warning
+}
+
+void GateVActor::AddOutputTreeInfo(const std::string &outputName,
+                                   const GateDigiCollection *digiCollection) {
+  if (digiCollection == nullptr) {
+    Fatal("Cannot register ROOT output tree info from a null digi collection.");
+  }
+  AddOutputTreeName(outputName, digiCollection->GetName());
+  fActorOutputInfos[outputName].treeBranchTypes[digiCollection->GetName()] =
+      digiCollection->GetRootBranchTypes();
+}
+
+std::map<std::string, std::map<std::string, std::string>>
+GateVActor::GetOutputTreeInfo(std::string outputName) const {
+  try {
+    ActorOutputInfo_t aInfo;
+    aInfo = fActorOutputInfos.at(outputName);
+    return aInfo.treeBranchTypes;
+  } catch (std::out_of_range &) {
+    std::ostringstream msg;
+    msg << "(GetOutputTreeInfo) No actor output with the name " << outputName
+        << " exists, attached to " << fAttachedToVolumeName << " " << GetName();
+    Fatal(msg.str());
+  }
+  return {};
 }
 
 void GateVActor::SetWriteToDisk(const std::string &outputName,

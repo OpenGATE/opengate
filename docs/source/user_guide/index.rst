@@ -22,6 +22,7 @@ User Guide
    user_guide_dynamic_parametrisations
    user_guide_actors
    user_guide_fields
+   user_guide_multijobs
 
 .. toctree::
    :caption: Detailed description of components

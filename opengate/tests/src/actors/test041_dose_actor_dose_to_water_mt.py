@@ -88,7 +88,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = 100
+    source.number_of_primaries = 100
 
     # Define actors and collect them in a list for convenience (see below)
     dose_actors = []

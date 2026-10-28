@@ -149,7 +149,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
             )
 
             # add weight
-            source.n = nspot
+            source.number_of_primaries = nspot
 
             # allow the possibility to count primaries
             source.generate_until_next_primary = self.generate_until_next_primary

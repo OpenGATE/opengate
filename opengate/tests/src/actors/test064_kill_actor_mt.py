@@ -51,7 +51,7 @@ if __name__ == "__main__":
     source1.direction.momentum = [0, 0, -1]
     source1.energy.type = "mono"
     source1.energy.mono = 1 * MeV
-    source1.n = n / sim.number_of_threads
+    source1.number_of_primaries = n
 
     # source2
     source2 = sim.add_source("GenericSource", "photon_source_2")
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     source2.direction.momentum = [0, 0, 1]
     source2.energy.type = "mono"
     source2.energy.mono = 1 * MeV
-    source2.n = n / sim.number_of_threads
+    source2.number_of_primaries = n
 
     # stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

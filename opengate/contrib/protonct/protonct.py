@@ -128,7 +128,7 @@ def protonct(
     else:
         # Use an explicit per-run particle count so each projection gets the
         # requested number of primaries deterministically.
-        source.n = [protons_per_projection] * projections
+        source.number_of_primaries = [protons_per_projection] * projections
 
     # Physics list
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"

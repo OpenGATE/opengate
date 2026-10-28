@@ -62,7 +62,7 @@ def test022_half_life(n_threads=1):
     source1.position.translation = [0, 0, -10 * cm]
     source1.direction.type = "focused"
     source1.direction.focus_point = [0, 0, 0]
-    source1.activity = 10000 * Bq / sim.number_of_threads
+    source1.activity = 10000 * Bq
     source1.half_life = 2 * sec
 
     # source #2
@@ -74,8 +74,8 @@ def test022_half_life(n_threads=1):
     source2.position.translation = [0, 0, -10 * cm]
     source2.direction.type = "focused"
     source2.direction.focus_point = [0, 0, 0]
-    source2.activity = 10000 * Bq / sim.number_of_threads
-    # source2.n = 50
+    source2.activity = 10000 * Bq
+    # source2.number_of_primaries = 50
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -126,13 +126,8 @@ def test022_half_life(n_threads=1):
     m = len(time2)
     start_time2 = sim.run_timing_intervals[1][0] / sec
     end_time2 = sim.run_timing_intervals[1][1] / sec
-    # number of elements is around activity times the duration (per thread)
-    m_ref = (
-        source2.activity
-        / Bq
-        * (end_time - start_time + end_time2 - start_time2)
-        * sim.number_of_threads
-    )
+    # number of elements is around activity times the duration
+    m_ref = source2.activity / Bq * (end_time - start_time + end_time2 - start_time2)
     diff = abs(m - m_ref) / m_ref
     b = diff < tol
     diff *= 100

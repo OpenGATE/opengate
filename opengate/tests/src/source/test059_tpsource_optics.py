@@ -65,8 +65,14 @@ if __name__ == "__main__":
     # phantom.rotation = Rotation.from_euler('x',-90,degrees=True).as_matrix()
     phantom.material = "G4_AIR"
     phantom.color = [0, 0, 1, 1]
-    sim.physics_manager.set_max_step_size(phantom.name, 0.8)
-    sim.physics_manager.set_user_limits_particles("all")
+    phantom.set_max_step_size(0.8 * mm)
+    sim.physics_manager.user_limits_particles = "all"
+    # sim.physics_manager.user_limits_particles = [
+    #     "proton",
+    #     "gamma",
+    #     "electron",
+    #     "positron",
+    # ]
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -111,7 +117,7 @@ if __name__ == "__main__":
     ntot = beam_data_dict["msw_beam"]
     tps = sim.add_source("TreatmentPlanPBSource", "TP source")
     tps.beam_model = IR2HBL
-    tps.n = nSim
+    tps.number_of_primaries = nSim
     tps.particle = "ion 6 12"
     tps.beam_data_dict = beam_data_dict
     # add stat actor

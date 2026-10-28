@@ -967,11 +967,14 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     @property
     def itk_image(self):
         if self._itk_image is None:
-            warning(
-                f"The itk_image in {self.type_name} '{self.name}' is None. "
-                f"If this is unexpected, run my_image_volume.load_input_image() first, "
-                f"where my_image_volume is the variable name of the {self.type_name} in your script. "
-            )
+            if self.image:
+                self._itk_image = self.load_input_image()
+            else:
+                warning(
+                    f"The itk_image in {self.type_name} '{self.name}' is None. "
+                    f"If this is unexpected, run my_image_volume.load_input_image() first, "
+                    f"where my_image_volume is the variable name of the {self.type_name} in your script. "
+                )
         return self._itk_image
 
     @itk_image.setter
@@ -982,21 +985,25 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     # FIXME: replace this property by function in opengate.image
     @property
     def size_pix(self):
-        if self.itk_image is None:
+        if self._itk_image is None:
             self.load_input_image()
-        return np.array(itk.size(self.itk_image)).astype(int)
+        return np.array(itk.size(self._itk_image)).astype(int)
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
     @property
     def spacing(self):
-        if self.itk_image is None:
+        if self._itk_image is None:
             self.load_input_image()
-        return np.array(self.itk_image.GetSpacing())
+        return np.array(self._itk_image.GetSpacing())
 
     # @requires_fatal("itk_image")
     @property
     def native_translation(self):
+        # FIXME: some actors may need image-derived geometry information during
+        # resolve_and_validate_config(). Revisit whether ImageVolume should offer
+        # an explicit config-resolution step for input-image metadata, rather
+        # than relying only on these lazy runtime-facing properties.
         if self.itk_image is not None:
             origin = np.array(self.itk_image.GetOrigin())
             spacing = np.array(self.itk_image.GetSpacing())
@@ -1257,25 +1264,25 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_voxel_param.initialize_image()
 
     def save_label_image(self, path=None):
-        # dump label image ?
+        # Resolve debug output paths through the simulation output directory so
+        # split child simulations keep their auxiliary files local to the job.
+        image_path = self.dump_label_image
         if path is None:
             if self.volume_manager is None:
                 fatal(
                     f"Cannot save label image of ImageVolume {self.name}. "
                     f"Either provide a path or add the volume to the simulation. "
                 )
-            root, ext = os.path.splitext(self.dump_label_image)
-            # path = (
-            #    self.volume_manager.simulation.get_output_path()
-            #    / f"label_to_material_lut_{self.name}.json"
-            # )
-            path = root + ".json"
+            image_path = self.volume_manager.simulation.get_output_path(image_path)
+            path = image_path.with_suffix(".json")
+        elif self.volume_manager is not None:
+            image_path = self.volume_manager.simulation.get_output_path(image_path)
+            path = self.volume_manager.simulation.get_output_path(path)
         if self.label_image is None:
             self.create_label_image()
 
         self.label_image.SetOrigin(self.itk_image.GetOrigin())  # set origin as in input
-        # FIXME: should write image into output dir
-        write_itk_image(self.label_image, str(self.dump_label_image))
+        write_itk_image(self.label_image, str(image_path))
         with open(path, "w") as f:
             json.dump(self.material_to_label_lut, f)
 
@@ -1294,17 +1301,14 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         for dp in self.dynamic_params.values():
             if dp["extra_params"]["auto_changer"] is True:
                 if "image" in dp:
-                    # create a LUT of image parametrisations
-                    label_image = {}
-                    for path_to_image in set(dp["image"]):
-                        itk_image = self.load_input_image(path_to_image)
-                        label_image[path_to_image] = self.create_label_image(itk_image)
+                    # Only create the serializable changer definition here.
+                    # The heavy label-image LUT is rebuilt later in
+                    # VolumeImageChanger.initialize().
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
                         attached_to=self,
                         simulation=self.simulation,
                         images=dp["image"],
-                        label_image=label_image,
                     )
                     changers.append(new_changer)
                     counter += 1
@@ -1322,6 +1326,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         return changers
 
     def write_material_database(self, material_filename):
+        if self.simulation is not None:
+            material_filename = self.simulation.get_output_path(material_filename)
         # get all the materials names
         materials = [m[2] for m in self.voxel_materials]
         # Maintaining order while keeping unique
@@ -1329,6 +1335,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         write_material_database(self.simulation, unique_materials, material_filename)
 
     def write_label_to_material(self, labels_filename):
+        if self.simulation is not None:
+            labels_filename = self.simulation.get_output_path(labels_filename)
         with open(labels_filename, "w") as outfile:
             dump_json(self.voxel_materials, outfile, indent=4)
 

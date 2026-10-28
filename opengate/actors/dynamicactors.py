@@ -204,21 +204,36 @@ class VolumeImageChanger(GeometryChanger):
         "images": (
             None,
             {
+                # FIXME: these image filenames are file-backed inputs but are
+                # still modeled as a plain list of string-like values rather
+                # than a Path-aware serialized representation.
                 "doc": "List of image names corresponding to the run timing intervals. ",
             },
         ),
         "label_image": (
             None,
             {
-                "doc": "Dictionary of label images where the keys correspond to the image names "
+                "doc": "Runtime cache of label images keyed by the image names "
                 "stored in the user info 'images'.",
             },
         ),
     }
 
+    def initialize(self):
+        # Build the heavy ITK label-image cache at runtime rather than during
+        # config resolution. The changer itself must already exist earlier for
+        # split-job serialization, but the cache can be reconstructed from the
+        # attached ImageVolume and the serialized image list.
+        self.label_image = {}
+        for path_to_image in set(self.images):
+            itk_image = self.attached_to_volume.load_input_image(path_to_image)
+            self.label_image[str(path_to_image)] = (
+                self.attached_to_volume.create_label_image(itk_image)
+            )
+
     def apply_change(self, run_id):
         self.attached_to_volume.update_label_image(
-            self.label_image[self.images[run_id]]
+            self.label_image[str(self.images[run_id])]
         )
 
 
@@ -334,6 +349,9 @@ class SourceActivityImageChanger(SourceChanger):
         "activity_images": (
             None,
             {
+                # FIXME: these image filenames are file-backed inputs but are
+                # still modeled as a plain list of string-like values rather
+                # than a Path-aware serialized representation.
                 "doc": "List of activity map file names corresponding to the run timing intervals. ",
             },
         ),

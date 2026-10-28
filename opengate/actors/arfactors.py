@@ -163,6 +163,9 @@ class ARFActor(ActorBase, g4.GateARFActor):
         "pth_filename": (
             None,
             {
+                # FIXME: this file-backed input is still modeled as a plain
+                # string-like parameter and is not yet marked as an archived
+                # input file.
                 "doc": "FIXME",
             },
         ),

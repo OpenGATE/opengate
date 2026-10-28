@@ -83,7 +83,7 @@ if __name__ == "__main__":
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
     source.position.translation = [0, 0, -(Size2[2] / 2) * mm]
-    source.n = 1e4 / sim.number_of_threads
+    source.number_of_primaries = 1e4
 
     sim.run()
 

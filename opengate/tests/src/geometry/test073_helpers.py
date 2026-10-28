@@ -26,7 +26,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     sim.visu = False
 
     # activity
-    activity = 7000000 * Bq / sim.number_of_threads
+    activity = 7000000 * Bq
 
     # world size
     world = sim.world

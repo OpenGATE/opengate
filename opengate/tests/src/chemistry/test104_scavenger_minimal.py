@@ -127,7 +127,7 @@ def create_simulation(enable_scavenger):
     source.position.type = "point"
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.n = 200
+    source.number_of_primaries = 200
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
 

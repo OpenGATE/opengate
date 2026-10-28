@@ -78,11 +78,14 @@ def assert_stats(stats_actor_1, stats_actor_2, tolerance=0):
 def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_flag=None):
     output1 = stats_actor_1  # .user_output.stats
     output2 = stats_actor_2  # .user_output.stats
+    # Access the statistics data item explicitly rather than relying on
+    # historical container-level __getattr__ forwarding. We need the data item
+    # itself because both raw counters (events, track_types, ...) and derived
+    # quantities (pps/tps/sps) are exposed through StatisticsDataItem.
+    counts1 = output1.merged_data.get_data_item_object(0)
+    counts2 = output2.merged_data.get_data_item_object(0)
     if track_types_flag is None:
-        track_types_flag = len(output1.track_types) > 0
-
-    counts1 = output1.merged_data
-    counts2 = output2.merged_data
+        track_types_flag = len(counts1.track_types) > 0
     if counts2.events != 0:
         event_d = counts1.events / counts2.events * 100 - 100
     else:
@@ -95,18 +98,18 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
         step_d = counts1.steps / counts2.steps * 100 - 100
     else:
         step_d = 100
-    if output2.pps != 0:
-        pps_d = output1.pps / output2.pps * 100 - 100
+    if counts2.pps != 0:
+        pps_d = counts1.pps / counts2.pps * 100 - 100
     else:
         pps_d = 100
 
-    if output2.tps != 0:
-        tps_d = output1.tps / output2.tps * 100 - 100
+    if counts2.tps != 0:
+        tps_d = counts1.tps / counts2.tps * 100 - 100
     else:
         tps_d = 100
 
-    if output2.sps != 0:
-        sps_d = output1.sps / output2.sps * 100 - 100
+    if counts2.sps != 0:
+        sps_d = counts1.sps / counts2.sps * 100 - 100
     else:
         sps_d = 100
 
@@ -144,17 +147,17 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
 
     print_test(
         True,
-        f"PPS:          {output1.pps:.1f} {output2.pps:.1f} : "
+        f"PPS:          {counts1.pps:.1f} {counts2.pps:.1f} : "
         f"{pps_d:+.1f}%    speedup = x{(pps_d + 100) / 100:.1f}",
     )
     print_test(
         True,
-        f"TPS:          {output1.tps:.1f} {output2.tps:.1f} : "
+        f"TPS:          {counts1.tps:.1f} {counts2.tps:.1f} : "
         f"{tps_d:+.1f}%    speedup = x{(tps_d + 100) / 100:.1f}",
     )
     print_test(
         True,
-        f"SPS:          {output1.sps:.1f} {output2.sps:.1f} : "
+        f"SPS:          {counts1.sps:.1f} {counts2.sps:.1f} : "
         f"{sps_d:+.1f}%    speedup = x{(sps_d + 100) / 100:.1f}",
     )
 
@@ -183,7 +186,7 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
             n += int(t)
         b = n == counts1.tracks
         print_test(b, f"Tracks      : {counts1.track_types}")
-        if "track_types" in counts2:
+        if "track_types" in counts2.data:
             print_test(b, f"Tracks (ref): {counts2.track_types}")
         print_test(b, f"Tracks vs track_types : {counts1.tracks} {n}")
         is_ok = b and is_ok
@@ -663,13 +666,9 @@ def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
     # figure ?
     if ax:
         label = f" {key1} $\mu$={m1:.2f}"
-        ax.hist(
-            b1, nb_bins, density=True, histtype="stepfilled", alpha=0.5, label=label
-        )
+        ax.hist(b1, nb_bins, density=True, histtype="step", alpha=0.5, label=label)
         label = f" {key2} $\mu$={m2:.2f}"
-        ax.hist(
-            b2, nb_bins, density=True, histtype="stepfilled", alpha=0.5, label=label
-        )
+        ax.hist(b2, nb_bins, density=True, histtype="step", alpha=0.5, label=label)
         ax.set_ylabel("Counts")
         ax.legend()
     return ok
@@ -998,7 +997,7 @@ def open_root_as_np(root_file, tree_name):
 
 
 # https://stackoverflow.com/questions/4527942/comparing-two-dictionaries-and-checking-how-many-key-value-pairs-are-equal
-def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
+def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key="", atol=1e-9):
     """
     Compare two dictionaries with a tolerance for float values and optional keys to ignore.
 
@@ -1007,6 +1006,7 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
         tolerance: Float tolerance for float values
         ignored_keys: List of keys that are optional
         parent_key: Internal use for tracking nested key path
+        atol: Absolute tolerance for float values close to 0
     """
     ignored_keys = set() if ignored_keys is None else set(ignored_keys)
 
@@ -1041,7 +1041,7 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
                     r = np.divide(
                         abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0)
                     )
-                    if r > tolerance:
+                    if abs(v1 - v2) > atol and r > tolerance:
                         print(
                             f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)}, {r*100} %)"
                         )
@@ -1061,14 +1061,14 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
 
         if isinstance(v1, dict) and isinstance(v2, dict):
             _, _, nested_modified, _ = dict_compare(
-                v1, v2, tolerance, ignored_keys, full_key
+                v1, v2, tolerance, ignored_keys, full_key, atol
             )
             return len(nested_modified) == 0
         elif isinstance(v1, list) and isinstance(v2, list):
             return compare_arrays(v1, v2, full_key)
         elif isinstance(v1, float) and isinstance(v2, float):
             r = np.divide(abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0))
-            if r > tolerance:
+            if abs(v1 - v2) > atol and r > tolerance:
                 print(
                     f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)}) (diff: {r*100} %)"
                 )

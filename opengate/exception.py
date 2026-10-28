@@ -26,6 +26,18 @@ class GateImplementationError(Exception):
     """
 
 
+class GateJobsBackendError(Exception):
+    """Raise this when a split-job execution backend fails or rejects its options."""
+
+
+class GateSplitError(Exception):
+    """Raise this when a simulation merge operation fails."""
+
+
+class GateMergeError(Exception):
+    """Raise this when a simulation merge operation fails."""
+
+
 color_error = colored.fore("red") + colored.style("bold")
 color_warning = colored.fore("orange_1")
 color_ok = colored.fore("light_blue")

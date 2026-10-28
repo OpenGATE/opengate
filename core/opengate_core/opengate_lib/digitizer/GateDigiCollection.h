@@ -99,6 +99,8 @@ public:
 
   std::set<std::string> GetDigiAttributeNames() const;
 
+  std::map<std::string, std::string> GetRootBranchTypes() const;
+
   GateVDigiAttribute *GetDigiAttribute(const std::string &name);
 
   bool IsDigiAttributeExists(const std::string &name) const;

@@ -94,7 +94,7 @@ def add_alpha_source(sim, name, nb_part):
     source.direction.type = "iso"
     source.direction_relative_to_attached_volume = True
     source.direction.momentum = [0, 0, -1]
-    source.activity = nb_part * Bq / sim.number_of_threads
+    source.activity = nb_part * Bq
     source.direction.theta = [0, 17 * deg]
     source.direction.phi = [0, 360 * deg]
 

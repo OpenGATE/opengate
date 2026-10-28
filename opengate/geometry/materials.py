@@ -942,7 +942,7 @@ class MaterialDatabase:
 
 
 def write_material_database(sim, materials, filename):
-    fn = str(filename)
+    fn = sim.get_output_path(str(filename))
     with open(fn, "w") as file:
         file.write("[Materials]\n")
         for mat in materials:

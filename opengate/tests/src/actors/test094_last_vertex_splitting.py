@@ -162,9 +162,9 @@ if __name__ == "__main__":
         ####### gamma source ###########
         source = sim.add_source("GenericSource", "source1")
         source.particle = "gamma"
-        source.n = 10000
+        source.number_of_primaries = 10000
         if bias:
-            source.n = source.n / nb_split
+            source.number_of_primaries = source.number_of_primaries / nb_split
 
         source.position.type = "sphere"
         source.position.radius = 1 * nm
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         ###### LastVertexSource #############
         if bias:
             source_0 = sim.add_source("LastVertexSource", "source_vertex")
-            source_0.n = 1
+            source_0.number_of_primaries = 1
 
         ####### PHASE SPACE ACTOR ##############
         sim.output_dir = paths.output

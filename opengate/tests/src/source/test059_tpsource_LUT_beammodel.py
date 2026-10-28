@@ -83,9 +83,9 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_HP_EMZ"
 
-    sim.physics_manager.set_max_step_size(x_0.name, 1.0)
-    sim.physics_manager.set_user_limits_particles("proton")
-    # sim.physics_manager.user_limits_particles = ['proton','GenericIon']
+    x_0.set_max_step_size(1.0 * mm)
+    # sim.physics_manager.user_limits_particles = "proton"
+    sim.physics_manager.user_limits_particles = ["proton", "GenericIon"]
 
     sim.physics_manager.set_production_cut("world", "gamma", 100 * m)
     sim.physics_manager.set_production_cut("world", "electron", 100 * m)
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # source
     tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
-    tps.n = 1e5
+    tps.number_of_primaries = 1e5
     tps.beam_model = beamline
     tps.beam_data_dict = beam_data
     tps.beam_nr = 1

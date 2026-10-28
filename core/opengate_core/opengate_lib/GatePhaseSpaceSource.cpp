@@ -52,7 +52,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   }
 
   // Init
-  fNumberOfGeneratedEvents = 0;
+  fRunGeneratedEvents = 0;
   fCurrentIndex = 0;
   fCurrentBatchSize = 0;
 
@@ -121,7 +121,7 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
         break;
     }
     // update the number of generated event
-    fNumberOfGeneratedEvents++;
+    fRunGeneratedEvents++;
   }
 
   else {
@@ -135,7 +135,7 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
     fCurrentIndex++;
 
     // update the number of generated event
-    fNumberOfGeneratedEvents++;
+    fRunGeneratedEvents++;
   }
 }
 

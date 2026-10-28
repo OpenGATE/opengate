@@ -30,7 +30,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     sim.random_seed = 123456
 
     # activity
-    activity = 10 * kBq / sim.number_of_threads
+    activity = 10 * kBq
 
     # world size
     world = sim.world
@@ -125,10 +125,10 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # should work but much too long !
     source.activity = 0
     source.user_particle_life_time = lifetime
-    source.n = int((activity / Bq) * (lifetime / sec))"""
+    source.number_of_primaries = int((activity / Bq) * (lifetime / sec))"""
 
     print("Activity  = ", activity / Bq)
-    print("Source n  = ", source.n)
+    print("Source number_of_primaries  = ", source.number_of_primaries)
     print("Source ac  = ", source.activity / Bq)
     print(f"Source HL = {half_life / sec} sec")
     print(f"Source HL = {half_life / sec / 3600 / 24} days")

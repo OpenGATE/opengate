@@ -66,7 +66,7 @@ if __name__ == "__main__":
     sim.verbose_level = DEBUG
     sim.log_sink = "str"
     print(f"Logger: {sim.verbose_level}")
-    sim.run()  # start_new_process=True)
+    sim.run(start_new_process=True)
     print(sim.log_output)
 
     # test

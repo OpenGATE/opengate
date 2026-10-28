@@ -69,9 +69,9 @@ def add_source(
     source.position.translation = [0, 0, -55 * cm]
     source.direction.type = "focused"
     source.direction.focus_point = [0, 0, -20 * cm]
-    source.n = n / sim.number_of_threads
+    source.number_of_primaries = n
     if sim.visu:
-        source.n = 10
+        source.number_of_primaries = 10
     return source
 
 
@@ -91,9 +91,9 @@ def add_iso_source(
     source.position.radius = 10 ** (-7) * cm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.n = n / sim.number_of_threads
+    source.number_of_primaries = n
     if sim.visu:
-        source.n = 100
+        source.number_of_primaries = 100
     return source
 
 

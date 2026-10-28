@@ -22,7 +22,7 @@ if __name__ == "__main__":
     ui.random_seed = 12345678910
     ui.number_of_threads = 8
 
-    numPartSimTest = 4e2 / ui.number_of_threads
+    numPartSimTest = 4e2
     numPartSimRef = 1e4
 
     # units
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     source.position.translation = [0 * mm, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
-    source.n = numPartSimTest
+    source.number_of_primaries = numPartSimTest
 
     size = [50, 1, 1]
     spacing = [1.0 * mm, 100.0 * mm, 100.0 * mm]

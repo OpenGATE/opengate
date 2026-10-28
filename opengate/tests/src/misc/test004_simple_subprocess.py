@@ -28,7 +28,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 200000
+    source.number_of_primaries = 200000
 
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True

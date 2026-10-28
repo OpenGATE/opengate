@@ -52,7 +52,7 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
     # sim.running_verbose_level = gate.EVENT
     # sim.g4_verbose = True
     sim.output_dir = paths.output
-    ac = 5e3 * BqmL / sim.number_of_threads
+    ac = 5e3 * BqmL
     sim.visu = False
     colli_flag = not sim.visu
     if sim.visu:

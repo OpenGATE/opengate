@@ -16,5 +16,7 @@ void init_GateVSource(py::module &m) {
       .def(py::init())
       .def("InitializeUserInfo", &GateVSource::InitializeUserInfo)
       .def("SetOrientationAccordingToAttachedVolume",
-           &GateVSource::SetOrientationAccordingToAttachedVolume);
+           &GateVSource::SetOrientationAccordingToAttachedVolume)
+      .def("GetRunGeneratedEvents", &GateVSource::GetRunGeneratedEvents)
+      .def("GetTotalGeneratedEvents", &GateVSource::GetTotalGeneratedEvents);
 }

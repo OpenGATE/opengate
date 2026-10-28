@@ -56,7 +56,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -10 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = n_total // sim.number_of_threads  # n is per-thread
+    source.number_of_primaries = n_total
 
     charge = sim.add_actor("DepositedChargeActor", "charge")
     charge.attached_to = target.name

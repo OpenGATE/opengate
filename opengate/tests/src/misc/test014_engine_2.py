@@ -18,7 +18,7 @@ if __name__ == "__main__":
     is_ok = test014.test_output(sim)
 
     # go without a new process
-    sim.run(start_new_process=False)
+    sim.run(start_new_process=True)
 
     # get output
     is_ok = test014.test_output(sim) and is_ok

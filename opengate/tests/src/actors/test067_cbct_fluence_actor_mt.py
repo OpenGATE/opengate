@@ -75,9 +75,9 @@ if __name__ == "__main__":
     # FIXME warning in world coord ! Should be in mother coord system
     source.direction.focus_point = [gantry.translation[0] - 60 * mm, 0, 0]
     if sim.visu:
-        source.n = 100
+        source.number_of_primaries = 100
     else:
-        source.n = 50000 / sim.number_of_threads
+        source.number_of_primaries = 50000
 
     # statistics
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

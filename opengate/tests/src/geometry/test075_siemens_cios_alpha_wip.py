@@ -70,9 +70,9 @@ if __name__ == "__main__":
     carm.translation = [0 * cm, 0 * cm, 0 * cm]
     carm.collimation = [25 * mm, 25 * mm]
 
-    carm.source.n = 1e6
+    carm.source.number_of_primaries = 1e6
     if sim.visu:
-        carm.source.n = 1000
+        carm.source.number_of_primaries = 1000
 
     # aluminum table
     table = sim.add_volume("Box", "aluminum_table")

@@ -93,7 +93,7 @@ if __name__ == "__main__":
     source.position.translation = [0, 0, -50 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = n_events
+    source.number_of_primaries = n_events
 
     charge_mother1 = sim.add_actor("DepositedChargeActor", "charge_mother1")
     charge_mother1.attached_to = mother1.name

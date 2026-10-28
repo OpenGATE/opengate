@@ -237,6 +237,35 @@ std::set<std::string> GateDigiCollection::GetDigiAttributeNames() const {
   return list;
 }
 
+std::map<std::string, std::string>
+GateDigiCollection::GetRootBranchTypes() const {
+  std::map<std::string, std::string> branchTypes;
+  for (auto *att : fDigiAttributes) {
+    const auto name = att->GetDigiAttributeName();
+    const auto type = att->GetDigiAttributeType();
+    if (type == 'D') {
+      branchTypes[name] = "float64";
+    } else if (type == 'S' || type == 'U') {
+      branchTypes[name] = "string";
+    } else if (type == 'I') {
+      branchTypes[name] = "int32";
+    } else if (type == 'L') {
+      branchTypes[name] = "int64";
+    } else if (type == '3') {
+      branchTypes[name + "_X"] = "float64";
+      branchTypes[name + "_Y"] = "float64";
+      branchTypes[name + "_Z"] = "float64";
+    } else {
+      std::ostringstream oss;
+      oss << "Unsupported digi attribute type '" << type
+          << "' while building ROOT branch metadata for attribute '" << name
+          << "'.";
+      Fatal(oss.str());
+    }
+  }
+  return branchTypes;
+}
+
 GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
   return GateDigiCollectionIterator(this, 0);
 }

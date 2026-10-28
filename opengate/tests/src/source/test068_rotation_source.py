@@ -79,7 +79,7 @@ if __name__ == "__main__":
     source1.direction.momentum = [0, 0, -1]
     source1.energy.type = "mono"
     source1.energy.mono = 1 * MeV
-    source1.activity = n * Bq / sim.number_of_threads
+    source1.activity = n * Bq
 
     source2 = sim.add_source("GenericSource", "photon_source_2")
     source2.particle = "gamma"
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # source1.direction.momentum = [0, 0, -1]
     source2.energy.type = "mono"
     source2.energy.mono = 1 * MeV
-    source2.activity = n * Bq / sim.number_of_threads
+    source2.activity = n * Bq
 
     source3 = sim.add_source("GenericSource", "photon_source_3")
     source3.particle = "gamma"
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     source3.direction_relative_to_attached_volume = True
     source3.energy.type = "mono"
     source3.energy.mono = 1 * MeV
-    source3.activity = n * Bq / sim.number_of_threads
+    source3.activity = n * Bq
 
     # Phase Space
 

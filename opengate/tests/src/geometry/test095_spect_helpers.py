@@ -7,8 +7,8 @@ import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.geometry.volume_info import store_volumes_info
 
 
-def vol_info(sim, filename):
-    store_volumes_info(sim, filename)
+def vol_info(simulation_engine, filename):
+    store_volumes_info(simulation_engine, filename)
     print(f"opengate_plot_volume_info {filename} --hl arf")
 
 

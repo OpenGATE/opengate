@@ -72,7 +72,7 @@ def main(argv):
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.global_production_cuts.all = 0.001 * mm
     sim.physics_manager.set_max_step_size("waterbox", 0.1 * mm)
-    sim.physics_manager.set_user_limits_particles("gamma")
+    sim.physics_manager.user_limits_particles = "gamma"
 
     sim.volume_manager.material_database.add_material_weights(
         "Tungsten",

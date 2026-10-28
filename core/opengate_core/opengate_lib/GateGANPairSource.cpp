@@ -70,7 +70,7 @@ void GateGANPairSource::GeneratePrimaries(G4Event *event,
   fCurrentIndex++;
 
   // update the number of generated event
-  fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
 }
 
 void GateGANPairSource::GeneratePrimariesPair(G4Event *event,

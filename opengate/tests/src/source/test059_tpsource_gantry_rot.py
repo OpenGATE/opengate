@@ -141,7 +141,7 @@ if __name__ == "__main__":
     )
 
     tps_rot = sim.add_source("TreatmentPlanPBSource", "HBL")
-    tps_rot.n = nSim
+    tps_rot.number_of_primaries = nSim
     tps_rot.end_time = 0.5 * s
     tps_rot.beam_model = beamline
     tps_rot.beam_data_dict = beam_data_dict
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     beam_data_dict_vbl["gantry_angle"] = 0
 
     tps = sim.add_source("TreatmentPlanPBSource", "VBL")
-    tps.n = nSim
+    tps.number_of_primaries = nSim
     tps.start_time = 0.5 * s
     tps.beam_model = beamline
     tps.beam_data_dict = beam_data_dict_vbl

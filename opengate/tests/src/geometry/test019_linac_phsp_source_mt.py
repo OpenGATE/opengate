@@ -14,14 +14,14 @@ if __name__ == "__main__":
     sim.number_of_threads = nt = 2
 
     sl = sim.get_source_user_info("phsp_source_local")
-    sl.n /= nt
-    sl.entry_start = [sl.n * p for p in range(nt)]
-    sl.batch_size = sl.n
+    # In MT, the source now keeps the total requested primaries and scales them
+    # internally per worker. Only the PHSP read windows remain thread-specific.
+    sl.entry_start = [int(sl.number_of_primaries // nt) * p for p in range(nt)]
+    sl.batch_size = int(sl.number_of_primaries // nt)
 
     sg = sim.get_source_user_info("phsp_source_global")
-    sg.n /= nt
-    sg.entry_start = [sl.n * p for p in range(nt)]
-    sg.batch_size = sg.n
+    sg.entry_start = [int(sg.number_of_primaries // nt) * p for p in range(nt)]
+    sg.batch_size = int(sg.number_of_primaries // nt)
 
     print("source entry start", sl.entry_start)
     print("source entry start", sg.entry_start)

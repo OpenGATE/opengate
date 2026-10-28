@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # source.direction.focus_point = [-20 * cm, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [1, 0, 0]
-    source.n = 50000
+    source.number_of_primaries = 50000
 
     # stats
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

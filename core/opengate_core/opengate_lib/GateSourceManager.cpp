@@ -17,6 +17,8 @@
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
+#include <CLHEP/Units/SystemOfUnits.h>
+#include <G4Exception.hh>
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
@@ -25,6 +27,7 @@
 #include <G4UnitsTable.hh>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <pybind11/numpy.h>
 
 #ifdef USE_GDML
@@ -34,6 +37,9 @@
 /* There will be one SourceManager per thread */
 
 bool GateSourceManager::fRunTerminationFlag = false;
+std::atomic<std::uint64_t> GateSourceManager::fGeneratedPrimariesThisRun{0};
+std::atomic<bool> GateSourceManager::fPrimaryLimitWarningIssued{false};
+std::uint64_t GateSourceManager::fMaxPrimariesPerRun = INT32_MAX;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
@@ -44,6 +50,7 @@ GateSourceManager::GateSourceManager() {
   fVerboseLevel = 0;
   fUserEventInformationFlag = false;
   fProgressBarFlag = false;
+  fProgressReportInterval = 0.0;
   auto &l = fThreadLocalData.Get();
   l.fStartNewRun = true;
   l.fNextRunId = 0;
@@ -66,6 +73,50 @@ void GateSourceManager::SetRunTerminationFlag(bool flag) {
   fRunTerminationFlag = flag;
 }
 
+std::uint64_t GateSourceManager::GetPlatformMaxPrimariesPerRun() {
+  return std::numeric_limits<G4int>::max();
+}
+
+void GateSourceManager::SetMaxPrimariesPerRun(std::uint64_t value) {
+  if (value == 0) {
+    fMaxPrimariesPerRun = GetPlatformMaxPrimariesPerRun();
+    return;
+  }
+  fMaxPrimariesPerRun = value;
+}
+
+void GateSourceManager::ResetPrimaryCounterForRun() {
+  fGeneratedPrimariesThisRun.store(0, std::memory_order_relaxed);
+  fPrimaryLimitWarningIssued.store(false, std::memory_order_relaxed);
+}
+
+bool GateSourceManager::TryReservePrimarySlot() {
+  auto current = fGeneratedPrimariesThisRun.load(std::memory_order_relaxed);
+  while (current < fMaxPrimariesPerRun) {
+    if (fGeneratedPrimariesThisRun.compare_exchange_weak(
+            current, current + 1, std::memory_order_relaxed,
+            std::memory_order_relaxed)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void GateSourceManager::WarnPrimaryLimitReached() {
+  bool warning_already_issued =
+      fPrimaryLimitWarningIssued.exchange(true, std::memory_order_relaxed);
+  if (warning_already_issued) {
+    return;
+  }
+
+  G4ExceptionDescription ed;
+  ed << "The current Geant4 BeamOn() call reached the maximum supported "
+     << "number of primaries (" << fMaxPrimariesPerRun << "). "
+     << "The run is being stopped before generating additional primaries.";
+  G4Exception("GateSourceManager::GeneratePrimaries", "GateSourceManager0001",
+              JustWarning, ed);
+}
+
 void GateSourceManager::Initialize(const TimeIntervals &simulation_times,
                                    py::dict &options) {
   fSimulationTimes = simulation_times;
@@ -86,7 +137,13 @@ void GateSourceManager::Initialize(const TimeIntervals &simulation_times,
     fVisCommands = DictGetVecStr(options, "visu_commands");
   fVerboseLevel = DictGetInt(options, "running_verbose_level");
   fProgressBarFlag = DictGetBool(options, "progress_bar");
+  if (options.contains("max_primaries_per_run")) {
+    SetMaxPrimariesPerRun(DictGetInt(options, "max_primaries_per_run"));
+  } else {
+    SetMaxPrimariesPerRun(GetPlatformMaxPrimariesPerRun());
+  }
   InstallSignalHandler();
+  ComputeExpectedNumberOfEvents();
   InitializeProgressBar();
 
   // Fake init of the EventModulo (will be changed in StartMasterThread or by
@@ -158,6 +215,7 @@ void GateSourceManager::StartMasterThread() {
   auto &l = fThreadLocalData.Get();
   l.fStartNewRun = true;
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
+    ResetPrimaryCounterForRun();
     // Start Begin Of Run for MasterThread
     // (both for multi-thread and mono-thread app)
     // The conventional (threaded) BeginOfRun will be called
@@ -188,8 +246,17 @@ void GateSourceManager::StartMasterThread() {
 void GateSourceManager::InitializeProgressBar() {
   if (!fProgressBarFlag)
     return;
-  // (all threads compute the expected number of events)
-  ComputeExpectedNumberOfEvents();
+
+  if (fExpectedNumberOfEvents <= 0) {
+    ComputeExpectedNumberOfEvents();
+  }
+
+  fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
+  if (fExpectedNumberOfEvents > 1e7)
+    fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
+  if (fProgressBarStep < 1) {
+    fProgressBarStep = 1;
+  }
 
   // the progress bar is only for one thread (id ==0)
   if (G4Threading::IsMultithreadedApplication() &&
@@ -211,25 +278,48 @@ void GateSourceManager::ComputeExpectedNumberOfEvents() {
     fExpectedNumberOfEvents +=
         source->GetExpectedNumberOfEvents(fSimulationTimes);
   }
-  fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
-  if (fExpectedNumberOfEvents > 1e7)
-    fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
-
-  if (fProgressBarStep < 1) {
-    fProgressBarStep = 1;
-  }
 }
 
 long int GateSourceManager::GetExpectedNumberOfEvents() const {
   return fExpectedNumberOfEvents;
 }
 
+unsigned long GateSourceManager::GetRunGeneratedEvents() const {
+  unsigned long n = 0;
+  for (const auto *source : fSources) {
+    n += source->GetRunGeneratedEvents();
+  }
+  return n;
+}
+
+unsigned long GateSourceManager::GetTotalGeneratedEvents() const {
+  unsigned long n = 0;
+  for (const auto *source : fSources) {
+    n += source->GetTotalGeneratedEvents();
+  }
+  return n;
+}
+
+double GateSourceManager::GetCurrentSimulationTime() const {
+  auto &l = fThreadLocalData.Get();
+  return l.fCurrentSimulationTime;
+}
+
+int GateSourceManager::GetCurrentRunId() const {
+  auto &l = fThreadLocalData.Get();
+  return l.fNextRunId;
+}
+
 void GateSourceManager::PrepareRunToStart(int run_id) {
   /*
-   In MT mode, this function (PrepareRunToStart) is called
-   by Master thread AND by workers
-   */
-  // set the current time interval
+    Start run run_id
+    fCurrentTimeInterval = interval run_id
+    fCurrentTime = start of interval run_id
+    fNextTime = end of interval run_id
+    fRunTerminationFlag = false
+    Call PrepareNextRun on all sources
+  */
+
   auto &l = fThreadLocalData.Get();
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
@@ -264,7 +354,7 @@ void GateSourceManager::PrepareNextSource() const {
 
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    G4int numberOfSimulatedEvents = source->GetNumberOfSimulatedEvents();
+    unsigned long numberOfSimulatedEvents = source->GetRunGeneratedEvents();
     auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
                                      numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
@@ -295,7 +385,39 @@ void GateSourceManager::CheckForNextRun() const {
   }
 }
 
+void GateSourceManager::SetProgressReportCallback(py::function func,
+                                                  double interval_seconds) {
+  fProgressReportCallback = func;
+  fProgressReportInterval = interval_seconds / CLHEP::s;
+  fLastProgressReportTime = std::chrono::steady_clock::now();
+}
+
+void GateSourceManager::CheckProgressReport() const {
+  if (fProgressReportInterval <= 0.0 || !fProgressReportCallback) {
+    return;
+  }
+  auto now = std::chrono::steady_clock::now();
+  std::unique_lock<std::mutex> lock(fProgressReportMutex, std::try_to_lock);
+  if (!lock.owns_lock()) {
+    return;
+  }
+  double elapsed =
+      std::chrono::duration<double>(now - fLastProgressReportTime).count();
+  if (elapsed >= fProgressReportInterval) {
+    fLastProgressReportTime = now;
+    // gil is needed when using fProgressReportCallback
+    py::gil_scoped_acquire acquire;
+    try {
+      fProgressReportCallback();
+    } catch (const py::error_already_set &e) {
+      std::cerr << "Error in progress report callback: " << e.what()
+                << std::endl;
+    }
+  }
+}
+
 void GateSourceManager::GeneratePrimaries(G4Event *event) {
+  CheckProgressReport();
   auto &l = fThreadLocalData.Get();
   // Needed to initialize a new Run (all threads)
   if (l.fStartNewRun) {
@@ -307,7 +429,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
 
   // Sometimes (rarely), there is no active source,
   // so we create a fake geantino particle
-  // It may happen when the number of primary is fixed (with source.n = XX)
+  // It may happen when the number of primaries is fixed
   // and several runs are used.
   if (l.fNextActiveSource == nullptr) {
     auto *particle_table = G4ParticleTable::GetParticleTable();
@@ -319,20 +441,35 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     event->AddPrimaryVertex(vertex);
     // (allocated memory is leaked)
   } else {
-    // shoot particle
-    l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
-    // log (after particle creation)
-    if (LogLevel_EVENT <= GateSourceManager::fVerboseLevel) {
-      const auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
-      std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
-      std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
-      std::string s = l.fNextActiveSource->fName;
-      Log(LogLevel_EVENT, fVerboseLevel,
-          "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n", event->GetEventID(),
-          t, prim->GetParticleDefinition()->GetParticleName(), e,
-          event->GetPrimaryVertex(0)->GetPosition()[0],
-          event->GetPrimaryVertex(0)->GetPosition()[1],
-          event->GetPrimaryVertex(0)->GetPosition()[2], s);
+    if (TryReservePrimarySlot()) {
+      // shoot particle
+      l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
+      // log (after particle creation)
+      if (LogLevel_EVENT <= GateSourceManager::fVerboseLevel) {
+        const auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
+        std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
+        std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
+        std::string s = l.fNextActiveSource->fName;
+        Log(LogLevel_EVENT, fVerboseLevel,
+            "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
+            event->GetEventID(), t,
+            prim->GetParticleDefinition()->GetParticleName(), e,
+            event->GetPrimaryVertex(0)->GetPosition()[0],
+            event->GetPrimaryVertex(0)->GetPosition()[1],
+            event->GetPrimaryVertex(0)->GetPosition()[2], s);
+      }
+    } else {
+      WarnPrimaryLimitReached();
+      fRunTerminationFlag = true;
+
+      auto *particle_table = G4ParticleTable::GetParticleTable();
+      const auto *particle_def = particle_table->FindParticle("geantino");
+      auto *particle = new G4PrimaryParticle(particle_def);
+      const auto p = G4ThreeVector();
+      auto *vertex = new G4PrimaryVertex(p, l.fCurrentSimulationTime);
+      vertex->SetPrimary(particle);
+      event->AddPrimaryVertex(vertex);
+      // (allocated memory is leaked)
     }
   }
 

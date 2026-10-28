@@ -168,6 +168,7 @@ void GateCoincidenceSorterActor::StartSimulationAction() {
 
   if (fInitializeRootTupleForMasterFlag) {
     fOutputDigiCollection->RootInitializeTupleForMaster();
+    AddOutputTreeInfo(fOutputNameRoot, fOutputDigiCollection);
   }
 }
 
