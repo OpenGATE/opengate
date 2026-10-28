@@ -3,8 +3,8 @@
 
 from click.testing import CliRunner
 import opengate as gate
-from opengate.bin.opengate_jobs_status import (
-    go as jobs_status_cli,
+from opengate.bin.opengate_jobs import (
+    status as jobs_status_cli,
     print_jobs_status_summary,
 )
 from opengate.geometry.materials import read_voxel_materials

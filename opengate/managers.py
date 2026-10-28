@@ -2397,8 +2397,30 @@ class Simulation(GateObject):
         directory = self.get_root_path(directory, is_file_or_directory="d")
         d = self.to_dictionary()
         d = self._rewrite_input_paths_in_dict(d, directory, path_mode="relative")
+        self._rewrite_output_dir_in_dict(d, directory)
         with open(directory / filename, "w") as f:
             dump_json(d, f)
+
+    def _rewrite_output_dir_in_dict(self, d, directory):
+        """A relative output_dir is resolved relative to simulation_dir, and a
+        relative simulation_dir is resolved relative to the folder of the json
+        file when it is loaded. If the output folder is inside this folder, it
+        is written relative to it, so that it does not change (e.g. output_dir
+        "camp/output" with the json in "camp" is written as "output", not
+        resolved later as "camp/camp/output")."""
+        output_dir = Path(self.output_dir)
+        simulation_dir = Path(self.simulation_dir)
+        if output_dir.is_absolute() or simulation_dir.is_absolute():
+            return
+        current = (simulation_dir / output_dir).resolve()
+        loaded_simulation_dir = (Path(directory) / simulation_dir).resolve()
+        if current == (loaded_simulation_dir / output_dir).resolve():
+            return
+        if current == loaded_simulation_dir or not current.is_relative_to(
+            loaded_simulation_dir
+        ):
+            return
+        d["user_info"]["output_dir"] = current.relative_to(loaded_simulation_dir)
 
     def write_simulation_json(self, directory=None, filename=None):
         """Write the authored simulation configuration under the structural root.

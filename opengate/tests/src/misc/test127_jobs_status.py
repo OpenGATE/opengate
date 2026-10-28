@@ -31,7 +31,7 @@ from pathlib import Path
 import numpy as np
 
 import opengate as gate
-from opengate.bin.opengate_jobs_status import (
+from opengate.bin.opengate_jobs import (
     format_campaign_timing,
     format_job_timing,
     print_jobs_status_summary,
