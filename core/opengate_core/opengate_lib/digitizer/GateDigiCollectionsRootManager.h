@@ -33,6 +33,8 @@ public:
 
   void OpenFile(int tupleId, const std::string &filename);
 
+  static void CheckFileCanBeCreated(const std::string &filename);
+
   void CloseFile(int tupleId);
 
   void Write(int tupleId) const;
@@ -55,6 +57,7 @@ protected:
     //  This is required to manage the Write process :
     //  only one is mandatory for all DigiCollections.
     std::map<int, bool> fTupleShouldBeWritten;
+    std::map<int, int> fTupleIdMap;
     bool fFileHasBeenWrittenByWorker;
     bool fFileHasBeenWrittenByMaster;
   };

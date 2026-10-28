@@ -166,7 +166,9 @@ def get_available_tests(all_file_paths):
                 reason_to_ignore = string_to_ignore
                 break
 
-        if not torch_avail and filename in torch_tests:
+        if not torch_avail and (
+            filename in torch_tests or os.path.basename(filename) in torch_tests
+        ):
             reason_to_ignore = "Torch not avail"
             eval_this_file = False
         if os.name == "nt" and "_mt" in filename:
@@ -309,6 +311,35 @@ def analyze_scripts(file_dir, files):
             args.get("dependency") if args is not None else None
         )
     return files_dependence_on
+
+
+# Tests that start child simulation jobs (job splitting, merging, controllers).
+# They are recognised by their file name.
+jobs_tests_pattern = re.compile(r"_jobs_|_split_run_")
+max_parallel_jobs_tests = 2
+
+
+def select_jobs_tests(files, files_with_dependency, path_tests_src):
+    # a test needed by another one must stay in the first round
+    needed = {
+        os.path.basename(v)
+        for v in analyze_scripts(path_tests_src, files_with_dependency).values()
+        if v
+    }
+    return [
+        f
+        for f in files
+        if jobs_tests_pattern.search(os.path.basename(f))
+        and os.path.basename(f) not in needed
+    ]
+
+
+def number_of_processes_for_jobs_tests(processes_run, num_processes):
+    if processes_run in ["legacy", "sp"]:
+        return num_processes
+    if num_processes == "all":
+        return max_parallel_jobs_tests
+    return min(max_parallel_jobs_tests, max(1, int(float(num_processes))))
 
 
 def resolve_dependencies(files_to_run, path_tests_src):

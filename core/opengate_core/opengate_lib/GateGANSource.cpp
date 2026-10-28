@@ -329,6 +329,14 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
         fAAManager->GetPolicy() == GateAcceptanceAngleManager::AASkipEvent) {
       fCurrentSkippedEvents++;
       fCurrentIndex++;
+      // end of the batch: the next particle does not exist (it was read past
+      // the end of the arrays, giving garbage positions), so this event is a
+      // zero-energy event (as when the energy is rejected at the end)
+      if (fCurrentIndex >= fCurrentBatchSize) {
+        energy = 0;
+        fCurrentZeroEvents = 1;
+        cont = false;
+      }
       continue; // no need to check energy now
     }
 

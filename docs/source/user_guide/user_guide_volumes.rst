@@ -205,6 +205,17 @@ All material names defined in the “GateMaterials.db” can then be used
 for any volume. Please check the file in ``tests/data/GateMaterials.db``
 for the required format of database file.
 
+The default GATE material database is shipped with opengate, in the
+``contrib`` folder. It can be loaded with:
+
+.. code:: python
+
+   import opengate as gate
+
+   sim.volume_manager.add_material_database(
+       gate.utility.get_contrib_path() / "GateMaterials.db"
+   )
+
 A material can also be described using isotopes. An example is available
 in ``tests/data/GateMaterials_Isotopes.db``. The format is similar to the
 one used for elements, but with the addition of a line starting with

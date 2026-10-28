@@ -139,6 +139,7 @@ Material defined in `GateMaterials.db`
 .. code-block:: python
 
     # Provide the location of GateMaterials.db to the volume manager.
+    # The default one is gate.utility.get_contrib_path() / "GateMaterials.db"
     sim.volume_manager.add_material_database(path_to_gate_materials_db)
 
     # Set the MeanEnergyPerIonPair of the material in the physics manager
@@ -200,6 +201,7 @@ Users can modify the `MeanExcitationEnergy` of a material, and therefore the mat
 .. code-block:: python
 
     # Provide the location of GateMaterials.db to the volume manager.
+    # The default one is gate.utility.get_contrib_path() / "GateMaterials.db"
     sim.volume_manager.add_material_database(path_to_gate_materials_db)
 
     # Set the MeanExcitationEnergy of the material in the physics manager

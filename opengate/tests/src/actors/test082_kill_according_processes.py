@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     #  adapt world size
     world = sim.world
-    world.size = [0.2 * m, 0.2 * m, 0.2 * m]
+    world.size = [0.3 * m, 0.3 * m, 0.3 * m]
     world.material = "G4_Galactic"
 
     source = sim.add_source("GenericSource", "photon_source")

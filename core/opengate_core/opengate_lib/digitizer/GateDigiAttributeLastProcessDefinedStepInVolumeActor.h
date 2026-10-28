@@ -9,6 +9,7 @@
 #define GateDigiAttributeLastProcessDefinedStepInVolumeActor_h
 
 #include "../GateVActor.h"
+#include <G4Cache.hh>
 #include <pybind11/stl.h>
 
 class GateDigiAttributeLastProcessDefinedStepInVolume;
@@ -24,7 +25,12 @@ public:
   void BeginOfEventAction(const G4Event *event) override;
 
   std::string GetLastProcess() const;
-  std::string fLastProcess;
+
+  // the last process is stored per thread
+  struct threadLocalT {
+    std::string fLastProcess = "Transportation";
+  };
+  G4Cache<threadLocalT> fThreadLocalData;
   GateDigiAttributeLastProcessDefinedStepInVolume *fAttribute;
 };
 

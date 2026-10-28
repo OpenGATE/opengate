@@ -12,10 +12,6 @@ GateMuTable::GateMuTable(const G4MaterialCutsCouple *couple, G4int size) {
   fMu = new double[size];
   fMuEn = new double[size];
   fSize = size;
-  fLastMu = -1.0;
-  fLastMuEn = -1.0;
-  fLastEnergyMu = -1.0;
-  fLastEnergyMuEn = -1.0;
 
   mCouple = couple;
   mDensity = -1;
@@ -44,69 +40,57 @@ inline double interpol(double x1, double x, double x2, double y1, double y2) {
   //   storage
 }
 
-double GateMuTable::GetMuEnOverRho(double energy) {
-  if (energy != fLastEnergyMuEn) {
-    fLastEnergyMuEn = energy;
+double GateMuTable::GetMuEnOverRho(double energy) const {
+  const double log_energy = log(energy);
 
-    energy = log(energy);
-
-    int inf = 0;
-    int sup = fSize - 1;
-    while (sup - inf > 1) {
-      int tmp_bound = (inf + sup) / 2;
-      if (fEnergy[tmp_bound] > energy) {
-        sup = tmp_bound;
-      } else {
-        inf = tmp_bound;
-      }
-    }
-    double e_inf = fEnergy[inf];
-    double e_sup = fEnergy[sup];
-
-    if (energy > e_inf && energy < e_sup) {
-      fLastMuEn = exp(interpol(e_inf, energy, e_sup, fMuEn[inf], fMuEn[sup]));
+  int inf = 0;
+  int sup = fSize - 1;
+  while (sup - inf > 1) {
+    int tmp_bound = (inf + sup) / 2;
+    if (fEnergy[tmp_bound] > log_energy) {
+      sup = tmp_bound;
     } else {
-      fLastMuEn = exp(fMuEn[inf]);
+      inf = tmp_bound;
     }
   }
+  double e_inf = fEnergy[inf];
+  double e_sup = fEnergy[sup];
 
-  return fLastMuEn;
+  if (log_energy > e_inf && log_energy < e_sup) {
+    return exp(interpol(e_inf, log_energy, e_sup, fMuEn[inf], fMuEn[sup]));
+  } else {
+    return exp(fMuEn[inf]);
+  }
 }
 
-double GateMuTable::GetMuEn(double energy) {
+double GateMuTable::GetMuEn(double energy) const {
   return (GetMuEnOverRho(energy) * mDensity);
 }
 
-double GateMuTable::GetMuOverRho(double energy) {
-  if (energy != fLastEnergyMu) {
-    fLastEnergyMu = energy;
+double GateMuTable::GetMuOverRho(double energy) const {
+  const double log_energy = log(energy);
 
-    energy = log(energy);
-
-    int inf = 0;
-    int sup = fSize - 1;
-    while (sup - inf > 1) {
-      int tmp_bound = (inf + sup) / 2;
-      if (fEnergy[tmp_bound] > energy) {
-        sup = tmp_bound;
-      } else {
-        inf = tmp_bound;
-      }
-    }
-    double e_inf = fEnergy[inf];
-    double e_sup = fEnergy[sup];
-
-    if (energy > e_inf && energy < e_sup) {
-      fLastMu = exp(interpol(e_inf, energy, e_sup, fMu[inf], fMu[sup]));
+  int inf = 0;
+  int sup = fSize - 1;
+  while (sup - inf > 1) {
+    int tmp_bound = (inf + sup) / 2;
+    if (fEnergy[tmp_bound] > log_energy) {
+      sup = tmp_bound;
     } else {
-      fLastMu = exp(fMu[inf]);
+      inf = tmp_bound;
     }
   }
+  double e_inf = fEnergy[inf];
+  double e_sup = fEnergy[sup];
 
-  return fLastMu;
+  if (log_energy > e_inf && log_energy < e_sup) {
+    return exp(interpol(e_inf, log_energy, e_sup, fMu[inf], fMu[sup]));
+  } else {
+    return exp(fMu[inf]);
+  }
 }
 
-double GateMuTable::GetMu(double energy) {
+double GateMuTable::GetMu(double energy) const {
   return (GetMuOverRho(energy) * mDensity);
 }
 

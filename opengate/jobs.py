@@ -21,13 +21,16 @@ from .exception import (
     GateJobsBackendError,
     GateMergeError,
     GateSplitError,
+    GateUserError,
     fatal,
     warning,
 )
 from .runtiming import assert_run_timing
+from .utility import g4_units
 from .serialization import (
     dump_json,
     load_json,
+    load_json_with_retry,
     _apply_path_modifier_recursively,
     _collect_input_file_values_from_gate_object_dictionary,
     _find_metaimage_payload_files,
@@ -44,12 +47,21 @@ JOBS_MANIFEST_FILENAME = "jobs_manifest.json"
 JOBS_BACKEND_STATUS_FILENAME = "jobs_backend_status.json"
 JOB_METADATA_FILENAME = "job_metadata.json"
 JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
+JOB_PROGRESS_FILENAME = "job_progress.json"
+# in Geant4 units, as progress_hook_interval
+JOB_PROGRESS_INTERVAL = 2.0 * g4_units.s
 JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
-JOB_EXECUTION_ALLOWED_STATUSES = ("running", "completed", "failed", "skipped")
+JOB_EXECUTION_ALLOWED_STATUSES = (
+    "running",
+    "completed",
+    "failed",
+    "skipped",
+    "interrupted",
+)
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
-SLURM_JOB_FOLDERS_FILENAME = "slurm_job_folders.txt"
+PBS_SUBMIT_FILENAME = "pbs_jobs.sh"
 
 
 def _prepare_package_root(path, overwrite=False):
@@ -171,9 +183,11 @@ def _prepare_campaign_dir(campaign_dir, overwrite_existing_job_folders=False):
     ) and overwrite_existing_job_folders is False:
         blocking_entries = [str(p.name) for p in existing_job_folders]
         blocking_entries.extend(str(p.name) for p in existing_jobs_sidecar_files)
-        fatal(
-            f"campaign_dir '{campaign_dir}' already contains split-job artifacts: "
-            f"{blocking_entries}. Set overwrite_existing_job_folders=True to replace them."
+        raise GateUserError(
+            f"The campaign folder already contains split jobs: {campaign_dir}\n"
+            f"({', '.join(blocking_entries)})\n"
+            f"Remove it, choose another campaign_dir, or use "
+            f"overwrite_existing_job_folders=True in jobs_split to replace them."
         )
 
     if overwrite_existing_job_folders is True:
@@ -1135,6 +1149,33 @@ def _get_job_execution_status_path(job_folder):
     return Path(job_folder) / JOB_EXECUTION_STATUS_FILENAME
 
 
+# Status files are rewritten by the job processes while other processes poll
+# them. On Windows, a file cannot be replaced while another process has it open
+# (and cannot be opened while it is being replaced): both raise PermissionError.
+# These conflicts last a few milliseconds, so retry for a short while.
+STATUS_FILE_RETRY_ATTEMPTS = 50
+STATUS_FILE_RETRY_DELAY_S = 0.1
+
+
+def _replace_with_retry(source_path, target_path):
+    for attempt in range(STATUS_FILE_RETRY_ATTEMPTS):
+        try:
+            os.replace(source_path, target_path)
+            return
+        except PermissionError:
+            if attempt == STATUS_FILE_RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(STATUS_FILE_RETRY_DELAY_S)
+
+
+def _load_status_file(status_path):
+    return load_json_with_retry(
+        status_path,
+        attempts=STATUS_FILE_RETRY_ATTEMPTS,
+        delay_s=STATUS_FILE_RETRY_DELAY_S,
+    )
+
+
 def _dump_json_atomic(output_path, data):
     """Write JSON atomically so status readers never observe a truncated file."""
     output_path = Path(output_path)
@@ -1146,7 +1187,7 @@ def _dump_json_atomic(output_path, data):
             dump_json(data, output_file)
             output_file.flush()
             os.fsync(output_file.fileno())
-        os.replace(temporary_output_path, output_path)
+        _replace_with_retry(temporary_output_path, output_path)
     finally:
         if temporary_output_path.exists():
             temporary_output_path.unlink()
@@ -1283,8 +1324,7 @@ def load_jobs_backend_status(split_root_folder):
     status_path = _get_jobs_backend_status_path(split_root_folder)
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return _load_status_file(status_path)
 
 
 def _write_jobs_backend_status(
@@ -1323,8 +1363,7 @@ def load_job_execution_status(job_folder):
     status_path = _get_job_execution_status_path(job_folder)
     if not status_path.exists():
         return None
-    with open(status_path, "r") as input_file:
-        return load_json(input_file)
+    return _load_status_file(status_path)
 
 
 def _write_job_execution_status(
@@ -1355,6 +1394,153 @@ def _write_job_execution_status(
     }
     _dump_json_atomic(_get_job_execution_status_path(job_folder), status_data)
     return status_data
+
+
+def _mark_running_jobs_as_interrupted(job_folders):
+    """Set the status of the jobs still 'running' to 'interrupted'.
+
+    Used when the campaign is interrupted by the user (Control-C): the
+    simulation of a job stops immediately (exit in the Geant4 signal handler),
+    without writing its final status. The jobs with another status (e.g.
+    completed) are not modified. An interrupted job is run again by jobs_run().
+    Return the names of the job folders that were marked.
+    """
+    marked = []
+    for job_folder in job_folders:
+        job_folder = Path(job_folder)
+        try:
+            current = load_job_execution_status(job_folder)
+        except Exception:
+            continue
+        if current is None or current.get("status") != "running":
+            continue
+        _write_job_execution_status(
+            job_folder,
+            current,
+            backend=current.get("backend"),
+            status="interrupted",
+            submitted_at=current.get("submitted_at"),
+            started_at=current.get("started_at"),
+            finished_at=_now_isoformat(),
+            error_message="Interrupted by the user (Control-C).",
+        )
+        marked.append(job_folder.name)
+    return marked
+
+
+class JobProgressWriter:
+    """Progress hook of a child job: writes the number of generated and
+    expected events in the job folder (job_progress.json), read by the
+    progress bar of the campaign. A module-level class, so that it can be
+    pickled with the simulation (start_new_process=True).
+    """
+
+    def __init__(self, path, interval=JOB_PROGRESS_INTERVAL):
+        self.path = str(path)
+        self._interval = interval  # used by the progress_hook setter
+
+    def __call__(self, simulation_engine, status="running"):
+        try:
+            source_engine = simulation_engine.source_engine
+            # same managers as for the expected number of events
+            managers = [source_engine.g4_master_source_manager]
+            if (
+                simulation_engine.simulation.multithreaded
+                and len(source_engine.g4_thread_source_managers) > 0
+            ):
+                managers = source_engine.g4_thread_source_managers
+            generated = sum(int(m.GetTotalGeneratedEvents()) for m in managers)
+            expected = source_engine.expected_number_of_events
+            progress = {
+                "status": status,
+                "generated_events": generated,
+                "expected_events": expected if isinstance(expected, int) else None,
+                "updated_at": _now_isoformat(),
+            }
+            # written then renamed: the progress bar never reads a partial file
+            tmp_path = self.path + ".tmp"
+            with open(tmp_path, "w") as f:
+                json.dump(progress, f)
+            os.replace(tmp_path, self.path)
+        except Exception:
+            # the progress is only informative, it never stops the job
+            pass
+
+
+def read_job_progress(job_folder):
+    """The content of job_progress.json of a job, or None"""
+    try:
+        with open(Path(job_folder) / JOB_PROGRESS_FILENAME, "r") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _format_duration(seconds):
+    seconds = int(seconds)
+    h, m, s = seconds // 3600, (seconds % 3600) // 60, seconds % 60
+    return f"{h}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
+
+
+def _format_count(n):
+    for factor, unit in ((1e9, "G"), (1e6, "M"), (1e3, "k")):
+        if n >= factor:
+            return f"{n / factor:.1f}{unit}"
+    return str(int(n))
+
+
+class CampaignProgressBar:
+    """One progress bar for all the jobs of a local campaign, drawn on a single
+    terminal line. The fraction of a running job is its number of generated
+    events over its expected number of events (job_progress.json); a completed
+    job counts as 1. The jobs are considered of equal size (split in time)."""
+
+    width = 30
+
+    def __init__(self, campaign_dir):
+        self.campaign_dir = Path(campaign_dir)
+        self.start_time = time.perf_counter()
+        self.drawn = False
+
+    def update(self, status_data):
+        jobs = status_data.get("jobs", []) if status_data else []
+        if len(jobs) == 0:
+            return
+        fraction = 0.0
+        events = 0
+        done = 0
+        for job in jobs:
+            execution_status = job.get("execution_status")
+            progress = read_job_progress(self.campaign_dir / job["folder_name"])
+            if progress is not None:
+                events += progress.get("generated_events") or 0
+            if execution_status == "completed":
+                fraction += 1.0
+                done += 1
+            elif progress is not None and progress.get("expected_events"):
+                fraction += min(
+                    1.0, progress["generated_events"] / progress["expected_events"]
+                )
+        fraction /= len(jobs)
+        elapsed = time.perf_counter() - self.start_time
+        eta = "?"
+        if fraction > 0.0:
+            eta = _format_duration(elapsed * max(0.0, 1.0 - fraction) / fraction)
+        n = int(round(fraction * self.width))
+        line = (
+            f"\rJobs {done}/{len(jobs)} |{'#' * n}{'-' * (self.width - n)}| "
+            f"{fraction * 100:5.1f}% {_format_count(events)} events "
+            f"[{_format_duration(elapsed)} < {eta}]"
+        )
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        self.drawn = True
+
+    def close(self):
+        if self.drawn:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            self.drawn = False
 
 
 def _run_job_folder(job_folder, backend, start_new_process):
@@ -1391,6 +1577,14 @@ def _run_job_folder(job_folder, backend, start_new_process):
         sim = create_sim_from_json(simulation_path)
         sim.simulation_dir = job_folder
         sim.output_dir = job_folder / "output"
+        # progress of the job, read by the progress bar of the campaign
+        progress_path = job_folder / JOB_PROGRESS_FILENAME
+        progress_path.unlink(missing_ok=True)
+        sim.progress_hook = JobProgressWriter(progress_path)
+        if backend in ("local_pool", "local_sequential"):
+            # the local jobs share the terminal: one progress bar for the whole
+            # campaign (SplitRunMergeController.wait), not one per job
+            sim.progress_bar = False
         sim.run(start_new_process=start_new_process)
 
         finished_at = _now_isoformat()
@@ -1409,6 +1603,11 @@ def _run_job_folder(job_folder, backend, start_new_process):
             "job_folder": str(job_folder),
             "status": "completed",
         }
+    except KeyboardInterrupt:
+        # Control-C before the Geant4 signal handler is installed, or in the
+        # process waiting for the simulation subprocess
+        _mark_running_jobs_as_interrupted([job_folder])
+        raise
     except Exception as error:
         finished_at = _now_isoformat()
         error_message = f"{type(error).__name__}: {error}"
@@ -1488,6 +1687,7 @@ def _run_job_folders_in_local_pool(
     pool = ctx.Pool(
         processes=int(n_workers),
         maxtasksperchild=1,
+        initializer=_ignore_sigint_in_pool_worker,
     )
     try:
         results = pool.map(_run_job_folder_local_pool, [str(p) for p in job_folders])
@@ -1497,10 +1697,22 @@ def _run_job_folders_in_local_pool(
         pool.close()
         pool.join()
         return results
-    except Exception:
+    except BaseException:
+        # also for KeyboardInterrupt (Control-C), which is not an Exception:
+        # without terminate(), the pool is left in a broken state
         pool.terminate()
         pool.join()
         raise
+
+
+def _ignore_sigint_in_pool_worker():
+    # Control-C is handled by the campaign process (that terminates the pool);
+    # a worker waiting for a job would otherwise print a KeyboardInterrupt
+    # traceback. While a simulation is running, Control-C still stops it: the
+    # Geant4 signal handler is installed when the simulation starts.
+    import signal
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def _render_htcondor_submit_file_lines(job_folders, backend_options):
@@ -1542,69 +1754,6 @@ def _write_htcondor_submit_file(split_root_folder, job_folders, backend_options)
 
 def _extract_htcondor_cluster_id(submit_stdout):
     match = re.search(r"cluster\s+(\d+)", submit_stdout, flags=re.IGNORECASE)
-    if match is None:
-        return None
-    return match.group(1)
-
-
-def _write_slurm_job_folders_file(split_root_folder, job_folders, backend_options):
-    job_folders_path = Path(split_root_folder) / backend_options["job_folders_filename"]
-    job_folders_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(job_folders_path, "w") as output_file:
-        for job_folder in job_folders:
-            output_file.write(f"{Path(job_folder).resolve()}\n")
-    return job_folders_path
-
-
-def _example_render_slurm_submit_script_lines(job_folders_file_path, **kwargs):
-    """Example Slurm submit-script renderer for users and tests.
-
-    The public Slurm backend expects the user to provide a renderer via
-    backend_options["submit_script_renderer"]. This helper remains as a
-    reference template and for internal tests.
-    """
-    script_commands = {
-        "output": "opengate_job_runner.%A_%a.out",
-        "error": "opengate_job_runner.%A_%a.err",
-    }
-    script_commands.update(kwargs.get("script_commands", {}))
-    job_runner_command = kwargs.get("job_runner_command", "opengate_job_runner")
-    lines = ["#!/bin/sh"]
-    lines.extend([f"#SBATCH --{key}={value}" for key, value in script_commands.items()])
-    lines.extend(
-        [
-            "",
-            "set -eu",
-            f'JOB_FOLDERS_FILE="{job_folders_file_path}"',
-            'JOB_FOLDER="$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$JOB_FOLDERS_FILE")"',
-            'cd "$JOB_FOLDER"',
-            f"exec {job_runner_command} . --backend slurm",
-            "",
-        ]
-    )
-    return lines
-
-
-def _write_slurm_submit_script(
-    split_root_folder, job_folders_file_path, backend_options
-):
-    submit_file_path = Path(split_root_folder) / backend_options["submit_filename"]
-    submit_file_path.parent.mkdir(parents=True, exist_ok=True)
-    submit_script_lines = backend_options["submit_script_renderer"](
-        job_folders_file_path,
-        **backend_options.get("submit_script_renderer_kwargs", {}),
-    )
-    submit_file_content = "\n".join([str(line) for line in submit_script_lines])
-    with open(submit_file_path, "w") as output_file:
-        output_file.write(submit_file_content)
-    os.chmod(submit_file_path, 0o755)
-    return submit_file_path
-
-
-def _extract_slurm_job_id(submit_stdout):
-    match = re.search(
-        r"Submitted batch job\s+(\d+)", submit_stdout, flags=re.IGNORECASE
-    )
     if match is None:
         return None
     return match.group(1)
@@ -1674,61 +1823,73 @@ def _submit_job_folders_to_slurm(
     backend_options,
     skipped_completed_jobs,
 ):
-    job_folders_file_path = _write_slurm_job_folders_file(
-        split_root_folder, job_folders, backend_options
-    )
-    submit_file_path = _write_slurm_submit_script(
-        split_root_folder, job_folders_file_path, backend_options
-    )
-    command = [backend_options["submit_binary"]]
-    command.extend(backend_options.get("command_line_args", []))
-    command.append(f"--array=0-{len(job_folders) - 1}")
-    command.append(str(submit_file_path))
-    try:
-        completed_process = subprocess.run(
-            command,
-            cwd=split_root_folder,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError as error:
-        raise GateJobsBackendError(
-            f"Slurm submission command not found: {backend_options['submit_binary']}."
-        ) from error
+    for job_folder in job_folders:
+        command = [backend_options["submit_binary"]]  # -> sbatch
+        command.extend(
+            backend_options.get("command_line_args", [])
+        )  # + set the path to the job folder
+        command[-1] += ",JOBDIR=" + str(job_folder)
+        command.append(str(backend_options["submit_filename"]))  # ->slurm filename
+        try:
+            print(command)
+            completed_process = subprocess.run(
+                command,
+                cwd=split_root_folder,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError as error:
+            raise GateJobsBackendError(
+                f"Slurm submission command not found: {backend_options['submit_binary']}."
+            ) from error
 
-    if completed_process.returncode != 0:
-        raise GateJobsBackendError(
-            "Slurm submission failed.\n"
-            f"Command: {' '.join(command)}\n"
-            f"Return code: {completed_process.returncode}\n"
-            f"stdout:\n{completed_process.stdout}\n"
-            f"stderr:\n{completed_process.stderr}"
-        )
+        if completed_process.returncode != 0:
+            raise GateJobsBackendError(
+                "Slurm submission failed.\n"
+                f"Command: {' '.join(command)}\n"
+                f"Return code: {completed_process.returncode}\n"
+                f"stdout:\n{completed_process.stdout}\n"
+                f"stderr:\n{completed_process.stderr}"
+            )
 
-    status_data = _write_jobs_backend_status(
-        split_root_folder,
-        backend="slurm",
-        status="submitted",
-        submitted_jobs=len(job_folders),
-        skipped_completed_jobs=skipped_completed_jobs,
-        submitted_at=_now_isoformat(),
-        scheduler_job_id=_extract_slurm_job_id(completed_process.stdout),
-        submit_file_path=str(submit_file_path),
-        submit_command=command,
-        submission_stdout=completed_process.stdout,
-        submission_stderr=completed_process.stderr,
-    )
 
-    return {
-        "submit_file_path": str(submit_file_path),
-        "job_folders_file_path": str(job_folders_file_path),
-        "submission_command": command,
-        "submission_stdout": completed_process.stdout,
-        "submission_stderr": completed_process.stderr,
-        "scheduler_job_id": status_data["scheduler_job_id"],
-        "backend_status_path": str(_get_jobs_backend_status_path(split_root_folder)),
-    }
+def _submit_job_folders_to_pbs(
+    split_root_folder,
+    job_folders,
+    backend_options,
+    skipped_completed_jobs,
+):
+    for job_folder in job_folders:
+        command = [backend_options["submit_binary"]]  # -> qsub
+        command.extend(
+            backend_options.get("command_line_args", [])
+        )  # + set the path to the job folder
+        command.append("-v")
+        command.append("JOBDIR=" + str(job_folder))
+        command.append(str(backend_options["submit_filename"]))  # ->pbs filename
+        try:
+            print(command)
+            completed_process = subprocess.run(
+                command,
+                cwd=split_root_folder,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError as error:
+            raise GateJobsBackendError(
+                f"PBS submission command not found: {backend_options['submit_binary']}."
+            ) from error
+
+        if completed_process.returncode != 0:
+            raise GateJobsBackendError(
+                "qsub submission failed.\n"
+                f"Command: {' '.join(command)}\n"
+                f"Return code: {completed_process.returncode}\n"
+                f"stdout:\n{completed_process.stdout}\n"
+                f"stderr:\n{completed_process.stderr}"
+            )
 
 
 def _run_jobs_campaign(job_folders, backend, backend_options):
@@ -1738,13 +1899,30 @@ def _run_jobs_campaign(job_folders, backend, backend_options):
     the selected child jobs are executed after ``jobs_run()`` has detached the
     campaign from the caller process.
     """
-    if backend == "local_sequential":
-        return _run_job_folders_in_local_sequential(job_folders)
+    try:
+        if backend == "local_sequential":
+            return _run_job_folders_in_local_sequential(job_folders)
 
-    if backend == "local_pool":
-        return _run_job_folders_in_local_pool(job_folders, **backend_options)
+        if backend == "local_pool":
+            return _run_job_folders_in_local_pool(job_folders, **backend_options)
+    except KeyboardInterrupt:
+        _mark_running_jobs_as_interrupted(job_folders)
+        raise
 
     raise GateJobsBackendError(f"Unknown jobs backend '{backend}'.")
+
+
+def _run_jobs_campaign_process(job_folders, backend, backend_options):
+    """Target of the detached campaign process (see jobs_run).
+
+    On Control-C, the running jobs are marked as interrupted (by
+    _run_jobs_campaign) and the process exits quietly with the code 130
+    (the caller process reports the interruption).
+    """
+    try:
+        _run_jobs_campaign(job_folders, backend, backend_options)
+    except KeyboardInterrupt:
+        sys.exit(130)
 
 
 def _validate_jobs_backend_options(backend, backend_options):
@@ -1814,52 +1992,45 @@ def _validate_jobs_backend_options(backend, backend_options):
         validated_options["submit_binary"] = str(validated_options["submit_binary"])
         return validated_options
 
-    if backend == "slurm":
+    if backend == "slurm" or backend == "pbs":
         allowed_top_level_keys = {
-            "submit_script_renderer",
-            "submit_script_renderer_kwargs",
             "command_line_args",
             "submit_filename",
-            "job_folders_filename",
             "submit_binary",
         }
         unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
         if len(unknown_keys) > 0:
-            raise GateJobsBackendError(
-                f"The slurm backend received unknown option groups: {sorted(unknown_keys)}."
-            )
+            if backend == "slurm":
+                raise GateJobsBackendError(
+                    f"The slurm backend received unknown option groups: {sorted(unknown_keys)}."
+                )
+            elif backend == "pbs":
+                raise GateJobsBackendError(
+                    f"The pbs backend received unknown option groups: {sorted(unknown_keys)}."
+                )
 
         validated_options = dict(backend_options)
-        validated_options.setdefault("submit_script_renderer_kwargs", {})
         validated_options.setdefault("command_line_args", [])
-        validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
-        validated_options.setdefault("job_folders_filename", SLURM_JOB_FOLDERS_FILENAME)
+        if backend == "slurm":
+            validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
+        elif backend == "pbs":
+            validated_options.setdefault("submit_filename", PBS_SUBMIT_FILENAME)
         validated_options.setdefault("submit_binary", "sbatch")
 
-        if "submit_script_renderer" not in validated_options:
-            raise GateJobsBackendError(
-                "The slurm backend requires a submit_script_renderer callable."
-            )
-        if not callable(validated_options["submit_script_renderer"]):
-            raise GateJobsBackendError(
-                "The slurm backend requires submit_script_renderer to be callable."
-            )
-        if not isinstance(validated_options["submit_script_renderer_kwargs"], dict):
-            raise GateJobsBackendError(
-                "The slurm backend requires submit_script_renderer_kwargs to be a dictionary."
-            )
         if not isinstance(validated_options["command_line_args"], (list, tuple)):
-            raise GateJobsBackendError(
-                "The slurm backend requires command_line_args to be a list or tuple."
-            )
+            if backend == "slurm":
+                raise GateJobsBackendError(
+                    "The slurm backend requires command_line_args to be a list or tuple."
+                )
+            elif backend == "pbs":
+                raise GateJobsBackendError(
+                    "The pbs backend requires command_line_args to be a list or tuple."
+                )
 
         validated_options["command_line_args"] = [
             str(argument) for argument in validated_options["command_line_args"]
         ]
         validated_options["submit_filename"] = str(validated_options["submit_filename"])
-        validated_options["job_folders_filename"] = str(
-            validated_options["job_folders_filename"]
-        )
         validated_options["submit_binary"] = str(validated_options["submit_binary"])
         return validated_options
 
@@ -1977,7 +2148,7 @@ def jobs_run(
             raise GateJobsBackendError(
                 "detach=False is only supported for local jobs backends."
             )
-        submission_summary = _submit_job_folders_to_slurm(
+        _submit_job_folders_to_slurm(
             split_root_folder,
             selected_job_folders,
             backend_options,
@@ -1990,7 +2161,26 @@ def jobs_run(
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
-            **submission_summary,
+        }
+
+    if backend == "pbs":
+        if detach is False:
+            raise GateJobsBackendError(
+                "detach=False is only supported for local jobs backends."
+            )
+        _submit_job_folders_to_pbs(
+            split_root_folder,
+            selected_job_folders,
+            backend_options,
+            len(skipped_completed_jobs),
+        )
+        return {
+            "backend": backend,
+            "manifest_path": str(manifest_path),
+            "campaign_dir": str(split_root_folder),
+            "submitted_jobs": len(selected_job_folders),
+            "skipped_completed_jobs": len(skipped_completed_jobs),
+            "campaign_process_pid": None,
         }
 
     if backend in ("local_sequential", "local_pool"):
@@ -2058,7 +2248,7 @@ def jobs_run(
             # This subprocess is only the campaign orchestrator. Backend-specific
             # job execution happens inside it, potentially with further worker
             # processes or per-job subprocesses depending on the backend.
-            target=_run_jobs_campaign,
+            target=_run_jobs_campaign_process,
             args=(
                 [str(job_folder) for job_folder in selected_job_folders],
                 backend,
@@ -2169,6 +2359,8 @@ class SplitRunMergeController:
                 return "failed"
             if execution_counts.get("running", 0) > 0:
                 return "running"
+            if execution_counts.get("interrupted", 0) > 0:
+                return "interrupted"
             if execution_counts.get("completed", 0) > 0 and execution_counts.get(
                 "completed", 0
             ) == summary_counts.get("total", 0):
@@ -2188,7 +2380,7 @@ class SplitRunMergeController:
 
     def has_finished(self):
         self.refresh()
-        return self.stage in ("completed", "merged", "cleaned", "failed")
+        return self.stage in ("completed", "merged", "cleaned", "failed", "interrupted")
 
     def has_failed(self):
         self.refresh()
@@ -2247,17 +2439,83 @@ class SplitRunMergeController:
         if self._campaign_dir is None:
             fatal("SplitRunMergeController.wait() requires split() to be called first.")
         start_time = time.perf_counter()
-        while True:
-            self.refresh()
-            if self.stage in ("completed", "failed", "merged", "cleaned"):
-                return self._status
-            if timeout is not None and (time.perf_counter() - start_time) > timeout:
-                error = GateJobsBackendError(
-                    f"Timed out while waiting for split jobs in '{self._campaign_dir}'."
-                )
-                self._set_error(error)
-                raise error
-            time.sleep(poll_interval)
+        # one progress bar for all the jobs, if the simulation asks for a
+        # progress bar (and only in a terminal)
+        progress_bar = None
+        if getattr(self.simulation, "progress_bar", False) and sys.stdout.isatty():
+            progress_bar = CampaignProgressBar(self._campaign_dir)
+        try:
+            while True:
+                self.refresh()
+                if progress_bar is not None:
+                    progress_bar.update(self._status.get("jobs_status"))
+                    if self.stage not in ("split", "submitted", "running"):
+                        progress_bar.close()
+                if self.stage == "failed":
+                    warning(
+                        f"Split jobs failed in '{self._campaign_dir}':\n"
+                        f"{self.format_failure_report()}"
+                    )
+                    return self._status
+                if self.stage in ("completed", "merged", "cleaned", "interrupted"):
+                    return self._status
+                if timeout is not None and (time.perf_counter() - start_time) > timeout:
+                    error = GateJobsBackendError(
+                        f"Timed out while waiting for split jobs in '{self._campaign_dir}':\n"
+                        f"{self.format_failure_report()}"
+                    )
+                    self._set_error(error)
+                    raise error
+                time.sleep(poll_interval)
+        except KeyboardInterrupt:
+            if progress_bar is not None:
+                progress_bar.close()
+            self._interrupted_by_user()
+        finally:
+            if progress_bar is not None:
+                progress_bar.close()
+
+    def _interrupted_by_user(self):
+        """Control-C while waiting for the jobs: report and exit (code 130).
+
+        The jobs stop at the same time (same terminal). The jobs still marked
+        as running are marked as interrupted (also done by the campaign
+        process, but it may already be gone). They can be run again with
+        jobs_run(campaign_dir), the completed jobs are kept.
+        """
+        job_folders = []
+        try:
+            with open(self.manifest_path, "r") as f:
+                manifest = load_json(f)
+            job_folders = [
+                self._campaign_dir / j["folder_name"] for j in manifest.get("jobs", [])
+            ]
+        except Exception:
+            pass
+        _mark_running_jobs_as_interrupted(job_folders)
+        self._stage = "interrupted"
+        counts = {}
+        try:
+            counts = jobs_status(self._campaign_dir).get("execution_counts", {})
+        except Exception:
+            pass
+        print(
+            f"\nJobs interrupted by the user (Control-C) in '{self._campaign_dir}': "
+            f"{counts.get('completed', 0)} completed, "
+            f"{counts.get('interrupted', 0)} interrupted. "
+            f"Run the remaining jobs with opengate.jobs_run('{self._campaign_dir}') "
+            f"(the completed jobs are kept)."
+        )
+        sys.exit(130)
+
+    def format_failure_report(self):
+        """Describe the child jobs that did not complete, with their error message."""
+        lines = []
+        if self._status.get("error") is not None:
+            lines.append(f"Controller error: {self._status['error']}")
+        if self._campaign_dir is not None and self.manifest_path.exists():
+            lines.append(format_jobs_failure_report(self._campaign_dir))
+        return "\n".join(lines)
 
     def merge(self, **merge_options):
         if self._campaign_dir is None:
@@ -2318,7 +2576,7 @@ class SplitRunMergeController:
 
         if wait_for_result:
             self.wait(poll_interval=poll_interval, timeout=timeout)
-            if self.stage == "failed":
+            if self.stage in ("failed", "interrupted"):
                 return self
             if merge_after_run:
                 self.merge(**(merge_options or {}))
@@ -2736,7 +2994,15 @@ class JobsMergeManager:
         reference_simulation = _load_master_simulation_from_manifest(
             self.manifest_path, self.manifest
         )
-        differences = self.master_simulation.compare_with(
+        # The reference is the resolved simulation of the campaign, which may
+        # contain helper actors added during the resolution (e.g. by the
+        # FluenceActor). The target is compared after the same resolution, done
+        # on a copy (the target simulation itself is not modified).
+        resolved_target = _clone_simulation_from_dictionary(
+            type(self.master_simulation), self.master_simulation.to_dictionary()
+        )
+        resolved_target.resolve_and_validate_config(context="merge_validation")
+        differences = resolved_target.compare_with(
             reference_simulation, mode="merge_target_compatibility"
         )
         if differences:
@@ -3225,7 +3491,7 @@ def print_jobs_merge_summary(
 from .base import (
     _get_user_info_options,
     find_all_gate_objects,
-    find_all_paths,
+    find_all_file_refs,
 )
 from .managers import create_sim_from_json
 
@@ -3243,7 +3509,9 @@ def _get_simulation_input_files_info(simulation):
                 continue
             options = _get_user_info_options(ui_name, class_name, class_module)
             if options.get("is_input_file") is True:
-                paths = find_all_paths(ui_value)
+                # same detection as the input files transferred to the jobs:
+                # a path can be given as a Path or as a str
+                paths = find_all_file_refs(ui_value)
                 for p in paths:
                     input_files_info.append(
                         {
@@ -3297,6 +3565,43 @@ def _format_bytes(size_bytes):
     else:
         val = size_bytes / (1024 * 1024 * 1024)
         return f"{val:.1f} GB"
+
+
+def format_jobs_failure_report(campaign_dir_or_status):
+    """Describe the child jobs of a campaign that did not complete.
+
+    For each such job, give its status and the error message (with traceback)
+    recorded by the job runner. A job still reported as 'running' while the
+    campaign is over usually means its process died without reporting, e.g.
+    after a native crash.
+    """
+    if isinstance(campaign_dir_or_status, dict):
+        status_data = campaign_dir_or_status
+    else:
+        status_data = jobs_status(campaign_dir_or_status)
+    lines = []
+    for job in status_data.get("jobs", []):
+        execution_status = job.get("execution_status")
+        if execution_status == "completed":
+            continue
+        folder = Path(status_data.get("campaign_dir", ".")) / str(
+            job.get("folder_name")
+        )
+        lines.append(f"Job {job.get('job_id')} [{execution_status}] in {folder}")
+        execution_status_data = job.get("execution_status_data") or {}
+        error_message = execution_status_data.get("error_message")
+        if error_message:
+            lines += ["    " + line for line in str(error_message).splitlines()]
+        elif execution_status is None:
+            lines.append("    The job has not started (no execution status file).")
+        elif execution_status == "running":
+            lines.append(
+                "    No error recorded: the job is still running, or its process "
+                "died without reporting (e.g. a native crash)."
+            )
+    if not lines:
+        return "All jobs completed."
+    return "\n".join(lines)
 
 
 def jobs_status(campaign_dir):
@@ -3371,6 +3676,7 @@ def jobs_status(campaign_dir):
             "completed": 0,
             "failed": 0,
             "skipped": 0,
+            "interrupted": 0,
         },
     }
 
@@ -3418,6 +3724,9 @@ def jobs_status(campaign_dir):
                         pass
 
         missing_input_files = []
+        input_check_error = None
+        # input files found for this job (path -> size), counted once
+        found_input_files = {}
         if folder_exists and metadata_exists and sim_exists:
             try:
                 child_sim = create_sim_from_json(simulation_file)
@@ -3425,32 +3734,41 @@ def jobs_status(campaign_dir):
                 for info in job_input_files:
                     val_str = info["value"]
                     val_path = Path(val_str)
-                    file_found = (
-                        (job_folder / val_path.name).exists()
-                        or (
-                            not val_path.is_absolute()
-                            and (job_folder / val_path).exists()
-                        )
-                        or (
-                            val_path.is_absolute()
-                            and val_path.exists()
-                            and not metadata_exists
-                        )
+                    candidates = [job_folder / val_path.name]
+                    if not val_path.is_absolute():
+                        candidates.append(job_folder / val_path)
+                    found_path = next((c for c in candidates if c.exists()), None)
+                    file_found = found_path is not None or (
+                        val_path.is_absolute()
+                        and val_path.exists()
+                        and not metadata_exists
                     )
+                    if found_path is not None:
+                        try:
+                            found_input_files[found_path.resolve()] = (
+                                found_path.stat().st_size
+                            )
+                        except OSError:
+                            pass
 
                     if not file_found:
                         missing_input_files.append(
                             f"[{info['class_name']}] {info['object_name']} -> {info['attribute']}: {val_str}"
                         )
-            except Exception:
-                pass
+            except Exception as error:
+                # the input files cannot be checked (e.g. the job simulation
+                # cannot be read with this version of opengate): report it
+                input_check_error = f"{type(error).__name__}: {error}"
 
         if not folder_exists:
             job_status = "missing_folder"
+            warning(f"Job {folder_name}: missing job folder at '{job_folder}'")
         elif not metadata_exists:
             job_status = "missing_metadata"
+            warning(f"Job {folder_name}: missing metadata file at '{metadata_file}'")
         elif missing_input_files:
             job_status = "missing_input_file"
+            warning(f"Job {folder_name}: missing input files: {missing_input_files}")
         elif sim_exists:
             job_status = "ready"
         else:
@@ -3481,6 +3799,10 @@ def jobs_status(campaign_dir):
                 "original_run_indices": metadata.get("original_run_indices", []),
                 "folder_size_bytes": folder_size,
                 "folder_size_str": _format_bytes(folder_size),
+                "input_check_error": input_check_error,
+                "number_of_input_files": len(found_input_files),
+                "input_files_size_bytes": sum(found_input_files.values()),
+                "input_files_size_str": _format_bytes(sum(found_input_files.values())),
                 "input_mode": "linked" if has_symlink else "copied",
                 "execution_status_filename": JOB_EXECUTION_STATUS_FILENAME,
                 "execution_status_exists": execution_status_data is not None,

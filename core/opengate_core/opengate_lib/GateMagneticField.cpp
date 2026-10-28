@@ -9,13 +9,8 @@
 
 // constructor
 GateMagneticField::GateMagneticField(G4MagneticField *inner,
-                                     const G4VSolid *solid,
-                                     std::vector<G4ThreeVector> translations,
-                                     std::vector<G4RotationMatrix> rotations,
-                                     double deltaChordMM)
-    : G4MagneticField(), GateFieldBase(solid, std::move(translations),
-                                       std::move(rotations), deltaChordMM),
-      m_inner(inner) {}
+                                     const G4LogicalVolume *logicalVolume)
+    : G4MagneticField(), GateFieldBase(logicalVolume), m_inner(inner) {}
 
 void GateMagneticField::GetFieldValue(const G4double Point[4],
                                       G4double *Bfield) const {

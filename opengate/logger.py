@@ -10,8 +10,35 @@ if sys.getdefaultencoding() != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8")
 
 
-# Remove the default logger configuration
-logger.remove()
+# Remove the default handler of loguru (id 0, to stderr), but keep the handlers
+# that the user may have added: opengate only manages its own handler (#1096).
+try:
+    logger.remove(0)
+except ValueError:
+    pass
+
+# id of the handler used by opengate (one at a time, shared by all simulations)
+_opengate_log_handler_id = None
+
+
+def set_opengate_log_handler(level):
+    """(Re)create the handler used by opengate to print its messages to stdout,
+    with the given level. Only the previous opengate handler is removed, so the
+    handlers added by the user (e.g. logger.add('run.log')) are kept."""
+    global _opengate_log_handler_id
+    if _opengate_log_handler_id is not None:
+        try:
+            logger.remove(_opengate_log_handler_id)
+        except ValueError:
+            pass
+    _opengate_log_handler_id = logger.add(
+        sys.stdout,
+        colorize=True,
+        level=level,
+        format=("{level.icon}<level>{message}</level>"),  # Message formatting
+    )
+    return _opengate_log_handler_id
+
 
 # configure logger
 logger.level("DEBUG", color="<green>")

@@ -4,6 +4,8 @@ import sys
 from typing import Optional
 from pathlib import Path
 
+import itk
+import numpy as np
 import opengate_core as g4
 from box import Box
 
@@ -327,6 +329,12 @@ class ActorOutputBase(GateObject):
             },
         ),
     }
+
+    def configure_like(self, other_obj):
+        # the output must keep belonging to its own actor (see #505)
+        belongs_to = self.belongs_to
+        super().configure_like(other_obj)
+        self.belongs_to = belongs_to
 
     @classmethod
     def get_default_interface_class(cls):
@@ -1430,6 +1438,115 @@ class ActorOutputSingleImageOfHistogram(ActorOutputImageOfHistogram):
     data_container_class = SingleItkImage
 
 
+class ActorOutputRunStackedImage(ActorOutputSingleImage):
+    """
+    Single image whose slices are stacked by run: the slices of run r are
+    [r * n, (r + 1) * n[, with n the number of slices per run (e.g. the energy
+    windows of a DigitizerProjectionActor). All runs are in the same image.
+
+    For the jobs merge, the slices of each local run of a job are added to the
+    slices of the corresponding original run (several jobs may contribute to
+    the same original run when a run is split between jobs). The generic merge
+    would sum the images of the jobs slice by slice, regardless of the runs.
+    """
+
+    def execute_merge(self, source_output, context=None):
+        run_map = None
+        if context is not None and hasattr(context, "get_local_to_original_run_map"):
+            run_map = context.get_local_to_original_run_map()
+        if run_map is None or len(run_map) == 0:
+            raise GateMergeError(
+                f"Cannot merge the run-stacked image output '{self.name}' of actor "
+                f"'{self.belongs_to_actor.name}': the local to original run map of "
+                f"the source job is not available in the merge context."
+            )
+        nb_original_runs = len(self.simulation.run_timing_intervals)
+        load_mode = context.get_load_mode(default="rehydrated")
+        for contribution in context.get_contributions():
+            if contribution.get("mergeable") is not True:
+                continue
+            source_scope = contribution.get("source_scope")
+            item_identifier = contribution.get("item_identifier")
+            if source_scope != "merged":
+                raise GateMergeError(
+                    f"Cannot merge the run-stacked image output '{self.name}' of "
+                    f"actor '{self.belongs_to_actor.name}' per run (source scope "
+                    f"{source_scope!r}): all runs are stacked in one image, only "
+                    f"the merged image can be merged."
+                )
+            try:
+                source_output.load_data(
+                    which="merged", item=item_identifier, load_mode=load_mode
+                )
+                self._merge_run_stacked_item(
+                    source_output, item_identifier, run_map, nb_original_runs
+                )
+            finally:
+                source_output.clear_data(which="merged", item=item_identifier)
+
+    def _merge_run_stacked_item(
+        self, source_output, item_identifier, run_map, nb_original_runs
+    ):
+        source_item = source_output.get_data_container("merged").get_data_item_object(
+            item_identifier
+        )
+        if source_item is None or source_item.data is None:
+            return
+        source_image = source_item.data
+        source_array = itk.array_view_from_image(source_image)
+        nb_local_runs = len(run_map)
+        if source_array.shape[0] % nb_local_runs != 0:
+            raise GateMergeError(
+                f"Cannot merge the run-stacked image output '{self.name}' of actor "
+                f"'{self.belongs_to_actor.name}': the source image has "
+                f"{source_array.shape[0]} slices, not a multiple of its "
+                f"{nb_local_runs} local runs."
+            )
+        n = source_array.shape[0] // nb_local_runs
+        if max(run_map) >= nb_original_runs:
+            raise GateMergeError(
+                f"Cannot merge the run-stacked image output '{self.name}': original "
+                f"run index {max(run_map)} but only {nb_original_runs} original runs."
+            )
+
+        target_item = self.ensure_data_container("merged").get_data_item_object(
+            item_identifier
+        )
+        target_shape = (nb_original_runs * n,) + source_array.shape[1:]
+        if target_item.data is None:
+            target_array = np.zeros(target_shape, dtype=source_array.dtype)
+            number_of_samples = 0
+        else:
+            target_array = itk.array_from_image(target_item.data)
+            number_of_samples = target_item.number_of_samples
+            if target_array.shape != target_shape:
+                raise GateMergeError(
+                    f"Cannot merge the run-stacked image output '{self.name}': the "
+                    f"target image has shape {target_array.shape} while "
+                    f"{target_shape} is expected ({nb_original_runs} runs x {n} "
+                    f"slices)."
+                )
+        for local_run, original_run in enumerate(run_map):
+            target_array[original_run * n : (original_run + 1) * n] += source_array[
+                local_run * n : (local_run + 1) * n
+            ]
+
+        # the image properties (spacing, origin, direction) are the ones of
+        # the first contributing job
+        if target_item.data is None:
+            reference_image = source_image
+        else:
+            reference_image = target_item.data
+        merged_image = itk.image_from_array(target_array)
+        merged_image.SetSpacing(reference_image.GetSpacing())
+        merged_image.SetOrigin(reference_image.GetOrigin())
+        merged_image.SetDirection(reference_image.GetDirection())
+        target_item.set_data(merged_image)
+        target_item.number_of_samples = (
+            number_of_samples + source_item.number_of_samples
+        )
+
+
 class ActorOutputSingleMeanImage(ActorOutputImage):
     data_container_class = SingleMeanItkImage
 
@@ -1949,6 +2066,7 @@ process_cls(ActorOutputImage)
 process_cls(ActorOutputImageOfHistogram)
 process_cls(ActorOutputSingleImage)
 process_cls(ActorOutputSingleImageOfHistogram)
+process_cls(ActorOutputRunStackedImage)
 process_cls(ActorOutputSingleMeanImage)
 process_cls(ActorOutputSingleImageWithVariance)
 process_cls(ActorOutputQuotientImage)

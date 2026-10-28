@@ -5,7 +5,7 @@
 #   See LICENSE.md for further details
 # --------------------------------------------------
 
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.12.0)
 
 # remove warning about project version
 cmake_policy(SET CMP0048 NEW)
@@ -39,6 +39,21 @@ IF (Geant4_qt_FOUND OR Geant4_vis_opengl_x11_FOUND)
     find_package(OpenGL QUIET)
     include_directories(${OPENGL_INCLUDE_DIR})
     add_definitions(-DUSE_VISU=1)
+    # GateImageBox draws image slices with the Geant4 OpenGL scene handler,
+    # which is a private Geant4 header: it is only available when building
+    # against a Geant4 build tree, not an installed Geant4 (see #800).
+    set(GATE_G4_OPENGL_PRIVATE_HEADERS OFF)
+    foreach (dir ${Geant4_INCLUDE_DIRS})
+        IF (EXISTS "${dir}/private/G4OpenGLSceneHandler.hh")
+            set(GATE_G4_OPENGL_PRIVATE_HEADERS ON)
+        ENDIF ()
+    endforeach ()
+    IF (GATE_G4_OPENGL_PRIVATE_HEADERS)
+        message(STATUS "OPENGATE - image volumes are displayed with their slices in the OpenGL visualisation")
+        add_definitions(-DUSE_G4_OPENGL_PRIVATE_HEADERS=1)
+    ELSE ()
+        message(STATUS "OPENGATE - Geant4 private OpenGL headers not found (installed Geant4): image volumes are displayed as plain boxes")
+    ENDIF ()
 ELSE ()
     message(STATUS "OPENGATE without Geant4 visualisation")
     add_definitions(-DUSE_VISU=0)
@@ -73,7 +88,7 @@ endif (ITK_FOUND)
 add_subdirectory(external/fmt EXCLUDE_FROM_ALL)
 
 # Create the geant4 python module
-file(GLOB all_SRCS
+file(GLOB all_SRCS CONFIGURE_DEPENDS
         "${PROJECT_SOURCE_DIR}/opengate_core/g4_bindings/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/digitizer/*.cpp"

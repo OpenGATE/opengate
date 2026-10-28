@@ -141,6 +141,21 @@ def go(
     files_to_run_part1, files_to_run_part2_depending_on_part1 = (
         helpers.resolve_dependencies(files_to_run, path_tests_src)
     )
+    # tests that start child simulation jobs run last, almost alone (see below)
+    files_to_run_part3_jobs = helpers.select_jobs_tests(
+        files_to_run_part1 + files_to_run_part2_depending_on_part1,
+        files_to_run_part2_depending_on_part1,
+        path_tests_src,
+    )
+    files_to_run_part1 = [
+        f for f in files_to_run_part1 if f not in files_to_run_part3_jobs
+    ]
+    files_to_run_part2_depending_on_part1 = [
+        f
+        for f in files_to_run_part2_depending_on_part1
+        if f not in files_to_run_part3_jobs
+    ]
+
     if len(files_to_run_part2_depending_on_part1) > 0:
         print(
             f"Found test cases with mutual dependencies, going to split evaluation into two sets. {len(files_to_run_part2_depending_on_part1)} tests will start right after first eval round."
@@ -148,28 +163,38 @@ def go(
     runs_status_info = helpers.execute_test_batch(
         files_to_run_part1, no_log_on_fail, processes_run, num_processes
     )
+    files_run = list(files_to_run_part1)
 
     if len(files_to_run_part2_depending_on_part1) > 0:
         print(
             "Now starting evaluation of tests depending on results of previous tests:"
         )
-        runs_status_info_part2 = helpers.execute_test_batch(
+        runs_status_info += helpers.execute_test_batch(
             files_to_run_part2_depending_on_part1,
             no_log_on_fail,
             processes_run,
             num_processes,
         )
+        files_run += files_to_run_part2_depending_on_part1
 
-        dashboard_dict, failure = helpers.generate_summary_report(
-            runs_status_info + runs_status_info_part2,
-            files_to_run_part1 + files_to_run_part2_depending_on_part1,
-            no_log_on_fail,
+    if len(files_to_run_part3_jobs) > 0:
+        # These tests start child simulations in separate processes and wait for
+        # them with a timeout. Run in parallel with all the other tests, the
+        # children compete for the CPU and may miss the timeout: run them last,
+        # with only a few of them at the same time.
+        n = helpers.number_of_processes_for_jobs_tests(processes_run, num_processes)
+        print(
+            f"Now starting evaluation of {len(files_to_run_part3_jobs)} tests "
+            f"running child simulation jobs ({n} at a time):"
         )
+        runs_status_info += helpers.execute_test_batch(
+            files_to_run_part3_jobs, no_log_on_fail, processes_run, n
+        )
+        files_run += files_to_run_part3_jobs
 
-    else:
-        dashboard_dict, failure = helpers.generate_summary_report(
-            runs_status_info, files_to_run_part1, no_log_on_fail
-        )
+    dashboard_dict, failure = helpers.generate_summary_report(
+        runs_status_info, files_run, no_log_on_fail
+    )
     end = time.time()
     run_time = timedelta(seconds=end - start)
     print(f"Evaluation took in total:   {run_time.seconds /60 :5.1f} min  ")

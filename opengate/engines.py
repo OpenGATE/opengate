@@ -12,7 +12,6 @@ from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
 from .physics import (
-    UserLimitsPhysics,
     translate_particle_name_gate_to_geant4,
     cut_particle_names,
     create_g4_optical_properties_table,
@@ -20,6 +19,7 @@ from .physics import (
 )
 from .base import GateSingletonFatal
 from .logger import logger
+from .utility import g4_units
 
 
 def _translate_track_structure_em_physics_to_geant4(track_structure_em_physics):
@@ -177,7 +177,10 @@ class SourceEngine(EngineBase):
         # Copy visualization parameters
         for k, v in self.simulation_engine.simulation.user_info.items():
             if "visu" in k:
-                self.source_manager_options[k] = v
+                # the visu filename may be a Path, the C++ side needs a str
+                self.source_manager_options[k] = (
+                    str(v) if isinstance(v, os.PathLike) else v
+                )
 
         # Copy verbosity parameters
         for k, v in self.simulation_engine.simulation.user_info.items():
@@ -222,7 +225,7 @@ class SourceEngine(EngineBase):
             interval = float(
                 sim.progress_hook_interval
                 if sim.progress_hook_interval is not None
-                else 30.0  # sec
+                else 30.0 * g4_units.s  # (Geant4 units, as progress_hook_interval)
             )
             target_manager = (
                 self.g4_thread_source_managers[0]
@@ -305,6 +308,9 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
+        # Translated names of the particles requested for the user limits;
+        # checked once Geant4 has created the particles (see #1163).
+        self.g4_user_limits_particles = []
 
         # We need to keep a reference to physics constructors
         # implemented on the python side
@@ -335,6 +341,7 @@ class PhysicsEngine(EngineBase):
         self.g4_optical_material_tables = {}
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
+        self.g4_user_limits_particles = []
 
     def release_optical_surface_g4_references(self):
         for optical_surface in self.physics_manager.optical_surfaces.values():
@@ -390,6 +397,7 @@ class PhysicsEngine(EngineBase):
 
     def initialize_after_runmanager(self):
         """ """
+        self.check_user_limits_particles()
         # Cuts need to be set *after*
         # G4RunManager.Initialize() is called.
         # Reason: The Initialize() sequence would otherwise override
@@ -542,7 +550,7 @@ class PhysicsEngine(EngineBase):
                         for mat in g4.G4Material.GetMaterialTable:
                             if str(mat.GetName()) == i:
                                 mat_prop = load_optical_properties_from_xml(
-                                    self.physics_manager.optical_properties_file,
+                                    self.physics_manager.get_optical_properties_file(),
                                     mat.GetName(),
                                 )
                                 if mat_prop is not None:
@@ -557,11 +565,11 @@ class PhysicsEngine(EngineBase):
                                 else:
                                     self.simulation_engine.warn_user(
                                         f"Could not load the optical material properties for material {mat.GetName()} "
-                                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}"
+                                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}"
                                     )
                 material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
-                    self.physics_manager.optical_properties_file, material_name
+                    self.physics_manager.get_optical_properties_file(), material_name
                 )
                 if material_properties is not None:
                     self.g4_optical_material_tables[str(material_name)] = (
@@ -573,7 +581,7 @@ class PhysicsEngine(EngineBase):
                 else:
                     self.simulation_engine.simulation.warn_user(
                         f"Could not load the optical material properties for material {material_name} "
-                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
+                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}."
                     )
 
     @requires_fatal("physics_manager")
@@ -606,11 +614,64 @@ class PhysicsEngine(EngineBase):
             if r.need_user_special_cut() is True:
                 need_user_special_cut = True
 
-        if need_step_limiter or need_user_special_cut:
-            user_limits_physics = UserLimitsPhysics()
-            user_limits_physics.physics_engine = self
-            self.g4_augmented_physics_list.RegisterPhysics(user_limits_physics)
-            self.gate_physics_constructors.append(user_limits_physics)
+        if not (need_step_limiter or need_user_special_cut):
+            return
+
+        ui = self.user_info_physics_manager
+        if len(ui.user_limits_particles) == 0:
+            self.physics_manager.warn_user(
+                "No particles selected to which UserLimits (incl. step limiter) will be applied. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
+            )
+
+        # process user input parameters
+        flag_all = "all" in ui.user_limits_particles
+        flag_all_charged = "all_charged" in ui.user_limits_particles
+        particles_to_consider = [
+            translate_particle_name_gate_to_geant4(p)
+            for p in ui.user_limits_particles
+            if p not in ["all", "all_charged"]
+        ]
+
+        if not (flag_all or flag_all_charged or particles_to_consider):
+            return
+
+        # The particle names cannot be checked yet: Geant4 creates the
+        # particles in G4RunManager.Initialize(), i.e. after this method.
+        # They are checked on the main thread in check_user_limits_particles()
+        # once the particle table is complete, so that checking does not
+        # happen on the Geant4 worker threads (#1163).
+        self.g4_user_limits_particles = particles_to_consider
+
+        # The physics constructor is implemented in C++: Geant4 calls
+        # ConstructProcess on each worker thread, without the GIL, so the
+        # initialisation cannot block on the interpreter (#1163). The physics
+        # list owns the object and deletes it with itself.
+        user_limits_physics = g4.GateUserLimitsPhysics(
+            particles_to_consider, flag_all, flag_all_charged
+        )
+        self.g4_augmented_physics_list.RegisterPhysics(user_limits_physics)
+
+    def check_user_limits_particles(self):
+        """Check the requested user-limit particles once Geant4 has built them.
+
+        This must run after G4RunManager.Initialize(), which is when the
+        particle table is populated. Doing it here, on the main thread, keeps
+        the check out of the worker threads which construct the physics (#1163).
+        """
+        if len(self.g4_user_limits_particles) == 0:
+            return
+
+        known_g4_particle_names = {
+            p.GetParticleName()
+            for p in g4.G4ParticleTable.GetParticleTable().GetParticleList()
+        }
+        wrong_particle_names = [
+            p for p in self.g4_user_limits_particles if p not in known_g4_particle_names
+        ]
+        if len(wrong_particle_names) > 0:
+            fatal(
+                f"UserLimits were requested for the following unknown particles: {wrong_particle_names}"
+            )
 
     @requires_fatal("physics_manager")
     def initialize_ionisation_options(self):
@@ -962,6 +1023,7 @@ class ActorEngine(EngineBase):
         for actor in self.actor_manager.sorted_actors:
             logger.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
             # self.simulation_engine.action_engine.register_all_actions(actor)
+            actor.ensure_cpp_part()
             actor.initialize()
             # warning: the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
@@ -1054,8 +1116,13 @@ class ActorEngine(EngineBase):
 
     def stop_simulation(self):
         # consider the priority value of the actors
+        # Phase 1: Complete all Geant4 / C++ simulation hooks and flush files
         for actor in self.actor_manager.sorted_actors:
             actor.EndSimulationAction()
+
+        # Phase 2: Python-side output finalization, metadata capture, and image transfer
+        for actor in self.actor_manager.sorted_actors:
+            actor.finalize_simulation()
 
 
 class FilterEngine(EngineBase):
@@ -1180,21 +1247,33 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self._is_constructed = True
         return self.volume_manager.world_volume.g4_physical_volume
 
-    def check_overlaps(self, verbose):
+    def check_overlaps(self, verbose, max_copies):
         for volume in self.volume_manager.volumes.values():
             if volume not in self.volume_manager.all_world_volumes:
                 for pw in volume.g4_physical_volumes:
+                    # parametrised volumes: each copy is checked against all the
+                    # others, so the cost grows with the square of the number of copies
+                    n = pw.GetMultiplicity()
+                    if isinstance(pw, g4.G4PVParameterised) and n > max_copies:
+                        logger.info(
+                            f'Overlaps of the volume "{volume.name}" are not checked: '
+                            f"{n} copies, more than "
+                            f"check_volumes_overlap_max_copies = {max_copies}."
+                        )
+                        continue
                     try:
                         b = pw.CheckOverlaps(1000, 0, verbose, 1)
-                        if b:
-                            fatal(
-                                f'Some volumes overlap with the volume "{volume.name}". \n'
-                                f"Use Geant4's verbose output to know which ones. \n"
-                                f"Aborting."
-                            )
-                    # FIXME: What causes the exceptions?
-                    except:
-                        warning(f"Could not check overlap for volume {volume.name}.")
+                    except Exception as e:
+                        warning(
+                            f'Could not check overlap for volume "{volume.name}": {e}'
+                        )
+                        continue
+                    if b:
+                        fatal(
+                            f'Some volumes overlap with the volume "{volume.name}". \n'
+                            f"Use Geant4's verbose output to know which ones. \n"
+                            f"Aborting."
+                        )
 
     def ConstructSDandField(self):
         """
@@ -1205,13 +1284,26 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             self.volume_manager.world_volume.name,
         )
 
-        for field in self.simulation_engine.simulation.volume_manager.fields.values():
-            for volume_name in field.attached_to:
-                volume_obj = self.volume_manager.get_volume(volume_name)
-                volume_obj.g4_field_manager = field.create_field_manager(volume_obj)
-                volume_obj.g4_logical_volume.SetFieldManager(
-                    volume_obj.g4_field_manager, True
-                )
+        # Fields are attached with forceToAllDaughters=True, so the order of declaration
+        # matters. Assign the outermost volumes first, so that a field attached to a
+        # deeper volume always wins over one inherited from an ancestor,
+        # whatever order the user happened to add the fields in.
+        field_assignments = [
+            (field, volume_name)
+            for field in self.simulation_engine.simulation.volume_manager.fields.values()
+            for volume_name in field.attached_to
+        ]
+        field_assignments.sort(
+            key=lambda assignment: len(
+                self.volume_manager.get_volume(assignment[1]).ancestor_volumes
+            )
+        )
+        for field, volume_name in field_assignments:
+            volume_obj = self.volume_manager.get_volume(volume_name)
+            volume_obj.g4_field_manager = field.create_field_manager(volume_obj)
+            volume_obj.g4_logical_volume.SetFieldManager(
+                volume_obj.g4_field_manager, True
+            )
 
     def get_volume(self, name):
         return self.volume_manager.get_volume(name)
@@ -1292,7 +1384,7 @@ class VisualisationEngine(EngineBase):
 
     def initialize_visualisation_vrml(self):
         if self.simulation.visu_filename is not None:
-            os.environ["G4VRMLFILE_FILE_NAME"] = self.simulation.visu_filename
+            os.environ["G4VRMLFILE_FILE_NAME"] = str(self.simulation.visu_filename)
         else:
             self.current_visu_filename = f"gate_visu_{os.getpid()}.wrl"
             os.environ["G4VRMLFILE_FILE_NAME"] = self.current_visu_filename
@@ -1317,6 +1409,32 @@ class VisualisationEngine(EngineBase):
                 pass
 
 
+class UserHookLog(Box):
+    """Information stored by user hook functions, as named entries.
+
+    In a hook function:
+        simulation_engine.user_hook_log["my_entry"] = value
+    After the run:
+        sim.user_hook_log["my_entry"]  (or sim.user_hook_log.my_entry)
+
+    The log used to be a list: append() and extend() are kept for backward
+    compatibility (deprecated); they store the values under the names
+    'entry_0', 'entry_1', ...
+    """
+
+    def append(self, value):
+        warning(
+            "user_hook_log is now a dictionary: use "
+            "simulation_engine.user_hook_log['my_entry'] = value instead of append(). "
+            f"The value is stored as 'entry_{len(self)}'."
+        )
+        self[f"entry_{len(self)}"] = value
+
+    def extend(self, values):
+        for value in values:
+            self.append(value)
+
+
 class SimulationOutput:
     """
     FIXME
@@ -1330,7 +1448,7 @@ class SimulationOutput:
         self.pid = os.getpid()
         self.ppid = os.getppid()
         self.current_random_seed = None
-        self.user_hook_log = []
+        self.user_hook_log = UserHookLog()
         self.warnings = None
 
     def __str__(self):
@@ -1466,9 +1584,8 @@ class SimulationEngine(GateSingletonFatal):
         self.user_hook_after_init = simulation.user_hook_after_init
         self.user_hook_after_init_arg = simulation.user_hook_after_init_arg
         self.user_hook_after_run = simulation.user_hook_after_run
-        # a list to store short log messages
-        # produced by hook function such as user_hook_after_init
-        self.user_hook_log = []  # FIXME: turn this into dictionary
+        # named information stored by hook functions such as user_hook_after_init
+        self.user_hook_log = UserHookLog()
 
     def close_engines(self):
         if self.volume_engine:
@@ -1925,7 +2042,9 @@ class SimulationEngine(GateSingletonFatal):
         self.initialize_g4_verbose()
 
         # check
-        self.volume_engine.check_overlaps(verbose)
+        self.volume_engine.check_overlaps(
+            verbose, self.simulation.check_volumes_overlap_max_copies
+        )
 
         # put back verbosity
         self.simulation.g4_verbose = b

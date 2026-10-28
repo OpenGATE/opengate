@@ -22,8 +22,8 @@
    use Parallel Geometries."
 */
 
-#define FILLF [=](GateVDigiAttribute * att, G4Step * step)
-#define FILLFS [=](GateVDigiAttribute * att, G4Step *)
+#define FILLF [=](GateVDigiAttribute *att, G4Step *step)
+#define FILLFS [=](GateVDigiAttribute *att, G4Step *)
 
 void GateDigiAttributeManager::InitializeAllDigiAttributes() {
 

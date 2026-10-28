@@ -48,6 +48,11 @@ The SimulationStatisticsActor actor is a very basic tool that allows counting th
 
 In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
 
+- ``duration`` is the computing time of the event loop, and ``init`` the time before the first event. When statistics are merged, e.g. the outputs of several jobs, both are summed: they are then the total computing time of all jobs, and the speeds are those of one job.
+- ``jobs`` is the number of simulations (jobs) merged in the statistics (1 for a simulation that is not split).
+- ``timespan`` is the wall-clock time from ``start_time`` to ``stop_time`` (known to the second). For merged outputs, it goes from the first start to the last stop, so for jobs run in parallel it is much shorter than ``duration``. ``pps_timespan`` is the number of primaries per second of ``timespan``: for jobs run in parallel, the speed of the whole campaign (``pps`` is the speed of one job).
+- ``sim_start_time`` and ``sim_stop_time`` are the simulated time covered (the run timing intervals); the statistics of each run contain the simulated time of that run.
+
 
 Reference
 ~~~~~~~~~
@@ -371,8 +376,9 @@ For leptons and ordinary protons the two are identical. They diverge only when a
 
     sim.run()
     print(charge)
-    print(f"nominal: {charge.deposited_nominal_charge} e")
-    print(f"dynamic: {charge.deposited_dynamic_charge} e")
+    data = charge.user_output.charge.merged_data
+    print(f"nominal: {data.deposited_nominal_charge} e")
+    print(f"dynamic: {data.deposited_dynamic_charge} e")
 
 
 Refer to the test files
@@ -386,6 +392,61 @@ for examples covering stopping electrons, stopping positrons, neutral beams, tra
 .. note::
 
    For repeated volume placements, the actor will score the total charge deposited across all instances of the volume.
+
+Statistical uncertainty
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The actor also provides a history-by-history estimate of the uncertainty on the deposited charge.
+
+After the simulation, the statistics are exposed on the actor's output object (``charge.user_output.charge``) as two dictionaries, ``nominal_charge_statistics`` and ``dynamic_charge_statistics``, one for each accumulated quantity. Each contains:
+
+  - ``mean``: mean net deposited charge per event, ``Sum x / N``.
+  - ``std``: sample standard deviation of the per-event charge (Bessel-corrected).
+  - ``sem``: standard error of the mean, ``std / sqrt(N)``.
+  - ``total``: total net charge, ``Sum x`` (identical to ``merged_data.deposited_nominal_charge`` / ``merged_data.deposited_dynamic_charge``).
+  - ``total_uncertainty``: absolute uncertainty on ``total``, i.e. the standard deviation of the sum, ``sqrt(N) * std = N * sem``.
+  - ``relative_uncertainty``: ``total_uncertainty / |total|``.
+
+.. code-block:: python
+
+    charge = sim.add_actor("DepositedChargeActor", "charge")
+    charge.attached_to = target.name
+
+    sim.run()
+
+    stats = charge.user_output.charge.nominal_charge_statistics
+    print(f"total charge: {stats['total']} +/- {stats['total_uncertainty']} e")
+    print(f"relative uncertainty: {stats['relative_uncertainty']:.3%}")
+
+The test ``test099_deposited_charge_actor_uncertainty.py`` cross-checks it against an explicit batch method.
+
+The results of the actor evaluation are held in the actor's ``user_output`` attribute, under the ``charge`` key. The raw totals are in ``charge.user_output.charge.merged_data`` and the statistics are the ``nominal_charge_statistics`` / ``dynamic_charge_statistics`` properties of the same output object. The output can optionally be written to disk as JSON by setting an output filename:
+
+.. code-block:: python
+
+    charge.output_filename = "deposited_charge.json"  # written to the simulation output_dir
+
+
+Multiple runs
+~~~~~~~~~~~~~
+
+If the simulation has several runs, the charge is scored independently for each run and, by default, accumulated into a single merged result covering all runs. The events of all runs are pooled into one set of moments, so ``merged_data`` and the ``nominal_charge_statistics`` / ``dynamic_charge_statistics`` properties always describe the whole simulation.
+
+You can keep the statistics of each individual run by setting ``keep_data_per_run = True``:
+
+.. code-block:: python
+
+    charge.user_output.charge.keep_data_per_run = True
+
+    sim.run()
+
+    out = charge.user_output.charge
+    merged = out.get_data(which="merged")          # accumulated over all runs
+    run0 = out.get_data(which=0)                    # statistics of run 0
+    stats_run0 = out.charge_statistics("nominal", which=0)
+
+The per-run raw moments are accessible using ``get_data(which=run_index)`` and the corresponding history-by-history statistics with ``charge_statistics(kind, which=run_index)``. When the output is written to disk, the merged result is written to the base filename and each kept run to a ``..._run<N>`` file.
+
 
 Reference
 ~~~~~~~~~
@@ -453,6 +514,11 @@ Here is a classical way to use the TLEDoseActor:
 
 Refer to the ``test081_tle_*`` tests in ``opengate/tests/src/actors`` for
 more details.
+
+.. seealso::
+
+   For an application combining ``TLEDoseActor`` with particle splitting for fast internal dosimetry and dose rate calculation, see :ref:`dose_rate_vrt_label`.
+
 
 Reference
 ~~~~~~~~~

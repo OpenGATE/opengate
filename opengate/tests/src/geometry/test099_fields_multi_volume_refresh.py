@@ -2,8 +2,9 @@
 """
 Test 099 - field attached to two volumes, dynamic geometry between runs.
 
-Verifies that refresh_transforms() updates the GateMagneticField transform
-cache for every volume the field is attached to.
+Verifies that a field attached to several volumes follows each volume's own
+placement, including when one of them is moved by a dynamic parametrisation
+between runs.
 
 Setup:
     Two boxes share one UniformMagneticField with B along local +Y (3 T).
@@ -25,6 +26,7 @@ Checks:
 
 """
 
+import pathlib
 import numpy as np
 import uproot
 from scipy.spatial.transform import Rotation
@@ -57,7 +59,9 @@ VISU = False
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     sim = gate.Simulation()
     sim.g4_verbose = False
@@ -199,7 +203,7 @@ if __name__ == "__main__":
     print(f"\nbox1 run0 deflects in -X: {ok_r0b1}")
     print(f"box2 run0 deflects in -X: {ok_r0b2}")
     print(f"box2 run1 deflects in -X (unchanged): {ok_r1b2}")
-    print(f"box1 run1 deflects in -Y (verifies refresh): {ok_r1b1}")
+    print(f"box1 run1 deflects in -Y (follows rotated volume): {ok_r1b1}")
 
     is_ok = ok_r0b1 and ok_r0b2 and ok_r1b2 and ok_r1b1
     utility.test_ok(is_ok)

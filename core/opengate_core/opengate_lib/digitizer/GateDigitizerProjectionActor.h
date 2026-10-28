@@ -67,7 +67,11 @@ protected:
   void ProcessSlice(size_t slice, size_t channel) const;
   void ScoreSquaredValue(const ImageType::IndexType &index,
                          int current_event_id, double value) const;
-  void FlushSquaredValues() const;
+  ImageType::RegionType GetRunRegion(int run_id) const;
+  void FlushSquaredValues(const ImageType::RegionType &region) const;
+  void MergeLocalImageToGlobal(const ImageType::Pointer &local_image,
+                               const ImageType::Pointer &global_image,
+                               const ImageType::RegionType &region) const;
 
   G4ThreeVector fPreviousTranslation;
   G4RotationMatrix fPreviousRotation;
@@ -76,8 +80,10 @@ protected:
   struct threadLocalT {
     std::vector<std::vector<G4ThreeVector> *> fInputPos;
     std::vector<std::vector<double> *> fInputWeights;
-    ImageType::Pointer fSquaredTempImage;
-    ImageIDType::Pointer fLastEventIdImage;
+    ImageType::Pointer fLocalImage = nullptr;
+    ImageType::Pointer fLocalSquaredImage = nullptr;
+    ImageType::Pointer fSquaredTempImage = nullptr;
+    ImageIDType::Pointer fLastEventIdImage = nullptr;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

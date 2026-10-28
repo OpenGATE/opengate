@@ -145,9 +145,10 @@ def create_electron_flash_simulation(paths, passive_collimation, fantom):
     return sim
 
 
-def analyze_dose(path_reference_dose, path_test_dose, tolerance=0.03):
-    reference_pdd = fun.obtain_pdd_from_image(path_reference_dose)
-    test_pdd = fun.obtain_pdd_from_image(path_test_dose)
+def analyze_dose(path_reference_dose, path_test_dose, tolerance=0.03, mean_size=10):
+    # mean_size: side (in voxels) of the central square where the PDD is computed
+    reference_pdd = fun.obtain_pdd_from_image(path_reference_dose, mean_size=mean_size)
+    test_pdd = fun.obtain_pdd_from_image(path_test_dose, mean_size=mean_size)
     is_ok, mae = fun.evaluate_pdd_similarity(reference_pdd, test_pdd, tolerance)
     return (is_ok, mae)
 

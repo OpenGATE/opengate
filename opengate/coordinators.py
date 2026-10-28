@@ -1,18 +1,26 @@
 from pathlib import Path
 
 from .exception import GateMergeError
-from .rootio import RootMergeFileWriter
 
 
 class _CoordinatorOutputMergeContext:
     """Minimal output-scoped execution context consumed by ActorOutput classes."""
 
-    def __init__(self, contributions, load_mode="rehydrated"):
+    def __init__(self, contributions, load_mode="rehydrated", source_info=None):
         self._contributions = list(contributions)
         self._load_mode = load_mode
+        self._source_info = dict(source_info) if source_info is not None else {}
 
     def get_contributions(self):
         return self._contributions
+
+    def get_source_info(self):
+        return self._source_info
+
+    def get_local_to_original_run_map(self):
+        """Original run index of each local run of the source job (None if unknown)."""
+        run_map = self._source_info.get("local_to_original_run_map")
+        return None if run_map is None else list(run_map)
 
     def get_load_mode(self, default="rehydrated"):
         return self._load_mode if self._load_mode is not None else default
@@ -87,7 +95,10 @@ class StandardMergeCoordinator:
                 try:
                     target_output.execute_merge(
                         source_output,
-                        context=_CoordinatorOutputMergeContext(contributions),
+                        context=_CoordinatorOutputMergeContext(
+                            contributions,
+                            source_info=self._source_infos.get(job_index),
+                        ),
                     )
                 except Exception as error:
                     if isinstance(error, GateMergeError):
@@ -192,10 +203,15 @@ class RootMergeCoordinator:
                     source_output = source_actor.user_output[output_name]
                     target_output.execute_merge(
                         source_output,
-                        context=_CoordinatorOutputMergeContext(contributions),
+                        context=_CoordinatorOutputMergeContext(
+                            contributions,
+                            source_info=self._source_infos.get(job_index),
+                        ),
                     )
 
     def finalize_merge(self):
+        from .rootio import RootMergeFileWriter
+
         for output_path, grouped_outputs in self._root_output_groups.items():
             writer = RootMergeFileWriter(output_path)
             writer.open()

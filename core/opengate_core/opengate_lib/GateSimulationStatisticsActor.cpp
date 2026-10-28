@@ -7,6 +7,7 @@
 
 #include "GateSimulationStatisticsActor.h"
 #include "GateHelpersDict.h"
+#include <algorithm>
 #include <chrono>
 
 G4Mutex GateSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;
@@ -19,6 +20,7 @@ GateSimulationStatisticsActor::GateSimulationStatisticsActor(
   fActions.insert("StartSimulationAction");
   fActions.insert("BeginOfRunAction");
   fActions.insert("BeginOfEventAction");
+  fActions.insert("EndOfEventAction");
   fActions.insert("PreUserTrackingAction");
   fActions.insert("SteppingAction");
   fActions.insert("EndOfRunAction");
@@ -28,6 +30,7 @@ GateSimulationStatisticsActor::GateSimulationStatisticsActor(
   fTrackTypesFlag = false;
   fInitDuration = 0;
   fStartRunTimeIsSet = false;
+  fEventTimesAreSet = false;
 }
 
 GateSimulationStatisticsActor::~GateSimulationStatisticsActor() = default;
@@ -52,6 +55,7 @@ void GateSimulationStatisticsActor::StartSimulationAction() {
   // the (relatively) high time needed to start all threads.
   fStartTime = std::chrono::system_clock::now();
   fStartRunTimeIsSet = false;
+  fEventTimesAreSet = false;
 
   // initialise the counts
   fCounts["runs"] = 0;
@@ -125,6 +129,7 @@ void GateSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
     data.fTrackCount = 0;
     data.fStepCount = 0;
     data.fTrackTypes.clear();
+    data.fFirstEventIsSet = false;
   }
   // Dedicated per-run counters. These are reset for every run and merged into
   // the per-run storage only.
@@ -133,6 +138,18 @@ void GateSimulationStatisticsActor::BeginOfRunAction(const G4Run *run) {
   data.fCurrentRunTrackCount = 0;
   data.fCurrentRunStepCount = 0;
   data.fCurrentRunTrackTypes.clear();
+}
+
+void GateSimulationStatisticsActor::BeginOfEventAction(const G4Event *) {
+  threadLocal_t &data = threadLocalData.Get();
+  if (!data.fFirstEventIsSet) {
+    data.fFirstEventStart = std::chrono::system_clock::now();
+    data.fFirstEventIsSet = true;
+  }
+}
+
+void GateSimulationStatisticsActor::EndOfEventAction(const G4Event *) {
+  threadLocalData.Get().fLastEventEnd = std::chrono::system_clock::now();
 }
 
 void GateSimulationStatisticsActor::PreUserTrackingAction(
@@ -182,6 +199,18 @@ void GateSimulationStatisticsActor::EndOfSimulationWorkerAction(
   // exactly as before. Per-run counters are handled in EndOfRunAction().
   G4AutoLock mutex(&GateSimulationStatisticsActorMutex);
   threadLocal_t &data = threadLocalData.Get();
+  // first event start and last event end, over all threads
+  if (data.fFirstEventIsSet) {
+    if (!fEventTimesAreSet) {
+      fFirstEventStartTime = data.fFirstEventStart;
+      fLastEventEndTime = data.fLastEventEnd;
+      fEventTimesAreSet = true;
+    } else {
+      fFirstEventStartTime =
+          std::min(fFirstEventStartTime, data.fFirstEventStart);
+      fLastEventEndTime = std::max(fLastEventEndTime, data.fLastEventEnd);
+    }
+  }
   fCounts["runs"] += data.fRunCount;
   fCounts["events"] += data.fEventCount;
   fCounts["tracks"] += data.fTrackCount;
@@ -226,14 +255,23 @@ int GateSimulationStatisticsActor::EndOfRunActionMasterThread(int run_id) {
 void GateSimulationStatisticsActor::EndSimulationAction() {
   // Called when the simulation end (only by the master thread)
   fStopTime = std::chrono::system_clock::now();
-  fDuration =
-      static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(
-                              fStopTime - fStartRunTime)
-                              .count());
-  fInitDuration =
-      static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(
-                              fStartRunTime - fStartTime)
-                              .count());
+  // The duration is the time of the event loop only: from the start of the
+  // first event to the end of the last one (over all threads and runs). It
+  // excludes the initialisation of the worker threads and the work done by
+  // the actors at the beginning and end of the runs, so it is proportional to
+  // the number of events (#1086). 'init' is the time before the first event.
+  auto begin = fStartRunTime;
+  auto end = fStopTime;
+  if (fEventTimesAreSet) {
+    begin = fFirstEventStartTime;
+    end = fLastEventEndTime;
+  }
+  fDuration = static_cast<double>(
+      std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+          .count());
+  fInitDuration = static_cast<double>(
+      std::chrono::duration_cast<std::chrono::microseconds>(begin - fStartTime)
+          .count());
   fDuration = fDuration * CLHEP::microsecond;
   fInitDuration = fInitDuration * CLHEP::microsecond;
   fCountsD["duration"] = fDuration;

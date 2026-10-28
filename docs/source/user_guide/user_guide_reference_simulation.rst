@@ -54,6 +54,14 @@ GATE 10 can visualize your simulation is different ways, namely using the native
 
 .. autoproperty:: opengate.Simulation.visu_type
 
+To check which visualisation types work on your computer, run:
+
+.. code-block:: bash
+
+    opengate_check_visu
+
+It writes a VRML and a GDML file, starts a Geant4 Qt session and creates the Qt OpenGL viewer, and checks that ``pyvista`` and ``pyg4ometry`` (the viewers of the vrml and gdml files) are installed. No window is opened: Qt runs offscreen. As the offscreen Qt usually has no OpenGL (on Linux), the OpenGL viewer check is then skipped. With ``opengate_check_visu --display``, the Qt checks use the real display, and a Qt window opens for a few seconds: use it to check the Qt viewer. Each check runs in its own process, so a crash is reported as a failure, with the end of its output.
+
 Qt
 ^^
 
@@ -63,7 +71,7 @@ If you set `visu_type='qt'`, you can customize the Geant4 visualization commands
 
 .. autoproperty:: opengate.Simulation.visu_commands
 
-.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume`, the visualization displays the middle slices of the image. See `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others).
+.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume` (e.g. a CT), the Qt visualization displays the image box and its three middle slices, see `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others). The intensity window of the slices is set with the ``visu_window`` parameter of the image volume, see :ref:`image-volume-visualisation`. The voxels themselves are never drawn, which keeps the viewer fast even with large images. With the VRML and GDML visualizations, the image volume is displayed as a plain box. The slices need opengate_core compiled with Qt against a Geant4 build tree: this is the case of the pip wheels for macOS and Linux (the Windows wheels have no Qt visualization); with a source build against an installed Geant4, the image is displayed as a plain box (see the cmake output).
 
 VRML
 ^^^^

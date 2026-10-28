@@ -435,6 +435,7 @@ def main():
     sim.random_seed = 123456789
 
     m = g4_units.m
+    cm = g4_units.cm
     mm = g4_units.mm
     keV = g4_units.keV
     Bq = g4_units.Bq
@@ -454,15 +455,18 @@ def main():
     # ======================================================
     # 3) Source
     # ======================================================
-    src_holder = sim.add_volume("Sphere", "test_source_holder")
-    src_holder.mother = sim.world
-    src_holder.material = "Plastic"
-    src_holder.rmax = 0.25 * mm
+    plastic = sim.add_volume("Tubs", "na22_capsule")
+    plastic.mother = sim.world
+    plastic.material = "G4_PLEXIGLASS"
+    plastic.rmin = 0 * cm
+    plastic.rmax = 0.5 * cm
+    plastic.dz = 0.5 * cm  # half-height → total 1.0 cm
+    plastic.translation = [0, 0, 2.5 * mm]
 
     src = sim.add_source("GenericSource", "Na22_decay")
     src.particle = "ion 11 22"
-    src.attached_to = src_holder
-    src.activity = 3388e3 * Bq
+    src.attached_to = plastic
+    src.activity = 5 * 847e3 * Bq
     src.position.type = "point"
     src.direction.type = "iso"
     src.user_particle_life_time = 0
@@ -513,6 +517,7 @@ def main():
         exp_abs_counts,
         exp_abs_edges,
         expected_energy=1274.5,
+        tol_frac=0.3,
         label="Absorber 1274.5 keV",
         output_plot_path=output_folder / "test107_abs_peak_1274.5keV.png",
     )

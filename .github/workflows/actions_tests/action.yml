@@ -12,6 +12,10 @@ runs:
       pattern: dist-*
       merge-multiple: true
       path: dist/
+  - uses: actions/download-artifact@v8
+    with:
+      name: opengate-tests-data
+      path: tests_data/
   - name: Set up Python ${{ matrix.python-version }}
     uses: actions/setup-python@v6
     with:
@@ -47,10 +51,19 @@ runs:
           fi
           pip install SimpleITK
           pip install "gaga_phsp>=0.7.6"
+          # garf: ARF actor (test128)
+          pip install garf
           pip install pytomography hist
           pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
           pip install dist/opengate-*.whl
           export GIT_SSL_NO_VERIFY=1
+          # write the test output immediately, and print a stack trace if a test
+          # crashes (otherwise a native crash loses all the buffered output)
+          export PYTHONUNBUFFERED=1
+          export PYTHONFAULTHANDLER=1
+          # use the test data archive prepared by the prepare_test_data job
+          # instead of downloading it from gitlab.in2p3.fr
+          export OPENGATE_TESTS_DATA_ARCHIVE="$GITHUB_WORKSPACE/tests_data/artifacts"
           if [[ ${{ matrix.os }} == "ubuntu-24.04" ]]; then
               path=`opengate_library_path.py -p site_packages`
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
@@ -60,6 +73,15 @@ runs:
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
               export PATH="${path}\\opengate_core.libs":${PATH}
           fi
+          if [[ ${{ matrix.os }} == "macos-15" ]]; then
+              # the Qt UI must start from the installed wheel (it used to crash,
+              # see fix_macos_qt_framework.py)
+              QT_QPA_PLATFORM=offscreen python -c "import opengate_core as g4; assert g4.G4UIExecutive().IsGUI()" || exit -1
+              echo "Qt UI started from the installed wheel"
+          fi
+          # report the visualisation types that work on this runner (for
+          # information only: the runners have no display)
+          opengate_check_visu || echo "opengate_check_visu: some visualisation checks failed"
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
           sha=${{ github.sha }}

@@ -7,7 +7,7 @@
 
 #include "GateElectroMagneticField.h"
 #include <G4ElectroMagneticField.hh>
-#include <G4VSolid.hh>
+#include <G4LogicalVolume.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -18,18 +18,9 @@ void init_GateElectroMagneticField(py::module &m) {
              std::unique_ptr<GateElectroMagneticField, py::nodelete>>(
       m, "GateElectroMagneticField")
 
-      .def(py::init([](G4ElectroMagneticField *inner, const G4VSolid *solid,
-                       std::vector<G4ThreeVector> translations,
-                       std::vector<G4RotationMatrix> rotations,
-                       double delta_chord_mm) {
-             return new GateElectroMagneticField(inner, solid, translations,
-                                                 rotations, delta_chord_mm);
+      .def(py::init([](G4ElectroMagneticField *inner,
+                       const G4LogicalVolume *logical_volume) {
+             return new GateElectroMagneticField(inner, logical_volume);
            }),
-           py::arg("inner_field"), py::arg("solid"), py::arg("translations"),
-           py::arg("rotations"), py::arg("delta_chord_mm"))
-
-      .def("SetTransforms", &GateElectroMagneticField::SetTransforms,
-           py::arg("translations"), py::arg("rotations"),
-           "Replace the cached world-to-local transforms. Call between runs "
-           "only after dynamic geometry changes have been applied.");
+           py::arg("inner_field"), py::arg("logical_volume"));
 }

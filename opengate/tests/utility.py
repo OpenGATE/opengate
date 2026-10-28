@@ -5,6 +5,7 @@ import pathlib
 import shutil
 import sys
 from pathlib import Path
+
 import colored
 import gatetools.phsp
 import itk
@@ -22,13 +23,14 @@ from ..exception import color_error, color_ok, fatal
 from ..image import (
     get_info_from_image,
     itk_image_from_array,
-    write_itk_image,
     read_image_info_sitk,
+    write_itk_image,
 )
 from ..utility import (
     LazyModuleLoader,
     ensure_filename_is_str,
     insert_suffix_before_extension,
+    read_json_file,
 )
 
 plt = LazyModuleLoader("matplotlib.pyplot")
@@ -192,6 +194,27 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
         is_ok = b and is_ok
 
     return is_ok
+
+
+def assert_json(json_filename_1, json_filename_2):
+    json1 = read_json_file(json_filename_1)
+    json2 = read_json_file(json_filename_2)
+    for k in json1:
+        if k not in json2:
+            print_test(False, f"Key {k} not found in {json_filename_2}")
+            return False
+    for k in json2:
+        if k not in json1:
+            print_test(False, f"Key {k} not found in {json_filename_1}")
+            return False
+    for k in json1:
+        if json1[k] != json2[k]:
+            print_test(
+                False,
+                f"Key {k} has different values: {json1[k]} vs {json2[k]} in {json_filename_1} and {json_filename_2}",
+            )
+            return False
+    return True
 
 
 def plot_img_axis(ax, img, label, axis="z"):
@@ -506,7 +529,14 @@ def fit_exponential_decay(data, start, end):
     bin_widths = np.diff(bin_borders)
     bin_centers = bin_borders[:-1] + bin_widths / 2
 
-    popt, _ = scipy.optimize.curve_fit(exponential_func, bin_centers, bin_heights)
+    # initial guess from the data, so that the fit does not overflow in exp when
+    # the times are large (the default a=b=1 does not depend on the time scale)
+    data = np.asarray(data)
+    b0 = 1.0 / max(np.mean(data) - bin_borders[0], np.finfo(float).tiny)
+    a0 = bin_heights[0] * np.exp(b0 * bin_centers[0])
+    popt, _ = scipy.optimize.curve_fit(
+        exponential_func, bin_centers, bin_heights, p0=[a0, b0]
+    )
     xx = np.linspace(start, end, 100)
     yy = exponential_func(xx, *popt)
     hl = np.log(2) / popt[1]

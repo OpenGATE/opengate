@@ -153,6 +153,7 @@ from .geometry.volumes import (
     PolyhedraVolume,
     RepeatParametrisedVolume,
     SphereVolume,
+    TetrahedralMeshVolume,
     TesselatedVolume,
     TrapVolume,
     TrdVolume,
@@ -696,6 +697,15 @@ def _setter_hook_user_limits_particles(self, particle_names):
         return particle_names
 
 
+# optical properties files shipped with GATE (used by default, if needed)
+DEFAULT_OPTICAL_PROPERTIES_FILE = (
+    Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml"
+)
+DEFAULT_SURFACE_PROPERTIES_FILE = (
+    Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml"
+)
+
+
 class PhysicsManager(GateObject):
     """
     Everything related to the physics (lists, cuts, etc.) should be here.
@@ -734,20 +744,23 @@ class PhysicsManager(GateObject):
             },
         ),
         "optical_properties_file": (
-            Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
+            None,
             {
                 "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-                "Default: file shipped with GATE.",
+                f"If None (default), the file shipped with GATE ({DEFAULT_OPTICAL_PROPERTIES_FILE}) is used, "
+                "only when G4OpticalPhysics is enabled (so it is not an input file of the "
+                "simulation otherwise).",
                 "is_input_file": True,
             },
         ),
         "surface_properties_file": (
-            Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml",
+            None,
             {
                 "doc": "Path to the xml file containing the surface material properties to be used by "
-                "optical surface, i.e. G4LogicalBorderSurface."
-                f"The default file shipped with GATE located is in "
-                f"{Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
+                "optical surface, i.e. G4LogicalBorderSurface. "
+                f"If None (default), the file shipped with GATE ({DEFAULT_SURFACE_PROPERTIES_FILE}) is used, "
+                "only when optical surfaces are defined (so it is not an input file of the "
+                "simulation otherwise).",
                 "is_input_file": True,
             },
         ),
@@ -1062,30 +1075,60 @@ class PhysicsManager(GateObject):
     # with a region. If it does not yet have one, created it.
     # Outlook: These setter methods might be linked to properties
     # implemented in a future version of the Volume class
-    def set_max_step_size(self, volume_name, max_step_size):
+    def set_max_step_size(self, volume_name, max_step_size, particles=None):
+        """Set the user limit 'max_step_size' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_step_size"] = max_step_size
+        self._add_user_limits_particles(particles)
 
-    def set_max_track_length(self, volume_name, max_track_length):
+    def set_max_track_length(self, volume_name, max_track_length, particles=None):
+        """Set the user limit 'max_track_length' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_track_length"] = max_track_length
+        self._add_user_limits_particles(particles)
 
-    def set_min_ekine(self, volume_name, min_ekine):
+    def set_min_ekine(self, volume_name, min_ekine, particles=None):
+        """Set the user limit 'min_ekine' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_ekine"] = min_ekine
+        self._add_user_limits_particles(particles)
 
-    def set_max_time(self, volume_name, max_time):
+    def set_max_time(self, volume_name, max_time, particles=None):
+        """Set the user limit 'max_time' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["max_time"] = max_time
+        self._add_user_limits_particles(particles)
 
-    def set_min_range(self, volume_name, min_range):
+    def set_min_range(self, volume_name, min_range, particles=None):
+        """Set the user limit 'min_range' in the region of this volume.
+        See _add_user_limits_particles for the 'particles' option."""
         volume_name = self._normalize_volume_name(volume_name)
         region = self.find_or_create_region(volume_name)
         region.user_limits["min_range"] = min_range
+        self._add_user_limits_particles(particles)
+
+    def _add_user_limits_particles(self, particles):
+        """Add particles (a name or a list of names, e.g. 'proton' or
+        ['gamma', 'e-']) to user_limits_particles. Warning: user_limits_particles
+        is global, i.e. the user limits of all regions apply to these particles
+        (Geant4 attaches the step limiter per particle type, not per region)."""
+        if particles is None:
+            return
+        if not isinstance(particles, (list, set, tuple)):
+            particles = [particles]
+        current = list(self.user_limits_particles)
+        for p in particles:
+            if p not in current:
+                current.append(p)
+        self.user_limits_particles = current
 
     def set_track_structure_em_physics(self, volume_name, track_structure_em_physics):
         volume_name = self._normalize_volume_name(volume_name)
@@ -1128,10 +1171,34 @@ class PhysicsManager(GateObject):
         #         )
         #     self.user_info.user_limits_particles[pn] = True
 
+    def get_optical_properties_file(self):
+        """The optical properties file, or the default one shipped with GATE"""
+        if self.optical_properties_file is None:
+            return DEFAULT_OPTICAL_PROPERTIES_FILE
+        return self.optical_properties_file
+
+    def get_surface_properties_file(self):
+        """The surface properties file, or the default one shipped with GATE"""
+        if self.surface_properties_file is None:
+            return DEFAULT_SURFACE_PROPERTIES_FILE
+        return self.surface_properties_file
+
+    def resolve_optical_properties_files(self):
+        # The optical files are input files of the simulation (e.g. copied in
+        # each job of a split simulation) only when they are used.
+        if (
+            self.special_physics_constructors["G4OpticalPhysics"] is True
+            and self.optical_properties_file is None
+        ):
+            self.optical_properties_file = DEFAULT_OPTICAL_PROPERTIES_FILE
+        if len(self.optical_surfaces) > 0 and self.surface_properties_file is None:
+            self.surface_properties_file = DEFAULT_SURFACE_PROPERTIES_FILE
+
     def resolve_and_validate_config(self, context=None):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
+        self.resolve_optical_properties_files()
         # Chemistry actors may request region-based track-structure EM physics on the
         # volumes they are attached to. This must be resolved before the
         # physics engine configures G4 EM parameters and registers the DNA
@@ -1456,6 +1523,7 @@ class VolumeManager(GateObject):
         "BooleanVolume": BooleanVolume,
         "RepeatParametrisedVolume": RepeatParametrisedVolume,
         "TesselatedVolume": TesselatedVolume,
+        "TetrahedralMeshVolume": TetrahedralMeshVolume,
     }
 
     def __init__(self, simulation, *args, **kwargs) -> None:
@@ -1559,6 +1627,9 @@ class VolumeManager(GateObject):
             field = field_types[field_type](name=v["user_info"]["name"])
             field.from_dictionary(v)
             self.fields[field.name] = field
+        # Before, create the parrallel world volumes, so that they are available for the volumes to be created
+        for k in d["parallel_world_volumes"]:
+            self.add_parallel_world(k)
         # First create all volumes
         for k, v in d["volumes"].items():
             # the world volume is always created in __init__
@@ -1568,6 +1639,10 @@ class VolumeManager(GateObject):
         #  to a volume in the volumes dictionary is satisfied
         for k, v in d["volumes"].items():
             self.volumes[k].from_dictionary(v)
+        # and check that any reference to a volume in the volumes dictionary is satisfied (for RepeatParametrisedVolume)
+        for volume in self.volumes.values():
+            if hasattr(volume, "resolve_references"):
+                volume.resolve_references()
 
     @property
     def world_volume(self):
@@ -1770,23 +1845,8 @@ class VolumeManager(GateObject):
 
 
 def _setter_hook_verbose_level(self, verbose_level):
-    # print(f"_setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
-    if self.log_handler_id == -1:
-        # Remove the default logger configuration
-        logger.remove()
-    else:
-        # Remove the current logger configuration
-        try:
-            logger.remove(self.log_handler_id)
-        except:
-            pass
-
-    self.log_handler_id = logger.add(
-        sys.stdout,
-        colorize=True,
-        level=verbose_level,
-        format=("{level.icon}<level>{message}</level>"),  # Message formatting
-    )
+    # Replace the opengate handler only: the user's own loguru handlers are kept
+    self.log_handler_id = set_opengate_log_handler(verbose_level)
     return verbose_level
 
 
@@ -1834,6 +1894,7 @@ class Simulation(GateObject):
     visu_commands_vrml: List[str]
     visu_commands_gdml: List[str]
     check_volumes_overlap: bool
+    check_volumes_overlap_max_copies: int
     number_of_threads: int
     force_multithread_mode: bool
     random_engine: str
@@ -1981,6 +2042,15 @@ class Simulation(GateObject):
                 "Note: Geant4 checks overlaps in any case."
             },
         ),
+        "check_volumes_overlap_max_copies": (
+            100,
+            {
+                "doc": "Overlaps of a parametrised volume (e.g. RepeatParametrisedVolume) "
+                "are only checked if it has at most this number of copies: each copy is "
+                "checked against all the others, so the cost grows with the square "
+                "of the number of copies.",
+            },
+        ),
         "number_of_threads": (
             1,
             {
@@ -2099,7 +2169,8 @@ class Simulation(GateObject):
         "progress_hook_interval": (
             None,
             {
-                "doc": "Interval in real wall-clock seconds between progress hook calls",
+                "doc": "Wall-clock time between progress hook calls, with units "
+                "(e.g. 30 * gate.g4_units.s, the default)",
             },
         ),
         "max_primaries_per_run": (
@@ -2707,6 +2778,9 @@ class Simulation(GateObject):
     def finalize_merge(self):
         for merge_coordinator in self._merge_coordinators:
             merge_coordinator.finalize_merge()
+        # outputs derived from the merged data (e.g. RBE) are computed again
+        for actor in self.actor_manager.actors.values():
+            actor.after_jobs_merge()
 
     def find_actors(self, sub_str, case_sensitive=False):
         return self.actor_manager.find_actors(sub_str, case_sensitive)

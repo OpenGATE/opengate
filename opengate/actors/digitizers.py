@@ -12,7 +12,7 @@ from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
 )
-from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
+from .actoroutput import ActorOutputRoot, ActorOutputRunStackedImage
 
 
 def ene_win_peak(name, energy, energy_width_percent):
@@ -278,21 +278,14 @@ class DigitizerBase(ActorBase):
     def initialize(self):
         ActorBase.initialize(self)
 
-    def end_simulation_action(self):
-        """Finalize digitizer outputs on the Python side.
-
-        This lower-case helper contains the reusable Python-side end-of-
-        simulation logic. Concrete ``EndSimulationAction()`` trampoline methods
-        should call their actor-specific C++ ``EndSimulationAction()`` first and
-        then forward here, either directly or via this base implementation.
-        """
-        for user_output in self.user_output.values():
-            user_output.end_of_simulation()
+    def finalize_simulation(self):
+        """Finalize digitizer outputs on the Python side."""
+        super().finalize_simulation()
 
     def EndSimulationAction(self):
         # Keep this trampoline thin: do not put functional Python logic here.
-        # Concrete Python-side finalization belongs in end_simulation_action().
-        self.end_simulation_action()
+        # Concrete Python-side finalization belongs in finalize_simulation().
+        pass
 
 
 class DigitizerWithRootOutput(DigitizerBase):
@@ -473,12 +466,6 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
                 "doc": "FIXME",
             },
         ),
-        "blur_fwhm": (
-            None,
-            {
-                "doc": "FIXME",
-            },
-        ),
         "blur_reference_value": (
             0,
             {
@@ -510,6 +497,14 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    @property
+    def blur_fwhm(self):
+        return self.blur_sigma / fwhm_to_sigma
+
+    @blur_fwhm.setter
+    def blur_fwhm(self, value):
+        self.blur_sigma = value * fwhm_to_sigma
+
     def resolve_and_validate_config(self, context=None):
         super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
@@ -530,13 +525,6 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
             self.set_param_linear()
 
     def set_param_gauss(self):
-        if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
-        if self.blur_fwhm is not None:
-            self.blur_sigma = self.blur_fwhm * fwhm_to_sigma
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
         self.blur_reference_value = -1
@@ -554,7 +542,6 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
                 f"Error, use positive blur_resolution "
                 f"(current value =  {self.blur_resolution}"
             )
-        self.blur_fwhm = -1
         self.blur_sigma = -1
         if self.blur_slope is None:
             self.blur_slope = 0
@@ -625,6 +612,18 @@ class DigitizerDeadTimeActor(DigitizerWithRootOutput, g4.GateDigitizerDeadTimeAc
             1e3,
             {
                 "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "thread_sync_enabled": (
+            True,
+            {
+                "doc": "Thread synchronization is applied to limit sorting buffer size",
+            },
+        ),
+        "sorting_buffer_size": (
+            5e4,
+            {
+                "doc": "Sorting buffer size (digis) at which thread synchronization is applied",
             },
         ),
         "skip_attributes": (
@@ -749,6 +748,18 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
                 "doc": "Time interval during which digis are buffered for time-sorting",
             },
         ),
+        "thread_sync_enabled": (
+            True,
+            {
+                "doc": "Thread synchronization is applied to limit sorting buffer size",
+            },
+        ),
+        "sorting_buffer_size": (
+            5e4,
+            {
+                "doc": "Sorting buffer size (digis) at which thread synchronization is applied",
+            },
+        ),
         "skip_attributes": (
             [],
             {
@@ -811,7 +822,6 @@ class DigitizerSpatialBlurringActor(
     skip_attributes: List
     clear_every: int
     blur_attribute: str
-    blur_fwhm: float
     blur_sigma: float
     keep_in_solid_limits: bool
     use_truncated_Gaussian: bool
@@ -847,12 +857,6 @@ class DigitizerSpatialBlurringActor(
                 "doc": "Which attribute to blur, e.g. PostPosition.",
             },
         ),
-        "blur_fwhm": (
-            None,
-            {
-                "doc": "FWHM for the blurring.",
-            },
-        ),
         "blur_sigma": (
             None,
             {
@@ -883,18 +887,19 @@ class DigitizerSpatialBlurringActor(
         g4.GateDigitizerSpatialBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    @property
+    def blur_fwhm(self):
+        return self.blur_sigma / fwhm_to_sigma
+
+    @blur_fwhm.setter
+    def blur_fwhm(self, value):
+        if not hasattr(value, "__len__"):
+            value = [value] * 3
+        self.blur_sigma = np.array(value) * fwhm_to_sigma
+
     def initialize_blurring_parameters(self):
-        if self.blur_fwhm is not None and self.blur_sigma is not None:
-            fatal(
-                f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
-            )
         if not hasattr(self.blur_sigma, "__len__"):
             self.blur_sigma = [self.blur_sigma] * 3
-        if not hasattr(self.blur_fwhm, "__len__"):
-            self.blur_fwhm = [self.blur_fwhm] * 3
-        if self.blur_fwhm is not None:
-            self.blur_sigma = np.array(self.blur_fwhm) * fwhm_to_sigma
         if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
@@ -1174,12 +1179,13 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         ),
     }
 
+    # all runs are stacked in the same image (slices of run r: channels of run r)
     user_output_config = {
         "counts": {
-            "actor_output_class": ActorOutputSingleImage,
+            "actor_output_class": ActorOutputRunStackedImage,
         },
         "squared_counts": {
-            "actor_output_class": ActorOutputSingleImage,
+            "actor_output_class": ActorOutputRunStackedImage,
             "active": False,
         },
     }
@@ -1341,12 +1347,10 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
     def EndSimulationAction(self):
         # Keep this trampoline thin: do not put functional Python logic here.
-        # Concrete Python-side finalization belongs in end_simulation_action().
+        # Concrete Python-side finalization belongs in finalize_simulation().
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
 
-        self.end_simulation_action()
-
-    def end_simulation_action(self):
+    def finalize_simulation(self):
         """Transfer the projection image from C++ to Python and finalize outputs."""
 
         # retrieve the image
@@ -1392,7 +1396,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             self.user_output.squared_counts.data_per_run.pop(0)
             self.user_output.squared_counts.write_data_if_requested(which="merged")
 
-        DigitizerBase.end_simulation_action(self)
+        DigitizerBase.finalize_simulation(self)
 
 
 class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterActor):
@@ -1474,6 +1478,18 @@ class CoincidenceSorterActor(DigitizerWithRootOutput, g4.GateCoincidenceSorterAc
             1e3,
             {
                 "doc": "Time interval during which digis are buffered for time-sorting",
+            },
+        ),
+        "thread_sync_enabled": (
+            True,
+            {
+                "doc": "Thread synchronization is applied to limit sorting buffer size",
+            },
+        ),
+        "sorting_buffer_size": (
+            5e4,
+            {
+                "doc": "Sorting buffer size (digis) at which thread synchronization is applied",
             },
         ),
         "skip_attributes": (
@@ -1662,11 +1678,11 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
 
     def EndSimulationAction(self):
         # Keep this trampoline thin: do not put functional Python logic here.
-        # Concrete Python-side finalization belongs in end_simulation_action().
+        # Concrete Python-side finalization belongs in finalize_simulation().
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
         DigitizerBase.EndSimulationAction(self)
 
-    def end_simulation_action(self):
+    def finalize_simulation(self):
         """Capture phase-space summary counters and finalize ROOT output."""
         self.number_of_absorbed_events = self.GetNumberOfAbsorbedEvents()
         self.total_number_of_entries = self.GetTotalNumberOfEntries()
@@ -1674,7 +1690,7 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
             self.warn_user(
                 f"Empty output, no particles stored in {self.get_output_path()}"
             )
-        DigitizerBase.end_simulation_action(self)
+        DigitizerBase.finalize_simulation(self)
 
 
 class DigiAttributeProcessDefinedStepInVolumeActor(

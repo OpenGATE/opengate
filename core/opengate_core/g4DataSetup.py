@@ -6,8 +6,6 @@ import tarfile
 from pathlib import Path
 from time import sleep
 
-import requests
-
 # Data for Geant4
 # Geant4 11.4.2
 data_packages = {
@@ -59,20 +57,57 @@ def check_g4_data():
 
 
 def download_with_resume(url, out, retries=5, delay=10):
+    """
+    Download url into out. The data are first written into out.part; if the
+    connection is broken, the next attempt resumes from the current size of
+    out.part (HTTP Range request). If the server does not support the Range
+    request (it sends the whole file), the download restarts from the
+    beginning. The file is only renamed to out if its size is the expected one.
+    """
+    # (imported here: about 0.1 s, only needed to download the data)
+    import requests
+
     temp_file = str(out) + ".part"
-    headers = {}
-    if os.path.exists(temp_file):
-        file_size = os.path.getsize(temp_file)
-        headers["Range"] = f"bytes={file_size}-"
 
     for attempt in range(retries):
         try:
+            # the start position must be recomputed at each attempt: a broken
+            # attempt leaves a partial file
+            start = os.path.getsize(temp_file) if os.path.exists(temp_file) else 0
+            headers = {"Range": f"bytes={start}-"} if start > 0 else {}
             with requests.get(url, headers=headers, stream=True) as r:
+                if r.status_code == 416:
+                    # range not satisfiable (e.g. stale part file), restart
+                    os.remove(temp_file)
+                    raise requests.exceptions.RequestException(
+                        f"Range not satisfiable for {url} (from byte {start}), "
+                        f"the partial file is removed"
+                    )
                 r.raise_for_status()
-                with open(temp_file, "ab") as f:
+                if start > 0 and r.status_code == 206:
+                    # the server sends the rest of the file: append
+                    mode = "ab"
+                    offset = start
+                else:
+                    # whole file (no range requested, or range not supported)
+                    mode = "wb"
+                    offset = 0
+                # expected size, unknown if no Content-Length or if the content
+                # is encoded (requests decodes it, the sizes then differ)
+                length = r.headers.get("Content-Length")
+                expected_size = -1
+                if length is not None and "Content-Encoding" not in r.headers:
+                    expected_size = offset + int(length)
+                with open(temp_file, mode) as f:
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
+            size = os.path.getsize(temp_file)
+            if expected_size >= 0 and size != expected_size:
+                raise requests.exceptions.RequestException(
+                    f"Incomplete download of {url}: {size} bytes instead of "
+                    f"{expected_size}"
+                )
             os.rename(temp_file, str(out))
             print(f"Downloaded {url} successfully.")
             return
@@ -143,7 +178,12 @@ def download_g4_one_data_folder(i, package, total_number):
             print("I need to remove it.")
             shutil.rmtree(extract_to_path)
         print("Extracting the data archive (tar) ...")
-        tar.extractall(path=data_location)
+        # Do not extract files outside data_location (absolute paths, '..'):
+        # the 'data' filter refuses them (default since Python 3.14, see #340)
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(path=data_location, filter="data")
+        else:
+            tar.extractall(path=data_location)
         print("done")
     os.remove(package_archive)
 

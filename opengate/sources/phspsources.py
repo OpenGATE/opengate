@@ -1,4 +1,3 @@
-import uproot
 import numpy as np
 import numbers
 from scipy.spatial.transform import Rotation
@@ -59,6 +58,8 @@ class PhaseSpaceSourceGenerator:
 
         # open root file and get the first branch
         # FIXME could have an option to select the branch
+        import uproot
+
         self.root_file = uproot.open(self.phsp_source.phsp_file)
         branches = self.root_file.keys()
         if len(branches) > 0:
@@ -81,7 +82,7 @@ class PhaseSpaceSourceGenerator:
     def get_entry_start(self, entry_start):
         if not g4.IsMultithreadedApplication():
             if not isinstance(entry_start, numbers.Number):
-                fatal("entry_start must be a simple number is mono-thread mode")
+                fatal("entry_start must be a simple number in mono-thread mode")
             n = int(entry_start % self.num_entries)
             if entry_start > self.num_entries:
                 warning(

@@ -106,17 +106,22 @@ Change the QT flags (GEANT4_USE_QT and DGEANT4_USE_OPENGL_X11) to OFF if you did
 STEP 2 - ITK
 ------------
 
-For **ITK**, you need to compile with the following options:
+For **ITK**, you need to compile with the following options (v5.4.4 is the
+version used to build the wheels):
 
 .. code:: bash
 
-   git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
+   git clone --branch v5.4.4 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1
    mkdir itk-build
    cd itk-build
-   cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
+   cmake -DCMAKE_CXX_STANDARD=17 \
          -DBUILD_TESTING=OFF \
          ../ITK
    make -j 32
+
+:note: with GCC 15 or newer (C23 by default), the MINC library included in
+  ITK does not compile (``too many arguments to function 'handlerProc'``).
+  Add ``-DCMAKE_C_FLAGS=-std=gnu11`` to the cmake command.
 
 STEP 3 - ``opengate_core`` module (cpp bindings)
 ------------------------------------------------

@@ -111,6 +111,27 @@ def create_image_like_info(info, allocate=True):
     return img
 
 
+def check_image_direction_is_identity(image, description):
+    """
+    The direction matrix (rotation or flip stored in the image header) is not
+    taken into account by ImageVolume and VoxelSource: the voxels are always
+    placed along the Geant4 axes. Ignoring it would silently mirror or rotate
+    the geometry or the activity, so we stop with an error instead (see #421).
+    """
+    direction = np.array(image.GetDirection())
+    n = direction.shape[0]
+    if not np.allclose(direction, np.eye(n)):
+        fatal(
+            f"The image used by {description} has a direction matrix that is not "
+            f"the identity:\n{np.round(direction, 6)}\n"
+            f"Image rotations and flips are not supported: the image would be "
+            f"interpreted without them, so the geometry or the activity would be "
+            f"silently mirrored or rotated. Please resample the image to an "
+            f"identity direction first (or simply reset the direction if the "
+            f"voxels are already in the expected order)."
+        )
+
+
 def get_info_from_image(image):
     info = Box()
     info.size = np.array(itk.size(image)).astype(int)
@@ -315,6 +336,10 @@ def compute_image_3D_CDF(image):
     Compute the three CDF (Cumulative Density Function) for the given image
     Warning; numpy order is ZYX
 
+    Returns cdf_x[z, y, x], cdf_y[z, y] and cdf_z[z], as float64 numpy arrays:
+    cdf_x is the CDF along x of each row (z, y), cdf_y the CDF along y of each
+    plane z (summed along x), cdf_z the CDF along z (summed along x and y).
+
     :param image: itk image
     """
     # consider the image as a np array
@@ -322,39 +347,27 @@ def compute_image_3D_CDF(image):
     # a segfault in some cases (linux + multithread + multiple sources)
     # It is unclear why, but for now we use array_from_image that copy the data
     # array = itk.array_view_from_image(image)
-    array = itk.array_from_image(image)
+    array = itk.array_from_image(image).astype(np.float64)
 
     # normalize
     array = array / np.sum(array)
 
-    # Sum image on a single plane along X axis
+    def normalised_cumsum(a):
+        # cumulated sum along the last axis, normalised to 1 at the end, except
+        # where the sum is zero (kept as zeros)
+        t = np.cumsum(a, axis=-1)
+        last = t[..., -1:]
+        return np.divide(t, last, out=t, where=last != 0)
+
+    # X 3D CDF: along X, for each (z, y)
+    cdf_x = normalised_cumsum(array)
+    # Y 2D CDF: sum along X, then along Y, for each z
     sumx = np.sum(array, axis=2)
-    # Y axis, sum plane on a single axis along Y axis
+    cdf_y = normalised_cumsum(sumx)
+    # Z 1D CDF: sum along X and Y
     sumxy = np.sum(sumx, axis=1)
-    # X 3D CDF
-    cdf_x = []
-    for i in range(array.shape[0]):  # Z
-        cdf_x.append([])
-        for j in range(array.shape[1]):  # Y
-            # cumulated sum along X axis
-            t = np.cumsum(array[i][j])
-            # normalise if the last value (sum) is not zero
-            if t[-1] != 0:
-                t = t / t[-1]
-            cdf_x[i].append(t)
-
-    # Y 2D CDF
-    cdf_y = []
-    for i in range(len(sumx)):  # Z
-        t = np.cumsum(sumx[i])
-        if t[-1] != 0:
-            t = t / t[-1]
-        cdf_y.append(t)
-
-    # Z 1D CDF
     cdf_z = np.cumsum(sumxy) / np.sum(sumxy)
 
-    # return
     return cdf_x, cdf_y, cdf_z
 
 

@@ -20,7 +20,6 @@ def protonct(
     m = gate.g4_units.m
     sec = gate.g4_units.second
     MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
 
     # Simulation
     sim = gate.Simulation()
@@ -124,7 +123,7 @@ def protonct(
 
     if sim.visu:
         # For visualisation speed, the number of particles is decreased.
-        source.activity = 10 * Bq
+        source.number_of_primaries = [100] * projections
     else:
         # Use an explicit per-run particle count so each projection gets the
         # requested number of primaries deterministically.
@@ -149,7 +148,7 @@ def protonct(
             "EventID",
             "TrackID",
             "KineticEnergy",
-            "LocalTime",
+            "GlobalTime",
             "Position",
             "Direction",
         ]
@@ -165,4 +164,4 @@ def protonct(
     stat = sim.add_actor("SimulationStatisticsActor", "stat")
     stat.output_filename = f"{output}/protonct.txt"
 
-    sim.run()
+    sim.run(start_new_process=True)

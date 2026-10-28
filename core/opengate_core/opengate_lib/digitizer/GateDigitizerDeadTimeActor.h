@@ -53,8 +53,10 @@ protected:
   // User parameters
   double fDeadTime;
   DeadTimePolicy fPolicy;
-  double fSortingTime;
   int fGroupVolumeDepth;
+  double fSortingTime;
+  int fSortingBufferSyncThreshold;
+  bool fThreadSyncEnabled;
 
   std::unique_ptr<GateTimeSorter> fTimeSorter;
   std::map<uint64_t, double> fVolumeEndOfDeadTimeInterval;

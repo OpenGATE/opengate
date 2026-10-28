@@ -383,8 +383,22 @@ class AttributeComparisonFilter(FilterBase):
     def __new__(cls, *args, **kwargs):
         # If the user is calling the factory, choose the correct subclass
         if cls is AttributeComparisonFilter:
+            att = kwargs.get("attribute")
             val = kwargs.get("compare_value")
-            if isinstance(val, str):
+            # the subclass must match the type of the attribute (not the type
+            # of the value: F.KineticEnergy > 0 compares a double attribute
+            # with an int), so we use the type of the digi attribute if known
+            att_type = get_digi_attribute_type(att)
+            if att_type is not None and att_type not in _filter_class_by_type:
+                fatal(
+                    f"The attribute '{att}' (type '{att_type}') cannot be used "
+                    f"in a filter: only double, int and string attributes are "
+                    f"supported (not vectors or unique volume IDs)."
+                )
+            if att_type is not None:
+                cls = _filter_class_by_type[att_type]
+            # unknown type (e.g. an auxiliary attribute): from the value
+            elif isinstance(val, str):
                 cls = AttributeFilterString
             elif isinstance(val, int):
                 cls = AttributeFilterInt
@@ -399,8 +413,25 @@ class AttributeComparisonFilter(FilterBase):
             fatal(f"The parameter 'attribute' is required for filter '{self.name}'.")
 
 
+def get_digi_attribute_type(attribute_name):
+    """
+    Type of a digi attribute ('D', 'I', 'S', '3', 'U'), or None if it is not a
+    digi attribute (e.g. an auxiliary attribute).
+    """
+    if not isinstance(attribute_name, str):
+        return None
+    dam = g4.GateDigiAttributeManager.GetInstance()
+    att = dam.GetDigiAttributeByName(attribute_name)
+    if att is None:
+        return None
+    return att.GetDigiAttributeType()
+
+
 class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDouble):
     def __init__(self, *args, **kwargs):
+        val = kwargs.get("compare_value")
+        if isinstance(val, int) and not isinstance(val, bool):
+            kwargs["compare_value"] = float(val)
         AttributeComparisonFilter.__init__(self, *args, **kwargs)
 
     def __initcpp__(self):
@@ -412,6 +443,14 @@ class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDou
 
 class AttributeFilterInt(AttributeComparisonFilter, g4.GateAttributeFilterInt):
     def __init__(self, *args, **kwargs):
+        val = kwargs.get("compare_value")
+        if isinstance(val, float):
+            if not val.is_integer():
+                fatal(
+                    f"The attribute '{kwargs.get('attribute')}' is an integer, "
+                    f"it cannot be compared with {val} in a filter."
+                )
+            kwargs["compare_value"] = int(val)
         AttributeComparisonFilter.__init__(self, *args, **kwargs)
 
     def __initcpp__(self):
@@ -432,13 +471,57 @@ class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterStr
         super().initialize()
 
 
-# Registry update
+# filter class for each type of digi attribute
+_filter_class_by_type = {
+    "D": AttributeFilterDouble,
+    "I": AttributeFilterInt,
+    "S": AttributeFilterString,
+}
+
+
+# Added filter: Python interface to the C++ GateCopyNumberFilter binding.
+class CopyNumberFilter(FilterBase, g4.GateCopyNumberFilter):
+    """Filter steps using the current volume's Geant4 copy number.
+
+    The copy number is read from the pre-step touchable at history depth 0.
+    A step is accepted when that number occurs in ``copy_numbers``. An empty
+    list disables copy-number filtering and therefore accepts every step.
+    """
+
+    copy_numbers: list
+
+    user_info_defaults = {
+        "copy_numbers": (
+            [],
+            {
+                "doc": (
+                    "Geant4 copy numbers accepted by this filter. "
+                    "An empty list accepts all copy numbers."
+                )
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        # Initialize OpenGATE's Python-side filter state first.
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        # Construct the matching pybind11 C++ base. InitializeUserInfo later
+        # transfers copy_numbers to GateCopyNumberFilter.
+        g4.GateCopyNumberFilter.__init__(self)
+
+
+# Added registration: allow get_filter_class(), filter deserialization, and
+# manager-side lookup to resolve the "CopyNumberFilter" type name.
 filter_classes = {
     "UnscatteredPrimaryFilter": UnscatteredPrimaryFilter,
     "AttributeFilterDouble": AttributeFilterDouble,
     "AttributeFilterInt": AttributeFilterInt,
     "AttributeFilterString": AttributeFilterString,
     "BooleanFilter": BooleanFilter,
+    "CopyNumberFilter": CopyNumberFilter,
 }
 
 
@@ -486,3 +569,7 @@ process_cls(AttributeComparisonFilter)
 process_cls(AttributeFilterDouble)
 process_cls(AttributeFilterInt)
 process_cls(AttributeFilterString)
+
+# Added class processing: install OpenGATE's generated properties and
+# serialization hooks for CopyNumberFilter.user_info_defaults.
+process_cls(CopyNumberFilter)

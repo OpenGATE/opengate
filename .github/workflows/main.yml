@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        python-version: ['3.10']
+        python-version: ['3.14']
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
@@ -38,7 +38,8 @@ jobs:
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
@@ -46,8 +47,8 @@ jobs:
         architecture: 'x64'
     - name: Create opengate Wheel
       run: |
-          rm -rf $GITHUB_WORKSPACE/opengate/tests/data
-          cp $GITHUB_WORKSPACE/.git/modules/gam-tests/data/HEAD $GITHUB_WORKSPACE/opengate/tests/
+          # commit of the test data submodule, used by the tests to download the data
+          git rev-parse HEAD:opengate/tests/data > $GITHUB_WORKSPACE/opengate/tests/HEAD
           pip install build
           python -m build
     - name: Upload wheels
@@ -56,18 +57,62 @@ jobs:
         name: dist-opengate
         path: dist/
 
+  find_core_wheels_to_reuse:
+    # a pull request that does not change opengate_core reuses the wheels of
+    # a master run (see the script); the label "build-core" forces the build
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      reuse_run_id: ${{ steps.find.outputs.reuse_run_id }}
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Find a master run with the same opengate_core
+      id: find
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EVENT_NAME: ${{ github.event_name }}
+        LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: bash .github/workflows/find_core_wheels_to_reuse.sh
+
+  reuse_opengate_core_wheels:
+    runs-on: ubuntu-24.04
+    needs: [find_core_wheels_to_reuse]
+    if: needs.find_core_wheels_to_reuse.outputs.reuse_run_id != ''
+    permissions:
+      actions: read
+    steps:
+    - name: Download the opengate_core wheels of the master run
+      uses: actions/download-artifact@v8
+      with:
+        pattern: dist-*-opengate-core
+        merge-multiple: true
+        path: dist/
+        run-id: ${{ needs.find_core_wheels_to_reuse.outputs.reuse_run_id }}
+        github-token: ${{ github.token }}
+    - name: List the wheels
+      run: ls -l dist/
+    - name: Upload wheels
+      uses: actions/upload-artifact@v7
+      with:
+        name: dist-reused-opengate-core
+        path: dist/
+        retention-days: 7
+        compression-level: 0
+
   build_opengate_core_wheel_pr:
+    needs: [find_core_wheels_to_reuse]
+    if: needs.find_core_wheels_to_reuse.outputs.reuse_run_id == ''
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-        exclude:
-          - os: macos-15
-            python-version: '3.10'
-          - os: windows-2025
-            python-version: '3.10'
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
@@ -79,7 +124,8 @@ jobs:
         else
           export GIT_SSL_NO_VERIFY=1
         fi
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - uses: ./.github/workflows/actions_build
       with:
         os: ${{ matrix.os }}
@@ -99,10 +145,6 @@ jobs:
         os: [ubuntu-24.04-arm, macos-15-intel]
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
-          - os: macos-15
-            python-version: '3.10'
-          - os: windows-2025
-            python-version: '3.10'
           - os: macos-15-intel
             python-version: '3.14'
     steps:
@@ -116,7 +158,8 @@ jobs:
         else
           export GIT_SSL_NO_VERIFY=1
         fi
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - uses: ./.github/workflows/actions_build
       with:
         os: ${{ matrix.os }}
@@ -142,7 +185,8 @@ jobs:
       shell: bash -l {0}
       run: |
         export GIT_SSL_NO_VERIFY=1
-        git submodule update --init --recursive
+        # the test data (opengate/tests/data, on gitlab.in2p3.fr) are not needed to build
+        git submodule update --init --recursive core/external/fmt core/external/pybind11
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
@@ -159,7 +203,7 @@ jobs:
         echo "release=${varOS}" >> $GITHUB_OUTPUT
     - name: Cache modules
       id: cache_opengate_core_dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
@@ -259,7 +303,7 @@ jobs:
 #        echo "release=${varOS:1}" >> $GITHUB_OUTPUT
 #    - name: Cache modules
 #      id: cache_opengate_core_dependencies
-#      uses: actions/cache@v4
+#      uses: actions/cache@v5
 #      with:
 #        path: ~/software
 #        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
@@ -272,26 +316,53 @@ jobs:
 #          python-version: 3.9
 #    - name: Set up Homebrew
 #      id: set-up-homebrew
-#      uses: Homebrew/actions/setup-homebrew@master
+#      uses: Homebrew/actions/setup-homebrew@main
 #    - name: Start SSH session
 #      uses: luchihoratiu/debug-via-ssh@main
 #      with:
 #        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
 #        SSH_PASS: ${{ secrets.SSH_PASS }}
 
+  # Get the test data archive once (from the GitHub cache, or from gitlab.in2p3.fr
+  # when the data changed) and share it with the test jobs as an artifact, so that
+  # they do not each download it from GitLab.
+  prepare_test_data:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v6
+    - name: Get the commit of the test data
+      id: data_sha
+      run: |
+        echo "sha=$(git rev-parse HEAD:opengate/tests/data)" >> $GITHUB_OUTPUT
+    - name: Cache the test data archive
+      id: cache_test_data
+      uses: actions/cache@v5
+      with:
+        path: tests_data
+        key: opengate-tests-data-${{ steps.data_sha.outputs.sha }}
+    - name: Download the test data archive from GitLab
+      if: steps.cache_test_data.outputs.cache-hit != 'true'
+      run: |
+        bash .github/workflows/get_tests_data_archive.sh ${{ steps.data_sha.outputs.sha }} tests_data/artifacts
+    - name: Share the test data archive with the test jobs
+      uses: actions/upload-artifact@v7
+      with:
+        name: opengate-tests-data
+        path: tests_data/artifacts
+        retention-days: 1
+        compression-level: 0
+
   test_wheel_pr:
     runs-on: ${{ matrix.os }}
-    needs: [build_opengate_wheel, build_opengate_core_wheel_pr]
+    needs: [build_opengate_wheel, build_opengate_core_wheel_pr, reuse_opengate_core_wheels, prepare_test_data]
+    # one of build_opengate_core_wheel_pr and reuse_opengate_core_wheels is skipped
+    if: ${{ !cancelled() && !failure() }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-        exclude:
-          - os: macos-15
-            python-version: '3.10'
-          - os: windows-2025
-            python-version: '3.10'
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
@@ -314,7 +385,7 @@ jobs:
           miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: vega-altair
-          python-version: '3.10'
+          python-version: '3.14'
     - name: Merge the results
       shell: bash -el {0}
       run: |

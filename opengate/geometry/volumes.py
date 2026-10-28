@@ -1,6 +1,6 @@
 import re
 import os
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import itk
@@ -15,7 +15,7 @@ from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
 from ..image import write_itk_image
-from ..image import update_image_py_to_cpp
+from ..image import update_image_py_to_cpp, check_image_direction_is_identity
 from .utility import (
     vec_np_as_g4,
     rot_np_as_g4,
@@ -529,31 +529,33 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
 
     @requires_fatal("volume_manager")
-    def set_max_step_size(self, max_step_size):
+    def set_max_step_size(self, max_step_size, particles=None):
         self.volume_manager.simulation.physics_manager.set_max_step_size(
-            self.name, max_step_size
+            self.name, max_step_size, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_max_track_length(self, max_track_length):
+    def set_max_track_length(self, max_track_length, particles=None):
         self.volume_manager.simulation.physics_manager.set_max_track_length(
-            self.name, max_track_length
+            self.name, max_track_length, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_min_ekine(self, min_ekine):
+    def set_min_ekine(self, min_ekine, particles=None):
         self.volume_manager.simulation.physics_manager.set_min_ekine(
-            self.name, min_ekine
+            self.name, min_ekine, particles=particles
         )
 
     @requires_fatal("volume_manager")
-    def set_max_time(self, max_time):
-        self.volume_manager.simulation.physics_manager.set_max_time(self.name, max_time)
+    def set_max_time(self, max_time, particles=None):
+        self.volume_manager.simulation.physics_manager.set_max_time(
+            self.name, max_time, particles=particles
+        )
 
     @requires_fatal("volume_manager")
-    def set_min_range(self, min_range):
+    def set_min_range(self, min_range, particles=None):
         self.volume_manager.simulation.physics_manager.set_min_range(
-            self.name, min_range
+            self.name, min_range, particles=particles
         )
 
     @requires_fatal("volume_manager")
@@ -775,6 +777,10 @@ class RepeatParametrisedVolume(VolumeBase):
             [1, 1, 1],
             {"doc": "FIXME"},
         ),
+        "repeated_volume_name": (
+            None,
+            {"doc": "Name of the repeated volume."},
+        ),
         "offset": (
             [0, 0, 0],
             {"doc": "3 component vector or list."},
@@ -783,20 +789,33 @@ class RepeatParametrisedVolume(VolumeBase):
         "start": ("auto", {"doc": "FIXME"}),
     }
 
-    def __init__(self, repeated_volume, *args, **kwargs):
+    def __init__(self, repeated_volume=None, *args, **kwargs):
         # FIXME: This should probably be a user_info
         self.repeated_volume = repeated_volume
-        if "name" not in kwargs:
-            kwargs["name"] = f"{repeated_volume.name}_param"
-        kwargs["mother"] = repeated_volume.mother
+        if repeated_volume is not None:
+            if "name" not in kwargs:
+                kwargs["name"] = f"{repeated_volume.name}_param"
+            kwargs["mother"] = repeated_volume.mother
         super().__init__(*args, **kwargs)
-        if repeated_volume.build_physical_volume is True:
-            repeated_volume.build_physical_volume = False
+        if repeated_volume is not None:
+            self.user_info["repeated_volume_name"] = repeated_volume.name
+            if repeated_volume.build_physical_volume is True:
+                repeated_volume.build_physical_volume = False
         self.g4_repeat_parametrisation = None
 
     def close(self):
         self.repeated_volume.close()
         super().close()
+
+    def resolve_references(self):
+        if self.repeated_volume is not None:
+            return
+        if self.user_info["repeated_volume_name"] is None:
+            return
+        self.repeated_volume = self.volume_manager.volumes[
+            self.user_info["repeated_volume_name"]
+        ]
+        self.repeated_volume.build_physical_volume = False
 
     def release_g4_references(self):
         super().release_g4_references()
@@ -887,12 +906,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     voxel_materials: List
     image: str
     dump_label_image: str
+    visu_window: Optional[List[float]]
 
     user_info_defaults = {
         "voxel_materials": (
             [[-np.inf, np.inf, "G4_AIR"]],
             {
-                "doc": "FIXME",
+                "doc": "Lookup table from the image values to the materials: a list of "
+                "[min, max, material_name], each one for the voxels with a value in "
+                "the half-closed interval [min, max). The voxels outside all the "
+                "intervals get the default material of the volume (``material``). "
+                "The intervals must not overlap.",
             },
         ),
         "image": (
@@ -909,6 +933,16 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             {
                 "doc": "Path at which the image containing material labels should be saved. "
                 "Set to None to dump no image."
+            },
+        ),
+        "visu_window": (
+            None,
+            {
+                "doc": "Intensity window [min, max] of the image slices shown in the "
+                "Qt visualisation, in the units of the image (e.g. HU for a CT): "
+                "values below min are black, above max are white. "
+                "If None, the window goes from the 0.5 to the 99.9 percentiles of "
+                "the image intensities.",
             },
         ),
     }
@@ -1061,27 +1095,49 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.half_spacing = 0.5 * self.spacing
         self.construct_material()
         self.construct_solid()
-        self.construct_slices()
+        # the slices are only displayed by the visualisation
+        if self.simulation is not None and self.simulation.visu:
+            self.construct_slices()
         self.construct_logical_volume()
         self.g4_voxel_param = self.create_image_parametrisation()
         self.construct_physical_volume()
 
+    def get_visu_window(self, image_array):
+        if self.visu_window is not None:
+            if len(self.visu_window) != 2 or self.visu_window[0] >= self.visu_window[1]:
+                fatal(
+                    f"The visu_window of the image volume '{self.name}' must be "
+                    f"[min, max] with min < max, while it is {self.visu_window}"
+                )
+            return float(self.visu_window[0]), float(self.visu_window[1])
+        # robust default: a few extreme voxels (e.g. metal in a CT) must not
+        # squeeze all the other intensities into a few grey levels
+        low, high = np.percentile(image_array, [0.5, 99.9])
+        if high <= low:
+            low, high = np.min(image_array), np.max(image_array)
+        if high <= low:
+            high = low + 1
+        return float(low), float(high)
+
+    def get_visu_slices(self, image_array):
+        """The three middle slices (xy, xz, yz) of the image (numpy array, in
+        z, y, x order), windowed in [0, 1] with visu_window."""
+        low, high = self.get_visu_window(image_array)
+
+        def window(s):
+            s = np.clip((s.astype(np.float64) - low) / (high - low), 0, 1)
+            return list(s.reshape(-1))
+
+        nz, ny, nx = image_array.shape
+        return (
+            window(image_array[nz // 2, :, :]),
+            window(image_array[:, ny // 2, :]),
+            window(image_array[:, :, nx // 2]),
+        )
+
     def construct_slices(self):
         image_array = itk.GetArrayFromImage(self.itk_image)
-        min_pixel = np.min(image_array)
-        interval_pixel = np.max(image_array) - min_pixel
-        self.slice_xy = (
-            image_array[int(self.size_pix[2] / 2), :, :] - min_pixel
-        ) / interval_pixel
-        self.slice_xy = list(self.slice_xy.reshape(1, -1)[0])
-        self.slice_xz = (
-            image_array[:, int(self.size_pix[1] / 2), :] - min_pixel
-        ) / interval_pixel
-        self.slice_xz = list(self.slice_xz.reshape(1, -1)[0])
-        self.slice_yz = (
-            image_array[:, :, int(self.size_pix[0] / 2)] - min_pixel
-        ) / interval_pixel
-        self.slice_yz = list(self.slice_yz.reshape(1, -1)[0])
+        self.slice_xy, self.slice_xz, self.slice_yz = self.get_visu_slices(image_array)
         image_dict = {
             "slice_xy": self.slice_xy,
             "slice_xz": self.slice_xz,
@@ -1140,6 +1196,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
         self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
         self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        # the visualisation draws the image box and its slices (GateImageBox),
+        # never the voxels: do not let Geant4 visit the (millions of) voxels
+        # each time the scene is drawn, it makes the Qt viewer very slow
+        self.g4_vis_attributes.SetDaughtersInvisible(True)
+        self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
     def create_material_to_label_lut(self, material=None, voxel_materials=None):
         if voxel_materials is None:
@@ -1169,10 +1230,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def load_input_image(self, path=None):
         if path is None:
-            itk_image = itk.imread(ensure_filename_is_str(self.image))
+            path = self.image
+            itk_image = itk.imread(ensure_filename_is_str(path))
+            check_image_direction_is_identity(
+                itk_image, f"the image volume '{self.name}' ({path})"
+            )
             self.itk_image = itk_image
         else:
             itk_image = itk.imread(ensure_filename_is_str(path))
+            check_image_direction_is_identity(
+                itk_image, f"the image volume '{self.name}' ({path})"
+            )
         return itk_image
 
     def create_attenuation_image(self, database, energy):
@@ -1346,6 +1414,373 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.voxel_materials = labels
 
 
+# -----------------------------------------------------------------------------
+# Added TetrahedralMesh volume support.
+#
+# MRCP-specific input parsing is kept private to this volume class, while mesh
+# construction is delegated to opengate_core.
+# -----------------------------------------------------------------------------
+class TetrahedralMeshVolume(VolumeBase, solids.TetrahedralMeshEnvelopeSolid):
+    """OpenGATE volume backed by a parameterised Geant4 tetrahedral mesh.
+
+    The outer logical volume is a bounding box derived from the TetGen node
+    coordinates. During construction, the C++ builder fills that logical
+    volume with one parameterised daughter whose copies use individual
+    ``G4Tet`` solids and region-specific materials.
+    """
+
+    user_info_defaults = {
+        "pv_name": ("phantom_tetmesh", {"doc": "PV name used by builder"}),
+        "check_overlaps": (False, {"doc": "Enable overlap checking"}),
+        "default_material": ("G4_WATER", {"doc": "Fallback mesh material"}),
+        "keep_regions": ([], {"doc": "Region IDs to keep"}),
+        "verbose": (False, {"doc": "Print tetrahedral mesh construction details"}),
+    }
+
+    _element_symbols = (
+        "",
+        "H",
+        "He",
+        "Li",
+        "Be",
+        "B",
+        "C",
+        "N",
+        "O",
+        "F",
+        "Ne",
+        "Na",
+        "Mg",
+        "Al",
+        "Si",
+        "P",
+        "S",
+        "Cl",
+        "Ar",
+        "K",
+        "Ca",
+        "Sc",
+        "Ti",
+        "V",
+        "Cr",
+        "Mn",
+        "Fe",
+        "Co",
+        "Ni",
+        "Cu",
+        "Zn",
+        "Ga",
+        "Ge",
+        "As",
+        "Se",
+        "Br",
+        "Kr",
+        "Rb",
+        "Sr",
+        "Y",
+        "Zr",
+        "Nb",
+        "Mo",
+        "Tc",
+        "Ru",
+        "Rh",
+        "Pd",
+        "Ag",
+        "Cd",
+        "In",
+        "Sn",
+        "Sb",
+        "Te",
+        "I",
+        "Xe",
+        "Cs",
+        "Ba",
+        "La",
+        "Ce",
+        "Pr",
+        "Nd",
+        "Pm",
+        "Sm",
+        "Eu",
+        "Gd",
+        "Tb",
+        "Dy",
+        "Ho",
+        "Er",
+        "Tm",
+        "Yb",
+        "Lu",
+        "Hf",
+        "Ta",
+        "W",
+        "Re",
+        "Os",
+        "Ir",
+        "Pt",
+        "Au",
+        "Hg",
+        "Tl",
+        "Pb",
+        "Bi",
+        "Po",
+        "At",
+        "Rn",
+        "Fr",
+        "Ra",
+        "Ac",
+        "Th",
+        "Pa",
+        "U",
+        "Np",
+        "Pu",
+        "Am",
+        "Cm",
+        "Bk",
+        "Cf",
+        "Es",
+        "Fm",
+        "Md",
+        "No",
+        "Lr",
+        "Rf",
+        "Db",
+        "Sg",
+        "Bh",
+        "Hs",
+        "Mt",
+        "Ds",
+        "Rg",
+        "Cn",
+        "Nh",
+        "Fl",
+        "Mc",
+        "Lv",
+        "Ts",
+        "Og",
+    )
+    _material_cache = {}
+
+    @staticmethod
+    def _parse_mrcp_material_file(material_file):
+        """Parse MRCP material blocks and their region IDs."""
+        definitions = {}
+        region_to_name = {}
+        current_name = None
+        current_density = None
+        current_fractions = {}
+
+        def flush_material():
+            nonlocal current_name, current_density, current_fractions
+            if current_name is None:
+                return
+            total = sum(current_fractions.values())
+            if current_density is None or current_density <= 0 or total <= 0:
+                fatal(f"Invalid MRCP material '{current_name}' in {material_file}")
+            definitions[current_name] = {
+                "density_g_cm3": float(current_density),
+                "zfrac": {
+                    z: fraction / total for z, fraction in current_fractions.items()
+                },
+            }
+            current_name = None
+            current_density = None
+            current_fractions = {}
+
+        with open(material_file, "r", encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                if stripped.startswith("C"):
+                    tokens = stripped.split()
+                    flush_material()
+                    if len(tokens) >= 3:
+                        current_name = tokens[1]
+                        try:
+                            current_density = float(tokens[2])
+                        except ValueError:
+                            fatal(f"Invalid density at {material_file}:{line_number}")
+                    continue
+                if current_name is None:
+                    fatal(
+                        f"Material data before a header at {material_file}:{line_number}"
+                    )
+                tokens = stripped.split()
+                if tokens[0].startswith("m") and tokens[0][1:].isdigit():
+                    region_to_name[int(tokens[0][1:])] = current_name
+                    if len(tokens) < 3:
+                        continue
+                    element_code, fraction_text = tokens[1], tokens[2]
+                elif len(tokens) >= 2:
+                    element_code, fraction_text = tokens[0], tokens[1]
+                else:
+                    fatal(f"Invalid composition at {material_file}:{line_number}")
+                try:
+                    atomic_number = int(element_code) // 1000
+                    fraction = abs(float(fraction_text))
+                except ValueError:
+                    fatal(f"Invalid composition at {material_file}:{line_number}")
+                if not 0 < atomic_number < len(TetrahedralMeshVolume._element_symbols):
+                    fatal(f"Unsupported atomic number Z={atomic_number}")
+                current_fractions[atomic_number] = (
+                    current_fractions.get(atomic_number, 0.0) + fraction
+                )
+        flush_material()
+        return definitions, region_to_name
+
+    @classmethod
+    def _ensure_custom_material_from_zfrac(cls, name, density_g_cm3, zfrac):
+        """Build once and reuse a material from elemental mass fractions."""
+        if name in cls._material_cache:
+            return cls._material_cache[name]
+        if density_g_cm3 <= 0 or density_g_cm3 > 30:
+            fatal(f"Unreasonable density for '{name}': {density_g_cm3} g/cm3")
+        material = g4.G4Material(
+            name,
+            float(density_g_cm3) * g4_units.g_cm3,
+            len(zfrac),
+            g4.kStateSolid,
+            293.15 * g4_units.kelvin,
+            g4_units.atmosphere,
+        )
+        nist = g4.G4NistManager.Instance()
+        for atomic_number, fraction in sorted(zfrac.items()):
+            element = nist.FindOrBuildElement(cls._element_symbols[int(atomic_number)])
+            material.AddElement(element, float(fraction))
+        cls._material_cache[name] = material
+        return material
+
+    @staticmethod
+    def _parse_colour_dat(color_file):
+        """Parse region RGBA entries used by tetrahedral visualization."""
+        colors = {}
+        if not color_file:
+            return colors
+        if not os.path.isfile(color_file):
+            fatal(f"MRCP color file does not exist: {color_file}")
+        with open(color_file, "r", encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, start=1):
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                tokens = stripped.replace(",", " ").split()
+                if len(tokens) < 4:
+                    fatal(f"Invalid color entry at {color_file}:{line_number}")
+                try:
+                    key = int(tokens[0])
+                    rgba = [float(value) for value in tokens[1:5]]
+                except ValueError:
+                    fatal(f"Invalid color entry at {color_file}:{line_number}")
+                if len(rgba) == 3:
+                    rgba.append(1.0)
+                if any(value < 0.0 or value > 1.0 for value in rgba):
+                    fatal(
+                        f"RGBA values must be between 0 and 1 at {color_file}:{line_number}"
+                    )
+                colors[key] = (rgba, rgba[3] > 0.0)
+        return colors
+
+    def _build_region_dicts(self):
+        """Build the region-to-material, RGBA, and visibility dictionaries."""
+
+        material_definitions, region_to_name = self._parse_mrcp_material_file(
+            self.material_file
+        )
+        colour_table = self._parse_colour_dat(self.color_file)
+
+        # 3) Select the regions used by this volume.
+        if self.keep_regions and len(self.keep_regions) > 0:
+            selected_rids = [int(r) for r in self.keep_regions]
+        else:
+            selected_rids = sorted(region_to_name.keys())
+
+        # 4) Build region-to-material, RGBA, and visibility mappings.
+        region_to_material = {}
+        region_to_rgba = {}
+        region_visible = {}
+
+        for rid in selected_rids:
+            if rid not in region_to_name:
+                # Missing regions are omitted and handled by the default
+                # material in the C++ builder.
+                continue
+
+            material_name = region_to_name[rid]
+            if material_name not in material_definitions:
+                continue
+
+            definition = material_definitions[material_name]
+
+            region_to_material[int(rid)] = self._ensure_custom_material_from_zfrac(
+                material_name,
+                definition["density_g_cm3"],
+                definition["zfrac"],
+            )
+
+            # Prefer a region-ID colour entry over a material-name entry.
+            rgba_vis = None
+            if int(rid) in colour_table:
+                rgba_vis = colour_table[int(rid)]
+            elif material_name in colour_table:
+                rgba_vis = colour_table[material_name]
+
+            if rgba_vis is None:
+                rgba, vis = ([0.8, 0.8, 0.8, 1.0], True)
+            else:
+                rgba, vis = rgba_vis
+
+            region_to_rgba[int(rid)] = list(rgba)
+            region_visible[int(rid)] = bool(vis)
+
+        return region_to_material, region_to_rgba, region_visible
+
+    def construct(self):
+        """Construct the envelope first, then populate it with the TetGen mesh."""
+
+        if self._is_constructed:
+            return
+
+        # 1) Construct the outer bounding-box volume first.
+        self.construct_material()
+        self.construct_solid()
+        self.construct_logical_volume()
+        if self.build_physical_volume is True:
+            self.construct_physical_volume()
+
+        # 2) Build region-specific material and visualization dictionaries.
+        region_to_material, region_to_rgba, region_visible = self._build_region_dicts()
+
+        default_material = g4.G4NistManager.Instance().FindOrBuildMaterial(
+            str(self.default_material), False
+        )
+        if default_material is None:
+            fatal(f"Cannot build default material {self.default_material}")
+
+        if self.verbose:
+            print(
+                f"[TetrahedralMeshVolume] name={self.name}, "
+                f"envelope_material={self.material}, "
+                f"default_material={default_material.GetName()}"
+            )
+
+        g4.build_mrcp_tetrahedral_mesh_from_tetgen(
+            self.node_file,
+            self.ele_file,
+            self.g4_logical_volume,  # The empty envelope logical volume.
+            region_to_material,
+            region_to_rgba,
+            region_visible,
+            default_material,
+            self.pv_name,
+            bool(self.check_overlaps),
+        )
+
+        self._is_constructed = True
+
+
+# End of added TetrahedralMesh volume support.
+
+
 class ParallelWorldVolume(NodeMixin):
     def __init__(self, name, volume_manager):
         # VolumeBase.__init__(self, name)
@@ -1441,3 +1876,6 @@ process_cls(TubsVolume)
 process_cls(RepeatParametrisedVolume)
 process_cls(ImageVolume)
 process_cls(TesselatedVolume)
+
+# Added class processing for TetrahedralMeshVolume user properties.
+process_cls(TetrahedralMeshVolume)

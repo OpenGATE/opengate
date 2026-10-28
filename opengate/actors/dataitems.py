@@ -32,6 +32,7 @@ import json
 import os
 import platform
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from collections import OrderedDict
 from box import Box
@@ -58,8 +59,6 @@ from ..image import (
     itk_image_from_array,
     add_constant_to_itk_image,
 )
-from ..rootio import RootMergeFileWriter
-from ..contrib.root_helpers import root_write_tree
 
 
 def derived_data_item(*, depends_on):
@@ -264,15 +263,21 @@ class MeanValueDataItemMixin:
         return result
 
     def inplace_merge_with(self, other):
+        # nothing to merge (e.g. in the jobs merge, the items are loaded and
+        # merged one by one: the other items of the container are still empty),
+        # as in ItkImageDataItem.inplace_merge_with
+        if other.data is None:
+            return self
         if self.data is None:
             self.set_data(other.data)
             self.number_of_samples = other.number_of_samples
         else:
+            # (other is not modified: it may be the data of a run, kept)
+            n = self.number_of_samples + other.number_of_samples
             self *= self.number_of_samples
-            other *= other.number_of_samples
-            self += other
-            self /= self.number_of_samples + other.number_of_samples
-            self.number_of_samples = self.number_of_samples + other.number_of_samples
+            self += other * other.number_of_samples
+            self /= n
+            self.number_of_samples = n
         return self
 
 
@@ -416,6 +421,37 @@ class ScalarDataItem(ArithmeticDataItem):
         raise NotImplementedError
 
 
+# The start and stop times of the statistics are written by std::ctime (C
+# locale), e.g. "Sat Oct 24 15:17:43 2026". They are parsed here without
+# strptime, which depends on the locale for the day and month names.
+_CTIME_MONTHS = (
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+)
+
+
+def parse_ctime(s):
+    """The datetime of a ctime string, or None if it is not one (e.g. unset)"""
+    try:
+        _, month, day, hms, year = str(s).split()
+        hour, minute, second = (int(x) for x in hms.split(":"))
+        return datetime(
+            int(year), _CTIME_MONTHS.index(month) + 1, int(day), hour, minute, second
+        )
+    except ValueError:
+        return None
+
+
 class StatisticsDataItem(DataItem):
     """Semantic data item for simulation statistics.
 
@@ -444,6 +480,10 @@ class StatisticsDataItem(DataItem):
         self.data.init = 0
         self.data.track_types = {}
         self.data.nb_threads = 1
+        # one random identifier per simulation (i.e. per job): merging keeps
+        # the union, so the number of jobs is right whatever the merge order
+        # (e.g. runs of the same job merged first)
+        self.data.simulation_ids = []
 
     @classmethod
     def get_known_entry_names(cls):
@@ -465,6 +505,24 @@ class StatisticsDataItem(DataItem):
         raise AttributeError(f"No such attribute '{item}'")
 
     @property
+    def timespan(self):
+        """Wall-clock time from the start to the stop of the simulation (for
+        merged outputs, e.g. of several jobs: from the first start to the last
+        stop). Unlike 'duration', it is not summed when merging. The start and
+        stop times are known to the second only."""
+        start = parse_ctime(self.data.start_time)
+        stop = parse_ctime(self.data.stop_time)
+        if start is None or stop is None:
+            return 0
+        return (stop - start).total_seconds() * g4_units.s
+
+    @property
+    def jobs(self):
+        """Number of simulations (jobs) merged in these statistics (1 if
+        unknown, e.g. for statistics written by an older version)"""
+        return max(1, len(self.data.get("simulation_ids", [])))
+
+    @property
     def pps(self):
         if self.data.duration != 0:
             return int(self.data.events / (self.data.duration / g4_units.s))
@@ -482,6 +540,17 @@ class StatisticsDataItem(DataItem):
             return int(self.data.steps / (self.data.duration / g4_units.s))
         return 0
 
+    @property
+    def pps_timespan(self):
+        """Primaries per second of wall-clock time (timespan). For jobs run in
+        parallel, it is the speed of the whole campaign, while pps is the speed
+        of one job. Not reliable for very short simulations (timespan is known
+        to the second)."""
+        timespan = self.timespan
+        if timespan != 0:
+            return int(self.data.events / (timespan / g4_units.s))
+        return 0
+
     def get_processed_output(self):
         d = {}
         d["runs"] = {"value": self.data.runs, "unit": None}
@@ -492,9 +561,12 @@ class StatisticsDataItem(DataItem):
         d["init"] = {"value": val, "unit": unit}
         val, unit = g4_best_unit_tuple(self.data.duration, "Time")
         d["duration"] = {"value": val, "unit": unit}
+        val, unit = g4_best_unit_tuple(self.timespan, "Time")
+        d["timespan"] = {"value": val, "unit": unit}
         d["pps"] = {"value": self.pps, "unit": None}
         d["tps"] = {"value": self.tps, "unit": None}
         d["sps"] = {"value": self.sps, "unit": None}
+        d["pps_timespan"] = {"value": self.pps_timespan, "unit": None}
         d["start_time"] = {"value": self.data.start_time, "unit": None}
         d["stop_time"] = {"value": self.data.stop_time, "unit": None}
         val, unit = g4_best_unit_tuple(self.data.sim_start_time, "Time")
@@ -502,6 +574,11 @@ class StatisticsDataItem(DataItem):
         val, unit = g4_best_unit_tuple(self.data.sim_stop_time, "Time")
         d["sim_stop_time"] = {"value": val, "unit": unit}
         d["threads"] = {"value": self.data.nb_threads, "unit": None}
+        d["jobs"] = {"value": self.jobs, "unit": None}
+        d["simulation_ids"] = {
+            "value": list(self.data.get("simulation_ids", [])),
+            "unit": None,
+        }
         d["arch"] = {"value": platform.system(), "unit": None}
         d["python"] = {"value": platform.python_version(), "unit": None}
         d["track_types"] = {"value": self.data.track_types, "unit": None}
@@ -510,6 +587,9 @@ class StatisticsDataItem(DataItem):
     def __str__(self):
         s = ""
         for k, v in self.get_processed_output().items():
+            if k == "simulation_ids":
+                # written in the file (for the merge), 'jobs' is printed
+                continue
             if k == "track_types":
                 if len(v["value"]) > 0:
                     s += "track_types\n"
@@ -523,7 +603,14 @@ class StatisticsDataItem(DataItem):
     def inplace_merge_with(self, *other):
         if self.data is None:
             self.reset_data()
+        # the time span covers self only if it already holds some data
+        merged_data = [o.data for o in other]
+        if self.data.runs > 0 or self.data.events > 0:
+            merged_data.append(self.data)
 
+        # 'duration' and 'init' are summed: for the outputs of several jobs run
+        # in parallel, this is the total computing time ('timespan' is the
+        # wall-clock time)
         for o in other:
             self.data.runs += o.data.runs
             self.data.events += o.data.events
@@ -543,11 +630,28 @@ class StatisticsDataItem(DataItem):
             for k in new_entries:
                 self.data.track_types[k] = o.data.track_types[k]
 
+            # a new list, not to modify the one of another item
+            ids = list(self.data.get("simulation_ids", []))
+            for i in o.data.get("simulation_ids", []):
+                if i not in ids:
+                    ids.append(i)
+            self.data.simulation_ids = ids
+
         if len(other) > 0:
-            self.data.start_time = min([o.data.start_time for o in other])
-            self.data.stop_time = max([o.data.stop_time for o in other])
-            self.data.sim_start_time = min([o.data.sim_start_time for o in other])
-            self.data.sim_stop_time = max([o.data.sim_stop_time for o in other])
+            # the earliest start and the latest stop (compared as dates, not
+            # as strings)
+            starts = [parse_ctime(d.start_time) for d in merged_data]
+            starts = [t for t in starts if t is not None]
+            if len(starts) > 0:
+                self.data.start_time = min(starts).ctime()
+            stops = [parse_ctime(d.stop_time) for d in merged_data]
+            stops = [t for t in stops if t is not None]
+            if len(stops) > 0:
+                self.data.stop_time = max(stops).ctime()
+            self.data.sim_start_time = min(d.sim_start_time for d in merged_data)
+            self.data.sim_stop_time = max(d.sim_stop_time for d in merged_data)
+            # the threads of one job (all the jobs use the same number)
+            self.data.nb_threads = max(d.get("nb_threads", 1) for d in merged_data)
         return self
 
     def merge_with(self, other):
@@ -572,7 +676,221 @@ class StatisticsDataItem(DataItem):
             unit = entry["unit"]
             if unit in g4_units:
                 loaded_data[key] *= g4_units[unit]
+        # written as "threads" (get_processed_output), stored as "nb_threads"
+        if "threads" in loaded_data:
+            loaded_data["nb_threads"] = loaded_data["threads"]
         self.set_data(loaded_data)
+
+
+class DepositedChargeDataItem(DataItem):
+    """Semantic data item for the deposited charge actor.
+
+    The payload holds the first and second moments of the per-event deposited
+    charge together with the event count, which is what history-by-history
+    uncertainty estimation needs. Every entry is additive, so merging runs,
+    threads or split jobs is a plain sum; the statistics themselves are derived
+    on demand rather than stored.
+    """
+
+    def set_data(self, data, **kwargs):
+        """The input data must behave like a dictionary."""
+        self.reset_data()
+        self.data.update(data)
+
+    def reset_data(self):
+        self.data = Box()
+        self.data.deposited_nominal_charge = 0.0
+        self.data.deposited_dynamic_charge = 0.0
+        self.data.deposited_nominal_charge_squared = 0.0
+        self.data.deposited_dynamic_charge_squared = 0.0
+        self.data.number_of_events = 0
+        # Returning the payload lets callers work with a value that is known
+        # not to be None, which self.data alone is not.
+        return self.data
+
+    @classmethod
+    def get_known_entry_names(cls):
+        charge_data_item = cls()
+        charge_data_item.reset_data()
+        return tuple(charge_data_item.data.keys())
+
+    def __getattr__(self, item):
+        # Like StatisticsDataItem, this is the semantic access layer: the raw
+        # moments live in the Box payload while the statistics are derived
+        # properties on this class.
+        if item not in ("data", "__setstate__", "__getstate__"):
+            try:
+                return self.data[item]
+            except (TypeError, KeyError):
+                pass
+        raise AttributeError(f"No such attribute '{item}'")
+
+    @staticmethod
+    def _history_statistics(sum_x, sum_x2, n):
+        """History-by-history statistics from the first and second moments.
+
+        Returns a dict with, for the per-event charge distribution:
+            - ``mean``: mean net charge per event (sum_x / n)
+            - ``std``: sample standard deviation of the per-event charge (Bessel-corrected)
+            - ``sem``: standard error of the mean (std / sqrt(n))
+            - ``total``: total net charge (sum_x)
+            - ``total_uncertainty``: absolute uncertainty on ``total``
+            - ``relative_uncertainty``: total_uncertainty / |total|
+        """
+        stats = {
+            "mean": 0.0,
+            "std": 0.0,
+            "sem": 0.0,
+            "total": sum_x,
+            "total_uncertainty": 0.0,
+            "relative_uncertainty": 0.0,
+        }
+        if n < 1:
+            return stats
+        stats["mean"] = sum_x / n
+        if n < 2:
+            return stats
+        mean = stats["mean"]
+        # Sum of squared deviations = sum_x2 - (sum_x)^2 / n, clamped to >= 0
+        sum_sq_dev = max(sum_x2 - sum_x * sum_x / n, 0.0)
+        variance = sum_sq_dev / (n - 1)
+        std = variance**0.5
+        sem = std / n**0.5
+        total_uncertainty = n * sem
+        stats.update(
+            mean=mean,
+            std=std,
+            sem=sem,
+            total_uncertainty=total_uncertainty,
+            relative_uncertainty=(
+                total_uncertainty / abs(sum_x) if sum_x != 0.0 else 0.0
+            ),
+        )
+        return stats
+
+    def statistics(self, kind="nominal"):
+        """History-by-history statistics for one kind ('nominal'/'dynamic')."""
+        if kind == "nominal":
+            return self._history_statistics(
+                self.data.deposited_nominal_charge,
+                self.data.deposited_nominal_charge_squared,
+                self.data.number_of_events,
+            )
+        elif kind == "dynamic":
+            return self._history_statistics(
+                self.data.deposited_dynamic_charge,
+                self.data.deposited_dynamic_charge_squared,
+                self.data.number_of_events,
+            )
+        else:
+            fatal(f"Unknown charge kind '{kind}'. Use 'nominal' or 'dynamic'. ")
+
+    @property
+    def nominal_statistics(self):
+        return self.statistics("nominal")
+
+    @property
+    def dynamic_statistics(self):
+        return self.statistics("dynamic")
+
+    def get_processed_output(self):
+        nominal = self.statistics("nominal")
+        dynamic = self.statistics("dynamic")
+        d = {}
+        d["number_of_events"] = {"value": self.data.number_of_events, "unit": None}
+        d["nominal_charge"] = {"value": nominal["total"], "unit": "eplus"}
+        d["nominal_charge_uncertainty"] = {
+            "value": nominal["total_uncertainty"],
+            "unit": "eplus",
+        }
+        d["dynamic_charge"] = {"value": dynamic["total"], "unit": "eplus"}
+        d["dynamic_charge_uncertainty"] = {
+            "value": dynamic["total_uncertainty"],
+            "unit": "eplus",
+        }
+        # The second moments are not recoverable from the derived statistics
+        # above, so persist them explicitly. They are what load() needs to
+        # rebuild this data item, e.g. when merging split jobs from disk.
+        d["nominal_charge_squared"] = {
+            "value": self.data.deposited_nominal_charge_squared,
+            "unit": None,  # should be eplus**2, but keep None
+        }
+        d["dynamic_charge_squared"] = {
+            "value": self.data.deposited_dynamic_charge_squared,
+            "unit": None,  # should be eplus**2, but keep None
+        }
+        d["nominal_statistics"] = {"value": nominal, "unit": None}
+        d["dynamic_statistics"] = {"value": dynamic, "unit": None}
+        return d
+
+    def __str__(self):
+        nominal = self.statistics("nominal")
+        dynamic = self.statistics("dynamic")
+        return (
+            f"  Nominal: {nominal['total']} +/- {nominal['total_uncertainty']} e\n"
+            f"  Dynamic: {dynamic['total']} +/- {dynamic['total_uncertainty']} e\n"
+            f"  (N events: {self.data.number_of_events})"
+        )
+
+    def inplace_merge_with(self, *other):
+        data = self.data if self.data is not None else self.reset_data()
+        # All entries are moments or counts, so merging is a plain sum.
+        for o in other:
+            for key in data:
+                data[key] += o.data[key]
+        return self
+
+    def merge_with(self, other):
+        merged = type(self)()
+        if self.data is not None:
+            merged.set_data(self.data)
+        return merged.inplace_merge_with(other)
+
+    def write(self, path, encoder="json", **kwargs):
+        with open(path, "w+") as f:
+            if encoder == "json":
+                dump_json(self.get_processed_output(), f, indent=4)
+            else:
+                f.write(self.__str__())
+
+    def load(self, path, **kwargs):
+        """Rebuild the payload from a json file written by write().
+
+        Only the moments and the event count are read back; the statistics in
+        the file are derived quantities and are recomputed on demand.
+        """
+        with open(path, "r") as input_file:
+            processed_output = json.load(input_file)
+
+        def entry_value(key):
+            try:
+                entry = processed_output[key]
+            except KeyError:
+                fatal(
+                    f"Cannot load deposited charge data from {path}: "
+                    f"the file has no entry '{key}'. Files written by GATE "
+                    f"versions before the second moments were persisted "
+                    f"cannot be loaded. "
+                )
+            value = entry["value"]
+            unit = entry["unit"]
+            if unit in g4_units:
+                value *= g4_units[unit]
+            return value
+
+        self.set_data(
+            {
+                "deposited_nominal_charge": entry_value("nominal_charge"),
+                "deposited_dynamic_charge": entry_value("dynamic_charge"),
+                "deposited_nominal_charge_squared": entry_value(
+                    "nominal_charge_squared"
+                ),
+                "deposited_dynamic_charge_squared": entry_value(
+                    "dynamic_charge_squared"
+                ),
+                "number_of_events": entry_value("number_of_events"),
+            }
+        )
 
 
 class RootDataItem(DataItem):
@@ -993,6 +1311,7 @@ class RootDataItem(DataItem):
 
         try:
             import uproot
+            from ..contrib.root_helpers import root_write_tree
 
             # DEBUG: dump branch payload structure before rewriting the shared
             # ROOT file. This helps diagnose cases where uproot receives an
@@ -1202,6 +1521,8 @@ class RootDataItem(DataItem):
         tree_descriptor = self.get_single_tree_descriptor()
 
         if owns_writer:
+            from ..rootio import RootMergeFileWriter
+
             writer = RootMergeFileWriter(output_path)
             writer.open()
 
@@ -2079,6 +2400,45 @@ class StatisticsItemContainer(DataItemContainer):
             return
         if item in self._known_stats_entry_names:
             setattr(self._stats_item.data, item, value)
+            return
+        if item not in ("__setstate__", "__getstate__"):
+            _raise_pre_interface_convenience_deprecation(
+                type(self).__name__, f"setattr({item})"
+            )
+        object.__setattr__(self, item, value)
+
+
+class DepositedChargeItemContainer(DataItemContainer):
+
+    _data_item_classes = (DepositedChargeDataItem,)
+    primary_item_identifiers = (0,)
+
+    @property
+    def _charge_item(self):
+        try:
+            return self.data[0]
+        except (AttributeError, IndexError):
+            raise AttributeError(
+                "Deposited charge item container has no primary data item."
+            )
+
+    @property
+    def _known_charge_entry_names(self):
+        return self._data_item_classes[0].get_known_entry_names()
+
+    def __getattr__(self, item):
+        if item in ("data", "belongs_to", "__setstate__", "__getstate__"):
+            raise AttributeError(f"No such attribute '{item}'")
+        if item in self._known_charge_entry_names:
+            return getattr(self._charge_item, item)
+        return super().__getattr__(item)
+
+    def __setattr__(self, item, value):
+        if item in ("data", "belongs_to"):
+            object.__setattr__(self, item, value)
+            return
+        if item in self._known_charge_entry_names:
+            setattr(self._charge_item.data, item, value)
             return
         if item not in ("__setstate__", "__getstate__"):
             _raise_pre_interface_convenience_deprecation(

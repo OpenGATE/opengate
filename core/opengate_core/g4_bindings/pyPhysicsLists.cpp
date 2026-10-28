@@ -62,6 +62,8 @@ namespace py = pybind11;
 #include <G4EmLowEPPhysics.hh>
 #include <G4EmPenelopePhysics.hh>
 #include <G4EmStandardPhysicsGS.hh>
+#include <G4EmStandardPhysicsSS.hh>
+#include <G4EmStandardPhysicsWVI.hh>
 #include <G4GenericBiasingPhysics.hh>
 #include <G4OpticalPhysics.hh>
 
@@ -183,7 +185,12 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_REFERENCE_PHYSICS_LIST1(QGSP_INCLXX)
   ADD_REFERENCE_PHYSICS_LIST1(QGSP_INCLXX_HP)
   ADD_REFERENCE_PHYSICS_LIST1(QGS_BIC)
-  ADD_REFERENCE_PHYSICS_LIST2(Shielding, "HP")
+  py::class_<Shielding, G4VModularPhysicsList,
+             std::unique_ptr<Shielding, py::nodelete>>(m, "Shielding")
+      .def(py::init<G4int, const G4String &, const G4String &, G4bool>(),
+           py::arg("verbosity") = 1, py::arg("type") = G4String("HP"),
+           py::arg("variant") = G4String(""), py::arg("use_liqmd") = false);
+  AddPhysicsList("Shielding");
   ADD_REFERENCE_PHYSICS_LIST1(ShieldingLEND)
 
   // G4VPhysicsConstructor
@@ -194,6 +201,8 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysics_option4)
 
   ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysicsGS)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysicsSS)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmStandardPhysicsWVI)
   ADD_PHYSICS_CONSTRUCTOR(G4EmLowEPPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePolarizedPhysics)

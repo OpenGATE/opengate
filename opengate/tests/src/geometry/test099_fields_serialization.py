@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     # Custom fields refuse serialization
     field = fields.CustomMagneticField(name="B_custom")
-    field.field_function = lambda x, y, z, t: [0, 0, 0]
+    field.field_function = lambda x, y, z: [0, 0, 0]
     try:
         field.to_dictionary()
         ok = False  # should not reach here
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     print(f"Custom B serialization raises: {'OK' if ok else 'FAIL'}")
 
     field = fields.CustomElectricField(name="E_custom")
-    field.field_function = lambda x, y, z, t: [0, 0, 0]
+    field.field_function = lambda x, y, z: [0, 0, 0]
     try:
         field.to_dictionary()
         ok = False

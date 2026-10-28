@@ -10,6 +10,8 @@
 #include <G4RootAnalysisManager.hh>
 #include <G4Run.hh>
 #include <G4RunManager.hh>
+#include <filesystem>
+#include <fstream>
 
 GateDigiCollectionsRootManager *GateDigiCollectionsRootManager::fInstance =
     nullptr;
@@ -42,7 +44,36 @@ void GateDigiCollectionsRootManager::OpenFile(const int tupleId,
       } else
         ram->SetNtupleMerging(true);
     }
-    ram->OpenFile(filename);
+    CheckFileCanBeCreated(filename);
+    if (!ram->OpenFile(filename)) {
+      std::ostringstream oss;
+      oss << "Cannot open the ROOT output file '" << filename << "'.";
+      Fatal(oss.str());
+    }
+  }
+}
+
+void GateDigiCollectionsRootManager::CheckFileCanBeCreated(
+    const std::string &filename) {
+  // Geant4 creates the ROOT file only later, when the first ntuple is created.
+  // If the file cannot be created, Geant4 only issues a warning and then
+  // crashes (null pointer, access violation on Windows). So we check first,
+  // and stop with a clear error. Only the master thread does it: in MT mode,
+  // the workers use their own file names.
+  if (!G4Threading::IsMasterThread())
+    return;
+  const bool existed = std::filesystem::exists(filename);
+  std::ofstream test_file(filename, std::ios::app);
+  if (!test_file) {
+    std::ostringstream oss;
+    oss << "Cannot create the ROOT output file '" << filename
+        << "'. Check that the output folder exists and is writable.";
+    Fatal(oss.str());
+  }
+  test_file.close();
+  if (!existed) {
+    std::error_code ec;
+    std::filesystem::remove(filename, ec);
   }
 }
 
@@ -73,7 +104,7 @@ int GateDigiCollectionsRootManager::DeclareNewTuple(const std::string &name) {
 
 void GateDigiCollectionsRootManager::AddNtupleRow(const int tupleId) {
   auto *ram = G4RootAnalysisManager::Instance();
-  ram->AddNtupleRow(tupleId);
+  ram->AddNtupleRow(threadLocalData.Get().fTupleIdMap.at(tupleId));
 }
 
 void GateDigiCollectionsRootManager::Write(const int tupleId) const {
@@ -126,14 +157,18 @@ void GateDigiCollectionsRootManager::CreateRootTuple(GateDigiCollection *hc) {
   ram->SetVerboseLevel(0);
   OpenFile(hc->GetTupleId(), hc->GetFilename());
   auto id = ram->CreateNtuple(hc->GetName(), hc->GetTitle());
+  threadLocalData.Get().fTupleIdMap[hc->GetTupleId()] = id;
 
   // Important ! This allows to write to several root files
-  ram->SetNtupleFileName(hc->GetTupleId(), hc->GetFilename());
+  if (hc->GetTupleId() > 0) {
+    ram->SetNtupleFileName(id, hc->GetFilename());
+  }
   for (auto *att : hc->GetDigiAttributes()) {
     // (depends on the type -> todo in the DigiAttribute ?)
     // WARNING: the id can be different from tupleId in HC and in att
     // because it is created at all runs (mandatory).
     // So id must be used to create columns, not tupleID in att.
+    att->SetRootTupleId(id);
     CreateNtupleColumn(id, att);
   }
   ram->FinishNtuple(id);

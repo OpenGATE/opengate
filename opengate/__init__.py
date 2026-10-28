@@ -128,6 +128,13 @@ except ImportError as e:
 if sys.platform.startswith("darwin"):
     restart_with_qt_libs()
 
+# before any use of itk (see itk_torch.py and itk_factories.py)
+from opengate.itk_torch import make_itk_import_torch_only_when_needed
+from opengate.itk_factories import defer_itk_io_factories_of_unused_modules
+
+make_itk_import_torch_only_when_needed()
+defer_itk_io_factories_of_unused_modules()
+
 # subpackages
 import opengate.sources
 import opengate.geometry

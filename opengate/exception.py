@@ -1,4 +1,6 @@
 import inspect
+import os
+import sys
 
 import colored
 import opengate_core as g4
@@ -38,6 +40,15 @@ class GateMergeError(Exception):
     """Raise this when a simulation merge operation fails."""
 
 
+class GateUserError(Exception):
+    """Raise this for an error of the user (e.g. a wrong parameter or an
+    existing output) with a message that says what to do. If it is not caught,
+    only the message is printed, without the Python traceback (see
+    _gate_excepthook); set the environment variable OPENGATE_TRACEBACK=1 to
+    get the traceback.
+    """
+
+
 color_error = colored.fore("red") + colored.style("bold")
 color_warning = colored.fore("orange_1")
 color_ok = colored.fore("light_blue")
@@ -49,6 +60,19 @@ def fatal(s):
     logger.critical(ss)
     logger.critical(s)
     raise Exception(s)
+
+
+def _gate_excepthook(exc_type, exc_value, exc_traceback):
+    """Print only the message of an uncaught GateUserError (the traceback
+    is not useful to the user), the other exceptions as usual."""
+    if issubclass(exc_type, GateUserError) and not os.environ.get("OPENGATE_TRACEBACK"):
+        logger.critical(str(exc_value))
+        return
+    _previous_excepthook(exc_type, exc_value, exc_traceback)
+
+
+_previous_excepthook = sys.excepthook
+sys.excepthook = _gate_excepthook
 
 
 def warning(s):

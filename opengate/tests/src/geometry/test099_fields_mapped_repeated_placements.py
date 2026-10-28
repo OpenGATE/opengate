@@ -6,6 +6,7 @@ Same scenario as test099_fields_repeated_placements, but both fields are
 MappedMagneticField.
 """
 
+import pathlib
 import itertools
 
 import numpy as np
@@ -42,7 +43,9 @@ VISU = False
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     sim = gate.Simulation()
     sim.g4_verbose = False
@@ -97,7 +100,7 @@ if __name__ == "__main__":
 
     # --- RIGHT: repeated box (N_REPS slabs along Z) at X = +SEP ---
     translations = get_grid_repetition(
-        [1, 1, N_REPS], [0, 0, SPACING], start=[0, 0, -SPACING]
+        [1, 1, N_REPS], [0, 0, SPACING], start=[0, 0, -(BOX_SIZE - SLAB_SIZE) / 2]
     )
     translations = [[+SEP + t[0], t[1], t[2]] for t in translations]
 

@@ -11,7 +11,6 @@
 namespace py = pybind11;
 
 #include <G4PhysListFactory.hh>
-#include <G4VModularPhysicsList.hh>
 
 void init_G4PhysListFactory(py::module &m) {
 
@@ -19,7 +18,5 @@ void init_G4PhysListFactory(py::module &m) {
       .def(py::init())
       .def("AvailablePhysLists", &G4PhysListFactory::AvailablePhysLists)
       .def("AvailablePhysListsEM", &G4PhysListFactory::AvailablePhysListsEM)
-      .def("IsReferencePhysList", &G4PhysListFactory::IsReferencePhysList)
-      .def("GetReferencePhysList", &G4PhysListFactory::GetReferencePhysList,
-           py::return_value_policy::reference_internal);
+      .def("IsReferencePhysList", &G4PhysListFactory::IsReferencePhysList);
 }

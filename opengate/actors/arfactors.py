@@ -10,7 +10,7 @@ from .base import ActorBase
 from .digitizers import (
     DigitizerEnergyWindowsActor,
 )
-from .actoroutput import ActorOutputSingleImage, ActorOutputRoot
+from .actoroutput import ActorOutputRunStackedImage, ActorOutputRoot
 from ..base import process_cls
 
 garf = LazyModuleLoader("garf")
@@ -215,12 +215,14 @@ class ARFActor(ActorBase, g4.GateARFActor):
         ),
     }
 
+    # all runs are stacked in the same image (slices of run r: energy windows
+    # of run r), see ActorOutputRunStackedImage for the jobs merge
     user_output_config = {
         "counts": {
-            "actor_output_class": ActorOutputSingleImage,
+            "actor_output_class": ActorOutputRunStackedImage,
         },
         "squared_counts": {
-            "actor_output_class": ActorOutputSingleImage,
+            "actor_output_class": ActorOutputRunStackedImage,
             "active": False,
         },
     }

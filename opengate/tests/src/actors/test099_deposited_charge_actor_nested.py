@@ -123,11 +123,19 @@ if __name__ == "__main__":
 
     expected_total = -float(n_events)
 
-    q_mother1 = charge_mother1.deposited_nominal_charge
-    q_daughter11 = charge_daughter11.deposited_nominal_charge
-    q_daughter12 = charge_daughter12.deposited_nominal_charge
-    q_daughter13 = charge_daughter13.deposited_nominal_charge
-    q_daughter131 = charge_daughter131.deposited_nominal_charge
+    q_mother1 = charge_mother1.user_output.charge.merged_data.deposited_nominal_charge
+    q_daughter11 = (
+        charge_daughter11.user_output.charge.merged_data.deposited_nominal_charge
+    )
+    q_daughter12 = (
+        charge_daughter12.user_output.charge.merged_data.deposited_nominal_charge
+    )
+    q_daughter13 = (
+        charge_daughter13.user_output.charge.merged_data.deposited_nominal_charge
+    )
+    q_daughter131 = (
+        charge_daughter131.user_output.charge.merged_data.deposited_nominal_charge
+    )
 
     expected_mother1 = 0
     expected_daughter11 = 0

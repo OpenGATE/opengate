@@ -9,6 +9,7 @@ Checks:
   3. Energy gain matches work done: dKE = q * E * dx
 """
 
+import pathlib
 import numpy as np
 import uproot
 
@@ -26,7 +27,9 @@ from test099_fields_helpers import (
 )
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test099_fields")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder=pathlib.Path(__file__).stem
+    )
 
     Ex = 1e8 * g4_volt / g4_m
     T = 10 * g4_MeV

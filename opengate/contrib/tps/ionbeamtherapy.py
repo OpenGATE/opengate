@@ -6,7 +6,6 @@
 #   See LICENSE for further details
 # -----------------------------------------------------------------------------
 
-import pydicom
 import os
 import re
 import numpy as np
@@ -173,6 +172,8 @@ class LayerInfo(object):
     def __init__(self, ctrlpnt, j, cumsumchk=[], verbose=False, keep0=False):
         self._cp = ctrlpnt
         if verbose:
+            import pydicom
+
             logger.debug("{}. control point with type {}".format(j, type(self._cp)))
             for k in self._cp.keys():
                 if pydicom.datadict.dictionary_has_tag(k):
@@ -484,6 +485,8 @@ class BeamsetInfo(object):
     def __init__(self, rpfp):
         self._warnings = list()  # will hopefully stay empty
         self._beam_numbers_corrupt = False  # e.g. PDM does not define beam numbers
+        import pydicom
+
         self._rp = pydicom.dcmread(rpfp)
         self._rpfp = rpfp
         logger.debug("beamset: survived reading DICOM file {}".format(rpfp))
@@ -531,6 +534,8 @@ class BeamsetInfo(object):
     def _chkrp(self):
         if "SOPClassUID" not in self._rp:
             raise IOError("bad DICOM file {},\nmissing SOPClassUID".format(self._rpfp))
+        import pydicom
+
         sop_class_name = pydicom.uid.UID_dictionary[self._rp.SOPClassUID][0]
         if sop_class_name != "RT Ion Plan Storage":
             raise IOError(

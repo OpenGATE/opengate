@@ -96,6 +96,27 @@ above, voxels with label 3 correspond to “G4_ADIPOSE_TISSUE_ICRP”,
 voxels with label 4 correspond to “G4_TISSUE_SOFT_ICRP”, and so forth.
 See test `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry>`_ as an example simulation using an Image volume.
 
+.. _image-volume-visualisation:
+
+Visualisation
+~~~~~~~~~~~~~
+
+With the Qt visualisation (``sim.visu_type = "qt"``), an image volume is
+displayed as its box and its three middle slices; the voxels are not drawn.
+The intensity window of the slices is set with ``visu_window = [min, max]``,
+in the units of the image: values below ``min`` are black, values above
+``max`` are white. For example, for a CT in HU:
+
+.. code:: python
+
+   patient.visu_window = [-200, 800]
+
+By default (``None``), the window goes from the 0.5 to the 99.9 percentiles of
+the image values, so that a few extreme voxels (e.g. metal implants) do not
+make the whole slice dark. With the VRML and GDML visualisations, the image
+volume is displayed as a plain box. See the visualisation section of
+:doc:`user_guide_reference_simulation` for the requirements.
+
 The frame of reference of an Image is linked to the bounding box and
 treated like other Geant4 volumes, i.e. by default, the center of the
 image box is positioned at the origin of the mother volume’s frame of
@@ -107,6 +128,24 @@ image, you need to extract that information and set it via the
 future version of Gate 10 might provide an option to do this
 automatically. If you are motivated, you can implement that feature and
 contribute it to the opengate package.
+
+The direction matrix of the input image (the rotation or flip stored in
+its header, e.g. ``TransformMatrix`` in a mhd file) is not supported
+either: the voxels are always placed along the axes of the volume. To
+avoid silently mirroring or rotating the geometry, the simulation stops
+with an error if the image direction is not the identity. In that case,
+resample the image to an identity direction first, or, if the voxels are
+already stored in the expected order, simply reset the direction, for
+example:
+
+.. code:: python
+
+   import itk
+   import numpy as np
+
+   img = itk.imread("ct.mhd")
+   img.SetDirection(np.eye(3))
+   itk.imwrite(img, "ct_identity.mhd")
 
 There is a helper function ``HounsfieldUnit_to_material`` to create an
 interval-material list that can be used as input to the
@@ -354,6 +393,16 @@ The user guide on this will soon be updated and extended.
    param.start = [-(x - 1) * y / 2.0 for x, y in zip(size, tr)]
    param.offset_nb = 1
    param.offset = [0, 0, 0]
+
+When ``sim.check_volumes_overlap`` is True (the default), each copy of a
+parametrised volume is checked against its mother and against all the
+other copies, so the cost of the check grows with the square of the
+number of copies. Parametrised volumes with more than
+``sim.check_volumes_overlap_max_copies`` copies (100 by default) are not
+checked, with an info message. To check a large parametrised volume, for
+example a collimator with thousands of holes, increase this value
+(be patient: about 1 s for 100 copies, 10 s for 300), or check
+once with a smaller ``linear_repeat``.
 
 
 Reference
