@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import click
 from pathlib import Path
+from scipy.spatial.transform import Rotation
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate import logger
 from opengate.managers import Simulation
@@ -53,6 +54,21 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Reverse the order of the spheres (the first one is the 10 mm sphere)",
 )
 @click.option(
+    "--translation",
+    default=None,
+    nargs=3,
+    type=float,
+    help="Translation (mm) of the phantom: the image is voxelized in this frame "
+    "(e.g. the frame of a CT, with --rotation)",
+)
+@click.option(
+    "--rotation",
+    default=None,
+    nargs=3,
+    type=float,
+    help="Rotation of the phantom, Euler angles xyz (deg), before the translation",
+)
+@click.option(
     "--no_central_cylinder",
     is_flag=True,
     default=False,
@@ -70,6 +86,8 @@ def go(
     iec_version,
     sphere_starting_angle,
     toggle_sphere_order,
+    translation,
+    rotation,
     no_central_cylinder,
 ):
     # create the simulation
@@ -90,6 +108,16 @@ def go(
         toggle_sphere_order=toggle_sphere_order,
         version=iec_version,
     )
+
+    # position of the phantom: the voxelized image is axis aligned in this
+    # frame (the world must contain the phantom)
+    mm = g4_units.mm
+    if rotation is not None:
+        iec.rotation = Rotation.from_euler("xyz", rotation, degrees=True).as_matrix()
+    if translation is not None:
+        iec.translation = [t * mm for t in translation]
+        half = max(abs(t) for t in translation) * mm + 0.5 * m
+        sim.world.size = [2 * half] * 3
 
     # voxelized the iec volume
     print("Starting voxelization ...")

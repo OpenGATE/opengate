@@ -313,11 +313,23 @@ def create_image_with_volume_extent(volume, spacing=(1, 1, 1), margin=0):
     p_min = []
     p_max = []
     for vol in volume:
+        # bounding box of the solid (in its own frame), rotated and translated:
+        # the extent is the bounding box of its 8 corners
+        # FIXME: make this work in case if repeated volumes
         pMin_g4vec, pMax_g4vec = vol.bounding_limits
-        p_min.append(
-            vec_g4_as_np(pMin_g4vec) + vol.translation_list[0]
-        )  # FIXME: make this work in case if repeated volumes
-        p_max.append(vec_g4_as_np(pMax_g4vec) + vol.translation_list[0])
+        lo, hi = vec_g4_as_np(pMin_g4vec), vec_g4_as_np(pMax_g4vec)
+        corners = np.array(
+            [
+                [x, y, z]
+                for x in (lo[0], hi[0])
+                for y in (lo[1], hi[1])
+                for z in (lo[2], hi[2])
+            ]
+        )
+        rot = np.asarray(vol.rotation_list[0], dtype=float)
+        corners = corners @ rot.T + np.asarray(vol.translation_list[0], dtype=float)
+        p_min.append(corners.min(axis=0))
+        p_max.append(corners.max(axis=0))
 
     extent_lower = np.min(p_min, axis=0)
     extent_upper = np.max(p_max, axis=0)
