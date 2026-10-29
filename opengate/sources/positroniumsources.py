@@ -229,7 +229,7 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
             intens3G = intensity * lifetime / PositroniumSource.ortho_ps_mean_lifetime_ns
             return intens2G, intens3G
 
-        fatal("This function does not handle parapositrionium case.")
+        fatal("This function does not handle interaction \"" + inter + "\".")
 
     @staticmethod
     def calc_fraction_from_ops_lifetime(intensity, lifetime, decay):
