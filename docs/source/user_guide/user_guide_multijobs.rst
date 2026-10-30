@@ -354,50 +354,40 @@ The merge only needs the actors of the simulations and the output of the jobs,
 not their input files: a campaign can be merged after being moved to another
 folder or computer, e.g. ``opengate_jobs merge campaign -o merged``.
 
-You can find examples you can adapt in the ``contrib/cluster`` folder for slurm and pbs backends.
-The backend options are usually site-specific and should be adapted to the target server.
+Example: Slurm
+~~~~~~~~~~~~~~
 
+The backend options are site-specific. Examples to adapt are in the
+``opengate/contrib/cluster`` folder of the source (slurm and pbs). For slurm,
+copy ``slurm/opengate_job.slurm`` and ``slurm/slurm.json``, then adapt:
 
-.. Example: Slurm
-.. ~~~~~~~~~~~~~~
+- in ``opengate_job.slurm``: the ``#SBATCH`` lines (account, partition,
+  time limit, ``--cpus-per-task`` equal to the number of threads of the
+  simulation, memory) and the environment where opengate is installed (e.g.
+  ``source /path/to/venv/bin/activate``). The output of each job goes to
+  ``job.log`` in its folder, the messages of slurm (time limit, memory) to
+  ``slurm_<id>.out`` in the campaign folder.
+- in ``slurm.json``: ``submit_filename``, the path of your
+  ``opengate_job.slurm`` (absolute; a relative path is relative to the folder
+  where ``opengate_jobs`` is run).
 
-.. The Slurm backend currently expects a Python callable named
-.. ``submit_script_renderer``. This means that, at the moment, Slurm submission is
-.. best driven from a Python script rather than through a pure JSON configuration
-.. file. This will likely change in the future.
+.. code-block:: json
 
-.. A minimal Python example looks like:
+   {
+     "backend": "slurm",
+     "backend_options": {
+       "submit_binary": "sbatch",
+       "submit_filename": "/path/to/opengate_job.slurm",
+       "command_line_args": ["--export=ALL"]
+     }
+   }
 
-.. .. code-block:: python
+.. code-block:: console
 
-..    import opengate as gate
-
-..    def my_slurm_renderer(job_folders_file_path, **kwargs):
-..        return [
-..            "#!/bin/sh",
-..            "#SBATCH --partition=cpu",
-..            "#SBATCH --cpus-per-task=4",
-..            "#SBATCH --mem=8G",
-..            "",
-..            "set -eu",
-..            f'JOB_FOLDERS_FILE="{job_folders_file_path}"',
-..            'JOB_FOLDER="$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$JOB_FOLDERS_FILE")"',
-..            'cd "$JOB_FOLDER"',
-..            "exec opengate_job_runner . --backend slurm",
-..        ]
-
-..    gate.jobs_run(
-..        "campaign",
-..        backend="slurm",
-..        backend_options={
-..            "submit_script_renderer": my_slurm_renderer,
-..            "submit_script_renderer_kwargs": {},
-..            "command_line_args": ["--job-name", "gate_jobs"],
-..        },
-..    )
-
-.. This explicit renderer is intentional for now because Slurm setups are often
-.. site-specific.
+   opengate_jobs split campaign/ -j 100
+   opengate_jobs run campaign/ --backend-options /path/to/slurm.json
+   opengate_jobs status campaign/
+   opengate_jobs merge campaign/
 
 
 Example: HTCondor
