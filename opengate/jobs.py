@@ -1,3 +1,4 @@
+import importlib.metadata
 import math
 import multiprocessing
 import os
@@ -52,6 +53,7 @@ JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_PROGRESS_FILENAME = "job_progress.json"
 # output (Python and Geant4) of a job run by a local backend
 JOB_LOG_FILENAME = "job.log"
+MERGED_FROM_FILENAME = "merged_from.json"
 # interval of the progress of a job (job_progress.json), wall clock, in
 # Geant4 units (as progress_hook_interval): short for the progress bar of the
 # local backends, longer on a cluster (shared file system, many jobs)
@@ -3315,6 +3317,18 @@ class MergeContext:
         return StandardMergeContextView(self)
 
 
+def read_merged_from(folder):
+    """Content of merged_from.json of a merged folder (None if missing)"""
+    path = Path(folder) / MERGED_FROM_FILENAME
+    if not path.exists():
+        return None
+    try:
+        with open(path) as f:
+            return load_json(f)
+    except (OSError, ValueError):
+        return None
+
+
 def _check_merge_output_dir(output_dir):
     """The merged output goes to the output_dir of the simulation: it must be
     possible to create it here. Not the case for a campaign moved from another
@@ -3830,9 +3844,111 @@ class JobsMergeManager:
             self.execute_merge()
         if self._merge_finalized is not True:
             self.finalize_merge()
+        self.write_merge_provenance()
         # the simulations of the jobs are no longer needed (memory)
         self._source_simulations_by_folder = {}
         return self._merge_result
+
+    def get_merged_output_dir(self):
+        if self.output_dir_override is not None:
+            return Path(self.output_dir_override)
+        return Path(self.master_simulation.get_output_path())
+
+    def get_job_output_filenames(self):
+        """Names of the output files of one job (the merge writes the same
+        files in the merged folder)."""
+        if len(self.leaf_sources) == 0:
+            return []
+        simulation = self.load_source_simulation(self.leaf_sources[0])
+        folder = Path(simulation.get_output_path())
+        if not folder.is_dir():
+            return []
+        return sorted(
+            str(f.relative_to(folder)) for f in folder.rglob("*") if f.is_file()
+        )
+
+    def check_merged_output_dir(self):
+        """Reason not to merge into the merged output folder (None: ok): it
+        contains the merge of another campaign (merged_from.json with another
+        campaign folder and simulation id), or output files not written by a
+        merge of this campaign. The same campaign merged again (e.g. after
+        running the failed jobs, or split again) is ok."""
+        output_dir = self.get_merged_output_dir()
+        previous = read_merged_from(output_dir)
+        if previous is not None:
+            same_folder = previous.get("campaign_dir") == str(
+                Path(self.campaign_dir).resolve()
+            )
+            same_id = previous.get("simulation_id") == self.manifest.get(
+                "simulation_id"
+            )
+            if same_folder or same_id:
+                return None
+            return (
+                f"{output_dir} contains the merge of another campaign "
+                f"({previous.get('campaign_dir')}, merged at "
+                f"{previous.get('merged_at')})."
+            )
+        existing = [
+            f for f in self.get_job_output_filenames() if (output_dir / f).exists()
+        ]
+        if len(existing) > 0:
+            return (
+                f"{output_dir} already contains {len(existing)} output file(s) "
+                f"of the merge (e.g. {existing[0]}), not from a merge of this "
+                f"campaign."
+            )
+        return None
+
+    def write_merge_provenance(self):
+        """merged_from.json in the merged folder (campaign, simulation id,
+        jobs, events, date, opengate version), and the merge recorded in the
+        manifest of the campaign (shown by status)."""
+        output_dir = self.get_merged_output_dir()
+        events = 0
+        for source in self.leaf_sources:
+            progress = read_job_progress(source["folder"]) or {}
+            events += progress.get("generated_events") or 0
+        try:
+            opengate_version = importlib.metadata.version("opengate")
+        except Exception:
+            opengate_version = None
+        info = {
+            "campaign_dir": str(Path(self.campaign_dir).resolve()),
+            "simulation_id": self.manifest.get("simulation_id"),
+            "number_of_jobs": len(self.leaf_sources),
+            "generated_events": events,
+            "merged_at": _now_isoformat(),
+            "merge_duration_seconds": self.total_merge_duration,
+            "opengate_version": opengate_version,
+            "output_dir": str(output_dir.resolve()),
+        }
+        output_dir.mkdir(parents=True, exist_ok=True)
+        with open(output_dir / MERGED_FROM_FILENAME, "w") as f:
+            dump_json(info, f, indent=2)
+        try:
+            manifest = dict(self.manifest)
+            merges = list(manifest.get("merges", []))
+            merges.append(
+                {
+                    k: info[k]
+                    for k in (
+                        "output_dir",
+                        "merged_at",
+                        "number_of_jobs",
+                        "generated_events",
+                    )
+                }
+            )
+            manifest["merges"] = merges
+            tmp = Path(self.manifest_path).with_suffix(".json.tmp")
+            with open(tmp, "w") as f:
+                dump_json(manifest, f)
+            os.replace(tmp, self.manifest_path)
+            self.manifest = manifest
+        except OSError as e:
+            warning(f"The merge could not be recorded in the manifest: {e}")
+        return info
 
 
 def jobs_merge(
@@ -4302,6 +4418,8 @@ def jobs_status(campaign_dir, check_inputs=True):
         )
 
     status_data["progress"] = _get_campaign_progress(status_data["jobs"])
+    merges = manifest.get("merges", [])
+    status_data["last_merge"] = merges[-1] if len(merges) > 0 else None
     return status_data
 
 

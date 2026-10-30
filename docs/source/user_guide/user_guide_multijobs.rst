@@ -358,6 +358,16 @@ Without ``-o``, the merged output goes to the ``output_dir`` of the
 simulation; the merge refuses if this folder cannot be created (e.g. an
 absolute path of the cluster, for a campaign copied back).
 
+The merge writes ``merged_from.json`` in the merged folder: the campaign
+folder, the simulation id, the number of jobs and of events, the date and
+the opengate version. The merge is also recorded in the campaign (``status``
+shows the last one). ``opengate_jobs merge`` (and ``run`` when it merges)
+refuses to write into a folder that contains the merge of another campaign,
+or output files that are not from a merge of this campaign (e.g. of a
+previous local run): give another folder with ``-o``, or ``--force`` to
+overwrite. Merging the same campaign again (e.g. after running its failed
+jobs) is allowed. The Python ``jobs_merge`` does not check.
+
 Example: Slurm
 ~~~~~~~~~~~~~~
 

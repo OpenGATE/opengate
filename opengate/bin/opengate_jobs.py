@@ -405,7 +405,7 @@ def run(
         click.echo(f"Jobs: {counts_str(status)}")
 
     if merge:
-        m = jobs_merge(campaign, execute=True)
+        m = do_merge(campaign, None, False, command="opengate_jobs merge")
         result["merge"] = merge_summary(m)
         if not as_json:
             echo_merge(m)
@@ -419,6 +419,23 @@ def run(
 
 # ---------------------------------------------------------------------------
 # merge
+
+
+def do_merge(campaign, output, force, command=None):
+    """Merge, refused if the output folder contains the merge of another
+    campaign or other output files (unless force)."""
+    try:
+        m = jobs_merge(Path(campaign), to_path=output, execute=False)
+        reason = m.check_merged_output_dir()
+        if reason is not None and not force:
+            what = "--force" if command is None else f"'{command} --force'"
+            raise click.ClickException(
+                f"{reason}\nUse another folder (-o), or {what} to overwrite."
+            )
+        m.merge()
+    except GateMergeError as e:
+        raise click.ClickException(str(e))
+    return m
 
 
 def merged_output_dir(merge_manager):
@@ -456,10 +473,21 @@ def echo_merge(merge_manager):
     is_flag=True,
     help="Remove the job folders and the jobs files after the merge.",
 )
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Merge even if the output folder contains the merge of another "
+    "campaign, or output files not from a merge of this campaign.",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Print the full merge summary.")
 @json_option
-def merge(campaign, output, clean, verbose, as_json):
-    """Merge the output of the completed jobs of CAMPAIGN."""
+def merge(campaign, output, clean, force, verbose, as_json):
+    """Merge the output of the completed jobs of CAMPAIGN.
+
+    The merged output goes to the output_dir of the simulation (or -o), with
+    merged_from.json (campaign, simulation id, jobs, events, date). Refused
+    if this folder contains the merge of another campaign or other output
+    files (--force); merging the same campaign again is allowed."""
     status = jobs_status(campaign, check_inputs=False)
     completed = status.get("execution_counts", {}).get("completed", 0)
     if completed != status["summary_counts"]["total"]:
@@ -467,10 +495,7 @@ def merge(campaign, output, clean, verbose, as_json):
             f"Not all jobs completed ({counts_str(status)}):\n"
             f"{failure_report(status)}"
         )
-    try:
-        m = jobs_merge(Path(campaign), to_path=output, execute=True)
-    except GateMergeError as e:
-        raise click.ClickException(str(e))
+    m = do_merge(campaign, output, force)
     result = merge_summary(m)
     if clean:
         result["clean"] = clean_campaign(campaign)
@@ -681,6 +706,12 @@ def print_jobs_status_summary(status_data, verbose=False):
         estimated = format_estimated_times(progress)
         if estimated:
             print(f"  Estimated: {estimated}")
+    last_merge = status_data.get("last_merge")
+    if last_merge is not None:
+        print(
+            f"  Merged: into {last_merge.get('output_dir')} at "
+            f"{str(last_merge.get('merged_at', ''))[:16].replace('T', ' ')}"
+        )
 
     jobs = status_data["jobs"]
     inputs_size = sum(job.get("input_files_size_bytes", 0) for job in jobs)
