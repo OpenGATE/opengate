@@ -2328,8 +2328,12 @@ class Simulation(GateObject):
 
     def from_dictionary(self, d):
         super().from_dictionary(d)
-        self.volume_manager.from_dictionary(d["volume_manager"])
-        self.physics_manager.from_dictionary(d["physics_manager"])
+        # (no volume or physics manager in a simulation loaded with
+        # actors_only, see from_json_file)
+        if "volume_manager" in d:
+            self.volume_manager.from_dictionary(d["volume_manager"])
+        if "physics_manager" in d:
+            self.physics_manager.from_dictionary(d["physics_manager"])
         if "chemistry_manager" in d:
             self.chemistry_manager.from_dictionary(d["chemistry_manager"])
         self.actor_manager.from_dictionary(d["actor_manager"])
@@ -2601,10 +2605,28 @@ class Simulation(GateObject):
     def from_json_string(self, json_string):
         self.from_dictionary(loads_json(json_string))
 
-    def from_json_file(self, path):
+    def from_json_file(self, path, actors_only=False):
+        """With actors_only, only the actors are created (with the attributes
+        of the simulation, e.g. output_dir): no volumes, physics, sources, so
+        their input files are not read. Enough to merge the outputs of split
+        jobs, much faster, and still possible when the input files are not
+        found (e.g. a campaign moved to another computer)."""
         path = Path(path).resolve()
         with open(path, "r") as f:
             d = load_json(f)
+        if actors_only:
+            d = {
+                k: v
+                for k, v in d.items()
+                if k
+                not in (
+                    "volume_manager",
+                    "physics_manager",
+                    "chemistry_manager",
+                    "source_manager",
+                    "auxiliary_attributes",
+                )
+            }
         d = self._rewrite_input_paths_in_dict(d, path.parent, path_mode="absolute")
         self.from_dictionary(d)
         serialized_output_dir = d.get("user_info", {}).get("output_dir", Path("output"))
@@ -3063,9 +3085,9 @@ class Simulation(GateObject):
         self.source_manager.initialize_before_g4_engine()
 
 
-def create_sim_from_json(path):
+def create_sim_from_json(path, actors_only=False):
     sim = Simulation()
-    sim.from_json_file(path)
+    sim.from_json_file(path, actors_only=actors_only)
     return sim
 
 

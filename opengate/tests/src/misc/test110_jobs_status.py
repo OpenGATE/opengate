@@ -153,7 +153,8 @@ def main():
     is_ok2 = is_ok2 and status_err2["summary_counts"]["missing_input_file"] == 1
     is_ok2 = is_ok2 and status_err2["summary_counts"]["missing_metadata"] == 1
 
-    result2 = runner.invoke(jobs_status_cli, [str(split_root_folder2), "-v"])
+    # (the input files are only checked with --check)
+    result2 = runner.invoke(jobs_status_cli, [str(split_root_folder2), "-v", "--check"])
     is_ok2 = is_ok2 and (result2.exit_code == 0)
     is_ok2 = is_ok2 and ("MISSING_INPUT_FILE" in result2.output)
     is_ok2 = is_ok2 and ("MISSING_METADATA" in result2.output)

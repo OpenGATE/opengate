@@ -291,7 +291,7 @@ def run(
         if not as_json:
             click.echo(f"Split into {jobs_str(jobs)} ({policy}) in {short(campaign)}")
     elif jobs is not None:
-        n = jobs_status(campaign)["number_of_jobs"]
+        n = jobs_status(campaign, check_inputs=False)["number_of_jobs"]
         if n != jobs:
             raise click.ClickException(
                 f"'{short(campaign)}' is already split into {n} jobs, not {jobs}. "
@@ -338,7 +338,7 @@ def run(
             )
             sys.exit(130)
     else:
-        status = jobs_status(campaign)
+        status = jobs_status(campaign, check_inputs=False)
     result["jobs"] = counts_str(status)
 
     total = status["summary_counts"]["total"]
@@ -411,7 +411,7 @@ def echo_merge(merge_manager):
 @json_option
 def merge(campaign, output, clean, verbose, as_json):
     """Merge the output of the completed jobs of CAMPAIGN."""
-    status = jobs_status(campaign)
+    status = jobs_status(campaign, check_inputs=False)
     completed = status.get("execution_counts", {}).get("completed", 0)
     if completed != status["summary_counts"]["total"]:
         raise click.ClickException(
@@ -546,8 +546,11 @@ def print_jobs_status_summary(status_data, verbose=False):
         )
         print(f" Resolved sim:       {resolved_str}")
         print(f"   Path:             {resolved_path}")
+    inputs_checked = status_data.get("inputs_checked", True)
     master_inputs = status_data.get("master_input_files", [])
-    if master_inputs:
+    if not inputs_checked:
+        print(" Master input files: not checked (--check)")
+    elif master_inputs:
         print(" Master input files:")
         for item in master_inputs:
             print(
@@ -592,11 +595,12 @@ def print_jobs_status_summary(status_data, verbose=False):
     input_mode = (
         "links" if any(j.get("input_mode") == "linked" for j in jobs) else "copies"
     )
-    print(
-        f"  Inputs: {per_job_str} files per job ({input_mode}), "
-        f"{format_bytes(inputs_size)} for all the jobs; "
-        f"job folders: {format_bytes(folders_size)}"
-    )
+    if inputs_checked:
+        print(
+            f"  Inputs: {per_job_str} files per job ({input_mode}), "
+            f"{format_bytes(inputs_size)} for all the jobs; "
+            f"job folders: {format_bytes(folders_size)}"
+        )
 
     for job in jobs:
         job_idx = job["job_index"]
@@ -627,10 +631,16 @@ def print_jobs_status_summary(status_data, verbose=False):
 @click.option(
     "-v", "--verbose", is_flag=True, help="Print all the run timing intervals"
 )
+@click.option(
+    "--check",
+    is_flag=True,
+    help="Check the input files of each job and compute the size of the job "
+    "folders (slow: the simulation of each job is created).",
+)
 @json_option
-def status(campaign, verbose, as_json):
+def status(campaign, verbose, check, as_json):
     """Print the status of the jobs of CAMPAIGN."""
-    status_data = jobs_status(campaign)
+    status_data = jobs_status(campaign, check_inputs=check)
     if as_json:
         echo_json(status_data)
     else:

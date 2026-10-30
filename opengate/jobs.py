@@ -2350,7 +2350,7 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
         bar = CampaignProgressBar(campaign_dir)
     start_time = time.perf_counter()
     final_statuses = ("completed", "failed", "interrupted")
-    status_data = jobs_status(campaign_dir)
+    status_data = jobs_status(campaign_dir, check_inputs=False)
     try:
         while True:
             if bar is not None:
@@ -2369,7 +2369,7 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
                     f"Timed out while waiting for the jobs in '{campaign_dir}'."
                 )
             time.sleep(poll_interval)
-            status_data = jobs_status(campaign_dir)
+            status_data = jobs_status(campaign_dir, check_inputs=False)
     except KeyboardInterrupt:
         if bar is not None:
             bar.close()
@@ -2390,7 +2390,7 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
         _campaign_processes.pop(str(campaign_dir), None)
     # the campaign process may have ended before writing the status of the
     # jobs it was running (e.g. killed): read it again
-    return jobs_status(campaign_dir)
+    return jobs_status(campaign_dir, check_inputs=False)
 
 
 class SplitRunMergeController:
@@ -2610,7 +2610,9 @@ class SplitRunMergeController:
         self._stage = "interrupted"
         counts = {}
         try:
-            counts = jobs_status(self._campaign_dir).get("execution_counts", {})
+            counts = jobs_status(self._campaign_dir, check_inputs=False).get(
+                "execution_counts", {}
+            )
         except Exception:
             pass
         print(
@@ -2713,7 +2715,7 @@ def _get_master_simulation_paths_from_manifest(manifest_path, manifest):
     return master_simulation_path, resolved_simulation_path
 
 
-def _load_master_simulation_from_manifest(manifest_path, manifest):
+def _load_master_simulation_from_manifest(manifest_path, manifest, actors_only=False):
     master_simulation_path, resolved_simulation_path = (
         _get_master_simulation_paths_from_manifest(manifest_path, manifest)
     )
@@ -2732,7 +2734,7 @@ def _load_master_simulation_from_manifest(manifest_path, manifest):
             f"Master simulation file not found at '{preferred_simulation_path}'. "
             "Cannot initialize jobs merge."
         )
-    return create_sim_from_json(preferred_simulation_path)
+    return create_sim_from_json(preferred_simulation_path, actors_only=actors_only)
 
 
 def _collect_leaf_merge_sources(manifest_path, manifest):
@@ -3036,6 +3038,9 @@ class JobsMergeManager:
         self.original_run_to_sources_map = {}
         self.child_simulations_by_job_id = {}
         self.remaining_local_runs_by_job_id = {}
+        # simulation of each job (actors only), loaded once for the planning
+        # and the merge coordinators
+        self._source_simulations_by_folder = {}
         self._merge_result = None
         self._total_merge_duration = None
         self._merge_start_time = None
@@ -3130,8 +3135,9 @@ class JobsMergeManager:
 
     def prepare_target_simulation(self):
         if self.master_simulation is None:
+            # only the actors are merged: no volumes, physics, sources
             self.master_simulation = _load_master_simulation_from_manifest(
-                self.manifest_path, self.manifest
+                self.manifest_path, self.manifest, actors_only=True
             )
         else:
             if (
@@ -3144,6 +3150,19 @@ class JobsMergeManager:
         if self.output_dir_override is not None:
             self.master_simulation.output_dir = self.output_dir_override
         return self.master_simulation
+
+    def load_source_simulation(self, source_info):
+        """The simulation of a job (actors only, output_dir in the job
+        folder), loaded once. source_info: 'simulation_path' and 'folder'."""
+        folder = str(source_info["folder"])
+        if folder not in self._source_simulations_by_folder:
+            simulation = create_sim_from_json(
+                source_info["simulation_path"], actors_only=True
+            )
+            simulation.simulation_dir = Path(folder)
+            simulation.output_dir = Path(folder) / "output"
+            self._source_simulations_by_folder[folder] = simulation
+        return self._source_simulations_by_folder[folder]
 
     def create_merge_context(self):
         self.merge_context = MergeContext()
@@ -3221,9 +3240,7 @@ class JobsMergeManager:
                     ),
                 },
             )
-            child_simulation = create_sim_from_json(source["simulation_path"])
-            child_simulation.simulation_dir = source["folder"]
-            child_simulation.output_dir = Path(source["folder"]) / "output"
+            child_simulation = self.load_source_simulation(source)
             output_plans = child_simulation.plan_merge(mode=mode)
             for output_plan in output_plans:
                 merge_context.set_output_plan(
@@ -3245,11 +3262,13 @@ class JobsMergeManager:
         self.standard_merge_coordinator.configure_from_context(
             merge_context.get_standard_view(),
             self.master_simulation,
+            source_simulation_loader=self.load_source_simulation,
         )
         self.root_merge_coordinator = RootMergeCoordinator()
         self.root_merge_coordinator.configure_from_context(
             merge_context.get_root_view(),
             self.master_simulation,
+            source_simulation_loader=self.load_source_simulation,
         )
         self.master_simulation.set_merge_coordinators(
             [
@@ -3487,6 +3506,8 @@ class JobsMergeManager:
             self.execute_merge()
         if self._merge_finalized is not True:
             self.finalize_merge()
+        # the simulations of the jobs are no longer needed (memory)
+        self._source_simulations_by_folder = {}
         return self._merge_result
 
 
@@ -3692,7 +3713,7 @@ def format_jobs_failure_report(campaign_dir_or_status):
     if isinstance(campaign_dir_or_status, dict):
         status_data = campaign_dir_or_status
     else:
-        status_data = jobs_status(campaign_dir_or_status)
+        status_data = jobs_status(campaign_dir_or_status, check_inputs=False)
     lines = []
     for job in status_data.get("jobs", []):
         execution_status = job.get("execution_status")
@@ -3720,7 +3741,11 @@ def format_jobs_failure_report(campaign_dir_or_status):
     return "\n".join(lines)
 
 
-def jobs_status(campaign_dir):
+def jobs_status(campaign_dir, check_inputs=True):
+    """Status of the jobs of a campaign. With check_inputs (slow: the
+    simulation of each job is created), the input files of each job are
+    checked and the size of the job folders is computed. Without, only the
+    manifest and the status files are read."""
     path = Path(campaign_dir).resolve()
     if path.is_dir() is False:
         fatal(
@@ -3747,7 +3772,7 @@ def jobs_status(campaign_dir):
     )
 
     master_input_files = []
-    if master_sim_file.exists():
+    if check_inputs and master_sim_file.exists():
         try:
             master_sim = create_sim_from_json(master_sim_file)
             master_input_files = _get_simulation_input_files_info(master_sim)
@@ -3776,6 +3801,7 @@ def jobs_status(campaign_dir):
             False if resolved_sim_file is None else resolved_sim_file.exists()
         ),
         "master_input_files": master_input_files,
+        "inputs_checked": check_inputs,
         "backend_status_filename": JOBS_BACKEND_STATUS_FILENAME,
         "backend_status_exists": False,
         "backend_status_data": None,
@@ -3829,7 +3855,7 @@ def jobs_status(campaign_dir):
 
         folder_size = 0
         has_symlink = False
-        if folder_exists:
+        if check_inputs and folder_exists:
             for item in job_folder.rglob("*"):
                 if item.is_symlink():
                     has_symlink = True
@@ -3843,7 +3869,7 @@ def jobs_status(campaign_dir):
         input_check_error = None
         # input files found for this job (path -> size), counted once
         found_input_files = {}
-        if folder_exists and metadata_exists and sim_exists:
+        if check_inputs and folder_exists and metadata_exists and sim_exists:
             try:
                 child_sim = create_sim_from_json(simulation_file)
                 job_input_files = _get_simulation_input_files_info(child_sim)

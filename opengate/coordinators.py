@@ -33,11 +33,15 @@ class StandardMergeCoordinator:
         self._output_groups = {}
         self._source_infos = {}
         self._source_simulations_by_job_index = {}
+        self._source_simulation_loader = None
 
-    def configure_from_context(self, standard_context, target_simulation):
+    def configure_from_context(
+        self, standard_context, target_simulation, source_simulation_loader=None
+    ):
         self._output_groups = {}
         self._source_infos = {}
         self._source_simulations_by_job_index = {}
+        self._source_simulation_loader = source_simulation_loader
 
         for output_plan in standard_context.iter_output_plans():
             actor_name = output_plan["actor_name"]
@@ -75,6 +79,9 @@ class StandardMergeCoordinator:
             }
 
     def _get_source_simulation(self, job_index):
+        if self._source_simulation_loader is not None:
+            # loaded once, shared with the planning and the other coordinators
+            return self._source_simulation_loader(self._source_infos[job_index])
         if job_index not in self._source_simulations_by_job_index:
             from .managers import create_sim_from_json
 
@@ -136,11 +143,15 @@ class RootMergeCoordinator:
         self._root_output_groups = {}
         self._source_infos = {}
         self._source_simulations_by_job_index = {}
+        self._source_simulation_loader = None
 
-    def configure_from_context(self, root_context, target_simulation):
+    def configure_from_context(
+        self, root_context, target_simulation, source_simulation_loader=None
+    ):
         self._root_output_groups = {}
         self._source_infos = {}
         self._source_simulations_by_job_index = {}
+        self._source_simulation_loader = source_simulation_loader
         for root_output_plan in root_context.iter_output_plans():
             actor_name = root_output_plan["actor_name"]
             output_name = root_output_plan["output_name"]
@@ -179,6 +190,9 @@ class RootMergeCoordinator:
             )
 
     def _get_source_simulation(self, job_index):
+        if self._source_simulation_loader is not None:
+            # loaded once, shared with the planning and the other coordinators
+            return self._source_simulation_loader(self._source_infos[job_index])
         if job_index not in self._source_simulations_by_job_index:
             from .managers import create_sim_from_json
 
