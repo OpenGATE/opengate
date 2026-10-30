@@ -179,11 +179,18 @@ def failure_report(status):
         if execution_status == "completed":
             continue
         folder = Path(status["campaign_dir"]) / job["folder_name"]
-        error = (job.get("execution_status_data") or {}).get("error_message")
+        execution_status_data = job.get("execution_status_data") or {}
+        error = execution_status_data.get("error_message")
         error = str(error).strip().splitlines()[0] if error else ""
         line = f"  {short(folder)}: {execution_status or 'not run'}"
+        if execution_status == "lost":
+            minutes = (job.get("seconds_since_last_news") or 0) / 60
+            line += f", no news for {minutes:.0f} min (process dead?)"
         if error:
             line += f", {error}"
+        scheduler_job_id = execution_status_data.get("scheduler_job_id")
+        if scheduler_job_id is not None:
+            line += f", scheduler job {scheduler_job_id}"
         if (folder / JOB_LOG_FILENAME).exists():
             line += f" (see {short(folder / JOB_LOG_FILENAME)})"
         lines.append(line)
@@ -197,7 +204,7 @@ def jobs_str(n):
 def counts_str(status):
     c = status.get("execution_counts", {})
     s = f"{c.get('completed', 0)} completed"
-    for k in ("failed", "interrupted", "running"):
+    for k in ("failed", "lost", "interrupted", "running", "submitted"):
         if c.get(k, 0) > 0:
             s += f", {c[k]} {k}"
     return s
@@ -250,7 +257,8 @@ def counts_str(status):
 @click.option(
     "--rerun-running",
     is_flag=True,
-    help="Run again the jobs marked as running (e.g. after a crash).",
+    help="Run again the jobs marked as running or submitted (the lost jobs, "
+    "without news for a long time, are always run again).",
 )
 @split_options
 @json_option
@@ -577,7 +585,9 @@ def print_jobs_status_summary(status_data, verbose=False):
     if len(execution_counts) > 0:
         print(
             "  Execution: "
+            f"submitted={execution_counts.get('submitted', 0)}  "
             f"running={execution_counts.get('running', 0)}  "
+            f"lost={execution_counts.get('lost', 0)}  "
             f"completed={execution_counts.get('completed', 0)}  "
             f"failed={execution_counts.get('failed', 0)}  "
             f"skipped={execution_counts.get('skipped', 0)}  "

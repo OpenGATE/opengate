@@ -52,11 +52,21 @@ JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_PROGRESS_FILENAME = "job_progress.json"
 # output (Python and Geant4) of a job run by a local backend
 JOB_LOG_FILENAME = "job.log"
-# in Geant4 units, as progress_hook_interval
+# interval of the progress of a job (job_progress.json), wall clock, in
+# Geant4 units (as progress_hook_interval): short for the progress bar of the
+# local backends, longer on a cluster (shared file system, many jobs)
 JOB_PROGRESS_INTERVAL = 2.0 * g4_units.s
+JOB_PROGRESS_INTERVAL_CLUSTER = 30.0 * g4_units.s
+LOCAL_JOBS_BACKENDS = ("local_pool", "local_sequential")
+# a running job without news for more than this time (seconds) is 'lost': its
+# process is dead without reporting (time limit, memory, crash). Longer when
+# it does not simulate events (initialization, writing of the outputs).
+JOB_LOST_AFTER = 10 * 60
+JOB_LOST_AFTER_NO_EVENT = 60 * 60
 JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 JOB_EXECUTION_ALLOWED_STATUSES = (
+    "submitted",
     "running",
     "completed",
     "failed",
@@ -1380,6 +1390,7 @@ def _write_job_execution_status(
     started_at=None,
     finished_at=None,
     error_message=None,
+    scheduler_job_id=None,
 ):
     if status not in JOB_EXECUTION_ALLOWED_STATUSES:
         fatal(
@@ -1396,9 +1407,95 @@ def _write_job_execution_status(
         "finished_at": finished_at,
         "updated_at": _now_isoformat(),
         "error_message": error_message,
+        "scheduler_job_id": scheduler_job_id,
     }
     _dump_json_atomic(_get_job_execution_status_path(job_folder), status_data)
     return status_data
+
+
+def _mark_job_as_submitted(job_folder, backend):
+    """Write the status 'submitted' of a job (waiting for the scheduler or for
+    a local worker), before its submission: the job may start (and write
+    'running') before the submit command returns. Return the previous status
+    (None if no status), to restore it if the submission fails."""
+    job_folder = Path(job_folder)
+    previous = load_job_execution_status(job_folder)
+    _write_job_execution_status(
+        job_folder,
+        _load_job_metadata(job_folder),
+        backend=backend,
+        status="submitted",
+        submitted_at=_now_isoformat(),
+    )
+    return previous
+
+
+def _restore_job_execution_status(job_folder, previous):
+    """Status of a job before a failed submission (see _mark_job_as_submitted)"""
+    if previous is None:
+        _get_job_execution_status_path(job_folder).unlink(missing_ok=True)
+    else:
+        _dump_json_atomic(_get_job_execution_status_path(job_folder), previous)
+
+
+def _set_scheduler_job_id(job_folder, scheduler_job_id):
+    """Add the id given by the scheduler to the status of a submitted job (only
+    informative, e.g. for sacct), if the job has not started meanwhile."""
+    if scheduler_job_id is None:
+        return
+    current = load_job_execution_status(job_folder)
+    if current is None:
+        return
+    if current.get("status") == "submitted":
+        current["scheduler_job_id"] = scheduler_job_id
+        current["updated_at"] = _now_isoformat()
+        _dump_json_atomic(_get_job_execution_status_path(job_folder), current)
+
+
+def _extract_scheduler_job_id(submit_stdout):
+    """The job id printed by sbatch ('Submitted batch job 1234', or '1234'
+    with --parsable) or qsub ('1234.server')"""
+    lines = (submit_stdout or "").strip().splitlines()
+    if len(lines) == 0:
+        return None
+    match = re.search(r"Submitted batch job (\d+)", lines[0])
+    if match:
+        return match.group(1)
+    return lines[0].split(";")[0].strip() or None
+
+
+def _seconds_since(isoformat_time, now=None):
+    if isoformat_time is None:
+        return None
+    try:
+        t = datetime.fromisoformat(str(isoformat_time))
+    except ValueError:
+        return None
+    return ((now or datetime.now()) - t).total_seconds()
+
+
+def get_job_last_news(job_folder, execution_status_data):
+    """For a running job: the time (seconds) since its last news and whether it
+    is lost. The news are the progress of the job (job_progress.json, written
+    during the event loop by the progress hook of the source manager, with an
+    interval in wall clock), or the status file if no progress yet. Same for
+    all the backends: only the files of the job are read.
+    Return (seconds_since_last_news, is_lost)."""
+    progress = read_job_progress(job_folder)
+    generating_events = False
+    last_news = None
+    if progress is not None and progress.get("updated_at") is not None:
+        last_news = progress["updated_at"]
+        generating_events = progress.get("status") == "running"
+    elif execution_status_data is not None:
+        last_news = execution_status_data.get(
+            "updated_at", execution_status_data.get("started_at")
+        )
+    seconds = _seconds_since(last_news)
+    if seconds is None:
+        return None, False
+    limit = JOB_LOST_AFTER if generating_events else JOB_LOST_AFTER_NO_EVENT
+    return seconds, seconds > limit
 
 
 def _mark_running_jobs_as_interrupted(job_folders):
@@ -1417,7 +1514,7 @@ def _mark_running_jobs_as_interrupted(job_folders):
             current = load_job_execution_status(job_folder)
         except Exception:
             continue
-        if current is None or current.get("status") != "running":
+        if current is None or current.get("status") not in ("running", "submitted"):
             continue
         _write_job_execution_status(
             job_folder,
@@ -1602,9 +1699,15 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
     }
     submitted_at = _now_isoformat()
     started_at = _now_isoformat()
+    scheduler_job_id = None
 
     try:
         metadata = _load_job_metadata(job_folder)
+        # keep the submission time and the scheduler job id
+        previous = load_job_execution_status(job_folder)
+        if previous is not None and previous.get("status") == "submitted":
+            submitted_at = previous.get("submitted_at") or submitted_at
+            scheduler_job_id = previous.get("scheduler_job_id")
         _write_job_execution_status(
             job_folder,
             metadata,
@@ -1612,6 +1715,19 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             status="running",
             submitted_at=submitted_at,
             started_at=started_at,
+            scheduler_job_id=scheduler_job_id,
+        )
+        # no event simulated yet: the progress hook writes 'running' during the
+        # event loop (see get_job_last_news)
+        progress_path = job_folder / JOB_PROGRESS_FILENAME
+        _dump_json_atomic(
+            progress_path,
+            {
+                "status": "initializing",
+                "generated_events": 0,
+                "expected_events": None,
+                "updated_at": _now_isoformat(),
+            },
         )
 
         simulation_path = job_folder / metadata.get(
@@ -1621,9 +1737,15 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
         sim.simulation_dir = job_folder
         sim.output_dir = job_folder / "output"
         # progress of the job, read by the progress bar of the campaign
-        progress_path = job_folder / JOB_PROGRESS_FILENAME
-        progress_path.unlink(missing_ok=True)
-        sim.progress_hook = JobProgressWriter(progress_path)
+        # and by the status (lost jobs)
+        sim.progress_hook = JobProgressWriter(
+            progress_path,
+            interval=(
+                JOB_PROGRESS_INTERVAL
+                if backend in LOCAL_JOBS_BACKENDS
+                else JOB_PROGRESS_INTERVAL_CLUSTER
+            ),
+        )
         if backend in ("local_pool", "local_sequential"):
             # the local jobs share the terminal: one progress bar for the whole
             # campaign (SplitRunMergeController.wait), not one per job
@@ -1639,6 +1761,7 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             submitted_at=submitted_at,
             started_at=started_at,
             finished_at=finished_at,
+            scheduler_job_id=scheduler_job_id,
         )
         return {
             "job_id": metadata.get("job_id"),
@@ -1666,6 +1789,7 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             started_at=started_at,
             finished_at=finished_at,
             error_message=f"{error_message}\n{traceback_str}",
+            scheduler_job_id=scheduler_job_id,
         )
         return {
             "job_id": metadata.get("job_id"),
@@ -1816,6 +1940,10 @@ def _submit_job_folders_to_htcondor(
     command = [backend_options["submit_binary"]]
     command.extend(backend_options.get("command_line_args", []))
     command.append(str(submit_file_path))
+    previous = {
+        job_folder: _mark_job_as_submitted(job_folder, "htcondor")
+        for job_folder in job_folders
+    }
     try:
         completed_process = subprocess.run(
             command,
@@ -1825,11 +1953,15 @@ def _submit_job_folders_to_htcondor(
             check=False,
         )
     except FileNotFoundError as error:
+        for job_folder, p in previous.items():
+            _restore_job_execution_status(job_folder, p)
         raise GateJobsBackendError(
             f"HTCondor submission command not found: {backend_options['submit_binary']}."
         ) from error
 
     if completed_process.returncode != 0:
+        for job_folder, p in previous.items():
+            _restore_job_execution_status(job_folder, p)
         raise GateJobsBackendError(
             "HTCondor submission failed.\n"
             f"Command: {' '.join(command)}\n"
@@ -1837,6 +1969,12 @@ def _submit_job_folders_to_htcondor(
             f"stdout:\n{completed_process.stdout}\n"
             f"stderr:\n{completed_process.stderr}"
         )
+
+    # one cluster, one process per job (in the order of the submit file)
+    cluster_id = _extract_htcondor_cluster_id(completed_process.stdout)
+    if cluster_id is not None:
+        for i, job_folder in enumerate(job_folders):
+            _set_scheduler_job_id(job_folder, f"{cluster_id}.{i}")
 
     status_data = _write_jobs_backend_status(
         split_root_folder,
@@ -1875,8 +2013,8 @@ def _submit_job_folders_to_slurm(
         )  # + set the path to the job folder
         command[-1] += ",JOBDIR=" + str(job_folder)
         command.append(str(backend_options["submit_filename"]))  # ->slurm filename
+        previous = _mark_job_as_submitted(job_folder, "slurm")
         try:
-            print(command)
             completed_process = subprocess.run(
                 command,
                 cwd=split_root_folder,
@@ -1885,11 +2023,13 @@ def _submit_job_folders_to_slurm(
                 check=False,
             )
         except FileNotFoundError as error:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 f"Slurm submission command not found: {backend_options['submit_binary']}."
             ) from error
 
         if completed_process.returncode != 0:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 "Slurm submission failed.\n"
                 f"Command: {' '.join(command)}\n"
@@ -1897,6 +2037,9 @@ def _submit_job_folders_to_slurm(
                 f"stdout:\n{completed_process.stdout}\n"
                 f"stderr:\n{completed_process.stderr}"
             )
+        _set_scheduler_job_id(
+            job_folder, _extract_scheduler_job_id(completed_process.stdout)
+        )
 
 
 def _submit_job_folders_to_pbs(
@@ -1913,8 +2056,8 @@ def _submit_job_folders_to_pbs(
         command.append("-v")
         command.append("JOBDIR=" + str(job_folder))
         command.append(str(backend_options["submit_filename"]))  # ->pbs filename
+        previous = _mark_job_as_submitted(job_folder, "pbs")
         try:
-            print(command)
             completed_process = subprocess.run(
                 command,
                 cwd=split_root_folder,
@@ -1923,11 +2066,13 @@ def _submit_job_folders_to_pbs(
                 check=False,
             )
         except FileNotFoundError as error:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 f"PBS submission command not found: {backend_options['submit_binary']}."
             ) from error
 
         if completed_process.returncode != 0:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 "qsub submission failed.\n"
                 f"Command: {' '.join(command)}\n"
@@ -1935,6 +2080,9 @@ def _submit_job_folders_to_pbs(
                 f"stdout:\n{completed_process.stdout}\n"
                 f"stderr:\n{completed_process.stderr}"
             )
+        _set_scheduler_job_id(
+            job_folder, _extract_scheduler_job_id(completed_process.stdout)
+        )
 
 
 def _run_jobs_campaign(job_folders, backend, backend_options):
@@ -2145,15 +2293,21 @@ def jobs_run(
             skipped_completed_jobs.append(job_folder)
             continue
 
-        if execution_status.get("status") == "running" and allow_rerun_running is False:
-            running_jobs.append(job_folder.name)
-            continue
+        if (
+            execution_status.get("status") in ("running", "submitted")
+            and allow_rerun_running is False
+        ):
+            # a lost job (dead process) is run again
+            _, is_lost = get_job_last_news(job_folder, execution_status)
+            if execution_status.get("status") == "submitted" or not is_lost:
+                running_jobs.append(job_folder.name)
+                continue
 
         selected_job_folders.append(job_folder)
 
     if len(running_jobs) > 0:
         fatal(
-            "Some jobs are still marked as running: "
+            "Some jobs are still marked as running or submitted: "
             f"{', '.join(running_jobs)}. "
             "Relaunch with allow_rerun_running=True to override them."
         )
@@ -2249,6 +2403,9 @@ def jobs_run(
             backend_options = {
                 "n_workers": number_of_workers,
             }
+        # waiting for a worker
+        for job_folder in selected_job_folders:
+            _mark_job_as_submitted(job_folder, backend)
 
         if detach is False:
             submitted_at = _now_isoformat()
@@ -2349,7 +2506,7 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
     if progress_bar and sys.stdout.isatty():
         bar = CampaignProgressBar(campaign_dir)
     start_time = time.perf_counter()
-    final_statuses = ("completed", "failed", "interrupted")
+    final_statuses = ("completed", "failed", "interrupted", "lost")
     status_data = jobs_status(campaign_dir, check_inputs=False)
     try:
         while True:
@@ -2466,9 +2623,13 @@ class SplitRunMergeController:
         if latest_jobs_status is not None:
             execution_counts = latest_jobs_status.get("execution_counts", {})
             summary_counts = latest_jobs_status.get("summary_counts", {})
-            if execution_counts.get("failed", 0) > 0:
+            if execution_counts.get("failed", 0) + execution_counts.get("lost", 0) > 0:
                 return "failed"
-            if execution_counts.get("running", 0) > 0:
+            if (
+                execution_counts.get("running", 0)
+                + execution_counts.get("submitted", 0)
+                > 0
+            ):
                 return "running"
             if execution_counts.get("interrupted", 0) > 0:
                 return "interrupted"
@@ -3736,6 +3897,16 @@ def format_jobs_failure_report(campaign_dir_or_status):
                 "    No error recorded: the job is still running, or its process "
                 "died without reporting (e.g. a native crash)."
             )
+        elif execution_status == "lost":
+            lines.append(
+                "    No news for "
+                f"{_format_duration(job.get('seconds_since_last_news') or 0)}: its "
+                "process died without reporting (time limit, memory, native "
+                "crash). See the log of the scheduler."
+            )
+        scheduler_job_id = execution_status_data.get("scheduler_job_id")
+        if scheduler_job_id is not None:
+            lines.append(f"    Scheduler job id: {scheduler_job_id}")
     if not lines:
         return "All jobs completed."
     return "\n".join(lines)
@@ -3814,7 +3985,9 @@ def jobs_status(campaign_dir, check_inputs=True):
             "missing_input_file": 0,
         },
         "execution_counts": {
+            "submitted": 0,
             "running": 0,
+            "lost": 0,
             "completed": 0,
             "failed": 0,
             "skipped": 0,
@@ -3842,8 +4015,16 @@ def jobs_status(campaign_dir, check_inputs=True):
 
         execution_status_data = load_job_execution_status(job_folder)
         execution_status = None
+        seconds_since_last_news = None
         if execution_status_data is not None:
             execution_status = execution_status_data.get("status")
+            if execution_status == "running":
+                # 'lost': running, but no news for too long (dead process)
+                seconds_since_last_news, is_lost = get_job_last_news(
+                    job_folder, execution_status_data
+                )
+                if is_lost:
+                    execution_status = "lost"
             if execution_status in status_data["execution_counts"]:
                 status_data["execution_counts"][execution_status] += 1
 
@@ -3950,6 +4131,7 @@ def jobs_status(campaign_dir, check_inputs=True):
                 "execution_status_exists": execution_status_data is not None,
                 "execution_status": execution_status,
                 "execution_status_data": execution_status_data,
+                "seconds_since_last_news": seconds_since_last_news,
             }
         )
 
