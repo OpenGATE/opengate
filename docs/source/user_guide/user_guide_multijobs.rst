@@ -304,7 +304,7 @@ execution state of each job is one of:
   in the queue of the scheduler, or for a local worker). The id given by the
   scheduler is kept in ``job_execution_status.json`` (e.g. for ``sacct``).
 - ``running``: started. During the simulation, the job writes its progress in
-  ``job_progress.json`` (every 2 s with a local backend, 30 s with a scheduler).
+  ``job_progress.json`` (every 2 s with a local backend, 60 s with a scheduler).
 - ``lost``: running, but without news for more than 10 min while simulating
   events (1 h during the initialization or the writing of the output): its
   process died without reporting, e.g. killed by the scheduler (time limit,

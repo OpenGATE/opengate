@@ -56,7 +56,7 @@ JOB_LOG_FILENAME = "job.log"
 # Geant4 units (as progress_hook_interval): short for the progress bar of the
 # local backends, longer on a cluster (shared file system, many jobs)
 JOB_PROGRESS_INTERVAL = 2.0 * g4_units.s
-JOB_PROGRESS_INTERVAL_CLUSTER = 30.0 * g4_units.s
+JOB_PROGRESS_INTERVAL_CLUSTER = 60.0 * g4_units.s
 LOCAL_JOBS_BACKENDS = ("local_pool", "local_sequential")
 # a running job without news for more than this time (seconds) is 'lost': its
 # process is dead without reporting (time limit, memory, crash). Longer when
