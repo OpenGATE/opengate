@@ -330,13 +330,24 @@ execution state of each job is one of:
   process died without reporting, e.g. killed by the scheduler (time limit,
   memory) or crashed. The cause is in the log of the scheduler.
 - ``completed``, ``failed`` (the error is in ``job_execution_status.json`` and
-  in the log of the job), ``interrupted`` (Control-C, local backends).
+  in the log of the job), ``interrupted`` (Control-C, local backends),
+  ``cancelled`` (``opengate_jobs cancel``).
 
 Run ``opengate_jobs run campaign`` again to submit the jobs that did not
-complete (failed, interrupted, lost); the completed jobs are kept. ``run``
-refuses while some jobs are still ``submitted`` or ``running``
+complete (failed, interrupted, cancelled, lost); the completed jobs are kept.
+``run`` refuses while some jobs are still ``submitted`` or ``running``
 (``--rerun-running`` to submit them anyway, e.g. for a job removed from the
-queue of the scheduler, which stays ``submitted``).
+queue of the scheduler by hand, which stays ``submitted``).
+
+``opengate_jobs cancel campaign`` stops the jobs that are submitted or running,
+for all the backends, and marks them ``cancelled``:
+
+- slurm, pbs, htcondor: ``scancel``, ``qdel`` or ``condor_rm`` with the job
+  ids given by the scheduler at the submission (``cancel_binary`` in the
+  backend options to use another command, ``--backend-options``). A job whose
+  id was not printed by the submit command is listed, to cancel by hand.
+- local backends: the campaign process is stopped (no new job), then the
+  process of each running job (only on the computer where it runs).
 
 ``status`` also gives the progress of the campaign (fraction of the events,
 the jobs being of equal size) and estimated times: the duration of one job

@@ -19,6 +19,7 @@ from opengate.jobs import (
     JOB_LOG_FILENAME,
     jobs_clean_split,
     jobs_merge,
+    jobs_cancel,
     jobs_run,
     jobs_split,
     jobs_status,
@@ -47,6 +48,7 @@ def go():
         opengate_jobs split campaign/ -j 100
         opengate_jobs run campaign/ --backend slurm --backend-options options.json
         opengate_jobs status campaign/
+        opengate_jobs cancel campaign/     (if needed)
         opengate_jobs merge campaign/
         opengate_jobs clean campaign/
     """
@@ -216,7 +218,7 @@ def jobs_str(n):
 def counts_str(status):
     c = status.get("execution_counts", {})
     s = f"{c.get('completed', 0)} completed"
-    for k in ("failed", "lost", "interrupted", "running", "submitted"):
+    for k in ("failed", "lost", "interrupted", "cancelled", "running", "submitted"):
         if c.get(k, 0) > 0:
             s += f", {c[k]} {k}"
     return s
@@ -510,6 +512,50 @@ def merge(campaign, output, clean, force, verbose, as_json):
 
 
 # ---------------------------------------------------------------------------
+# cancel
+
+
+@go.command(context_settings=CONTEXT_SETTINGS)
+@campaign_argument
+@click.option(
+    "--backend-options",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="JSON file of the backend options: 'cancel_binary' replaces the "
+    "default command (scancel, qdel, condor_rm).",
+)
+@json_option
+def cancel(campaign, backend_options, as_json):
+    """Cancel the submitted and running jobs of CAMPAIGN (all the backends).
+
+    Scheduler (slurm, pbs, htcondor): scancel, qdel or condor_rm with the job
+    ids given at the submission. Local: the processes of the campaign and of
+    the running jobs are stopped. The jobs are marked 'cancelled'; the
+    completed jobs are kept, 'opengate_jobs run' runs the others again."""
+    options = None
+    if backend_options is not None:
+        with open(backend_options) as f:
+            options = json.load(f).get("backend_options")
+    result = jobs_cancel(campaign, backend_options=options)
+    if as_json:
+        echo_json(result)
+        return
+    for command in result["commands"]:
+        line = " ".join(command)
+        click.echo(line if len(line) < 200 else line[:200] + " ...")
+    for w in result["warnings"]:
+        click.echo(f"Warning: {w}", err=True)
+    n = len(result["cancelled_jobs"])
+    if n == 0:
+        click.echo("No submitted or running job to cancel")
+    else:
+        click.echo(
+            f"{jobs_str(n)} cancelled. Run them again with: "
+            f"opengate_jobs run {short(campaign)} ..."
+        )
+
+
+# ---------------------------------------------------------------------------
 # clean
 
 
@@ -608,6 +654,7 @@ def job_needs_attention(job):
         "failed",
         "lost",
         "interrupted",
+        "cancelled",
     )
 
 
@@ -698,7 +745,8 @@ def print_jobs_status_summary(status_data, verbose=False):
             f"completed={execution_counts.get('completed', 0)}  "
             f"failed={execution_counts.get('failed', 0)}  "
             f"skipped={execution_counts.get('skipped', 0)}  "
-            f"interrupted={execution_counts.get('interrupted', 0)}"
+            f"interrupted={execution_counts.get('interrupted', 0)}  "
+            f"cancelled={execution_counts.get('cancelled', 0)}"
         )
     progress = status_data.get("progress")
     if progress is not None:
@@ -737,7 +785,7 @@ def print_jobs_status_summary(status_data, verbose=False):
         listed = [j for j in jobs if job_needs_attention(j)]
         print(
             f"  {len(listed)} job(s) listed out of {len(jobs)} (failed, lost, "
-            f"interrupted or not ready; -v for all)"
+            f"interrupted, cancelled or not ready; -v for all)"
         )
     for job in listed:
         job_idx = job["job_index"]
@@ -748,7 +796,7 @@ def print_jobs_status_summary(status_data, verbose=False):
         exec_str = exec_status.upper() if exec_status is not None else "NONE"
         if exec_status in ("running", "lost") and job.get("progress_fraction"):
             exec_str += f" {job['progress_fraction'] * 100:.0f}%"
-        if exec_status in ("failed", "lost", "interrupted"):
+        if exec_status in ("failed", "lost", "interrupted", "cancelled"):
             exec_str = colored.stylize(exec_str, color_error)
         job_intervals = job.get("run_timing_intervals", [])
         timing_str = format_job_timing(job_intervals, verbose)

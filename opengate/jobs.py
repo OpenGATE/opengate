@@ -4,6 +4,8 @@ import multiprocessing
 import os
 import re
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import time
@@ -74,7 +76,10 @@ JOB_EXECUTION_ALLOWED_STATUSES = (
     "failed",
     "skipped",
     "interrupted",
+    "cancelled",
 )
+# command to cancel the jobs of a scheduler (ids given by the submit command)
+JOBS_CANCEL_BINARIES = {"slurm": "scancel", "pbs": "qdel", "htcondor": "condor_rm"}
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
 PBS_SUBMIT_FILENAME = "pbs_jobs.sh"
@@ -1397,6 +1402,8 @@ def _write_job_execution_status(
     finished_at=None,
     error_message=None,
     scheduler_job_id=None,
+    pid=None,
+    hostname=None,
 ):
     if status not in JOB_EXECUTION_ALLOWED_STATUSES:
         fatal(
@@ -1415,6 +1422,10 @@ def _write_job_execution_status(
         "error_message": error_message,
         "scheduler_job_id": scheduler_job_id,
     }
+    if pid is not None:
+        # process of the running job (to cancel a local job)
+        status_data["pid"] = pid
+        status_data["hostname"] = hostname
     _dump_json_atomic(_get_job_execution_status_path(job_folder), status_data)
     return status_data
 
@@ -1765,6 +1776,8 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             submitted_at=submitted_at,
             started_at=started_at,
             scheduler_job_id=scheduler_job_id,
+            pid=os.getpid(),
+            hostname=socket.gethostname(),
         )
         # no event simulated yet: the progress hook writes 'running' during the
         # event loop (see get_job_last_news)
@@ -2290,6 +2303,7 @@ def _validate_jobs_backend_options(backend, backend_options):
             "job_runner_command",
             "submit_filename",
             "submit_binary",
+            "cancel_binary",
         }
         unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
         if len(unknown_keys) > 0:
@@ -2332,6 +2346,7 @@ def _validate_jobs_backend_options(backend, backend_options):
             "command_line_args",
             "submit_filename",
             "submit_binary",
+            "cancel_binary",
         }
         unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
         if len(unknown_keys) > 0:
@@ -2350,7 +2365,9 @@ def _validate_jobs_backend_options(backend, backend_options):
             validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
         elif backend == "pbs":
             validated_options.setdefault("submit_filename", PBS_SUBMIT_FILENAME)
-        validated_options.setdefault("submit_binary", "sbatch")
+        validated_options.setdefault(
+            "submit_binary", "sbatch" if backend == "slurm" else "qsub"
+        )
 
         if not isinstance(validated_options["command_line_args"], (list, tuple)):
             if backend == "slurm":
@@ -2652,7 +2669,7 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
     if progress_bar and sys.stdout.isatty():
         bar = CampaignProgressBar(campaign_dir)
     start_time = time.perf_counter()
-    final_statuses = ("completed", "failed", "interrupted", "lost")
+    final_statuses = ("completed", "failed", "interrupted", "lost", "cancelled")
     status_data = jobs_status(campaign_dir, check_inputs=False)
     try:
         while True:
@@ -2694,6 +2711,135 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
     # the campaign process may have ended before writing the status of the
     # jobs it was running (e.g. killed): read it again
     return jobs_status(campaign_dir, check_inputs=False)
+
+
+def _kill_process(pid):
+    """Terminate a process (SIGTERM; TerminateProcess on Windows). False if
+    there is no such process."""
+    try:
+        os.kill(int(pid), signal.SIGTERM)
+        return True
+    except (ProcessLookupError, PermissionError, OSError, ValueError):
+        return False
+
+
+def _mark_job_as_cancelled(job_folder, current):
+    _write_job_execution_status(
+        job_folder,
+        current,
+        backend=current.get("backend"),
+        status="cancelled",
+        submitted_at=current.get("submitted_at"),
+        started_at=current.get("started_at"),
+        finished_at=_now_isoformat(),
+        error_message="Cancelled by the user (opengate_jobs cancel).",
+        scheduler_job_id=current.get("scheduler_job_id"),
+    )
+
+
+def jobs_cancel(campaign_dir, backend_options=None):
+    """Cancel the jobs of a campaign that are submitted or running (also the
+    lost ones), for all the backends, and mark them 'cancelled' (run again by
+    jobs_run, like the failed jobs; the completed jobs are kept).
+
+    - slurm, pbs, htcondor: the cancel command of the scheduler (scancel,
+      qdel, condor_rm; 'cancel_binary' in backend_options) with the job ids
+      printed by the submit command (kept in job_execution_status.json). A
+      job without id (not printed) cannot be cancelled: listed.
+    - local backends: the campaign process is terminated (no new job), then
+      the process of each running job (its pid, on this computer only).
+
+    Return a summary: cancelled jobs, commands, warnings.
+    """
+    campaign_dir = Path(campaign_dir).resolve()
+    manifest_path, manifest = _load_jobs_manifest(campaign_dir)
+    backend_options = backend_options or {}
+    this_host = socket.gethostname()
+
+    # the jobs to cancel, per backend
+    targets = {}
+    for job_item in manifest.get("jobs", []):
+        job_folder = campaign_dir / job_item["folder_name"]
+        current = load_job_execution_status(job_folder)
+        if current is None or current.get("status") not in ("submitted", "running"):
+            continue
+        _, is_lost = get_job_last_news(job_folder, current)
+        backend = current.get("backend") or "unknown"
+        targets.setdefault(backend, []).append((job_folder, current, is_lost))
+
+    commands = []
+    warnings = []
+    for backend, jobs in targets.items():
+        if backend in JOBS_CANCEL_BINARIES:
+            ids = []
+            for job_folder, current, _ in jobs:
+                if current.get("scheduler_job_id"):
+                    ids.append(str(current["scheduler_job_id"]))
+                else:
+                    warnings.append(
+                        f"{job_folder.name}: no {backend} job id (not printed by "
+                        f"the submit command), cancel it with the scheduler."
+                    )
+            if len(ids) == 0:
+                continue
+            binary = backend_options.get("cancel_binary", JOBS_CANCEL_BINARIES[backend])
+            command = [str(binary)] + ids
+            commands.append(command)
+            try:
+                r = subprocess.run(command, capture_output=True, text=True, check=False)
+            except FileNotFoundError as error:
+                raise GateJobsBackendError(
+                    f"Cancel command not found: {binary} (backend {backend})."
+                ) from error
+            # e.g. a job already finished: its id is unknown to the scheduler
+            if r.returncode != 0:
+                warnings.append(
+                    f"{' '.join(command[:1])} returned {r.returncode}: "
+                    f"{(r.stderr or r.stdout).strip()}"
+                )
+        elif backend in LOCAL_JOBS_BACKENDS + ("local_cli",):
+            # first the campaign process: no new job is started
+            backend_status = load_jobs_backend_status(campaign_dir) or {}
+            pid = backend_status.get("campaign_process_pid")
+            if pid is not None and any(not lost for _, _, lost in jobs):
+                if _kill_process(pid):
+                    commands.append(["kill", str(pid)])
+            for job_folder, current, is_lost in jobs:
+                pid = current.get("pid")
+                # a lost job: its process is dead (and its pid maybe reused)
+                if pid is None or is_lost or current.get("status") != "running":
+                    continue
+                if current.get("hostname") not in (None, this_host):
+                    warnings.append(
+                        f"{job_folder.name}: running on {current.get('hostname')}, "
+                        f"not on this computer: not stopped."
+                    )
+                    continue
+                if _kill_process(pid):
+                    commands.append(["kill", str(pid)])
+        else:
+            warnings.append(
+                f"{len(jobs)} job(s) of the backend '{backend}': cannot be cancelled."
+            )
+
+    # mark them, unless they ended meanwhile
+    cancelled = []
+    for jobs in targets.values():
+        for job_folder, _, _ in jobs:
+            current = load_job_execution_status(job_folder)
+            if current is None or current.get("status") not in (
+                "submitted",
+                "running",
+            ):
+                continue
+            _mark_job_as_cancelled(job_folder, current)
+            cancelled.append(job_folder.name)
+    return {
+        "campaign_dir": str(campaign_dir),
+        "cancelled_jobs": sorted(cancelled),
+        "commands": commands,
+        "warnings": warnings,
+    }
 
 
 class SplitRunMergeController:
@@ -2777,7 +2923,11 @@ class SplitRunMergeController:
                 > 0
             ):
                 return "running"
-            if execution_counts.get("interrupted", 0) > 0:
+            if (
+                execution_counts.get("interrupted", 0)
+                + execution_counts.get("cancelled", 0)
+                > 0
+            ):
                 return "interrupted"
             if execution_counts.get("completed", 0) > 0 and execution_counts.get(
                 "completed", 0
@@ -4271,6 +4421,7 @@ def jobs_status(campaign_dir, check_inputs=True):
             "failed": 0,
             "skipped": 0,
             "interrupted": 0,
+            "cancelled": 0,
         },
     }
 

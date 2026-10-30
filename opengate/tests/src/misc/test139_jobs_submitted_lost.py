@@ -19,9 +19,15 @@ A campaign of 3 jobs is submitted to a fake slurm (a script that prints
 6. merge of a campaign moved from another computer: its output_dir (e.g.
    /lustre/...) cannot be created here, clear error (use -o); local backend:
    default number of workers at most the number of cores
+7. cancel: slurm (fake scancel with the job ids), local (the process of a
+   running job is stopped); the jobs are 'cancelled', the completed one
+   kept, and run again by jobs_run
 """
 
 import os
+import socket
+import subprocess
+import sys
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -30,6 +36,7 @@ import opengate as gate
 from opengate.jobs import (
     jobs_split,
     jobs_run,
+    jobs_cancel,
     jobs_status,
     load_job_execution_status,
     _run_job_folder_cli,
@@ -238,5 +245,72 @@ if __name__ == "__main__":
     is_ok = (
         utility.print_test(ok6, "6. merge output folder, number of workers") and is_ok
     )
+
+    # 7. cancel. slurm: the ids given to the fake scancel
+    fake_scancel = paths.output / "fake_scancel.sh"
+    scancel_args = paths.output / "scancel_args.txt"
+    fake_scancel.write_text(f'#!/bin/sh\necho "$@" > {scancel_args}\n')
+    os.chmod(fake_scancel, 0o755)
+    for job_folder, status in (
+        (job_folders[1], "running"),
+        (job_folders[2], "submitted"),
+    ):
+        path = job_folder / JOB_EXECUTION_STATUS_FILENAME
+        with open(path) as f:
+            data = json.load(f)
+        data.update({"status": status, "backend": "slurm", "scheduler_job_id": "4242"})
+        with open(path, "w") as f:
+            json.dump(data, f)
+    write_old_progress(job_folders[1], "running", 0)
+    result = jobs_cancel(
+        campaign_dir, backend_options={"cancel_binary": str(fake_scancel)}
+    )
+    statuses, _ = execution_statuses(campaign_dir)
+    print(f"Cancel (slurm): {result}, {statuses}")
+    ok7 = (
+        result["cancelled_jobs"] == ["job0002", "job0003"]
+        and scancel_args.read_text().split() == ["4242", "4242"]
+        and statuses == ["completed", "cancelled", "cancelled"]
+    )
+
+    # local: a running job (a sleeping process) is stopped
+    process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"])
+    path = job_folders[1] / JOB_EXECUTION_STATUS_FILENAME
+    with open(path) as f:
+        data = json.load(f)
+    data.update(
+        {
+            "status": "running",
+            "backend": "local_pool",
+            "pid": process.pid,
+            "hostname": socket.gethostname(),
+        }
+    )
+    with open(path, "w") as f:
+        json.dump(data, f)
+    write_old_progress(job_folders[1], "running", 0)
+    result = jobs_cancel(campaign_dir)
+    try:
+        process.wait(timeout=20)
+        stopped = True
+    except subprocess.TimeoutExpired:
+        process.kill()
+        stopped = False
+    statuses, status = execution_statuses(campaign_dir)
+    print(f"Cancel (local): {result}, process stopped: {stopped}, {statuses}")
+    ok7 = (
+        ok7
+        and stopped
+        and result["cancelled_jobs"] == ["job0002"]
+        and statuses[1] == "cancelled"
+        and status["execution_counts"]["cancelled"] == 2
+    )
+
+    # the cancelled jobs are run again
+    result = jobs_run(campaign_dir, backend="slurm", backend_options=backend_options)
+    statuses, _ = execution_statuses(campaign_dir)
+    print(f"Run again: {result['submitted_jobs']} submitted, {statuses}")
+    ok7 = ok7 and result["submitted_jobs"] == 2 and statuses[0] == "completed"
+    is_ok = utility.print_test(ok7, "7. cancel (slurm, local), run again") and is_ok
 
     utility.test_ok(is_ok)
