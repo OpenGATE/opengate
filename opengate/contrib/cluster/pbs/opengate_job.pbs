@@ -1,40 +1,37 @@
-#!/bin/bash -x
-#PBS -l walltime=10:00:00
+#!/bin/bash
+# Example: one job of a campaign split by opengate_jobs, run by PBS/Torque.
+# Copy this file and pbs.json, adapt them to your cluster, then:
+#   opengate_jobs split campaign -j 100
+#   opengate_jobs run campaign --backend-options /path/to/pbs.json
+# opengate_jobs run calls "qsub <options> -v JOBDIR=<job folder> opengate_job.pbs"
+# once per job, from the campaign folder.
+# Options for one campaign (they replace the #PBS lines below):
+#   opengate_jobs run campaign --backend-options pbs.json \
+#       --submit-args "-l walltime=04:00:00"
+
 #PBS -N opengate
-#PBS -l nodes=1:ppn=1
-#PBS -l mem=10gb
-#PBS -o opengate.out
-#PBS -e opengate.err
+#PBS -l nodes=1:ppn=1          # ppn = number_of_threads of the simulation (PBS Pro: -l select=1:ncpus=1)
+#PBS -l walltime=10:00:00
+#PBS -j oe                     # in the campaign folder: only the PBS messages (walltime, memory)
+# Site specific, e.g.:
+##PBS -A my_account
+##PBS -q my_queue
+##PBS -l mem=4gb
 
-function error {
-    echo "ERROR: $1"
-    exit 1
-}
+# The output of the job goes to job.log in its folder (as with the local
+# backends): opengate_jobs status shows its end for a failed job.
+exec >> "${JOBDIR:?unknown JOBDIR}/job.log" 2>&1
 
-function warning {
-    echo "WARNING: $1"
-}
+# Environment with opengate installed, e.g.:
+# module load python
+# source /path/to/venv/bin/activate
 
-date
-test -f ${HOME}/.bashrc && echo "Sourcing bashrc" && source ${HOME}/.bashrc
-set -u
+export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
 
-echo "Checking"
-uname -a
-echo "JOBDIR=${JOBDIR:?"unknown JOBDIR"}"
-
-echo Using $(which python)
-test -d "${JOBDIR}"  || error "invalid macro"
-
-
-# Enforce one thread
-ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-
-echo "Lauching macro"
-date
-cd ${JOBDIR}
-cd ..
-opengate_job_runner --backend "slurm" ${JOBDIR} || error "gate failed"
-date
-
-echo "Success!!!"
+echo "$(date) $(hostname) pbs job ${PBS_JOBID} JOBDIR=${JOBDIR}"
+echo "Using $(which python)"
+cd "${JOBDIR}/.." || exit 1
+opengate_job_runner --backend pbs "${JOBDIR}"
+status=$?
+echo "$(date) exit status ${status}"
+exit ${status}

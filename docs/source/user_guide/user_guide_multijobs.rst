@@ -368,8 +368,8 @@ copy ``slurm/opengate_job.slurm`` and ``slurm/slurm.json``, then adapt:
   ``job.log`` in its folder, the messages of slurm (time limit, memory) to
   ``slurm_<id>.out`` in the campaign folder.
 - in ``slurm.json``: ``submit_filename``, the path of your
-  ``opengate_job.slurm`` (absolute; a relative path is relative to the folder
-  where ``opengate_jobs`` is run).
+  ``opengate_job.slurm`` (absolute; a relative path is relative to the
+  campaign folder, where ``sbatch`` is run).
 
 .. code-block:: json
 
@@ -388,6 +388,9 @@ copy ``slurm/opengate_job.slurm`` and ``slurm/slurm.json``, then adapt:
    opengate_jobs run campaign/ --backend-options /path/to/slurm.json
    opengate_jobs status campaign/
    opengate_jobs merge campaign/
+
+PBS/Torque is the same with ``pbs/opengate_job.pbs`` and ``pbs/pbs.json``
+(``qsub -V -v JOBDIR=<job folder>``; ``-l nodes=1:ppn=N`` for N threads).
 
 
 Example: HTCondor
