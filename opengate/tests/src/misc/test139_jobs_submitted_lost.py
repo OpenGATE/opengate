@@ -13,6 +13,8 @@ A campaign of 3 jobs is submitted to a fake slurm (a script that prints
    simulating events, 1 h before, e.g. initialization)
 4. jobs_run again: the lost job is submitted again, not the completed one;
    a job still 'submitted' (waiting in the queue) is not
+5. progress of the campaign: fraction of the events, estimated end of the
+   running jobs (elapsed time and fraction of the running job)
 """
 
 import os
@@ -166,5 +168,39 @@ if __name__ == "__main__":
         and statuses == ["completed", "submitted", "submitted"]
     )
     is_ok = utility.print_test(ok4, "4. run again: lost and failed jobs") and is_ok
+
+    # 5. progress: job 2 running for 10 min, half done -> ends in ~10 min
+    path = job_folders[1] / JOB_EXECUTION_STATUS_FILENAME
+    with open(path) as f:
+        data = json.load(f)
+    data["status"] = "running"
+    data["started_at"] = (datetime.now() - timedelta(minutes=10)).isoformat()
+    with open(path, "w") as f:
+        json.dump(data, f)
+    with open(job_folders[1] / JOB_PROGRESS_FILENAME, "w") as f:
+        json.dump(
+            {
+                "status": "running",
+                "generated_events": 500,
+                "expected_events": 1000,
+                "updated_at": datetime.now().isoformat(),
+            },
+            f,
+        )
+    statuses, status = execution_statuses(campaign_dir)
+    progress = status["progress"]
+    print(f"Progress: {progress}")
+    remaining = progress["running_remaining_seconds"]
+    is_ok = (
+        utility.print_test(
+            abs(progress["fraction"] - 0.5) < 1e-6  # (1 + 0.5 + 0) / 3
+            and progress["number_of_completed_durations"] == 1
+            and remaining is not None
+            and abs(remaining - 600) < 10
+            and progress["not_started"] == 1,
+            "5. progress: fraction of the events, end of the running jobs",
+        )
+        and is_ok
+    )
 
     utility.test_ok(is_ok)

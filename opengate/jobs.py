@@ -4132,7 +4132,97 @@ def jobs_status(campaign_dir, check_inputs=True):
                 "execution_status": execution_status,
                 "execution_status_data": execution_status_data,
                 "seconds_since_last_news": seconds_since_last_news,
+                **_get_job_progress_info(
+                    job_folder, execution_status, execution_status_data
+                ),
             }
         )
 
+    status_data["progress"] = _get_campaign_progress(status_data["jobs"])
     return status_data
+
+
+def _get_job_progress_info(job_folder, execution_status, execution_status_data):
+    """Fraction of the job done (generated / expected events, from
+    job_progress.json; 1 when completed), its number of events, and its
+    elapsed time (seconds, since its start; until its end when finished)."""
+    progress = read_job_progress(job_folder) if execution_status else None
+    generated = (progress or {}).get("generated_events") or 0
+    expected = (progress or {}).get("expected_events")
+    fraction = None
+    if execution_status == "completed":
+        fraction = 1.0
+    elif expected:
+        fraction = min(1.0, generated / expected)
+    elif execution_status in ("running", "lost"):
+        fraction = 0.0
+    elapsed = None
+    data = execution_status_data or {}
+    if execution_status in ("running", "lost", "completed", "failed"):
+        end = None
+        if data.get("finished_at") is not None:
+            try:
+                end = datetime.fromisoformat(data["finished_at"])
+            except ValueError:
+                pass
+        elapsed = _seconds_since(data.get("started_at"), now=end)
+    return {
+        "progress_fraction": fraction,
+        "generated_events": generated,
+        "elapsed_seconds": elapsed,
+    }
+
+
+def _get_campaign_progress(jobs):
+    """Progress of the campaign: fraction of the events (the jobs are
+    considered of equal size: split in time), number of events, and the
+    estimated times (seconds, None if unknown):
+    - job_duration: of one job, the mean of the completed jobs, or estimated
+      from the running jobs (elapsed / fraction, when > 5 % done);
+    - running_remaining: until the end of the running jobs (the longest);
+    - not_started: number of jobs not started (their start depends on the
+      queue of the scheduler)."""
+    n = len(jobs)
+    fraction = sum(j.get("progress_fraction") or 0.0 for j in jobs) / n if n else 0.0
+    events = sum(j.get("generated_events") or 0 for j in jobs)
+    completed = [
+        j["elapsed_seconds"]
+        for j in jobs
+        if j.get("execution_status") == "completed" and j.get("elapsed_seconds")
+    ]
+    running = [
+        j
+        for j in jobs
+        if j.get("execution_status") == "running"
+        and j.get("elapsed_seconds") is not None
+    ]
+    estimated = [
+        j["elapsed_seconds"] / j["progress_fraction"]
+        for j in running
+        if (j.get("progress_fraction") or 0) > 0.05
+    ]
+    job_duration = None
+    if completed:
+        job_duration = sum(completed) / len(completed)
+    elif estimated:
+        job_duration = sorted(estimated)[len(estimated) // 2]
+    running_remaining = None
+    for j in running:
+        f = j.get("progress_fraction") or 0
+        if f > 0.05:
+            r = j["elapsed_seconds"] * (1 - f) / f
+        elif job_duration is not None:
+            r = job_duration - j["elapsed_seconds"]
+        else:
+            continue
+        running_remaining = max(running_remaining or 0, r, 0)
+    return {
+        "fraction": fraction,
+        "generated_events": events,
+        "job_duration_seconds": job_duration,
+        "number_of_completed_durations": len(completed),
+        "running_remaining_seconds": running_remaining,
+        "not_started": sum(
+            1 for j in jobs if j.get("execution_status") in (None, "submitted")
+        ),
+    }

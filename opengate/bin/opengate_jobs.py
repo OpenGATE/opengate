@@ -13,6 +13,8 @@ from opengate.jobs import (
     DEFAULT_SPLIT_POLICY,
     JOBS_MANIFEST_FILENAME,
     _format_bytes as format_bytes,
+    _format_count as format_count,
+    _format_duration as format_duration,
     JOB_LOG_FILENAME,
     jobs_clean_split,
     jobs_merge,
@@ -529,6 +531,44 @@ def format_all_intervals(intervals):
     return f"{intervals_str}  {len(intervals)} run(s)"
 
 
+# above this number of jobs, the status only lists the jobs that need
+# attention (all with -v)
+MAX_LISTED_JOBS = 20
+
+
+def job_needs_attention(job):
+    return job["status"] != "ready" or job.get("execution_status") in (
+        "failed",
+        "lost",
+        "interrupted",
+    )
+
+
+def format_progress(progress):
+    return (
+        f"{progress['fraction'] * 100:.1f} % of the events "
+        f"({format_count(progress['generated_events'])} events)"
+    )
+
+
+def format_estimated_times(progress):
+    """One job duration, end of the running jobs, jobs not started: estimated
+    from the completed and running jobs (empty if nothing is known yet)"""
+    items = []
+    job_duration = progress.get("job_duration_seconds")
+    if job_duration is not None:
+        n = progress.get("number_of_completed_durations", 0)
+        source = f"{n} completed" if n > 0 else "running jobs"
+        items.append(f"one job ~{format_duration(job_duration)} (from {source})")
+    remaining = progress.get("running_remaining_seconds")
+    if remaining is not None:
+        items.append(f"running jobs end in ~{format_duration(remaining)}")
+    not_started = progress.get("not_started", 0)
+    if not_started > 0 and items:
+        items.append(f"{not_started} not started (depends on the queue)")
+    return "; ".join(items)
+
+
 def print_jobs_status_summary(status_data, verbose=False):
     intervals = status_data.get("original_run_timing_intervals", [])
     print(f" Manifest file:      {status_data['manifest_path']}")
@@ -593,6 +633,12 @@ def print_jobs_status_summary(status_data, verbose=False):
             f"skipped={execution_counts.get('skipped', 0)}  "
             f"interrupted={execution_counts.get('interrupted', 0)}"
         )
+    progress = status_data.get("progress")
+    if progress is not None:
+        print(f"  Progress: {format_progress(progress)}")
+        estimated = format_estimated_times(progress)
+        if estimated:
+            print(f"  Estimated: {estimated}")
 
     jobs = status_data["jobs"]
     inputs_size = sum(job.get("input_files_size_bytes", 0) for job in jobs)
@@ -612,13 +658,25 @@ def print_jobs_status_summary(status_data, verbose=False):
             f"job folders: {format_bytes(folders_size)}"
         )
 
-    for job in jobs:
+    # many jobs: only the ones that need attention (all with -v)
+    listed = jobs
+    if not verbose and len(jobs) > MAX_LISTED_JOBS:
+        listed = [j for j in jobs if job_needs_attention(j)]
+        print(
+            f"  {len(listed)} job(s) listed out of {len(jobs)} (failed, lost, "
+            f"interrupted or not ready; -v for all)"
+        )
+    for job in listed:
         job_idx = job["job_index"]
         folder = job["folder_name"]
         st = job["status"].upper()
         st_str = colored.stylize(st, color_error) if st != "READY" else st
         exec_status = job.get("execution_status")
         exec_str = exec_status.upper() if exec_status is not None else "NONE"
+        if exec_status in ("running", "lost") and job.get("progress_fraction"):
+            exec_str += f" {job['progress_fraction'] * 100:.0f}%"
+        if exec_status in ("failed", "lost", "interrupted"):
+            exec_str = colored.stylize(exec_str, color_error)
         job_intervals = job.get("run_timing_intervals", [])
         timing_str = format_job_timing(job_intervals, verbose)
         print(
@@ -639,7 +697,11 @@ def print_jobs_status_summary(status_data, verbose=False):
 @go.command(context_settings=CONTEXT_SETTINGS)
 @campaign_argument
 @click.option(
-    "-v", "--verbose", is_flag=True, help="Print all the run timing intervals"
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help=f"List all the jobs (above {MAX_LISTED_JOBS} jobs, only the ones that "
+    "need attention are listed) and all the run timing intervals.",
 )
 @click.option(
     "--check",

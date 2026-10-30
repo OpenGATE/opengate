@@ -318,6 +318,14 @@ refuses while some jobs are still ``submitted`` or ``running``
 (``--rerun-running`` to submit them anyway, e.g. for a job removed from the
 queue of the scheduler, which stays ``submitted``).
 
+``status`` also gives the progress of the campaign (fraction of the events,
+the jobs being of equal size) and estimated times: the duration of one job
+(mean of the completed jobs, or from the running ones), and the end of the
+running jobs. The start of the jobs not started depends on the queue of the
+scheduler, it is not estimated. Above 20 jobs, only the jobs that need
+attention (failed, lost, interrupted, not ready) are listed; ``-v`` lists all
+of them.
+
 By default, ``status`` does not check the input files of the jobs (fast, even
 with hundreds of jobs). ``opengate_jobs status campaign --check`` also checks
 that the input files of each job are found and gives the size of the job
