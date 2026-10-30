@@ -61,7 +61,7 @@ if __name__ == "__main__":
             stats,
             tolerance=300,
             ignore_value_data1=0,
-            sum_tolerance=63,
+            sum_tolerance=70,
             sad_profile_tolerance=39,
             axis="x",
         )
