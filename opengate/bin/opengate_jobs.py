@@ -407,7 +407,13 @@ def run(
         click.echo(f"Jobs: {counts_str(status)}")
 
     if merge:
-        m = do_merge(campaign, None, False, command="opengate_jobs merge")
+        m = do_merge(
+            campaign,
+            None,
+            False,
+            command="opengate_jobs merge",
+            progress=not as_json,
+        )
         result["merge"] = merge_summary(m)
         if not as_json:
             echo_merge(m)
@@ -423,11 +429,12 @@ def run(
 # merge
 
 
-def do_merge(campaign, output, force, command=None):
+def do_merge(campaign, output, force, command=None, progress=True):
     """Merge, refused if the output folder contains the merge of another
-    campaign or other output files (unless force)."""
+    campaign or other output files (unless force). progress: a bar while
+    reading the jobs, then one line per actor output."""
     try:
-        m = jobs_merge(Path(campaign), to_path=output, execute=False)
+        m = jobs_merge(Path(campaign), to_path=output, execute=False, progress=progress)
         reason = m.check_merged_output_dir()
         if reason is not None and not force:
             what = "--force" if command is None else f"'{command} --force'"
@@ -497,7 +504,7 @@ def merge(campaign, output, clean, force, verbose, as_json):
             f"Not all jobs completed ({counts_str(status)}):\n"
             f"{failure_report(status)}"
         )
-    m = do_merge(campaign, output, force)
+    m = do_merge(campaign, output, force, progress=not as_json)
     result = merge_summary(m)
     if clean:
         result["clean"] = clean_campaign(campaign)

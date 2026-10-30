@@ -1615,12 +1615,14 @@ class TerminalProgressBar:
 
     width = 30
 
-    def __init__(self, total, label):
+    def __init__(self, total, label, summary_line=False):
         self.total = total
         self.label = label
         self.start_time = time.perf_counter()
         self.last_draw = None
         self.enabled = sys.stdout.isatty() and total > 0
+        # not in a terminal (e.g. a log file): one line when closed
+        self.summary_line = summary_line
 
     def update(self, done):
         if not self.enabled:
@@ -1649,6 +1651,9 @@ class TerminalProgressBar:
         if self.enabled and self.last_draw is not None:
             sys.stdout.write("\n")
             sys.stdout.flush()
+        elif self.summary_line and self.total > 0:
+            elapsed = _format_duration(time.perf_counter() - self.start_time)
+            print(f"{self.label} {self.total}/{self.total} [{elapsed}]", flush=True)
 
 
 class CampaignProgressBar:
@@ -3713,7 +3718,10 @@ class JobsMergeManager:
             }
         )
 
-        for source in self.leaf_sources:
+        bar = self._progress_bar(len(self.leaf_sources), "Reading the jobs")
+        for i, source in enumerate(self.leaf_sources):
+            if bar is not None:
+                bar.update(i)
             job_index = source["job_index"]
             merge_context.set_source_info(
                 job_index,
@@ -3745,6 +3753,9 @@ class JobsMergeManager:
                 job_id=source["job_id"],
                 source_simulation_id=source["metadata"].get("simulation_id"),
             )
+        if bar is not None:
+            bar.update(len(self.leaf_sources))
+            bar.close()
 
         self.standard_merge_coordinator = StandardMergeCoordinator()
         self.standard_merge_coordinator.configure_from_context(
@@ -3758,6 +3769,10 @@ class JobsMergeManager:
             self.master_simulation,
             source_simulation_loader=self.load_source_simulation,
         )
+        # one progress line per actor output during the merge
+        if self.options.get("progress"):
+            self.standard_merge_coordinator.progress_bar_factory = self._progress_bar
+            self.root_merge_coordinator.progress_bar_factory = self._progress_bar
         self.master_simulation.set_merge_coordinators(
             [
                 self.standard_merge_coordinator,
@@ -3951,7 +3966,13 @@ class JobsMergeManager:
                 "JobsMergeManager.finalize_merge() requires execute_merge() to have run first. "
                 "Call execute_merge() before finalize_merge(), or use merge()."
             )
+        bar = self._progress_bar(1, "Writing the merged output")
+        if bar is not None:
+            bar.update(0)
         self.master_simulation.finalize_merge()
+        if bar is not None:
+            bar.update(1)
+            bar.close()
         if self._execution_start_time is not None:
             self._execution_duration = time.perf_counter() - self._execution_start_time
         if self._merge_start_time is not None:
@@ -3998,6 +4019,13 @@ class JobsMergeManager:
         # the simulations of the jobs are no longer needed (memory)
         self._source_simulations_by_folder = {}
         return self._merge_result
+
+    def _progress_bar(self, total, label):
+        """Progress of the merge (option progress=True, e.g. opengate_jobs
+        merge): a bar in a terminal, one line at the end in a log file."""
+        if not self.options.get("progress"):
+            return None
+        return TerminalProgressBar(total, label, summary_line=True)
 
     def get_merged_output_dir(self):
         if self.output_dir_override is not None:

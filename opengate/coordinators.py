@@ -3,6 +3,13 @@ from pathlib import Path
 from .exception import GateMergeError
 
 
+def _progress_bar(coordinator, total, label):
+    """Progress of the merge of one actor output (see progress_bar_factory,
+    set by JobsMergeManager with the option progress), else None."""
+    factory = getattr(coordinator, "progress_bar_factory", None)
+    return None if factory is None else factory(total, label)
+
+
 class _CoordinatorOutputMergeContext:
     """Minimal output-scoped execution context consumed by ActorOutput classes."""
 
@@ -93,9 +100,33 @@ class StandardMergeCoordinator:
         return self._source_simulations_by_job_index[job_index]
 
     def execute_merge(self):
+        # progress: one line per actor (all its outputs)
+        totals = {}
+        n_outputs = {}
+        for (actor_name, _), group in self._output_groups.items():
+            totals[actor_name] = totals.get(actor_name, 0) + len(
+                group["contributions_by_job"]
+            )
+            n_outputs[actor_name] = n_outputs.get(actor_name, 0) + 1
+        bar = None
+        bar_actor = None
+        done = 0
         for (actor_name, output_name), group in self._output_groups.items():
+            if actor_name != bar_actor:
+                if bar is not None:
+                    bar.update(done)
+                    bar.close()
+                label = actor_name
+                if n_outputs[actor_name] > 1:
+                    label += f" ({n_outputs[actor_name]} outputs x jobs)"
+                bar = _progress_bar(self, totals[actor_name], label)
+                bar_actor = actor_name
+                done = 0
             target_output = group["target_output"]
             for job_index, contributions in group["contributions_by_job"].items():
+                if bar is not None:
+                    bar.update(done)
+                done += 1
                 source_simulation = self._get_source_simulation(job_index)
                 source_actor = source_simulation.get_actor(actor_name)
                 source_output = source_actor.user_output[output_name]
@@ -119,6 +150,9 @@ class StandardMergeCoordinator:
                         f"actor output '{output_name}' of actor '{actor_name}' "
                         f"from job_index {job_index}."
                     ) from error
+        if bar is not None:
+            bar.update(done)
+            bar.close()
 
     def finalize_merge(self):
         for (actor_name, output_name), group in self._output_groups.items():
@@ -209,9 +243,13 @@ class RootMergeCoordinator:
                 target_output = grouped_output["target_output"]
                 actor_name = target_output.belongs_to_actor.name
                 output_name = target_output.name
-                for job_index, contributions in grouped_output[
-                    "contributions_by_job"
-                ].items():
+                n = len(grouped_output["contributions_by_job"])
+                bar = _progress_bar(self, n, f"{actor_name} {output_name}")
+                for i, (job_index, contributions) in enumerate(
+                    grouped_output["contributions_by_job"].items()
+                ):
+                    if bar is not None:
+                        bar.update(i)
                     source_simulation = self._get_source_simulation(job_index)
                     source_actor = source_simulation.get_actor(actor_name)
                     source_output = source_actor.user_output[output_name]
@@ -222,6 +260,9 @@ class RootMergeCoordinator:
                             source_info=self._source_infos.get(job_index),
                         ),
                     )
+                if bar is not None:
+                    bar.update(n)
+                    bar.close()
 
     def finalize_merge(self):
         from .rootio import RootMergeFileWriter

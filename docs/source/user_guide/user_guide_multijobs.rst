@@ -362,6 +362,9 @@ with hundreds of jobs). ``opengate_jobs status campaign --check`` also checks
 that the input files of each job are found and gives the size of the job
 folders (slow: the simulation of each job is created).
 
+``opengate_jobs merge`` shows its progress: a bar while reading the jobs,
+then one line per actor (in a log file, only the final lines).
+
 The merge only needs the actors of the simulations and the output of the jobs,
 not their input files: a campaign can be merged after being moved to another
 folder or computer, e.g. ``opengate_jobs merge campaign -o merged``.
