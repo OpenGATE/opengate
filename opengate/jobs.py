@@ -2047,19 +2047,91 @@ def _submit_job_folders_to_htcondor(
     }
 
 
+def _get_slurm_submit_command(backend_options, job_folder):
+    """sbatch command of one job: the options (command_line_args) as given,
+    and the job folder (JOBDIR) added to the --export option, or
+    --export=ALL,JOBDIR=... if there is none."""
+    args = list(backend_options.get("command_line_args", []))
+    jobdir = f"JOBDIR={job_folder}"
+    for i, arg in enumerate(args):
+        if arg.startswith("--export="):
+            args[i] = f"{arg},{jobdir}"
+            break
+    else:
+        args.append(f"--export=ALL,{jobdir}")
+    return [
+        backend_options["submit_binary"],
+        *args,
+        str(backend_options["submit_filename"]),
+    ]
+
+
+def _parse_slurm_cpus_per_task(tokens):
+    for i, token in enumerate(tokens):
+        match = re.fullmatch(r"(?:--cpus-per-task=|-c)(\d+)", token)
+        if match:
+            return int(match.group(1))
+        if token in ("-c", "--cpus-per-task") and i + 1 < len(tokens):
+            if tokens[i + 1].isdigit():
+                return int(tokens[i + 1])
+    return None
+
+
+def _get_slurm_cpus_per_task(split_root_folder, backend_options):
+    """Number of cores per job: --cpus-per-task (or -c) of the sbatch command
+    line, else of the #SBATCH lines of the submitted file, else 1 (default of
+    slurm)."""
+    n = _parse_slurm_cpus_per_task(backend_options.get("command_line_args", []))
+    if n is not None:
+        return n
+    path = Path(backend_options["submit_filename"])
+    if not path.is_absolute():
+        path = Path(split_root_folder) / path
+    try:
+        with open(path) as f:
+            for line in f:
+                if line.startswith("#SBATCH"):
+                    tokens = line[len("#SBATCH") :].split("#")[0].split()
+                    n = _parse_slurm_cpus_per_task(tokens)
+                    if n is not None:
+                        return n
+    except OSError:
+        pass
+    return 1
+
+
+def _warn_if_slurm_cpus_differ_from_threads(manifest_path, manifest, backend_options):
+    """Warning if the cores reserved per job differ from the number of
+    threads of the simulation (only a warning: more cores may be wanted for
+    the memory)."""
+    try:
+        path = _get_master_simulation_paths_from_manifest(manifest_path, manifest)[0]
+        with open(path) as f:
+            threads = load_json(f)["user_info"].get("number_of_threads", 1)
+    except Exception:
+        return
+    cpus = _get_slurm_cpus_per_task(manifest_path.parent, backend_options)
+    if cpus != threads:
+        warning(
+            f"Each job uses {threads} thread(s) (number_of_threads of the "
+            f"simulation) but slurm reserves {cpus} core(s) per job "
+            f"(--cpus-per-task): use --cpus-per-task={threads} (--submit-args, "
+            f"or the #SBATCH lines of {backend_options['submit_filename']}), "
+            f"unless more cores are wanted for the memory."
+        )
+
+
 def _submit_job_folders_to_slurm(
     split_root_folder,
     job_folders,
     backend_options,
     skipped_completed_jobs,
 ):
+    first_command = None
     for job_folder in job_folders:
-        command = [backend_options["submit_binary"]]  # -> sbatch
-        command.extend(
-            backend_options.get("command_line_args", [])
-        )  # + set the path to the job folder
-        command[-1] += ",JOBDIR=" + str(job_folder)
-        command.append(str(backend_options["submit_filename"]))  # ->slurm filename
+        command = _get_slurm_submit_command(backend_options, job_folder)
+        if first_command is None:
+            first_command = command
         previous = _mark_job_as_submitted(job_folder, "slurm")
         try:
             completed_process = subprocess.run(
@@ -2087,6 +2159,7 @@ def _submit_job_folders_to_slurm(
         _set_scheduler_job_id(
             job_folder, _extract_scheduler_job_id(completed_process.stdout)
         )
+    return {"submission_command": first_command}
 
 
 def _submit_job_folders_to_pbs(
@@ -2095,6 +2168,7 @@ def _submit_job_folders_to_pbs(
     backend_options,
     skipped_completed_jobs,
 ):
+    first_command = None
     for job_folder in job_folders:
         command = [backend_options["submit_binary"]]  # -> qsub
         command.extend(
@@ -2103,6 +2177,8 @@ def _submit_job_folders_to_pbs(
         command.append("-v")
         command.append("JOBDIR=" + str(job_folder))
         command.append(str(backend_options["submit_filename"]))  # ->pbs filename
+        if first_command is None:
+            first_command = command
         previous = _mark_job_as_submitted(job_folder, "pbs")
         try:
             completed_process = subprocess.run(
@@ -2130,6 +2206,7 @@ def _submit_job_folders_to_pbs(
         _set_scheduler_job_id(
             job_folder, _extract_scheduler_job_id(completed_process.stdout)
         )
+    return {"submission_command": first_command}
 
 
 def _run_jobs_campaign(job_folders, backend, backend_options):
@@ -2395,7 +2472,10 @@ def jobs_run(
             raise GateJobsBackendError(
                 "detach=False is only supported for local jobs backends."
             )
-        _submit_job_folders_to_slurm(
+        _warn_if_slurm_cpus_differ_from_threads(
+            manifest_path, manifest, backend_options
+        )
+        submission_summary = _submit_job_folders_to_slurm(
             split_root_folder,
             selected_job_folders,
             backend_options,
@@ -2408,6 +2488,7 @@ def jobs_run(
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
+            **submission_summary,
         }
 
     if backend == "pbs":
@@ -2415,7 +2496,7 @@ def jobs_run(
             raise GateJobsBackendError(
                 "detach=False is only supported for local jobs backends."
             )
-        _submit_job_folders_to_pbs(
+        submission_summary = _submit_job_folders_to_pbs(
             split_root_folder,
             selected_job_folders,
             backend_options,
@@ -2428,6 +2509,7 @@ def jobs_run(
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
+            **submission_summary,
         }
 
     if backend in ("local_sequential", "local_pool"):

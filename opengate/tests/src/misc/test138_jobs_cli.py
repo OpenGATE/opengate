@@ -3,7 +3,7 @@
 
 """
 The opengate_jobs command line tool: split + run + merge in one command (local
-backend by default), the subcommands split, run, status, merge and clean, the
+backend, -l; no default backend), the subcommands split, run, status, merge and clean, the
 JSON output, the failure of a job, and a relative output_dir inside the
 campaign folder (kept when the simulation.json is written there).
 """
@@ -81,8 +81,13 @@ if __name__ == "__main__":
         utility.print_test(b, f"output_dir in simulation.json: {output_dir}") and is_ok
     )
 
-    # split + run + merge in one command, local backend by default
-    r = opengate_jobs("run", campaign, "-j", 3, "--json")
+    # no default backend: refused
+    r = opengate_jobs("run", campaign, "-j", 3)
+    b = r.returncode != 0 and "No backend" in r.stderr
+    is_ok = utility.print_test(b, "run without backend: refused") and is_ok
+
+    # split + run + merge in one command, local backend (-l)
+    r = opengate_jobs("run", campaign, "-j", 3, "-l", "--json")
     result = json.loads(r.stdout) if r.returncode == 0 else {}
     merged = result.get("merge", {}).get("merged_output_dir")
     b = (
@@ -98,7 +103,7 @@ if __name__ == "__main__":
     is_ok = utility.print_test(b, "one job.log per job folder") and is_ok
 
     # a different number of jobs needs --overwrite
-    r = opengate_jobs("run", campaign, "-j", 2)
+    r = opengate_jobs("run", campaign, "-j", 2, "-l")
     b = r.returncode != 0 and "--overwrite" in r.stderr
     is_ok = utility.print_test(b, "already split: needs --overwrite") and is_ok
 
@@ -128,7 +133,7 @@ if __name__ == "__main__":
     d["source_manager"]["sources"]["source"]["user_info"]["particle"] = "no_particle"
     with open(p, "w") as f:
         json.dump(d, f)
-    r = opengate_jobs("run", campaign, "--no-merge")
+    r = opengate_jobs("run", campaign, "-l", "--no-merge")
     b = r.returncode == 1 and "job0002: failed" in r.stderr and "job.log" in r.stderr
     is_ok = utility.print_test(b, "failed job reported") and is_ok
     r = opengate_jobs("merge", campaign)
@@ -136,7 +141,9 @@ if __name__ == "__main__":
     is_ok = utility.print_test(b, "merge refused") and is_ok
 
     # split again, run with one worker at a time, and merge
-    r = opengate_jobs("run", campaign, "-j", 2, "--overwrite", "--workers", 1, "--json")
+    r = opengate_jobs(
+        "run", campaign, "-j", 2, "-l", "--overwrite", "--workers", 1, "--json"
+    )
     result = json.loads(r.stdout) if r.returncode == 0 else {}
     b = (
         r.returncode == 0

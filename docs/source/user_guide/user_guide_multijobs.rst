@@ -198,11 +198,16 @@ The simulation can also be written in a campaign folder and run with the
    sim.to_json_file("campaign/")
 
 Then, in one command, split the simulation into 8 jobs, run them on the local
-machine (with one progress bar for all the jobs) and merge their output:
+machine (``-l``, with one progress bar for all the jobs) and merge their
+output:
 
 .. code-block:: console
 
-   opengate_jobs run campaign/ -j 8
+   opengate_jobs run campaign/ -j 8 -l
+
+There is no default backend: ``-l`` (or ``--backend local``) is required to run
+the jobs on the local machine, so that the jobs of a campaign are not run on
+the login node of a cluster by mistake.
 
 The merged output is written in the ``output_dir`` of the simulation. A
 relative ``output_dir`` is relative to the campaign folder, e.g.
@@ -285,7 +290,21 @@ backend options from a JSON file:
 As a convenience, the command also looks for a default file named
 ``jobs_backend_options.json`` inside the campaign folder when no
 ``--backend-options`` argument is provided. Without backend (on the command
-line or in this file), the jobs run on the local machine (``local``).
+line or in this file), ``run`` refuses to run the jobs.
+
+With slurm, each job is submitted with ``sbatch <command_line_args>
+--export=ALL,JOBDIR=<job folder> <submit_filename>`` (``JOBDIR`` is added to
+the ``--export`` option if ``command_line_args`` has one). The options of one
+campaign can be added on the command line, e.g. the time limit and the
+number of cores per job:
+
+.. code-block:: console
+
+   opengate_jobs run campaign/ --backend-options slurm_options.json --submit-args "--time=04:00:00 --cpus-per-task=2"
+
+They replace the ``#SBATCH`` lines of the submitted file. ``run`` prints the
+submit command of the first job, and warns if the number of cores per job
+(``--cpus-per-task``) differs from the number of threads of the simulation.
 
 With a scheduler backend, ``opengate_jobs run`` only submits the jobs and
 returns: follow them with ``opengate_jobs status campaign``, and merge them
@@ -411,8 +430,9 @@ Command-line tools
 GATE ships with one multi-job command-line tool, ``opengate_jobs``, with the
 subcommands:
 
-- ``opengate_jobs run``: run the jobs of a campaign through a backend (local by
-  default), after splitting it if needed (``-j``); with the local backend, wait
+- ``opengate_jobs run``: run the jobs of a campaign through a backend (required:
+  ``-l`` for the local machine, ``--backend``, ``--backend-options``), after
+  splitting it if needed (``-j``); with the local backend, wait
   for the jobs and merge their output
 - ``opengate_jobs split``: split a campaign folder into child jobs
 - ``opengate_jobs status``: inspect the current campaign status (``--check``

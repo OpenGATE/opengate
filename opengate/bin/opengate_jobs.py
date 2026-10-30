@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import shlex
 import sys
 from pathlib import Path
 
@@ -35,9 +36,10 @@ def go():
 
     The CAMPAIGN folder contains the simulation.json of the simulation (written
     with sim.to_json_file("campaign/")) and its input files. The most common use,
-    on a workstation (split, run with a progress bar, merge):
+    on a workstation (split, run with a progress bar, merge; -l: local machine,
+    there is no default backend):
 
-        opengate_jobs run campaign/ -j 8
+        opengate_jobs run campaign/ -j 8 -l
 
     On a cluster:
 
@@ -147,7 +149,9 @@ def split(campaign, jobs, policy, link_files, overwrite, as_json):
 
 def load_backend_options(campaign, backend, backend_options):
     """The backend and its options: from the command line, or from the file
-    jobs_backend_options.json of the campaign folder. Local by default."""
+    jobs_backend_options.json of the campaign folder. No default: an error if
+    no backend is given (e.g. not to run all the jobs on the login node of a
+    cluster by mistake)."""
     default_path = Path(campaign) / DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME
     path = backend_options
     if path is None and default_path.exists():
@@ -161,8 +165,14 @@ def load_backend_options(campaign, backend, backend_options):
                 f"The backend options file '{path}' must contain a JSON object."
             )
     if backend is None:
-        backend = config.get("backend", "local")
-    elif config.get("backend") not in (None, backend):
+        backend = config.get("backend")
+    if backend is None:
+        raise click.ClickException(
+            "No backend: give it with --backend (e.g. --backend slurm "
+            "--backend-options <file.json>), -l for the local machine, or in "
+            f"{DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME} in the campaign folder."
+        )
+    if config.get("backend") not in (None, backend):
         click.echo(
             f"Warning: the backend '{backend}' (command line) replaces the backend "
             f"'{config.get('backend')}' of '{path}' (its options are ignored).",
@@ -225,8 +235,14 @@ def counts_str(status):
     "--backend",
     default=None,
     type=click.Choice(BACKENDS, case_sensitive=False),
-    help="Where the jobs run. Default: the backend of jobs_backend_options.json "
-    "in CAMPAIGN if any, else local.",
+    help="Where the jobs run (required: no default), or the backend of "
+    "jobs_backend_options.json in CAMPAIGN.",
+)
+@click.option(
+    "-l",
+    "--local",
+    is_flag=True,
+    help="Run the jobs on the local machine (same as --backend local).",
 )
 @click.option(
     "--backend-options",
@@ -234,6 +250,13 @@ def counts_str(status):
     default=None,
     help="JSON file with the backend and its options "
     "(default: jobs_backend_options.json in CAMPAIGN).",
+)
+@click.option(
+    "--submit-args",
+    default=None,
+    help="Options added to the submit command of a scheduler backend, e.g. "
+    "--submit-args '--time=04:00:00 --cpus-per-task=2' for slurm (they replace "
+    "the #SBATCH lines of the submitted file).",
 )
 @click.option(
     "--workers",
@@ -268,7 +291,9 @@ def run(
     campaign,
     jobs,
     backend,
+    local,
     backend_options,
+    submit_args,
     workers,
     merge,
     clean,
@@ -287,8 +312,19 @@ def run(
     with 'opengate_jobs status', then 'opengate_jobs merge'.
     """
     campaign = Path(campaign).resolve()
+    if local:
+        if backend not in (None, "local"):
+            raise click.ClickException(f"-l (local) and --backend {backend}.")
+        backend = "local"
     backend, options = load_backend_options(campaign, backend, backend_options)
     local = backend == "local"
+    if submit_args:
+        if local:
+            raise click.ClickException("--submit-args is not for the local backend.")
+        options = dict(options or {})
+        options["command_line_args"] = list(
+            options.get("command_line_args", [])
+        ) + shlex.split(submit_args)
 
     # split if needed
     if not is_split(campaign) or overwrite:
@@ -324,6 +360,9 @@ def run(
         if as_json:
             echo_json(result)
         else:
+            command = result.get("submission_command")
+            if command:
+                click.echo(f"Submit command (first job): {shlex.join(command)}")
             click.echo(
                 f"{jobs_str(result['submitted_jobs'])} submitted to {backend} "
                 f"({result['skipped_completed_jobs']} already completed). "
@@ -343,7 +382,7 @@ def run(
         except KeyboardInterrupt:
             click.echo(
                 f"\nInterrupted by the user. The completed jobs are kept; run the "
-                f"others with: opengate_jobs run {short(campaign)}",
+                f"others with: opengate_jobs run {short(campaign)} -l",
                 err=True,
             )
             sys.exit(130)

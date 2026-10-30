@@ -6,7 +6,8 @@
 
 A campaign of 3 jobs is submitted to a fake slurm (a script that prints
 "Submitted batch job 4242" and runs nothing):
-1. the 3 jobs are 'submitted', with the scheduler job id
+1. the 3 jobs are 'submitted', with the scheduler job id; JOBDIR added to the
+   --export option of sbatch (not to the last option)
 2. job 1 runs (job runner): 'completed', submission time and scheduler job
    id kept
 3. job 2 is 'running' but its last progress is old: 'lost' (10 min while
@@ -89,7 +90,8 @@ if __name__ == "__main__":
     backend_options = {
         "submit_binary": str(fake_sbatch),
         "submit_filename": "job.slurm",
-        "command_line_args": ["--export=ALL"],
+        # (JOBDIR is added to --export, whatever the order of the options)
+        "command_line_args": ["--export=ALL", "--time=01:00:00"],
     }
 
     sim = create_simulation(campaign_dir / "output")
@@ -106,8 +108,13 @@ if __name__ == "__main__":
     statuses, status = execution_statuses(campaign_dir)
     ids = [load_job_execution_status(f).get("scheduler_job_id") for f in job_folders]
     print(f"After submission: {statuses}, scheduler ids {ids}")
+    command = result["submission_command"]
+    print(f"Submit command of the first job: {command}")
     is_ok = utility.print_test(
-        result["submitted_jobs"] == 3
+        f"--export=ALL,JOBDIR={job_folders[0]}" in command
+        and "--time=01:00:00" in command
+        and command[-1] == "job.slurm"
+        and result["submitted_jobs"] == 3
         and statuses == ["submitted"] * 3
         and ids == ["4242"] * 3
         and status["execution_counts"]["submitted"] == 3,
