@@ -71,6 +71,21 @@ def create_simulation(output_dir):
     return sim
 
 
+def write_fake_binary(path, python_code):
+    # a fake scheduler command: a python script and a launcher that can be
+    # run as a binary (.cmd on Windows, sh elsewhere)
+    script = path.with_suffix(".py")
+    script.write_text(python_code)
+    if os.name == "nt":
+        binary = path.with_suffix(".cmd")
+        binary.write_text(f'@"{sys.executable}" "{script}" %*\n')
+    else:
+        binary = path.with_suffix(".sh")
+        binary.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{script}" "$@"\n')
+        os.chmod(binary, 0o755)
+    return binary
+
+
 def write_old_progress(job_folder, status, minutes):
     t = (datetime.now() - timedelta(minutes=minutes)).isoformat()
     with open(job_folder / JOB_PROGRESS_FILENAME, "w") as f:
@@ -97,10 +112,10 @@ if __name__ == "__main__":
     campaign_dir = paths.output / "campaign"
 
     # fake slurm: prints the job id, runs nothing
-    fake_sbatch = paths.output / "fake_sbatch.sh"
-    fake_sbatch.parent.mkdir(parents=True, exist_ok=True)
-    fake_sbatch.write_text('#!/bin/sh\necho "Submitted batch job 4242"\n')
-    os.chmod(fake_sbatch, 0o755)
+    paths.output.mkdir(parents=True, exist_ok=True)
+    fake_sbatch = write_fake_binary(
+        paths.output / "fake_sbatch", 'print("Submitted batch job 4242")\n'
+    )
     backend_options = {
         "submit_binary": str(fake_sbatch),
         "submit_filename": "job.slurm",
@@ -247,10 +262,12 @@ if __name__ == "__main__":
     )
 
     # 7. cancel. slurm: the ids given to the fake scancel
-    fake_scancel = paths.output / "fake_scancel.sh"
     scancel_args = paths.output / "scancel_args.txt"
-    fake_scancel.write_text(f'#!/bin/sh\necho "$@" > {scancel_args}\n')
-    os.chmod(fake_scancel, 0o755)
+    fake_scancel = write_fake_binary(
+        paths.output / "fake_scancel",
+        "import sys\n"
+        f"open({str(scancel_args)!r}, 'w').write(' '.join(sys.argv[1:]))\n",
+    )
     for job_folder, status in (
         (job_folders[1], "running"),
         (job_folders[2], "submitted"),
