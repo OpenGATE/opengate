@@ -22,8 +22,7 @@ def run_simulation(vrt_mode="analog", activity=5e5, threads=None, skip=False):
     # Set parameters
     param = Box()
     param.ct_image = str(dr_data / "29_CT_5mm_crop.mhd")
-    param.table_mat = str(dr_data / "Schneider2000MaterialsTable.txt")
-    param.table_density = str(dr_data / "Schneider2000DensitiesTable.txt")
+    # table_mat and table_density: default, the Schneider 2000 tables of opengate
     param.activity_image = str(dr_data / "activity_test_crop_4mm.mhd")
     param.radionuclide = "Lu177"
     param.activity_bq = activity

@@ -60,8 +60,6 @@ The JSON file contains the input parameters for the simulation:
 
     {
       "ct_image": "./dose_rate_data/29_CT_5mm.mhd",
-      "table_mat": "./dose_rate_data/Schneider2000MaterialsTable.txt",
-      "table_density": "./dose_rate_data/Schneider2000DensitiesTable.txt",
       "density_tolerance_gcm3": 0.05,
 
       "activity_image": "./dose_rate_data/385_NM_5mm.mhd",
@@ -78,7 +76,7 @@ The JSON file contains the input parameters for the simulation:
 Parameter descriptions:
 
 - **ct_image**: Patient CT image providing the geometry and tissue distribution.
-- **table_mat**, **table_density**: Calibration tables mapping Hounsfield Units (HU) to materials and mass densities (e.g., Schneider 2000).
+- **table_mat**, **table_density** (optional): Calibration tables mapping Hounsfield Units (HU) to materials and mass densities. Default: the Schneider 2000 tables shipped with opengate (``opengate/data/Schneider2000MaterialsTable.txt`` and ``Schneider2000DensitiesTable.txt``). The materials cover HU -1050 to 100000 (below: ``G4_AIR``); above HU 3000 (metal implants, or the 3071 saturation of many scanners), the material is titanium at 2.8 g/cm³, the last density of the table. GATE 9 version of the table (metal only up to HU 3001, ``G4_AIR`` above): ``Schneider2000MaterialsTable_gate9.txt``. For real metal implants, the HU are not reliable (saturation, artifacts): segment them and use a table of your own (e.g. a last row at the HU of the segmented label, with the right material and density). The HU to density calibration of these tables is the one of the scanner of Schneider et al. 2000 (Phys Med Biol 45:459): for quantitative dosimetry, use the calibration of your own CT scanner.
 - **density_tolerance_gcm3**: Tolerance for grouping voxels with similar densities into discrete material definitions (default: 0.05 g/cm³).
 - **activity_image**: 3D spatial activity distribution (from SPECT or PET). Used as a **relative spatial probability distribution** (internally normalized so that the sum of all voxel values is 1).
 - **radionuclide**: Radionuclide identifier (see below).
@@ -171,8 +169,6 @@ To set up an analog simulation directly in Python (see ``opengate/tests/src/sour
     # Configure parameters
     param = Box()
     param.ct_image = "29_CT_5mm_crop.mhd"
-    param.table_mat = "Schneider2000MaterialsTable.txt"
-    param.table_density = "Schneider2000DensitiesTable.txt"
     param.activity_image = "activity_test_crop_4mm.mhd"
     param.radionuclide = "Lu177"  # or "Ac225", "89 225", etc.
     param.activity_bq = 1e6
@@ -204,8 +200,6 @@ To run decoupled VRT simulations and merge their results (see ``opengate/tests/s
     # Common parameters
     base_param = Box()
     base_param.ct_image = "29_CT_5mm_crop.mhd"
-    base_param.table_mat = "Schneider2000MaterialsTable.txt"
-    base_param.table_density = "Schneider2000DensitiesTable.txt"
     base_param.activity_image = "activity_test_crop_4mm.mhd"
     base_param.radionuclide = "Lu177"
     base_param.number_of_threads = 4
