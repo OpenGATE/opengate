@@ -1035,7 +1035,9 @@ class JobsSplitManager:
         if self.is_packaged is False:
             self.package_master_campaign()
 
-        for job_definition in self.job_definitions:
+        bar = TerminalProgressBar(len(self.job_definitions), "Split")
+        for i, job_definition in enumerate(self.job_definitions):
+            bar.update(i)
             # Each child simulation starts from the immutable resolved master
             # representation and is then rewritten to one job's local scope.
             child_simulation = _clone_simulation_from_dictionary(
@@ -1073,6 +1075,8 @@ class JobsSplitManager:
                 }
             )
             self._job_folders.append(job_folder)
+        bar.update(len(self.job_definitions))
+        bar.close()
 
         self.is_materialized = True
 
@@ -1589,6 +1593,49 @@ def _format_count(n):
         if n >= factor:
             return f"{n / factor:.1f}{unit}"
     return str(int(n))
+
+
+class TerminalProgressBar:
+    """A progress bar on one terminal line, for a loop of known length
+    (e.g. the split of the jobs). Drawn only in a terminal (not in a log
+    file), at most every 0.2 s."""
+
+    width = 30
+
+    def __init__(self, total, label):
+        self.total = total
+        self.label = label
+        self.start_time = time.perf_counter()
+        self.last_draw = None
+        self.enabled = sys.stdout.isatty() and total > 0
+
+    def update(self, done):
+        if not self.enabled:
+            return
+        now = time.perf_counter()
+        if (
+            done < self.total
+            and self.last_draw is not None
+            and now - self.last_draw < 0.2
+        ):
+            return
+        self.last_draw = now
+        elapsed = now - self.start_time
+        fraction = done / self.total
+        eta = "?"
+        if done > 0:
+            eta = _format_duration(elapsed * (self.total - done) / done)
+        n = int(round(fraction * self.width))
+        sys.stdout.write(
+            f"\r{self.label} {done}/{self.total} |{'#' * n}{'-' * (self.width - n)}| "
+            f"[{_format_duration(elapsed)} < {eta}]"
+        )
+        sys.stdout.flush()
+
+    def close(self):
+        if self.enabled and self.last_draw is not None:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
 
 
 class CampaignProgressBar:
