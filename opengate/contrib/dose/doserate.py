@@ -97,6 +97,9 @@ def create_simulation(param):
     - verbose:
     - radionuclide
     - activity_bq
+    - bremsstrahlung (optional, default True): in "e-" mode, create the bremsstrahlung
+      photons and score them with the track-length estimator (TLE). Otherwise, the
+      bremsstrahlung energy is deposited along the electron tracks.
     """
     # create the simulation
     sim = Simulation()
@@ -173,11 +176,23 @@ def create_simulation(param):
     if not hasattr(param, "mode") or param.mode is None:
         param.mode = ""
 
+    bremsstrahlung = getattr(param, "bremsstrahlung", True)
+    if bremsstrahlung is None:
+        bremsstrahlung = True
     if param.mode == "e-":
         # electron source
         source.particle = "e-"
         set_source_energy_spectrum(source, param.radionuclide)
-        sim.physics_manager.set_production_cut("ct", "all", 1 * m)
+        if bremsstrahlung:
+            # no secondary electrons, but the bremsstrahlung photons are created
+            # (scored with TLE, see below). Note: in a region, the "all" cut
+            # overrides the per-particle cuts, so it is unset first.
+            sim.physics_manager.set_production_cut("ct", "all", None)
+            sim.physics_manager.set_production_cut("ct", "electron", 1 * m)
+            sim.physics_manager.set_production_cut("ct", "positron", 1 * m)
+            sim.physics_manager.set_production_cut("ct", "gamma", 2 * mm)
+        else:
+            sim.physics_manager.set_production_cut("ct", "all", 1 * m)
     elif "gamma" in param.mode:
         # gamma source
         source.particle = "gamma"
@@ -191,6 +206,10 @@ def create_simulation(param):
         dose.tle_threshold_type = "energy"
         dose.tle_threshold = source.energy.spectrum_energies[-1]
         print(f"tle_threshold = {dose.tle_threshold/keV} keV")
+    elif param.mode == "e-" and bremsstrahlung:
+        # the electrons are scored as with the DoseActor, all photons (the
+        # bremsstrahlung) with the track-length estimator
+        dose = sim.add_actor("TLEDoseActor", "dose")
     else:
         dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "output.mhd"

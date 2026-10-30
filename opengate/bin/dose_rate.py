@@ -46,6 +46,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="In vrt mode, factor by which electron activity is reduced (default: from JSON or 10.0).",
 )
 @click.option(
+    "--bremsstrahlung/--no-bremsstrahlung",
+    default=None,
+    help="In e- and vrt modes, create the bremsstrahlung photons of the electrons and score them "
+    "with TLE (default: from JSON or on). Off: their energy is deposited along the electron tracks.",
+)
+@click.option(
     "--threads",
     "-t",
     default=None,
@@ -79,6 +85,7 @@ def go(
     activity,
     radionuclide,
     e_factor,
+    bremsstrahlung,
     threads,
     output_folder,
     visu,
@@ -159,6 +166,11 @@ def go(
         param.e_factor = 10.0
     e_factor = float(param.e_factor)
 
+    if bremsstrahlung is not None:
+        param.bremsstrahlung = bremsstrahlung
+    elif "bremsstrahlung" not in param or param.bremsstrahlung is None:
+        param.bremsstrahlung = True
+
     if not hasattr(param, "verbose"):
         param.verbose = True
     if not hasattr(param, "density_tolerance_gcm3"):
@@ -216,6 +228,9 @@ def go(
         print(f"Target activity (gamma): {param.activity_bq:.2e} Bq")
         act_e = int(float(param.activity_bq) / e_factor)
         print(f"Electron activity (e_factor={e_factor}): {act_e:.2e} Bq")
+        print(
+            f"Bremsstrahlung of the electrons: {'on' if param.bremsstrahlung else 'off'}"
+        )
         print(f"Output directory: {out_dir}")
 
         out_e = out_dir / "e"
