@@ -76,7 +76,7 @@ The JSON file contains the input parameters for the simulation:
 Parameter descriptions:
 
 - **ct_image**: Patient CT image providing the geometry and tissue distribution.
-- **table_mat**, **table_density** (optional): Calibration tables mapping Hounsfield Units (HU) to materials and mass densities. Default: the Schneider 2000 tables shipped with opengate (``opengate/data/Schneider2000MaterialsTable.txt`` and ``Schneider2000DensitiesTable.txt``).
+- **table_mat**, **table_density** (optional): Calibration tables mapping Hounsfield Units (HU) to materials and mass densities. Default: the Schneider 2000 tables shipped with opengate (``opengate/data/Schneider2000MaterialsTable.txt`` and ``Schneider2000DensitiesTable.txt``). The materials cover HU -1050 to 3000 (outside: ``G4_AIR``). The HU to density calibration of these tables is the one of the scanner of Schneider et al. 2000 (Phys Med Biol 45:459): for quantitative dosimetry, use the calibration of your own CT scanner.
 - **density_tolerance_gcm3**: Tolerance for grouping voxels with similar densities into discrete material definitions (default: 0.05 g/cm³).
 - **activity_image**: 3D spatial activity distribution (from SPECT or PET). Used as a **relative spatial probability distribution** (internally normalized so that the sum of all voxel values is 1).
 - **radionuclide**: Radionuclide identifier (see below).

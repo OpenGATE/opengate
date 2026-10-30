@@ -37,8 +37,7 @@ def run_simulation(bremsstrahlung, activity=2e5, threads=None):
 
     param = Box()
     param.ct_image = ct_image
-    param.table_mat = str(dr_data / "Schneider2000MaterialsTable.txt")
-    param.table_density = str(dr_data / "Schneider2000DensitiesTable.txt")
+    # table_mat and table_density: default, the Schneider 2000 tables of opengate
     param.activity_image = activity_image
     param.radionuclide = "Y90"
     param.activity_bq = activity
