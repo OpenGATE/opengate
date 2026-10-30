@@ -292,6 +292,41 @@ returns: follow them with ``opengate_jobs status campaign``, and merge them
 with ``opengate_jobs merge campaign`` once they are all completed (the merge
 refuses an incomplete campaign).
 
+
+Following the jobs
+~~~~~~~~~~~~~~~~~~
+
+``opengate_jobs status campaign`` only reads the files of the campaign (it does
+not query the scheduler), so it works the same for all the backends. The
+execution state of each job is one of:
+
+- ``submitted``: submitted by ``opengate_jobs run``, not started yet (waiting
+  in the queue of the scheduler, or for a local worker). The id given by the
+  scheduler is kept in ``job_execution_status.json`` (e.g. for ``sacct``).
+- ``running``: started. During the simulation, the job writes its progress in
+  ``job_progress.json`` (every 2 s with a local backend, 30 s with a scheduler).
+- ``lost``: running, but without news for more than 10 min while simulating
+  events (1 h during the initialization or the writing of the output): its
+  process died without reporting, e.g. killed by the scheduler (time limit,
+  memory) or crashed. The cause is in the log of the scheduler.
+- ``completed``, ``failed`` (the error is in ``job_execution_status.json`` and
+  in the log of the job), ``interrupted`` (Control-C, local backends).
+
+Run ``opengate_jobs run campaign`` again to submit the jobs that did not
+complete (failed, interrupted, lost); the completed jobs are kept. ``run``
+refuses while some jobs are still ``submitted`` or ``running``
+(``--rerun-running`` to submit them anyway, e.g. for a job removed from the
+queue of the scheduler, which stays ``submitted``).
+
+By default, ``status`` does not check the input files of the jobs (fast, even
+with hundreds of jobs). ``opengate_jobs status campaign --check`` also checks
+that the input files of each job are found and gives the size of the job
+folders (slow: the simulation of each job is created).
+
+The merge only needs the actors of the simulations and the output of the jobs,
+not their input files: a campaign can be merged after being moved to another
+folder or computer, e.g. ``opengate_jobs merge campaign -o merged``.
+
 You can find examples you can adapt in the ``contrib/cluster`` folder for slurm and pbs backends.
 The backend options are usually site-specific and should be adapted to the target server.
 
@@ -372,7 +407,8 @@ subcommands:
   default), after splitting it if needed (``-j``); with the local backend, wait
   for the jobs and merge their output
 - ``opengate_jobs split``: split a campaign folder into child jobs
-- ``opengate_jobs status``: inspect the current campaign status
+- ``opengate_jobs status``: inspect the current campaign status (``--check``
+  to also check the input files of the jobs)
 - ``opengate_jobs merge``: merge the finished jobs (``-o`` for another output
   folder)
 - ``opengate_jobs clean``: remove the job folders and the jobs files

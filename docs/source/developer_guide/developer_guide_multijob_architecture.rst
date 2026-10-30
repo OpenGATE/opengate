@@ -86,6 +86,26 @@ Every job writes ``job_execution_status.json`` in its job folder. This file is
 the authoritative execution status for recovery and reruns. Campaign-level
 backend submission metadata is stored separately.
 
+The status is file-based for all the backends (no query of the scheduler):
+
+- ``jobs_run`` writes ``submitted`` for each job before its submission (the
+  job may start before the submit command returns; the previous status is
+  restored if the submission fails), then the scheduler job id when the
+  submit command prints it (only informative).
+- the job runner writes ``running`` (keeping the submission time and the
+  scheduler job id), then ``job_progress.json`` with ``initializing`` before
+  creating the simulation. During the event loop, ``JobProgressWriter`` (the
+  progress hook, called by ``GateSourceManager::CheckProgressReport`` with an
+  interval in wall clock) updates it: this is the heartbeat of the job, the
+  same for a simulation defined by time or by number of primaries.
+- ``jobs_status`` reports a running job as ``lost`` (not written) when its
+  last news is older than ``JOB_LOST_AFTER`` while simulating events, or
+  ``JOB_LOST_AFTER_NO_EVENT`` otherwise. ``jobs_run`` submits the lost jobs
+  again.
+- ``jobs_status(check_inputs=False)`` only reads the manifest and these files;
+  with ``check_inputs=True``, each job simulation is created to check its
+  input files (slow for many jobs).
+
 Merge
 ^^^^^
 
@@ -93,6 +113,13 @@ The merge phase is coordinated by ``JobsMergeManager`` and exposed through
 ``gate.jobs_merge(...)``. The manager rehydrates the master simulation and the
 child simulations from disk, builds a ``MergeContext``, executes the merge, and
 finalizes output writing.
+
+The simulations are rehydrated with ``create_sim_from_json(path,
+actors_only=True)``: only the actors and the attributes of the simulation, no
+volumes, physics or sources, so no input file is read (fast, and a moved
+campaign can be merged). Each child simulation is loaded once
+(``JobsMergeManager.load_source_simulation``) and shared by the planning and
+the coordinators.
 
 The workflow is split into three stages:
 
