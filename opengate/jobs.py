@@ -2100,15 +2100,31 @@ def _get_slurm_cpus_per_task(split_root_folder, backend_options):
     return 1
 
 
+def _get_campaign_number_of_threads(manifest_path, manifest):
+    """number_of_threads of the simulation of the campaign (None if unknown)"""
+    try:
+        path = _get_master_simulation_paths_from_manifest(manifest_path, manifest)[0]
+        with open(path) as f:
+            return int(load_json(f)["user_info"].get("number_of_threads", 1))
+    except Exception:
+        return None
+
+
+def _get_default_number_of_workers(manifest_path, manifest):
+    """Local backend: all the jobs at the same time, but not more than the
+    cores of the computer (number of cores / number of threads per job)."""
+    n_jobs = manifest.get("number_of_jobs", len(manifest.get("jobs", [])))
+    threads = _get_campaign_number_of_threads(manifest_path, manifest) or 1
+    n_cores = os.cpu_count() or 1
+    return max(1, min(n_jobs, n_cores // max(threads, 1)))
+
+
 def _warn_if_slurm_cpus_differ_from_threads(manifest_path, manifest, backend_options):
     """Warning if the cores reserved per job differ from the number of
     threads of the simulation (only a warning: more cores may be wanted for
     the memory)."""
-    try:
-        path = _get_master_simulation_paths_from_manifest(manifest_path, manifest)[0]
-        with open(path) as f:
-            threads = load_json(f)["user_info"].get("number_of_threads", 1)
-    except Exception:
+    threads = _get_campaign_number_of_threads(manifest_path, manifest)
+    if threads is None:
         return
     cpus = _get_slurm_cpus_per_task(manifest_path.parent, backend_options)
     if cpus != threads:
@@ -2376,9 +2392,10 @@ def jobs_run(
     For the ``local_pool`` backend, ``number_of_workers`` controls how many
     child simulations can run concurrently. If fewer workers than jobs are
     used, the jobs are executed in several waves and each additional wave pays
-    the full overhead of starting and finalizing another Geant4 simulation. In
-    most practical local runs, ``number_of_workers`` should therefore be equal
-    to ``number_of_jobs``.
+    the full overhead of starting and finalizing another Geant4 simulation.
+    Default: all the jobs at the same time, but not more than the number of
+    cores of the computer divided by the number of threads of the simulation
+    (e.g. 200 jobs on a login node do not start at once).
     """
     backend = JOBS_BACKEND_ALIASES.get(backend, backend)
     manifest_path, manifest = _load_jobs_manifest(split_path)
@@ -2514,9 +2531,7 @@ def jobs_run(
 
     if backend in ("local_sequential", "local_pool"):
         if number_of_workers is None and backend == "local_pool":
-            number_of_workers = manifest.get(
-                "number_of_jobs", len(manifest.get("jobs", []))
-            )
+            number_of_workers = _get_default_number_of_workers(manifest_path, manifest)
         if number_of_workers is not None:
             try:
                 number_of_workers = int(number_of_workers)
@@ -3300,6 +3315,23 @@ class MergeContext:
         return StandardMergeContextView(self)
 
 
+def _check_merge_output_dir(output_dir):
+    """The merged output goes to the output_dir of the simulation: it must be
+    possible to create it here. Not the case for a campaign moved from another
+    computer with an absolute output_dir (e.g. /lustre/... on a cluster)."""
+    output_dir = Path(output_dir)
+    existing = output_dir
+    while not existing.exists():
+        existing = existing.parent
+    if existing == Path(existing.anchor) or not os.access(existing, os.W_OK):
+        raise GateMergeError(
+            f"The output folder of the simulation, {output_dir}, cannot be "
+            f"created here (campaign moved from another computer?). Give the "
+            f"folder of the merged output (opengate_jobs merge -o, or "
+            f"to_path)."
+        )
+
+
 class JobsMergeManager:
     """Campaign-level orchestrator for merging split simulation results.
 
@@ -3439,6 +3471,8 @@ class JobsMergeManager:
 
         if self.output_dir_override is not None:
             self.master_simulation.output_dir = self.output_dir_override
+        else:
+            _check_merge_output_dir(self.master_simulation.get_output_path())
         return self.master_simulation
 
     def load_source_simulation(self, source_info):

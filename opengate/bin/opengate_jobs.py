@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 import colored
 import opengate_core as g4
-from opengate.exception import color_error
+from opengate.exception import color_error, GateMergeError
 from opengate.jobs import (
     DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME,
     DEFAULT_SPLIT_POLICY,
@@ -263,7 +263,7 @@ def counts_str(status):
     type=int,
     default=None,
     help="Local backend: number of jobs run at the same time "
-    "(default: all the jobs).",
+    "(default: all the jobs, at most the number of cores / threads per job).",
 )
 @click.option(
     "--merge/--no-merge",
@@ -467,7 +467,10 @@ def merge(campaign, output, clean, verbose, as_json):
             f"Not all jobs completed ({counts_str(status)}):\n"
             f"{failure_report(status)}"
         )
-    m = jobs_merge(Path(campaign), to_path=output, execute=True)
+    try:
+        m = jobs_merge(Path(campaign), to_path=output, execute=True)
+    except GateMergeError as e:
+        raise click.ClickException(str(e))
     result = merge_summary(m)
     if clean:
         result["clean"] = clean_campaign(campaign)

@@ -217,8 +217,9 @@ relative ``output_dir`` is relative to the campaign folder, e.g.
 - If some jobs fail or are interrupted (Control-C), the command reports them
   and does not merge. Run the same command again to run only the jobs that did
   not complete; the completed jobs are kept.
-- ``--workers N`` runs at most N jobs at the same time (all the jobs by
-  default).
+- ``--workers N`` runs at most N jobs at the same time (default: all the
+  jobs, but not more than the number of cores divided by the number of
+  threads of the simulation).
 - ``--no-merge`` does not merge; ``--clean`` removes the job folders after the
   merge.
 - ``-j`` is only needed the first time (to split). To split again with another
@@ -353,6 +354,9 @@ folders (slow: the simulation of each job is created).
 The merge only needs the actors of the simulations and the output of the jobs,
 not their input files: a campaign can be merged after being moved to another
 folder or computer, e.g. ``opengate_jobs merge campaign -o merged``.
+Without ``-o``, the merged output goes to the ``output_dir`` of the
+simulation; the merge refuses if this folder cannot be created (e.g. an
+absolute path of the cluster, for a campaign copied back).
 
 Example: Slurm
 ~~~~~~~~~~~~~~

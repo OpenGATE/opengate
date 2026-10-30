@@ -16,6 +16,9 @@ A campaign of 3 jobs is submitted to a fake slurm (a script that prints
    a job still 'submitted' (waiting in the queue) is not
 5. progress of the campaign: fraction of the events, estimated end of the
    running jobs (elapsed time and fraction of the running job)
+6. merge of a campaign moved from another computer: its output_dir (e.g.
+   /lustre/...) cannot be created here, clear error (use -o); local backend:
+   default number of workers at most the number of cores
 """
 
 import os
@@ -30,9 +33,13 @@ from opengate.jobs import (
     jobs_status,
     load_job_execution_status,
     _run_job_folder_cli,
+    _check_merge_output_dir,
+    _get_default_number_of_workers,
+    _load_jobs_manifest,
     JOB_PROGRESS_FILENAME,
     JOB_EXECUTION_STATUS_FILENAME,
 )
+from opengate.exception import GateMergeError
 from opengate.tests import utility
 
 
@@ -208,6 +215,28 @@ if __name__ == "__main__":
             "5. progress: fraction of the events, end of the running jobs",
         )
         and is_ok
+    )
+
+    # 6. output folder of a moved campaign, default number of workers
+    ok6 = True
+    for folder, expected_error in [
+        ("/nonexistent_lustre_folder/output", True),
+        (paths.output / "new_folder" / "merged", False),
+    ]:
+        try:
+            _check_merge_output_dir(folder)
+            error = False
+        except GateMergeError as e:
+            print(f"Merge output {folder}: {e}")
+            error = True
+        ok6 = ok6 and error == expected_error
+    manifest_path, manifest = _load_jobs_manifest(campaign_dir)
+    manifest["number_of_jobs"] = 10000
+    n = _get_default_number_of_workers(manifest_path, manifest)
+    print(f"Default workers for 10000 jobs: {n} ({os.cpu_count()} cores)")
+    ok6 = ok6 and 1 <= n <= os.cpu_count()
+    is_ok = (
+        utility.print_test(ok6, "6. merge output folder, number of workers") and is_ok
     )
 
     utility.test_ok(is_ok)
