@@ -86,6 +86,34 @@ Every job writes ``job_execution_status.json`` in its job folder. This file is
 the authoritative execution status for recovery and reruns. Campaign-level
 backend submission metadata is stored separately.
 
+The status is file-based for all the backends (no query of the scheduler):
+
+- ``jobs_run`` writes ``submitted`` for each job before its submission (the
+  job may start before the submit command returns; the previous status is
+  restored if the submission fails), then the scheduler job id when the
+  submit command prints it (only informative).
+- the job runner writes ``running`` (keeping the submission time and the
+  scheduler job id), then ``job_progress.json`` with ``initializing`` before
+  creating the simulation. During the event loop, ``JobProgressWriter`` (the
+  progress hook, called by ``GateSourceManager::CheckProgressReport`` with an
+  interval in wall clock) updates it: this is the heartbeat of the job, the
+  same for a simulation defined by time or by number of primaries.
+- ``jobs_status`` reports a running job as ``lost`` (not written) when its
+  last news is older than ``JOB_LOST_AFTER`` while simulating events, or
+  ``JOB_LOST_AFTER_NO_EVENT`` otherwise. ``jobs_run`` submits the lost jobs
+  again.
+- ``jobs_status(check_inputs=False)`` only reads the manifest and these files;
+  with ``check_inputs=True``, each job simulation is created to check its
+  input files (slow for many jobs).
+- ``jobs_cancel`` stops the ``submitted`` and ``running`` jobs and writes
+  ``cancelled``: with a scheduler, its cancel command (``scancel``, ``qdel``,
+  ``condor_rm``; ``cancel_binary`` in the backend options) with the kept job
+  ids; with a local backend, the campaign process (``campaign_process_pid``
+  of the backend status), then the process of each running job (the runner
+  writes ``pid`` and ``hostname`` in ``job_execution_status.json``; a lost
+  job is not killed, its pid may have been reused). ``jobs_run`` runs the
+  cancelled jobs again.
+
 Merge
 ^^^^^
 
@@ -93,6 +121,23 @@ The merge phase is coordinated by ``JobsMergeManager`` and exposed through
 ``gate.jobs_merge(...)``. The manager rehydrates the master simulation and the
 child simulations from disk, builds a ``MergeContext``, executes the merge, and
 finalizes output writing.
+
+The simulations are rehydrated with ``create_sim_from_json(path,
+actors_only=True)``: only the actors and the attributes of the simulation, no
+volumes, physics or sources, so no input file is read (fast, and a moved
+campaign can be merged). Each child simulation is loaded once
+(``JobsMergeManager.load_source_simulation``) and shared by the planning and
+the coordinators.
+
+At the end, ``JobsMergeManager.write_merge_provenance`` writes
+``merged_from.json`` in the merged folder (campaign folder, simulation id,
+number of jobs and events, date, duration, opengate version) and appends the
+merge to ``merges`` in the manifest. ``check_merged_output_dir`` returns why
+the merged folder should not be written (the merge of another campaign, or
+output files not from a merge of this campaign); it is called by the command
+``opengate_jobs merge`` (``--force``), not by ``jobs_merge``. With the option
+``progress=True`` (the command), the planning and each actor show a
+``TerminalProgressBar`` (``progress_bar_factory`` of the coordinators).
 
 The workflow is split into three stages:
 

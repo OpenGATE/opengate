@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 
 import json
+import shlex
 import sys
 from pathlib import Path
 
 import click
 import colored
 import opengate_core as g4
-from opengate.exception import color_error
+from opengate.exception import color_error, GateMergeError
 from opengate.jobs import (
     DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME,
     DEFAULT_SPLIT_POLICY,
     JOBS_MANIFEST_FILENAME,
     _format_bytes as format_bytes,
+    _format_count as format_count,
+    _format_duration as format_duration,
     JOB_LOG_FILENAME,
     jobs_clean_split,
     jobs_merge,
+    jobs_cancel,
     jobs_run,
     jobs_split,
     jobs_status,
@@ -33,9 +37,10 @@ def go():
 
     The CAMPAIGN folder contains the simulation.json of the simulation (written
     with sim.to_json_file("campaign/")) and its input files. The most common use,
-    on a workstation (split, run with a progress bar, merge):
+    on a workstation (split, run with a progress bar, merge; -l: local machine,
+    there is no default backend):
 
-        opengate_jobs run campaign/ -j 8
+        opengate_jobs run campaign/ -j 8 -l
 
     On a cluster:
 
@@ -43,6 +48,7 @@ def go():
         opengate_jobs split campaign/ -j 100
         opengate_jobs run campaign/ --backend slurm --backend-options options.json
         opengate_jobs status campaign/
+        opengate_jobs cancel campaign/     (if needed)
         opengate_jobs merge campaign/
         opengate_jobs clean campaign/
     """
@@ -145,7 +151,9 @@ def split(campaign, jobs, policy, link_files, overwrite, as_json):
 
 def load_backend_options(campaign, backend, backend_options):
     """The backend and its options: from the command line, or from the file
-    jobs_backend_options.json of the campaign folder. Local by default."""
+    jobs_backend_options.json of the campaign folder. No default: an error if
+    no backend is given (e.g. not to run all the jobs on the login node of a
+    cluster by mistake)."""
     default_path = Path(campaign) / DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME
     path = backend_options
     if path is None and default_path.exists():
@@ -159,8 +167,14 @@ def load_backend_options(campaign, backend, backend_options):
                 f"The backend options file '{path}' must contain a JSON object."
             )
     if backend is None:
-        backend = config.get("backend", "local")
-    elif config.get("backend") not in (None, backend):
+        backend = config.get("backend")
+    if backend is None:
+        raise click.ClickException(
+            "No backend: give it with --backend (e.g. --backend slurm "
+            "--backend-options <file.json>), -l for the local machine, or in "
+            f"{DEFAULT_JOBS_BACKEND_OPTIONS_FILENAME} in the campaign folder."
+        )
+    if config.get("backend") not in (None, backend):
         click.echo(
             f"Warning: the backend '{backend}' (command line) replaces the backend "
             f"'{config.get('backend')}' of '{path}' (its options are ignored).",
@@ -179,11 +193,18 @@ def failure_report(status):
         if execution_status == "completed":
             continue
         folder = Path(status["campaign_dir"]) / job["folder_name"]
-        error = (job.get("execution_status_data") or {}).get("error_message")
+        execution_status_data = job.get("execution_status_data") or {}
+        error = execution_status_data.get("error_message")
         error = str(error).strip().splitlines()[0] if error else ""
         line = f"  {short(folder)}: {execution_status or 'not run'}"
+        if execution_status == "lost":
+            minutes = (job.get("seconds_since_last_news") or 0) / 60
+            line += f", no news for {minutes:.0f} min (process dead?)"
         if error:
             line += f", {error}"
+        scheduler_job_id = execution_status_data.get("scheduler_job_id")
+        if scheduler_job_id is not None:
+            line += f", scheduler job {scheduler_job_id}"
         if (folder / JOB_LOG_FILENAME).exists():
             line += f" (see {short(folder / JOB_LOG_FILENAME)})"
         lines.append(line)
@@ -197,7 +218,7 @@ def jobs_str(n):
 def counts_str(status):
     c = status.get("execution_counts", {})
     s = f"{c.get('completed', 0)} completed"
-    for k in ("failed", "interrupted", "running"):
+    for k in ("failed", "lost", "interrupted", "cancelled", "running", "submitted"):
         if c.get(k, 0) > 0:
             s += f", {c[k]} {k}"
     return s
@@ -216,8 +237,14 @@ def counts_str(status):
     "--backend",
     default=None,
     type=click.Choice(BACKENDS, case_sensitive=False),
-    help="Where the jobs run. Default: the backend of jobs_backend_options.json "
-    "in CAMPAIGN if any, else local.",
+    help="Where the jobs run (required: no default), or the backend of "
+    "jobs_backend_options.json in CAMPAIGN.",
+)
+@click.option(
+    "-l",
+    "--local",
+    is_flag=True,
+    help="Run the jobs on the local machine (same as --backend local).",
 )
 @click.option(
     "--backend-options",
@@ -227,11 +254,18 @@ def counts_str(status):
     "(default: jobs_backend_options.json in CAMPAIGN).",
 )
 @click.option(
+    "--submit-args",
+    default=None,
+    help="Options added to the submit command of a scheduler backend, e.g. "
+    "--submit-args '--time=04:00:00 --cpus-per-task=2' for slurm (they replace "
+    "the #SBATCH lines of the submitted file).",
+)
+@click.option(
     "--workers",
     type=int,
     default=None,
     help="Local backend: number of jobs run at the same time "
-    "(default: all the jobs).",
+    "(default: all the jobs, at most the number of cores / threads per job).",
 )
 @click.option(
     "--merge/--no-merge",
@@ -250,7 +284,8 @@ def counts_str(status):
 @click.option(
     "--rerun-running",
     is_flag=True,
-    help="Run again the jobs marked as running (e.g. after a crash).",
+    help="Run again the jobs marked as running or submitted (the lost jobs, "
+    "without news for a long time, are always run again).",
 )
 @split_options
 @json_option
@@ -258,7 +293,9 @@ def run(
     campaign,
     jobs,
     backend,
+    local,
     backend_options,
+    submit_args,
     workers,
     merge,
     clean,
@@ -277,8 +314,19 @@ def run(
     with 'opengate_jobs status', then 'opengate_jobs merge'.
     """
     campaign = Path(campaign).resolve()
+    if local:
+        if backend not in (None, "local"):
+            raise click.ClickException(f"-l (local) and --backend {backend}.")
+        backend = "local"
     backend, options = load_backend_options(campaign, backend, backend_options)
     local = backend == "local"
+    if submit_args:
+        if local:
+            raise click.ClickException("--submit-args is not for the local backend.")
+        options = dict(options or {})
+        options["command_line_args"] = list(
+            options.get("command_line_args", [])
+        ) + shlex.split(submit_args)
 
     # split if needed
     if not is_split(campaign) or overwrite:
@@ -291,7 +339,7 @@ def run(
         if not as_json:
             click.echo(f"Split into {jobs_str(jobs)} ({policy}) in {short(campaign)}")
     elif jobs is not None:
-        n = jobs_status(campaign)["number_of_jobs"]
+        n = jobs_status(campaign, check_inputs=False)["number_of_jobs"]
         if n != jobs:
             raise click.ClickException(
                 f"'{short(campaign)}' is already split into {n} jobs, not {jobs}. "
@@ -314,6 +362,9 @@ def run(
         if as_json:
             echo_json(result)
         else:
+            command = result.get("submission_command")
+            if command:
+                click.echo(f"Submit command (first job): {shlex.join(command)}")
             click.echo(
                 f"{jobs_str(result['submitted_jobs'])} submitted to {backend} "
                 f"({result['skipped_completed_jobs']} already completed). "
@@ -333,12 +384,12 @@ def run(
         except KeyboardInterrupt:
             click.echo(
                 f"\nInterrupted by the user. The completed jobs are kept; run the "
-                f"others with: opengate_jobs run {short(campaign)}",
+                f"others with: opengate_jobs run {short(campaign)} -l",
                 err=True,
             )
             sys.exit(130)
     else:
-        status = jobs_status(campaign)
+        status = jobs_status(campaign, check_inputs=False)
     result["jobs"] = counts_str(status)
 
     total = status["summary_counts"]["total"]
@@ -356,7 +407,13 @@ def run(
         click.echo(f"Jobs: {counts_str(status)}")
 
     if merge:
-        m = jobs_merge(campaign, execute=True)
+        m = do_merge(
+            campaign,
+            None,
+            False,
+            command="opengate_jobs merge",
+            progress=not as_json,
+        )
         result["merge"] = merge_summary(m)
         if not as_json:
             echo_merge(m)
@@ -370,6 +427,24 @@ def run(
 
 # ---------------------------------------------------------------------------
 # merge
+
+
+def do_merge(campaign, output, force, command=None, progress=True):
+    """Merge, refused if the output folder contains the merge of another
+    campaign or other output files (unless force). progress: a bar while
+    reading the jobs, then one line per actor output."""
+    try:
+        m = jobs_merge(Path(campaign), to_path=output, execute=False, progress=progress)
+        reason = m.check_merged_output_dir()
+        if reason is not None and not force:
+            what = "--force" if command is None else f"'{command} --force'"
+            raise click.ClickException(
+                f"{reason}\nUse another folder (-o), or {what} to overwrite."
+            )
+        m.merge()
+    except GateMergeError as e:
+        raise click.ClickException(str(e))
+    return m
 
 
 def merged_output_dir(merge_manager):
@@ -407,18 +482,29 @@ def echo_merge(merge_manager):
     is_flag=True,
     help="Remove the job folders and the jobs files after the merge.",
 )
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Merge even if the output folder contains the merge of another "
+    "campaign, or output files not from a merge of this campaign.",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Print the full merge summary.")
 @json_option
-def merge(campaign, output, clean, verbose, as_json):
-    """Merge the output of the completed jobs of CAMPAIGN."""
-    status = jobs_status(campaign)
+def merge(campaign, output, clean, force, verbose, as_json):
+    """Merge the output of the completed jobs of CAMPAIGN.
+
+    The merged output goes to the output_dir of the simulation (or -o), with
+    merged_from.json (campaign, simulation id, jobs, events, date). Refused
+    if this folder contains the merge of another campaign or other output
+    files (--force); merging the same campaign again is allowed."""
+    status = jobs_status(campaign, check_inputs=False)
     completed = status.get("execution_counts", {}).get("completed", 0)
     if completed != status["summary_counts"]["total"]:
         raise click.ClickException(
             f"Not all jobs completed ({counts_str(status)}):\n"
             f"{failure_report(status)}"
         )
-    m = jobs_merge(Path(campaign), to_path=output, execute=True)
+    m = do_merge(campaign, output, force, progress=not as_json)
     result = merge_summary(m)
     if clean:
         result["clean"] = clean_campaign(campaign)
@@ -430,6 +516,50 @@ def merge(campaign, output, clean, verbose, as_json):
     echo_merge(m)
     if clean:
         click.echo("Job folders and jobs files removed")
+
+
+# ---------------------------------------------------------------------------
+# cancel
+
+
+@go.command(context_settings=CONTEXT_SETTINGS)
+@campaign_argument
+@click.option(
+    "--backend-options",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="JSON file of the backend options: 'cancel_binary' replaces the "
+    "default command (scancel, qdel, condor_rm).",
+)
+@json_option
+def cancel(campaign, backend_options, as_json):
+    """Cancel the submitted and running jobs of CAMPAIGN (all the backends).
+
+    Scheduler (slurm, pbs, htcondor): scancel, qdel or condor_rm with the job
+    ids given at the submission. Local: the processes of the campaign and of
+    the running jobs are stopped. The jobs are marked 'cancelled'; the
+    completed jobs are kept, 'opengate_jobs run' runs the others again."""
+    options = None
+    if backend_options is not None:
+        with open(backend_options) as f:
+            options = json.load(f).get("backend_options")
+    result = jobs_cancel(campaign, backend_options=options)
+    if as_json:
+        echo_json(result)
+        return
+    for command in result["commands"]:
+        line = " ".join(command)
+        click.echo(line if len(line) < 200 else line[:200] + " ...")
+    for w in result["warnings"]:
+        click.echo(f"Warning: {w}", err=True)
+    n = len(result["cancelled_jobs"])
+    if n == 0:
+        click.echo("No submitted or running job to cancel")
+    else:
+        click.echo(
+            f"{jobs_str(n)} cancelled. Run them again with: "
+            f"opengate_jobs run {short(campaign)} ..."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -521,6 +651,45 @@ def format_all_intervals(intervals):
     return f"{intervals_str}  {len(intervals)} run(s)"
 
 
+# above this number of jobs, the status only lists the jobs that need
+# attention (all with -v)
+MAX_LISTED_JOBS = 20
+
+
+def job_needs_attention(job):
+    return job["status"] != "ready" or job.get("execution_status") in (
+        "failed",
+        "lost",
+        "interrupted",
+        "cancelled",
+    )
+
+
+def format_progress(progress):
+    return (
+        f"{progress['fraction'] * 100:.1f} % of the events "
+        f"({format_count(progress['generated_events'])} events)"
+    )
+
+
+def format_estimated_times(progress):
+    """One job duration, end of the running jobs, jobs not started: estimated
+    from the completed and running jobs (empty if nothing is known yet)"""
+    items = []
+    job_duration = progress.get("job_duration_seconds")
+    if job_duration is not None:
+        n = progress.get("number_of_completed_durations", 0)
+        source = f"{n} completed" if n > 0 else "running jobs"
+        items.append(f"one job ~{format_duration(job_duration)} (from {source})")
+    remaining = progress.get("running_remaining_seconds")
+    if remaining is not None:
+        items.append(f"running jobs end in ~{format_duration(remaining)}")
+    not_started = progress.get("not_started", 0)
+    if not_started > 0 and items:
+        items.append(f"{not_started} not started (depends on the queue)")
+    return "; ".join(items)
+
+
 def print_jobs_status_summary(status_data, verbose=False):
     intervals = status_data.get("original_run_timing_intervals", [])
     print(f" Manifest file:      {status_data['manifest_path']}")
@@ -546,8 +715,11 @@ def print_jobs_status_summary(status_data, verbose=False):
         )
         print(f" Resolved sim:       {resolved_str}")
         print(f"   Path:             {resolved_path}")
+    inputs_checked = status_data.get("inputs_checked", True)
     master_inputs = status_data.get("master_input_files", [])
-    if master_inputs:
+    if not inputs_checked:
+        print(" Master input files: not checked (--check)")
+    elif master_inputs:
         print(" Master input files:")
         for item in master_inputs:
             print(
@@ -574,11 +746,26 @@ def print_jobs_status_summary(status_data, verbose=False):
     if len(execution_counts) > 0:
         print(
             "  Execution: "
+            f"submitted={execution_counts.get('submitted', 0)}  "
             f"running={execution_counts.get('running', 0)}  "
+            f"lost={execution_counts.get('lost', 0)}  "
             f"completed={execution_counts.get('completed', 0)}  "
             f"failed={execution_counts.get('failed', 0)}  "
             f"skipped={execution_counts.get('skipped', 0)}  "
-            f"interrupted={execution_counts.get('interrupted', 0)}"
+            f"interrupted={execution_counts.get('interrupted', 0)}  "
+            f"cancelled={execution_counts.get('cancelled', 0)}"
+        )
+    progress = status_data.get("progress")
+    if progress is not None:
+        print(f"  Progress: {format_progress(progress)}")
+        estimated = format_estimated_times(progress)
+        if estimated:
+            print(f"  Estimated: {estimated}")
+    last_merge = status_data.get("last_merge")
+    if last_merge is not None:
+        print(
+            f"  Merged: into {last_merge.get('output_dir')} at "
+            f"{str(last_merge.get('merged_at', ''))[:16].replace('T', ' ')}"
         )
 
     jobs = status_data["jobs"]
@@ -592,19 +779,32 @@ def print_jobs_status_summary(status_data, verbose=False):
     input_mode = (
         "links" if any(j.get("input_mode") == "linked" for j in jobs) else "copies"
     )
-    print(
-        f"  Inputs: {per_job_str} files per job ({input_mode}), "
-        f"{format_bytes(inputs_size)} for all the jobs; "
-        f"job folders: {format_bytes(folders_size)}"
-    )
+    if inputs_checked:
+        print(
+            f"  Inputs: {per_job_str} files per job ({input_mode}), "
+            f"{format_bytes(inputs_size)} for all the jobs; "
+            f"job folders: {format_bytes(folders_size)}"
+        )
 
-    for job in jobs:
+    # many jobs: only the ones that need attention (all with -v)
+    listed = jobs
+    if not verbose and len(jobs) > MAX_LISTED_JOBS:
+        listed = [j for j in jobs if job_needs_attention(j)]
+        print(
+            f"  {len(listed)} job(s) listed out of {len(jobs)} (failed, lost, "
+            f"interrupted, cancelled or not ready; -v for all)"
+        )
+    for job in listed:
         job_idx = job["job_index"]
         folder = job["folder_name"]
         st = job["status"].upper()
         st_str = colored.stylize(st, color_error) if st != "READY" else st
         exec_status = job.get("execution_status")
         exec_str = exec_status.upper() if exec_status is not None else "NONE"
+        if exec_status in ("running", "lost") and job.get("progress_fraction"):
+            exec_str += f" {job['progress_fraction'] * 100:.0f}%"
+        if exec_status in ("failed", "lost", "interrupted", "cancelled"):
+            exec_str = colored.stylize(exec_str, color_error)
         job_intervals = job.get("run_timing_intervals", [])
         timing_str = format_job_timing(job_intervals, verbose)
         print(
@@ -625,12 +825,22 @@ def print_jobs_status_summary(status_data, verbose=False):
 @go.command(context_settings=CONTEXT_SETTINGS)
 @campaign_argument
 @click.option(
-    "-v", "--verbose", is_flag=True, help="Print all the run timing intervals"
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help=f"List all the jobs (above {MAX_LISTED_JOBS} jobs, only the ones that "
+    "need attention are listed) and all the run timing intervals.",
+)
+@click.option(
+    "--check",
+    is_flag=True,
+    help="Check the input files of each job and compute the size of the job "
+    "folders (slow: the simulation of each job is created).",
 )
 @json_option
-def status(campaign, verbose, as_json):
+def status(campaign, verbose, check, as_json):
     """Print the status of the jobs of CAMPAIGN."""
-    status_data = jobs_status(campaign)
+    status_data = jobs_status(campaign, check_inputs=check)
     if as_json:
         echo_json(status_data)
     else:

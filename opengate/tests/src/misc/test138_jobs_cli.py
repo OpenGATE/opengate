@@ -3,9 +3,12 @@
 
 """
 The opengate_jobs command line tool: split + run + merge in one command (local
-backend by default), the subcommands split, run, status, merge and clean, the
+backend, -l; no default backend), the subcommands split, run, status, merge and clean, the
 JSON output, the failure of a job, and a relative output_dir inside the
-campaign folder (kept when the simulation.json is written there).
+campaign folder (kept when the simulation.json is written there). The
+provenance of a merge (merged_from.json, last merge in status), and the merge
+refused into a folder with the merge of another campaign or other output
+files (--force).
 """
 
 import json
@@ -81,8 +84,13 @@ if __name__ == "__main__":
         utility.print_test(b, f"output_dir in simulation.json: {output_dir}") and is_ok
     )
 
-    # split + run + merge in one command, local backend by default
-    r = opengate_jobs("run", campaign, "-j", 3, "--json")
+    # no default backend: refused
+    r = opengate_jobs("run", campaign, "-j", 3)
+    b = r.returncode != 0 and "No backend" in r.stderr
+    is_ok = utility.print_test(b, "run without backend: refused") and is_ok
+
+    # split + run + merge in one command, local backend (-l)
+    r = opengate_jobs("run", campaign, "-j", 3, "-l", "--json")
     result = json.loads(r.stdout) if r.returncode == 0 else {}
     merged = result.get("merge", {}).get("merged_output_dir")
     b = (
@@ -98,7 +106,7 @@ if __name__ == "__main__":
     is_ok = utility.print_test(b, "one job.log per job folder") and is_ok
 
     # a different number of jobs needs --overwrite
-    r = opengate_jobs("run", campaign, "-j", 2)
+    r = opengate_jobs("run", campaign, "-j", 2, "-l")
     b = r.returncode != 0 and "--overwrite" in r.stderr
     is_ok = utility.print_test(b, "already split: needs --overwrite") and is_ok
 
@@ -114,6 +122,46 @@ if __name__ == "__main__":
     b = r.returncode == 0 and e == n
     is_ok = utility.print_test(b, f"merge -o: {e} events") and is_ok
 
+    # provenance: merged_from.json, last merge in the status
+    with open(paths.output / "merged2" / "merged_from.json") as f:
+        info = json.load(f)
+    r = opengate_jobs("status", campaign, "--json")
+    last = json.loads(r.stdout).get("last_merge") or {} if r.returncode == 0 else {}
+    b = (
+        info["number_of_jobs"] == 3
+        and info["generated_events"] == n
+        and info["campaign_dir"] == str(campaign.resolve())
+        and (campaign / "output" / "merged_from.json").exists()
+        and last.get("output_dir") == str((paths.output / "merged2").resolve())
+    )
+    is_ok = utility.print_test(b, f"merged_from.json, last merge {last}") and is_ok
+
+    # the same campaign merged again in the same folder: ok
+    r = opengate_jobs("merge", campaign, "-o", paths.output / "merged2")
+    is_ok = utility.print_test(r.returncode == 0, "merge again: ok") and is_ok
+
+    # another campaign, merged in the folder of the first one: refused
+    campaign_b = paths.output / "campaign_b"
+    campaign_b.mkdir()
+    build_campaign(campaign_b)
+    r = opengate_jobs("run", campaign_b, "-j", 2, "-l", "--no-merge")
+    r = opengate_jobs("merge", campaign_b, "-o", paths.output / "merged2")
+    b = r.returncode != 0 and "another campaign" in r.stderr and "--force" in r.stderr
+    is_ok = utility.print_test(b, "merge of another campaign: refused") and is_ok
+    r = opengate_jobs("merge", campaign_b, "-o", paths.output / "merged2", "--force")
+    with open(paths.output / "merged2" / "merged_from.json") as f:
+        info = json.load(f)
+    b = r.returncode == 0 and info["campaign_dir"] == str(campaign_b.resolve())
+    is_ok = utility.print_test(b, "--force: merged") and is_ok
+
+    # output files not from a merge (e.g. a local run): refused
+    other = paths.output / "other_run"
+    shutil.copytree(campaign / "output", other)
+    (other / "merged_from.json").unlink()
+    r = opengate_jobs("merge", campaign_b, "-o", other)
+    b = r.returncode != 0 and "output file" in r.stderr
+    is_ok = utility.print_test(b, "merge into other output files: refused") and is_ok
+
     # clean: only simulation.json and the merged output are kept
     r = opengate_jobs("clean", campaign)
     remaining = sorted(p.name for p in campaign.iterdir())
@@ -128,7 +176,7 @@ if __name__ == "__main__":
     d["source_manager"]["sources"]["source"]["user_info"]["particle"] = "no_particle"
     with open(p, "w") as f:
         json.dump(d, f)
-    r = opengate_jobs("run", campaign, "--no-merge")
+    r = opengate_jobs("run", campaign, "-l", "--no-merge")
     b = r.returncode == 1 and "job0002: failed" in r.stderr and "job.log" in r.stderr
     is_ok = utility.print_test(b, "failed job reported") and is_ok
     r = opengate_jobs("merge", campaign)
@@ -136,7 +184,9 @@ if __name__ == "__main__":
     is_ok = utility.print_test(b, "merge refused") and is_ok
 
     # split again, run with one worker at a time, and merge
-    r = opengate_jobs("run", campaign, "-j", 2, "--overwrite", "--workers", 1, "--json")
+    r = opengate_jobs(
+        "run", campaign, "-j", 2, "-l", "--overwrite", "--workers", 1, "--json"
+    )
     result = json.loads(r.stdout) if r.returncode == 0 else {}
     b = (
         r.returncode == 0

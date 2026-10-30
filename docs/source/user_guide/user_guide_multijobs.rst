@@ -198,11 +198,16 @@ The simulation can also be written in a campaign folder and run with the
    sim.to_json_file("campaign/")
 
 Then, in one command, split the simulation into 8 jobs, run them on the local
-machine (with one progress bar for all the jobs) and merge their output:
+machine (``-l``, with one progress bar for all the jobs) and merge their
+output:
 
 .. code-block:: console
 
-   opengate_jobs run campaign/ -j 8
+   opengate_jobs run campaign/ -j 8 -l
+
+There is no default backend: ``-l`` (or ``--backend local``) is required to run
+the jobs on the local machine, so that the jobs of a campaign are not run on
+the login node of a cluster by mistake.
 
 The merged output is written in the ``output_dir`` of the simulation. A
 relative ``output_dir`` is relative to the campaign folder, e.g.
@@ -212,8 +217,9 @@ relative ``output_dir`` is relative to the campaign folder, e.g.
 - If some jobs fail or are interrupted (Control-C), the command reports them
   and does not merge. Run the same command again to run only the jobs that did
   not complete; the completed jobs are kept.
-- ``--workers N`` runs at most N jobs at the same time (all the jobs by
-  default).
+- ``--workers N`` runs at most N jobs at the same time (default: all the
+  jobs, but not more than the number of cores divided by the number of
+  threads of the simulation).
 - ``--no-merge`` does not merge; ``--clean`` removes the job folders after the
   merge.
 - ``-j`` is only needed the first time (to split). To split again with another
@@ -285,57 +291,134 @@ backend options from a JSON file:
 As a convenience, the command also looks for a default file named
 ``jobs_backend_options.json`` inside the campaign folder when no
 ``--backend-options`` argument is provided. Without backend (on the command
-line or in this file), the jobs run on the local machine (``local``).
+line or in this file), ``run`` refuses to run the jobs.
+
+With slurm, each job is submitted with ``sbatch <command_line_args>
+--export=ALL,JOBDIR=<job folder> <submit_filename>`` (``JOBDIR`` is added to
+the ``--export`` option if ``command_line_args`` has one). The options of one
+campaign can be added on the command line, e.g. the time limit and the
+number of cores per job:
+
+.. code-block:: console
+
+   opengate_jobs run campaign/ --backend-options slurm_options.json --submit-args "--time=04:00:00 --cpus-per-task=2"
+
+They replace the ``#SBATCH`` lines of the submitted file. ``run`` prints the
+submit command of the first job, and warns if the number of cores per job
+(``--cpus-per-task``) differs from the number of threads of the simulation.
 
 With a scheduler backend, ``opengate_jobs run`` only submits the jobs and
 returns: follow them with ``opengate_jobs status campaign``, and merge them
 with ``opengate_jobs merge campaign`` once they are all completed (the merge
 refuses an incomplete campaign).
 
-You can find examples you can adapt in the ``contrib/cluster`` folder for slurm and pbs backends.
-The backend options are usually site-specific and should be adapted to the target server.
 
+Following the jobs
+~~~~~~~~~~~~~~~~~~
 
-.. Example: Slurm
-.. ~~~~~~~~~~~~~~
+``opengate_jobs status campaign`` only reads the files of the campaign (it does
+not query the scheduler), so it works the same for all the backends. The
+execution state of each job is one of:
 
-.. The Slurm backend currently expects a Python callable named
-.. ``submit_script_renderer``. This means that, at the moment, Slurm submission is
-.. best driven from a Python script rather than through a pure JSON configuration
-.. file. This will likely change in the future.
+- ``submitted``: submitted by ``opengate_jobs run``, not started yet (waiting
+  in the queue of the scheduler, or for a local worker). The id given by the
+  scheduler is kept in ``job_execution_status.json`` (e.g. for ``sacct``).
+- ``running``: started. During the simulation, the job writes its progress in
+  ``job_progress.json`` (every 2 s with a local backend, 60 s with a scheduler).
+- ``lost``: running, but without news for more than 10 min while simulating
+  events (1 h during the initialization or the writing of the output): its
+  process died without reporting, e.g. killed by the scheduler (time limit,
+  memory) or crashed. The cause is in the log of the scheduler.
+- ``completed``, ``failed`` (the error is in ``job_execution_status.json`` and
+  in the log of the job), ``interrupted`` (Control-C, local backends),
+  ``cancelled`` (``opengate_jobs cancel``).
 
-.. A minimal Python example looks like:
+Run ``opengate_jobs run campaign`` again to submit the jobs that did not
+complete (failed, interrupted, cancelled, lost); the completed jobs are kept.
+``run`` refuses while some jobs are still ``submitted`` or ``running``
+(``--rerun-running`` to submit them anyway, e.g. for a job removed from the
+queue of the scheduler by hand, which stays ``submitted``).
 
-.. .. code-block:: python
+``opengate_jobs cancel campaign`` stops the jobs that are submitted or running,
+for all the backends, and marks them ``cancelled``:
 
-..    import opengate as gate
+- slurm, pbs, htcondor: ``scancel``, ``qdel`` or ``condor_rm`` with the job
+  ids given by the scheduler at the submission (``cancel_binary`` in the
+  backend options to use another command, ``--backend-options``). A job whose
+  id was not printed by the submit command is listed, to cancel by hand.
+- local backends: the campaign process is stopped (no new job), then the
+  process of each running job (only on the computer where it runs).
 
-..    def my_slurm_renderer(job_folders_file_path, **kwargs):
-..        return [
-..            "#!/bin/sh",
-..            "#SBATCH --partition=cpu",
-..            "#SBATCH --cpus-per-task=4",
-..            "#SBATCH --mem=8G",
-..            "",
-..            "set -eu",
-..            f'JOB_FOLDERS_FILE="{job_folders_file_path}"',
-..            'JOB_FOLDER="$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$JOB_FOLDERS_FILE")"',
-..            'cd "$JOB_FOLDER"',
-..            "exec opengate_job_runner . --backend slurm",
-..        ]
+``status`` also gives the progress of the campaign (fraction of the events,
+the jobs being of equal size) and estimated times: the duration of one job
+(mean of the completed jobs, or from the running ones), and the end of the
+running jobs. The start of the jobs not started depends on the queue of the
+scheduler, it is not estimated. Above 20 jobs, only the jobs that need
+attention (failed, lost, interrupted, not ready) are listed; ``-v`` lists all
+of them.
 
-..    gate.jobs_run(
-..        "campaign",
-..        backend="slurm",
-..        backend_options={
-..            "submit_script_renderer": my_slurm_renderer,
-..            "submit_script_renderer_kwargs": {},
-..            "command_line_args": ["--job-name", "gate_jobs"],
-..        },
-..    )
+By default, ``status`` does not check the input files of the jobs (fast, even
+with hundreds of jobs). ``opengate_jobs status campaign --check`` also checks
+that the input files of each job are found and gives the size of the job
+folders (slow: the simulation of each job is created).
 
-.. This explicit renderer is intentional for now because Slurm setups are often
-.. site-specific.
+``opengate_jobs merge`` shows its progress: a bar while reading the jobs,
+then one line per actor (in a log file, only the final lines).
+
+The merge only needs the actors of the simulations and the output of the jobs,
+not their input files: a campaign can be merged after being moved to another
+folder or computer, e.g. ``opengate_jobs merge campaign -o merged``.
+Without ``-o``, the merged output goes to the ``output_dir`` of the
+simulation; the merge refuses if this folder cannot be created (e.g. an
+absolute path of the cluster, for a campaign copied back).
+
+The merge writes ``merged_from.json`` in the merged folder: the campaign
+folder, the simulation id, the number of jobs and of events, the date and
+the opengate version. The merge is also recorded in the campaign (``status``
+shows the last one). ``opengate_jobs merge`` (and ``run`` when it merges)
+refuses to write into a folder that contains the merge of another campaign,
+or output files that are not from a merge of this campaign (e.g. of a
+previous local run): give another folder with ``-o``, or ``--force`` to
+overwrite. Merging the same campaign again (e.g. after running its failed
+jobs) is allowed. The Python ``jobs_merge`` does not check.
+
+Example: Slurm
+~~~~~~~~~~~~~~
+
+The backend options are site-specific. Examples to adapt are in the
+``opengate/contrib/cluster`` folder of the source (slurm and pbs). For slurm,
+copy ``slurm/opengate_job.slurm`` and ``slurm/slurm.json``, then adapt:
+
+- in ``opengate_job.slurm``: the ``#SBATCH`` lines (account, partition,
+  time limit, ``--cpus-per-task`` equal to the number of threads of the
+  simulation, memory) and the environment where opengate is installed (e.g.
+  ``source /path/to/venv/bin/activate``). The output of each job goes to
+  ``job.log`` in its folder, the messages of slurm (time limit, memory) to
+  ``slurm_<id>.out`` in the campaign folder.
+- in ``slurm.json``: ``submit_filename``, the path of your
+  ``opengate_job.slurm`` (absolute; a relative path is relative to the
+  campaign folder, where ``sbatch`` is run).
+
+.. code-block:: json
+
+   {
+     "backend": "slurm",
+     "backend_options": {
+       "submit_binary": "sbatch",
+       "submit_filename": "/path/to/opengate_job.slurm",
+       "command_line_args": ["--export=ALL"]
+     }
+   }
+
+.. code-block:: console
+
+   opengate_jobs split campaign/ -j 100
+   opengate_jobs run campaign/ --backend-options /path/to/slurm.json
+   opengate_jobs status campaign/
+   opengate_jobs merge campaign/
+
+PBS/Torque is the same with ``pbs/opengate_job.pbs`` and ``pbs/pbs.json``
+(``qsub -V -v JOBDIR=<job folder>``; ``-l nodes=1:ppn=N`` for N threads).
 
 
 Example: HTCondor
@@ -368,11 +451,13 @@ Command-line tools
 GATE ships with one multi-job command-line tool, ``opengate_jobs``, with the
 subcommands:
 
-- ``opengate_jobs run``: run the jobs of a campaign through a backend (local by
-  default), after splitting it if needed (``-j``); with the local backend, wait
+- ``opengate_jobs run``: run the jobs of a campaign through a backend (required:
+  ``-l`` for the local machine, ``--backend``, ``--backend-options``), after
+  splitting it if needed (``-j``); with the local backend, wait
   for the jobs and merge their output
 - ``opengate_jobs split``: split a campaign folder into child jobs
-- ``opengate_jobs status``: inspect the current campaign status
+- ``opengate_jobs status``: inspect the current campaign status (``--check``
+  to also check the input files of the jobs)
 - ``opengate_jobs merge``: merge the finished jobs (``-o`` for another output
   folder)
 - ``opengate_jobs clean``: remove the job folders and the jobs files

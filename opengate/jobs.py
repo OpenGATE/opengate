@@ -1,8 +1,11 @@
+import importlib.metadata
 import math
 import multiprocessing
 import os
 import re
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import time
@@ -52,17 +55,31 @@ JOB_EXECUTION_STATUS_FILENAME = "job_execution_status.json"
 JOB_PROGRESS_FILENAME = "job_progress.json"
 # output (Python and Geant4) of a job run by a local backend
 JOB_LOG_FILENAME = "job.log"
-# in Geant4 units, as progress_hook_interval
+MERGED_FROM_FILENAME = "merged_from.json"
+# interval of the progress of a job (job_progress.json), wall clock, in
+# Geant4 units (as progress_hook_interval): short for the progress bar of the
+# local backends, longer on a cluster (shared file system, many jobs)
 JOB_PROGRESS_INTERVAL = 2.0 * g4_units.s
+JOB_PROGRESS_INTERVAL_CLUSTER = 60.0 * g4_units.s
+LOCAL_JOBS_BACKENDS = ("local_pool", "local_sequential")
+# a running job without news for more than this time (seconds) is 'lost': its
+# process is dead without reporting (time limit, memory, crash). Longer when
+# it does not simulate events (initialization, writing of the outputs).
+JOB_LOST_AFTER = 10 * 60
+JOB_LOST_AFTER_NO_EVENT = 60 * 60
 JOB_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 MASTER_SIMULATION_FILENAME = DEFAULT_SIMULATION_FILENAME
 JOB_EXECUTION_ALLOWED_STATUSES = (
+    "submitted",
     "running",
     "completed",
     "failed",
     "skipped",
     "interrupted",
+    "cancelled",
 )
+# command to cancel the jobs of a scheduler (ids given by the submit command)
+JOBS_CANCEL_BINARIES = {"slurm": "scancel", "pbs": "qdel", "htcondor": "condor_rm"}
 HTCONDOR_SUBMIT_FILENAME = "htcondor_jobs.submit"
 SLURM_SUBMIT_FILENAME = "slurm_jobs.sh"
 PBS_SUBMIT_FILENAME = "pbs_jobs.sh"
@@ -1025,7 +1042,9 @@ class JobsSplitManager:
         if self.is_packaged is False:
             self.package_master_campaign()
 
-        for job_definition in self.job_definitions:
+        bar = TerminalProgressBar(len(self.job_definitions), "Split")
+        for i, job_definition in enumerate(self.job_definitions):
+            bar.update(i)
             # Each child simulation starts from the immutable resolved master
             # representation and is then rewritten to one job's local scope.
             child_simulation = _clone_simulation_from_dictionary(
@@ -1063,6 +1082,8 @@ class JobsSplitManager:
                 }
             )
             self._job_folders.append(job_folder)
+        bar.update(len(self.job_definitions))
+        bar.close()
 
         self.is_materialized = True
 
@@ -1380,6 +1401,9 @@ def _write_job_execution_status(
     started_at=None,
     finished_at=None,
     error_message=None,
+    scheduler_job_id=None,
+    pid=None,
+    hostname=None,
 ):
     if status not in JOB_EXECUTION_ALLOWED_STATUSES:
         fatal(
@@ -1396,9 +1420,99 @@ def _write_job_execution_status(
         "finished_at": finished_at,
         "updated_at": _now_isoformat(),
         "error_message": error_message,
+        "scheduler_job_id": scheduler_job_id,
     }
+    if pid is not None:
+        # process of the running job (to cancel a local job)
+        status_data["pid"] = pid
+        status_data["hostname"] = hostname
     _dump_json_atomic(_get_job_execution_status_path(job_folder), status_data)
     return status_data
+
+
+def _mark_job_as_submitted(job_folder, backend):
+    """Write the status 'submitted' of a job (waiting for the scheduler or for
+    a local worker), before its submission: the job may start (and write
+    'running') before the submit command returns. Return the previous status
+    (None if no status), to restore it if the submission fails."""
+    job_folder = Path(job_folder)
+    previous = load_job_execution_status(job_folder)
+    _write_job_execution_status(
+        job_folder,
+        _load_job_metadata(job_folder),
+        backend=backend,
+        status="submitted",
+        submitted_at=_now_isoformat(),
+    )
+    return previous
+
+
+def _restore_job_execution_status(job_folder, previous):
+    """Status of a job before a failed submission (see _mark_job_as_submitted)"""
+    if previous is None:
+        _get_job_execution_status_path(job_folder).unlink(missing_ok=True)
+    else:
+        _dump_json_atomic(_get_job_execution_status_path(job_folder), previous)
+
+
+def _set_scheduler_job_id(job_folder, scheduler_job_id):
+    """Add the id given by the scheduler to the status of a submitted job (only
+    informative, e.g. for sacct), if the job has not started meanwhile."""
+    if scheduler_job_id is None:
+        return
+    current = load_job_execution_status(job_folder)
+    if current is None:
+        return
+    if current.get("status") == "submitted":
+        current["scheduler_job_id"] = scheduler_job_id
+        current["updated_at"] = _now_isoformat()
+        _dump_json_atomic(_get_job_execution_status_path(job_folder), current)
+
+
+def _extract_scheduler_job_id(submit_stdout):
+    """The job id printed by sbatch ('Submitted batch job 1234', or '1234'
+    with --parsable) or qsub ('1234.server')"""
+    lines = (submit_stdout or "").strip().splitlines()
+    if len(lines) == 0:
+        return None
+    match = re.search(r"Submitted batch job (\d+)", lines[0])
+    if match:
+        return match.group(1)
+    return lines[0].split(";")[0].strip() or None
+
+
+def _seconds_since(isoformat_time, now=None):
+    if isoformat_time is None:
+        return None
+    try:
+        t = datetime.fromisoformat(str(isoformat_time))
+    except ValueError:
+        return None
+    return ((now or datetime.now()) - t).total_seconds()
+
+
+def get_job_last_news(job_folder, execution_status_data):
+    """For a running job: the time (seconds) since its last news and whether it
+    is lost. The news are the progress of the job (job_progress.json, written
+    during the event loop by the progress hook of the source manager, with an
+    interval in wall clock), or the status file if no progress yet. Same for
+    all the backends: only the files of the job are read.
+    Return (seconds_since_last_news, is_lost)."""
+    progress = read_job_progress(job_folder)
+    generating_events = False
+    last_news = None
+    if progress is not None and progress.get("updated_at") is not None:
+        last_news = progress["updated_at"]
+        generating_events = progress.get("status") == "running"
+    elif execution_status_data is not None:
+        last_news = execution_status_data.get(
+            "updated_at", execution_status_data.get("started_at")
+        )
+    seconds = _seconds_since(last_news)
+    if seconds is None:
+        return None, False
+    limit = JOB_LOST_AFTER if generating_events else JOB_LOST_AFTER_NO_EVENT
+    return seconds, seconds > limit
 
 
 def _mark_running_jobs_as_interrupted(job_folders):
@@ -1417,7 +1531,7 @@ def _mark_running_jobs_as_interrupted(job_folders):
             current = load_job_execution_status(job_folder)
         except Exception:
             continue
-        if current is None or current.get("status") != "running":
+        if current is None or current.get("status") not in ("running", "submitted"):
             continue
         _write_job_execution_status(
             job_folder,
@@ -1492,6 +1606,54 @@ def _format_count(n):
         if n >= factor:
             return f"{n / factor:.1f}{unit}"
     return str(int(n))
+
+
+class TerminalProgressBar:
+    """A progress bar on one terminal line, for a loop of known length
+    (e.g. the split of the jobs). Drawn only in a terminal (not in a log
+    file), at most every 0.2 s."""
+
+    width = 30
+
+    def __init__(self, total, label, summary_line=False):
+        self.total = total
+        self.label = label
+        self.start_time = time.perf_counter()
+        self.last_draw = None
+        self.enabled = sys.stdout.isatty() and total > 0
+        # not in a terminal (e.g. a log file): one line when closed
+        self.summary_line = summary_line
+
+    def update(self, done):
+        if not self.enabled:
+            return
+        now = time.perf_counter()
+        if (
+            done < self.total
+            and self.last_draw is not None
+            and now - self.last_draw < 0.2
+        ):
+            return
+        self.last_draw = now
+        elapsed = now - self.start_time
+        fraction = done / self.total
+        eta = "?"
+        if done > 0:
+            eta = _format_duration(elapsed * (self.total - done) / done)
+        n = int(round(fraction * self.width))
+        sys.stdout.write(
+            f"\r{self.label} {done}/{self.total} |{'#' * n}{'-' * (self.width - n)}| "
+            f"[{_format_duration(elapsed)} < {eta}]"
+        )
+        sys.stdout.flush()
+
+    def close(self):
+        if self.enabled and self.last_draw is not None:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+        elif self.summary_line and self.total > 0:
+            elapsed = _format_duration(time.perf_counter() - self.start_time)
+            print(f"{self.label} {self.total}/{self.total} [{elapsed}]", flush=True)
 
 
 class CampaignProgressBar:
@@ -1602,9 +1764,15 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
     }
     submitted_at = _now_isoformat()
     started_at = _now_isoformat()
+    scheduler_job_id = None
 
     try:
         metadata = _load_job_metadata(job_folder)
+        # keep the submission time and the scheduler job id
+        previous = load_job_execution_status(job_folder)
+        if previous is not None and previous.get("status") == "submitted":
+            submitted_at = previous.get("submitted_at") or submitted_at
+            scheduler_job_id = previous.get("scheduler_job_id")
         _write_job_execution_status(
             job_folder,
             metadata,
@@ -1612,6 +1780,21 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             status="running",
             submitted_at=submitted_at,
             started_at=started_at,
+            scheduler_job_id=scheduler_job_id,
+            pid=os.getpid(),
+            hostname=socket.gethostname(),
+        )
+        # no event simulated yet: the progress hook writes 'running' during the
+        # event loop (see get_job_last_news)
+        progress_path = job_folder / JOB_PROGRESS_FILENAME
+        _dump_json_atomic(
+            progress_path,
+            {
+                "status": "initializing",
+                "generated_events": 0,
+                "expected_events": None,
+                "updated_at": _now_isoformat(),
+            },
         )
 
         simulation_path = job_folder / metadata.get(
@@ -1621,9 +1804,15 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
         sim.simulation_dir = job_folder
         sim.output_dir = job_folder / "output"
         # progress of the job, read by the progress bar of the campaign
-        progress_path = job_folder / JOB_PROGRESS_FILENAME
-        progress_path.unlink(missing_ok=True)
-        sim.progress_hook = JobProgressWriter(progress_path)
+        # and by the status (lost jobs)
+        sim.progress_hook = JobProgressWriter(
+            progress_path,
+            interval=(
+                JOB_PROGRESS_INTERVAL
+                if backend in LOCAL_JOBS_BACKENDS
+                else JOB_PROGRESS_INTERVAL_CLUSTER
+            ),
+        )
         if backend in ("local_pool", "local_sequential"):
             # the local jobs share the terminal: one progress bar for the whole
             # campaign (SplitRunMergeController.wait), not one per job
@@ -1639,6 +1828,7 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             submitted_at=submitted_at,
             started_at=started_at,
             finished_at=finished_at,
+            scheduler_job_id=scheduler_job_id,
         )
         return {
             "job_id": metadata.get("job_id"),
@@ -1666,6 +1856,7 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             started_at=started_at,
             finished_at=finished_at,
             error_message=f"{error_message}\n{traceback_str}",
+            scheduler_job_id=scheduler_job_id,
         )
         return {
             "job_id": metadata.get("job_id"),
@@ -1816,6 +2007,10 @@ def _submit_job_folders_to_htcondor(
     command = [backend_options["submit_binary"]]
     command.extend(backend_options.get("command_line_args", []))
     command.append(str(submit_file_path))
+    previous = {
+        job_folder: _mark_job_as_submitted(job_folder, "htcondor")
+        for job_folder in job_folders
+    }
     try:
         completed_process = subprocess.run(
             command,
@@ -1825,11 +2020,15 @@ def _submit_job_folders_to_htcondor(
             check=False,
         )
     except FileNotFoundError as error:
+        for job_folder, p in previous.items():
+            _restore_job_execution_status(job_folder, p)
         raise GateJobsBackendError(
             f"HTCondor submission command not found: {backend_options['submit_binary']}."
         ) from error
 
     if completed_process.returncode != 0:
+        for job_folder, p in previous.items():
+            _restore_job_execution_status(job_folder, p)
         raise GateJobsBackendError(
             "HTCondor submission failed.\n"
             f"Command: {' '.join(command)}\n"
@@ -1837,6 +2036,12 @@ def _submit_job_folders_to_htcondor(
             f"stdout:\n{completed_process.stdout}\n"
             f"stderr:\n{completed_process.stderr}"
         )
+
+    # one cluster, one process per job (in the order of the submit file)
+    cluster_id = _extract_htcondor_cluster_id(completed_process.stdout)
+    if cluster_id is not None:
+        for i, job_folder in enumerate(job_folders):
+            _set_scheduler_job_id(job_folder, f"{cluster_id}.{i}")
 
     status_data = _write_jobs_backend_status(
         split_root_folder,
@@ -1862,21 +2067,109 @@ def _submit_job_folders_to_htcondor(
     }
 
 
+def _get_slurm_submit_command(backend_options, job_folder):
+    """sbatch command of one job: the options (command_line_args) as given,
+    and the job folder (JOBDIR) added to the --export option, or
+    --export=ALL,JOBDIR=... if there is none."""
+    args = list(backend_options.get("command_line_args", []))
+    jobdir = f"JOBDIR={job_folder}"
+    for i, arg in enumerate(args):
+        if arg.startswith("--export="):
+            args[i] = f"{arg},{jobdir}"
+            break
+    else:
+        args.append(f"--export=ALL,{jobdir}")
+    return [
+        backend_options["submit_binary"],
+        *args,
+        str(backend_options["submit_filename"]),
+    ]
+
+
+def _parse_slurm_cpus_per_task(tokens):
+    for i, token in enumerate(tokens):
+        match = re.fullmatch(r"(?:--cpus-per-task=|-c)(\d+)", token)
+        if match:
+            return int(match.group(1))
+        if token in ("-c", "--cpus-per-task") and i + 1 < len(tokens):
+            if tokens[i + 1].isdigit():
+                return int(tokens[i + 1])
+    return None
+
+
+def _get_slurm_cpus_per_task(split_root_folder, backend_options):
+    """Number of cores per job: --cpus-per-task (or -c) of the sbatch command
+    line, else of the #SBATCH lines of the submitted file, else 1 (default of
+    slurm)."""
+    n = _parse_slurm_cpus_per_task(backend_options.get("command_line_args", []))
+    if n is not None:
+        return n
+    path = Path(backend_options["submit_filename"])
+    if not path.is_absolute():
+        path = Path(split_root_folder) / path
+    try:
+        with open(path) as f:
+            for line in f:
+                if line.startswith("#SBATCH"):
+                    tokens = line[len("#SBATCH") :].split("#")[0].split()
+                    n = _parse_slurm_cpus_per_task(tokens)
+                    if n is not None:
+                        return n
+    except OSError:
+        pass
+    return 1
+
+
+def _get_campaign_number_of_threads(manifest_path, manifest):
+    """number_of_threads of the simulation of the campaign (None if unknown)"""
+    try:
+        path = _get_master_simulation_paths_from_manifest(manifest_path, manifest)[0]
+        with open(path) as f:
+            return int(load_json(f)["user_info"].get("number_of_threads", 1))
+    except Exception:
+        return None
+
+
+def _get_default_number_of_workers(manifest_path, manifest):
+    """Local backend: all the jobs at the same time, but not more than the
+    cores of the computer (number of cores / number of threads per job)."""
+    n_jobs = manifest.get("number_of_jobs", len(manifest.get("jobs", [])))
+    threads = _get_campaign_number_of_threads(manifest_path, manifest) or 1
+    n_cores = os.cpu_count() or 1
+    return max(1, min(n_jobs, n_cores // max(threads, 1)))
+
+
+def _warn_if_slurm_cpus_differ_from_threads(manifest_path, manifest, backend_options):
+    """Warning if the cores reserved per job differ from the number of
+    threads of the simulation (only a warning: more cores may be wanted for
+    the memory)."""
+    threads = _get_campaign_number_of_threads(manifest_path, manifest)
+    if threads is None:
+        return
+    cpus = _get_slurm_cpus_per_task(manifest_path.parent, backend_options)
+    if cpus != threads:
+        warning(
+            f"Each job uses {threads} thread(s) (number_of_threads of the "
+            f"simulation) but slurm reserves {cpus} core(s) per job "
+            f"(--cpus-per-task): use --cpus-per-task={threads} (--submit-args, "
+            f"or the #SBATCH lines of {backend_options['submit_filename']}), "
+            f"unless more cores are wanted for the memory."
+        )
+
+
 def _submit_job_folders_to_slurm(
     split_root_folder,
     job_folders,
     backend_options,
     skipped_completed_jobs,
 ):
+    first_command = None
     for job_folder in job_folders:
-        command = [backend_options["submit_binary"]]  # -> sbatch
-        command.extend(
-            backend_options.get("command_line_args", [])
-        )  # + set the path to the job folder
-        command[-1] += ",JOBDIR=" + str(job_folder)
-        command.append(str(backend_options["submit_filename"]))  # ->slurm filename
+        command = _get_slurm_submit_command(backend_options, job_folder)
+        if first_command is None:
+            first_command = command
+        previous = _mark_job_as_submitted(job_folder, "slurm")
         try:
-            print(command)
             completed_process = subprocess.run(
                 command,
                 cwd=split_root_folder,
@@ -1885,11 +2178,13 @@ def _submit_job_folders_to_slurm(
                 check=False,
             )
         except FileNotFoundError as error:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 f"Slurm submission command not found: {backend_options['submit_binary']}."
             ) from error
 
         if completed_process.returncode != 0:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 "Slurm submission failed.\n"
                 f"Command: {' '.join(command)}\n"
@@ -1897,6 +2192,10 @@ def _submit_job_folders_to_slurm(
                 f"stdout:\n{completed_process.stdout}\n"
                 f"stderr:\n{completed_process.stderr}"
             )
+        _set_scheduler_job_id(
+            job_folder, _extract_scheduler_job_id(completed_process.stdout)
+        )
+    return {"submission_command": first_command}
 
 
 def _submit_job_folders_to_pbs(
@@ -1905,6 +2204,7 @@ def _submit_job_folders_to_pbs(
     backend_options,
     skipped_completed_jobs,
 ):
+    first_command = None
     for job_folder in job_folders:
         command = [backend_options["submit_binary"]]  # -> qsub
         command.extend(
@@ -1913,8 +2213,10 @@ def _submit_job_folders_to_pbs(
         command.append("-v")
         command.append("JOBDIR=" + str(job_folder))
         command.append(str(backend_options["submit_filename"]))  # ->pbs filename
+        if first_command is None:
+            first_command = command
+        previous = _mark_job_as_submitted(job_folder, "pbs")
         try:
-            print(command)
             completed_process = subprocess.run(
                 command,
                 cwd=split_root_folder,
@@ -1923,11 +2225,13 @@ def _submit_job_folders_to_pbs(
                 check=False,
             )
         except FileNotFoundError as error:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 f"PBS submission command not found: {backend_options['submit_binary']}."
             ) from error
 
         if completed_process.returncode != 0:
+            _restore_job_execution_status(job_folder, previous)
             raise GateJobsBackendError(
                 "qsub submission failed.\n"
                 f"Command: {' '.join(command)}\n"
@@ -1935,6 +2239,10 @@ def _submit_job_folders_to_pbs(
                 f"stdout:\n{completed_process.stdout}\n"
                 f"stderr:\n{completed_process.stderr}"
             )
+        _set_scheduler_job_id(
+            job_folder, _extract_scheduler_job_id(completed_process.stdout)
+        )
+    return {"submission_command": first_command}
 
 
 def _run_jobs_campaign(job_folders, backend, backend_options):
@@ -2000,6 +2308,7 @@ def _validate_jobs_backend_options(backend, backend_options):
             "job_runner_command",
             "submit_filename",
             "submit_binary",
+            "cancel_binary",
         }
         unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
         if len(unknown_keys) > 0:
@@ -2042,6 +2351,7 @@ def _validate_jobs_backend_options(backend, backend_options):
             "command_line_args",
             "submit_filename",
             "submit_binary",
+            "cancel_binary",
         }
         unknown_keys = set(backend_options.keys()).difference(allowed_top_level_keys)
         if len(unknown_keys) > 0:
@@ -2060,7 +2370,9 @@ def _validate_jobs_backend_options(backend, backend_options):
             validated_options.setdefault("submit_filename", SLURM_SUBMIT_FILENAME)
         elif backend == "pbs":
             validated_options.setdefault("submit_filename", PBS_SUBMIT_FILENAME)
-        validated_options.setdefault("submit_binary", "sbatch")
+        validated_options.setdefault(
+            "submit_binary", "sbatch" if backend == "slurm" else "qsub"
+        )
 
         if not isinstance(validated_options["command_line_args"], (list, tuple)):
             if backend == "slurm":
@@ -2104,9 +2416,10 @@ def jobs_run(
     For the ``local_pool`` backend, ``number_of_workers`` controls how many
     child simulations can run concurrently. If fewer workers than jobs are
     used, the jobs are executed in several waves and each additional wave pays
-    the full overhead of starting and finalizing another Geant4 simulation. In
-    most practical local runs, ``number_of_workers`` should therefore be equal
-    to ``number_of_jobs``.
+    the full overhead of starting and finalizing another Geant4 simulation.
+    Default: all the jobs at the same time, but not more than the number of
+    cores of the computer divided by the number of threads of the simulation
+    (e.g. 200 jobs on a login node do not start at once).
     """
     backend = JOBS_BACKEND_ALIASES.get(backend, backend)
     manifest_path, manifest = _load_jobs_manifest(split_path)
@@ -2145,15 +2458,21 @@ def jobs_run(
             skipped_completed_jobs.append(job_folder)
             continue
 
-        if execution_status.get("status") == "running" and allow_rerun_running is False:
-            running_jobs.append(job_folder.name)
-            continue
+        if (
+            execution_status.get("status") in ("running", "submitted")
+            and allow_rerun_running is False
+        ):
+            # a lost job (dead process) is run again
+            _, is_lost = get_job_last_news(job_folder, execution_status)
+            if execution_status.get("status") == "submitted" or not is_lost:
+                running_jobs.append(job_folder.name)
+                continue
 
         selected_job_folders.append(job_folder)
 
     if len(running_jobs) > 0:
         fatal(
-            "Some jobs are still marked as running: "
+            "Some jobs are still marked as running or submitted: "
             f"{', '.join(running_jobs)}. "
             "Relaunch with allow_rerun_running=True to override them."
         )
@@ -2194,7 +2513,10 @@ def jobs_run(
             raise GateJobsBackendError(
                 "detach=False is only supported for local jobs backends."
             )
-        _submit_job_folders_to_slurm(
+        _warn_if_slurm_cpus_differ_from_threads(
+            manifest_path, manifest, backend_options
+        )
+        submission_summary = _submit_job_folders_to_slurm(
             split_root_folder,
             selected_job_folders,
             backend_options,
@@ -2207,6 +2529,7 @@ def jobs_run(
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
+            **submission_summary,
         }
 
     if backend == "pbs":
@@ -2214,7 +2537,7 @@ def jobs_run(
             raise GateJobsBackendError(
                 "detach=False is only supported for local jobs backends."
             )
-        _submit_job_folders_to_pbs(
+        submission_summary = _submit_job_folders_to_pbs(
             split_root_folder,
             selected_job_folders,
             backend_options,
@@ -2227,13 +2550,12 @@ def jobs_run(
             "submitted_jobs": len(selected_job_folders),
             "skipped_completed_jobs": len(skipped_completed_jobs),
             "campaign_process_pid": None,
+            **submission_summary,
         }
 
     if backend in ("local_sequential", "local_pool"):
         if number_of_workers is None and backend == "local_pool":
-            number_of_workers = manifest.get(
-                "number_of_jobs", len(manifest.get("jobs", []))
-            )
+            number_of_workers = _get_default_number_of_workers(manifest_path, manifest)
         if number_of_workers is not None:
             try:
                 number_of_workers = int(number_of_workers)
@@ -2249,6 +2571,9 @@ def jobs_run(
             backend_options = {
                 "n_workers": number_of_workers,
             }
+        # waiting for a worker
+        for job_folder in selected_job_folders:
+            _mark_job_as_submitted(job_folder, backend)
 
         if detach is False:
             submitted_at = _now_isoformat()
@@ -2349,8 +2674,8 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
     if progress_bar and sys.stdout.isatty():
         bar = CampaignProgressBar(campaign_dir)
     start_time = time.perf_counter()
-    final_statuses = ("completed", "failed", "interrupted")
-    status_data = jobs_status(campaign_dir)
+    final_statuses = ("completed", "failed", "interrupted", "lost", "cancelled")
+    status_data = jobs_status(campaign_dir, check_inputs=False)
     try:
         while True:
             if bar is not None:
@@ -2369,7 +2694,7 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
                     f"Timed out while waiting for the jobs in '{campaign_dir}'."
                 )
             time.sleep(poll_interval)
-            status_data = jobs_status(campaign_dir)
+            status_data = jobs_status(campaign_dir, check_inputs=False)
     except KeyboardInterrupt:
         if bar is not None:
             bar.close()
@@ -2390,7 +2715,136 @@ def jobs_wait(campaign_dir, progress_bar=True, poll_interval=0.5, timeout=None):
         _campaign_processes.pop(str(campaign_dir), None)
     # the campaign process may have ended before writing the status of the
     # jobs it was running (e.g. killed): read it again
-    return jobs_status(campaign_dir)
+    return jobs_status(campaign_dir, check_inputs=False)
+
+
+def _kill_process(pid):
+    """Terminate a process (SIGTERM; TerminateProcess on Windows). False if
+    there is no such process."""
+    try:
+        os.kill(int(pid), signal.SIGTERM)
+        return True
+    except (ProcessLookupError, PermissionError, OSError, ValueError):
+        return False
+
+
+def _mark_job_as_cancelled(job_folder, current):
+    _write_job_execution_status(
+        job_folder,
+        current,
+        backend=current.get("backend"),
+        status="cancelled",
+        submitted_at=current.get("submitted_at"),
+        started_at=current.get("started_at"),
+        finished_at=_now_isoformat(),
+        error_message="Cancelled by the user (opengate_jobs cancel).",
+        scheduler_job_id=current.get("scheduler_job_id"),
+    )
+
+
+def jobs_cancel(campaign_dir, backend_options=None):
+    """Cancel the jobs of a campaign that are submitted or running (also the
+    lost ones), for all the backends, and mark them 'cancelled' (run again by
+    jobs_run, like the failed jobs; the completed jobs are kept).
+
+    - slurm, pbs, htcondor: the cancel command of the scheduler (scancel,
+      qdel, condor_rm; 'cancel_binary' in backend_options) with the job ids
+      printed by the submit command (kept in job_execution_status.json). A
+      job without id (not printed) cannot be cancelled: listed.
+    - local backends: the campaign process is terminated (no new job), then
+      the process of each running job (its pid, on this computer only).
+
+    Return a summary: cancelled jobs, commands, warnings.
+    """
+    campaign_dir = Path(campaign_dir).resolve()
+    manifest_path, manifest = _load_jobs_manifest(campaign_dir)
+    backend_options = backend_options or {}
+    this_host = socket.gethostname()
+
+    # the jobs to cancel, per backend
+    targets = {}
+    for job_item in manifest.get("jobs", []):
+        job_folder = campaign_dir / job_item["folder_name"]
+        current = load_job_execution_status(job_folder)
+        if current is None or current.get("status") not in ("submitted", "running"):
+            continue
+        _, is_lost = get_job_last_news(job_folder, current)
+        backend = current.get("backend") or "unknown"
+        targets.setdefault(backend, []).append((job_folder, current, is_lost))
+
+    commands = []
+    warnings = []
+    for backend, jobs in targets.items():
+        if backend in JOBS_CANCEL_BINARIES:
+            ids = []
+            for job_folder, current, _ in jobs:
+                if current.get("scheduler_job_id"):
+                    ids.append(str(current["scheduler_job_id"]))
+                else:
+                    warnings.append(
+                        f"{job_folder.name}: no {backend} job id (not printed by "
+                        f"the submit command), cancel it with the scheduler."
+                    )
+            if len(ids) == 0:
+                continue
+            binary = backend_options.get("cancel_binary", JOBS_CANCEL_BINARIES[backend])
+            command = [str(binary)] + ids
+            commands.append(command)
+            try:
+                r = subprocess.run(command, capture_output=True, text=True, check=False)
+            except FileNotFoundError as error:
+                raise GateJobsBackendError(
+                    f"Cancel command not found: {binary} (backend {backend})."
+                ) from error
+            # e.g. a job already finished: its id is unknown to the scheduler
+            if r.returncode != 0:
+                warnings.append(
+                    f"{' '.join(command[:1])} returned {r.returncode}: "
+                    f"{(r.stderr or r.stdout).strip()}"
+                )
+        elif backend in LOCAL_JOBS_BACKENDS + ("local_cli",):
+            # first the campaign process: no new job is started
+            backend_status = load_jobs_backend_status(campaign_dir) or {}
+            pid = backend_status.get("campaign_process_pid")
+            if pid is not None and any(not lost for _, _, lost in jobs):
+                if _kill_process(pid):
+                    commands.append(["kill", str(pid)])
+            for job_folder, current, is_lost in jobs:
+                pid = current.get("pid")
+                # a lost job: its process is dead (and its pid maybe reused)
+                if pid is None or is_lost or current.get("status") != "running":
+                    continue
+                if current.get("hostname") not in (None, this_host):
+                    warnings.append(
+                        f"{job_folder.name}: running on {current.get('hostname')}, "
+                        f"not on this computer: not stopped."
+                    )
+                    continue
+                if _kill_process(pid):
+                    commands.append(["kill", str(pid)])
+        else:
+            warnings.append(
+                f"{len(jobs)} job(s) of the backend '{backend}': cannot be cancelled."
+            )
+
+    # mark them, unless they ended meanwhile
+    cancelled = []
+    for jobs in targets.values():
+        for job_folder, _, _ in jobs:
+            current = load_job_execution_status(job_folder)
+            if current is None or current.get("status") not in (
+                "submitted",
+                "running",
+            ):
+                continue
+            _mark_job_as_cancelled(job_folder, current)
+            cancelled.append(job_folder.name)
+    return {
+        "campaign_dir": str(campaign_dir),
+        "cancelled_jobs": sorted(cancelled),
+        "commands": commands,
+        "warnings": warnings,
+    }
 
 
 class SplitRunMergeController:
@@ -2466,11 +2920,19 @@ class SplitRunMergeController:
         if latest_jobs_status is not None:
             execution_counts = latest_jobs_status.get("execution_counts", {})
             summary_counts = latest_jobs_status.get("summary_counts", {})
-            if execution_counts.get("failed", 0) > 0:
+            if execution_counts.get("failed", 0) + execution_counts.get("lost", 0) > 0:
                 return "failed"
-            if execution_counts.get("running", 0) > 0:
+            if (
+                execution_counts.get("running", 0)
+                + execution_counts.get("submitted", 0)
+                > 0
+            ):
                 return "running"
-            if execution_counts.get("interrupted", 0) > 0:
+            if (
+                execution_counts.get("interrupted", 0)
+                + execution_counts.get("cancelled", 0)
+                > 0
+            ):
                 return "interrupted"
             if execution_counts.get("completed", 0) > 0 and execution_counts.get(
                 "completed", 0
@@ -2610,7 +3072,9 @@ class SplitRunMergeController:
         self._stage = "interrupted"
         counts = {}
         try:
-            counts = jobs_status(self._campaign_dir).get("execution_counts", {})
+            counts = jobs_status(self._campaign_dir, check_inputs=False).get(
+                "execution_counts", {}
+            )
         except Exception:
             pass
         print(
@@ -2713,7 +3177,7 @@ def _get_master_simulation_paths_from_manifest(manifest_path, manifest):
     return master_simulation_path, resolved_simulation_path
 
 
-def _load_master_simulation_from_manifest(manifest_path, manifest):
+def _load_master_simulation_from_manifest(manifest_path, manifest, actors_only=False):
     master_simulation_path, resolved_simulation_path = (
         _get_master_simulation_paths_from_manifest(manifest_path, manifest)
     )
@@ -2732,7 +3196,7 @@ def _load_master_simulation_from_manifest(manifest_path, manifest):
             f"Master simulation file not found at '{preferred_simulation_path}'. "
             "Cannot initialize jobs merge."
         )
-    return create_sim_from_json(preferred_simulation_path)
+    return create_sim_from_json(preferred_simulation_path, actors_only=actors_only)
 
 
 def _collect_leaf_merge_sources(manifest_path, manifest):
@@ -3008,6 +3472,35 @@ class MergeContext:
         return StandardMergeContextView(self)
 
 
+def read_merged_from(folder):
+    """Content of merged_from.json of a merged folder (None if missing)"""
+    path = Path(folder) / MERGED_FROM_FILENAME
+    if not path.exists():
+        return None
+    try:
+        with open(path) as f:
+            return load_json(f)
+    except (OSError, ValueError):
+        return None
+
+
+def _check_merge_output_dir(output_dir):
+    """The merged output goes to the output_dir of the simulation: it must be
+    possible to create it here. Not the case for a campaign moved from another
+    computer with an absolute output_dir (e.g. /lustre/... on a cluster)."""
+    output_dir = Path(output_dir)
+    existing = output_dir
+    while not existing.exists():
+        existing = existing.parent
+    if existing == Path(existing.anchor) or not os.access(existing, os.W_OK):
+        raise GateMergeError(
+            f"The output folder of the simulation, {output_dir}, cannot be "
+            f"created here (campaign moved from another computer?). Give the "
+            f"folder of the merged output (opengate_jobs merge -o, or "
+            f"to_path)."
+        )
+
+
 class JobsMergeManager:
     """Campaign-level orchestrator for merging split simulation results.
 
@@ -3036,6 +3529,9 @@ class JobsMergeManager:
         self.original_run_to_sources_map = {}
         self.child_simulations_by_job_id = {}
         self.remaining_local_runs_by_job_id = {}
+        # simulation of each job (actors only), loaded once for the planning
+        # and the merge coordinators
+        self._source_simulations_by_folder = {}
         self._merge_result = None
         self._total_merge_duration = None
         self._merge_start_time = None
@@ -3130,8 +3626,9 @@ class JobsMergeManager:
 
     def prepare_target_simulation(self):
         if self.master_simulation is None:
+            # only the actors are merged: no volumes, physics, sources
             self.master_simulation = _load_master_simulation_from_manifest(
-                self.manifest_path, self.manifest
+                self.manifest_path, self.manifest, actors_only=True
             )
         else:
             if (
@@ -3143,7 +3640,22 @@ class JobsMergeManager:
 
         if self.output_dir_override is not None:
             self.master_simulation.output_dir = self.output_dir_override
+        else:
+            _check_merge_output_dir(self.master_simulation.get_output_path())
         return self.master_simulation
+
+    def load_source_simulation(self, source_info):
+        """The simulation of a job (actors only, output_dir in the job
+        folder), loaded once. source_info: 'simulation_path' and 'folder'."""
+        folder = str(source_info["folder"])
+        if folder not in self._source_simulations_by_folder:
+            simulation = create_sim_from_json(
+                source_info["simulation_path"], actors_only=True
+            )
+            simulation.simulation_dir = Path(folder)
+            simulation.output_dir = Path(folder) / "output"
+            self._source_simulations_by_folder[folder] = simulation
+        return self._source_simulations_by_folder[folder]
 
     def create_merge_context(self):
         self.merge_context = MergeContext()
@@ -3206,7 +3718,10 @@ class JobsMergeManager:
             }
         )
 
-        for source in self.leaf_sources:
+        bar = self._progress_bar(len(self.leaf_sources), "Reading the jobs")
+        for i, source in enumerate(self.leaf_sources):
+            if bar is not None:
+                bar.update(i)
             job_index = source["job_index"]
             merge_context.set_source_info(
                 job_index,
@@ -3221,9 +3736,7 @@ class JobsMergeManager:
                     ),
                 },
             )
-            child_simulation = create_sim_from_json(source["simulation_path"])
-            child_simulation.simulation_dir = source["folder"]
-            child_simulation.output_dir = Path(source["folder"]) / "output"
+            child_simulation = self.load_source_simulation(source)
             output_plans = child_simulation.plan_merge(mode=mode)
             for output_plan in output_plans:
                 merge_context.set_output_plan(
@@ -3240,17 +3753,26 @@ class JobsMergeManager:
                 job_id=source["job_id"],
                 source_simulation_id=source["metadata"].get("simulation_id"),
             )
+        if bar is not None:
+            bar.update(len(self.leaf_sources))
+            bar.close()
 
         self.standard_merge_coordinator = StandardMergeCoordinator()
         self.standard_merge_coordinator.configure_from_context(
             merge_context.get_standard_view(),
             self.master_simulation,
+            source_simulation_loader=self.load_source_simulation,
         )
         self.root_merge_coordinator = RootMergeCoordinator()
         self.root_merge_coordinator.configure_from_context(
             merge_context.get_root_view(),
             self.master_simulation,
+            source_simulation_loader=self.load_source_simulation,
         )
+        # one progress line per actor output during the merge
+        if self.options.get("progress"):
+            self.standard_merge_coordinator.progress_bar_factory = self._progress_bar
+            self.root_merge_coordinator.progress_bar_factory = self._progress_bar
         self.master_simulation.set_merge_coordinators(
             [
                 self.standard_merge_coordinator,
@@ -3444,7 +3966,13 @@ class JobsMergeManager:
                 "JobsMergeManager.finalize_merge() requires execute_merge() to have run first. "
                 "Call execute_merge() before finalize_merge(), or use merge()."
             )
+        bar = self._progress_bar(1, "Writing the merged output")
+        if bar is not None:
+            bar.update(0)
         self.master_simulation.finalize_merge()
+        if bar is not None:
+            bar.update(1)
+            bar.close()
         if self._execution_start_time is not None:
             self._execution_duration = time.perf_counter() - self._execution_start_time
         if self._merge_start_time is not None:
@@ -3487,7 +4015,118 @@ class JobsMergeManager:
             self.execute_merge()
         if self._merge_finalized is not True:
             self.finalize_merge()
+        self.write_merge_provenance()
+        # the simulations of the jobs are no longer needed (memory)
+        self._source_simulations_by_folder = {}
         return self._merge_result
+
+    def _progress_bar(self, total, label):
+        """Progress of the merge (option progress=True, e.g. opengate_jobs
+        merge): a bar in a terminal, one line at the end in a log file."""
+        if not self.options.get("progress"):
+            return None
+        return TerminalProgressBar(total, label, summary_line=True)
+
+    def get_merged_output_dir(self):
+        if self.output_dir_override is not None:
+            return Path(self.output_dir_override)
+        return Path(self.master_simulation.get_output_path())
+
+    def get_job_output_filenames(self):
+        """Names of the output files of one job (the merge writes the same
+        files in the merged folder)."""
+        if len(self.leaf_sources) == 0:
+            return []
+        simulation = self.load_source_simulation(self.leaf_sources[0])
+        folder = Path(simulation.get_output_path())
+        if not folder.is_dir():
+            return []
+        return sorted(
+            str(f.relative_to(folder)) for f in folder.rglob("*") if f.is_file()
+        )
+
+    def check_merged_output_dir(self):
+        """Reason not to merge into the merged output folder (None: ok): it
+        contains the merge of another campaign (merged_from.json with another
+        campaign folder and simulation id), or output files not written by a
+        merge of this campaign. The same campaign merged again (e.g. after
+        running the failed jobs, or split again) is ok."""
+        output_dir = self.get_merged_output_dir()
+        previous = read_merged_from(output_dir)
+        if previous is not None:
+            same_folder = previous.get("campaign_dir") == str(
+                Path(self.campaign_dir).resolve()
+            )
+            same_id = previous.get("simulation_id") == self.manifest.get(
+                "simulation_id"
+            )
+            if same_folder or same_id:
+                return None
+            return (
+                f"{output_dir} contains the merge of another campaign "
+                f"({previous.get('campaign_dir')}, merged at "
+                f"{previous.get('merged_at')})."
+            )
+        existing = [
+            f for f in self.get_job_output_filenames() if (output_dir / f).exists()
+        ]
+        if len(existing) > 0:
+            return (
+                f"{output_dir} already contains {len(existing)} output file(s) "
+                f"of the merge (e.g. {existing[0]}), not from a merge of this "
+                f"campaign."
+            )
+        return None
+
+    def write_merge_provenance(self):
+        """merged_from.json in the merged folder (campaign, simulation id,
+        jobs, events, date, opengate version), and the merge recorded in the
+        manifest of the campaign (shown by status)."""
+        output_dir = self.get_merged_output_dir()
+        events = 0
+        for source in self.leaf_sources:
+            progress = read_job_progress(source["folder"]) or {}
+            events += progress.get("generated_events") or 0
+        try:
+            opengate_version = importlib.metadata.version("opengate")
+        except Exception:
+            opengate_version = None
+        info = {
+            "campaign_dir": str(Path(self.campaign_dir).resolve()),
+            "simulation_id": self.manifest.get("simulation_id"),
+            "number_of_jobs": len(self.leaf_sources),
+            "generated_events": events,
+            "merged_at": _now_isoformat(),
+            "merge_duration_seconds": self.total_merge_duration,
+            "opengate_version": opengate_version,
+            "output_dir": str(output_dir.resolve()),
+        }
+        output_dir.mkdir(parents=True, exist_ok=True)
+        with open(output_dir / MERGED_FROM_FILENAME, "w") as f:
+            dump_json(info, f, indent=2)
+        try:
+            manifest = dict(self.manifest)
+            merges = list(manifest.get("merges", []))
+            merges.append(
+                {
+                    k: info[k]
+                    for k in (
+                        "output_dir",
+                        "merged_at",
+                        "number_of_jobs",
+                        "generated_events",
+                    )
+                }
+            )
+            manifest["merges"] = merges
+            tmp = Path(self.manifest_path).with_suffix(".json.tmp")
+            with open(tmp, "w") as f:
+                dump_json(manifest, f)
+            os.replace(tmp, self.manifest_path)
+            self.manifest = manifest
+        except OSError as e:
+            warning(f"The merge could not be recorded in the manifest: {e}")
+        return info
 
 
 def jobs_merge(
@@ -3692,7 +4331,7 @@ def format_jobs_failure_report(campaign_dir_or_status):
     if isinstance(campaign_dir_or_status, dict):
         status_data = campaign_dir_or_status
     else:
-        status_data = jobs_status(campaign_dir_or_status)
+        status_data = jobs_status(campaign_dir_or_status, check_inputs=False)
     lines = []
     for job in status_data.get("jobs", []):
         execution_status = job.get("execution_status")
@@ -3715,12 +4354,26 @@ def format_jobs_failure_report(campaign_dir_or_status):
                 "    No error recorded: the job is still running, or its process "
                 "died without reporting (e.g. a native crash)."
             )
+        elif execution_status == "lost":
+            lines.append(
+                "    No news for "
+                f"{_format_duration(job.get('seconds_since_last_news') or 0)}: its "
+                "process died without reporting (time limit, memory, native "
+                "crash). See the log of the scheduler."
+            )
+        scheduler_job_id = execution_status_data.get("scheduler_job_id")
+        if scheduler_job_id is not None:
+            lines.append(f"    Scheduler job id: {scheduler_job_id}")
     if not lines:
         return "All jobs completed."
     return "\n".join(lines)
 
 
-def jobs_status(campaign_dir):
+def jobs_status(campaign_dir, check_inputs=True):
+    """Status of the jobs of a campaign. With check_inputs (slow: the
+    simulation of each job is created), the input files of each job are
+    checked and the size of the job folders is computed. Without, only the
+    manifest and the status files are read."""
     path = Path(campaign_dir).resolve()
     if path.is_dir() is False:
         fatal(
@@ -3747,7 +4400,7 @@ def jobs_status(campaign_dir):
     )
 
     master_input_files = []
-    if master_sim_file.exists():
+    if check_inputs and master_sim_file.exists():
         try:
             master_sim = create_sim_from_json(master_sim_file)
             master_input_files = _get_simulation_input_files_info(master_sim)
@@ -3776,6 +4429,7 @@ def jobs_status(campaign_dir):
             False if resolved_sim_file is None else resolved_sim_file.exists()
         ),
         "master_input_files": master_input_files,
+        "inputs_checked": check_inputs,
         "backend_status_filename": JOBS_BACKEND_STATUS_FILENAME,
         "backend_status_exists": False,
         "backend_status_data": None,
@@ -3788,11 +4442,14 @@ def jobs_status(campaign_dir):
             "missing_input_file": 0,
         },
         "execution_counts": {
+            "submitted": 0,
             "running": 0,
+            "lost": 0,
             "completed": 0,
             "failed": 0,
             "skipped": 0,
             "interrupted": 0,
+            "cancelled": 0,
         },
     }
 
@@ -3816,8 +4473,16 @@ def jobs_status(campaign_dir):
 
         execution_status_data = load_job_execution_status(job_folder)
         execution_status = None
+        seconds_since_last_news = None
         if execution_status_data is not None:
             execution_status = execution_status_data.get("status")
+            if execution_status == "running":
+                # 'lost': running, but no news for too long (dead process)
+                seconds_since_last_news, is_lost = get_job_last_news(
+                    job_folder, execution_status_data
+                )
+                if is_lost:
+                    execution_status = "lost"
             if execution_status in status_data["execution_counts"]:
                 status_data["execution_counts"][execution_status] += 1
 
@@ -3829,7 +4494,7 @@ def jobs_status(campaign_dir):
 
         folder_size = 0
         has_symlink = False
-        if folder_exists:
+        if check_inputs and folder_exists:
             for item in job_folder.rglob("*"):
                 if item.is_symlink():
                     has_symlink = True
@@ -3843,7 +4508,7 @@ def jobs_status(campaign_dir):
         input_check_error = None
         # input files found for this job (path -> size), counted once
         found_input_files = {}
-        if folder_exists and metadata_exists and sim_exists:
+        if check_inputs and folder_exists and metadata_exists and sim_exists:
             try:
                 child_sim = create_sim_from_json(simulation_file)
                 job_input_files = _get_simulation_input_files_info(child_sim)
@@ -3924,7 +4589,100 @@ def jobs_status(campaign_dir):
                 "execution_status_exists": execution_status_data is not None,
                 "execution_status": execution_status,
                 "execution_status_data": execution_status_data,
+                "seconds_since_last_news": seconds_since_last_news,
+                **_get_job_progress_info(
+                    job_folder, execution_status, execution_status_data
+                ),
             }
         )
 
+    status_data["progress"] = _get_campaign_progress(status_data["jobs"])
+    merges = manifest.get("merges", [])
+    status_data["last_merge"] = merges[-1] if len(merges) > 0 else None
     return status_data
+
+
+def _get_job_progress_info(job_folder, execution_status, execution_status_data):
+    """Fraction of the job done (generated / expected events, from
+    job_progress.json; 1 when completed), its number of events, and its
+    elapsed time (seconds, since its start; until its end when finished)."""
+    progress = read_job_progress(job_folder) if execution_status else None
+    generated = (progress or {}).get("generated_events") or 0
+    expected = (progress or {}).get("expected_events")
+    fraction = None
+    if execution_status == "completed":
+        fraction = 1.0
+    elif expected:
+        fraction = min(1.0, generated / expected)
+    elif execution_status in ("running", "lost"):
+        fraction = 0.0
+    elapsed = None
+    data = execution_status_data or {}
+    if execution_status in ("running", "lost", "completed", "failed"):
+        end = None
+        if data.get("finished_at") is not None:
+            try:
+                end = datetime.fromisoformat(data["finished_at"])
+            except ValueError:
+                pass
+        elapsed = _seconds_since(data.get("started_at"), now=end)
+    return {
+        "progress_fraction": fraction,
+        "generated_events": generated,
+        "elapsed_seconds": elapsed,
+    }
+
+
+def _get_campaign_progress(jobs):
+    """Progress of the campaign: fraction of the events (the jobs are
+    considered of equal size: split in time), number of events, and the
+    estimated times (seconds, None if unknown):
+    - job_duration: of one job, the mean of the completed jobs, or estimated
+      from the running jobs (elapsed / fraction, when > 5 % done);
+    - running_remaining: until the end of the running jobs (the longest);
+    - not_started: number of jobs not started (their start depends on the
+      queue of the scheduler)."""
+    n = len(jobs)
+    fraction = sum(j.get("progress_fraction") or 0.0 for j in jobs) / n if n else 0.0
+    events = sum(j.get("generated_events") or 0 for j in jobs)
+    completed = [
+        j["elapsed_seconds"]
+        for j in jobs
+        if j.get("execution_status") == "completed" and j.get("elapsed_seconds")
+    ]
+    running = [
+        j
+        for j in jobs
+        if j.get("execution_status") == "running"
+        and j.get("elapsed_seconds") is not None
+    ]
+    estimated = [
+        j["elapsed_seconds"] / j["progress_fraction"]
+        for j in running
+        if (j.get("progress_fraction") or 0) > 0.05
+    ]
+    job_duration = None
+    if completed:
+        job_duration = sum(completed) / len(completed)
+    elif estimated:
+        job_duration = sorted(estimated)[len(estimated) // 2]
+    running_remaining = None
+    for j in running:
+        f = j.get("progress_fraction") or 0
+        if f > 0.05:
+            r = j["elapsed_seconds"] * (1 - f) / f
+        elif job_duration is not None:
+            r = job_duration - j["elapsed_seconds"]
+        else:
+            continue
+        running_remaining = max(running_remaining or 0, r, 0)
+    return {
+        "fraction": fraction,
+        "generated_events": events,
+        "job_duration_seconds": job_duration,
+        "number_of_completed_durations": len(completed),
+        "running_remaining_seconds": running_remaining,
+        "not_started": sum(
+            1 for j in jobs if j.get("execution_status") in (None, "submitted")
+        ),
+    }
