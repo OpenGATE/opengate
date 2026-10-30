@@ -60,8 +60,6 @@ The JSON file contains the input parameters for the simulation:
 
     {
       "ct_image": "./dose_rate_data/29_CT_5mm.mhd",
-      "table_mat": "./dose_rate_data/Schneider2000MaterialsTable.txt",
-      "table_density": "./dose_rate_data/Schneider2000DensitiesTable.txt",
       "density_tolerance_gcm3": 0.05,
 
       "activity_image": "./dose_rate_data/385_NM_5mm.mhd",
@@ -78,7 +76,7 @@ The JSON file contains the input parameters for the simulation:
 Parameter descriptions:
 
 - **ct_image**: Patient CT image providing the geometry and tissue distribution.
-- **table_mat**, **table_density**: Calibration tables mapping Hounsfield Units (HU) to materials and mass densities (e.g., Schneider 2000).
+- **table_mat**, **table_density** (optional): Calibration tables mapping Hounsfield Units (HU) to materials and mass densities. Default: the Schneider 2000 tables shipped with opengate (``opengate/data/Schneider2000MaterialsTable.txt`` and ``Schneider2000DensitiesTable.txt``).
 - **density_tolerance_gcm3**: Tolerance for grouping voxels with similar densities into discrete material definitions (default: 0.05 g/cm³).
 - **activity_image**: 3D spatial activity distribution (from SPECT or PET). Used as a **relative spatial probability distribution** (internally normalized so that the sum of all voxel values is 1).
 - **radionuclide**: Radionuclide identifier (see below).
@@ -171,8 +169,6 @@ To set up an analog simulation directly in Python (see ``opengate/tests/src/sour
     # Configure parameters
     param = Box()
     param.ct_image = "29_CT_5mm_crop.mhd"
-    param.table_mat = "Schneider2000MaterialsTable.txt"
-    param.table_density = "Schneider2000DensitiesTable.txt"
     param.activity_image = "activity_test_crop_4mm.mhd"
     param.radionuclide = "Lu177"  # or "Ac225", "89 225", etc.
     param.activity_bq = 1e6
@@ -204,8 +200,6 @@ To run decoupled VRT simulations and merge their results (see ``opengate/tests/s
     # Common parameters
     base_param = Box()
     base_param.ct_image = "29_CT_5mm_crop.mhd"
-    base_param.table_mat = "Schneider2000MaterialsTable.txt"
-    base_param.table_density = "Schneider2000DensitiesTable.txt"
     base_param.activity_image = "activity_test_crop_4mm.mhd"
     base_param.radionuclide = "Lu177"
     base_param.number_of_threads = 4
