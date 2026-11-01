@@ -1,3 +1,10 @@
+# Schneider et al. 2000 (Phys Med Biol 45:459), HU to materials, from GATE 9.
+# Each row is a material from its HU to the HU of the next row (the last row:
+# one HU). Change from GATE 9 (Schneider2000MaterialsTable_gate9.txt): the last
+# row is at HU 100000 (was 3000), so the metal implants material covers
+# HU 3000 to 100000, instead of 3000 to 3001 (above: the default material of
+# the volume, often G4_AIR). The densities are those of
+# Schneider2000DensitiesTable.txt (2.8 g/cm3 above HU 3000).
 [Elements]
 Hydrogen  Carbon Nitrogen Oxygen Sodium Magnesium Phosphor Sulfur
 Chlorine Argon Potassium Calcium
@@ -33,3 +40,4 @@ Titanium Copper Zinc  Silver Tin
   1640   0   0     0   0    0   0   0    0    0   0   0    0  0    4  2  65  29  AmalgamTooth
   2300   0   0     0   0    0   0   0    0    0   0   0    0  100  0  0  0   0  MetallImplants
   3000   0   0     0   0    0   0   0    0    0   0   0    0  100  0  0  0   0  MetallImplants
+100000   0   0     0   0    0   0   0    0    0   0   0    0  100  0  0  0   0  MetallImplants

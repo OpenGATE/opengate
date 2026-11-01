@@ -97,8 +97,6 @@ def main(dependency="test035b_dose_rate_vrt.py"):
         tmp = pathlib.Path(tmpdir)
         cfg = {
             "ct_image": str(dr_data / "29_CT_5mm_crop.mhd"),
-            "table_mat": str(dr_data / "Schneider2000MaterialsTable.txt"),
-            "table_density": str(dr_data / "Schneider2000DensitiesTable.txt"),
             "activity_image": str(dr_data / "activity_test_crop_4mm.mhd"),
             "density_tolerance_gcm3": 0.2,
             "verbose": False,

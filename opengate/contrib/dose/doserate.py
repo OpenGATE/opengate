@@ -7,7 +7,7 @@ from opengate.image import get_translation_between_images_center, read_image_inf
 from opengate.logger import INFO
 from opengate.managers import Simulation
 from opengate.sources.utility import set_source_energy_spectrum
-from opengate.utility import g4_best_unit, g4_units
+from opengate.utility import g4_best_unit, g4_units, get_data_folder
 
 
 def get_ion_z_a_e(rad):
@@ -92,8 +92,8 @@ def create_simulation(param):
     - number_of_threads
     - ct_image
     - density_tolerance_gcm3
-    - table_mat
-    - table_density
+    - table_mat, table_density (optional): HU to material and density tables,
+      default: the Schneider 2000 tables shipped with opengate
     - verbose:
     - radionuclide
     - activity_bq
@@ -137,6 +137,12 @@ def create_simulation(param):
         ct = sim.add_volume("Image", "ct")
         ct.image = param.ct_image
         ct.material = "G4_AIR"  # material used by default
+        if not param.get("table_mat"):
+            param.table_mat = str(get_data_folder() / "Schneider2000MaterialsTable.txt")
+        if not param.get("table_density"):
+            param.table_density = str(
+                get_data_folder() / "Schneider2000DensitiesTable.txt"
+            )
         tol = param.density_tolerance_gcm3 * gcm3
         ct.voxel_materials, materials = HounsfieldUnit_to_material(
             sim, tol, param.table_mat, param.table_density
