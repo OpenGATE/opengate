@@ -350,11 +350,14 @@ jobs:
       with:
         name: opengate-tests-data
         path: tests_data/artifacts
-        retention-days: 1
+        # 3 days: a single test job can still be re-run the next days
+        retention-days: 3
         compression-level: 0
 
   test_wheel_pr:
     runs-on: ${{ matrix.os }}
+    # a test job takes 15 to 40 min: a hang fails after 1.5 h (default: 6 h)
+    timeout-minutes: 90
     needs: [build_opengate_wheel, build_opengate_core_wheel_pr, reuse_opengate_core_wheels, prepare_test_data]
     # one of build_opengate_core_wheel_pr and reuse_opengate_core_wheels is skipped
     if: ${{ !cancelled() && !failure() }}
