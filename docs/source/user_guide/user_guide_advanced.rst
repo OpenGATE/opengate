@@ -36,6 +36,14 @@ The names of the Geant4 physics lists are composed of a first part concerning ha
     ShieldingM
     NuBeam
 
+.. note:: The ``AllHP`` physics lists (e.g. ``QGSP_BIC_AllHP``) need the optional Geant4 dataset G4TENDL, and the ``LEND`` lists (``ShieldingLEND``) the dataset LEND. These large datasets are not downloaded automatically with the other Geant4 data. Install them once with:
+
+    .. code-block:: bash
+
+        opengate_download_data -o
+
+    Without them, GATE stops before the simulation with a message about the missing dataset.
+
 and a second part concerning electromagnetic interactions:
 
 .. code-block:: text
