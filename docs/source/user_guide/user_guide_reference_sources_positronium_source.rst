@@ -10,11 +10,11 @@ The full theoretical description of the model, together with implementation deta
 
 ``PositroniumSource`` is a dedicated source model for positronium decays. It combines the standard source activity, time and position handling from ``GenericSource`` with an internal decay model that generates:
 
-* a delayed 2-gamma or 3-gamma annihilation vertex,
-* an optional prompt de-excitation gamma,
+* a delayed 2-photon or 3-photon annihilation vertex,
+* an optional prompt de-excitation photon,
 * an optional spatial shift of the annihilation point to model the mean positron range.
 
-The source is configured component by component. Each component represents one positronium decay channel description with its own intensity, lifetime and prompt-gamma settings.
+The source is configured component by component. Each component represents one positronium decay channel description with its own intensity, lifetime and prompt-photon settings.
 
 Creating a positronium source
 -----------------------------
@@ -33,7 +33,7 @@ As for other sources, the activity and the spatial or temporal distributions are
     source.position.type = "sphere"
     source.position.radius = 20 * cm
 
-The annihilation particles are generated internally by the positronium model, therefore there is no need to configure ``source.particle`` for the annihilation gammas.
+The annihilation particles are generated internally by the positronium model, therefore there is no need to configure ``source.particle`` for the annihilation photons.
 
 Channel parameters
 ------------------
@@ -48,8 +48,8 @@ The channels can be defined either from positronium fractions and decay kinds, o
 - ``source.channels_from_intensities.intensities``: intensities of each interaction type.
 - ``source.channels_from_intensities.positron_interactions``: interaction type assigned to each channel. Allowed values are ``kParaPs``, ``kDirect`` and ``kOrthoPs``.
 - ``source.positronium_lifetimes``: lifetime of each channel.
-- ``source.prompt_gamma_probabilities``: probability of prompt-gamma emission for each channel.
-- ``source.prompt_gamma_energies``: prompt-gamma energies for each channel.
+- ``source.prompt_photon_probabilities``: probability of prompt-photon emission for each channel.
+- ``source.prompt_photon_energies``: prompt-photon energies for each channel.
 
 Optional parameters
 ^^^^^^^^^^^^^^^^^^^
@@ -62,12 +62,12 @@ Event timing and generated vertices
 
 For each event, the source first samples the source time and position from the standard source configuration. Then the positronium model may generate up to two primary vertices:
 
-- a prompt-gamma vertex at the sampled source time and position,
+- a prompt-photon vertex at the sampled source time and position,
 - an annihilation vertex delayed by an exponential law with the configured positronium lifetime.
 
 If ``mean_positron_range`` is used, the annihilation vertex position is additionally smeared around the sampled source position.
 
-If the electron-capture probability is very high and the prompt-gamma probability is very low, event generation can become inefficient because the source retries until at least one primary vertex is created. The code emits a warning when the probability of producing neither a prompt gamma nor an annihilation exceeds 90% for a component.
+If the electron-capture probability is very high and the prompt-photon probability is very low, event generation can become inefficient because the source retries until at least one primary vertex is created. The code emits a warning when the probability of producing neither a prompt photon nor an annihilation exceeds 90% for a component.
 
 Decay index
 -----------
@@ -100,8 +100,8 @@ Examples
     source.channels_from_intensities.intensities = [12, 4, 2, 2]
     source.channels_from_intensities.positron_interactions = ["kDirect", "kOrthoPs", "kParaPs", "kOrthoPs"]
     source.positronium_lifetimes = [.4, 2., .125, 50.]
-    source.prompt_gamma_probabilities = [5, 6, 7, 8]
-    source.prompt_gamma_energies = [1., 2., 3., 4.]
+    source.prompt_photon_probabilities = [5, 6, 7, 8]
+    source.prompt_photon_energies = [1., 2., 3., 4.]
 
 
 Reference
