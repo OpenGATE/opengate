@@ -49,8 +49,8 @@ if __name__ == "__main__":
     source.channels_from_fractions.fractions = [1.]
     source.channels_from_fractions.decay_kinds = ["k3Gamma"]
     source.positronium_lifetimes = [100. * ns]
-    source.prompt_gamma_probabilities = [0.]
-    source.prompt_gamma_energies = [1. * MeV]
+    source.prompt_photon_probabilities = [0.]
+    source.prompt_photon_energies = [1. * MeV]
     source.mean_positron_range = [MEAN_POSITRON_RANGE_MM * mm]
 
     # actors

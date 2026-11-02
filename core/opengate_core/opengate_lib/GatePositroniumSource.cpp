@@ -26,8 +26,8 @@ void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
   auto positronium_fractions = DictGetVecDouble(channel_from_fractions, "fractions");
   auto decay_kinds = DictGetVecStr(channel_from_fractions,"decay_kinds");
   auto positronium_lifetimes = DictGetVecDouble(user_info,"positronium_lifetimes");
-  auto prompt_gamma_probabilities = DictGetVecDouble(user_info,"prompt_gamma_probabilities");
-  auto prompt_gamma_energies = DictGetVecDouble(user_info,"prompt_gamma_energies");
+  auto prompt_photon_probabilities = DictGetVecDouble(user_info,"prompt_photon_probabilities");
+  auto prompt_photon_energies = DictGetVecDouble(user_info,"prompt_photon_energies");
   auto mean_positron_range = DictGetVecDouble(user_info,"mean_positron_range");
   auto electron_capture_probabilities = DictGetVecDouble(user_info,"electron_capture_probabilities");
 
@@ -35,8 +35,8 @@ void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
   params.fFractions = positronium_fractions;
   params.fLifetimes = positronium_lifetimes;
   params.fDecayKind = ParsePositroniumDecayKind(decay_kinds);
-  params.fPromptGammaProbabilities = prompt_gamma_probabilities;
-  params.fPromptGammaEnergy = prompt_gamma_energies;
+  params.fPromptGammaProbabilities = prompt_photon_probabilities;
+  params.fPromptGammaEnergy = prompt_photon_energies;
   params.fMeanPositronRange = mean_positron_range;
   params.fElectronCaptureProbabilities = electron_capture_probabilities;
 
