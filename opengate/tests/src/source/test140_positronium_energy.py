@@ -102,7 +102,7 @@ if __name__ == "__main__":
     plt.figure()
     plt.stairs(counts, bins)
     plt.plot(xs, expected_distribution)
-    plt.savefig(paths.output / "distribution.pdf")
+    plt.savefig(paths.output / "energy.pdf")
 
     ks = scipy.stats.kstest(counts, expected_distribution)
     is_ok = ks.pvalue > .05
