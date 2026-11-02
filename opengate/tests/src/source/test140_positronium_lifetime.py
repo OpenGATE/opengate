@@ -24,10 +24,10 @@ SPEED_OF_LIGHT_MM_PER_NS = 299.79246
 
 
 def propagation_time(hit_position, source_position):
-    distance_cm = np.sqrt((hit_position[0] - source_position[0])**2 +
-                          (hit_position[1] - source_position[1])**2 +
-                          (hit_position[2] - source_position[2])**2)
-    return distance_cm / SPEED_OF_LIGHT_MM_PER_NS
+    distance = np.sqrt((hit_position[0] - source_position[0])**2 +
+                       (hit_position[1] - source_position[1])**2 +
+                       (hit_position[2] - source_position[2])**2)
+    return distance / SPEED_OF_LIGHT_MM_PER_NS
 
 
 def emission_time(hit_time, propagation_time):
