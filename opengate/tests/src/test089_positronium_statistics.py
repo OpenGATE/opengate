@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     # test sources
     source = sim.add_source("PositroniumSource", "source")
-    source.n = n
+    source.number_of_primaries = n
     source.position.type = "sphere"
     source.position.radius = 20 * cm
 
