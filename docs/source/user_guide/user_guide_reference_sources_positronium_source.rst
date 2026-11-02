@@ -86,22 +86,22 @@ Examples
 .. code:: python
 
     source = sim.add_source("PositroniumSource", "source")
-    source.positronium_fractions = [.5, .5]
+    source.channels_from_fractions.fractions = [.5, .5]
+    source.channels_from_fractions.decay_kinds = ["k2Gamma", "k3Gamma"]
     source.positronium_lifetimes = [0.122 * ns, 0.122 * ns]
-    source.decay_kinds = ["k2Gamma", "k3Gamma"]
     source.prompt_photon_probabilities = [.25, .33]
     source.prompt_photon_energies = [1.244 * MeV, 1.244 * MeV]
 
-- Defining the positronium channels using intensitites:
+- Defining the positronium channels using intensities:
 
 .. code:: python
 
     source = sim.add_source("PositroniumSource", "source")
     source.channels_from_intensities.intensities = [12, 4, 2, 2]
+    source.channels_from_intensities.positron_interactions = ["kDirect", "kOrthoPs", "kParaPs", "kOrthoPs"]
     source.positronium_lifetimes = [.4, 2., .125, 50.]
     source.prompt_gamma_probabilities = [5, 6, 7, 8]
     source.prompt_gamma_energies = [1., 2., 3., 4.]
-    source.channels_from_intensities.positron_interactions = ["kDirect", "kOrthoPs", "kParaPs", "kOrthoPs"]
 
 
 Reference
