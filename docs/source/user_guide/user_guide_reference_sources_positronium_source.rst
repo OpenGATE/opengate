@@ -69,6 +69,15 @@ If ``mean_positron_range`` is used, the annihilation vertex position is addition
 
 If the electron-capture probability is very high and the prompt-gamma probability is very low, event generation can become inefficient because the source retries until at least one primary vertex is created. The code emits a warning when the probability of producing neither a prompt gamma nor an annihilation exceeds 90% for a component.
 
+Decay index
+-----------
+
+The positronium source provides a ``PositroniumDecayIndex`` field in the output ROOT files. This attributes corresponds to the 0-based index of the positronium channel that produced the detected photon. It allows to keep track of whether the detected photon comes from a back-to-back annihilation, an ortho-positronium annihilation, or a para-positronium annihilation.
+
+.. note::
+
+   The ``PositroniumDecayIndex`` digitizer attribute is not automatically propagated through the currently defined digitizers. When a digitizer processes the hits, this attribute is lost. If the user needs to keep track of the decay index of the positronium source after merging hits, they must implement a custom strategy for this attribute within a digitizer.
+
 Examples
 --------
 
