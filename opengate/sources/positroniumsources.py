@@ -47,6 +47,7 @@ class PositroniumSource(GenericSource):
     }
 
     def __init__(self, *args, **kwargs):
+        self.initialized = False
         GenericSource.__init__(self, *args, **kwargs)
 
     def create_g4_source(self):
@@ -54,57 +55,64 @@ class PositroniumSource(GenericSource):
 
     def initialize_g4_source(self, g4_source, run_timing_intervals):
 
-        fractions_provided = len(self.channels_from_fractions.fractions) > 0
-        intensities_provided = len(
-            self.channels_from_intensities.intensities) > 0
+        # Only run all the checks during the first initialisation.
+        if not self.initialized:
 
-        if fractions_provided and intensities_provided:
-            fatal("Cannot provide both fractions and intensities")
-        elif not fractions_provided and not intensities_provided:
-            fatal("Either fractions or intensities must be provided")
-        elif fractions_provided:
-            specific_parameters = [
-                self.channels_from_fractions.fractions,
-                self.channels_from_fractions.decay_kinds
+            fractions_provided = len(
+                self.channels_from_fractions.fractions) > 0
+            intensities_provided = len(
+                self.channels_from_intensities.intensities) > 0
+
+            if fractions_provided and intensities_provided:
+                fatal("Cannot provide both fractions and intensities")
+            elif not fractions_provided and not intensities_provided:
+                fatal("Either fractions or intensities must be provided")
+            elif fractions_provided:
+                specific_parameters = [
+                    self.channels_from_fractions.fractions,
+                    self.channels_from_fractions.decay_kinds
+                ]
+            elif intensities_provided:
+                specific_parameters = [
+                    self.channels_from_intensities.intensities,
+                    self.channels_from_intensities.positron_interactions
+                ]
+            else:
+                fatal("Should never happen")
+
+            # Default values
+            number_of_channels = len(specific_parameters[0])  # arbitrary
+            if len(self.mean_positron_range) == 0:
+                self.mean_positron_range = [0.] * number_of_channels
+            if len(self.electron_capture_probabilities) == 0:
+                self.electron_capture_probabilities = [0.] * number_of_channels
+
+            common_parameters = [
+                self.positronium_lifetimes, self.prompt_gamma_probabilities,
+                self.prompt_gamma_energies, self.mean_positron_range,
+                self.electron_capture_probabilities
             ]
-        elif intensities_provided:
-            specific_parameters = [
-                self.channels_from_intensities.positron_interactions,
-                self.channels_from_intensities.positron_interactions
-            ]
-        else:
-            fatal("Should never happen")
 
-        # Default values
-        number_of_channels = len(specific_parameters[0])  # arbitrary
-        if len(self.mean_positron_range) == 0:
-            self.mean_positron_range = [0.] * number_of_channels
-        if len(self.electron_capture_probabilities) == 0:
-            self.electron_capture_probabilities = [0.] * number_of_channels
+            parameters = [*specific_parameters, *common_parameters]
 
-        common_parameters = [
-            self.positronium_lifetimes, self.prompt_gamma_probabilities,
-            self.prompt_gamma_energies, self.mean_positron_range,
-            self.electron_capture_probabilities
-        ]
+            if not all(
+                    len(common_parameters[0]) == len(p)
+                    for p in parameters[1:]):
+                fatal("Positronium source parameters have different lengths")
 
-        parameters = [*specific_parameters, *common_parameters]
+            if any(len(p) == 0 for p in common_parameters):
+                fatal("Positronium must have at least one decay channel")
 
-        if not all(
-                len(common_parameters[0]) == len(p) for p in parameters[1:]):
-            fatal("Positronium source parameters have different lengths")
+            if intensities_provided:
+                self.calculate_channels_from_lifetimes()
 
-        if any(len(p) == 0 for p in common_parameters):
-            fatal("Positronium must have at least one decay channel")
-
-        if intensities_provided:
-            self.calculate_channels_from_lifetimes()
-
-        if self.particle != "gamma":
-            fatal("Positronium source can only emit gamma particles")
+            if self.particle != "gamma":
+                fatal("Positronium source can only emit gamma particles")
 
         GenericSource.initialize_g4_source(self, g4_source,
                                            run_timing_intervals)
+
+        self.initialized = True
 
     # Helpers
 
