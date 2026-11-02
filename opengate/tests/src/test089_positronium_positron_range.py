@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # test sources
     source = sim.add_source("PositroniumSource", "source")
-    source.n = 1000
+    source.number_of_primaries = 1000
     source.position.type = "point"
 
     source.channels_from_fractions.fractions = [1.]

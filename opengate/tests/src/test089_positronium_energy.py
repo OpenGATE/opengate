@@ -60,7 +60,7 @@ if __name__ == "__main__":
     source = sim.add_source("PositroniumSource", "source")
     source.position.type = "sphere"
     source.position.radius = 1 * mm
-    source.n = 10_000
+    source.number_of_primaries = 10_000
 
     source.channels_from_fractions.fractions = [1.]
     source.channels_from_fractions.decay_kinds = ["k3Gamma"]

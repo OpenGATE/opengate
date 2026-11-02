@@ -29,7 +29,7 @@ As for other sources, the activity and the spatial or temporal distributions are
 
 .. code:: python
 
-    source.n = 1000
+    source.number_of_primaries = 1000
     source.position.type = "sphere"
     source.position.radius = 20 * cm
 

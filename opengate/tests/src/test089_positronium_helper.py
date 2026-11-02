@@ -38,7 +38,7 @@ def test_calculate_fractions_from_lifetimes():
 
     # test sources
     source = sim.add_source("PositroniumSource", "source")
-    source.n = 100
+    source.number_of_primaries = 100
     source.channels_from_intensities.intensities = intensities
     source.positronium_lifetimes = positronium_lifetimes
     source.prompt_gamma_probabilities = prompt_gamma_probabilities
