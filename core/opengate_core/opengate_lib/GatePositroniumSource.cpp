@@ -43,7 +43,7 @@ void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
   pModel = std::make_unique<GatePositroniumDecayModel>(params);
 }
 
-std::vector<PositroniumDecayKind> GatePositroniumSource::ParsePositroniumDecayKind(const std::vector<string> & decayKindsStr) {
+std::vector<PositroniumDecayKind> GatePositroniumSource::ParsePositroniumDecayKind(const std::vector<std::string> & decayKindsStr) {
   std::vector<PositroniumDecayKind> decayKinds;
   for(auto const & decayKindStr : decayKindsStr) {
     if (decayKindStr == "k2Gamma") {
@@ -59,10 +59,10 @@ std::vector<PositroniumDecayKind> GatePositroniumSource::ParsePositroniumDecayKi
 
 void GatePositroniumSource::GeneratePrimaries(G4Event *event,
                                           double current_simulation_time) {
-  auto &ll = GetThreadLocalDataGenericSource();
-  ll.fSPS->SetParticleTime(current_simulation_time);
-  auto vertex = ll.fSPS->GetPosDist()->VGenerateOne();
-  auto number_of_vertices = pModel->GeneratePrimaryVertices(event, current_simulation_time, vertex);
-  auto &l = GetThreadLocalData();
-  l.fNumberOfGeneratedEvents++;
+  fSPS->SetParticleTime(current_simulation_time);
+  auto vertex = fSPS->GetPosDist()->VGenerateOne();
+  auto number_of_vertices=pModel->GeneratePrimaryVertices(event, current_simulation_time, vertex);
+  fNumberOfGeneratedEvents++;
+  fTotalGeneratedEvents++;
+  fRunGeneratedEvents++;
 }
