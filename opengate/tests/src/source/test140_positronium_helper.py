@@ -91,8 +91,8 @@ def test_normalize_fractions():
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__,
-                                           "gate_test089_positronium_helper",
-                                           output_folder="test089")
+                                           "gate_test140_positronium_helper",
+                                           output_folder="test140")
 
     is_ok = True
 
