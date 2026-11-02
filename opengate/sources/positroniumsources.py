@@ -5,7 +5,7 @@ from ..base import process_cls
 from ..exception import fatal
 
 
-class PositroniumSource(GenericSource, g4.GatePositroniumSource):
+class PositroniumSource(GenericSource):
     """
     positroniumSource close to the G4 SPS, but a bit simpler.
     The G4 source created by this class is GatePositroniumSource.
@@ -47,13 +47,12 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
     }
 
     def __init__(self, *args, **kwargs):
-        self.__initcpp__()
-        super().__init__(self, *args, **kwargs)
+        GenericSource.__init__(self, *args, **kwargs)
 
-    def __initcpp__(self):
-        g4.GatePositroniumSource.__init__(self)
+    def create_g4_source(self):
+        return g4.GatePositroniumSource()
 
-    def initialize(self, run_timing_intervals):
+    def initialize_g4_source(self, g4_source, run_timing_intervals):
 
         fractions_provided = len(self.channels_from_fractions.fractions) > 0
         intensities_provided = len(
@@ -104,7 +103,8 @@ class PositroniumSource(GenericSource, g4.GatePositroniumSource):
         if self.particle != "gamma":
             fatal("Positronium source can only emit gamma particles")
 
-        GenericSource.initialize(self, run_timing_intervals)
+        GenericSource.initialize_g4_source(self, g4_source,
+                                           run_timing_intervals)
 
     # Helpers
 
