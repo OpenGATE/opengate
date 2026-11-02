@@ -105,6 +105,6 @@ if __name__ == "__main__":
     plt.savefig(paths.output / "distribution.pdf")
 
     ks = scipy.stats.kstest(counts, expected_distribution)
-    is_ok = ks.pvalue > .95
+    is_ok = ks.pvalue > .05
 
     utility.test_ok(is_ok)
