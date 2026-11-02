@@ -7,7 +7,7 @@
 
 #include "../GateUniqueVolumeIDManager.h"
 #include "../GateUserEventInformation.h"
-#include "../GateEmittedGammaInformation.h"
+#include "../positronium/GateEmittedGammaInformation.h"
 #include "../filters/GatePrimaryScatterFilter.h"
 #include "GateDigiAttributeManager.h"
 #include <G4Run.hh>
