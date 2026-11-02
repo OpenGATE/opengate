@@ -40,7 +40,7 @@ public:
 protected:
   unsigned long fNumberOfGeneratedEvents;
 
-  std::vector<PositroniumDecayKind> ParsePositroniumDecayKind(const std::vector<string> & decayKindsStr);
+  std::vector<PositroniumDecayKind> ParsePositroniumDecayKind(const std::vector<std::string> & decayKindsStr);
 
 protected:
   std::unique_ptr<GateGammaEmissionModel> pModel;
