@@ -74,8 +74,8 @@ def calculate_lifetimes(group):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__,
-                                           "gate_test089_positronium_lifetime",
-                                           output_folder="test089")
+                                           "gate_test140_positronium_lifetime",
+                                           output_folder="test140")
     print("Starting")
 
     # create the simulation
@@ -116,9 +116,8 @@ if __name__ == "__main__":
     ]
     phsp.debug = True
     phsp.steps_to_store = "first"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    phsp.filters.append(f)
+    F = gate.actors.filters.GateFilterBuilder()
+    phsp.filter = F.ParticleName == "gamma"
     phsp.output_filename = "output_positronium_lifetime.root"
 
     # start simulation
