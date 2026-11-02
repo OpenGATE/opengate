@@ -102,8 +102,8 @@ if __name__ == "__main__":
     source.channels_from_fractions.fractions = [1.]
     source.channels_from_fractions.decay_kinds = ["k3Gamma"]
     source.positronium_lifetimes = [MEAN_LIFETIME_NS * ns]
-    source.prompt_gamma_probabilities = [1.]
-    source.prompt_gamma_energies = [PROMPT_PHOTON_KINETIC_ENERGY_MEV * MeV]
+    source.prompt_photon_probabilities = [1.]
+    source.prompt_photon_energies = [PROMPT_PHOTON_KINETIC_ENERGY_MEV * MeV]
 
     # actors
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

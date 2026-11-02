@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     # parameters
     n = 1000
-    gammasPromptProbability = 1.
+    promptPhotonProbability = 1.
     electronCaptureProbability = .25
 
     # test sources
@@ -50,8 +50,8 @@ if __name__ == "__main__":
     source.channels_from_fractions.fractions = [1.]
     source.channels_from_fractions.decay_kinds = ["k2Gamma"]
     source.positronium_lifetimes = [0.122 * ns]
-    source.prompt_gamma_probabilities = [gammasPromptProbability]
-    source.prompt_gamma_energies = [1.244 * MeV]
+    source.prompt_photon_probabilities = [promptPhotonProbability]
+    source.prompt_photon_energies = [1.244 * MeV]
     source.electron_capture_probabilities = [electronCaptureProbability]
 
     # actors
@@ -64,11 +64,11 @@ if __name__ == "__main__":
     # get results
     print(stats)
 
-    # check expected number of gammas
-    expected_number_of_gammas = n * 2. * (
-        1. - electronCaptureProbability) + n * gammasPromptProbability
+    # check expected number of photons
+    expected_number_of_photons = n * 2. * (
+        1. - electronCaptureProbability) + n * promptPhotonProbability
     is_ok = math.isclose(stats.user_output.stats.merged_data.track_types.gamma,
-                         expected_number_of_gammas,
+                         expected_number_of_photons,
                          rel_tol=0.,
                          abs_tol=100.)
     utility.test_ok(is_ok)

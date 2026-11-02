@@ -29,11 +29,11 @@ class PositroniumSource(GenericSource):
         "positronium_lifetimes": ([], {
             "doc": "Lifetimes of each decay channel "
         }),
-        "prompt_gamma_probabilities": ([], {
+        "prompt_photon_probabilities": ([], {
             "doc":
             "Prompt photon probability of each decay channel"
         }),
-        "prompt_gamma_energies": ([], {
+        "prompt_photon_energies": ([], {
             "doc": "Photon energy of each decay channel"
         }),
         "mean_positron_range": ([], {
@@ -88,8 +88,8 @@ class PositroniumSource(GenericSource):
                 self.electron_capture_probabilities = [0.] * number_of_channels
 
             common_parameters = [
-                self.positronium_lifetimes, self.prompt_gamma_probabilities,
-                self.prompt_gamma_energies, self.mean_positron_range,
+                self.positronium_lifetimes, self.prompt_photon_probabilities,
+                self.prompt_photon_energies, self.mean_positron_range,
                 self.electron_capture_probabilities
             ]
 
@@ -131,8 +131,8 @@ class PositroniumSource(GenericSource):
         fractions = []
         decay_kinds = []
         positronium_lifetimes = []
-        prompt_gamma_probabilities = []
-        prompt_gamma_energies = []
+        prompt_photon_probabilities = []
+        prompt_photon_energies = []
         positron_interactions = []
         electron_capture_probabilities = []
         mean_positron_range = []
@@ -162,12 +162,12 @@ class PositroniumSource(GenericSource):
 
                 positronium_lifetimes.append(self.positronium_lifetimes[i])
                 positronium_lifetimes.append(self.positronium_lifetimes[i])
-                prompt_gamma_probabilities.append(
-                    self.prompt_gamma_probabilities[i])
-                prompt_gamma_probabilities.append(
-                    self.prompt_gamma_probabilities[i])
-                prompt_gamma_energies.append(self.prompt_gamma_energies[i])
-                prompt_gamma_energies.append(self.prompt_gamma_energies[i])
+                prompt_photon_probabilities.append(
+                    self.prompt_photon_probabilities[i])
+                prompt_photon_probabilities.append(
+                    self.prompt_photon_probabilities[i])
+                prompt_photon_energies.append(self.prompt_photon_energies[i])
+                prompt_photon_energies.append(self.prompt_photon_energies[i])
                 positron_interactions.append(
                     self.channels_from_intensities.positron_interactions[i])
                 positron_interactions.append(
@@ -185,13 +185,14 @@ class PositroniumSource(GenericSource):
         if pPs_inter > 0:
             if pPs_index < 0:
                 fatal(
-                    "A non-zero para-Ps fraction was derived from the ortho-Ps components, but no kParaPs entry was provided in fPositronInteractions to supply its lifetime/prompt-gamma parameters."
+                    "A non-zero para-Ps fraction was derived from the ortho-Ps components, but no kParaPs entry was provided in fPositronInteractions to supply its lifetime/prompt-photon parameters."
                 )
             fractions.append(pPs_inter)
             positronium_lifetimes.append(self.positronium_lifetimes[pPs_index])
-            prompt_gamma_probabilities.append(
-                self.prompt_gamma_probabilities[pPs_index])
-            prompt_gamma_energies.append(self.prompt_gamma_energies[pPs_index])
+            prompt_photon_probabilities.append(
+                self.prompt_photon_probabilities[pPs_index])
+            prompt_photon_energies.append(
+                self.prompt_photon_energies[pPs_index])
             decay_kinds.append("k2Gamma")
             positron_interactions.append("kParaPs")
             if len(self.electron_capture_probabilities) > 0:
@@ -209,8 +210,8 @@ class PositroniumSource(GenericSource):
         self.channels_from_fractions.fractions = fractions
         self.channels_from_fractions.decay_kinds = decay_kinds
         self.positronium_lifetimes = positronium_lifetimes
-        self.prompt_gamma_probabilities = prompt_gamma_probabilities
-        self.prompt_gamma_energies = prompt_gamma_energies
+        self.prompt_photon_probabilities = prompt_photon_probabilities
+        self.prompt_photon_energies = prompt_photon_energies
         self.channels_from_intensities.positron_interactions = positron_interactions
         self.electron_capture_probabilities = electron_capture_probabilities
         self.mean_positron_range = mean_positron_range
