@@ -39,10 +39,10 @@ if __name__ == "__main__":
 
     # parameters
     n = 1000
-    twoGammasRatio = .5
-    threeGammasRatio = .5
-    twoGammasPromptProbability = 0.
-    threeGammasPromptProbability = 1.
+    twoPhotonsRatio = .5
+    threePhotonsRatio = .5
+    twoPromptPhotonsPromptProbability = 0.
+    threePromptPhotonsProbability = 1.
 
     # test sources
     source = sim.add_source("PositroniumSource", "source")
@@ -51,14 +51,14 @@ if __name__ == "__main__":
     source.position.radius = 20 * cm
 
     source.channels_from_fractions.fractions = [
-        twoGammasRatio, threeGammasRatio
+        twoPhotonsRatio, threePhotonsRatio
     ]
     source.channels_from_fractions.decay_kinds = ["k2Gamma", "k3Gamma"]
     source.positronium_lifetimes = [0.122 * ns, 0.122 * ns]
-    source.prompt_gamma_probabilities = [
-        twoGammasPromptProbability, threeGammasPromptProbability
+    source.prompt_photon_probabilities = [
+        twoPromptPhotonsPromptProbability, threePromptPhotonsProbability
     ]
-    source.prompt_gamma_energies = [1.244 * MeV, 1.244 * MeV]
+    source.prompt_photon_energies = [1.244 * MeV, 1.244 * MeV]
     source.mean_positron_range = [0. * mm, 0. * mm]
     source.electron_capture_probabilities = [0., 0.]
 
@@ -72,13 +72,13 @@ if __name__ == "__main__":
     # get results
     print(stats)
 
-    # check expected number of gammas
-    expected_number_of_gammas = (n * twoGammasRatio *
-                                 (2 + twoGammasPromptProbability)) + (
-                                     n * threeGammasRatio *
-                                     (3 + threeGammasPromptProbability))
+    # check expected number of photons
+    expected_number_of_photons = (n * twoPhotonsRatio *
+                                  (2 + twoPromptPhotonsPromptProbability)) + (
+                                      n * threePhotonsRatio *
+                                      (3 + threePromptPhotonsProbability))
     is_ok = math.isclose(stats.user_output.stats.merged_data.track_types.gamma,
-                         expected_number_of_gammas,
+                         expected_number_of_photons,
                          rel_tol=0.,
                          abs_tol=100.)
     utility.test_ok(is_ok)
