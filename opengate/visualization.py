@@ -25,6 +25,7 @@ one it was built with on the machine it runs on.  What this module adds is a
 
     cuda   render on the NVIDIA proprietary driver (device choice, not an API)
     vulkan vtkWebGPURenderWindow with the Vulkan backend (Dawn)
+    metal  vtkWebGPURenderWindow with the Metal backend (Dawn, macOS)
     gpu    the default VTK backend on whatever GPU is present
     cpu    software rendering (OSMesa / Mesa llvmpipe)
 
@@ -49,7 +50,12 @@ from pathlib import Path
 from .logger import logger
 
 # Preference order of the backend ladder (discussion #1228).
-BACKENDS = ("cuda", "vulkan", "gpu", "cpu")
+BACKENDS = ("cuda", "vulkan", "metal", "gpu", "cpu")
+
+# The rungs that go through VTK's WebGPU module (Dawn), and the Dawn backend
+# each one asks for: they are the only ones that need a VTK built with
+# VTK_ENABLE_WEBGPU (the PyPI wheels are not).
+_WEBGPU_RUNGS = {"vulkan": "Vulkan", "metal": "Metal"}
 
 # Vendors/renderers that mean "this is not a GPU".
 _SOFTWARE_MARKERS = (
@@ -184,11 +190,82 @@ def _read_capabilities(window):
         elif line.lower().startswith("opengl version string:"):
             version = line.split(":", 1)[1].strip()
     if not renderer:
+        # the WebGPU window reports an "Adapter" block instead of GL strings
+        for line in (caps or "").splitlines():
+            line = line.strip()
+            key = line.split(":", 1)[0].strip().lower()
+            if key in ("vendor", "name", "driver description", "architecture"):
+                value = line.split(":", 1)[1].strip()
+                if key == "vendor":
+                    vendor = value
+                elif key == "name":
+                    renderer = value
+                elif key == "driver description":
+                    version = value
+    if not renderer:
         try:
             renderer = window.GetClassName()
         except Exception:
             pass
     return vendor, renderer, version
+
+
+# The concrete classes the factory would pick for OpenGL.  A VTK built with
+# both modules hands out the WebGPU window for a plain vtkRenderWindow() (the
+# factory preference does not override it on 9.7/macOS), so the OpenGL rungs
+# have to name the window of their platform.
+_GL_WINDOW_CLASSES = {
+    "darwin": ("vtkCocoaRenderWindow",),
+    "win32": ("vtkWin32OpenGLRenderWindow",),
+}
+_GL_WINDOW_CLASSES_LINUX = (
+    "vtkXOpenGLRenderWindow",
+    "vtkWaylandOpenGLRenderWindow",
+)
+
+
+def _gl_window(vtk):
+    """The OpenGL render window of this platform, or a plain vtkRenderWindow."""
+    names = _GL_WINDOW_CLASSES.get(sys.platform)
+    if names is None:
+        names = _GL_WINDOW_CLASSES_LINUX if sys.platform.startswith("linux") else ()
+    for name in names:
+        cls = getattr(vtk, name, None)
+        if cls is not None:
+            try:
+                return cls()
+            except Exception:
+                continue
+    return vtk.vtkRenderWindow()
+
+
+def _gl_rung_window(vtk):
+    """_gl_window(), refusing a VTK build whose factory is WebGPU-only.
+
+    A build with both modules links RenderingOpenGL2, but its object factory
+    hands out the WebGPU classes unconditionally (9.7/macOS ignores
+    VTK_FACTORY_PREFER=RenderingBackend=OpenGL2), and mixing those mappers
+    with an OpenGL window aborts the process.  Creating a mapper is the cheap
+    way to know before a window is rendered.
+    """
+    window = _gl_window(vtk)
+    if "webgpu" in window.GetClassName().lower():
+        raise _RungUnavailable(
+            "this VTK build has no OpenGL render window (WebGPU only): the "
+            "gpu and cpu rungs need one built with RenderingOpenGL2"
+        )
+    try:
+        mapper = vtk.vtkPolyDataMapper().GetClassName()
+    except Exception:
+        mapper = ""
+    if "webgpu" in mapper.lower():
+        raise _RungUnavailable(
+            "this VTK build always creates the WebGPU classes (its object "
+            "factory ignores RenderingBackend=OpenGL2), so its OpenGL path "
+            "cannot be used: install the vtk wheel, or build VTK with "
+            "WebGPU for the vtk-metal/vtk-vulkan rungs only"
+        )
+    return window
 
 
 def _make_window(vtk, rung, nvidia):
@@ -199,27 +276,46 @@ def _make_window(vtk, rung, nvidia):
     """
     device_index = -1
 
-    if rung == "vulkan":
+    if rung in _WEBGPU_RUNGS:
         cls = getattr(vtk, "vtkWebGPURenderWindow", None)
         if cls is None:
             raise _RungUnavailable(
-                "VTK was not built with RenderingWebGPU (no vtkWebGPURenderWindow)"
+                "VTK was not built with RenderingWebGPU (no vtkWebGPURenderWindow); "
+                "the PyPI wheels are not, a build needs -DVTK_ENABLE_WEBGPU=ON"
             )
+        # When both backends are linked, VTK's object factory prefers OpenGL2
+        # unless told otherwise, and it reads that preference when the first
+        # VTK object of the process is created (Rendering/WebGPU/README.md).
+        # The probe therefore gives the WebGPU rungs their own child process;
+        # setting it here only helps when this module is used directly.
+        os.environ.setdefault("VTK_FACTORY_PREFER", "RenderingBackend=WebGPU")
         window = cls()
+        config = window.GetWGPUConfiguration()
+        if config is None:
+            raise _RungUnavailable(
+                "this vtkWebGPURenderWindow has no WGPU configuration"
+            )
+        wanted = _WEBGPU_RUNGS[rung]
         try:
-            window.SetBackendTypeToVulkan()
+            config.SetBackend(getattr(vtk.vtkWebGPUConfiguration.BackendType, wanted))
         except AttributeError:
             raise _RungUnavailable(
-                "this VTK has no vtkWebGPURenderWindow.SetBackendTypeToVulkan()"
+                f"this VTK has no vtkWebGPUConfiguration.BackendType.{wanted}"
             )
-        return window, "vulkan", device_index
+        # A backend with no adapter stalls for a minute by default (Dawn waits
+        # for a device that will never come): the probe must not.
+        try:
+            config.SetTimeout(5000)
+        except Exception:
+            pass
+        return window, wanted.lower(), device_index
 
     if rung == "cuda":
         if not nvidia:
             raise _RungUnavailable(
                 "no NVIDIA device found (checked /dev/nvidia*, nvidia-smi)"
             )
-        window = vtk.vtkRenderWindow()
+        window = _gl_rung_window(vtk)
         # The device is *verified* after the first render, in _evaluate_rung:
         # the driver must report NVIDIA, otherwise this rung is refused.  That
         # is what catches the hybrid (Optimus/PRIME) case, where the default
@@ -250,19 +346,22 @@ def _make_window(vtk, rung, nvidia):
                 return cls(), "osmesa", device_index
             except Exception:
                 pass
-        # llvmpipe is still reached through the plain window; the vendor string
+        # llvmpipe is still reached through the OpenGL window; the vendor string
         # tells whether it is software, and _evaluate_rung checks that.
-        return vtk.vtkRenderWindow(), "opengl2", device_index
+        return _gl_rung_window(vtk), "opengl2", device_index
 
     # gpu
-    return vtk.vtkRenderWindow(), "opengl2", device_index
+    return _gl_rung_window(vtk), "opengl2", device_index
 
 
 def _render_test(vtk, window):
-    """Draw one 32x32 offscreen frame.  Returns (ms, blank).
+    """Draw one 32x32 offscreen frame.  Returns (ms, blank, mapper class).
 
     The window is left initialised on purpose: ReportCapabilities() segfaults
     on some VTK builds (9.7/macOS) when it is called before the first render.
+    The mapper class is what tells whether the WebGPU module is driving the
+    render: VTK's WebGPU window reports neither GetRenderingBackend() (always
+    "") nor always a ready device.
     """
     window.SetOffScreenRendering(1)
     window.SetSize(32, 32)
@@ -298,19 +397,47 @@ def _render_test(vtk, window):
     except Exception:
         blank = False  # cannot read back: do not claim it is blank
 
-    return ms, blank
+    return ms, blank, mapper.GetClassName()
 
 
 def _evaluate_rung(vtk, rung, nvidia):
     window, api, device_index = _make_window(vtk, rung, nvidia)
 
     # render first: ReportCapabilities() needs an initialised GL/Vulkan context
-    ms, blank = _render_test(vtk, window)
+    ms, blank, mapper_class = _render_test(vtk, window)
     vendor, renderer, version = _read_capabilities(window)
+    # the adapter type must be read while the device is alive: Finalize()
+    # destroys it, and the configuration then reports Undefined
+    in_use = ""
+    if rung in _WEBGPU_RUNGS:
+        try:
+            config = window.GetWGPUConfiguration()
+            in_use = (config.GetBackendInUseAsString() or "") if config else ""
+        except Exception:
+            in_use = ""
+        if in_use.lower() == "undefined":
+            in_use = ""
     try:
         window.Finalize()
     except Exception:
         pass
+
+    if rung in _WEBGPU_RUNGS:
+        # The window accepted the request; the driver must now confirm it.  The
+        # proof is that the scene is drawn by the WebGPU module, plus the
+        # adapter type Dawn reports when the device is ready (a backend the
+        # build does not have never gets that far: the adapter request fails).
+        wanted = _WEBGPU_RUNGS[rung]
+        if "webgpu" not in (mapper_class or "").lower():
+            raise _RungUnavailable(
+                f"the WebGPU module is not driving the render (mappers are "
+                f"'{mapper_class}'), so the {wanted} backend was not used"
+            )
+        if in_use and in_use.lower() != wanted.lower():
+            raise _RungUnavailable(
+                f"Dawn was asked for {wanted} and delivered {in_use}"
+            )
+        renderer = f"{in_use or wanted} via WebGPU"
 
     driver = (vendor + " " + renderer).lower()
     software = any(m in driver for m in _SOFTWARE_MARKERS)
@@ -354,12 +481,27 @@ def probe_rendering(only=None):
     Each entry is a dict with ``backend``, ``available`` and either the
     BackendInfo fields or the ``reason`` it was skipped.  This is what
     ``opengate_visu --probe`` prints, and what the unit tests exercise.
+
+    ``only`` restricts the rungs (a name, or a sequence of names): the probe
+    gives the WebGPU rungs their own process, since VTK's backend preference
+    can only be set before the first VTK object of a process exists.
     """
     vtk = import_vtk()
     nvidia = _nvidia_devices()
     reports = []
-    rungs = BACKENDS if only is None else (only,)
-    for rung in rungs:
+    if only is None:
+        rungs = BACKENDS
+    elif isinstance(only, str):
+        rungs = (only,)
+    else:
+        rungs = tuple(only)
+    # The OpenGL rungs first: asking for WebGPU sets VTK_FACTORY_PREFER, which
+    # VTK reads once per process and never gives back, so a WebGPU rung would
+    # turn every later rung into another WebGPU window.
+    ordered = tuple(r for r in rungs if r not in _WEBGPU_RUNGS) + tuple(
+        r for r in rungs if r in _WEBGPU_RUNGS
+    )
+    for rung in ordered:
         try:
             info = _evaluate_rung(vtk, rung, nvidia)
             entry = asdict(info)
@@ -374,33 +516,55 @@ def probe_rendering(only=None):
             }
         entry["nvidia_devices"] = nvidia
         reports.append(entry)
-    return reports
+    return sorted(reports, key=lambda report: rungs.index(report["backend"]))
 
 
 _PROBE_PREFIX = "VISU_PROBE_JSON:"
 
 
 def _probe_in_child(timeout=180):
-    """Run the probe in a child process, one JSON line per rung.
+    """Run the probe in child processes, one JSON line per rung.
 
     A graphics backend can abort the whole process (on VTK 9.7/macOS, the
     OSMesa rung does), and no try/except catches a segfault.  The child streams
     its results, so a crash only loses the rung that crashed, and never kills a
     simulation that has already run (#1228: "probe in a child process").
+
+    Each WebGPU rung gets a child of its own, started with VTK_FACTORY_PREFER
+    set: VTK reads that preference when the first VTK object of a process is
+    created, so a process that has already rendered with OpenGL cannot switch
+    to WebGPU, and two WebGPU backends cannot be tried in one process either.
     """
-    code = (
-        "import json\n"
-        "from opengate.visualization import probe_rendering\n"
-        "for report in probe_rendering():\n"
-        f"    print({_PROBE_PREFIX!r} + json.dumps(report), flush=True)\n"
-    )
-    process = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True, timeout=timeout
-    )
     reports = []
-    for line in process.stdout.splitlines():
-        if line.startswith(_PROBE_PREFIX):
-            reports.append(json.loads(line[len(_PROBE_PREFIX) :]))
+    for rung in BACKENDS:
+        env = dict(os.environ)
+        if rung in _WEBGPU_RUNGS:
+            env["VTK_FACTORY_PREFER"] = "RenderingBackend=WebGPU"
+        if rung == "cuda":
+            group = ("cuda", "gpu", "cpu")
+        elif rung in _WEBGPU_RUNGS:
+            group = (rung,)
+        else:
+            continue  # already covered by the cuda group
+        code = (
+            "import json\n"
+            "from opengate.visualization import probe_rendering\n"
+            f"for report in probe_rendering({list(group)!r}):\n"
+            f"    print({_PROBE_PREFIX!r} + json.dumps(report), flush=True)\n"
+        )
+        try:
+            process = subprocess.run(
+                [sys.executable, "-c", code],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env=env,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        for line in process.stdout.splitlines():
+            if line.startswith(_PROBE_PREFIX):
+                reports.append(json.loads(line[len(_PROBE_PREFIX) :]))
     seen = {report["backend"] for report in reports}
     for rung in BACKENDS:
         if rung not in seen:
@@ -412,7 +576,7 @@ def _probe_in_child(timeout=180):
                     "backend (graphics driver crash)",
                 }
             )
-    return reports
+    return sorted(reports, key=lambda report: BACKENDS.index(report["backend"]))
 
 
 def probe_backends():
@@ -674,15 +838,38 @@ def add_slices(renderer, slices, outline_color=(0.5, 0.5, 0.5)):
             scalars.SetNumberOfComponents(1)
             image.GetPointData().SetScalars(scalars)
 
-            mapper = vtk.vtkImageSliceMapper()
-            mapper.SetInputData(image)
-            mapper.SetOrientationToZ()
+            if "webgpu" in renderer.GetClassName().lower():
+                # The WebGPU module implements neither vtkImageSliceMapper nor
+                # vtkImageActor (VTK 9.7), and an OpenGL image actor cannot
+                # take a WebGPU mapper.  A textured plane uses the classes
+                # that are implemented on both paths; the slice data is
+                # already windowed in [0, 1], so a greyscale lookup table
+                # reproduces what the GL path shows with window/level.  That
+                # path has no nearest-neighbour sampling, so slices are
+                # interpolated there.
+                ha, hb = _outline_half_sizes(kind, volume["half_size_mm"])
+                quad = vtk.vtkPlaneSource()
+                quad.SetOrigin(-ha, -hb, 0.0)
+                quad.SetPoint1(ha, -hb, 0.0)
+                quad.SetPoint2(-ha, hb, 0.0)
+                mapper = vtk.vtkPolyDataMapper()
+                mapper.SetInputConnection(quad.GetOutputPort())
+                texture = vtk.vtkTexture()
+                texture.SetInputData(image)
+                texture.SetLookupTable(_greyscale_lut(vtk))
+                actor = vtk.vtkActor()
+                actor.SetMapper(mapper)
+                actor.SetTexture(texture)
+            else:
+                mapper = vtk.vtkImageSliceMapper()
+                mapper.SetInputData(image)
+                mapper.SetOrientationToZ()
 
-            actor = vtk.vtkImageSlice()
-            actor.SetMapper(mapper)
-            actor.GetProperty().SetInterpolationTypeToNearest()
-            actor.GetProperty().SetColorWindow(1.0)
-            actor.GetProperty().SetColorLevel(0.5)
+                actor = vtk.vtkImageSlice()
+                actor.SetMapper(mapper)
+                actor.GetProperty().SetInterpolationTypeToNearest()
+                actor.GetProperty().SetColorWindow(1.0)
+                actor.GetProperty().SetColorLevel(0.5)
             # local frame of the box -> world
             to_world = _compose(
                 vtk,
@@ -714,6 +901,18 @@ def add_slices(renderer, slices, outline_color=(0.5, 0.5, 0.5)):
             renderer.AddViewProp(outline)
             count += 1
     return count
+
+
+def _greyscale_lut(vtk):
+    """A 256-entry black-to-white lookup table over [0, 1] (slice textures)."""
+    lut = vtk.vtkLookupTable()
+    lut.SetNumberOfTableValues(256)
+    lut.SetRange(0.0, 1.0)
+    lut.Build()
+    for i in range(256):
+        value = i / 255.0
+        lut.SetTableValue(i, value, value, value, 1.0)
+    return lut
 
 
 def _outline_half_sizes(kind, half_size_mm):
@@ -883,8 +1082,9 @@ def show(
     filename : str | Path
         The VRML (``.wrl``) file exported by Geant4.
     backend : str
-        "auto" (default), or one of "cuda", "vulkan", "gpu", "cpu".  An
-        explicit backend raises when it cannot be used: no silent downgrade.
+        "auto" (default), or one of "cuda", "vulkan", "metal", "gpu",
+        "cpu".  An explicit backend raises when it cannot be used: no silent
+        downgrade.
     slices : str | Path | None
         The ``.npz`` file written by :func:`write_slices` (image-volume slices).
     offscreen : bool | None
@@ -945,15 +1145,30 @@ def show(
 
 def _create_window(vtk, info):
     """The render window of a resolved backend, configured like the probe."""
-    if info.backend == "vulkan":
+    os.environ.setdefault(
+        "VTK_FACTORY_PREFER",
+        (
+            "RenderingBackend=WebGPU"
+            if info.backend in _WEBGPU_RUNGS
+            else "RenderingBackend=OpenGL2"
+        ),
+    )
+    if info.backend in _WEBGPU_RUNGS:
         window = vtk.vtkWebGPURenderWindow()
-        window.SetBackendTypeToVulkan()
+        config = window.GetWGPUConfiguration()
+        if config is not None:
+            config.SetBackend(
+                getattr(
+                    vtk.vtkWebGPUConfiguration.BackendType,
+                    _WEBGPU_RUNGS[info.backend],
+                )
+            )
         return window
     if info.backend == "cpu" and info.api == "osmesa":
         cls = getattr(vtk, "vtkOSOpenGLRenderWindow", None)
         if cls is not None:
             return cls()
-    window = vtk.vtkRenderWindow()
+    window = _gl_window(vtk)
     if info.device_index >= 0:
         try:
             window.SetDeviceIndex(info.device_index)
@@ -971,7 +1186,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="opengate VTK visualisation driver")
     parser.add_argument("filename", nargs="?", help="VRML (.wrl) file to display")
     parser.add_argument(
-        "--backend", "-b", default="auto", help="auto, cuda, vulkan, gpu, cpu"
+        "--backend",
+        "-b",
+        default="auto",
+        help="auto, cuda, vulkan, metal, gpu, cpu",
     )
     parser.add_argument("--slices", "-s", default=None, help=".npz image slices file")
     parser.add_argument(

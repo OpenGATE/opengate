@@ -5,14 +5,21 @@
 
 Every driver is measured end to end, on the same scene:
 
-======== ==========================================================================
-driver   what is timed
-======== ==========================================================================
-vrml     Geant4 VRML2FILE export, then the pyvista viewer (the default today)
-gdml     Geant4 GDML export, then the pyg4ometry viewer
-vtk      Geant4 VRML2FILE export, then the VTK driver (visu_type = 'vtk')
-qt       the Geant4 Qt viewer: a GUI event loop, reported but not timed
-======== ==========================================================================
+===========  ======================================================================
+driver       what is timed
+===========  ======================================================================
+vrml         Geant4 VRML2FILE export, then the pyvista viewer (the default today)
+gdml         Geant4 GDML export, then the pyg4ometry viewer
+vtk          Geant4 VRML2FILE export, then the VTK driver (backend 'auto')
+vtk-metal    the same VTK driver, with the WebGPU (Metal) backend pinned
+vtk-vulkan   the same VTK driver, with the Vulkan (WebGPU) backend pinned
+qt           the Geant4 Qt viewer: a GUI event loop, reported but not timed
+===========  ======================================================================
+
+The ``vtk-metal`` and ``vtk-vulkan`` rows need a VTK built with
+``VTK_ENABLE_WEBGPU=ON`` (the PyPI wheels are not), and the ``vtk-vulkan`` row
+needs a Dawn build with its Vulkan backend (the prebuilt macOS binaries are
+Metal only, so that row is reported as not available there).
 
 The export runs in its own process (the Geant4 kernel can only be initialised
 once per process), each viewer runs in its own process too (VTK, pyvista and
@@ -41,7 +48,16 @@ from pathlib import Path
 
 import click
 
-VIEWERS = ("vtk", "pyvista", "pyg4ometry", "qt")
+VIEWERS = ("vtk", "vtk-metal", "vtk-vulkan", "pyvista", "pyg4ometry", "qt")
+
+# a viewer whose name starts with 'vtk' is the VTK driver with a pinned backend
+_VTK_BACKEND_OF = {
+    "vtk": None,
+    "vtk-metal": "metal",
+    "vtk-vulkan": "vulkan",
+    "vtk-gpu": "gpu",
+    "vtk-cpu": "cpu",
+}
 _JSON_PREFIX = "BENCH_JSON:"
 
 
@@ -298,6 +314,7 @@ def bench_vtk(vrml, slices=None, frames=30, size=(1024, 768), backend="auto"):
         "viewer": "vtk",
         "available": True,
         "backend": info.report(),
+        "backend_name": info.backend,
         "probe_ms": round(1000 * probe_s, 2),
         "load_ms": round(1000 * load_s, 2),
         "first_frame_ms": round(1000 * first_s, 2),
@@ -400,9 +417,7 @@ def bench_pyg4ometry(gdml, frames=30, size=(1024, 768)):
 def _run_viewer(
     viewer, vrml, gdml, slices, frames, size=(1024, 768), backend="auto", timeout=900
 ):
-    needed = [] if viewer == "pyg4ometry" else [vrml]
-    if viewer == "pyg4ometry":
-        needed = [gdml]
+    needed = [gdml] if viewer == "pyg4ometry" else [vrml]
     for filename in needed:
         if not filename or not Path(filename).is_file():
             return {
@@ -437,10 +452,20 @@ def _run_viewer(
 def _bench_viewer(viewer, vrml, gdml, slices, frames, size=(1024, 768), backend="auto"):
     """One viewer, in its own process (see the module docstring)."""
     t0 = time.perf_counter()
-    if viewer == "vtk":
+    if viewer.startswith("vtk"):
+        forced = _VTK_BACKEND_OF.get(viewer) or backend
         result = bench_vtk(
-            vrml, slices=slices, frames=frames, size=size, backend=backend
+            vrml, slices=slices, frames=frames, size=size, backend=forced
         )
+        result["viewer"] = viewer
+        notes = []
+        if result.get("backend_name") in ("vulkan", "metal") and slices:
+            notes.append(
+                "WebGPU path: slices drawn as textured quads (no slice mapper "
+                "there), so they are interpolated rather than nearest-neighbour"
+            )
+        if notes:
+            result["notes"] = "; ".join(notes)
     elif viewer == "pyvista":
         result = bench_pyvista(vrml, frames=frames, size=size)
     elif viewer == "pyg4ometry":
@@ -487,7 +512,14 @@ def _table(rows, columns):
 
 # which Geant4 export belongs to which viewer (the export is what the driver
 # writes before its viewer runs)
-_EXPORT_OF = {"vtk": "vtk", "pyvista": "vrml", "pyg4ometry": "gdml", "qt": None}
+_EXPORT_OF = {
+    "vtk": "vtk",
+    "vtk-metal": "vtk",
+    "vtk-vulkan": "vtk",
+    "pyvista": "vrml",
+    "pyg4ometry": "gdml",
+    "qt": None,
+}
 
 
 def build_report(export_seconds, viewers, image_volume):
@@ -511,6 +543,7 @@ def build_report(export_seconds, viewers, image_volume):
                     "peak RSS MB": f"{entry.get('peak_rss_mb', 0):.0f}",
                     "props": entry.get("props", ""),
                     "triangles": entry.get("triangles", ""),
+                    "notes": entry.get("notes", ""),
                     "backend": entry.get("backend", ""),
                 }
             )
@@ -534,6 +567,7 @@ def build_report(export_seconds, viewers, image_volume):
         "props",
         "triangles",
         "end-to-end s",
+        "notes",
         "backend",
     ]
     title = (
@@ -563,7 +597,10 @@ def build_report(export_seconds, viewers, image_volume):
     "--frames", default=30, help="number of frames for the frame-time statistics"
 )
 @click.option(
-    "--backend", default="auto", help="VTK backend: auto, cuda, vulkan, gpu, cpu"
+    "--backend",
+    default="auto",
+    help="VTK backend for the 'vtk' row: auto, cuda, vulkan, metal, gpu, cpu "
+    "(the 'vtk-vulkan' and 'vtk-metal' rows always pin their backend)",
 )
 @click.option("--size", default="1024x768", help="render size, e.g. 1024x768")
 @click.option(
@@ -655,7 +692,7 @@ def go(
 
     print(f"benchmarking the viewers ({frames} frames each) ...")
     viewers = {}
-    for name in ("vtk", "pyvista", "pyg4ometry"):
+    for name in ("vtk", "vtk-metal", "vtk-vulkan", "pyvista", "pyg4ometry"):
         print(f"  {name} ...")
         viewers[name] = _run_viewer(
             name,

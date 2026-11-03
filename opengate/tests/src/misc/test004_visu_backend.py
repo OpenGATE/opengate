@@ -4,7 +4,7 @@
 """
 Test the backend ladder of the VTK visualisation driver (#1228):
 
-- the order is cuda -> vulkan -> gpu -> cpu;
+- the order is cuda -> vulkan -> metal -> gpu -> cpu;
 - 'auto' takes the first usable rung, and records why the others were skipped;
 - an explicit backend never degrades silently: it raises when it is unusable;
 - OPENGATE_VISU_BACKEND is honoured, an unknown backend is refused;
@@ -35,7 +35,7 @@ def fake_probe(available):
                     {
                         "backend": rung,
                         "available": True,
-                        "api": "vulkan" if rung == "vulkan" else "opengl2",
+                        "api": visu._WEBGPU_RUNGS.get(rung, "opengl2").lower(),
                         "vendor": "Test Vendor",
                         "renderer": f"Test {rung} renderer",
                         "version": "1.0",
@@ -67,13 +67,13 @@ def with_probe(available, function):
 if __name__ == "__main__":
     is_ok = True
 
-    b = visu.BACKENDS == ("cuda", "vulkan", "gpu", "cpu")
+    b = visu.BACKENDS == ("cuda", "vulkan", "metal", "gpu", "cpu")
     utility.print_test(b, f"Ladder order is {visu.BACKENDS}")
     is_ok = is_ok and b
 
     # auto: first usable rung, the skipped ones are reported
     info = with_probe({"gpu", "cpu"}, lambda: visu.resolve_backend("auto"))
-    b = info.backend == "gpu" and set(info.skipped) == {"cuda", "vulkan"}
+    b = info.backend == "gpu" and set(info.skipped) == {"cuda", "vulkan", "metal"}
     utility.print_test(b, f"auto picks the first usable rung: {info.report()}")
     is_ok = is_ok and b
 

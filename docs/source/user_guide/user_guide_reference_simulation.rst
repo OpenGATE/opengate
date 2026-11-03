@@ -117,7 +117,7 @@ If you select ``visu_type = "vtk"`` without VTK, the simulation stops with that 
    sim = gate.Simulation()
    sim.visu = True
    sim.visu_type = "vtk"
-   sim.visu_backend = "auto"  # cuda, vulkan, gpu or cpu
+   sim.visu_backend = "auto"  # cuda, vulkan, metal, gpu or cpu
    # optional: save an image and render without a window (cluster, CI)
    sim.visu_screenshot = "scene.png"
 
@@ -128,7 +128,9 @@ The graphics backend is chosen by VTK, i.e. the best one available on the machin
 ``cuda``
     render on the NVIDIA proprietary driver, when an NVIDIA card is present (a device choice, not a rendering API)
 ``vulkan``
-    ``vtkWebGPURenderWindow`` with the Vulkan backend (needs a VTK built with RenderingWebGPU)
+    ``vtkWebGPURenderWindow`` with the Vulkan backend (needs a VTK built with RenderingWebGPU, and a Dawn build with Vulkan)
+``metal``
+    ``vtkWebGPURenderWindow`` with the Metal backend (the same WebGPU build, on macOS/iOS GPUs)
 ``gpu``
     the default VTK backend on whatever GPU is present
 ``cpu``
@@ -143,6 +145,30 @@ The same viewer is available from the command line on an exported file:
    opengate_visu --vtk --input scene.wrl --backend auto --screenshot scene.png
    opengate_visu --probe
 
+WebGPU builds (metal, vulkan)
+""""""""""""""""""""""""""""""
+
+The ``vulkan`` and ``metal`` rungs need a VTK built with ``RenderingWebGPU``: the PyPI wheels are not, and the probe says so instead of failing later. Building one (VTK 9.7, Dawn binaries fetched by VTK's own CI script, ccache, ~1 h for the full library):
+
+.. code-block:: bash
+
+   git clone https://gitlab.kitware.com/vtk/vtk.git && cd vtk
+   CMAKE_CONFIGURATION=macos_x86_64 cmake -P .gitlab/ci/download_dawn.cmake   # or macos_arm64 / fedora / windows
+   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+         -DVTK_ENABLE_WEBGPU=ON -DDawn_DIR=$PWD/.gitlab/dawn/lib/cmake/Dawn \
+         -DVTK_WRAP_PYTHON=ON -DCMAKE_INSTALL_PREFIX=$PWD/../install
+   cmake --build build && cmake --install build
+   # then put install/lib/python3.x/site-packages on the venv path instead of the vtk wheel
+
+Two things cost time on the way, and are worth knowing before starting:
+
+* **Dawn decides which rung can work.** The prebuilt macOS Dawn binaries are Metal only (no ``vkCreateInstance``, no Vulkan loader, only the ``metal`` and ``null`` backend names in the static library), so ``metal`` works there and ``vulkan`` fails to get an adapter. On Linux and Windows the same VTK asks Dawn for Vulkan and that is the rung that works. A Vulkan backend *on macOS* would mean building Dawn from source with ``-DDAWN_ENABLE_VULKAN=ON`` and MoltenVK (installed on this machine, but not enough by itself), on top of the existing build.
+* **Such a build has no usable OpenGL path.** Its object factory hands out ``vtkWebGPURenderWindow``, ``vtkWebGPUPolyDataMapper``, ... for every plain ``vtkRenderWindow()``/``vtkPolyDataMapper()``, whatever ``VTK_FACTORY_PREFER=RenderingBackend=OpenGL2`` says (checked on 9.7.1/macOS), and mixing those with a Cocoa OpenGL window aborts the process. The driver therefore reports the ``gpu`` and ``cpu`` rungs as unavailable in that environment, with that reason, rather than crashing. A WebGPU build and the wheel are two different environments; the probe tells which one a process is in.
+
+The image slices are the one feature that differs: the WebGPU module implements neither ``vtkImageSliceMapper`` nor ``vtkImageActor`` (VTK 9.7), and an OpenGL image actor cannot take a WebGPU mapper, so on that path the slices are drawn as textured quads with a greyscale lookup table (same windowing, interpolated instead of nearest-neighbour).
+
+The scene is the same one (28 props on both paths, same geometry, trajectories, slices, outlines, axes), but the WebGPU/Metal picture is **not equivalent yet**: translucent volumes are not composited there (without depth peeling the world box writes depth and hides what is inside it), and forcing the actors opaque made the box vanish from the frame while the axes stayed. The module is ``Highly Experimental`` upstream and its README lists what it does and does not draw (no image slice mapper, no text actors, no labeled contour mapper, ...). The ``metal``/``vulkan`` rungs are therefore opt-in ways to use VTK's WebGPU path where OpenGL is going away, not a replacement for the ``gpu`` rung on a machine where OpenGL still works.
+
 Benchmark
 ^^^^^^^^^
 
@@ -154,24 +180,43 @@ Benchmark
     Geant4 GDML export + the pyg4ometry viewer
 ``vtk``
     Geant4 VRML2FILE export + the VTK driver
+``vtk-metal``, ``vtk-vulkan``
+    the same VTK driver with the WebGPU backend pinned (needs a WebGPU build, above)
 ``qt``
     the Geant4 Qt viewer (a GUI event loop: reported, never timed)
 
-Measured on an Intel Mac (AMD Radeon Pro 560X, VTK 9.7.1, pyvista 0.49.2, 13 volumes, 6930 triangles, 30 frames):
+Measured on an Intel Mac (AMD Radeon Pro 560X, VTK 9.7.1, pyvista 0.49.2, 13 volumes + a CT-like image volume, 6933 triangles, 20 frames). The VTK rows come from two environments: the PyPI wheel (OpenGL) and the WebGPU build (Metal), same scene files, so the columns are comparable:
 
-===========  ========  ========  ==========  =============  ===========
-driver       sim+exp.  load      first frame frame median   peak RSS
-===========  ========  ========  ==========  =============  ===========
-vtk          19.2 s    3.9 s     654 ms      2.2 ms         289 MB
-pyvista      5.9 s     1.5 s     200 ms      3.7 ms         284 MB
-===========  ========  ========  ==========  =============  ===========
+===========  ========  ==========  ============  ===========  ============
+driver       load      first frame frame median  p95          peak RSS
+===========  ========  ==========  ============  ===========  ============
+vtk (OpenGL) 2.44 s    1515 ms     1.8 ms        5.4 ms       286 MB
+vtk-metal    1.72 s    602 ms      8.3 ms        8.9 ms       307 MB
+pyvista      1.96 s    1152 ms     3.8 ms        7.5 ms       282 MB
+===========  ========  ==========  ============  ===========  ============
 
 What this says, and what it does not:
 
 * Once the scene is loaded, the VTK driver and pyvista render at the same speed (both are VTK: pyvista is a wrapper over it), so there is no speed argument for or against the VTK driver -- its value is that it removes the fixed-function OpenGL code of ``GateImageBox.cpp`` (issue #1040) and gives us the image slices in a maintained rendering toolkit.
 * The VTK driver renders **more** than pyvista here: it also draws the three image slices and their outlines (28 props against 22), which is why its load time is higher.
-* The ``sim+export`` column of the VTK row includes the one-off backend probe (a child process importing opengate and VTK) and the first shader compilation, i.e. the cold start of VTK in a fresh process. It is paid once per process.
+* The WebGPU/Metal path is **not faster**: 8.3 ms per frame against 1.8 ms for OpenGL on the same GPU, while its first frame is 2.5x faster (602 against 1515 ms, i.e. less shader-compilation cost). Its value is not speed: it is the backend that exists on the machines where OpenGL is going away, and it proves the driver works on VTK's Vulkan/Metal path at all -- on this Mac, with slices drawn as textured quads because the slice mapper is not implemented there. The ``vtk-vulkan`` row reports itself unavailable on this machine (the prebuilt Dawn is Metal only, see above).
+* The ``sim+export`` column of the full report includes the one-off backend probe (a child process importing opengate and VTK) and the first shader compilation, i.e. the cold start of VTK in a fresh process. It is paid once per process.
 * Not measured on that machine, and why: the GDML driver needs an ``opengate_core`` compiled with ``USE_GDML`` (it was not), ``pyg4ometry`` needs opencascade/gmp, and the Qt driver has no offscreen mode nor any way to be driven without a user. The benchmark reports those as *not available*, with the reason, rather than skipping them silently.
+
+pyvista or VTK?
+"""""""""""""""
+
+``pyvista`` *is* VTK: it is a Python wrapper over the same renderer and it imports the VRML scene with the same ``vtkVRMLImporter``, so the two draw the same pixels. Writing the ``vtk`` driver on ``pyvista`` was measured against the current implementation (a 108-line ``pyvista`` prototype drawing the same scene, slices included):
+
+**Identical** -- the renderer, the imported scene (22 props for the same VRML file), the frames: 3.7 ms median with ``pyvista`` against 2.2 ms with the VTK driver on the benchmark scene, i.e. the wrapper's per-frame overhead.
+
+**What ``pyvista`` would save** -- the scene layer only: about 100 lines of VTK code (``import_vrml``, ``add_axes``, the screenshot writer, the window setup). The backend layer -- the probe, the ladder, the device report, the pinning, ~430 lines -- would be needed either way, because it is VTK-level.
+
+**What ``pyvista`` cannot do** -- choose the graphics backend. ``pyvista`` 0.49 has no API for it: searching the installed package for ``WebGPU``, ``Vulkan``, ``Metal`` or ``SetBackendType`` finds nothing, and a prototype asked for ``backend="vulkan"`` can only raise. The handles all live in VTK (``VTK_FACTORY_PREFER``, ``vtkWebGPURenderWindow``, ``SetDeviceIndex``, ``ReportCapabilities``). Two smaller gaps showed up in the prototype: nearest-neighbour sampling of the slice textures still needs ``texture.SetInterpolate(0)``, a VTK call under the wrapper, and placing the slices in the frame of a *rotated* image volume needs the VTK transform anyway.
+
+**What ``pyvista`` would cost** -- one more dependency on top of ``vtk``, with ten transitive ones (``matplotlib``, ``pillow``, ``pooch``, ``pyobjc-framework-Cocoa`` on macOS, ``cyclopts``, ``scooby``, ``pyvista-validation``, ...), 13 MB installed, in exchange for a 100-line saving. The VTK driver needs ``vtk`` and nothing else.
+
+So: ``pyvista`` stays the right tool for the existing ``visu_type = "vrml"`` (it does its job in a few lines and nothing here argues for rewriting it), while the ``vtk`` driver is written against VTK directly because its reason to exist is the backend choice and the slice replication. "Improving pyvista" would not remove the backend code, it would only hide it behind a wrapper that does not expose it. The one measurable cost of that choice is the import: ``opengate/visualization.py`` imports the whole ``vtk`` namespace (~4.4 s in a fresh process, paid once by the probe), where ``pyvista`` imports in ~0.9 s and loads its VTK modules lazily; selective ``vtkmodules`` imports would fix that if it ever matters.
 
 This is phase 1 of the plan in discussion `#1228 <https://github.com/OpenGATE/opengate/discussions/1228>`_: no C++ change, VTK optional and opt-in. Removing the OpenGL slice code from ``GateImageBox.cpp`` (phase 2) and a native Geant4 VTK driver (phase 3, blocked upstream on Qt6/VTK) are not part of it.
 
