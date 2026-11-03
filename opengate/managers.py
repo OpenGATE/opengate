@@ -26,6 +26,7 @@ from .engines import SimulationEngine
 from .exception import (
     GateDeprecationError,
     GateImplementationError,
+    GateUserError,
     fatal,
     warning,
 )
@@ -702,6 +703,15 @@ DEFAULT_SURFACE_PROPERTIES_FILE = (
 )
 
 
+# Physics lists that need an optional Geant4 dataset, not downloaded with the
+# other Geant4 data (opengate_download_data -o): (part of the physics list
+# name, environment variable of the dataset, name of the dataset)
+PHYSICS_LISTS_OPTIONAL_G4_DATA = (
+    ("AllHP", "G4PARTICLEHPDATA", "G4TENDL"),
+    ("LEND", "G4LENDDATA", "LEND"),
+)
+
+
 class PhysicsManager(GateObject):
     """
     Everything related to the physics (lists, cuts, etc.) should be here.
@@ -1190,10 +1200,27 @@ class PhysicsManager(GateObject):
         if len(self.optical_surfaces) > 0 and self.surface_properties_file is None:
             self.surface_properties_file = DEFAULT_SURFACE_PROPERTIES_FILE
 
+    def check_optional_g4_data(self):
+        """Some physics lists need an optional Geant4 dataset, not downloaded
+        with the other data. Stop with a clear message if it is missing
+        (Geant4 only says, at initialisation, that an environment variable is
+        not set)."""
+        name = str(self.physics_list_name)
+        for part, variable, dataset in PHYSICS_LISTS_OPTIONAL_G4_DATA:
+            if part in name and not os.environ.get(variable):
+                raise GateUserError(
+                    f'The physics list "{name}" needs the optional Geant4 '
+                    f"dataset {dataset}, which is not installed (the "
+                    f"environment variable {variable} is not set).\n"
+                    f"Install the optional Geant4 data once with:\n"
+                    f"    opengate_download_data -o"
+                )
+
     def resolve_and_validate_config(self, context=None):
         # Freeze the Python-side configuration before any SimulationEngine is
         # created. This phase may negotiate requests across managers and
         # actors, but it must not instantiate Geant4 objects yet.
+        self.check_optional_g4_data()
         self.resolve_optical_properties_files()
         # Chemistry actors may request region-based track-structure EM physics on the
         # volumes they are attached to. This must be resolved before the
