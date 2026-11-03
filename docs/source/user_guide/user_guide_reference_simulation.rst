@@ -71,7 +71,7 @@ If you set `visu_type='qt'`, you can customize the Geant4 visualization commands
 
 .. autoproperty:: opengate.Simulation.visu_commands
 
-.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume` (e.g. a CT), the Qt visualization displays the image box and its three middle slices, see `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others). The intensity window of the slices is set with the ``visu_window`` parameter of the image volume, see :ref:`image-volume-visualisation`. The voxels themselves are never drawn, which keeps the viewer fast even with large images. With the VRML and GDML visualizations, the image volume is displayed as a plain box. The slices need opengate_core compiled with Qt against a Geant4 build tree: this is the case of the pip wheels for macOS and Linux (the Windows wheels have no Qt visualization); with a source build against an installed Geant4, the image is displayed as a plain box (see the cmake output).
+.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume` (e.g. a CT), the Qt and VTK visualizations display the image box and its three middle slices, see `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others). The intensity window of the slices is set with the ``visu_window`` parameter of the image volume, see :ref:`image-volume-visualisation`. The voxels themselves are never drawn, which keeps the viewer fast even with large images. With the VRML and GDML visualizations, the image volume is displayed as a plain box. The slices need opengate_core compiled with Qt against a Geant4 build tree: this is the case of the pip wheels for macOS and Linux (the Windows wheels have no Qt visualization); with a source build against an installed Geant4, the image is displayed as a plain box (see the cmake output).
 
 VRML
 ^^^^
@@ -98,6 +98,82 @@ Opengate uses ``pyg4ometry`` for the GUI, so you need to install it with:
 ``pip install pyg4ometry``
 
 ``pyg4ometry`` uses opencascade libraries, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with ``sim.visu_type = "gdml_file_only"``. In such cases, the GUI is not open, and you do not need ``pyg4ometry``. In both cases, you need to set ``sim.visu_filename = "geant4VisuFile.gdml"`` to save the GDML file. You can find an example in `test004_simple_visu_gdml <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/others/test004_simple_visu_gdml.py>`_ .
+
+VTK (optional)
+^^^^^^^^^^^^^^^
+
+A VTK visualisation is available as an opt-in alternative to the Geant4 viewers (``visu_type = "vtk"``). It is **not** installed by default and it is **not** the default viewer: VTK is a heavy dependency, so it is an optional extra.
+
+.. code-block:: bash
+
+   pip install vtk
+   # or, with the optional dependency of opengate declared in pyproject.toml:
+   pip install 'opengate[vtk]'
+
+If you select ``visu_type = "vtk"`` without VTK, the simulation stops with that install command in the message (it does not fail silently).
+
+.. code-block:: python
+
+   sim = gate.Simulation()
+   sim.visu = True
+   sim.visu_type = "vtk"
+   sim.visu_backend = "auto"  # cuda, vulkan, gpu or cpu
+   # optional: save an image and render without a window (cluster, CI)
+   sim.visu_screenshot = "scene.png"
+
+The VTK viewer renders the scene GATE already exports through the VRML scene handler: the volumes with their colours, the accumulated trajectories, and (like the Qt viewer, unlike the VRML and GDML viewers) the three middle slices of each image volume, with the intensity window of ``visu_window``. The orientation axes are those of the Qt viewer. As with the VRML visualization, ``visu_filename`` is only needed to keep the ``.wrl`` file (it is temporary otherwise); the slices are handed to the viewer through a ``.wrl.slices.npz`` sidecar next to it.
+
+The graphics backend is chosen by VTK, i.e. the best one available on the machine; opengate only reports and (optionally) pins it:
+
+``cuda``
+    render on the NVIDIA proprietary driver, when an NVIDIA card is present (a device choice, not a rendering API)
+``vulkan``
+    ``vtkWebGPURenderWindow`` with the Vulkan backend (needs a VTK built with RenderingWebGPU)
+``gpu``
+    the default VTK backend on whatever GPU is present
+``cpu``
+    software rendering (OSMesa / Mesa llvmpipe, Linux only in practice)
+
+``auto`` (the default) walks that ladder, first success wins, and logs the decision once, naming the device and why the previous rungs were skipped, e.g. ``visu backend: gpu -> opengl2 on AMD Radeon Pro 560X OpenGL Engine (skipped: cuda: no NVIDIA device found ...)``. An explicit ``visu_backend`` never degrades silently: it raises when it cannot be used. ``OPENGATE_VISU_BACKEND`` overrides ``auto`` from the environment. The probe runs in a child process, so a graphics driver that aborts only loses that rung and never a simulation that has already run. ``opengate_visu --probe`` prints the ladder of a machine.
+
+The same viewer is available from the command line on an exported file:
+
+.. code-block:: bash
+
+   opengate_visu --vtk --input scene.wrl --backend auto --screenshot scene.png
+   opengate_visu --probe
+
+Benchmark
+^^^^^^^^^
+
+``opengate_visu_benchmark`` measures every driver on the same scene, each viewer in its own process. ``opengate_visu_benchmark --generate DIR --with-image`` builds the demo scene (a water box, a ring of 12 spheres and a CT-like image volume), exports it and prints the table:
+
+``vrml``
+    Geant4 VRML2FILE export + the pyvista viewer (the default today)
+``gdml``
+    Geant4 GDML export + the pyg4ometry viewer
+``vtk``
+    Geant4 VRML2FILE export + the VTK driver
+``qt``
+    the Geant4 Qt viewer (a GUI event loop: reported, never timed)
+
+Measured on an Intel Mac (AMD Radeon Pro 560X, VTK 9.7.1, pyvista 0.49.2, 13 volumes, 6930 triangles, 30 frames):
+
+===========  ========  ========  ==========  =============  ===========
+driver       sim+exp.  load      first frame frame median   peak RSS
+===========  ========  ========  ==========  =============  ===========
+vtk          19.2 s    3.9 s     654 ms      2.2 ms         289 MB
+pyvista      5.9 s     1.5 s     200 ms      3.7 ms         284 MB
+===========  ========  ========  ==========  =============  ===========
+
+What this says, and what it does not:
+
+* Once the scene is loaded, the VTK driver and pyvista render at the same speed (both are VTK: pyvista is a wrapper over it), so there is no speed argument for or against the VTK driver -- its value is that it removes the fixed-function OpenGL code of ``GateImageBox.cpp`` (issue #1040) and gives us the image slices in a maintained rendering toolkit.
+* The VTK driver renders **more** than pyvista here: it also draws the three image slices and their outlines (28 props against 22), which is why its load time is higher.
+* The ``sim+export`` column of the VTK row includes the one-off backend probe (a child process importing opengate and VTK) and the first shader compilation, i.e. the cold start of VTK in a fresh process. It is paid once per process.
+* Not measured on that machine, and why: the GDML driver needs an ``opengate_core`` compiled with ``USE_GDML`` (it was not), ``pyg4ometry`` needs opencascade/gmp, and the Qt driver has no offscreen mode nor any way to be driven without a user. The benchmark reports those as *not available*, with the reason, rather than skipping them silently.
+
+This is phase 1 of the plan in discussion `#1228 <https://github.com/OpenGATE/opengate/discussions/1228>`_: no C++ change, VTK optional and opt-in. Removing the OpenGL slice code from ``GateImageBox.cpp`` (phase 2) and a native Geant4 VTK driver (phase 3, blocked upstream on Qt6/VTK) are not part of it.
 
 Multithreading
 --------------

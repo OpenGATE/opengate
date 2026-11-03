@@ -1912,6 +1912,8 @@ class Simulation(GateObject):
     visu: bool
     visu_type: str
     visu_filename: Optional[Path]
+    visu_backend: str
+    visu_screenshot: Optional[Path]
     visu_verbose: bool
     visu_commands: List[str]
     visu_commands_vrml: List[str]
@@ -2011,11 +2013,14 @@ class Simulation(GateObject):
             {
                 "doc": "The type of visualization to be used. "
                 "'qt' will start a Geant4 Qt interface. "
+                "'vtk' will render the scene with VTK instead (optional, needs the "
+                "vtk package: ``pip install vtk``). "
                 "The Geant4 visualisation commands can be adapted via the parameter visu_commands.",
                 "allowed_values": (
                     "qt",
                     "vrml",
                     "gdml",
+                    "vtk",
                     "vrml_file_only",
                     "gdml_file_only",
                 ),
@@ -2024,7 +2029,30 @@ class Simulation(GateObject):
         "visu_filename": (
             None,
             {
-                "doc": "Name of the file where visualization output is stored. Only applicable for vrml and gdml.",
+                "doc": "Name of the file where visualization output is stored. Only applicable for vrml, gdml and vtk.",
+                "required_type": Path,
+            },
+        ),
+        "visu_backend": (
+            "auto",
+            {
+                "doc": "Graphics backend of the VTK visualisation (only used when "
+                "visu_type = 'vtk'). 'auto' lets VTK select the best available "
+                "hardware, trying, in this order: 'cuda' (the NVIDIA proprietary "
+                "driver, when an NVIDIA card is present), 'vulkan', 'gpu' (the "
+                "default VTK OpenGL backend) and 'cpu' (software rendering). "
+                "An explicit value fails with an error instead of silently "
+                "falling back. Can also be set with the OPENGATE_VISU_BACKEND "
+                "environment variable.",
+                "allowed_values": ("auto", "cuda", "vulkan", "gpu", "cpu"),
+            },
+        ),
+        "visu_screenshot": (
+            None,
+            {
+                "doc": "With visu_type = 'vtk', save the scene in this image file "
+                "(png/jpg/tiff) and render offscreen, without opening a window. "
+                "Useful on clusters and in continuous integration.",
                 "required_type": Path,
             },
         ),
@@ -2058,6 +2086,9 @@ class Simulation(GateObject):
                 "Only used for vrml-like visualization types. ",
             },
         ),
+        # The 'vtk' visualisation renders what GATE exports through the VRML
+        # scene handler: the same geometry, colours and trajectories. It has no
+        # Geant4 commands of its own, it reuses visu_commands_vrml.
         "check_volumes_overlap": (
             True,
             {
