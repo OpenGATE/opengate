@@ -9,6 +9,10 @@ Fields are attached to logical volumes, so they automatically propagate to all p
 
 All field definitions are relative to the local coordinate system they are attached to. This means that, for instance, if a field is attached to a volume that is rotated, the field vector will be rotated accordingly.
 
+.. note::
+
+   The electromagnetic field implementation is described in `[Ballestero Ribó et al, arXiv, 2026] <https://arxiv.org/abs/2611.00376>`_, which details its architecture and validation strategy. If you use electromagnetic fields in work leading to a publication, please consider citing this preprint alongside the standard GATE references.
+
 Quick example
 -------------
 

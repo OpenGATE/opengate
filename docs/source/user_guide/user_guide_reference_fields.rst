@@ -3,6 +3,8 @@
 Details: Electromagnetic fields
 ================================
 
+The architecture and validation of the electromagnetic field implementation are described in detail in `[Ballestero Ribó et al, arXiv, 2026] <https://arxiv.org/abs/2611.00376>`_.
+
 [TO BE COMPLETED]
 
 Base class reference
