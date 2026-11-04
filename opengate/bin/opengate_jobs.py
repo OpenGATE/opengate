@@ -35,10 +35,12 @@ BACKENDS = ["local", "htcondor", "slurm", "pbs"]
 def go():
     """Split a simulation into jobs, run them, follow them and merge their output.
 
-    The CAMPAIGN folder contains the simulation.json of the simulation (written
-    with sim.to_json_file("campaign/")) and its input files. The most common use,
-    on a workstation (split, run with a progress bar, merge; -l: local machine,
-    there is no default backend):
+    The CAMPAIGN folder contains the simulation.json of the simulation, written
+    in the script by gate.package_simulation(sim, "campaign/") instead of
+    sim.run() (with copy_inputs=True, the default, the input files are copied
+    in the folder, that can be moved, e.g. to a cluster). The job folders link
+    to the input files. The most common use, on a workstation (split, run with
+    a progress bar, merge; -l: local machine, there is no default backend):
 
         opengate_jobs run campaign/ -j 8 -l
 
@@ -81,13 +83,12 @@ def is_split(campaign):
     return (Path(campaign) / JOBS_MANIFEST_FILENAME).exists()
 
 
-def do_split(campaign, jobs, policy, link_files, overwrite):
+def do_split(campaign, jobs, policy, overwrite):
     m = jobs_split(
         simulation_folder=Path(campaign),
         campaign_dir=Path(campaign),
         number_of_jobs=jobs,
         policy=policy,
-        link_files=link_files,
         overwrite_existing_job_folders=overwrite,
         write_resolved_simulation=True,
     )
@@ -99,12 +100,6 @@ def split_options(f):
         "--overwrite",
         is_flag=True,
         help="Replace the jobs of a campaign already split.",
-    )(f)
-    f = click.option(
-        "--link-files/--copy-files",
-        default=False,
-        show_default=True,
-        help="Link the input files in the job folders instead of copying them.",
     )(f)
     f = click.option(
         "--policy",
@@ -136,9 +131,9 @@ def clean_campaign(campaign, remove_job_folders=True, remove_metadata_files=True
 @click.option("-j", "--jobs", type=int, required=True, help="Number of jobs.")
 @split_options
 @json_option
-def split(campaign, jobs, policy, link_files, overwrite, as_json):
+def split(campaign, jobs, policy, overwrite, as_json):
     """Split the simulation of CAMPAIGN into job folders."""
-    m = do_split(campaign, jobs, policy, link_files, overwrite)
+    m = do_split(campaign, jobs, policy, overwrite)
     if as_json:
         echo_json(m.split_result)
     else:
@@ -302,7 +297,6 @@ def run(
     rerun_completed,
     rerun_running,
     policy,
-    link_files,
     overwrite,
     as_json,
 ):
@@ -335,7 +329,7 @@ def run(
             raise click.ClickException(
                 f"'{short(campaign)}' {what}: give the number of jobs with -j."
             )
-        do_split(campaign, jobs, policy, link_files, overwrite)
+        do_split(campaign, jobs, policy, overwrite)
         if not as_json:
             click.echo(f"Split into {jobs_str(jobs)} ({policy}) in {short(campaign)}")
     elif jobs is not None:
