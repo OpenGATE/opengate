@@ -16,11 +16,11 @@ The reduction uses one lock per worker, with no new locks in transport callbacks
 Worker-owned track/step copies and acceptance objects are released before teardown.
 The existing Python counter getters return the reduced totals after transport.
 
-This is the state-localization stage, not complete MT support. The actor remains
-declared non-MT-ready. Current-event source provenance and deferred completion are implemented below;
-other application actors, phase-space allocation and MT transport validation
-remain open. The performance
-criterion remains wall time to comparable uncertainty; no speedup is established.
+The actor now permits MT transport after worker-state, source-provenance,
+deferred-completion and kill-actor updates. Controlled patient transport checks
+are recorded below. This is not physical or correlated-uncertainty validation.
+The performance criterion remains wall time to comparable uncertainty; no useful
+speedup is established.
 
 After building the core, run the native regression from the repository root
 with the Python interpreter used for that build:
@@ -189,3 +189,36 @@ python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-fail-fast 
 
 The CT_40/split-50 smoke retains 12717 events, 33 replays and six exact image
 matches to the previous reference, including existing uncertainty NaNs.
+
+## Retry limits and full transport checks
+
+The retry thresholds and scheduling were inspected and left unchanged. A native
+controlled-process test confirms successive accepted batches retain the first
+300 and clear the stack at batch 301, matching the current strict-greater-than
+condition. In the zero-accepted recursive path, the batch cutoff is evaluated
+only when recursion returns: a case rejecting 301 times makes 302 calls before
+unwinding, with the removal counter incremented at each eligible unwind frame.
+With production defaults (batch 500, angular max_rejection 10000), a permanently
+rejected direction instead raises the angular error at proposal 10002, after
+20 full batches. The separate 10000-iteration secondary-generation guard was
+reviewed statically; it was not exercised by that controlled Compton test.
+
+```bash
+python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-attempts \
+  --test-source core/tests/test_lastvertex_attempt_limits.cpp
+```
+
+Maintained LINAC/RTPlan/patient LV+TLE transports complete all 123 intervals with
+CT_40 on 1/2/4/8 workers and the full 4 mm CT on four workers. Each normal case
+uses 12684 originals, split 50, seed 20261103 and unchanged physical settings;
+generated/classified replay counts match. Thirty exported images fully read,
+finite dose/squared arrays, and exact six-image monothread reference agreement.
+
+An additional 8-worker zero-quota case executes 255 real originals and 729
+synthetic geantinos, verified at native source gathering before source teardown.
+The launcher's legacy total-minus-replays header reports 984 originals there;
+this known metadata limitation is not fixed by the actor MT flag. Normal cases
+have no such count discrepancy. Correlated replay uncertainty, physical accuracy,
+stop-path completeness and meaningful scaling remain separate validation work.
+The small CT_40 smoke is slower in MT (28.7/34.5/39.1/42.9 s wall on 1/2/4/8);
+these startup/geometry/output-inclusive times are not an equal-uncertainty benchmark.

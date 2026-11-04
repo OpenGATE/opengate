@@ -48,7 +48,7 @@ G4Mutex SetEventCorrectionForLastVertex = G4MUTEX_INITIALIZER;
 
 GateLastVertexInteractionSplittingActor::
     GateLastVertexInteractionSplittingActor(py::dict &user_info)
-    : GateVActor(user_info, false) {
+    : GateVActor(user_info, true) {
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfSimulationWorkerAction");
 }
