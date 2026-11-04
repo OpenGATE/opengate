@@ -1153,7 +1153,8 @@ def build_scene(
     which is what the benchmark does.  ``cache=False`` bypasses the baked
     ``.vtp`` scene cache: the cached scene is one actor, so anything that needs
     the actors of the scene (per-track animation, per-volume visibility, the
-    ``edges`` option) has to parse the VRML.
+    ``edges`` option) has to parse the VRML.  A WebGPU backend never reads the
+    cache, see :func:`write_scene_cache`.
     """
     vtk = import_vtk()
     info = resolve_backend(backend)
@@ -1164,8 +1165,17 @@ def build_scene(
         window.SetOffScreenRendering(1)
 
     # the VRML parse is the expensive part of opening a scene (12-19 ms against
-    # 5-7 ms for the baked file, §6.4), and it is the same scene every time
-    cache_path = scene_cache_path(filename) if cache and not edges else None
+    # 5-7 ms for the baked file, §6.4), and it is the same scene every time.
+    # Not on a WebGPU window though: vtkWebGPU draws *nothing* for a polydata
+    # whose colour comes from an array (the baked scene carries one RGBA per
+    # cell, 0 pixel against 24 964 without the colours), so the parsed scene is
+    # kept there and the cache is not even written.
+    webgpu = "webgpu" in window.GetClassName().lower()
+    cache_path = (
+        scene_cache_path(filename) if cache and not edges and not webgpu else None
+    )
+    if webgpu and cache:
+        logger.debug("vtkWebGPU: scene cache bypassed (scalar-coloured polydata)")
     if cache_path is not None and _cache_is_fresh(cache_path, Path(filename)):
         renderer = read_scene_cache(window, cache_path)
     else:
