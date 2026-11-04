@@ -29,13 +29,19 @@ representation before creating child jobs:
    master simulation. This stage is allowed to mutate user info if values need
    to be resolved before cloning, for example run timing dependent dynamic
    parametrisations.
-3. The resolved master configuration is stored in the campaign folder.
+3. The resolved master configuration is stored in the campaign folder, with
+   ``simulation_dir`` "." and the input paths relative to the campaign
+   folder (``_write_campaign_simulation_json``, also used by
+   ``package_simulation``): the campaign folder can be moved.
 4. Child simulations are cloned from the resolved master dictionary.
 5. Each child receives job-specific changes, such as run timing intervals and
    random seed updates.
-6. Input files are transferred into each job folder by copy or symlink, and the
-   child ``simulation.json`` is rewritten so rehydrated paths point to the
-   job-local files.
+6. Input files are transferred into each job folder by relative symlinks
+   (default, ``link_files=True``; copied if a link cannot be created) or
+   copies, and the child ``simulation.json`` is rewritten so rehydrated paths
+   point to the job-local files. The input files of the job are listed in its
+   ``job_metadata.json`` (``input_files``): a job folder copied with its links
+   dereferenced is self-contained.
 7. The campaign manifest and one metadata file per job are written.
 
 The manifest is the campaign-level index. It records the original run timing
@@ -184,7 +190,9 @@ The command line tool ``opengate_jobs`` (``opengate/bin/opengate_jobs.py``)
 calls the same lower-level functions, with the subcommands ``split``, ``run``,
 ``status``, ``merge`` and ``clean``; ``run`` can split first, and with the
 local backend it also waits for the jobs and merges their output. This is important for server usage: the user can package a
-simulation folder, copy it to a cluster, then run ``opengate_jobs split``,
+simulation folder (``package_simulation``, with ``copy_inputs=True`` the
+input files are copied and the folder can be moved), copy it to a cluster,
+then run ``opengate_jobs split``,
 ``opengate_jobs run --backend ...``, ``opengate_jobs merge`` and
 ``opengate_jobs clean`` without writing a custom Python driver script on the
 cluster. ``opengate_job_runner`` runs one job folder: it is the command of the

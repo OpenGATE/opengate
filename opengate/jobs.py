@@ -102,48 +102,92 @@ def package_simulation(
     path,
     simulation_file=DEFAULT_SIMULATION_FILENAME,
     resolved_simulation_file=None,
-    link_files=False,
+    copy_inputs=True,
     overwrite=False,
 ):
-    """Package a simulation under a structural root folder.
+    """Package a simulation in a campaign folder, to split it into jobs later
+    (opengate_jobs split / run / merge).
 
-    The package root contains the authored ``simulation.json`` plus archived
-    input files. Optionally, a second ``simulation_resolved.json`` snapshot can
-    be written to make the resolved configuration explicit on disk.
+    The folder contains ``simulation.json`` and, with ``copy_inputs=True``
+    (default), a copy of the input files: ``simulation.json`` points to these
+    copies and the folder can be moved (e.g. to a cluster). With
+    ``copy_inputs=False``, nothing is copied and ``simulation.json`` points to
+    the original input files: the folder must stay on the same machine.
+
+    The folder is the root of the simulation (``simulation_dir``): a relative
+    ``output_dir`` (the merged output) is relative to it. Optionally, a second
+    ``simulation_resolved.json`` snapshot can be written to make the resolved
+    configuration explicit on disk.
     """
 
     package_root = _prepare_package_root(path, overwrite=overwrite)
-    simulation_json_path = package_root / simulation_file
-
-    if simulation_json_path.exists() and overwrite is False:
-        fatal(
-            f"Refusing to overwrite existing simulation file '{simulation_json_path}'. "
-            "Set overwrite=True to replace it."
-        )
-
-    simulation.write_simulation_json(
-        directory=package_root,
-        filename=Path(simulation_file),
-    )
-    simulation.archive_input_files(
-        directory=package_root,
-        link_files=link_files,
-    )
-
-    resolved_simulation_path = None
+    filenames = [simulation_file]
     if resolved_simulation_file is not None:
-        resolved_simulation_path = package_root / resolved_simulation_file
-        if resolved_simulation_path.exists() and overwrite is False:
+        filenames.append(resolved_simulation_file)
+    for filename in filenames:
+        if (package_root / filename).exists() and overwrite is False:
             fatal(
-                f"Refusing to overwrite existing resolved simulation file "
-                f"'{resolved_simulation_path}'. Set overwrite=True to replace it."
+                f"Refusing to overwrite existing simulation file "
+                f"'{package_root / filename}'. Set overwrite=True to replace it."
             )
-        simulation.write_resolved_simulation_json(
-            directory=package_root,
-            filename=Path(resolved_simulation_file),
+
+    _write_campaign_simulation_json(
+        simulation,
+        simulation.to_dictionary(),
+        package_root,
+        simulation_file,
+        copy_inputs=copy_inputs,
+    )
+    if resolved_simulation_file is not None:
+        simulation.resolve_and_validate_config()
+        _write_campaign_simulation_json(
+            simulation,
+            simulation._get_resolved_simulation_dictionary(),
+            package_root,
+            resolved_simulation_file,
+            copy_inputs=copy_inputs,
         )
 
     return package_root
+
+
+def _write_campaign_simulation_json(
+    simulation,
+    simulation_dict,
+    campaign_dir,
+    filename,
+    copy_inputs=False,
+    keep_output_dir=False,
+):
+    """Write the simulation of a campaign folder: the folder is the root of the
+    simulation (simulation_dir "."), the input paths are relative to it, so the
+    folder can be moved (with copy_inputs, or when the inputs are moved with it).
+
+    copy_inputs: copy the input files in the folder and point to these copies.
+    keep_output_dir: the output folder stays the same folder as in the
+    simulation (relative to the campaign folder if inside, absolute otherwise);
+    by default, a relative output_dir becomes relative to the campaign folder.
+    """
+    campaign_dir = Path(campaign_dir).absolute()
+    source_dir = Path(simulation.simulation_dir).absolute()
+    if copy_inputs:
+        d, _ = _transfer_input_files_between_simulations(
+            simulation_dict, source_dir, simulation_dict, campaign_dir
+        )
+    else:
+        d = simulation._rewrite_input_paths_in_dict(
+            simulation_dict, campaign_dir, path_mode="relative"
+        )
+    user_info = d["user_info"]
+    user_info["simulation_dir"] = Path(".")
+    if keep_output_dir:
+        output_dir = (source_dir / Path(simulation.output_dir)).resolve()
+        if output_dir.is_relative_to(campaign_dir.resolve()):
+            output_dir = output_dir.relative_to(campaign_dir.resolve())
+        user_info["output_dir"] = output_dir
+    with open(campaign_dir / filename, "w") as f:
+        dump_json(d, f)
+    return campaign_dir / filename
 
 
 def _clone_simulation_from_dictionary(simulation_type, simulation_dict):
@@ -152,20 +196,6 @@ def _clone_simulation_from_dictionary(simulation_type, simulation_dict):
     cloned_simulation = simulation_type()
     cloned_simulation.from_dictionary(copy.deepcopy(simulation_dict))
     return cloned_simulation
-
-
-def _write_simulation_dictionary_json(
-    simulation, simulation_dict, directory, filename=DEFAULT_SIMULATION_FILENAME
-):
-    directory = simulation.get_root_path(directory, is_file_or_directory="d")
-    updated_dict = simulation._rewrite_input_paths_in_dict(
-        simulation_dict,
-        directory,
-        path_mode="relative",
-    )
-    with open(directory / filename, "w") as output_file:
-        dump_json(updated_dict, output_file)
-    return directory / filename
 
 
 def _load_packaged_simulation(simulation_folder, simulation_file):
@@ -606,8 +636,17 @@ def _collect_resolved_input_files_from_simulation_dict(
     return input_files
 
 
+# warn only once when the input files cannot be linked (copied instead)
+_symlink_failure_warned = False
+
+
 def _stage_input_files(input_files, target_directory, link_files=False):
-    """Copy or link resolved input files and return source-to-target path map."""
+    """Copy or link resolved input files and return source-to-target path map.
+
+    The links are relative. If a link cannot be created (e.g. on Windows
+    without the Developer Mode), the file is copied.
+    """
+    global _symlink_failure_warned
 
     target_directory = Path(target_directory)
     unique_input_files = list(dict.fromkeys(Path(f).resolve() for f in input_files))
@@ -640,15 +679,17 @@ def _stage_input_files(input_files, target_directory, link_files=False):
             relative_target = os.path.relpath(input_file, target_directory)
             try:
                 destination.symlink_to(relative_target)
+                continue
             except OSError as error:
-                fatal(
-                    f"Failed to create symlink from '{relative_target}' to "
-                    f"'{destination}': {error}. On Windows, creating symbolic "
-                    "links requires Developer Mode or Administrator privileges. "
-                    "Use link_files=False to copy files instead."
-                )
-        else:
-            shutil.copy2(input_file, target_directory)
+                if not _symlink_failure_warned:
+                    warning(
+                        f"Cannot create a symbolic link to the input file "
+                        f"'{input_file}' ({error}): the input files are copied. "
+                        f"On Windows, symbolic links require the Developer Mode "
+                        f"or Administrator privileges."
+                    )
+                    _symlink_failure_warned = True
+        shutil.copy2(input_file, target_directory)
 
     return {
         Path(input_file)
@@ -751,7 +792,8 @@ def _transfer_input_files_between_simulations(
 
     This helper is intentionally asymmetric: source paths are resolved against
     the source context, files are staged in the target folder, and the target
-    serialized config is rewritten to point to the staged files.
+    serialized config is rewritten to point to the staged files. Return the
+    rewritten config and the names of the staged files (in target_directory).
     """
 
     # The target child dict encodes the per-job subset of dynamic inputs. Use it
@@ -783,12 +825,13 @@ def _transfer_input_files_between_simulations(
         target_directory,
         link_files=link_files,
     )
-    return _rewrite_transferred_input_paths_in_dict(
+    updated_dict = _rewrite_transferred_input_paths_in_dict(
         target_simulation_dict,
         source_reference_root_dir,
         target_directory,
         transferred_path_map,
     )
+    return updated_dict, sorted(p.name for p in transferred_path_map.values())
 
 
 class JobsSplitManager:
@@ -809,7 +852,7 @@ class JobsSplitManager:
         campaign_dir=None,
         number_of_jobs=1,
         policy=DEFAULT_SPLIT_POLICY,
-        link_files=False,
+        link_files=True,
         overwrite_existing_job_folders=False,
         write_resolved_simulation=True,
         **options,
@@ -994,28 +1037,21 @@ class JobsSplitManager:
             overwrite_existing_job_folders=self.overwrite_existing_job_folders,
         )
 
-        _write_simulation_dictionary_json(
-            self.master_simulation,
-            self.resolved_master_simulation_dict,
-            directory=self.campaign_dir,
-            filename=Path(self.simulation_file),
-        )
+        # The input files are not copied in the campaign folder: the jobs link
+        # to (or copy) the files of the master simulation (in the campaign
+        # folder if it was packaged with copy_inputs, the original files
+        # otherwise). The merged output goes to the output folder of the master
+        # simulation.
+        filenames = [self.simulation_file]
         if self.write_resolved_simulation is True:
-            _write_simulation_dictionary_json(
+            filenames.append(self.resolved_simulation_file)
+        for filename in filenames:
+            _write_campaign_simulation_json(
                 self.master_simulation,
                 self.resolved_master_simulation_dict,
-                directory=self.campaign_dir,
-                filename=Path(self.resolved_simulation_file),
-            )
-        packaged_root_matches_campaign_dir = (
-            self._simulation_path is not None
-            and self._simulation_path.parent.resolve() == Path(self.campaign_dir)
-        )
-        if packaged_root_matches_campaign_dir is False:
-            self.master_simulation.archive_input_files(
-                directory=self.campaign_dir,
-                dct=self.resolved_master_simulation_dict,
-                link_files=self.link_files,
+                self.campaign_dir,
+                filename,
+                keep_output_dir=True,
             )
 
         self.jobs_manifest = {
@@ -1062,13 +1098,18 @@ class JobsSplitManager:
             )
             job_folder.mkdir(parents=True, exist_ok=False)
             child_simulation_dict = child_simulation.to_dictionary()
-            updated_child_simulation_dict = _transfer_input_files_between_simulations(
-                self.resolved_master_simulation_dict,
-                self.master_source_reference_simulation_dir,
-                child_simulation_dict,
-                job_folder,
-                link_files=self.link_files,
+            updated_child_simulation_dict, input_files = (
+                _transfer_input_files_between_simulations(
+                    self.resolved_master_simulation_dict,
+                    self.master_source_reference_simulation_dir,
+                    child_simulation_dict,
+                    job_folder,
+                    link_files=self.link_files,
+                )
             )
+            # the input files of the job (links or copies in its folder): a
+            # job folder copied with its links dereferenced is self-contained
+            child_metadata["input_files"] = input_files
             with open(job_folder / JOB_SIMULATION_FILENAME, "w") as output_file:
                 dump_json(updated_child_simulation_dict, output_file)
             with open(job_folder / JOB_METADATA_FILENAME, "w") as output_file:
@@ -1128,11 +1169,21 @@ def jobs_split(
     campaign_dir=None,
     number_of_jobs=1,
     policy=DEFAULT_SPLIT_POLICY,
-    link_files=False,
+    link_files=True,
     overwrite_existing_job_folders=False,
     write_resolved_simulation=True,
     **options,
 ):
+    """Split a simulation into job folders in campaign_dir.
+
+    The simulation is given as an object (simulation) or as a folder with its
+    json file (simulation_folder, e.g. a folder made by package_simulation).
+    Each job folder contains the simulation of the job and its input files:
+    relative symbolic links (link_files=True, default) to the input files of
+    the simulation, or copies (link_files=False). A job folder copied with its
+    links dereferenced is self-contained (its input files are listed in
+    job_metadata.json).
+    """
     jobs_split_manager = JobsSplitManager(
         simulation=simulation,
         simulation_folder=simulation_folder,

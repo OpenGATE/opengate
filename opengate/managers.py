@@ -2999,6 +2999,13 @@ class Simulation(GateObject):
             else:
                 from .jobs import SplitRunMergeController
 
+                if campaign_dir is None:
+                    fatal(
+                        f"Simulation.run(number_of_jobs={number_of_jobs}) requires "
+                        f"campaign_dir, the folder of the jobs, e.g. "
+                        f'sim.run(number_of_jobs={number_of_jobs}, campaign_dir="jobs").'
+                    )
+
                 if start_new_process is True:
                     fatal(
                         "Simulation.run() received both start_new_process=True and "

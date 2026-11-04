@@ -41,6 +41,7 @@ the same script, use ``merge_after_run=True`` together with
 
    controller = sim.run(
        number_of_jobs=4,
+       campaign_dir="campaign",
        wait_for_result=True,
        merge_after_run=True,
    )
@@ -49,6 +50,11 @@ the same script, use ``merge_after_run=True`` together with
    # and the live simulation object can be used for postprocessing.
 
 In the example, ``controller`` is a ``SplitRunMergeController`` object that can be inspected. It is always returned by ``sim.run(...)`` when the simulation is run in multiple jobs.
+
+``campaign_dir`` is required with ``number_of_jobs`` > 1: it is the folder of
+the jobs (``campaign/job0001``, ``campaign/job0002``, ...). The input files are
+not copied: the job folders contain symbolic links to them (see
+:ref:`multijob_input_files`).
 
 Local pooled execution always uses one spawned worker process per child job.
 The output of each job (the messages of GATE and Geant4) goes to the file
@@ -195,7 +201,10 @@ The simulation can also be written in a campaign folder and run with the
 
 .. code-block:: python
 
-   sim.to_json_file("campaign/")
+   gate.package_simulation(sim, "campaign/")
+
+The folder ``campaign`` then contains ``simulation.json`` and a copy of the
+input files (see :ref:`multijob_input_files`).
 
 Then, in one command, split the simulation into 8 jobs, run them on the local
 machine (``-l``, with one progress bar for all the jobs) and merge their
@@ -211,7 +220,8 @@ the login node of a cluster by mistake.
 
 The merged output is written in the ``output_dir`` of the simulation. A
 relative ``output_dir`` is relative to the campaign folder, e.g.
-``campaign/output`` for ``sim.output_dir = "output"``.
+``campaign/output`` for ``sim.output_dir = "output"`` (``opengate_jobs merge
+-o`` writes it elsewhere).
 
 - The output of each job is in ``campaign/job000N/job.log``.
 - If some jobs fail or are interrupted (Control-C), the command reports them
@@ -229,53 +239,75 @@ relative ``output_dir`` is relative to the campaign folder, e.g.
 Server-based execution
 ----------------------
 
-Server-based multi-job execution is intended to be file-based:
+On a cluster, the jobs are submitted to a scheduler (Slurm, PBS, HTCondor).
+The workflow is file-based:
 
-1. prepare a campaign folder containing ``simulation.json`` and the required
-   input files, probably locally. To create the ```simulation.json`` file, you can use ``sim.to_json_file()`` in your script instead of ``sim.run(...)``.
-2. transfer the campaign folder to the server. Be aware of the paths used in the .json file for material database or other input files. They should be valid on the server.
-3. split the simulation on the server
-4. submit the child jobs through a scheduler
-5. inspect job status
-6. merge the finished jobs
-7. optionally clean temporary split artifacts
-8. transfer the campaign folder with the merged output back to your local machine
+1. **package** the simulation in a campaign folder: in the script, replace
+   ``sim.run()`` by
 
-.. warning::
+   .. code-block:: python
 
-   Server-based multi-job execution is currently untested. The workflow and
-   command-line tools are available, but they should still be treated as
-   experimental until broader validation has been completed.
+      gate.package_simulation(sim, "campaign/")
 
+   The folder contains ``simulation.json`` and a copy of the input files
+   (``copy_inputs=True``, the default), so it can be moved.
+2. copy the campaign folder to the server (if it is not made there);
+3. split, run, follow and merge the jobs with the command line:
 
-Suggested server workflow
-~~~~~~~~~~~~~~~~~~~~~~~~~
+   .. code-block:: console
 
-On a large server, execution of simulations is usually handled via :ref:`command-line tools <command_line_tools>`.
+      opengate_jobs split campaign/ -j 100
+      opengate_jobs run campaign/ --backend slurm --backend-options slurm.json
+      opengate_jobs status campaign/
+      opengate_jobs cancel campaign/     (if needed)
+      opengate_jobs merge campaign/
+      opengate_jobs clean campaign/
 
-Assume a campaign folder called ``campaign`` containing:
+4. copy the merged output (``campaign/output`` for a relative
+   ``output_dir``) back to your local machine.
 
-- ``simulation.json``
-- any input files needed by the simulation
+The campaign folder is the authoritative container throughout the workflow.
+After the split, it contains:
 
-Then the workflow is:
-
-.. code-block:: console
-
-   opengate_jobs split campaign/ -j 100
-   opengate_jobs run campaign/ --backend htcondor --backend-options htcondor_options.json
-   opengate_jobs status campaign/
-   opengate_jobs merge campaign/
-   opengate_jobs clean campaign/
-
-The campaign folder is the authoritative container throughout the workflow. It
-contains:
-
-- the master ``simulation.json``
-- optionally ``simulation_resolved.json``
-- the child folders ``job0001``, ``job0002``, ...
+- the master ``simulation.json`` (and ``simulation_resolved.json``)
+- the input files (with ``copy_inputs=True``)
+- the job folders ``job0001``, ``job0002``, ...
 - the manifest and status files used by the jobs tools
-- the merged output
+- the merged output (for a relative ``output_dir``)
+
+
+.. _multijob_input_files:
+
+Input files
+~~~~~~~~~~~
+
+``gate.package_simulation(sim, "campaign/", copy_inputs=...)``:
+
+- ``copy_inputs=True`` (default): the input files (images, material
+  databases, ...) are copied in the campaign folder and ``simulation.json``
+  points to these copies. The campaign folder can be moved, e.g. to a cluster,
+  before or after the split.
+- ``copy_inputs=False``: nothing is copied, ``simulation.json`` points to the
+  original input files. The campaign folder must stay on the same machine,
+  with the original files at the same place.
+
+All the paths of ``simulation.json`` are relative to the campaign folder,
+which is the root of the simulation (``simulation_dir``).
+
+Each job folder contains the ``simulation.json`` of the job and relative
+symbolic links to its input files: the copies of the campaign folder, or the
+original files. The input files are therefore never copied for each job (if
+a symbolic link cannot be created, e.g. on Windows without the Developer
+Mode, the file is copied). The jobs need a file system shared with the
+campaign folder, as usual on a cluster.
+
+For a grid without shared file system, each job folder can be sent on its
+own: copied with its links dereferenced (e.g. ``tar -h``, ``cp -L``,
+``rsync -L``), a job folder is self-contained and runs anywhere with
+``opengate_job_runner <job folder>``. The input files of each job are listed
+in its ``job_metadata.json``. Once the job folders, with their ``output``
+folder, are back in the campaign folder, ``opengate_jobs merge`` merges them
+(the merge does not need the input files).
 
 
 Backend options on a server
