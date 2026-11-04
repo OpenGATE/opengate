@@ -114,6 +114,29 @@ def _scene_stats(renderer):
     return {"props": props, "triangles": triangles}
 
 
+def _run_label(driver, backend, size):
+    """One line stamped on the screenshot, so each PNG says which run it is."""
+    return (
+        f"opengate {driver} - {backend} - {size[0]}x{size[1]} - "
+        f"{platform.system()} {platform.machine()}"
+    )
+
+
+def _add_vtk_label(vtk, renderer, text):
+    """Draw `text` in the upper-left corner of a VTK renderer."""
+    actor = vtk.vtkTextActor()
+    actor.SetInput(text)
+    prop = actor.GetTextProperty()
+    prop.SetFontSize(18)
+    prop.SetColor(1.0, 1.0, 1.0)
+    prop.SetBackgroundColor(0.0, 0.0, 0.0)
+    prop.SetBackgroundOpacity(0.65)
+    actor.GetPositionCoordinate().SetCoordinateSystemToNormalizedViewport()
+    actor.SetPosition(0.015, 0.955)
+    renderer.AddViewProp(actor)
+    return actor
+
+
 # -----------------------------------------------------------------------------
 # geant4 export (one process per export)
 # -----------------------------------------------------------------------------
@@ -290,7 +313,107 @@ def _run_export(kind, outdir, with_image, backend="auto", timeout=900):
 # -----------------------------------------------------------------------------
 # viewer benchmarks (one process per viewer)
 # -----------------------------------------------------------------------------
-def bench_vtk(vrml, slices=None, frames=30, size=(1024, 768), backend="auto"):
+def _track_actors(renderer):
+    """The trajectory actors of a renderer: one polyline per stored track."""
+    tracks = []
+    for i in range(renderer.GetViewProps().GetNumberOfItems()):
+        prop = renderer.GetViewProps().GetItemAsObject(i)
+        mapper = getattr(prop, "GetMapper", lambda: None)()
+        data = mapper.GetInput() if mapper is not None else None
+        if data is None or not hasattr(data, "GetNumberOfLines"):
+            continue
+        if data.GetNumberOfLines() > 0 and data.GetNumberOfPolys() == 0:
+            tracks.append(prop)
+    return tracks
+
+
+def _animate_tracks(vtk, window, renderer, path, frames=40):
+    """Write an animated GIF that reveals the stored tracks one by one.
+
+    The geometry stays fixed; each frame makes one more trajectory visible and
+    updates an on-screen fps counter, so the GIF shows the scene filling up with
+    tracks while stating the render rate it was captured at.
+    """
+    from PIL import Image
+
+    from opengate.visualization import _write_screenshot
+
+    tracks = _track_actors(renderer)
+    if not tracks or not path:
+        return ""
+
+    import colorsys
+
+    for index, track in enumerate(tracks):
+        # one hue per particle, so overlapping tracks stay distinguishable
+        hue = index / max(1, len(tracks))
+        track.GetProperty().SetColor(*colorsys.hsv_to_rgb(hue, 0.85, 1.0))
+        track.VisibilityOff()
+
+    counter = vtk.vtkTextActor()
+    prop = counter.GetTextProperty()
+    prop.SetFontSize(16)
+    prop.SetColor(0.5, 1.0, 0.5)
+    prop.SetBackgroundColor(0.0, 0.0, 0.0)
+    prop.SetBackgroundOpacity(0.65)
+    counter.GetPositionCoordinate().SetCoordinateSystemToNormalizedViewport()
+    # bottom centre: pyvista draws its axes triad in the bottom-left corner
+    counter.SetPosition(0.38, 0.03)
+    renderer.AddViewProp(counter)
+
+    # spread the tracks over the requested frames, so the GIF grows steadily
+    # even when the scene stores only a handful of trajectories
+    frames = max(2, frames)
+    images = []
+    smoothing = 0.0
+    shown = 0
+    with tempfile.TemporaryDirectory() as scratch:
+        for index in range(frames):
+            target = round((index + 1) * len(tracks) / frames)
+            while shown < target:
+                tracks[shown].VisibilityOn()
+                shown += 1
+            t0 = time.perf_counter()
+            window.Render()
+            elapsed = time.perf_counter() - t0
+            rate = 1.0 / elapsed if elapsed > 0 else 0.0
+            smoothing = rate if smoothing == 0.0 else 0.9 * smoothing + 0.1 * rate
+            counter.SetInput(
+                f"{smoothing:5.1f} fps - {shown}/{len(tracks)} tracks"
+            )
+            window.Render()
+            frame = Path(scratch) / f"frame_{index:04d}.png"
+            _write_screenshot(vtk, window, str(frame))
+            images.append(Image.open(frame).convert("RGB"))
+            frame.unlink()
+
+    renderer.RemoveViewProp(counter)
+    for track in tracks:
+        track.VisibilityOn()
+    window.Render()
+
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    images[0].save(
+        path,
+        save_all=True,
+        append_images=images[1:],
+        duration=50,
+        loop=0,
+        optimize=True,
+    )
+    return str(path)
+
+
+def bench_vtk(
+    vrml,
+    slices=None,
+    frames=30,
+    size=(1024, 768),
+    backend="auto",
+    driver="vtk",
+    gif="",
+    gif_frames=40,
+):
     from opengate import visualization
 
     # the backend probe is a one-off (cached for the process): time it apart,
@@ -303,23 +426,36 @@ def bench_vtk(vrml, slices=None, frames=30, size=(1024, 768), backend="auto"):
     )
     first_s, _ = _timed(window.Render)
     frames_report = _frame_times(window.Render, frames)
+    device = info.renderer.split(" (")[0] or info.vendor
+    # 'vulkan -> vulkan on Vulkan via WebGPU': do not repeat the same name
+    where = info.api if info.api == info.backend else f"{info.backend} ({info.api})"
+    label = _run_label(driver, f"{where} on {device}", size)
+    _add_vtk_label(visualization.import_vtk(), renderer, label)
+    png = str(Path(vrml).with_suffix(f".{driver}.png"))
     shot_s, _ = _timed(
         lambda: visualization._write_screenshot(
-            visualization.import_vtk(),
-            window,
-            str(Path(vrml).with_suffix(".bench.png")),
+            visualization.import_vtk(), window, png
         )
     )
+    gif_path = (
+        _animate_tracks(
+            visualization.import_vtk(), window, renderer, gif, frames=gif_frames
+        )
+        if gif
+        else ""
+    )
     result = {
-        "viewer": "vtk",
+        "viewer": driver,
         "available": True,
         "backend": info.report(),
         "backend_name": info.backend,
+        "label": label,
+        "gif": gif_path,
         "probe_ms": round(1000 * probe_s, 2),
         "load_ms": round(1000 * load_s, 2),
         "first_frame_ms": round(1000 * first_s, 2),
         "screenshot_ms": round(1000 * shot_s, 2),
-        "screenshot": str(Path(vrml).with_suffix(".bench.png")),
+        "screenshot": png,
         **_scene_stats(renderer),
         **frames_report,
     }
@@ -327,7 +463,7 @@ def bench_vtk(vrml, slices=None, frames=30, size=(1024, 768), backend="auto"):
     return result
 
 
-def bench_pyvista(vrml, frames=30, size=(1024, 768)):
+def bench_pyvista(vrml, frames=30, size=(1024, 768), gif="", gif_frames=40):
     try:
         import pyvista
     except Exception as exception:
@@ -344,18 +480,31 @@ def bench_pyvista(vrml, frames=30, size=(1024, 768)):
 
     try:
         load_s, plotter = _timed(load)
+        label = _run_label("pyvista", f"pyvista {pyvista.__version__}", size)
+        plotter.add_text(
+            label, position="upper_left", font_size=10, color="white", name="run-label"
+        )
         # plotter.render() is a no-op when nothing changed: time the underlying
         # render window, exactly like the VTK driver, so the frames compare
         render = plotter.ren_win.Render
         first_s, _ = _timed(render)
         frames_report = _frame_times(render, frames)
-        png = str(Path(vrml).with_suffix(".bench_pyvista.png"))
+        png = str(Path(vrml).with_suffix(".pyvista.png"))
         shot_s, _ = _timed(lambda: plotter.screenshot(png))
         renderer = plotter.renderer
+        from opengate.visualization import import_vtk
+
+        gif_path = (
+            _animate_tracks(import_vtk(), plotter.ren_win, renderer, gif, gif_frames)
+            if gif
+            else ""
+        )
         result = {
             "viewer": "pyvista",
             "available": True,
             "backend": f"pyvista {pyvista.__version__}",
+            "label": label,
+            "gif": gif_path,
             "load_ms": round(1000 * load_s, 2),
             "first_frame_ms": round(1000 * first_s, 2),
             "screenshot_ms": round(1000 * shot_s, 2),
@@ -369,7 +518,7 @@ def bench_pyvista(vrml, frames=30, size=(1024, 768)):
         return {"viewer": "pyvista", "available": False, "reason": str(exception)}
 
 
-def bench_pyg4ometry(gdml, frames=30, size=(1024, 768)):
+def bench_pyg4ometry(gdml, frames=30, size=(1024, 768), gif="", gif_frames=40):
     try:
         import pyg4ometry
     except Exception as exception:
@@ -391,18 +540,31 @@ def bench_pyg4ometry(gdml, frames=30, size=(1024, 768)):
 
     try:
         load_s, viewer = _timed(load)
+        from opengate.visualization import _write_screenshot, import_vtk
+
+        vtk = import_vtk()
+        label = _run_label(
+            "pyg4ometry",
+            f"pyg4ometry {getattr(pyg4ometry, '__version__', '?')}",
+            size,
+        )
+        _add_vtk_label(vtk, viewer.ren, label)
         render = viewer.renWin.Render
         first_s, _ = _timed(render)
         frames_report = _frame_times(render, frames)
-        from opengate.visualization import import_vtk, _write_screenshot
-
-        vtk = import_vtk()
-        png = str(Path(gdml).with_suffix(".bench_pyg4ometry.png"))
+        png = str(Path(gdml).with_suffix(".pyg4ometry.png"))
         shot_s, _ = _timed(lambda: _write_screenshot(vtk, viewer.renWin, png))
+        gif_path = (
+            _animate_tracks(vtk, viewer.renWin, viewer.ren, gif, gif_frames)
+            if gif
+            else ""
+        )
         return {
             "viewer": "pyg4ometry",
             "available": True,
             "backend": f"pyg4ometry {getattr(pyg4ometry, '__version__', '?')}",
+            "label": label,
+            "gif": gif_path,
             "load_ms": round(1000 * load_s, 2),
             "first_frame_ms": round(1000 * first_s, 2),
             "screenshot_ms": round(1000 * shot_s, 2),
@@ -415,7 +577,15 @@ def bench_pyg4ometry(gdml, frames=30, size=(1024, 768)):
 
 
 def _run_viewer(
-    viewer, vrml, gdml, slices, frames, size=(1024, 768), backend="auto", timeout=900
+    viewer,
+    vrml,
+    gdml,
+    slices,
+    frames,
+    size=(1024, 768),
+    backend="auto",
+    gif=False,
+    timeout=900,
 ):
     needed = [gdml] if viewer == "pyg4ometry" else [vrml]
     for filename in needed:
@@ -429,7 +599,7 @@ def _run_viewer(
         "import json, sys\n"
         "from opengate.bin.opengate_visu_benchmark import _bench_viewer\n"
         f"r = _bench_viewer({viewer!r}, {vrml!r}, {gdml!r}, {slices!r}, {frames},"
-        f" {tuple(size)!r}, {backend!r})\n"
+        f" {tuple(size)!r}, {backend!r}, {bool(gif)!r})\n"
         f"print({_JSON_PREFIX!r} + json.dumps(r))\n"
     )
     process = subprocess.run(
@@ -449,13 +619,32 @@ def _run_viewer(
     return {"viewer": viewer, "available": False, "reason": "no report"}
 
 
-def _bench_viewer(viewer, vrml, gdml, slices, frames, size=(1024, 768), backend="auto"):
+def _bench_viewer(
+    viewer,
+    vrml,
+    gdml,
+    slices,
+    frames,
+    size=(1024, 768),
+    backend="auto",
+    gif=False,
+):
     """One viewer, in its own process (see the module docstring)."""
     t0 = time.perf_counter()
+    gif_path = ""
+    if gif:
+        base = gdml if viewer == "pyg4ometry" else vrml
+        gif_path = str(Path(base).with_suffix(f".{viewer}.gif")) if base else ""
     if viewer.startswith("vtk"):
         forced = _VTK_BACKEND_OF.get(viewer) or backend
         result = bench_vtk(
-            vrml, slices=slices, frames=frames, size=size, backend=forced
+            vrml,
+            slices=slices,
+            frames=frames,
+            size=size,
+            backend=forced,
+            driver=viewer,
+            gif=gif_path,
         )
         result["viewer"] = viewer
         notes = []
@@ -467,9 +656,9 @@ def _bench_viewer(viewer, vrml, gdml, slices, frames, size=(1024, 768), backend=
         if notes:
             result["notes"] = "; ".join(notes)
     elif viewer == "pyvista":
-        result = bench_pyvista(vrml, frames=frames, size=size)
+        result = bench_pyvista(vrml, frames=frames, size=size, gif=gif_path)
     elif viewer == "pyg4ometry":
-        result = bench_pyg4ometry(gdml, frames=frames, size=size)
+        result = bench_pyg4ometry(gdml, frames=frames, size=size, gif=gif_path)
     else:
         raise ValueError(f"unknown viewer '{viewer}'")
     result["total_seconds"] = time.perf_counter() - t0
@@ -604,6 +793,13 @@ def build_report(export_seconds, viewers, image_volume):
 )
 @click.option("--size", default="1024x768", help="render size, e.g. 1024x768")
 @click.option(
+    "--gif",
+    is_flag=True,
+    help="also write an animated GIF per driver: the tracks appear one by one, "
+    "with an fps counter",
+)
+@click.option("--gif-frames", default=40, help="maximum frames of the animated GIF")
+@click.option(
     "--json", "json_out", default="", help="write the raw report to this JSON file"
 )
 @click.option(
@@ -629,6 +825,8 @@ def go(
     frames,
     backend,
     size,
+    gif,
+    gif_frames,
     json_out,
     markdown,
     viewer,
@@ -657,6 +855,7 @@ def go(
                     frames,
                     (width, height),
                     backend,
+                    gif,
                 )
             )
         )
@@ -702,9 +901,12 @@ def go(
             frames,
             (width, height),
             backend,
+            gif,
         )
         if not viewers[name].get("available"):
             print(f"    not available: {viewers[name].get('reason')}")
+        elif viewers[name].get("gif"):
+            print(f"    gif: {viewers[name]['gif']}")
     viewers["qt"] = bench_qt(generate_dir, with_image)
 
     title, table = build_report(exports, viewers, image_volume)

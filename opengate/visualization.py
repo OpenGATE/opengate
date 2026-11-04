@@ -541,7 +541,11 @@ def _probe_in_child(timeout=180):
         if rung in _WEBGPU_RUNGS:
             env["VTK_FACTORY_PREFER"] = "RenderingBackend=WebGPU"
         if rung == "cuda":
-            group = ("cuda", "gpu", "cpu")
+            group = ("cuda", "gpu")
+        elif rung == "cpu":
+            # a broken OSMesa aborts the process (VTK 9.7 on Linux as well as
+            # macOS): probed alone, it cannot take the gpu result down with it
+            group = ("cpu",)
         elif rung in _WEBGPU_RUNGS:
             group = (rung,)
         else:
@@ -1206,7 +1210,9 @@ def main(argv=None):
 
     try:
         if args.probe:
-            reports = probe_rendering()
+            # in child processes: a graphics driver that aborts takes down the
+            # rung that tried it, not the probe (and never the caller)
+            reports = probe_backends()
             if args.json:
                 print(json.dumps(reports, indent=2))
             else:
