@@ -378,9 +378,7 @@ def _animate_tracks(vtk, window, renderer, path, frames=40):
             elapsed = time.perf_counter() - t0
             rate = 1.0 / elapsed if elapsed > 0 else 0.0
             smoothing = rate if smoothing == 0.0 else 0.9 * smoothing + 0.1 * rate
-            counter.SetInput(
-                f"{smoothing:5.1f} fps - {shown}/{len(tracks)} tracks"
-            )
+            counter.SetInput(f"{smoothing:5.1f} fps - {shown}/{len(tracks)} tracks")
             window.Render()
             frame = Path(scratch) / f"frame_{index:04d}.png"
             _write_screenshot(vtk, window, str(frame))
@@ -421,7 +419,11 @@ def bench_vtk(
     probe_s, info = _timed(lambda: visualization.resolve_backend(backend))
     load_s, (info, window, renderer) = _timed(
         lambda: visualization.build_scene(
-            vrml, backend=backend, slices=slices, size=size, offscreen=True,
+            vrml,
+            backend=backend,
+            slices=slices,
+            size=size,
+            offscreen=True,
             # the baked cache is a single actor: the per-track animation needs
             # the actors of the scene, so a GIF run parses the VRML
             cache=not gif,
@@ -436,9 +438,7 @@ def bench_vtk(
     _add_vtk_label(visualization.import_vtk(), renderer, label)
     png = str(Path(vrml).with_suffix(f".{driver}.png"))
     shot_s, _ = _timed(
-        lambda: visualization._write_screenshot(
-            visualization.import_vtk(), window, png
-        )
+        lambda: visualization._write_screenshot(visualization.import_vtk(), window, png)
     )
     gif_path = (
         _animate_tracks(
