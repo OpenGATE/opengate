@@ -31,7 +31,7 @@ def add_test_digitizer(sim, crystal, filename="output.root"):
     sc.policy = "EnergyWeightedCentroidPosition"
     sc.group_volume = crystal.name
     sc.output_filename = hc.output_filename
-    sc.root_output.write_to_disk  = False
+    sc.root_output.write_to_disk = False
 
     fc = sim.add_actor("DigitizerEfficiencyActor", "singles")
     fc.attached_to = crystal.name
@@ -39,7 +39,7 @@ def add_test_digitizer(sim, crystal, filename="output.root"):
     fc.input_digi_collection = sc.name
     fc.efficiency = 1.0
     fc.output_filename = filename
-    
+
     return hc, fc
 
 

@@ -60,9 +60,11 @@ if __name__ == "__main__":
     n_module = len(module.translation)
 
     # set a (fake) digitizer
-    hits_actor, singles_actor = add_test_digitizer(sim, crystal, paths.output_ref / "output_ref.root")
-    hits_actor.root_output.write_to_disk  = False
-    singles_actor.root_output.write_to_disk  = True   
+    hits_actor, singles_actor = add_test_digitizer(
+        sim, crystal, paths.output_ref / "output_ref.root"
+    )
+    hits_actor.root_output.write_to_disk = False
+    singles_actor.root_output.write_to_disk = True
     singles_actor.skip_attributes = [
         "ParticleName",
         "PostPositionLocal",
@@ -100,9 +102,9 @@ if __name__ == "__main__":
     print(f"Size of the file is {file_size / 1e6:.2f} MB")
 
     # consider the singles and hits trees
-    #hits_tree = root_file["hits"]
-    #n = int(hits_tree.num_entries)
-    #print(f"There are {n} hits")
+    # hits_tree = root_file["hits"]
+    # n = int(hits_tree.num_entries)
+    # print(f"There are {n} hits")
 
     singles_tree = root_file["singles"]
     n = int(singles_tree.num_entries)
