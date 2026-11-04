@@ -19,9 +19,9 @@ def main(dependency="test096_pet_castor_ge.py"):
     root_folder = paths.output
 
     # consider the singles and hits trees
-    hits_tree = root_file["hits"]
-    n = int(hits_tree.num_entries)
-    print(f"There are {n} hits")
+    # hits_tree = root_file["hits"]
+    #n = int(hits_tree.num_entries)
+    #print(f"There are {n} hits")
 
     singles_tree = root_file["singles"]
     n = int(singles_tree.num_entries)
@@ -48,17 +48,17 @@ def main(dependency="test096_pet_castor_ge.py"):
     # save to file
     output_filename = root_folder / "coincidences.root"
 
-    hits_data = root_tree_get_branch_data(hits_tree)
-    singles_data = root_tree_get_branch_data(singles_tree, library="ak")
+    #hits_data = root_tree_get_branch_data(hits_tree)
+    #singles_data = root_tree_get_branch_data(singles_tree, library="ak")
     coincidences_data = root_tree_get_branch_data(coincidences)
 
-    hits_types = root_tree_get_branch_types(hits_data)
-    singles_types = root_tree_get_branch_types(singles_data)
+    #hits_types = root_tree_get_branch_types(hits_data)
+    #singles_types = root_tree_get_branch_types(singles_data)
     coincidences_types = root_tree_get_branch_types(coincidences_data)
 
     with uproot.recreate(output_filename) as output_file:
-        root_write_tree(output_file, "hits", hits_types, hits_data)
-        root_write_tree(output_file, "singles", singles_types, singles_data)
+        #root_write_tree(output_file, "hits", hits_types, hits_data)
+        #root_write_tree(output_file, "singles", singles_types, singles_data)
         root_write_tree(
             output_file, "coincidences", coincidences_types, coincidences_data
         )

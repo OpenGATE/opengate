@@ -60,12 +60,17 @@ if __name__ == "__main__":
     n_module = len(module.translation)
 
     # set a (fake) digitizer
-    hits_actor, blur_actor = add_test_digitizer(sim, crystal, "output_ref.root")
-    blur_actor.use_truncated_Gaussian = True
+    hits_actor, singles_actor = add_test_digitizer(sim, crystal, paths.output_ref / "output_ref.root")
+    hits_actor.root_output.write_to_disk  = False
+    singles_actor.root_output.write_to_disk  = True   
+    singles_actor.skip_attributes = [
+        "ParticleName",
+        "PostPositionLocal",
+    ]
 
     # source and physics
     stats = test_add_physics_and_stats(sim, "pet")
-    activity = 1 * MBq
+    activity = 0.22 * MBq
     if sim.visu:
         activity = 50 * Bq
     test_add_b2b_source(sim, activity)
@@ -95,9 +100,9 @@ if __name__ == "__main__":
     print(f"Size of the file is {file_size / 1e6:.2f} MB")
 
     # consider the singles and hits trees
-    hits_tree = root_file["hits"]
-    n = int(hits_tree.num_entries)
-    print(f"There are {n} hits")
+    #hits_tree = root_file["hits"]
+    #n = int(hits_tree.num_entries)
+    #print(f"There are {n} hits")
 
     singles_tree = root_file["singles"]
     n = int(singles_tree.num_entries)
