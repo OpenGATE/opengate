@@ -125,7 +125,7 @@ if __name__ == "__main__":
     tungsten_leaves.translation = liste_translation_W
     tungsten_leaves.color = [0.9, 0.0, 0.4, 0.8]
 
-    kill_No_int_act = sim.add_actor("KillNonInteractingParticleActor", "killact")
+    kill_No_int_act = sim.add_actor("KillNonInteractingParticleForLVActor", "killact")
     kill_No_int_act.attached_to = actor_box.name
 
     entry_phase_space = sim.add_volume("Box", "entry_phase_space")

@@ -17,7 +17,11 @@ def main():
     parser.add_argument('--build-dir', type=Path,
                         default=core / 'build/cmake.linux-x86_64-cpython-3.11')
     parser.add_argument('--output-dir', type=Path, required=True)
+    parser.add_argument('--test-source', type=Path,
+                        default=core / 'tests/test_lastvertex_worker_state.cpp')
     args = parser.parse_args()
+    # Initialize Geant4 dataset environment for transport regressions.
+    import opengate
     build = args.build_dir.resolve()
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -26,7 +30,7 @@ def main():
         '/GateLastVertexInteractionSplittingActor.cpp'))
     command = shlex.split(entry['command'])
     command[command.index('-o') + 1] = str(output / 'test.o')
-    command[command.index('-c') + 1] = str(core / 'tests/test_lastvertex_worker_state.cpp')
+    command[command.index('-c') + 1] = str(args.test_source.resolve())
     commands = [command]
     link = shlex.split((build / 'CMakeFiles/opengate_core.dir/link.txt').read_text())
     link.remove('-shared')

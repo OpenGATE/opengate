@@ -131,7 +131,7 @@ from .actors.miscactors import (
     KillAccordingParticleNameActor,
     KillAccordingProcessesActor,
     KillActor,
-    KillNonInteractingParticleActor,
+    KillNonInteractingParticleForLVActor,
     SimulationStatisticsActor,
     DebugActor,
 )
@@ -186,7 +186,7 @@ actor_types = {
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
-    "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
+    "KillNonInteractingParticleForLVActor": KillNonInteractingParticleForLVActor,
     "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
     "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,

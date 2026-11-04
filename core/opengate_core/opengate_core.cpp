@@ -442,7 +442,7 @@ void init_GateKillActor(py::module &);
 
 void init_GateKillAccordingProcessesActor(py::module &);
 
-void init_GateKillNonInteractingParticleActor(py::module &);
+void init_GateKillNonInteractingParticleForLVActor(py::module &);
 
 void init_GateKillAccordingParticleNameActor(py::module &);
 
@@ -884,7 +884,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
   init_GateKillAccordingProcessesActor(m);
-  init_GateKillNonInteractingParticleActor(m);
+  init_GateKillNonInteractingParticleForLVActor(m);
   init_GateKillAccordingParticleNameActor(m);
   init_GateDepositedChargeActor(m);
   init_GateAttenuationImageActor(m);
