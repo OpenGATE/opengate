@@ -987,6 +987,115 @@ def import_vrml(window, filename, edges=False):
     return importer, renderer
 
 
+# -----------------------------------------------------------------------------
+# Scene cache: parse the VRML once, reopen the baked scene next time
+# -----------------------------------------------------------------------------
+def scene_cache_path(filename):
+    """Where the baked copy of `filename` lives, or None when the cache is off.
+
+    ``OPENGATE_VISU_CACHE=0`` disables it (read-only VRML mount, or a cold-parse
+    timing).
+    """
+    if os.environ.get("OPENGATE_VISU_CACHE", "1").strip().lower() in (
+        "0",
+        "off",
+        "no",
+        "false",
+    ):
+        return None
+    return Path(filename).with_suffix(".vtp")
+
+
+def _cache_is_fresh(cache, source):
+    """True when `cache` was written from a `source` that has not changed since."""
+    try:
+        return cache.is_file() and cache.stat().st_mtime >= source.stat().st_mtime
+    except OSError:
+        return False
+
+
+def write_scene_cache(renderer, filename):
+    """Bake the actors of `renderer` into one ``.vtp`` file.
+
+    The transforms are applied and the actor colours become one RGBA per cell,
+    so the file is a single mesh: 4x smaller than the VRML and 2-3x faster to
+    reopen (§6.4 of the plan).  The trade-off is identity — everything becomes
+    one actor, so per-volume picking and per-actor visibility are gone; that is
+    why this is a cache and not the wire format.
+
+    Only mapped props are baked: the axes and the slices are added by
+    ``build_scene`` on every open.  Returns the path written, or None when there
+    was nothing to bake.
+    """
+    vtk = import_vtk()
+    append = vtk.vtkAppendPolyData()
+    baked = 0
+    for prop in _props(renderer):
+        mapper = getattr(prop, "GetMapper", lambda: None)()
+        data = mapper.GetInput() if mapper is not None else None
+        if data is None or not hasattr(data, "GetNumberOfPolys"):
+            continue
+        if data.GetNumberOfCells() == 0:
+            continue
+        transform = vtk.vtkTransform()
+        transform.SetMatrix(prop.GetMatrix())
+        moved = vtk.vtkTransformPolyDataFilter()
+        moved.SetInputData(data)
+        moved.SetTransform(transform)
+        moved.Update()
+        part = moved.GetOutput()
+        # the arrays of the VRML importer do not survive the append (and are not
+        # needed: one colour per cell replaces them), so the cache starts clean
+        part.GetPointData().Initialize()
+        part.GetCellData().Initialize()
+        red, green, blue = prop.GetProperty().GetColor()
+        alpha = prop.GetProperty().GetOpacity()
+        colours = vtk.vtkUnsignedCharArray()
+        colours.SetName("RGBA")
+        colours.SetNumberOfComponents(4)
+        rgba = (int(255 * red), int(255 * green), int(255 * blue), int(255 * alpha))
+        for _ in range(part.GetNumberOfCells()):
+            colours.InsertNextTuple4(*rgba)
+        part.GetCellData().AddArray(colours)
+        append.AddInputData(part)
+        baked += 1
+    if not baked:
+        return None
+    append.Update()
+    combined = append.GetOutput()
+    combined.GetCellData().SetActiveScalars("RGBA")
+    path = Path(filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    writer = vtk.vtkXMLPolyDataWriter()
+    writer.SetFileName(str(path))
+    writer.SetInputData(combined)
+    writer.SetCompressorTypeToZLib()
+    writer.SetDataModeToBinary()
+    writer.Write()
+    return path
+
+
+def read_scene_cache(window, filename):
+    """Add the baked scene of `filename` to `window`, and return its renderer."""
+    vtk = import_vtk()
+    path = Path(filename)
+    if not path.is_file():
+        raise VisuBackendError(f"The scene cache '{path}' does not exist")
+    reader = vtk.vtkXMLPolyDataReader()
+    reader.SetFileName(str(path))
+    reader.Update()
+    mapper = vtk.vtkPolyDataMapper()
+    mapper.SetInputConnection(reader.GetOutputPort())
+    mapper.SetScalarModeToUseCellData()
+    mapper.SetColorModeToDirectScalars()
+    actor = vtk.vtkActor()
+    actor.SetMapper(mapper)
+    renderer = vtk.vtkRenderer()
+    renderer.AddActor(actor)
+    window.AddRenderer(renderer)
+    return renderer
+
+
 def _props(renderer):
     props = []
     for i in range(renderer.GetViewProps().GetNumberOfItems()):
@@ -1050,7 +1159,18 @@ def build_scene(
     if offscreen:
         window.SetOffScreenRendering(1)
 
-    importer, renderer = import_vrml(window, filename, edges=edges)
+    # the VRML parse is the expensive part of opening a scene (12-19 ms against
+    # 5-7 ms for the baked file, §6.4), and it is the same scene every time
+    cache = scene_cache_path(filename)
+    if cache is not None and not edges and _cache_is_fresh(cache, Path(filename)):
+        renderer = read_scene_cache(window, cache)
+    else:
+        importer, renderer = import_vrml(window, filename, edges=edges)
+        if cache is not None and not edges:
+            try:
+                write_scene_cache(renderer, cache)
+            except Exception as exception:  # a cache must never break a viewer
+                logger.warning(f"Cannot write the scene cache '{cache}': {exception}")
     renderer.SetBackground(*background)
     if slices is not None:
         add_slices(renderer, load_slices(slices))
