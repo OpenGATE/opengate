@@ -3,6 +3,20 @@ name: ci_test_wheel
 runs:
   using: "composite"
   steps:
+  # the free disk of the ubuntu runners is sometimes not enough for the
+  # wheels, the test data, torch and the test output ("No space left on
+  # device"). Remove large preinstalled tools that the tests do not use (the
+  # python of setup-python is in /opt/hostedtoolcache, kept).
+  - name: Free disk space
+    if: runner.os == 'Linux'
+    shell: bash {0}
+    run: |
+         df -h /
+         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+           /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost \
+           /usr/local/share/powershell /usr/share/swift
+         sudo docker image prune --all --force > /dev/null
+         df -h /
   - name: Run tests
     shell: bash {0}
     run: |
