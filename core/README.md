@@ -35,3 +35,18 @@ executable without replacing the core. It tests real cache/callback isolation
 on 1/2/4/8 native threads, independent actors, counters across simulated run
 boundaries, reduction, reset and acceptance-manager cleanup. It does not run
 Geant4 transport or establish MT physics correctness or scaling.
+
+## Replay source identity
+
+The LV actor finds exactly one `GateLastVertexSource` by C++ type in the current
+worker's source list at run start, caches its pointer and compares it with the
+actual generating-source pointer. It selects replays by pointer, without source
+name lookups in event or step callbacks. The Python actor likewise identifies
+`LastVertexSource` by type for validation and gathered replay counts. Names are
+arbitrary, including `None`; a null pointer identifies synthetic events.
+
+Zero or multiple replay sources are rejected explicitly. Multiple independent
+LV actor/source pairings are not supported by this automatic discovery. Existing
+macros may retain their source names; no new configuration field is required.
+The renamed-source CT_40/split-50 smoke reproduces all six images from the
+preceding deferred-completion reference exactly, including existing NaNs.

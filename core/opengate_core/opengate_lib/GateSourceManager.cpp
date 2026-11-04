@@ -231,9 +231,7 @@ G4String GateSourceManager::GetActiveSourceName() {
 }
 
 void GateSourceManager::SetActiveSourcebyName(G4String sourceName) {
-  auto &l = fThreadLocalData.Get();
-  auto *source = FindSourceByName(sourceName);
-  l.fNextActiveSource = source;
+  SetActiveSource(FindSourceByName(sourceName));
 }
 
 void GateSourceManager::StartMasterThread() {
@@ -468,6 +466,8 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
   // update the current time
   l.fCurrentSimulationTime = l.fNextSimulationTime;
 
+  l.fGeneratingSource = nullptr;
+
   // Sometimes (rarely), there is no active source,
   // so we create a fake geantino particle
   // It may happen when the number of primaries is fixed
@@ -485,6 +485,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     if (TryReservePrimarySlot()) {
       // shoot particle
       const int first_vertex = event->GetNumberOfPrimaryVertex();
+      l.fGeneratingSource = l.fNextActiveSource;
       l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
       CheckPrimaryVerticesInsideWorld(event, first_vertex, l.fNextActiveSource);
       // log (after particle creation)

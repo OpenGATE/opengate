@@ -85,6 +85,14 @@ public:
   // Set the active source by name
   void SetActiveSourcebyName(G4String sourceName);
 
+  void SetActiveSource(GateVSource *source) {
+    fThreadLocalData.Get().fNextActiveSource = source;
+  }
+
+  const GateVSource *GetGeneratingSource() const {
+    return fThreadLocalData.Get().fGeneratingSource;
+  }
+
   // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 
@@ -167,6 +175,8 @@ public:
 
     // Next simulation time
     double fNextSimulationTime;
+
+    const GateVSource *fGeneratingSource = nullptr;
 
     // Next active source
     GateVSource *fNextActiveSource;

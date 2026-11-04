@@ -78,7 +78,7 @@ public:
     G4double fWeightOfEnteringParticle = 0;
     G4double fSplitCounter = 0;
     G4bool fToSplit = true;
-    G4String fActiveSource = "None";
+    const GateVSource *fActiveSource = nullptr;
     G4bool fIsAnnihilAlreadySplit = false;
     G4int fCounter = 0;
     G4bool fKilledBecauseOfProcess = false;

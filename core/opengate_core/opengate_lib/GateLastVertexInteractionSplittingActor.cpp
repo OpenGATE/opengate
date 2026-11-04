@@ -576,14 +576,25 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
   data.fListOfBiasedVolume.push_back(biasingVolume->GetName());
   CreateListOfbiasedVolume(biasingVolume);
 
-  auto *source = data.fSourceManager->FindSourceByName("source_vertex");
-  data.fVertexSource = (GateLastVertexSource *)source;
+  data.fVertexSource = nullptr;
+  for (auto *source : data.fSourceManager->fSources) {
+    auto *replay = dynamic_cast<GateLastVertexSource *>(source);
+    if (!replay)
+      continue;
+    if (data.fVertexSource)
+      Fatal("LastVertexSplitting requires exactly one LastVertexSource; "
+            "multiple replay sources are ambiguous");
+    data.fVertexSource = replay;
+  }
+  if (!data.fVertexSource)
+    Fatal("LastVertexSplitting requires exactly one LastVertexSource; none found");
   data.fStackManager = G4EventManager::GetEventManager()->GetStackManager();
 }
 
 void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     const G4Event *event) {
   auto &data = fWorkerState.Get();
+  data.fActiveSource = data.fSourceManager->GetGeneratingSource();
   data.fEventID = event->GetEventID();
   data.fNumberOfEvent++;
   data.fIsAnnihilAlreadySplit = false;
@@ -599,9 +610,8 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
   data.fNumberOfTrackToSimulate = 0;
   data.fKilledBecauseOfProcess = false;
 
-  if (data.fActiveSource == "source_vertex") {
-    auto *source = data.fSourceManager->FindSourceByName(data.fActiveSource);
-    GateLastVertexSource *vertexSource = (GateLastVertexSource *)source;
+  if (data.fActiveSource == data.fVertexSource) {
+    auto *vertexSource = data.fVertexSource;
     data.fContainer = vertexSource->GetLastVertexContainer();
     data.fProcessNameToSplit = vertexSource->GetProcessToSplit();
     if (data.fProcessToSplit != 0) {
@@ -630,7 +640,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
   auto &data = fWorkerState.Get();
   data.fAAManager->StartAcceptLoop();
 
-  if (data.fActiveSource != "source_vertex") {
+  if (data.fActiveSource != data.fVertexSource) {
     FillOfDataTree(step);
 
     if (IsParticleExitTheBiasedVolume(step)) {
@@ -650,7 +660,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
   }
 
   if (fOnlyTree == false) {
-    if (data.fActiveSource == "source_vertex") {
+    if (data.fActiveSource == data.fVertexSource) {
 
       if (data.fIsFirstStep) {
         data.fTrackID = step->GetTrack()->GetTrackID();
@@ -753,8 +763,11 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
 void GateLastVertexInteractionSplittingActor::EndOfEventAction(
     const G4Event *event) {
   auto &data = fWorkerState.Get();
+  if (data.fActiveSource == nullptr)
+    return; // synthetic event: preserve pending replay state
 
-  if (data.fActiveSource != "source_vertex") {
+
+  if (data.fActiveSource != data.fVertexSource) {
 
     // print_tree(data.fTree,data.fTree.begin(),data.fTree.end());
     data.fVertexSource->SetNumberOfEventToSimulate(data.fListOfContainer.size());
@@ -766,13 +779,11 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
 
   if (fOnlyTree == false) {
 
-    auto *source = data.fSourceManager->FindSourceByName("source_vertex");
-    GateLastVertexSource *vertexSource = (GateLastVertexSource *)source;
+    auto *vertexSource = data.fVertexSource;
     if (vertexSource->GetNumberOfGeneratedEvent() <
         vertexSource->GetNumberOfEventToSimulate()) {
-      data.fSourceManager->SetActiveSourcebyName("source_vertex");
+      data.fSourceManager->SetActiveSource(vertexSource);
     }
-    data.fActiveSource = data.fSourceManager->GetActiveSourceName();
   }
 }
 

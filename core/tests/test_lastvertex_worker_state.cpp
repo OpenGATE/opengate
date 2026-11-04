@@ -1,6 +1,8 @@
 // Native regression: exercise the real LV cache/callbacks concurrently without
 // enabling transport MT before replay scheduling is ready.
 #include "GateLastVertexInteractionSplittingActor.h"
+#include "GateSourceManager.h"
+#include <G4ParticleTable.hh>
 #include <pybind11/embed.h>
 #include <atomic>
 #include <cstdlib>
@@ -27,12 +29,18 @@ int main() {
     std::vector<std::thread> threads;
     for (int worker = 0; worker < workers; ++worker) {
       threads.emplace_back([&, worker] {
+        // This cache-only test has no physics/run manager or particle transport.
+        G4ParticleTable::GetParticleTable()->SetReadiness(true);
+        GateSourceManager manager;
+        GateVSource source;
+        source.fName = worker == 0 ? "None" : "arbitrary_replay_name";
+        manager.fThreadLocalData.Get().fGeneratingSource = &source;
         auto &state = actor.fWorkerState.Get();
         auto &independent = other.fWorkerState.Get();
         require(&state != &independent, "Actors share worker state");
         require(state.fProcessToSplit == nullptr, "Uninitialized process");
         require(state.fSourceManager == nullptr, "Nonlocal source manager");
-        require(state.fActiveSource == "None", "Nonlocal source name");
+        require(state.fActiveSource == nullptr, "Nonlocal source name");
         LastVertexDataContainer root;
         root.SetTrackID(worker + 1);
         state.fTree.set_head(root);
@@ -56,7 +64,8 @@ int main() {
                 "Workers share acceptance state");
         require(state.fNbOfBatchForExitingParticle == worker + 1,
                 "Workers share batch counters");
-        state.fActiveSource = std::to_string(worker);
+        state.fSourceManager = &manager;
+        state.fActiveSource = nullptr;
         // Two simulated runs: counters must accumulate across their boundary.
         for (int run = 0; run < 2; ++run) {
           for (int event_id = 1; event_id <= 100; ++event_id) {
@@ -65,7 +74,7 @@ int main() {
             actor.PreUserTrackingAction(nullptr);
           }
         }
-        require(state.fActiveSource == std::to_string(worker),
+        require(state.fActiveSource == &source,
                 "Workers share current source name");
         require(state.fNumberOfEvent == 200, "Worker lost events");
         require(independent.fNumberOfEvent == 0, "Actors share counters");

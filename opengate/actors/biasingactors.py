@@ -579,7 +579,22 @@ class LastVertexInteractionSplittingActor(
             }
         )
 
+    def _get_replay_source(self):
+        from ..sources.lastvertexsources import LastVertexSource
+
+        sources = [
+            source for source in self.simulation.source_manager.sources.values()
+            if isinstance(source, LastVertexSource)
+        ]
+        if len(sources) != 1:
+            fatal(
+                "LastVertexSplitting requires exactly one LastVertexSource; "
+                f"found {len(sources)}."
+            )
+        return sources[0]
+
     def initialize(self):
+        self._get_replay_source()
         ActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
