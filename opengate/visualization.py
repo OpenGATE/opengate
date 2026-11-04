@@ -1144,12 +1144,16 @@ def build_scene(
     axes_length=500.0,
     background=(0.0, 0.0, 0.0),
     edges=False,
+    cache=True,
     title="opengate",
 ):
     """Create the render window and renderer of a scene, without rendering it.
 
     Returns ``(info, window, renderer)``; the caller renders (and can time it),
-    which is what the benchmark does.
+    which is what the benchmark does.  ``cache=False`` bypasses the baked
+    ``.vtp`` scene cache: the cached scene is one actor, so anything that needs
+    the actors of the scene (per-track animation, per-volume visibility, the
+    ``edges`` option) has to parse the VRML.
     """
     vtk = import_vtk()
     info = resolve_backend(backend)
@@ -1161,16 +1165,18 @@ def build_scene(
 
     # the VRML parse is the expensive part of opening a scene (12-19 ms against
     # 5-7 ms for the baked file, §6.4), and it is the same scene every time
-    cache = scene_cache_path(filename)
-    if cache is not None and not edges and _cache_is_fresh(cache, Path(filename)):
-        renderer = read_scene_cache(window, cache)
+    cache_path = scene_cache_path(filename) if cache and not edges else None
+    if cache_path is not None and _cache_is_fresh(cache_path, Path(filename)):
+        renderer = read_scene_cache(window, cache_path)
     else:
         importer, renderer = import_vrml(window, filename, edges=edges)
-        if cache is not None and not edges:
+        if cache_path is not None:
             try:
-                write_scene_cache(renderer, cache)
+                write_scene_cache(renderer, cache_path)
             except Exception as exception:  # a cache must never break a viewer
-                logger.warning(f"Cannot write the scene cache '{cache}': {exception}")
+                logger.warning(
+                    f"Cannot write the scene cache '{cache_path}': {exception}"
+                )
     renderer.SetBackground(*background)
     if slices is not None:
         add_slices(renderer, load_slices(slices))

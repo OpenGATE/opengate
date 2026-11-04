@@ -421,7 +421,10 @@ def bench_vtk(
     probe_s, info = _timed(lambda: visualization.resolve_backend(backend))
     load_s, (info, window, renderer) = _timed(
         lambda: visualization.build_scene(
-            vrml, backend=backend, slices=slices, size=size, offscreen=True
+            vrml, backend=backend, slices=slices, size=size, offscreen=True,
+            # the baked cache is a single actor: the per-track animation needs
+            # the actors of the scene, so a GIF run parses the VRML
+            cache=not gif,
         )
     )
     first_s, _ = _timed(window.Render)
