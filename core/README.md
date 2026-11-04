@@ -105,3 +105,31 @@ Use fresh output directories for 1/2/4/8 threads. The default checks 128
 unchanged-energy gamma tracks across two runs and both exposed count paths.
 `--birth inside` checks the birth exemption, and `--birth world` checks safe
 world exits. No scaling or unbiased-dose claim follows from these tests.
+
+## LV particle-name kill actor
+
+`GateKillAccordingParticleNameLVActor` replaces
+`GateKillAccordingParticleNameActor` (.h/.cpp and Python binding). Its Python
+factory name is `KillAccordingParticleNameLVActor`; the old name has no alias.
+The optional VRT helpers use the new name and remain disabled in the current
+patient transport path.
+
+The original rule is preserved: select the configured particle names and kill
+only when the track crosses into an ancestor of the attached volume. The
+selection flag and killed count use the existing `G4Cache`; counts accumulate
+across runs and are reduced at worker completion. The mutex is taken only for
+that final reduction. `StartSimulationAction` resets the final total. Null
+post-volumes are safe. Python's final count uses the native reduced getter.
+
+Native selection/isolation/reduction checks and standalone transport tests:
+
+```bash
+python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/kill-name-lv \
+  --test-source core/tests/test_kill_particle_name_lv_state.cpp
+python opengate/tests/src/actors/test_kill_particle_name_lv_mt.py \
+  --output-dir /tmp/kill-name-lv-transport --threads 4 --particle e-
+```
+
+Use fresh output directories for each run. The transport test uses two runs
+with 128 selected primaries; `--unselected` and `--world` expect zero kills.
+This actor is MT-ready; it does not enable or validate the whole LV transport.

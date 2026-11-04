@@ -212,9 +212,11 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         return s
 
 
-class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleNameActor):
-    """Actor which kills a particle according the particle name provied by the user at the exit of the
-    actorified volume."""
+class KillAccordingParticleNameLVActor(ActorBase, g4.GateKillAccordingParticleNameLVActor):
+    """LV actor killing selected particle names at an ancestor-volume exit.
+
+    Selection and counts are worker-local, with one final counter reduction.
+    """
 
     particles_name_to_kill: list
 
@@ -234,7 +236,7 @@ class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleName
         self.list_of_volume_name = []
 
     def __initcpp__(self):
-        g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)
+        g4.GateKillAccordingParticleNameLVActor.__init__(self, self.user_info)
         self.AddActions(
             {"PreUserTrackingAction", "SteppingAction", "EndSimulationAction"}
         )
@@ -658,7 +660,7 @@ process_cls(ActorOutputDepositedChargeActor)
 process_cls(DepositedChargeActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
-process_cls(KillAccordingParticleNameActor)
+process_cls(KillAccordingParticleNameLVActor)
 process_cls(ActorOutputKillNonInteractingParticleForLVActor)
 process_cls(KillNonInteractingParticleForLVActor)
 process_cls(AttenuationImageActor)
