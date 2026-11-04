@@ -83,16 +83,23 @@ G4VProcess *GateLastVertexInteractionSplittingActor::GetProcessFromProcessName(
   auto *particle_table = G4ParticleTable::GetParticleTable();
   G4ParticleDefinition *particleDefinition =
       particle_table->FindParticle(particleName);
+  if (!particleDefinition)
+    Fatal("LastVertex: particle '" + particleName +
+          "' not found while looking up process '" + pName + "'");
   G4ProcessManager *processManager = particleDefinition->GetProcessManager();
+  if (!processManager)
+    Fatal("LastVertex: no process manager for particle '" + particleName +
+          "' while looking up process '" + pName + "'");
   G4ProcessVector *processList = processManager->GetProcessList();
-  G4VProcess *nullProcess = nullptr;
   for (size_t i = 0; i < processList->size(); ++i) {
     auto process = (*processList)[i];
     if (process->GetProcessName() == pName) {
       return process;
     }
   }
-  return nullProcess;
+  Fatal("LastVertex: process '" + pName + "' not found for particle '" +
+        particleName + "'; cannot split this interaction");
+  return nullptr; // Fatal throws; no splitting is attempted.
 }
 
 G4Track *GateLastVertexInteractionSplittingActor::CreateATrackFromContainer(
@@ -405,14 +412,20 @@ void GateLastVertexInteractionSplittingActor::FillOfDataTree(G4Step *step) {
       }
     }
 
+    bool found = false;
     for (auto it = data.fTree.begin_post(); it != data.fTree.end_post(); ++it) {
       LastVertexDataContainer container = *it;
       G4int trackID = container.GetTrackID();
       if (step->GetTrack()->GetTrackID() == trackID) {
         data.fIterator = it;
+        found = true;
         break;
       }
     }
+    if (!found)
+      Fatal("LastVertex: track " + std::to_string(step->GetTrack()->GetTrackID()) +
+            " (parent " + std::to_string(step->GetTrack()->GetParentID()) +
+            ") absent from genealogy tree");
   }
 
   LastVertexDataContainer *container = &(*data.fIterator);
@@ -488,6 +501,8 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
           G4RunManager::GetRunManager()->GetUserPrimaryGeneratorAction()));
   if (!data.fSourceManager)
     Fatal("LastVertexSplitting requires the current worker's GateSourceManager");
+  if (!fOnlyTree)
+    data.fSourceManager->DeferRunCompletion();
   if (!data.fAAManager) {
     data.fAAManager = new GateAcceptanceAngleManager();
     data.fAAManager->Initialize(fAcceptanceAngleParameters, true);
@@ -681,8 +696,7 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
     const G4Event *event) {
   auto &data = fWorkerState.Get();
   if (data.fActiveSource == nullptr)
-    return; // synthetic event: preserve pending replay state
-
+    return; // synthetic event: preserve pending replay state for the stop check
 
   if (data.fActiveSource != data.fVertexSource) {
 

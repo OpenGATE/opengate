@@ -44,15 +44,22 @@ public:
 
   void SetNumberOfEventToSimulate(G4int N) { fN = N; }
 
+  bool HasPendingEvents() const override {
+    return fNumberOfGeneratedEvents < fN;
+  }
+
   G4int GetNumberOfEventToSimulate() { return fN; }
 
   G4int GetNumberOfGeneratedEvent() { return fNumberOfGeneratedEvents; }
+
+  unsigned long GetTotalReplayedEvents() const { return fTotalReplayedEvents; }
 
   G4String GetProcessToSplit() { return fProcessToSplit; }
 
   LastVertexDataContainer GetLastVertexContainer() { return fContainer; }
 
 protected:
+  unsigned long fTotalReplayedEvents = 0;
   G4int fNumberOfGeneratedEvents = 0;
   G4int fN = 0;
   std::vector<LastVertexDataContainer> fListOfContainer;

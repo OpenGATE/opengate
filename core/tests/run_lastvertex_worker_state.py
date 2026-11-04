@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--test-source', type=Path,
                         default=core / 'tests/test_lastvertex_worker_state.cpp')
+    parser.add_argument('--test-args', nargs='*', default=[])
     args = parser.parse_args()
     # Initialize Geant4 dataset environment for transport regressions.
     import opengate
@@ -38,7 +39,7 @@ def main():
     link.extend([str(output / 'test.o'),
                  str(Path(sysconfig.get_config_var('LIBDIR')) /
                      sysconfig.get_config_var('LDLIBRARY'))])
-    commands.extend([link, [str(output / 'test_lastvertex_worker_state')]])
+    commands.extend([link, [str(output / 'test_lastvertex_worker_state'), *args.test_args]])
     (output / 'commands.json').write_text(json.dumps(commands, indent=2))
     for command in commands:
         subprocess.run(command, cwd=build, check=True)

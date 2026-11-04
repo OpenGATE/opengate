@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateLastVertexSource.h"
+#include "GateHelpers.h"
 #include <G4ParticleTable.hh>
 
 GateLastVertexSource::GateLastVertexSource() : GateVSource() {}
@@ -14,6 +15,7 @@ GateLastVertexSource::~GateLastVertexSource() {}
 
 void GateLastVertexSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
+  fTotalReplayedEvents = 0;
   // get user info about activity or nb of events
   fN = 0;
 }
@@ -55,6 +57,11 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
     vertex->SetPrimary(particle);
     event->AddPrimaryVertex(vertex);
   } else {
+    if (fListOfContainer.size() != static_cast<size_t>(fN) ||
+        static_cast<size_t>(idx) >= fListOfContainer.size())
+      Fatal("LastVertexSource '" + fName + "': replay queue desynchronised "
+            "(index=" + std::to_string(idx) + ", expected=" + std::to_string(fN) +
+            ", size=" + std::to_string(fListOfContainer.size()) + ")");
 
     SimpleContainer containerToSplit =
         fListOfContainer[idx].GetContainerToSplit();
@@ -78,6 +85,7 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
     auto *vertex = new G4PrimaryVertex(position, current_simulation_time);
     vertex->SetPrimary(particle);
     event->AddPrimaryVertex(vertex);
+    ++fTotalReplayedEvents;
   }
 }
 

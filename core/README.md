@@ -17,9 +17,9 @@ Worker-owned track/step copies and acceptance objects are released before teardo
 The existing Python counter getters return the reduced totals after transport.
 
 This is the state-localization stage, not complete MT support. The actor remains
-declared non-MT-ready. Current-event source provenance, replay draining at run
-boundaries, other application actors, global stopping and phase-space allocation
-still require their planned changes and transport validation. The performance
+declared non-MT-ready. Current-event source provenance and deferred completion are implemented below;
+other application actors, phase-space allocation and MT transport validation
+remain open. The performance
 criterion remains wall time to comparable uncertainty; no speedup is established.
 
 After building the core, run the native regression from the repository root
@@ -35,6 +35,35 @@ executable without replacing the core. It tests real cache/callback isolation
 on 1/2/4/8 native threads, independent actors, counters across simulated run
 boundaries, reduction, reset and acceptance-manager cleanup. It does not run
 Geant4 transport or establish MT physics correctness or scaling.
+
+## LV deferred run completion
+
+LV replay mode opts the worker source manager into completion after all native
+end-event actors and chemistry callbacks. `PrepareNextSource()` stays in
+`GeneratePrimaries()` and is not repeated. Other simulations retain their
+existing generation-time completion check. LV reads the actual generating
+source pointer; synthetic events preserve pending replay state.
+
+`GateVSource::HasPendingEvents()` defaults to false; LastVertexSource reports
+unconsumed replay events. A stop criterion or primary cap with pending replays
+raises an explicit incomplete-history error. The code neither silently drops
+replays nor ignores the cap to generate an endless sequence of geantinos.
+The shared stop flag is atomic and resets at the master run boundary. Run
+completion advances the worker once and retains the existing Geant4 barrier.
+External aborts, fatal errors and SIGINT do not promise graceful replay drainage.
+
+After building, the controlled native transport regression can be run with:
+
+```bash
+python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-completion \
+  --test-source core/tests/test_source_manager_completion.cpp
+```
+
+Use `--test-args ordinary`, `deferred`, `empty`, `stop` or `limit` with distinct
+output directories for the other cases (default: `replays`). The test exercises
+two sequential Geant4 runs, final-primary replay publication, selection call
+counts, final callbacks once, duplicate completion and explicit incomplete
+history failures. It does not validate LV physics or multithreaded transport.
 
 ## Replay source identity
 
@@ -133,3 +162,30 @@ python opengate/tests/src/actors/test_kill_particle_name_lv_mt.py \
 Use fresh output directories for each run. The transport test uses two runs
 with 128 selected primaries; `--unselected` and `--world` expect zero kills.
 This actor is MT-ready; it does not enable or validate the whole LV transport.
+
+## LV process and replay-queue failures
+
+A missing particle/process manager or unresolved splitting process now raises
+an explicit LastVertex error before process use. No interaction is silently
+skipped. Lookup checks occur in GetProcessFromProcessName, not every step.
+On a real replay, the source checks queue size against its advertised count
+and checks the index before indexing. These are two integer comparisons; error
+strings are assembled only on the failing branch. A mismatch raises an explicit
+error with source name, index, expected count and vector size. Existing exhausted-
+queue geantino behavior is unchanged. The checks do not promise zero CPU cost;
+no performance measurement was made.
+
+The splitting attempt limit and recursive scheduling are unchanged. Genealogy
+lookup now uses a local found flag in the existing first-step search: a missing
+track raises an explicit error with track and parent IDs before iterator access.
+No extra tree traversal or subsequent-step validation is added.
+
+Native failure/success regressions after building:
+
+```bash
+python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-fail-fast \
+  --test-source core/tests/test_lastvertex_fail_fast.cpp
+```
+
+The CT_40/split-50 smoke retains 12717 events, 33 replays and six exact image
+matches to the previous reference, including existing uncertainty NaNs.

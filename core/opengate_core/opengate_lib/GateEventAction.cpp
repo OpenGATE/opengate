@@ -6,6 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateEventAction.h"
+#include "GateSourceManager.h"
+#include <G4RunManager.hh>
 #include <G4MoleculeCounterManager.hh>
 
 GateEventAction::GateEventAction() : G4UserEventAction() {
@@ -40,4 +42,9 @@ void GateEventAction::EndOfEventAction(const G4Event *event) {
   if (fChemistryIsActive) {
     G4MoleculeCounterManager::Instance()->EndOfEventAction(event);
   }
+  // Resolve the worker's generator, not the shared actors' master binding.
+  auto *manager = dynamic_cast<const GateSourceManager *>(
+      G4RunManager::GetRunManager()->GetUserPrimaryGeneratorAction());
+  if (manager && manager->IsRunCompletionDeferred())
+    manager->CheckForNextRun();
 }

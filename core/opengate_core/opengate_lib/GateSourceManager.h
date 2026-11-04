@@ -89,10 +89,6 @@ public:
     fThreadLocalData.Get().fNextActiveSource = source;
   }
 
-  const GateVSource *GetGeneratingSource() const {
-    return fThreadLocalData.Get().fGeneratingSource;
-  }
-
   // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 
@@ -104,6 +100,19 @@ public:
 
   // After an event, prepare for the next
   void PrepareNextSource() const;
+
+  // LV opts in per worker; ordinary sources retain the generation-time check.
+  void DeferRunCompletion() { fThreadLocalData.Get().fDeferRunCompletion = true; }
+  bool IsRunCompletionDeferred() const {
+    return fThreadLocalData.Get().fDeferRunCompletion;
+  }
+  const GateVSource *GetGeneratingSource() const {
+    return fThreadLocalData.Get().fGeneratingSource;
+  }
+  G4String GetGeneratingSourceName() const {
+    const auto *source = GetGeneratingSource();
+    return source ? source->fName : "None";
+  }
 
   // Check if the current run is terminated
   void CheckForNextRun() const;
@@ -144,7 +153,7 @@ public:
   static std::uint64_t GetPlatformMaxPrimariesPerRun();
 
   // fRunTerminationFlag should not be thread local
-  static bool fRunTerminationFlag;
+  static std::atomic<bool> fRunTerminationFlag;
   static std::atomic<std::uint64_t> fGeneratedPrimariesThisRun;
   static std::atomic<bool> fPrimaryLimitWarningIssued;
   static std::uint64_t fMaxPrimariesPerRun;
@@ -176,6 +185,7 @@ public:
     // Next simulation time
     double fNextSimulationTime;
 
+    bool fDeferRunCompletion = false;
     const GateVSource *fGeneratingSource = nullptr;
 
     // Next active source
