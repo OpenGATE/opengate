@@ -7,7 +7,6 @@
 
 #include "GateLastVertexSource.h"
 #include <G4ParticleTable.hh>
-#include <G4UnitsTable.hh>
 
 GateLastVertexSource::GateLastVertexSource() : GateVSource() {}
 
@@ -23,22 +22,6 @@ double
 GateLastVertexSource::PrepareNextTime(double current_simulation_time,
                                       unsigned long NumberOfGeneratedEvents) {
 
-  /*
-  // If all N events have been generated, we stop (negative time)
-  if (fNumberOfGeneratedEvents >= fN){
-    std::cout << "LV: "<< -1<<"  "<< fNumberOfGeneratedEvents <<"  "<<
-  fN<<std::endl; return -1;
-  }
-
-   if (fListOfContainer.size()==0){
-    std::cout << "LV: "<< 1<<"  "<<fNumberOfGeneratedEvents <<"  "<<
-  fN<<std::endl; return 1;
-  }
-  // Else we consider all event with a timestamp equal to the simulation
-  // StartTime
-  std::cout << "LV: "<< fStartTime<<"  "<<fNumberOfGeneratedEvents <<"  "<<
-  fN<<std::endl; return fStartTime;
-  */
   if (fNumberOfGeneratedEvents >= fN)
     return -1;
 

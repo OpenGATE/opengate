@@ -6,7 +6,7 @@ Please, consider the README.md file in the main opengate folder.
 `GateLastVertexInteractionSplittingActor` keeps its mutable transport state in
 one `G4Cache<WorkerState>` per actor: genealogy, replay containers, track/step
 copies, physical process and stack pointers, source identity, acceptance manager,
-volume traversal state and counters. Configuration stays shared read-only.
+and counters. Configuration stays shared read-only.
 At run start, the actor obtains the current worker's `GateSourceManager` from
 its Geant4 primary generator. Sources are already instantiated per worker by
 the Python source engine; this change does not create additional sources.
@@ -50,3 +50,17 @@ LV actor/source pairings are not supported by this automatic discovery. Existing
 macros may retain their source names; no new configuration field is required.
 The renamed-source CT_40/split-50 smoke reproduces all six images from the
 preceding deferred-completion reference exactly, including existing NaNs.
+
+## LV dead-code cleanup
+
+Unused actor state and source-template fields have been removed, together with
+an unimplemented solid-angle helper, unused process-filter/tree-print helpers,
+and the biased-volume traversal whose stored result had no active consumer.
+The live ancestor-volume list and its Python binding remain. Splitting helpers
+no longer pass unused step/container/process arguments; old commented code and
+unused local computations were removed. Callbacks, exported counters, process
+wrappers and replay containers remain in use and are retained.
+
+After this cleanup, the maintained renamed-source CT_40/split-50 smoke reproduces
+all six preceding reference images exactly, including existing uncertainty NaNs.
+This is a regression check, not physical validation or a speed measurement.

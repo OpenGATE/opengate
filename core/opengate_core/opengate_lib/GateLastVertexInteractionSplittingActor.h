@@ -55,39 +55,24 @@ public:
   G4double fBatchSize;
   G4int fNbOfMaxBatchPerEvent;
   std::vector<std::string> fListOfVolumeAncestor;
-  std::vector<G4String> fListOfProcesses = {"compt", "annihil", "eBrem", "conv",
-                                            "phot"};
   std::map<std::string, std::string> fAcceptanceAngleParameters;
 
   // One state per actor and worker. No locks in tracking/stepping callbacks.
   struct WorkerState {
     GateAcceptanceAngleManager *fAAManager = nullptr;
-    G4int fNumberOfTargetedVolume = 0;
-    G4double fCosMaxTheta = 0;
-    G4int fTrackIDOfSplittedTrack = 0;
-    G4int fParentID = -1;
     G4int fEventID = 0;
-    G4int fEventIDOfSplittedTrack = 0;
-    G4int fEventIDOfInitialSplittedTrack = 0;
     G4int fTrackID = 0;
     G4double fEkin = 0;
-    G4int fTrackIDOfInitialSplittedTrack = 0;
-    G4int ftmpTrackID = 0;
     G4bool fIsFirstStep = true;
-    G4bool fSuspendForAnnihil = false;
-    G4double fWeightOfEnteringParticle = 0;
     G4double fSplitCounter = 0;
     G4bool fToSplit = true;
     const GateVSource *fActiveSource = nullptr;
     G4bool fIsAnnihilAlreadySplit = false;
-    G4int fCounter = 0;
     G4bool fKilledBecauseOfProcess = false;
-    G4bool fFirstSplittedPart = true;
     G4bool fAbortedEvent = false;
     G4double fWeight = 0;
     G4int fNumberOfTrackToSimulate = 0;
     G4int fNbOfBatchForExitingParticle = 0;
-    G4int fTracksCounts = 0;
     GateLastVertexSource *fVertexSource = nullptr;
     tree<LastVertexDataContainer> fTree;
     tree<LastVertexDataContainer>::post_order_iterator fIterator;
@@ -97,16 +82,11 @@ public:
     long fNumberOfReplayedParticle = 0;
     long fNumberOfReplayedEvent = 0;
     long fNumberOfEvent = 0;
-    G4ThreeVector fCurrentVectorDirector;
     G4Track *fTrackToSplit = nullptr;
     G4Step *fCopyInitStep = nullptr;
     G4String fProcessNameToSplit;
     G4VProcess *fProcessToSplit = nullptr;
     LastVertexDataContainer fContainer;
-    std::vector<G4Track> fTracksToPostpone;
-    std::map<G4String, std::vector<G4String>> fListOfProcessesAccordingParticles;
-    std::map<G4int, LastVertexDataContainer> fDataMap;
-    std::vector<std::string> fListOfBiasedVolume;
     GateSourceManager *fSourceManager = nullptr;
     WorkerState() = default;
     WorkerState(const WorkerState &) = delete;
@@ -133,33 +113,23 @@ public:
 
   // Pure splitting functions
   void InitializeAAManager(const std::map<std::string, std::string> &user_info);
-  G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir,
-                                         G4ThreeVector vectorDirector);
   G4Track *CreateComptonTrack(G4ParticleChangeForGamma *, G4Track, G4double);
-  void ComptonSplitting(G4Step *initStep, G4Step *CurrentStep,
-                        G4VProcess *process, LastVertexDataContainer container,
+  void ComptonSplitting(G4Step *initStep, G4VProcess *process,
                         G4double batchSize);
-  void SecondariesSplitting(G4Step *initStep, G4Step *CurrentStep,
-                            G4VProcess *process,
+  void SecondariesSplitting(G4Step *initStep, G4VProcess *process,
                             LastVertexDataContainer container,
                             G4double batchSize);
 
-  void CreateNewParticleAtTheLastVertex(G4Step *init, G4Step *current,
+  void CreateNewParticleAtTheLastVertex(G4Step *init,
                                         LastVertexDataContainer,
                                         G4double batchSize);
   G4Track *CreateATrackFromContainer(LastVertexDataContainer container);
-  G4bool IsTheParticleUndergoesAProcess(G4Step *step);
   G4bool IsTheParticleUndergoesALossEnergyProcess(G4Step *step);
   G4VProcess *GetProcessFromProcessName(G4String particleName, G4String pName);
-  G4Track eBremProcessFinalState(G4Track *track, G4Step *step,
-                                 G4VProcess *process);
+  G4Track eBremProcessFinalState(G4Track *track, G4Step *step);
 
   void FillOfDataTree(G4Step *step);
   G4bool IsParticleExitTheBiasedVolume(G4Step *step);
-  void CreateListOfbiasedVolume(G4LogicalVolume *volume);
-  void print_tree(const tree<LastVertexDataContainer> &tr,
-                  tree<LastVertexDataContainer>::pre_order_iterator it,
-                  tree<LastVertexDataContainer>::pre_order_iterator end);
   inline long GetNumberOfKilledParticles() { return fRemovedParticle; }
   inline long GetNumberOfReplayedEvents() { return fNumberOfReplayedEvent; }
   inline long GetNumberOfEvents() { return fNumberOfEvent; }

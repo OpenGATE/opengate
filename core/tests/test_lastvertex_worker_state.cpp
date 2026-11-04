@@ -46,7 +46,6 @@ int main() {
         state.fTree.set_head(root);
         state.fIterator = state.fTree.begin_post();
         state.fListOfContainer.push_back(root);
-        state.fListOfBiasedVolume.push_back(std::to_string(worker));
         state.fAAManager = new GateAcceptanceAngleManager();
         state.fAAManager->fNotAcceptedEvents = worker + 1;
         state.fNbOfBatchForExitingParticle = worker + 1;
@@ -58,8 +57,6 @@ int main() {
                 "Workers share tree/iterator");
         require(state.fListOfContainer.front().GetTrackID() == worker + 1,
                 "Workers share replay payload");
-        require(state.fListOfBiasedVolume.front() == std::to_string(worker),
-                "Workers share volume traversal state");
         require(state.fAAManager->fNotAcceptedEvents == worker + 1,
                 "Workers share acceptance state");
         require(state.fNbOfBatchForExitingParticle == worker + 1,

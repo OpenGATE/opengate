@@ -12,8 +12,5 @@ void init_GateLastVertexSource(py::module &m) {
 
   py::class_<GateLastVertexSource, GateVSource>(m, "GateLastVertexSource")
       .def(py::init())
-      .def("InitializeUserInfo", &GateLastVertexSource::InitializeUserInfo)
-      // If needed: add your own class functions that will be accessible from
-      // python side.
-      ;
+      .def("InitializeUserInfo", &GateLastVertexSource::InitializeUserInfo);
 }

@@ -14,13 +14,7 @@
 
 namespace py = pybind11;
 
-/*
- This is NOT a real source type but a template to help writing your own source
- type. Copy-paste this file with a different name ("MyNewSource.hh") and start
- building. You also need to copy : GateLastVertexSource.hh
- GateLastVertexSource.cpp pyGateLastVertexSource.cpp And add the source
- declaration in opengate_core.cpp
- */
+// Replays the last-vertex states published by the splitting actor.
 
 class GateLastVertexSource : public GateVSource {
 
@@ -61,8 +55,6 @@ public:
 protected:
   G4int fNumberOfGeneratedEvents = 0;
   G4int fN = 0;
-  double fFloatValue;
-  std::vector<double> fVectorValue;
   std::vector<LastVertexDataContainer> fListOfContainer;
   G4String fProcessToSplit = "None";
   LastVertexDataContainer fContainer;
