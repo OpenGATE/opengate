@@ -4,7 +4,10 @@ set -e
 source $GITHUB_WORKSPACE/env_dump.txt
 source $CONDA/Scripts/activate opengate_core
 conda info
-conda install cmake==4.2.3
+# ninja: opengate_core is compiled with Ninja (ccache, see below). Installed here:
+# a conda install re-activates the environment, which resets SSL_CERT_FILE (set
+# below)
+conda install cmake==4.2.3 ninja
 cmake --version
 conda list
 which python
@@ -52,6 +55,26 @@ if [ "${MATRIX_CACHE}" != 'true' ]; then
 fi
 cd $GITHUB_WORKSPACE
 source $HOME/software/geant4/bin/geant4make.sh
+# compile opengate_core with ccache (not Geant4 and ITK above): Ninja instead of
+# MSBuild (which does not support ccache), Release (setup.py sets the build type
+# for the other OS only; cmake reads it from the environment), the MSVC
+# environment comes from the build action. The cache folder is saved and
+# restored by the build action.
+CCACHE_VERSION=4.11.3
+mkdir -p $HOME/.ccache $HOME/ccache_bin
+curl -fsSL --retry 5 --retry-all-errors -o $HOME/ccache_bin/ccache.zip https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-windows-x86_64.zip
+unzip -q -j -o $HOME/ccache_bin/ccache.zip "*/ccache.exe" -d $HOME/ccache_bin
+export CCACHE_DIR=$(cygpath -w $HOME/.ccache)
+# MSVC object files are large: ~1.1 GB for opengate_core
+export CCACHE_MAXSIZE=2G
+export CCACHE_BASEDIR=$(cygpath -w $GITHUB_WORKSPACE)
+export CCACHE_COMPILERCHECK=content
+export CMAKE_GENERATOR=Ninja
+export CMAKE_BUILD_TYPE=Release
+export CMAKE_CXX_COMPILER_LAUNCHER=$(cygpath -m $HOME/ccache_bin/ccache.exe)
+export CMAKE_C_COMPILER_LAUNCHER=$(cygpath -m $HOME/ccache_bin/ccache.exe)
+which cl ninja link || true
+$HOME/ccache_bin/ccache.exe --zero-stats
 export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
 cp VERSION core/VERSION
 cd core
@@ -83,6 +106,7 @@ ls $HOME/software/geant4/bin/BuildProducts/Release/lib/
 export CIBW_BEFORE_BUILD_WINDOWS="pip install colored"
 export CIBW_REPAIR_WHEEL_COMMAND_WINDOWS=''
 python -m cibuildwheel --output-dir dist
+$HOME/ccache_bin/ccache.exe --show-stats --verbose || true
 
 cd ..
 mkdir core/dist2
