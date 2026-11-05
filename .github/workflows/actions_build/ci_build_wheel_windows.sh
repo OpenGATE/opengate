@@ -62,7 +62,7 @@ source $HOME/software/geant4/bin/geant4make.sh
 # restored by the build action.
 CCACHE_VERSION=4.11.3
 mkdir -p $HOME/.ccache $HOME/ccache_bin
-curl -sSL --retry 3 -o $HOME/ccache_bin/ccache.zip https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-windows-x86_64.zip
+curl -fsSL --retry 5 --retry-all-errors -o $HOME/ccache_bin/ccache.zip https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-windows-x86_64.zip
 unzip -q -j -o $HOME/ccache_bin/ccache.zip "*/ccache.exe" -d $HOME/ccache_bin
 export CCACHE_DIR=$(cygpath -w $HOME/.ccache)
 # MSVC object files are large: ~1.1 GB for opengate_core
