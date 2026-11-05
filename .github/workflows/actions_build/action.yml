@@ -122,8 +122,12 @@ runs:
         GH_TOKEN: ${{ github.token }}
         PREFIX: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-
         KEEP: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-${{ github.run_id }}
+      # a failed clean-up must not fail the build
+      continue-on-error: true
       shell: bash -l {0}
       run: |
+          # Windows: SSL_CERT_FILE of the conda environment breaks the TLS of gh
+          unset SSL_CERT_FILE SSL_CERT_DIR
           gh cache list --repo ${{ github.repository }} --ref ${{ github.ref }} --key "$PREFIX" --limit 100 --json key --jq '.[].key' |
             while read -r key; do
               [[ "$key" == "$KEEP" ]] || gh cache delete --repo ${{ github.repository }} "$key" || true

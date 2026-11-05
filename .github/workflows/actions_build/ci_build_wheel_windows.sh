@@ -65,7 +65,8 @@ mkdir -p $HOME/.ccache $HOME/ccache_bin
 curl -sSL --retry 3 -o $HOME/ccache_bin/ccache.zip https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-windows-x86_64.zip
 unzip -q -j -o $HOME/ccache_bin/ccache.zip "*/ccache.exe" -d $HOME/ccache_bin
 export CCACHE_DIR=$(cygpath -w $HOME/.ccache)
-export CCACHE_MAXSIZE=1G
+# MSVC object files are large: ~1.1 GB for opengate_core
+export CCACHE_MAXSIZE=2G
 export CCACHE_BASEDIR=$(cygpath -w $GITHUB_WORKSPACE)
 export CCACHE_COMPILERCHECK=content
 export CMAKE_GENERATOR=Ninja
