@@ -194,22 +194,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
-    - name: Get OS version
-      id: get-os-version
-      shell: bash -l {0}
-      run: |
-        varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
-        varOS=($varOS)
-        varOS=${varOS[0]}
-        varOS="${varOS}-intel"
-        echo "release=${varOS}" >> $GITHUB_OUTPUT
-    - name: Cache modules
-      id: cache_opengate_core_dependencies
-      uses: actions/cache@v5
-      with:
-        path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
     - name: Create opengate_core_novis Wheel Linux
       run: |
           if [ ${{ matrix.python-version }} == "3.10" ]; then

@@ -43,13 +43,16 @@ runs:
             fi
             echo "release=${varOS}" >> $GITHUB_OUTPUT
         fi
+    # installed Geant4 and ITK (macOS, Windows), built by the build scripts on a
+    # cache miss. Linux: Geant4 and ITK are in the docker image, no cache
     - name: Cache modules
+      if: (inputs.os != 'ubuntu-24.04') && (inputs.os != 'ubuntu-24.04-arm')
       id: cache_opengate_core_dependencies
       uses: actions/cache@v5
       with:
-        path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        path: ~/software/install
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_install1
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_install1
     # compiler cache (ccache) of opengate_core, macOS, Linux x86 and Windows
     # x86: saved by the master runs only, for the Python versions built by
     # the pull requests (3.10, 3.14), one entry per OS and Python (the older one
