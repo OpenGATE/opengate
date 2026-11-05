@@ -50,13 +50,13 @@ runs:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
         restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-    # compiler cache (ccache) of opengate_core, macOS and Linux x86 (not
-    # Windows): saved by the master runs only, for the Python versions built by
+    # compiler cache (ccache) of opengate_core, macOS, Linux x86 and Windows
+    # x86: saved by the master runs only, for the Python versions built by
     # the pull requests (3.10, 3.14), one entry per OS and Python (the older one
     # is deleted), so that it does not fill the Actions cache (~0.1 GB macOS,
     # ~0.36 GB Linux per entry); restored by all the runs
     - name: Restore the compiler cache
-      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04')
+      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025')
       uses: actions/cache/restore@v5
       with:
         path: ~/.ccache
@@ -93,6 +93,13 @@ runs:
       run: |
           export > $GITHUB_WORKSPACE/env_dump.txt
           bash $GITHUB_WORKSPACE/.github/workflows/actions_build/ci_build_wheel_macos.sh
+    # Windows: opengate_core is compiled with Ninja (MSBuild does not support
+    # ccache): it needs the MSVC environment (cl.exe, link.exe) in the PATH
+    - name: MSVC environment Windows
+      if: (inputs.os == 'windows-2025')
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
     - name: Create opengate_core Wheel Windows
       if: (inputs.os == 'windows-2025') || (inputs.os == 'windows-11-arm')
       env:
@@ -104,13 +111,13 @@ runs:
           export > $GITHUB_WORKSPACE\\env_dump.txt
           bash $GITHUB_WORKSPACE\\.github\\workflows\\actions_build\\ci_build_wheel_windows.sh
     - name: Save the compiler cache
-      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && ((github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.head_ref == 'ci_ccache_windows' && inputs.os == 'windows-2025'))
       uses: actions/cache/save@v5
       with:
         path: ~/.ccache
         key: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-${{ github.run_id }}
     - name: Delete the older compiler caches
-      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && ((github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.head_ref == 'ci_ccache_windows' && inputs.os == 'windows-2025'))
       env:
         GH_TOKEN: ${{ github.token }}
         PREFIX: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-
