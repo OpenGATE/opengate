@@ -4,7 +4,10 @@ set -e
 source $GITHUB_WORKSPACE/env_dump.txt
 source $CONDA/Scripts/activate opengate_core
 conda info
-conda install cmake==4.2.3
+# ninja: opengate_core is compiled with Ninja (ccache, see below). Installed here:
+# a conda install re-activates the environment, which resets SSL_CERT_FILE (set
+# below)
+conda install cmake==4.2.3 ninja
 cmake --version
 conda list
 which python
@@ -61,7 +64,6 @@ CCACHE_VERSION=4.11.3
 mkdir -p $HOME/.ccache $HOME/ccache_bin
 curl -sSL --retry 3 -o $HOME/ccache_bin/ccache.zip https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-windows-x86_64.zip
 unzip -q -j -o $HOME/ccache_bin/ccache.zip "*/ccache.exe" -d $HOME/ccache_bin
-conda install -y ninja
 export CCACHE_DIR=$(cygpath -w $HOME/.ccache)
 export CCACHE_MAXSIZE=1G
 export CCACHE_BASEDIR=$(cygpath -w $GITHUB_WORKSPACE)
