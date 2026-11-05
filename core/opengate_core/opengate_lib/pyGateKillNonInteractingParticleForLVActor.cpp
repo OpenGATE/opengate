@@ -9,14 +9,18 @@
 #include <pybind11/pybind11.h>
 
 void init_GateKillNonInteractingParticleForLVActor(py::module &m) {
-  py::class_<GateKillNonInteractingParticleForLVActor,
-             std::unique_ptr<GateKillNonInteractingParticleForLVActor, py::nodelete>,
-             GateVActor>(m, "GateKillNonInteractingParticleForLVActor")
-      .def_readwrite("fListOfVolumeAncestor",
-                    &GateKillNonInteractingParticleForLVActor::fListOfVolumeAncestor)
-      .def_property_readonly("number_of_killed_particles",
-                    &GateKillNonInteractingParticleForLVActor::GetNumberOfKilledParticles)
-      .def("GetNumberOfKilledParticles",
-                    &GateKillNonInteractingParticleForLVActor::GetNumberOfKilledParticles)
+  py::class_<
+      GateKillNonInteractingParticleForLVActor,
+      std::unique_ptr<GateKillNonInteractingParticleForLVActor, py::nodelete>,
+      GateVActor>(m, "GateKillNonInteractingParticleForLVActor")
+      .def_readwrite(
+          "fListOfVolumeAncestor",
+          &GateKillNonInteractingParticleForLVActor::fListOfVolumeAncestor)
+      .def_property_readonly(
+          "number_of_killed_particles",
+          &GateKillNonInteractingParticleForLVActor::GetNumberOfKilledParticles)
+      .def(
+          "GetNumberOfKilledParticles",
+          &GateKillNonInteractingParticleForLVActor::GetNumberOfKilledParticles)
       .def(py::init<py::dict &>());
 }

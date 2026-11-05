@@ -212,7 +212,9 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         return s
 
 
-class KillAccordingParticleNameLVActor(ActorBase, g4.GateKillAccordingParticleNameLVActor):
+class KillAccordingParticleNameLVActor(
+    ActorBase, g4.GateKillAccordingParticleNameLVActor
+):
     """LV actor killing selected particle names at an ancestor-volume exit.
 
     Selection and counts are worker-local, with one final counter reduction.
@@ -318,7 +320,8 @@ class KillNonInteractingParticleForLVActor(
         ActorBase.__init__(self, *args, **kwargs)
         # FIXME: Should rely on user_output_config and not call _add_user_output manually
         self._add_user_output(
-            ActorOutputKillNonInteractingParticleForLVActor, "kill_non_interacting_particles"
+            ActorOutputKillNonInteractingParticleForLVActor,
+            "kill_non_interacting_particles",
         )
         self.__initcpp__()
         self.list_of_volume_name = []

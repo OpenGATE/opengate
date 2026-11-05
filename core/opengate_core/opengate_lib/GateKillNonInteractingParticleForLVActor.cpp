@@ -53,8 +53,8 @@ void GateKillNonInteractingParticleForLVActor::SteppingAction(G4Step *step) {
 
   // At a world exit there is no post volume; do not dereference it.
   const auto *postVolume = post->GetPhysicalVolume();
-  if (data.fPassedByTheMotherVolume &&
-      post->GetStepStatus() == fGeomBoundary && postVolume) {
+  if (data.fPassedByTheMotherVolume && post->GetStepStatus() == fGeomBoundary &&
+      postVolume) {
     const auto &postName = postVolume->GetLogicalVolume()->GetName();
     if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(),
                   postName) != fListOfVolumeAncestor.end() &&

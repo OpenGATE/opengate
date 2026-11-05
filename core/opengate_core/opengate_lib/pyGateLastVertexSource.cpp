@@ -13,5 +13,6 @@ void init_GateLastVertexSource(py::module &m) {
   py::class_<GateLastVertexSource, GateVSource>(m, "GateLastVertexSource")
       .def(py::init())
       .def("InitializeUserInfo", &GateLastVertexSource::InitializeUserInfo)
-      .def("GetTotalReplayedEvents", &GateLastVertexSource::GetTotalReplayedEvents);
+      .def("GetTotalReplayedEvents",
+           &GateLastVertexSource::GetTotalReplayedEvents);
 }

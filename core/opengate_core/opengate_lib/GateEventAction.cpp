@@ -7,8 +7,8 @@
 
 #include "GateEventAction.h"
 #include "GateSourceManager.h"
-#include <G4RunManager.hh>
 #include <G4MoleculeCounterManager.hh>
+#include <G4RunManager.hh>
 
 GateEventAction::GateEventAction() : G4UserEventAction() {
   fChemistryIsActive = false;

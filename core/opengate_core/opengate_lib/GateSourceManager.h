@@ -102,7 +102,9 @@ public:
   void PrepareNextSource() const;
 
   // LV opts in per worker; ordinary sources retain the generation-time check.
-  void DeferRunCompletion() { fThreadLocalData.Get().fDeferRunCompletion = true; }
+  void DeferRunCompletion() {
+    fThreadLocalData.Get().fDeferRunCompletion = true;
+  }
   bool IsRunCompletionDeferred() const {
     return fThreadLocalData.Get().fDeferRunCompletion;
   }

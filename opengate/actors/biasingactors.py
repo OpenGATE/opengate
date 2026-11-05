@@ -505,7 +505,9 @@ class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
     def get_processed_output(self):
         d = {}
         d["replayed_particles"] = self.number_of_replayed_events
-        d["actor_classified_replay_events"] = self.number_of_actor_classified_replayed_events
+        d["actor_classified_replay_events"] = (
+            self.number_of_actor_classified_replayed_events
+        )
         d["nb_events"] = self.number_of_events
         return d
 
@@ -585,7 +587,8 @@ class LastVertexInteractionSplittingActor(
         from ..sources.lastvertexsources import LastVertexSource
 
         sources = [
-            source for source in self.simulation.source_manager.sources.values()
+            source
+            for source in self.simulation.source_manager.sources.values()
             if isinstance(source, LastVertexSource)
         ]
         if len(sources) != 1:
@@ -619,7 +622,9 @@ class LastVertexInteractionSplittingActor(
         )
         # Source outputs are gathered before actor EndSimulationAction hooks.
         source = self._get_replay_source()
-        self.user_output.last_vertex_output.number_of_replayed_events = source.total_replayed_events
+        self.user_output.last_vertex_output.number_of_replayed_events = (
+            source.total_replayed_events
+        )
         print("Number of replayed Events: ", source.total_replayed_events)
         print("Actor-classified replay Events: ", self.GetNumberOfReplayedEvents())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())

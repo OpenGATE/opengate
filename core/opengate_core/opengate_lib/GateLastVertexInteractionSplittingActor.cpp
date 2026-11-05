@@ -169,12 +169,12 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
     G4ParticleChangeForGamma *gammaProcessFinalState =
         (G4ParticleChangeForGamma *)processFinalState;
 
-    G4Track *newTrack =
-        CreateComptonTrack(gammaProcessFinalState, *data.fTrackToSplit, data.fWeight);
+    G4Track *newTrack = CreateComptonTrack(gammaProcessFinalState,
+                                           *data.fTrackToSplit, data.fWeight);
 
     if ((data.fAAManager != 0) &&
         (!(data.fAAManager->TestIfAccept(newTrack->GetPosition(),
-                                    newTrack->GetMomentumDirection())))) {
+                                         newTrack->GetMomentumDirection())))) {
       delete newTrack;
     } else {
       data.fStackManager->PushOneTrack(newTrack);
@@ -193,8 +193,9 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
   }
 }
 
-G4Track GateLastVertexInteractionSplittingActor::eBremProcessFinalState(
-    G4Track *track, G4Step *step) {
+G4Track
+GateLastVertexInteractionSplittingActor::eBremProcessFinalState(G4Track *track,
+                                                                G4Step *step) {
   // It seem's that the the along step method apply only to brem results to no
   // deposited energy but a change in momentum direction according to the
   // process Whereas the along step method applied to the ionisation well change
@@ -227,11 +228,10 @@ G4Track GateLastVertexInteractionSplittingActor::eBremProcessFinalState(
 }
 
 void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
-    G4Step *initStep, G4VProcess *process,
-    LastVertexDataContainer theContainer, G4double batchSize) {
+    G4Step *initStep, G4VProcess *process, LastVertexDataContainer theContainer,
+    G4double batchSize) {
   auto &data = fWorkerState.Get();
   SimpleContainer container = theContainer.GetContainerToSplit();
-
 
   G4VParticleChange *processFinalState = nullptr;
   GateBremPostStepDoIt *bremProcess = nullptr;
@@ -251,8 +251,7 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
     G4int count = 0;
     while (NbOfSecondaries == 0) {
       if (process->GetProcessName() == "eBrem") {
-        G4Track aTrack =
-            eBremProcessFinalState(data.fTrackToSplit, initStep);
+        G4Track aTrack = eBremProcessFinalState(data.fTrackToSplit, initStep);
         bremProcess = (GateBremPostStepDoIt *)process;
         processFinalState =
             bremProcess->GateBremPostStepDoIt::PostStepDoIt(aTrack, *initStep);
@@ -297,15 +296,14 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
 
       if (!(isnan(momentum[0]))) {
         if ((data.fAAManager != 0) &&
-            (!(data.fAAManager->TestIfAccept(newTrack->GetPosition(),
-                                        newTrack->GetMomentumDirection())))) {
+            (!(data.fAAManager->TestIfAccept(
+                newTrack->GetPosition(), newTrack->GetMomentumDirection())))) {
           delete newTrack;
         } else if (IsPushBack == true) {
           delete newTrack;
         } else {
           newTrack->SetWeight(data.fWeight);
           newTrack->SetCreatorProcess(process);
-
 
           data.fStackManager->PushOneTrack(newTrack);
 
@@ -354,7 +352,6 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
     data.fStackManager->clear();
     data.fRemovedParticle++;
   }
-
 }
 
 void GateLastVertexInteractionSplittingActor::FillOfDataTree(G4Step *step) {
@@ -423,8 +420,9 @@ void GateLastVertexInteractionSplittingActor::FillOfDataTree(G4Step *step) {
       }
     }
     if (!found)
-      Fatal("LastVertex: track " + std::to_string(step->GetTrack()->GetTrackID()) +
-            " (parent " + std::to_string(step->GetTrack()->GetParentID()) +
+      Fatal("LastVertex: track " +
+            std::to_string(step->GetTrack()->GetTrackID()) + " (parent " +
+            std::to_string(step->GetTrack()->GetParentID()) +
             ") absent from genealogy tree");
   }
 
@@ -496,11 +494,12 @@ G4bool GateLastVertexInteractionSplittingActor::
 void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
     const G4Run *run) {
   auto &data = fWorkerState.Get();
-  data.fSourceManager = const_cast<GateSourceManager *>(
-      dynamic_cast<const GateSourceManager *>(
+  data.fSourceManager =
+      const_cast<GateSourceManager *>(dynamic_cast<const GateSourceManager *>(
           G4RunManager::GetRunManager()->GetUserPrimaryGeneratorAction()));
   if (!data.fSourceManager)
-    Fatal("LastVertexSplitting requires the current worker's GateSourceManager");
+    Fatal(
+        "LastVertexSplitting requires the current worker's GateSourceManager");
   if (!fOnlyTree)
     data.fSourceManager->DeferRunCompletion();
   if (!data.fAAManager) {
@@ -519,7 +518,8 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
     data.fVertexSource = replay;
   }
   if (!data.fVertexSource)
-    Fatal("LastVertexSplitting requires exactly one LastVertexSource; none found");
+    Fatal("LastVertexSplitting requires exactly one LastVertexSource; none "
+          "found");
   data.fStackManager = G4EventManager::GetEventManager()->GetStackManager();
 }
 
@@ -637,8 +637,8 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
                 data.fCopyInitStep->GetPreStepPoint()->SetKineticEnergy(
                     data.fContainer.GetContainerToSplit().GetEnergy());
               }
-              CreateNewParticleAtTheLastVertex(data.fCopyInitStep, data.fContainer,
-                                               fBatchSize);
+              CreateNewParticleAtTheLastVertex(data.fCopyInitStep,
+                                               data.fContainer, fBatchSize);
             }
 
             step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
@@ -700,7 +700,8 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
 
   if (data.fActiveSource != data.fVertexSource) {
 
-    data.fVertexSource->SetNumberOfEventToSimulate(data.fListOfContainer.size());
+    data.fVertexSource->SetNumberOfEventToSimulate(
+        data.fListOfContainer.size());
     data.fVertexSource->SetNumberOfGeneratedEvent(0);
     data.fVertexSource->SetListOfVertexToSimulate(data.fListOfContainer);
     data.fTree.clear();

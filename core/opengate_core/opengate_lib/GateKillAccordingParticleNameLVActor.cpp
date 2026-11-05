@@ -21,7 +21,8 @@ GateKillAccordingParticleNameLVActor::GateKillAccordingParticleNameLVActor(
   fActions.insert("EndOfSimulationWorkerAction");
 }
 
-void GateKillAccordingParticleNameLVActor::InitializeUserInfo(py::dict &user_info) {
+void GateKillAccordingParticleNameLVActor::InitializeUserInfo(
+    py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
   fParticlesNameToKill = DictGetVecStr(user_info, "particles_name_to_kill");
 }
@@ -34,8 +35,8 @@ void GateKillAccordingParticleNameLVActor::PreUserTrackingAction(
     const G4Track *track) {
   const auto &name = track->GetParticleDefinition()->GetParticleName();
   fThreadLocalData.Get().fIsAParticleToKill =
-      std::find(fParticlesNameToKill.begin(), fParticlesNameToKill.end(), name) !=
-      fParticlesNameToKill.end();
+      std::find(fParticlesNameToKill.begin(), fParticlesNameToKill.end(),
+                name) != fParticlesNameToKill.end();
 }
 
 void GateKillAccordingParticleNameLVActor::SteppingAction(G4Step *step) {
@@ -47,8 +48,8 @@ void GateKillAccordingParticleNameLVActor::SteppingAction(G4Step *step) {
   if (!volume)
     return;
   const auto &name = volume->GetLogicalVolume()->GetName();
-  if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(), name) !=
-      fListOfVolumeAncestor.end()) {
+  if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(),
+                name) != fListOfVolumeAncestor.end()) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     ++data.fNbOfKilledParticles;
   }

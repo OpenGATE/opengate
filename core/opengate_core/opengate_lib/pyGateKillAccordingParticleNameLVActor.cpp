@@ -9,12 +9,14 @@
 #include <pybind11/pybind11.h>
 
 void init_GateKillAccordingParticleNameLVActor(py::module &m) {
-  py::class_<GateKillAccordingParticleNameLVActor,
-             std::unique_ptr<GateKillAccordingParticleNameLVActor, py::nodelete>,
-             GateVActor>(m, "GateKillAccordingParticleNameLVActor")
+  py::class_<
+      GateKillAccordingParticleNameLVActor,
+      std::unique_ptr<GateKillAccordingParticleNameLVActor, py::nodelete>,
+      GateVActor>(m, "GateKillAccordingParticleNameLVActor")
       .def(py::init<py::dict &>())
-      .def_readwrite("fListOfVolumeAncestor",
-                     &GateKillAccordingParticleNameLVActor::fListOfVolumeAncestor)
+      .def_readwrite(
+          "fListOfVolumeAncestor",
+          &GateKillAccordingParticleNameLVActor::fListOfVolumeAncestor)
       .def("GetNumberOfKilledParticles",
            &GateKillAccordingParticleNameLVActor::GetNumberOfKilledParticles);
 }

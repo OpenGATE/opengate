@@ -59,8 +59,10 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
   } else {
     if (fListOfContainer.size() != static_cast<size_t>(fN) ||
         static_cast<size_t>(idx) >= fListOfContainer.size())
-      Fatal("LastVertexSource '" + fName + "': replay queue desynchronised "
-            "(index=" + std::to_string(idx) + ", expected=" + std::to_string(fN) +
+      Fatal("LastVertexSource '" + fName +
+            "': replay queue desynchronised "
+            "(index=" +
+            std::to_string(idx) + ", expected=" + std::to_string(fN) +
             ", size=" + std::to_string(fListOfContainer.size()) + ")");
 
     SimpleContainer containerToSplit =

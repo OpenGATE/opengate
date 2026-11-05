@@ -120,8 +120,7 @@ public:
                             LastVertexDataContainer container,
                             G4double batchSize);
 
-  void CreateNewParticleAtTheLastVertex(G4Step *init,
-                                        LastVertexDataContainer,
+  void CreateNewParticleAtTheLastVertex(G4Step *init, LastVertexDataContainer,
                                         G4double batchSize);
   G4Track *CreateATrackFromContainer(LastVertexDataContainer container);
   G4bool IsTheParticleUndergoesALossEnergyProcess(G4Step *step);

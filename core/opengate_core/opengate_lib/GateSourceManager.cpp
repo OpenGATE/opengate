@@ -417,7 +417,8 @@ void GateSourceManager::CheckForNextRun() const {
               "(stop criterion or primary limit). No valid completed result "
               "can be reported.");
       if (l.fNextActiveSource == nullptr)
-        Fatal("Pending replay events have no selected source at run completion");
+        Fatal(
+            "Pending replay events have no selected source at run completion");
     }
   }
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
