@@ -4,12 +4,12 @@
 python opengate/tests/src/actors/test094_last_vertex_splitting_rtplan_mt.py
 ```
 
-Compares water-dose maps with and without LV, on one and four threads.
+Compares LV water-dose maps from one and four threads. LV is enabled in both.
 The four selected RTPlan intervals are repeated eight times. Each repetition
 is a batch containing all its correlated replays; the variance of the mean
 is the sample variance of the eight batch maps divided by eight.
-For independent LV/reference seeds, each scored voxel must satisfy
-`abs(D_LV - D_ref) / sqrt(var_LV + var_ref) <= 4`.
+For independent mono/MT seeds, each scored voxel must satisfy
+`abs(D_MT - D_mono) / sqrt(var_MT + var_mono) <= 4`.
 Both-zero voxels agree exactly. Unequal doses with zero variance fail.
 
 Only public OpenGATE outputs are used. Dose maps stay in memory; only the
@@ -26,5 +26,5 @@ DICOM identity fields, isocentre coordinates or patient images. Rows were
 selected among the first 512 by energy/(1+transverse radius) and are repeated
 to give the same primary population per interval in mono and MT. Geometry
 uses packaged Elekta Versa helpers, a water target, 4 cm shielding, 128
-originals per interval and split 50. Seeds are 20261105 without LV and
-20261106 with LV. No workspace files or external downloads are needed.
+originals per interval and split 50. Seeds are 20261105 for mono and
+20261106 for MT. No workspace files or external downloads are needed.

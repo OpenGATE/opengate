@@ -14,7 +14,7 @@ def load_fixture():
     return json.loads(FIXTURE.read_text())
 
 
-def build_simulation(use_lv, repetitions):
+def build_simulation(repetitions):
     plan = {key: np.concatenate([value] * repetitions)
             for key, value in load_fixture()['plan'].items()}
     sim = gate.Simulation()
@@ -57,17 +57,16 @@ def build_simulation(use_lv, repetitions):
 
     kill = sim.add_actor('KillNonInteractingParticleForLVActor', 'kill_non_int_actor')
     kill.attached_to = bias.name
-    if use_lv:
-        lv = sim.add_actor('LastVertexInteractionSplittingActor', 'vertexSplittingActor')
-        lv.attached_to = bias.name
-        lv.splitting_factor = 50
-        lv.batch_size = 500
-        lv.nb_of_max_batch_per_event = 300
-        lv.angular_acceptance.target_volumes = [patient.name]
-        lv.angular_acceptance.policy = 'Rejection'
-        lv.angular_acceptance.skip_policy = 'SkipEvents'
-        lv.angular_acceptance.enable_intersection_check = True
-        sim.add_source('LastVertexSource', 'source_vertex')
+    lv = sim.add_actor('LastVertexInteractionSplittingActor', 'vertexSplittingActor')
+    lv.attached_to = bias.name
+    lv.splitting_factor = 50
+    lv.batch_size = 500
+    lv.nb_of_max_batch_per_event = 300
+    lv.angular_acceptance.target_volumes = [patient.name]
+    lv.angular_acceptance.policy = 'Rejection'
+    lv.angular_acceptance.skip_policy = 'SkipEvents'
+    lv.angular_acceptance.enable_intersection_check = True
+    sim.add_source('LastVertexSource', 'source_vertex')
     sim.physics_manager.physics_list_name = 'G4EmStandardPhysics_option3'
     sim.physics_manager.set_production_cut('world', 'electron', 1000 * gate.g4_units.m)
     sim.physics_manager.set_production_cut('patient', 'electron', 0.05)
