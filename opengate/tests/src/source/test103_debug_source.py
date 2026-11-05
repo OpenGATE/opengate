@@ -48,13 +48,13 @@ if __name__ == "__main__":
 
     # start simulation in another process
     sim.run(start_new_process=True)
-    sim.to_json_file(filename=archive_filename)
+    sim.to_json_file(directory=sim.output_dir, filename=archive_filename)
 
     # print results at the end
     print(stat)
     print(debug_source)
 
-    json_path = sim.get_root_path(archive_filename)
+    json_path = sim.output_dir / archive_filename
     print(f"Simulation json saved in {json_path}")
 
     # assertions to verify MT execution and output recovery
