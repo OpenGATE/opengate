@@ -22,20 +22,6 @@ are recorded below. This is not physical or correlated-uncertainty validation.
 The performance criterion remains wall time to comparable uncertainty; no useful
 speedup is established.
 
-After building the core, run the native regression from the repository root
-with the Python interpreter used for that build:
-
-```bash
-python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-state-test
-```
-
-The output directory must be new. Pass `--build-dir` for another CMake build.
-The runner reuses that build's compiler/linker configuration and links a separate
-executable without replacing the core. It tests real cache/callback isolation
-on 1/2/4/8 native threads, independent actors, counters across simulated run
-boundaries, reduction, reset and acceptance-manager cleanup. It does not run
-Geant4 transport or establish MT physics correctness or scaling.
-
 ## LV deferred run completion
 
 LV replay mode opts the worker source manager into completion after all native
@@ -51,19 +37,6 @@ replays nor ignores the cap to generate an endless sequence of geantinos.
 The shared stop flag is atomic and resets at the master run boundary. Run
 completion advances the worker once and retains the existing Geant4 barrier.
 External aborts, fatal errors and SIGINT do not promise graceful replay drainage.
-
-After building, the controlled native transport regression can be run with:
-
-```bash
-python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-completion \
-  --test-source core/tests/test_source_manager_completion.cpp
-```
-
-Use `--test-args ordinary`, `deferred`, `empty`, `stop` or `limit` with distinct
-output directories for the other cases (default: `replays`). The test exercises
-two sequential Geant4 runs, final-primary replay publication, selection call
-counts, final callbacks once, duplicate completion and explicit incomplete
-history failures. It does not validate LV physics or multithreaded transport.
 
 ## Replay source identity
 
@@ -116,25 +89,6 @@ reads the reduced count through `GetNumberOfKilledParticles()` and the read-only
 the actor output's count. The actor is MT-ready; LV transport as a whole remains
 subject to its other outstanding validation and source-allocation work.
 
-After building, run controlled callback cases with the native regression runner:
-
-```bash
-python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/kill-lv-state \
-  --test-source core/tests/test_kill_noninteracting_lv_state.cpp
-```
-
-A standalone transport test (independent of LV transport and reference datasets):
-
-```bash
-python opengate/tests/src/actors/test_kill_noninteracting_lv_mt.py \
-  --output-dir /tmp/kill-lv-transport --threads 4
-```
-
-Use fresh output directories for 1/2/4/8 threads. The default checks 128
-unchanged-energy gamma tracks across two runs and both exposed count paths.
-`--birth inside` checks the birth exemption, and `--birth world` checks safe
-world exits. No scaling or unbiased-dose claim follows from these tests.
-
 ## LV particle-name kill actor
 
 `GateKillAccordingParticleNameLVActor` replaces
@@ -149,19 +103,6 @@ selection flag and killed count use the existing `G4Cache`; counts accumulate
 across runs and are reduced at worker completion. The mutex is taken only for
 that final reduction. `StartSimulationAction` resets the final total. Null
 post-volumes are safe. Python's final count uses the native reduced getter.
-
-Native selection/isolation/reduction checks and standalone transport tests:
-
-```bash
-python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/kill-name-lv \
-  --test-source core/tests/test_kill_particle_name_lv_state.cpp
-python opengate/tests/src/actors/test_kill_particle_name_lv_mt.py \
-  --output-dir /tmp/kill-name-lv-transport --threads 4 --particle e-
-```
-
-Use fresh output directories for each run. The transport test uses two runs
-with 128 selected primaries; `--unselected` and `--world` expect zero kills.
-This actor is MT-ready; it does not enable or validate the whole LV transport.
 
 ## LV process and replay-queue failures
 
@@ -180,13 +121,6 @@ lookup now uses a local found flag in the existing first-step search: a missing
 track raises an explicit error with track and parent IDs before iterator access.
 No extra tree traversal or subsequent-step validation is added.
 
-Native failure/success regressions after building:
-
-```bash
-python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-fail-fast \
-  --test-source core/tests/test_lastvertex_fail_fast.cpp
-```
-
 The CT_40/split-50 smoke retains 12717 events, 33 replays and six exact image
 matches to the previous reference, including existing uncertainty NaNs.
 
@@ -203,10 +137,7 @@ rejected direction instead raises the angular error at proposal 10002, after
 20 full batches. The separate 10000-iteration secondary-generation guard was
 reviewed statically; it was not exercised by that controlled Compton test.
 
-```bash
-python core/tests/run_lastvertex_worker_state.py --output-dir /tmp/lv-attempts \
-  --test-source core/tests/test_lastvertex_attempt_limits.cpp
-```
+
 
 Maintained LINAC/RTPlan/patient LV+TLE transports complete all 123 intervals with
 CT_40 on 1/2/4/8 workers and the full 4 mm CT on four workers. Each normal case
@@ -222,3 +153,12 @@ have no such count discrepancy. Correlated replay uncertainty, physical accuracy
 stop-path completeness and meaningful scaling remain separate validation work.
 The small CT_40 smoke is slower in MT (28.7/34.5/39.1/42.9 s wall on 1/2/4/8);
 these startup/geometry/output-inclusive times are not an equal-uncertainty benchmark.
+
+## Maintained LV mono/MT regression
+
+```bash
+python opengate/tests/src/actors/test094_last_vertex_splitting_rtplan_mt.py
+```
+
+This compares LV water dose on one and four threads at four sigma.
+Agent-only diagnostic harnesses are not part of the maintained test suite.
