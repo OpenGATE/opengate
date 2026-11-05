@@ -13,6 +13,7 @@ from test094_last_vertex_splitting_rtplan_helpers import build_simulation, load_
 
 if __name__ == "__main__":
     repetitions = 8
+    is_ok = True
     with tempfile.TemporaryDirectory(prefix="test094-rtplan-") as scratch:
         phsp = Path(scratch) / "fixture.root"
         # Each interval receives the same primary population in all configurations.
@@ -40,10 +41,11 @@ if __name__ == "__main__":
             stats = sim.actor_manager.actors["stats"]
             lv = sim.actor_manager.actors["vertexSplittingActor"].user_output.last_vertex_output
             replays = lv.number_of_replayed_events
-            assert replays > 0
-            assert replays == lv.number_of_actor_classified_replayed_events
-            assert stats.counts.runs == 4 * repetitions * threads
-            assert stats.counts.events == 512 * repetitions + replays
+            is_ok = (replays > 0
+                     and replays == lv.number_of_actor_classified_replayed_events
+                     and stats.counts.runs == 4 * repetitions * threads
+                     and stats.counts.events == 512 * repetitions + replays
+                     and is_ok)
 
             dose = sim.actor_manager.actors["dose"].dose
             maps = np.asarray([
@@ -52,7 +54,7 @@ if __name__ == "__main__":
             ])
             # Keep all correlated replays inside their original four-interval batch.
             batches = maps.reshape(repetitions, 4, *maps.shape[1:]).sum(axis=1)
-            assert np.isfinite(batches).all() and np.any(batches > 0)
+            is_ok = bool(np.isfinite(batches).all() and np.any(batches > 0) and is_ok)
             means.append(batches.mean(axis=0))
             variances.append(batches.var(axis=0, ddof=1) / repetitions)
 
@@ -62,10 +64,9 @@ if __name__ == "__main__":
         # Empty voxels agree exactly; a nonzero difference with zero sigma fails.
         z = np.divide(np.abs(difference), sigma,
                       out=np.where(difference == 0, 0., np.inf), where=sigma > 0)
-        assert np.any(scored)
-        maximum = z[scored].max()
+        maximum = z[scored].max() if np.any(scored) else np.inf
         print(f"LV mono vs 4 threads: max |Z| = {maximum:.2f}, "
               f"{np.count_nonzero(z[scored] > 4)}/{scored.sum()} voxels above 4 sigma")
-        assert maximum <= 4, "LV water dose in mono/MT differs by more than 4 sigma"
+        is_ok = bool(is_ok and np.isfinite(z[scored]).all() and maximum <= 4)
 
-    utility.test_ok(True)
+    utility.test_ok(is_ok)

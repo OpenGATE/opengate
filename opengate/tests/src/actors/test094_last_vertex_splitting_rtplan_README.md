@@ -14,7 +14,8 @@ Both-zero voxels agree exactly. Unequal doses with zero variance fail.
 
 Only public OpenGATE outputs are used. Dose maps stay in memory; only the
 necessary temporary PHSP input is written. Checks also require completed
-intervals, matching event/replay counts and finite, nonzero dose. The test
+intervals, matching event/replay counts and finite, nonzero dose. All checks
+contribute to the final boolean passed to `utility.test_ok(is_ok)`. The test
 prints the maximum absolute Z-score and the number of voxels exceeding four
 sigma. Low statistics and a repeated PHSP fixture limit this regression;
 it is not a full physics or uncertainty validation.
