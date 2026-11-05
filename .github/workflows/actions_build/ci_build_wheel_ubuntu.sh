@@ -49,21 +49,13 @@ source /software/geant4/bin/geant4make.sh &&
 . /opt/rh/gcc-toolset-14/enable
 '
 
-# expose external libraries to build environment
-export CIBW_ENVIRONMENT='
-CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/
-Geant4_DIR=/software/geant4/lib/cmake/Geant4
-ITK_DIR=/software/itk/lib/cmake/ITK
-LD_LIBRARY_PATH=/software/geant4/lib:/software/itk/lib
-CCACHE_MAXSIZE=1G
-CCACHE_BASEDIR=/project
-CCACHE_COMPILERCHECK=content
-CMAKE_CXX_COMPILER_LAUNCHER=ccache
-CMAKE_C_COMPILER_LAUNCHER=ccache
-'
-
-# $HOME of the host, not of the container
-export CIBW_ENVIRONMENT="${CIBW_ENVIRONMENT} CCACHE_DIR=/host$HOME/.ccache"
+# expose external libraries to build environment. cibuildwheel reads one line
+# of space separated assignments (the next lines were ignored: Geant4_DIR,
+# ITK_DIR and LD_LIBRARY_PATH were never set, CMAKE_PREFIX_PATH is enough).
+# ccache: the cache folder of the host ($HOME of the host, not of the container)
+export CIBW_ENVIRONMENT="CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/ \
+CCACHE_DIR=/host$HOME/.ccache CCACHE_MAXSIZE=1G CCACHE_BASEDIR=/project \
+CCACHE_COMPILERCHECK=content CMAKE_CXX_COMPILER_LAUNCHER=ccache CMAKE_C_COMPILER_LAUNCHER=ccache"
 
 # Do not bundle the OpenGL dispatch libraries (libglvnd) in the wheel. Geant4's
 # OpenGL driver links the system libGL.so.1, which uses the system libGLX and
