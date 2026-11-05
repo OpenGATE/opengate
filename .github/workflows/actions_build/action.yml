@@ -54,7 +54,7 @@ runs:
     # x86: saved by the master runs only, for the Python versions built by
     # the pull requests (3.10, 3.14), one entry per OS and Python (the older one
     # is deleted), so that it does not fill the Actions cache (~0.1 GB macOS,
-    # ~0.36 GB Linux per entry); restored by all the runs
+    # ~0.36 GB Linux, ~1.15 GB Windows per entry); restored by all the runs
     - name: Restore the compiler cache
       if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025')
       uses: actions/cache/restore@v5
@@ -111,13 +111,13 @@ runs:
           export > $GITHUB_WORKSPACE\\env_dump.txt
           bash $GITHUB_WORKSPACE\\.github\\workflows\\actions_build\\ci_build_wheel_windows.sh
     - name: Save the compiler cache
-      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && ((github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.head_ref == 'ci_ccache_windows' && inputs.os == 'windows-2025'))
+      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: actions/cache/save@v5
       with:
         path: ~/.ccache
         key: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-${{ github.run_id }}
     - name: Delete the older compiler caches
-      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && ((github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.head_ref == 'ci_ccache_windows' && inputs.os == 'windows-2025'))
+      if: (inputs.os == 'macos-15' || inputs.os == 'ubuntu-24.04' || inputs.os == 'windows-2025') && (inputs.python-version == '3.10' || inputs.python-version == '3.14') && github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
         GH_TOKEN: ${{ github.token }}
         PREFIX: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-
