@@ -5,9 +5,6 @@ import json
 
 import numpy as np
 import opengate as gate
-import opengate_core as g4
-from opengate.actors.base import ActorBase
-from opengate.base import process_cls
 from opengate.contrib.linacs import elektaversa as versa
 
 FIXTURE = Path(__file__).with_name('test094_last_vertex_splitting_rtplan_fixture.json')
@@ -17,37 +14,14 @@ def load_fixture():
     return json.loads(FIXTURE.read_text())
 
 
-class ShortRunsTraceActor(ActorBase, g4.GateDebugActor):
-    """Native run/event prints; Python event overrides are not dispatched."""
-
-    user_info_defaults = {'debug_flag': (False, {'doc': 'Native debug option'})}
-
-    def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateDebugActor.__init__(self, self.user_info)
-        self.AddActions({'BeginOfRunAction', 'EndOfRunAction',
-                         'BeginOfEventAction', 'EndOfEventAction'})
-
-    def initialize(self):
-        ActorBase.initialize(self)
-        self.InitializeUserInfo(self.user_info)
-        self.InitializeCpp()
-
-
-process_cls(ShortRunsTraceActor)
-
-
-def build_simulation():
-    plan = {key: np.asarray(value) for key, value in load_fixture()['plan'].items()}
+def build_simulation(use_lv, repetitions):
+    plan = {key: np.concatenate([value] * repetitions)
+            for key, value in load_fixture()['plan'].items()}
     sim = gate.Simulation()
+    sim.verbose_level = 'WARNING'
+    sim.running_verbose_level = 0
     sim.world.size = [3000, 3000, 3000]
     sim.world.material = 'G4_AIR'
-    trace = ShortRunsTraceActor(name='short_runs_trace')
-    trace.priority = -1000
-    sim.add_actor(trace, trace.name)
 
     linac = versa.add_linac(sim, 'linac_box', sad=1000)
     bias = versa.add_patient_dependent_linac_box(sim, linac.name)
@@ -78,26 +52,26 @@ def build_simulation():
     dose.output_coordinate_system = 'local'
     dose.hit_type = 'random'
     dose.dose.active = True
-    dose.dose_squared.active = True
-    dose.edep.write_to_disk = False
+    dose.write_to_disk = False
+    dose.dose.keep_data_per_run = True
 
     kill = sim.add_actor('KillNonInteractingParticleForLVActor', 'kill_non_int_actor')
     kill.attached_to = bias.name
-    lv = sim.add_actor('LastVertexInteractionSplittingActor', 'vertexSplittingActor')
-    lv.attached_to = bias.name
-    lv.splitting_factor = 50
-    lv.batch_size = 500
-    lv.nb_of_max_batch_per_event = 300
-    lv.angular_acceptance.target_volumes = [patient.name]
-    lv.angular_acceptance.policy = 'Rejection'
-    lv.angular_acceptance.skip_policy = 'SkipEvents'
-    lv.angular_acceptance.enable_intersection_check = True
-    sim.add_source('LastVertexSource', 'source_vertex')
+    if use_lv:
+        lv = sim.add_actor('LastVertexInteractionSplittingActor', 'vertexSplittingActor')
+        lv.attached_to = bias.name
+        lv.splitting_factor = 50
+        lv.batch_size = 500
+        lv.nb_of_max_batch_per_event = 300
+        lv.angular_acceptance.target_volumes = [patient.name]
+        lv.angular_acceptance.policy = 'Rejection'
+        lv.angular_acceptance.skip_policy = 'SkipEvents'
+        lv.angular_acceptance.enable_intersection_check = True
+        sim.add_source('LastVertexSource', 'source_vertex')
     sim.physics_manager.physics_list_name = 'G4EmStandardPhysics_option3'
     sim.physics_manager.set_production_cut('world', 'electron', 1000 * gate.g4_units.m)
     sim.physics_manager.set_production_cut('patient', 'electron', 0.05)
     sim.g4_commands_before_init.extend(['/process/em/UseGeneralProcess false',
                                        '/process/eLoss/CSDARange true'])
-    stats = sim.add_actor('SimulationStatisticsActor', 'stats')
-    stats.track_types_flag = True
+    sim.add_actor('SimulationStatisticsActor', 'stats')
     return sim
