@@ -33,8 +33,9 @@ export CIBW_PLATFORM="linux"
 # static ccache binary is used on the host (statistics) and in the container.
 CCACHE_VERSION=4.11.3
 mkdir -p $HOME/.ccache $HOME/ccache_bin
-curl -sSL --retry 3 https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-x86_64.tar.xz |
-  tar -xJ --strip-components=1 -C $HOME/ccache_bin
+curl -fsSL --retry 5 --retry-all-errors -o $HOME/ccache_bin/ccache.tar.xz \
+  https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-x86_64.tar.xz
+tar -xJf $HOME/ccache_bin/ccache.tar.xz --strip-components=1 -C $HOME/ccache_bin
 export CIBW_BEFORE_ALL_LINUX="cp /host$HOME/ccache_bin/ccache /usr/local/bin/ && ccache --version"
 export CIBW_BUILD_FRONTEND="build"
 export CIBW_SKIP="*-musllinux_* *t*"
