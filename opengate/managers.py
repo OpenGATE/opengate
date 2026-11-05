@@ -1033,33 +1033,38 @@ class PhysicsManager(GateObject):
         from all biasing actors present in the simulation.
         """
 
-        charged_particles = {"e-", "e+", "proton"}
-        all_particles = charged_particles.union({"gamma"})
+        # WARNING: lists and dicts are used instead of sets to keep a
+        # deterministic order. The order of the processes is the order of
+        # the biased processes in Geant4, which is the order in which they
+        # sample their interaction lengths. With sets, it changes with the
+        # Python hash seed and the simulation is not reproducible.
+        charged_particles = ["e-", "e+", "proton"]
+        all_particles = charged_particles + ["gamma"]
 
-        # create a dictionary with sets as entries (to ensure uniqueness)
-        particles_processes = dict([(p, set()) for p in all_particles])
+        # create a dictionary with ordered dicts as entries (to ensure uniqueness)
+        particles_processes = dict([(p, {}) for p in all_particles])
 
         for actor in self.simulation.actor_manager.actors.values():
             if isinstance(actor, GenericBiasingActorBase):
-                particles = set()
+                particles = {}
                 if "all" in actor.particles:
-                    particles.update(all_particles)
+                    particles.update(dict.fromkeys(all_particles))
                 elif "all_charged" in actor.particles:
-                    particles.update(charged_particles)
+                    particles.update(dict.fromkeys(charged_particles))
                 else:
                     for particle in actor.particles:
                         p_ = translate_particle_name_gate_to_geant4(particle)
                         if p_ in all_particles:
-                            particles.add(p_)
+                            particles[p_] = None
                         else:
                             fatal(
                                 f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
-                                f"This is not possible. Compatible particles are: {list(all_particles)}. "
+                                f"This is not possible. Compatible particles are: {all_particles}. "
                             )
                 for p in particles:
-                    particles_processes[p].update(actor.processes)
+                    particles_processes[p].update(dict.fromkeys(actor.processes))
 
-        # convert the dictionary entries back from set to list
+        # convert the dictionary entries to list
         return dict(
             [
                 (particle, list(processes))
@@ -3029,6 +3034,13 @@ class Simulation(GateObject):
                 start_new_process = True
             else:
                 from .jobs import SplitRunMergeController
+
+                if campaign_dir is None:
+                    fatal(
+                        f"Simulation.run(number_of_jobs={number_of_jobs}) requires "
+                        f"campaign_dir, the folder of the jobs, e.g. "
+                        f'sim.run(number_of_jobs={number_of_jobs}, campaign_dir="jobs").'
+                    )
 
                 if start_new_process is True:
                     fatal(
