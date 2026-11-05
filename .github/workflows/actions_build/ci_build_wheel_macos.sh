@@ -69,6 +69,16 @@ if [ "${MATRIX_CACHE}" != 'true' ]; then
 fi
 cd $GITHUB_WORKSPACE
 source $HOME/software/geant4/bin/geant4make.sh
+# compile opengate_core with ccache (not Geant4 and ITK above): the cache folder
+# is saved and restored by the build action. cmake reads the launcher from the
+# environment.
+export CCACHE_DIR=$HOME/.ccache
+export CCACHE_MAXSIZE=1G
+export CCACHE_BASEDIR=$GITHUB_WORKSPACE
+export CCACHE_COMPILERCHECK=content
+export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+export CMAKE_C_COMPILER_LAUNCHER=ccache
+ccache --zero-stats
 export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
 cp VERSION core/VERSION
 cd core
@@ -104,6 +114,7 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
 fi
 
 python -m cibuildwheel --output-dir dist
+ccache --show-stats --verbose || true
 # delocate copies QtCore out of its framework bundle, which makes Qt crash at
 # start-up with pip installed wheels: put it back in a framework bundle
 python $GITHUB_WORKSPACE/.github/workflows/actions_build/fix_macos_qt_framework.py dist/*.whl

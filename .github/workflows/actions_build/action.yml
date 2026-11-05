@@ -50,6 +50,16 @@ runs:
         path: ~/software
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
         restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+    # compiler cache (ccache) of opengate_core, macOS only for now: saved by the
+    # master runs only (one entry per OS and Python, the older one is deleted, so
+    # that it does not fill the Actions cache), restored by all the runs
+    - name: Restore the compiler cache
+      if: (inputs.os == 'macos-15')
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.ccache
+        key: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-${{ github.run_id }}
+        restore-keys: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-
     - name: Miniconda setup Macos and windows
       if: (inputs.os == 'macos-15')|| (inputs.os == 'macos-15-intel') || (inputs.os == 'windows-2025') || (inputs.os == 'windows-11-arm')
       uses: conda-incubator/setup-miniconda@v4
@@ -91,3 +101,21 @@ runs:
       run: |
           export > $GITHUB_WORKSPACE\\env_dump.txt
           bash $GITHUB_WORKSPACE\\.github\\workflows\\actions_build\\ci_build_wheel_windows.sh
+    - name: Save the compiler cache
+      if: (inputs.os == 'macos-15') && ((github.event_name == 'push' && github.ref == 'refs/heads/master') || github.head_ref == 'ci_ccache_macos')
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.ccache
+        key: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-${{ github.run_id }}
+    - name: Delete the older compiler caches
+      if: (inputs.os == 'macos-15') && ((github.event_name == 'push' && github.ref == 'refs/heads/master') || github.head_ref == 'ci_ccache_macos')
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PREFIX: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-
+        KEEP: ccache-${{ inputs.os }}-${{ inputs.python-version }}-${{ env.GEANT4_VERSION }}-${{ github.run_id }}
+      shell: bash -l {0}
+      run: |
+          gh cache list --repo ${{ github.repository }} --ref ${{ github.ref }} --key "$PREFIX" --limit 100 --json key --jq '.[].key' |
+            while read -r key; do
+              [[ "$key" == "$KEEP" ]] || gh cache delete --repo ${{ github.repository }} "$key" || true
+            done
