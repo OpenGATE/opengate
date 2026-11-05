@@ -112,7 +112,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        # pull requests: the oldest and newest Python only (the label "full-matrix",
+        # set before the push, forces all of them); master, schedule, tags: all
+        python-version: ${{ fromJSON(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-matrix') && '["3.10", "3.14"]' || '["3.10", "3.11", "3.12", "3.13", "3.14"]') }}
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
@@ -365,7 +367,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        # same Python versions as build_opengate_core_wheel_pr
+        python-version: ${{ fromJSON(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-matrix') && '["3.10", "3.14"]' || '["3.10", "3.11", "3.12", "3.13", "3.14"]') }}
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
