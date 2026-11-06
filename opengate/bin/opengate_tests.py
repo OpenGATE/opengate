@@ -69,7 +69,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.2",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.4.3",
 )
 @click.option(
     "--print_last_test",
