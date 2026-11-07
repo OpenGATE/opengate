@@ -68,7 +68,9 @@ runs:
           # garf: ARF actor (test128)
           pip install garf
           pip install pytomography hist
-          pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
+          # stop if the opengate_core wheel is missing (build failed or cancelled):
+          # otherwise pip installs the opengate_core of PyPI (dependency of opengate)
+          pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl || { echo "No opengate_core wheel for ${PYTHONFOLDER} ${OSNAME} in dist/ (build failed or cancelled?)"; ls dist; exit 1; }
           pip install dist/opengate-*.whl
           export GIT_SSL_NO_VERIFY=1
           # write the test output immediately, and print a stack trace if a test
