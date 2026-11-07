@@ -13,6 +13,7 @@
 #include <G4IonTable.hh>
 #include <G4ParticleTable.hh>
 #include <G4UnitsTable.hh>
+#include <algorithm>
 
 GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
   // fNumberOfGeneratedEvents = 0; // Keeps truck of nb events per RUN
@@ -63,19 +64,23 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
 
   // Init the random fEngine
   InitRandomEngine();
-  // assign n_particles to each spot, in case of sorted generation
-  if (fSortedSpotGenerationFlag) {
-    InitNbPrimariesVec();
-  }
+  // (for sorted generation, n_particles are assigned to each spot at the
+  // beginning of every run, see PrepareNextRun)
 }
 
 void GateTreatmentPlanPBSource::InitNbPrimariesVec() {
   // Initialize all spots to zero particles
-  fNbIonsToGenerate.resize(fTotalNumberOfSpots, 0);
-  for (long int i = 0; i < fMaxN; i++) {
-    int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
-    ++fNbIonsToGenerate[bin];
+  fNbIonsToGenerate.assign(fTotalNumberOfSpots, 0);
+  for (unsigned long i = 0; i < fMaxN; i++) {
+    ++fNbIonsToGenerate[SampleSpot()];
   }
+}
+
+int GateTreatmentPlanPBSource::SampleSpot() {
+  // select random spot according to PDF (the bin is clamped to stay within the
+  // spot vectors, whatever the value returned by the random generator)
+  int bin = static_cast<int>(fTotalNumberOfSpots * fDistriGeneral->fire());
+  return std::min(std::max(bin, 0), fTotalNumberOfSpots - 1);
 }
 void GateTreatmentPlanPBSource::InitRandomEngine() {
   fEngine = new CLHEP::HepJamesRandom();
@@ -83,36 +88,17 @@ void GateTreatmentPlanPBSource::InitRandomEngine() {
       new CLHEP::RandGeneral(fEngine, fPDF, fTotalNumberOfSpots, 0);
 }
 
-double GateTreatmentPlanPBSource::CalcNextTime(double current_simulation_time) {
-  double fakeActivity = (double)fMaxN * CLHEP::Bq; // 1e-9;
-  double timeDelta = (1.0 / fakeActivity);
-  double next_time = current_simulation_time + timeDelta;
-  return next_time;
-}
-
-double GateTreatmentPlanPBSource::PrepareNextTime(
-    double current_simulation_time, unsigned long NumberOfGeneratedEvents) {
-
-  if (current_simulation_time < fStartTime) {
-    return fStartTime;
-  }
-  if (current_simulation_time >= fEndTime) {
-    return -1;
-  }
-
-  // increment simulation time
-  double next_time = CalcNextTime(current_simulation_time);
-  if (next_time >= fEndTime) {
-    return -1;
-  }
-
-  return next_time;
-}
-
 void GateTreatmentPlanPBSource::PrepareNextRun() {
   // The following compute the global transformation from
   // the local volume (attached_to) to the world
   GateVSource::PrepareNextRun();
+  // the SPS must be configured again (the attached volume may have moved)
+  fPreviousSpot = -1;
+  // assign the primaries of this run to each spot, in case of sorted generation
+  if (fSortedSpotGenerationFlag) {
+    fCurrentSpot = 0;
+    InitNbPrimariesVec();
+  }
 }
 
 void GateTreatmentPlanPBSource::GeneratePrimaries(
@@ -136,7 +122,7 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
   }
 
   // update number of generated events
-  // fNumberOfGeneratedEvents++;
+  fRunGeneratedEvents++;
   fNbGeneratedSpots[fCurrentSpot]++;
 
   if (fSortedSpotGenerationFlag) {
@@ -155,11 +141,12 @@ void GateTreatmentPlanPBSource::FindNextSpot() {
            (fNbIonsToGenerate[fCurrentSpot] <= 0)) {
       fCurrentSpot++;
     }
-
+    if (fCurrentSpot >= fTotalNumberOfSpots) {
+      Fatal("GateTreatmentPlanPBSource '" + fName +
+            "': no primaries left to generate in any spot.");
+    }
   } else {
-    // select random spot according to PDF
-    int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
-    fCurrentSpot = bin;
+    fCurrentSpot = SampleSpot();
   }
 }
 
