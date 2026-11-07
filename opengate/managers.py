@@ -58,6 +58,7 @@ from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.gansources import GANPairsSource, GANSource
 from .sources.generic import GenericSource, SourceBase
+from .sources.fasty90 import FastY90Source
 from .sources.lastvertexsources import LastVertexSource
 from .sources.phidsources import PhotonFromIonDecaySource
 from .sources.phspsources import PhaseSpaceSource
@@ -73,6 +74,7 @@ from .voxelize import voxelize_geometry
 
 source_types = {
     "GenericSource": GenericSource,
+    "FastY90Source": FastY90Source,
     "DebugSource": DebugSource,
     "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
