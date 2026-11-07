@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateLastVertexSource.h"
+#include "GateHelpers.h"
 #include <G4ParticleTable.hh>
-#include <G4UnitsTable.hh>
 
 GateLastVertexSource::GateLastVertexSource() : GateVSource() {}
 
@@ -15,6 +15,7 @@ GateLastVertexSource::~GateLastVertexSource() {}
 
 void GateLastVertexSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
+  fTotalReplayedEvents = 0;
   // get user info about activity or nb of events
   fN = 0;
 }
@@ -23,22 +24,6 @@ double
 GateLastVertexSource::PrepareNextTime(double current_simulation_time,
                                       unsigned long NumberOfGeneratedEvents) {
 
-  /*
-  // If all N events have been generated, we stop (negative time)
-  if (fNumberOfGeneratedEvents >= fN){
-    std::cout << "LV: "<< -1<<"  "<< fNumberOfGeneratedEvents <<"  "<<
-  fN<<std::endl; return -1;
-  }
-
-   if (fListOfContainer.size()==0){
-    std::cout << "LV: "<< 1<<"  "<<fNumberOfGeneratedEvents <<"  "<<
-  fN<<std::endl; return 1;
-  }
-  // Else we consider all event with a timestamp equal to the simulation
-  // StartTime
-  std::cout << "LV: "<< fStartTime<<"  "<<fNumberOfGeneratedEvents <<"  "<<
-  fN<<std::endl; return fStartTime;
-  */
   if (fNumberOfGeneratedEvents >= fN)
     return -1;
 
@@ -72,6 +57,13 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
     vertex->SetPrimary(particle);
     event->AddPrimaryVertex(vertex);
   } else {
+    if (fListOfContainer.size() != static_cast<size_t>(fN) ||
+        static_cast<size_t>(idx) >= fListOfContainer.size())
+      Fatal("LastVertexSource '" + fName +
+            "': replay queue desynchronised "
+            "(index=" +
+            std::to_string(idx) + ", expected=" + std::to_string(fN) +
+            ", size=" + std::to_string(fListOfContainer.size()) + ")");
 
     SimpleContainer containerToSplit =
         fListOfContainer[idx].GetContainerToSplit();
@@ -95,6 +87,7 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
     auto *vertex = new G4PrimaryVertex(position, current_simulation_time);
     vertex->SetPrimary(particle);
     event->AddPrimaryVertex(vertex);
+    ++fTotalReplayedEvents;
   }
 }
 
