@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.contrib.pet.philipsvereos as vereos
+import opengate.contrib.pet.ge_signa as pet_ge_signa
 import opengate.contrib.pet.castor_helpers as castor
 from scipy.spatial.transform import Rotation
 from test096_pet_castor_helpers import *
@@ -44,27 +44,35 @@ if __name__ == "__main__":
     world.material = "G4_AIR"
 
     # create the pet and move it
-    pet = vereos.add_pet(sim, "pet")
-    pet.translation = [3 * cm, 4 * cm, 2 * cm]
-    pet.rotation = Rotation.from_euler("yx", (20, 10), degrees=True).as_matrix()
+    pet = pet_ge_signa.add_pet(sim, "pet")
 
     # get the crystal volume
-    crystal = sim.volume_manager.get_volume("pet_crystal")
-    die = sim.volume_manager.get_volume("pet_die")
-    stack = sim.volume_manager.get_volume("pet_stack")
-    module = sim.volume_manager.get_volume("pet_module")
+    crystal = sim.volume_manager.get_volume("crystal")
+    optical = sim.volume_manager.get_volume("optical")
+    block = sim.volume_manager.get_volume("block")
+    unit = sim.volume_manager.get_volume("unit")
+    module = sim.volume_manager.get_volume("module")
+
     n_crystal = len(crystal.translation)
-    n_die = len(die.translation)
-    n_stack = len(stack.translation)
+    n_optical = len(optical.translation)
+    n_block = len(block.translation)
+    n_unit = len(unit.translation)
     n_module = len(module.translation)
 
     # set a (fake) digitizer
-    hits_actor, blur_actor = add_test_digitizer(sim, crystal, "output_ref.root")
-    blur_actor.use_truncated_Gaussian = True
+    hits_actor, singles_actor = add_test_digitizer(
+        sim, crystal, paths.output_ref / "output_ref.root"
+    )
+    hits_actor.root_output.write_to_disk = False
+    singles_actor.root_output.write_to_disk = True
+    singles_actor.skip_attributes = [
+        "ParticleName",
+        "PostPositionLocal",
+    ]
 
     # source and physics
     stats = test_add_physics_and_stats(sim, "pet")
-    activity = 1 * MBq
+    activity = 0.22 * MBq
     if sim.visu:
         activity = 50 * Bq
     test_add_b2b_source(sim, activity)
@@ -94,9 +102,9 @@ if __name__ == "__main__":
     print(f"Size of the file is {file_size / 1e6:.2f} MB")
 
     # consider the singles and hits trees
-    hits_tree = root_file["hits"]
-    n = int(hits_tree.num_entries)
-    print(f"There are {n} hits")
+    # hits_tree = root_file["hits"]
+    # n = int(hits_tree.num_entries)
+    # print(f"There are {n} hits")
 
     singles_tree = root_file["singles"]
     n = int(singles_tree.num_entries)
