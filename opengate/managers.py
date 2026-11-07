@@ -113,6 +113,7 @@ from .actors.digitizers import (
     PhaseSpaceActor,
 )
 from .actors.doseactors import (
+    AMFActor,
     BeamQualityActor,
     DoseActor,
     EmCalculatorActor,
@@ -169,6 +170,7 @@ particle_names_Gate_to_G4 = {
 }
 
 actor_types = {
+    "AMFActor": AMFActor,
     # dose related
     "DoseActor": DoseActor,
     "TLEDoseActor": TLEDoseActor,

@@ -8,6 +8,11 @@ Details: Actors
 Overview: Types of actors
 -------------------------
 
+.. toctree::
+   :maxdepth: 1
+
+   user_guide_amf_actor
+
 Hits-related actors (digitizers)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
