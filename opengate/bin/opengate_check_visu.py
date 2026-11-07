@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Check which visualisation types work on this machine (vrml, gdml, qt),
+Check which visualisation types work on this machine (vrml, gdml, vtk, qt),
 without opening any window by default.
 
 Each check runs in its own Python process, so that a crash (for example a Qt
@@ -110,12 +110,26 @@ def check_import(module):
     print(f"{module} imported")
 
 
-# optional python modules, only needed to display the vrml or gdml files
-OPTIONAL_CHECKS = ("pyvista", "pyg4ometry")
+def check_vtk(tmp_dir):
+    """The optional VTK driver: vtk is installed, and a graphics backend works."""
+    check_import("vtk")
+    from opengate.visualization import VisuBackendError, resolve_backend
+
+    try:
+        info = resolve_backend("auto")
+    except VisuBackendError as exception:
+        print(f"vtk is installed but no graphics backend works: {exception}")
+        sys.exit(1)
+    print(info.report())
+
+
+# optional python modules, only needed to display the vrml, gdml or vtk scenes
+OPTIONAL_CHECKS = ("vtk", "pyvista", "pyg4ometry")
 
 CHECKS = {
     "vrml": lambda d: check_file_output("vrml_file_only", "wrl", d),
     "gdml": lambda d: check_file_output("gdml_file_only", "gdml", d),
+    "vtk": check_vtk,
     "qt_init": check_qt_init,
     "qt_viewer": check_qt_viewer,
     "pyvista": lambda d: check_import("pyvista"),
@@ -262,6 +276,7 @@ def print_build_info():
 DESCRIPTIONS = {
     "vrml": "write a VRML file (visu_type='vrml_file_only')",
     "gdml": "write a GDML file (visu_type='gdml_file_only')",
+    "vtk": "vtk, viewer for visu_type='vtk' (and the backend it resolves to)",
     "qt_init": "start a Geant4 Qt session",
     "qt_viewer": "create the Qt OpenGL viewer, draw the geometry",
     "pyvista": "pyvista, viewer for visu_type='vrml'",

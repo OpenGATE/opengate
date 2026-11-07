@@ -178,9 +178,13 @@ class SourceEngine(EngineBase):
         for k, v in self.simulation_engine.simulation.user_info.items():
             if "visu" in k:
                 # the visu filename may be a Path, the C++ side needs a str
-                self.source_manager_options[k] = (
-                    str(v) if isinstance(v, os.PathLike) else v
-                )
+                value = str(v) if isinstance(v, os.PathLike) else v
+                if k == "visu_type" and value == "vtk":
+                    # The VTK viewer renders the VRML export, so Geant4 must
+                    # open the VRML2FILE driver: to the C++ side (which only
+                    # uses visu_type to pick the vis commands), 'vtk' is 'vrml'.
+                    value = "vrml"
+                self.source_manager_options[k] = value
 
         # Copy verbosity parameters
         for k, v in self.simulation_engine.simulation.user_info.items():
@@ -1365,8 +1369,8 @@ class VisualisationEngine(EngineBase):
         if self.simulation.visu_type in ("gdml", "gdml_file_only"):
             self.initialize_visualisation_gdml()
 
-        # vrml
-        if self.simulation.visu_type in ("vrml", "vrml_file_only"):
+        # vrml (the 'vtk' viewer renders the same VRML export)
+        if self.simulation.visu_type in ("vrml", "vrml_file_only", "vtk"):
             self.initialize_visualisation_vrml()
 
         # G4 stuff
@@ -1393,6 +1397,13 @@ class VisualisationEngine(EngineBase):
         if not self.simulation.visu:
             return
 
+        # the file with the image slices, when the VTK viewer was used
+        slices = None
+
+        # VTK ?
+        if self.simulation.visu_type == "vtk":
+            slices = self.start_vtk_visu()
+
         # VRML ?
         if self.simulation.visu_type == "vrml":
             start_vrml_visu(self.current_visu_filename)
@@ -1401,12 +1412,45 @@ class VisualisationEngine(EngineBase):
         if self.simulation.visu_type == "gdml":
             start_gdml_visu(self.current_visu_filename)
 
-        # remove the temporary file
+        # remove the temporary files
         if self.simulation.visu_filename is None:
-            try:
-                os.remove(self.current_visu_filename)
-            except:
-                pass
+            for filename in (self.current_visu_filename, slices):
+                if filename is None:
+                    continue
+                try:
+                    os.remove(filename)
+                except OSError:
+                    pass
+
+    def start_vtk_visu(self):
+        """Render the exported scene with VTK. Returns the slices file that the
+        caller has to remove (or None)."""
+        from .visualization import VisuBackendError, show, write_slices
+
+        slices_file = str(self.current_visu_filename) + ".slices.npz"
+        try:
+            slices = write_slices(slices_file, self.simulation)
+        except Exception as exception:
+            logger.warning(
+                f"Cannot write the image slices of the VTK visualisation: {exception}"
+            )
+            slices = None
+
+        try:
+            show(
+                self.current_visu_filename,
+                backend=self.simulation.visu_backend,
+                slices=slices,
+                screenshot=self.simulation.visu_screenshot,
+            )
+        except VisuBackendError as exception:
+            fatal(
+                f"The VTK visualisation (visu_type = 'vtk') is not available: "
+                f"{exception}\n"
+                f"Use another visu_type (e.g. 'qt' or 'vrml'), or install vtk with "
+                f"'pip install vtk'."
+            )
+        return slices
 
 
 class UserHookLog(Box):
