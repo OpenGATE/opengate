@@ -27,16 +27,18 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
   export CIBW_BUILD="cp314-*"
 fi
 export CIBW_PLATFORM="linux"
-# compile opengate_core with ccache: the cache folder of the host
-# ($HOME/.ccache, saved and restored by the build action) is seen in the
-# container under /host (cibuildwheel mounts the host root there). The same
-# static ccache binary is used on the host (statistics) and in the container.
-CCACHE_VERSION=4.11.3
-mkdir -p $HOME/.ccache $HOME/ccache_bin
-curl -fsSL --retry 5 --retry-all-errors -o $HOME/ccache_bin/ccache.tar.xz \
-  https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-x86_64.tar.xz
-tar -xJf $HOME/ccache_bin/ccache.tar.xz --strip-components=1 -C $HOME/ccache_bin
-export CIBW_BEFORE_ALL_LINUX="cp /host$HOME/ccache_bin/ccache /usr/local/bin/ && ccache --version"
+if [ ${MATRIX_OS} == "ubuntu-24.04" ]; then
+  # compile opengate_core with ccache: the cache folder of the host
+  # ($HOME/.ccache, saved and restored by the build action) is seen in the
+  # container under /host (cibuildwheel mounts the host root there). The same
+  # static ccache binary is used on the host (statistics) and in the container.
+  CCACHE_VERSION=4.11.3
+  mkdir -p $HOME/.ccache $HOME/ccache_bin
+  curl -fsSL --retry 5 --retry-all-errors -o $HOME/ccache_bin/ccache.tar.xz \
+    https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-x86_64.tar.xz
+  tar -xJf $HOME/ccache_bin/ccache.tar.xz --strip-components=1 -C $HOME/ccache_bin
+  export CIBW_BEFORE_ALL_LINUX="cp /host$HOME/ccache_bin/ccache /usr/local/bin/ && ccache --version"
+fi
 export CIBW_BUILD_FRONTEND="build"
 export CIBW_SKIP="*-musllinux_* *t*"
 export CIBW_BEFORE_BUILD='
@@ -54,10 +56,13 @@ source /software/geant4/bin/geant4make.sh &&
 # of space separated assignments (the next lines were ignored: Geant4_DIR,
 # ITK_DIR and LD_LIBRARY_PATH were never set, CMAKE_PREFIX_PATH is enough).
 # ccache: the cache folder of the host ($HOME of the host, not of the container)
-export CIBW_ENVIRONMENT="CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/ \
-CCACHE_DIR=/host$HOME/.ccache CCACHE_MAXSIZE=1G CCACHE_BASEDIR=/project \
-CCACHE_COMPILERCHECK=content CMAKE_CXX_COMPILER_LAUNCHER=ccache CMAKE_C_COMPILER_LAUNCHER=ccache"
-
+if [ ${MATRIX_OS} == "ubuntu-24.04" ]; then
+  export CIBW_ENVIRONMENT="CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/ \
+  CCACHE_DIR=/host$HOME/.ccache CCACHE_MAXSIZE=1G CCACHE_BASEDIR=/project \
+  CCACHE_COMPILERCHECK=content CMAKE_CXX_COMPILER_LAUNCHER=ccache CMAKE_C_COMPILER_LAUNCHER=ccache"
+else
+  export CIBW_ENVIRONMENT="CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/"
+fi
 # Do not bundle the OpenGL dispatch libraries (libglvnd) in the wheel. Geant4's
 # OpenGL driver links the system libGL.so.1, which uses the system libGLX and
 # libGLdispatch; bundled copies of them (used by Qt) put a second, private
@@ -82,9 +87,11 @@ export CIBW_REPAIR_WHEEL_COMMAND_LINUX='auditwheel repair --exclude libGLX.so.0 
 cp VERSION core/VERSION
 cd core
 python -m cibuildwheel --output-dir dist
-# statistics of the ccache (the container runs as root: give the files back to
-# the runner user, for the cache save)
-sudo chown -R $(id -u):$(id -g) $HOME/.ccache
-CCACHE_DIR=$HOME/.ccache $HOME/ccache_bin/ccache --show-stats --verbose || true
+if [ ${MATRIX_OS} == "ubuntu-24.04" ]; then
+  # statistics of the ccache (the container runs as root: give the files back to
+  # the runner user, for the cache save)
+  sudo chown -R $(id -u):$(id -g) $HOME/.ccache
+  CCACHE_DIR=$HOME/.ccache $HOME/ccache_bin/ccache --show-stats --verbose || true
+fi
 mkdir -p $GITHUB_WORKSPACE/dist
 mv dist/*.whl $GITHUB_WORKSPACE/dist/
