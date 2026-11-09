@@ -8,12 +8,11 @@
 #ifndef GateEmittedGammaInformation_h
 #define GateEmittedGammaInformation_h
 
-#include "G4VUserPrimaryParticleInformation.hh"
 #include "G4ThreeVector.hh"
+#include "G4VUserPrimaryParticleInformation.hh"
 
-class GateEmittedGammaInformation : public G4VUserPrimaryParticleInformation
-{
- public:
+class GateEmittedGammaInformation : public G4VUserPrimaryParticleInformation {
+public:
   GateEmittedGammaInformation();
   virtual ~GateEmittedGammaInformation();
 
@@ -21,32 +20,37 @@ class GateEmittedGammaInformation : public G4VUserPrimaryParticleInformation
       Each class which inherits from GateEmissionModel class should add
       here its own kinds.
   **/
-  enum SourceKind
-  {
-   NotDefined = 0, // by default
-   SingleGammaEmitter = 1, // just emitted single gamma with specfic energy ( by class GateGammaEmissionModel )
-   ParaPositronium = 2, // 2 gammas ( plus prompt if it is required ) from pPs decay ( by GatePositroniumDecayModel )
-   OrthoPositronium = 3, // 3 gammas ( plus prompt if it is required ) from oPs decay ( by GatePositroniumDecayModel )
-   DirectAnnihilation = 4 // 2 gammas from direct annihilation of positron without formation of positronium
+  enum SourceKind {
+    NotDefined = 0,         // by default
+    SingleGammaEmitter = 1, // just emitted single gamma with specfic energy (
+                            // by class GateGammaEmissionModel )
+    ParaPositronium = 2,  // 2 gammas ( plus prompt if it is required ) from pPs
+                          // decay ( by GatePositroniumDecayModel )
+    OrthoPositronium = 3, // 3 gammas ( plus prompt if it is required ) from oPs
+                          // decay ( by GatePositroniumDecayModel )
+    DirectAnnihilation = 4 // 2 gammas from direct annihilation of positron
+                           // without formation of positronium
   };
 
   /** This enum specifies model of source decay ( if it is present )
-  **/
-  enum DecayModel
-  {
-   None = 0, // Not specify - for example when there is not decay ( e.g. class GateGammaEmissionModel )
-   Standard = 1, // Standard decay of source ( e.g. pPs -> 2 gamma )
-   Deexcitation = 2 // If only deexcitation is present or when is part of standard decay changel ( Na22* -> Na22 + prompt gamma, Na22 -> Ne22 + e+, pPs-> 2 gamma <==> pPs* --> 2 gamma + prompt )
+   **/
+  enum DecayModel {
+    None = 0, // Not specify - for example when there is not decay ( e.g. class
+              // GateGammaEmissionModel )
+    Standard = 1, // Standard decay of source ( e.g. pPs -> 2 gamma )
+    Deexcitation =
+        2 // If only deexcitation is present or when is part of standard decay
+          // changel ( Na22* -> Na22 + prompt gamma, Na22 -> Ne22 + e+, pPs-> 2
+          // gamma <==> pPs* --> 2 gamma + prompt )
   };
 
   /** This enum specifies of gamma emitted by source
-  **/
-  enum GammaKind
-  {
-   Unknown = 0, // by default
-   Single = 1, // gamma is emitted alone ( by class GateGammaEmissionModel )
-   Annihilation = 2, // gamma is a product of annihilation
-   Prompt = 3 // gamma is emitted from deexcitation process
+   **/
+  enum GammaKind {
+    Unknown = 0, // by default
+    Single = 1,  // gamma is emitted alone ( by class GateGammaEmissionModel )
+    Annihilation = 2, // gamma is a product of annihilation
+    Prompt = 3        // gamma is emitted from deexcitation process
   };
 
   void SetSourceKind(SourceKind source_kind);
@@ -76,13 +80,13 @@ class GateEmittedGammaInformation : public G4VUserPrimaryParticleInformation
 
   virtual void Print() const;
 
- protected:
+protected:
   SourceKind fSourceKind = SourceKind::NotDefined;
   DecayModel fDecayModel = DecayModel::None;
   GammaKind fGammaKind = GammaKind::Unknown;
   G4int fDecayIndex = -1;
   G4ThreeVector fInitialPolarization = G4ThreeVector(0.0, 0.0, 0.0);
-  G4double fTimeShift = 0.0;//[ns]
+  G4double fTimeShift = 0.0; //[ns]
 };
 
 #endif

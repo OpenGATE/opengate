@@ -10,28 +10,59 @@ GateEmittedGammaInformation::GateEmittedGammaInformation() {}
 
 GateEmittedGammaInformation::~GateEmittedGammaInformation() {}
 
-void GateEmittedGammaInformation::SetSourceKind( GateEmittedGammaInformation::SourceKind source_kind ) { fSourceKind = source_kind; }
+void GateEmittedGammaInformation::SetSourceKind(
+    GateEmittedGammaInformation::SourceKind source_kind) {
+  fSourceKind = source_kind;
+}
 
-GateEmittedGammaInformation::SourceKind GateEmittedGammaInformation::GetSourceKind() const { return fSourceKind; }
+GateEmittedGammaInformation::SourceKind
+GateEmittedGammaInformation::GetSourceKind() const {
+  return fSourceKind;
+}
 
-void GateEmittedGammaInformation::SetDecayModel( GateEmittedGammaInformation::DecayModel decay_model ) { fDecayModel = decay_model; }
+void GateEmittedGammaInformation::SetDecayModel(
+    GateEmittedGammaInformation::DecayModel decay_model) {
+  fDecayModel = decay_model;
+}
 
-GateEmittedGammaInformation::DecayModel GateEmittedGammaInformation::GetDecayModel() const { return fDecayModel; }
+GateEmittedGammaInformation::DecayModel
+GateEmittedGammaInformation::GetDecayModel() const {
+  return fDecayModel;
+}
 
-void GateEmittedGammaInformation::SetGammaKind( GateEmittedGammaInformation::GammaKind gamma_kind ) { fGammaKind = gamma_kind; }
+void GateEmittedGammaInformation::SetGammaKind(
+    GateEmittedGammaInformation::GammaKind gamma_kind) {
+  fGammaKind = gamma_kind;
+}
 
-GateEmittedGammaInformation::GammaKind GateEmittedGammaInformation::GetGammaKind() const { return fGammaKind; }
+GateEmittedGammaInformation::GammaKind
+GateEmittedGammaInformation::GetGammaKind() const {
+  return fGammaKind;
+}
 
-void GateEmittedGammaInformation::SetDecayIndex(G4int decay_index) { fDecayIndex = decay_index; }
+void GateEmittedGammaInformation::SetDecayIndex(G4int decay_index) {
+  fDecayIndex = decay_index;
+}
 
 G4int GateEmittedGammaInformation::GetDecayIndex() const { return fDecayIndex; }
 
-void GateEmittedGammaInformation::SetInitialPolarization(const G4ThreeVector& polarization) { fInitialPolarization = polarization; }
+void GateEmittedGammaInformation::SetInitialPolarization(
+    const G4ThreeVector &polarization) {
+  fInitialPolarization = polarization;
+}
 
-G4ThreeVector GateEmittedGammaInformation::GetInitialPolarization() const { return fInitialPolarization; }
+G4ThreeVector GateEmittedGammaInformation::GetInitialPolarization() const {
+  return fInitialPolarization;
+}
 
-void GateEmittedGammaInformation::SetTimeShift(const G4double& time_shift) { fTimeShift = time_shift; }
+void GateEmittedGammaInformation::SetTimeShift(const G4double &time_shift) {
+  fTimeShift = time_shift;
+}
 
-G4double GateEmittedGammaInformation::GetTimeShift() const { return fTimeShift; }
+G4double GateEmittedGammaInformation::GetTimeShift() const {
+  return fTimeShift;
+}
 
-void GateEmittedGammaInformation::Print() const { G4cout << "GateEmittedGammaInformation" << G4endl; }
+void GateEmittedGammaInformation::Print() const {
+  G4cout << "GateEmittedGammaInformation" << G4endl;
+}

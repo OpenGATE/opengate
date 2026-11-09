@@ -6,21 +6,25 @@
    -------------------------------------------------- */
 
 #include "G4DecayProducts.hh"
-#include "G4ParticleTable.hh"
 #include "G4DecayTable.hh"
 #include "G4ParticleDefinition.hh"
+#include "G4ParticleTable.hh"
 
 #include "GatePositronium.h"
 
-GatePositronium::GatePositronium(const G4String& name, G4double life_time): fName(name), fLifeTime(life_time)
-{
+GatePositronium::GatePositronium(const G4String &name, G4double life_time)
+    : fName(name), fLifeTime(life_time) {
   pDecayChannel = new GatePositroniumDecayChannel(name);
 }
 
 G4double GatePositronium::GetLifeTime() const { return fLifeTime; }
 
-const G4String& GatePositronium::GetName() const { return fName; }
+const G4String &GatePositronium::GetName() const { return fName; }
 
-G4int GatePositronium::GetAnnihilationGammasNumber() const { return pDecayChannel->GetNumberOfDaughters(); }
+G4int GatePositronium::GetAnnihilationGammasNumber() const {
+  return pDecayChannel->GetNumberOfDaughters();
+}
 
-G4DecayProducts* GatePositronium::GetDecayProducts() const { return pDecayChannel->DecayIt(); }
+G4DecayProducts *GatePositronium::GetDecayProducts() const {
+  return pDecayChannel->DecayIt();
+}
