@@ -24,9 +24,11 @@ SPEED_OF_LIGHT_MM_PER_NS = 299.79246
 
 
 def propagation_time(hit_position, source_position):
-    distance = np.sqrt((hit_position[0] - source_position[0])**2 +
-                       (hit_position[1] - source_position[1])**2 +
-                       (hit_position[2] - source_position[2])**2)
+    distance = np.sqrt(
+        (hit_position[0] - source_position[0]) ** 2
+        + (hit_position[1] - source_position[1]) ** 2
+        + (hit_position[2] - source_position[2]) ** 2
+    )
     return distance / SPEED_OF_LIGHT_MM_PER_NS
 
 
@@ -40,47 +42,49 @@ def lifetime(emission_time_annihilation, emission_time_prompt):
 
 def calculate_lifetime(prompt_photon, annihilation_photon, source_position):
     annihilation_hit_position = [
-        annihilation_photon["Position_X"], annihilation_photon["Position_Y"],
-        annihilation_photon["Position_Z"]
+        annihilation_photon["Position_X"],
+        annihilation_photon["Position_Y"],
+        annihilation_photon["Position_Z"],
     ]
     prompt_hit_position = [
-        prompt_photon["Position_X"], prompt_photon["Position_Y"],
-        prompt_photon["Position_Z"]
+        prompt_photon["Position_X"],
+        prompt_photon["Position_Y"],
+        prompt_photon["Position_Z"],
     ]
-    propagation_time_annihilation = propagation_time(annihilation_hit_position,
-                                                     source_position)
-    propagation_time_prompt = propagation_time(prompt_hit_position,
-                                               source_position)
+    propagation_time_annihilation = propagation_time(
+        annihilation_hit_position, source_position
+    )
+    propagation_time_prompt = propagation_time(prompt_hit_position, source_position)
     emission_time_annihilation = emission_time(
-        annihilation_photon["GlobalTime"], propagation_time_annihilation)
-    emission_time_prompt = emission_time(prompt_photon["GlobalTime"],
-                                         propagation_time_prompt)
+        annihilation_photon["GlobalTime"], propagation_time_annihilation
+    )
+    emission_time_prompt = emission_time(
+        prompt_photon["GlobalTime"], propagation_time_prompt
+    )
     return lifetime(emission_time_annihilation, emission_time_prompt)
 
 
 def calculate_lifetimes(group):
     annihilation_photon = group.iloc[0]
     prompt_photon = group.iloc[3]
-    assert np.isclose(prompt_photon["KineticEnergy"],
-                      PROMPT_PHOTON_KINETIC_ENERGY_MEV)
+    assert np.isclose(prompt_photon["KineticEnergy"], PROMPT_PHOTON_KINETIC_ENERGY_MEV)
     source_position = [
         annihilation_photon["EventPosition_X"],
         annihilation_photon["EventPosition_Y"],
-        annihilation_photon["EventPosition_Z"]
+        annihilation_photon["EventPosition_Z"],
     ]
-    return calculate_lifetime(prompt_photon, annihilation_photon,
-                              source_position)
+    return calculate_lifetime(prompt_photon, annihilation_photon, source_position)
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__,
-                                           "gate_test140_positronium_lifetime",
-                                           output_folder="test140")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test140_positronium_lifetime", output_folder="test140"
+    )
     print("Starting")
 
     # create the simulation
     sim = gate.Simulation()
-    sim.physics_manager.physics_list_name = 'G4EmLivermorePolarizedPhysics'
+    sim.physics_manager.physics_list_name = "G4EmLivermorePolarizedPhysics"
 
     # main options
     sim.g4_verbose = False
@@ -91,18 +95,18 @@ if __name__ == "__main__":
 
     # set the world size like in the Gate macro
     world = sim.world
-    world.size = [1. * m, 1. * m, 1. * m]
+    world.size = [1.0 * m, 1.0 * m, 1.0 * m]
 
     # test sources
     source = sim.add_source("PositroniumSource", "source")
     source.number_of_primaries = 1000
     source.position.type = "sphere"
-    source.position.radius = 1. * cm
+    source.position.radius = 1.0 * cm
 
-    source.channels_from_fractions.fractions = [1.]
+    source.channels_from_fractions.fractions = [1.0]
     source.channels_from_fractions.decay_kinds = ["k3Gamma"]
     source.positronium_lifetimes = [MEAN_LIFETIME_NS * ns]
-    source.prompt_photon_probabilities = [1.]
+    source.prompt_photon_probabilities = [1.0]
     source.prompt_photon_energies = [PROMPT_PHOTON_KINETIC_ENERGY_MEV * MeV]
 
     # actors
@@ -112,7 +116,11 @@ if __name__ == "__main__":
     # PhaseSpace Actor
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp.attributes = [
-        "EventID", "Position", "KineticEnergy", "GlobalTime", "EventPosition"
+        "EventID",
+        "Position",
+        "KineticEnergy",
+        "GlobalTime",
+        "EventPosition",
     ]
     phsp.debug = True
     phsp.steps_to_store = "first"
@@ -129,8 +137,11 @@ if __name__ == "__main__":
     phsp_output = uproot.open(phsp.get_output_path())
     df = phsp_output["PhaseSpace"].arrays(library="pd")
 
-    lifetimes = df.groupby('EventID').apply(calculate_lifetimes).reset_index(
-        name='lifetime')["lifetime"]
+    lifetimes = (
+        df.groupby("EventID")
+        .apply(calculate_lifetimes)
+        .reset_index(name="lifetime")["lifetime"]
+    )
 
     mean_lifetime = lifetimes.mean()
 
@@ -141,5 +152,5 @@ if __name__ == "__main__":
 
     print("Mean lifetime: " + str(mean_lifetime))
 
-    is_ok = np.isclose(mean_lifetime, MEAN_LIFETIME_NS, atol=0., rtol=.1)
+    is_ok = np.isclose(mean_lifetime, MEAN_LIFETIME_NS, atol=0.0, rtol=0.1)
     utility.test_ok(is_ok)

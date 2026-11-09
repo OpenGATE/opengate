@@ -17,14 +17,13 @@ ns = gate.g4_units.ns
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__,
-        "gate_test140_positronium_electron_capture",
-        output_folder="test140")
+        __file__, "gate_test140_positronium_electron_capture", output_folder="test140"
+    )
     print("Starting")
 
     # create the simulation
     sim = gate.Simulation()
-    sim.physics_manager.physics_list_name = 'G4EmLivermorePolarizedPhysics'
+    sim.physics_manager.physics_list_name = "G4EmLivermorePolarizedPhysics"
 
     # main options
     sim.g4_verbose = False
@@ -38,8 +37,8 @@ if __name__ == "__main__":
 
     # parameters
     n = 1000
-    promptPhotonProbability = 1.
-    electronCaptureProbability = .25
+    promptPhotonProbability = 1.0
+    electronCaptureProbability = 0.25
 
     # test sources
     source = sim.add_source("PositroniumSource", "source")
@@ -47,7 +46,7 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 20 * cm
 
-    source.channels_from_fractions.fractions = [1.]
+    source.channels_from_fractions.fractions = [1.0]
     source.channels_from_fractions.decay_kinds = ["k2Gamma"]
     source.positronium_lifetimes = [0.122 * ns]
     source.prompt_photon_probabilities = [promptPhotonProbability]
@@ -65,10 +64,13 @@ if __name__ == "__main__":
     print(stats)
 
     # check expected number of photons
-    expected_number_of_photons = n * 2. * (
-        1. - electronCaptureProbability) + n * promptPhotonProbability
-    is_ok = math.isclose(stats.user_output.stats.merged_data.track_types.gamma,
-                         expected_number_of_photons,
-                         rel_tol=0.,
-                         abs_tol=100.)
+    expected_number_of_photons = (
+        n * 2.0 * (1.0 - electronCaptureProbability) + n * promptPhotonProbability
+    )
+    is_ok = math.isclose(
+        stats.user_output.stats.merged_data.track_types.gamma,
+        expected_number_of_photons,
+        rel_tol=0.0,
+        abs_tol=100.0,
+    )
     utility.test_ok(is_ok)

@@ -19,14 +19,14 @@ cm = gate.g4_units.cm
 ns = gate.g4_units.ns
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__,
-                                           "gate_test140_decay_index",
-                                           output_folder="test140")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test140_decay_index", output_folder="test140"
+    )
     print("Starting")
 
     # create the simulation
     sim = gate.Simulation()
-    sim.physics_manager.physics_list_name = 'G4EmLivermorePolarizedPhysics'
+    sim.physics_manager.physics_list_name = "G4EmLivermorePolarizedPhysics"
 
     # main options
     sim.g4_verbose = False
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     source.number_of_primaries = 10_000
 
     nchannels = 10
-    source.channels_from_fractions.fractions = [.1] * nchannels
+    source.channels_from_fractions.fractions = [0.1] * nchannels
     source.channels_from_fractions.decay_kinds = ["k3Gamma"] * nchannels
     source.positronium_lifetimes = [0.122 * ns] * nchannels
-    source.prompt_photon_probabilities = [0.] * nchannels
+    source.prompt_photon_probabilities = [0.0] * nchannels
     source.prompt_photon_energies = [1.244 * MeV] * nchannels
 
     # actors
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     plt.hist(df["PositroniumDecayIndex"], bins=nchannels)
     plt.savefig(paths.output / "decay_index.pdf")
 
-    is_ok = np.isclose(df["PositroniumDecayIndex"].mean(), (nchannels - 1) / 2,
-                       rtol=0.,
-                       atol=.1)
+    is_ok = np.isclose(
+        df["PositroniumDecayIndex"].mean(), (nchannels - 1) / 2, rtol=0.0, atol=0.1
+    )
     utility.test_ok(is_ok)

@@ -21,10 +21,11 @@ ns = gate.g4_units.ns
 
 def one_photon_energy(en):
     m = 1
-    first_term = en * (m - en) / (2 * m - en)**2
+    first_term = en * (m - en) / (2 * m - en) ** 2
     second_term = (2 * m - en) / en
-    third_term = ((2 * m * (m - en) / (en * en) - 2 * m * (m - en)**2 /
-                   (2 * m - en)**3)) * np.log((m - en) / m)
+    third_term = (
+        (2 * m * (m - en) / (en * en) - 2 * m * (m - en) ** 2 / (2 * m - en) ** 3)
+    ) * np.log((m - en) / m)
     return first_term + second_term + third_term
 
 
@@ -34,14 +35,14 @@ def normalize_energies(en):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__,
-                                           "gate_test140_positronium_energy",
-                                           output_folder="test140")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test140_positronium_energy", output_folder="test140"
+    )
     print("Starting")
 
     # create the simulation
     sim = gate.Simulation()
-    sim.physics_manager.physics_list_name = 'G4EmLivermorePolarizedPhysics'
+    sim.physics_manager.physics_list_name = "G4EmLivermorePolarizedPhysics"
 
     # main options
     sim.g4_verbose = False
@@ -62,10 +63,10 @@ if __name__ == "__main__":
     source.position.radius = 1 * mm
     source.number_of_primaries = 10_000
 
-    source.channels_from_fractions.fractions = [1.]
+    source.channels_from_fractions.fractions = [1.0]
     source.channels_from_fractions.decay_kinds = ["k3Gamma"]
     source.positronium_lifetimes = [0.122 * ns]
-    source.prompt_photon_probabilities = [0.]
+    source.prompt_photon_probabilities = [0.0]
     source.prompt_photon_energies = [1.244 * MeV]
 
     # actors
@@ -105,6 +106,6 @@ if __name__ == "__main__":
     plt.savefig(paths.output / "energy.pdf")
 
     ks = scipy.stats.kstest(counts, expected_distribution)
-    is_ok = ks.pvalue > .05
+    is_ok = ks.pvalue > 0.05
 
     utility.test_ok(is_ok)

@@ -9,11 +9,19 @@ from opengate.sources.positroniumsources import PositroniumSource
 import numpy as np
 
 
-def test_channel(source, index, positron_interaction, decay_kind,
-                 positronium_lifetime, prompt_photon_probability,
-                 prompt_photon_energy):
-    if source.channels_from_intensities.positron_interactions[
-            index] != positron_interaction:
+def test_channel(
+    source,
+    index,
+    positron_interaction,
+    decay_kind,
+    positronium_lifetime,
+    prompt_photon_probability,
+    prompt_photon_energy,
+):
+    if (
+        source.channels_from_intensities.positron_interactions[index]
+        != positron_interaction
+    ):
         return False
     if source.channels_from_fractions.decay_kinds[index] != decay_kind:
         return False
@@ -28,9 +36,9 @@ def test_channel(source, index, positron_interaction, decay_kind,
 
 def test_calculate_fractions_from_lifetimes():
     intensities = [12, 4, 2, 2]
-    positronium_lifetimes = [.4, 2., .125, 50.]
+    positronium_lifetimes = [0.4, 2.0, 0.125, 50.0]
     prompt_photon_probabilities = [5, 6, 7, 8]
-    prompt_photon_energies = [1., 2., 3., 4.]
+    prompt_photon_energies = [1.0, 2.0, 3.0, 4.0]
     positron_interactions = ["kDirect", "kOrthoPs", "kParaPs", "kOrthoPs"]
 
     # create the simulation
@@ -50,49 +58,97 @@ def test_calculate_fractions_from_lifetimes():
     is_ok = True
 
     is_ok = is_ok and test_channel(
-        source, 0, "kDirect", "k2Gamma", positronium_lifetimes[0],
-        prompt_photon_probabilities[0], prompt_photon_energies[0])
+        source,
+        0,
+        "kDirect",
+        "k2Gamma",
+        positronium_lifetimes[0],
+        prompt_photon_probabilities[0],
+        prompt_photon_energies[0],
+    )
     is_ok = is_ok and test_channel(
-        source, 1, "kDirect", "k3Gamma", positronium_lifetimes[0],
-        prompt_photon_probabilities[0], prompt_photon_energies[0])
+        source,
+        1,
+        "kDirect",
+        "k3Gamma",
+        positronium_lifetimes[0],
+        prompt_photon_probabilities[0],
+        prompt_photon_energies[0],
+    )
     is_ok = is_ok and test_channel(
-        source, 2, "kOrthoPs", "k2Gamma", positronium_lifetimes[1],
-        prompt_photon_probabilities[1], prompt_photon_energies[1])
+        source,
+        2,
+        "kOrthoPs",
+        "k2Gamma",
+        positronium_lifetimes[1],
+        prompt_photon_probabilities[1],
+        prompt_photon_energies[1],
+    )
     is_ok = is_ok and test_channel(
-        source, 3, "kOrthoPs", "k3Gamma", positronium_lifetimes[1],
-        prompt_photon_probabilities[1], prompt_photon_energies[1])
+        source,
+        3,
+        "kOrthoPs",
+        "k3Gamma",
+        positronium_lifetimes[1],
+        prompt_photon_probabilities[1],
+        prompt_photon_energies[1],
+    )
     is_ok = is_ok and test_channel(
-        source, 4, "kOrthoPs", "k2Gamma", positronium_lifetimes[3],
-        prompt_photon_probabilities[3], prompt_photon_energies[3])
+        source,
+        4,
+        "kOrthoPs",
+        "k2Gamma",
+        positronium_lifetimes[3],
+        prompt_photon_probabilities[3],
+        prompt_photon_energies[3],
+    )
     is_ok = is_ok and test_channel(
-        source, 5, "kOrthoPs", "k3Gamma", positronium_lifetimes[3],
-        prompt_photon_probabilities[3], prompt_photon_energies[3])
+        source,
+        5,
+        "kOrthoPs",
+        "k3Gamma",
+        positronium_lifetimes[3],
+        prompt_photon_probabilities[3],
+        prompt_photon_energies[3],
+    )
     is_ok = is_ok and test_channel(
-        source, 6, "kParaPs", "k2Gamma", positronium_lifetimes[2],
-        prompt_photon_probabilities[2], prompt_photon_energies[2])
+        source,
+        6,
+        "kParaPs",
+        "k2Gamma",
+        positronium_lifetimes[2],
+        prompt_photon_probabilities[2],
+        prompt_photon_energies[2],
+    )
 
     good_fractions = [
-        371. / 620., 1. / 620., 14. / 71., 1. / 355., 23. / 355., 5. / 142.,
-        0.1
+        371.0 / 620.0,
+        1.0 / 620.0,
+        14.0 / 71.0,
+        1.0 / 355.0,
+        23.0 / 355.0,
+        5.0 / 142.0,
+        0.1,
     ]
     is_ok = is_ok and np.all(
-        np.isclose(source.channels_from_fractions.fractions, good_fractions))
+        np.isclose(source.channels_from_fractions.fractions, good_fractions)
+    )
 
     return is_ok
 
 
 def test_normalize_fractions():
     fractions = [12, 2, 4, 2]
-    good_fractions = [.6, .1, .2, .1]
+    good_fractions = [0.6, 0.1, 0.2, 0.1]
     output_fractions = PositroniumSource.normalize_fractions(fractions)
     is_ok = np.all(np.isclose(output_fractions, good_fractions))
     return is_ok
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__,
-                                           "gate_test140_positronium_helper",
-                                           output_folder="test140")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test140_positronium_helper", output_folder="test140"
+    )
 
     is_ok = True
 

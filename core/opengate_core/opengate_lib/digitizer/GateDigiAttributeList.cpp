@@ -7,8 +7,8 @@
 
 #include "../GateUniqueVolumeIDManager.h"
 #include "../GateUserEventInformation.h"
-#include "../positronium/GateEmittedGammaInformation.h"
 #include "../filters/GatePrimaryScatterFilter.h"
+#include "../positronium/GateEmittedGammaInformation.h"
 #include "GateDigiAttributeManager.h"
 #include <G4Run.hh>
 #include <G4RunManager.hh>
@@ -324,8 +324,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
 
   // -----------------------------------------------------
   // Positronium information
-  DefineDigiAttribute("PositroniumDecayIndex",'I',FILLF {
-        const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent()->GetPrimaryVertex(0)->GetPrimary(0);
+  DefineDigiAttribute(
+      "PositroniumDecayIndex", 'I', FILLF {
+        const auto *event = G4RunManager::GetRunManager()
+                                ->GetCurrentEvent()
+                                ->GetPrimaryVertex(0)
+                                ->GetPrimary(0);
         auto info = dynamic_cast<GateEmittedGammaInformation *>(
             event->GetUserInformation());
         if (info == nullptr)

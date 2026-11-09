@@ -11,57 +11,62 @@
 #include "G4GeneralPhaseSpaceDecay.hh"
 #include "G4PhysicalConstants.hh"
 
-/** Authors: Wojciech Krzemień, Mateusz Bała and Aurélien Coussat
- *  Emails: wojciech.krzemien@ncbj.gov.pl, bala.mateusz@gmail.com and aurelien.coussat@creatis.insa-lyon.fr
- *  Organization: National Centre For Nuclear Research (NCBJ, https://ncbj.gov.pl), Poland
- *  Developed within the IMPET project: https://pet.ncbj.gov.pl/
- *  Original author of the oPs decay model: Daria Kamińska et al. ( Eur. Phys. J. C (2016) 76:445 )
- *  About class: Implements pPs and oPs positronium decays. Provides support for polarization.
+/** Authors: Wojciech Krzemień, Mateusz Bała, Kamil Dulski and Aurélien Coussat
+ *
+ *  Emails: wojciech.krzemien@ncbj.gov.pl, mateusz.bala@ncbj.gov.pl,
+ * kamil.dulski@gmail.com and aurelien.coussat@creatis.insa-lyon.fr
+ *
+ * Organization: National Centre For Nuclear Research (NCBJ,
+ https://ncbj.gov.pl), Poland
+
+ * Developed within the IMPET project: https://pet.ncbj.gov.pl/
+ *
+ * About class:
+ * Implements pPs and oPs positronium decays. Provides support for polarization.
  **/
-class GatePositroniumDecayChannel : public G4GeneralPhaseSpaceDecay
-{
- public:
-  
-  //Describes for which positronium we need decay
+class GatePositroniumDecayChannel : public G4GeneralPhaseSpaceDecay {
+public:
+  // Describes for which positronium we need decay
   enum PositroniumKind { NotDefined, ParaPositronium, OrthoPositronium };
 
-  GatePositroniumDecayChannel( const G4String& parentName);
+  GatePositroniumDecayChannel(const G4String &parentName);
   virtual ~GatePositroniumDecayChannel() = default;
   /** Return gammas from positronium decay
-  **/
-  virtual G4DecayProducts* DecayIt(G4double m=0.0) override;
+   **/
+  virtual G4DecayProducts *DecayIt(G4double m = 0.0) override;
 
- protected:
+protected:
   /** Return gammas from para-positronium decay
-  **/
-  G4DecayProducts* DecayParaPositronium();
+   **/
+  G4DecayProducts *DecayParaPositronium();
   /** Return gammas from ortho-positronium decay
-  **/
-  G4DecayProducts* DecayOrthoPositronium();
+   **/
+  G4DecayProducts *DecayOrthoPositronium();
   /** Calculate cross section Mij matrix element
-    * Based on "Quantum electrodynamics" V. B. BERESTETSKY.
-    * Chapter: 89. Annihilation of positronium
-    * Equation: 89.14
-  **/
+   * Based on "Quantum electrodynamics" V. B. BERESTETSKY.
+   * Chapter: 89. Annihilation of positronium
+   * Equation: 89.14
+   **/
   G4double GetOrthoPsM(G4double w1, G4double w2, G4double w3) const;
   /** Calculate polarization orthogonal to momentum direction
    **/
-  G4ThreeVector GetPolarization(const G4ThreeVector& momentum) const;
+  G4ThreeVector GetPolarization(const G4ThreeVector &momentum) const;
   /** Generate perpendiculator vector ( to calculate orthogonal polarization )
    **/
-  G4ThreeVector GetPerpendicularVector(const G4ThreeVector& v) const;
+  G4ThreeVector GetPerpendicularVector(const G4ThreeVector &v) const;
 
- protected:
+protected:
   static inline const G4String kParaPositroniumName = "pPs";
   static inline const G4String kOrthoPositroniumName = "oPs";
   static inline const G4String kDaughterName = "gamma";
 
-  //Decay paramters
+  // Decay paramters
   static constexpr G4int kParaPositroniumAnnihilationGammasNumber = 2;
   static constexpr G4int kOrthoPositroniumAnnihilationGammasNumber = 3;
 
   static constexpr G4double kPositroniumMass = 2.0 * electron_mass_c2;
-  ///This is maximal number which can be calculated by function GetOrthoPsM() - determined based on 10^7 iterations
+  /// This is maximal number which can be calculated by function GetOrthoPsM() -
+  /// determined based on 10^7 iterations
   static constexpr G4double kOrthoPsMMax = 7.65928;
   static constexpr G4double kElectronMass = electron_mass_c2; //[MeV]
 
