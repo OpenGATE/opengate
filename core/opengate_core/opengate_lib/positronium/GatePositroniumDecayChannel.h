@@ -11,7 +11,7 @@
 #include "G4GeneralPhaseSpaceDecay.hh"
 #include "G4PhysicalConstants.hh"
 
-/** Authors: Wojciech Krzemień, Mateusz Bała and Aurelien Coussat
+/** Authors: Wojciech Krzemień, Mateusz Bała and Aurélien Coussat
  *  Emails: wojciech.krzemien@ncbj.gov.pl, bala.mateusz@gmail.com and aurelien.coussat@creatis.insa-lyon.fr
  *  Organization: National Centre For Nuclear Research (NCBJ, https://ncbj.gov.pl), Poland
  *  Developed within the IMPET project: https://pet.ncbj.gov.pl/
