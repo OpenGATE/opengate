@@ -5,7 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-/** Authors: Wojciech Krzemień, Mateusz Bała, Kamil Dulski and Aurelien Coussat
+/** Authors: Wojciech Krzemień, Mateusz Bała, Kamil Dulski and Aurélien Coussat
  *  Emails: wojciech.krzemien@ncbj.gov.pl, mateusz.bala@ncbj.gov.pl, kamil.dulski@gmail.com and aurelien.coussat@creatis.insa-lyon.fr
  *  Organization: National Centre For Nuclear Research (NCBJ, https://ncbj.gov.pl), Poland
  *  Developed within the IMPET project: https://pet.ncbj.gov.pl/
