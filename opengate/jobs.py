@@ -629,10 +629,20 @@ def _configure_child_simulation(
 
     # Rewrite source.number_of_primaries to match the child's local runs so the serialized child is
     # directly executable later without extra split-time logic.
+    inactive_source_names = []
     for source_name, assigned_counts in source_primaries_assignments.items():
         child_source = child_simulation.source_manager.get_source(source_name)
         parent_source_number_of_primaries = child_source.number_of_primaries
         child_source.number_of_primaries = assigned_counts
+
+        # A source may intentionally be active only during selected master
+        # runs. If none of those runs contributes to this child, retaining the
+        # source would leave it with an invalid all-zero local count array even
+        # though its physical contribution is exactly zero. Omit it from this
+        # child rather than weakening the ordinary source-validity contract.
+        if not np.any(np.asarray(assigned_counts, dtype=int) > 0):
+            inactive_source_names.append(source_name)
+            continue
 
         if (
             isinstance(child_source, PhaseSpaceSource)
@@ -657,6 +667,9 @@ def _configure_child_simulation(
                 n_threads,
                 offset=job_offset,
             )
+
+    for source_name in inactive_source_names:
+        child_simulation.source_manager.remove_source(source_name)
 
     child_metadata = {
         "job_id": job_definition["job_id"],
