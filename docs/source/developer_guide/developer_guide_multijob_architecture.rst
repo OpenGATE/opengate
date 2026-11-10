@@ -170,12 +170,21 @@ source job contributes to which target slot.
 User-facing Python API, CLI, and internal wiring
 ------------------------------------------------
 
-There are three public layers over the same implementation:
+The following public interfaces use the same implementation. Execution state
+is kept separate from the reusable simulation configuration:
+
+``ExecutionController``
+    Common owner of execution lifecycle state and optional profiling.
+    ``MonolithicRunController`` represents an ordinary synchronous run, while
+    ``SplitRunMergeController`` represents a multi-job campaign. The
+    ``Simulation`` remains the configuration and recovered-result object; it
+    does not own execution profiling state.
 
 ``sim.run(number_of_jobs=N, ...)``
     High-level local API. This creates a ``SplitRunMergeController`` and uses it
     to split, run, and optionally merge the simulation. This is the natural path
-    for local multi-job execution.
+    for local multi-job execution. An ordinary ``sim.run()`` instead returns a
+    ``MonolithicRunController``.
 
 ``SplitRunMergeController``
     Python API object for local workflows that need more control than a single
@@ -185,6 +194,11 @@ There are three public layers over the same implementation:
 ``gate.jobs_split(...)``, ``gate.jobs_run(...)``, ``gate.jobs_merge(...)``
     Lower-level file-based entry points. These are used directly by scripts,
     tests, and command line tools.
+
+The lower-level functions deliberately return their stage-specific manager or
+result rather than an ``ExecutionController``. They may run in separate Python
+sessions or on different machines; the campaign manifest and status files
+provide continuity between those invocations.
 
 The command line tool ``opengate_jobs`` (``opengate/bin/opengate_jobs.py``)
 calls the same lower-level functions, with the subcommands ``split``, ``run``,

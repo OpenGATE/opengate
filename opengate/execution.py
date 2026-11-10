@@ -54,12 +54,15 @@ class ExecutionController(Profilable):
         return self.stage == "failed"
 
     def _mark_started(self):
-        self.started_at = _utc_now()
-        self._stage = "running"
+        if self.started_at is None:
+            self.started_at = _utc_now()
+        self.finished_at = None
+        if self._stage == "initialized":
+            self._stage = "running"
 
-    def _mark_completed(self):
+    def _mark_finished(self, stage):
         self.finished_at = _utc_now()
-        self._stage = "completed"
+        self._stage = stage
 
     def _set_error(self, error):
         self.finished_at = _utc_now()
@@ -100,7 +103,7 @@ class MonolithicRunController(ExecutionController):
         except Exception as error:
             self._set_error(error)
             raise
-        self._mark_completed()
+        self._mark_finished("completed")
         return self
 
     def wait(self, *args, **kwargs):

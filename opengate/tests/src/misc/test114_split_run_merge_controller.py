@@ -157,6 +157,15 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
+            single_job_result.started_at is not None
+            and single_job_result.finished_at is not None
+            and single_job_result.stage == "completed",
+            "Monolithic controller records its execution lifecycle",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
             single_job_stats_path.exists()
             and single_job_dose_path.exists()
             and single_job_uncertainty_path.exists(),
@@ -233,6 +242,14 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
+            async_controller.started_at is not None
+            and async_controller.finished_at is None,
+            "Submitted asynchronous controller records a start but is not finished",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
             async_controller.campaign_dir
             == (paths.output / "async_campaign").resolve(),
             f"Controller keeps track of the campaign directory: {async_controller.campaign_dir}",
@@ -246,7 +263,8 @@ if __name__ == "__main__":
     async_controller.wait(poll_interval=0.2, timeout=120)
     is_ok = (
         utility.print_test(
-            async_controller.stage == "completed",
+            async_controller.stage == "completed"
+            and async_controller.finished_at is not None,
             f"Controller.wait() advances the controller to the completed stage: {async_controller.stage}",
         )
         and is_ok
@@ -353,7 +371,9 @@ if __name__ == "__main__":
     is_ok = (
         utility.print_test(
             isinstance(merged_controller, gate.SplitRunMergeController)
-            and merged_controller.stage == "merged",
+            and merged_controller.stage == "merged"
+            and merged_controller.started_at is not None
+            and merged_controller.finished_at is not None,
             f"Synchronous split run returns a merged controller: stage={merged_controller.stage}",
         )
         and is_ok

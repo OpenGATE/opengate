@@ -49,7 +49,10 @@ the same script, use ``merge_after_run=True`` together with
    # At this point, the merged output is already available in sim.output_dir
    # and the live simulation object can be used for postprocessing.
 
-In the example, ``controller`` is a ``SplitRunMergeController`` object that can be inspected. It is always returned by ``sim.run(...)`` when the simulation is run in multiple jobs.
+In the example, ``controller`` is a ``SplitRunMergeController`` object that can
+be inspected. It is always returned by ``sim.run(...)`` when the simulation is
+run in multiple jobs. Users who only need the merged output can otherwise
+ignore it.
 
 ``campaign_dir`` is required with ``number_of_jobs`` > 1: it is the folder of
 the jobs (``campaign/job0001``, ``campaign/job0002``, ...). The input files are
@@ -65,7 +68,10 @@ the jobs while ``sim.run(...)`` waits for them (the jobs do not display their ow
 progress bars, they would all print in the same terminal). Each job writes its
 number of generated and expected events in ``job_progress.json``, in its folder.
 
-.. note:: ``number_of_jobs=1`` does not create a split campaign. It maps to an ordinary simulation run in a new process, i.e. it is equivalent to ``sim.run(start_new_process=True)``
+.. note:: ``number_of_jobs=1`` does not create a split campaign. It maps to an
+   ordinary simulation run in a new process, i.e. it is equivalent to
+   ``sim.run(start_new_process=True)``. Ordinary runs return a
+   ``MonolithicRunController``.
 
 Split and run now, merge later
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,7 +110,7 @@ jobs:
 
    merge_manager = gate.jobs_merge("campaign")
    sim = merge_manager.master_simulation
-   gate.jobs_clean_split("campaign")  # this removes the job folders and other metadata about the split run
+   gate.jobs_clean_split("campaign")  # remove temporary split-job artifacts
 
    merge_manager.print_merge_summary()
    # ... post-process sim, actors, and merged output ...
@@ -191,6 +197,47 @@ simulation logic or the validation strategy specifically benefits from staying
 closer to the original run partition.
 
 .. tip:: If you use ``split_in_time_per_run`` and set the number of jobs equal to the number of run timing intervals in your simulation, you will get one job per run timing interval.
+
+
+Optional execution profiling
+----------------------------
+
+Profiling is disabled by default and is not required for normal simulation
+use. It can be enabled for a particular execution by passing
+``profiling=True`` to ``sim.run(...)``:
+
+.. code-block:: python
+
+   controller = sim.run(
+       number_of_jobs=4,
+       wait_for_result=True,
+       merge_after_run=True,
+       profiling=True,
+   )
+
+   profile = controller.profiler.to_dictionary()
+   controller.profiler.to_json_file("profile.json")
+
+The profiler belongs to the execution controller, not to the ``Simulation``
+configuration. Reusing the same simulation for another run therefore creates a
+new controller and a separate profiling inventory.
+
+For a split campaign, profiling is propagated to child jobs and merge
+operations. Process-local profile fragments are stored below the campaign's
+``profiling`` folders and combined into
+``campaign/profiling/campaign_profile.json``. The command-line tool provides
+the optional ``--profile`` flag for the same purpose, for example:
+
+.. code-block:: console
+
+   opengate_jobs split campaign/ -j 100 --profile
+   opengate_jobs run campaign/ --backend htcondor --profile
+   opengate_jobs merge campaign/ --profile
+
+Profiling records timing history. Campaign status reporting remains a separate
+mechanism and should be used to determine whether jobs are pending, running,
+completed, or failed. Use ``--no-profile`` to disable profiling for a later
+stage of a campaign where it was enabled previously.
 
 
 Local multi-job execution from the command line

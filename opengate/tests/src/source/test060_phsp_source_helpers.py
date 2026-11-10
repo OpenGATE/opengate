@@ -257,7 +257,6 @@ def create_phs_without_source(
     # source.number_of_primaries = number_of_particles
     # # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
-    # output = sim.run()
     # output = sim.start()
     # output = sim.start(start_new_process=True)
     return sim

@@ -3252,7 +3252,15 @@ class SplitRunMergeController(ExecutionController):
     def refresh(self):
         if self._campaign_dir is not None and self.manifest_path.exists():
             self._status["jobs_status"] = jobs_status(self._campaign_dir)
-        self._stage = self._derive_stage_from_status()
+        derived_stage = self._derive_stage_from_status()
+        if derived_stage != "initialized" and self.started_at is None:
+            self._mark_started()
+        self._stage = derived_stage
+        if self.stage in ("completed", "merged", "cleaned", "failed"):
+            if self.finished_at is None:
+                self._mark_finished(self.stage)
+        else:
+            self.finished_at = None
         return self._status
 
     def has_finished(self):
@@ -3265,6 +3273,7 @@ class SplitRunMergeController(ExecutionController):
 
     @profile_method("split")
     def split(self, number_of_jobs, **split_options):
+        self._mark_started()
         try:
             split_options = dict(split_options)
             split_options.setdefault("profiling", self.profiler.enabled)
@@ -3299,6 +3308,8 @@ class SplitRunMergeController(ExecutionController):
         ``number_of_workers`` should therefore be equal to the number of split
         jobs.
         """
+        if self.started_at is None:
+            self._mark_started()
         if self._campaign_dir is None:
             fatal("SplitRunMergeController.run() requires split() to be called first.")
         try:
@@ -3317,6 +3328,7 @@ class SplitRunMergeController(ExecutionController):
                 ]
             self._status["run_result"] = jobs_run(self._campaign_dir, **run_options)
             self._stage = "submitted"
+            self.finished_at = None
             self.refresh()
             return self._status["run_result"]
         except Exception as error:
@@ -3325,6 +3337,8 @@ class SplitRunMergeController(ExecutionController):
 
     @profile_method("wait")
     def wait(self, poll_interval=1.0, timeout=None):
+        if self.started_at is None:
+            self._mark_started()
         if self._campaign_dir is None:
             fatal("SplitRunMergeController.wait() requires split() to be called first.")
         start_time = time.perf_counter()
@@ -3410,6 +3424,8 @@ class SplitRunMergeController(ExecutionController):
 
     @profile_method("merge")
     def merge(self, **merge_options):
+        if self.started_at is None:
+            self._mark_started()
         if self._campaign_dir is None:
             fatal(
                 "SplitRunMergeController.merge() requires split() to be called first."
@@ -3427,7 +3443,7 @@ class SplitRunMergeController(ExecutionController):
                 **merge_options,
             )
             self._status["merge_result"] = self.merge_manager.merge_result
-            self._stage = "merged"
+            self._mark_finished("merged")
             self.refresh()
             return self.merge_manager
         except Exception as error:
@@ -3436,6 +3452,8 @@ class SplitRunMergeController(ExecutionController):
 
     @profile_method("clean")
     def clean(self, **clean_options):
+        if self.started_at is None:
+            self._mark_started()
         if self._campaign_dir is None:
             fatal(
                 "SplitRunMergeController.clean() requires split() to be called first."
@@ -3447,7 +3465,7 @@ class SplitRunMergeController(ExecutionController):
             self._status["clean_result"] = jobs_clean_split(
                 self._campaign_dir, **clean_options
             )
-            self._stage = "cleaned"
+            self._mark_finished("cleaned")
             self.refresh()
             return self._status["clean_result"]
         except Exception as error:
@@ -3467,6 +3485,11 @@ class SplitRunMergeController(ExecutionController):
         merge_options=None,
         clean_options=None,
     ):
+        if self.started_at is not None:
+            raise RuntimeError(
+                "SplitRunMergeController.execute() can only be called once."
+            )
+        self._mark_started()
         execution_token = self.profiler.start("execute")
         try:
             if merge_after_run is None:

@@ -208,7 +208,7 @@ if __name__ == "__main__":
         sim.physics_manager.global_production_cuts.electron = 1000 * km
         sim.physics_manager.global_production_cuts.positron = 1000 * km
 
-        output = sim.run(True)
+        sim.run(True)
         print(s)
 
     f_data = uproot.open(paths.output / "test094_output_data_last_vertex_biased.root")

@@ -3010,9 +3010,9 @@ class Simulation(GateObject):
     ):
         """Execute the simulation and return its execution controller.
 
-        Ordinary executions return a :class:`MonolithicRunController`; managed
+        Ordinary executions return a ``MonolithicRunController``; managed
         executions with more than one job return a
-        :class:`SplitRunMergeController`. Profiling is execution-scoped and its
+        ``SplitRunMergeController``. Profiling is execution-scoped and its
         results are available through the returned controller.
         """
         # if windows and MT -> fail
