@@ -58,13 +58,15 @@ if __name__ == "__main__":
     simulation = build_simulation(paths.output / "merged")
     controller = simulation.run(
         number_of_jobs=2,
-        wait_for_result=True,
-        merge_after_run=True,
+        wait_for_result=False,
+        merge_after_run=False,
         campaign_dir=paths.output / "campaign",
         poll_interval=0.1,
         timeout=60,
         profiling=True,
     )
+    controller.wait(poll_interval=0.1, timeout=60)
+    controller.merge()
 
     aggregate_path = (
         controller.campaign_dir / "profiling" / "campaign_profile.json"
@@ -105,6 +107,13 @@ if __name__ == "__main__":
         utility.print_test(
             any("merge_manager.execute_merge" in path for path in record_paths),
             "Aggregate profile contains merge execution timing",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            "wait" in record_paths and "merge" in record_paths,
+            "Manual wait and merge timings are persisted in the campaign profile",
         )
         and is_ok
     )

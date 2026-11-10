@@ -13,6 +13,7 @@ import traceback
 import uuid
 import copy
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
 import json
 
@@ -3155,6 +3156,24 @@ def jobs_run(
     return result
 
 
+def _profile_and_persist_controller_method(name):
+    """Profile a controller stage and persist it after its timer has stopped."""
+
+    def decorate(method):
+        profiled_method = profile_method(name)(method)
+
+        @wraps(method)
+        def wrapped(self, *args, **kwargs):
+            try:
+                return profiled_method(self, *args, **kwargs)
+            finally:
+                self._persist_profile()
+
+        return wrapped
+
+    return decorate
+
+
 class SplitRunMergeController(ExecutionController):
     """Local orchestration handle for split-run-merge workflows.
 
@@ -3211,6 +3230,20 @@ class SplitRunMergeController(ExecutionController):
 
     def _set_error(self, error):
         super()._set_error(error)
+
+    def _persist_profile(self):
+        if (
+            self.profiler.enabled is False
+            or self._campaign_dir is None
+            or self.manifest_path.exists() is False
+        ):
+            return
+        manifest_path, manifest = _load_jobs_manifest(self._campaign_dir)
+        _write_profile_fragment(
+            self.profiler,
+            manifest_path.parent / PROFILING_DIRNAME / "controller.json",
+        )
+        _aggregate_campaign_profile(manifest_path.parent, manifest)
 
     def _derive_stage_from_status(self):
         if self._status.get("error") is not None:
@@ -3271,7 +3304,7 @@ class SplitRunMergeController(ExecutionController):
         self.refresh()
         return self.stage == "failed"
 
-    @profile_method("split")
+    @_profile_and_persist_controller_method("split")
     def split(self, number_of_jobs, **split_options):
         self._mark_started()
         try:
@@ -3296,7 +3329,7 @@ class SplitRunMergeController(ExecutionController):
             self._set_error(error)
             raise
 
-    @profile_method("run")
+    @_profile_and_persist_controller_method("run")
     def run(self, **run_options):
         """Launch the already split campaign through the configured backend.
 
@@ -3335,7 +3368,7 @@ class SplitRunMergeController(ExecutionController):
             self._set_error(error)
             raise
 
-    @profile_method("wait")
+    @_profile_and_persist_controller_method("wait")
     def wait(self, poll_interval=1.0, timeout=None):
         if self.started_at is None:
             self._mark_started()
@@ -3422,7 +3455,7 @@ class SplitRunMergeController(ExecutionController):
             lines.append(format_jobs_failure_report(self._campaign_dir))
         return "\n".join(lines)
 
-    @profile_method("merge")
+    @_profile_and_persist_controller_method("merge")
     def merge(self, **merge_options):
         if self.started_at is None:
             self._mark_started()
@@ -3450,7 +3483,7 @@ class SplitRunMergeController(ExecutionController):
             self._set_error(error)
             raise
 
-    @profile_method("clean")
+    @_profile_and_persist_controller_method("clean")
     def clean(self, **clean_options):
         if self.started_at is None:
             self._mark_started()
@@ -3522,15 +3555,7 @@ class SplitRunMergeController(ExecutionController):
                     self.profiler.stop(execution_token)
                 except KeyError:
                     pass
-            if self.profiler.enabled and self._campaign_dir is not None:
-                manifest_path, manifest = _load_jobs_manifest(self._campaign_dir)
-                _write_profile_fragment(
-                    self.profiler,
-                    manifest_path.parent
-                    / PROFILING_DIRNAME
-                    / "controller.json",
-                )
-                _aggregate_campaign_profile(manifest_path.parent, manifest)
+            self._persist_profile()
 
 
 def _get_master_simulation_paths_from_manifest(manifest_path, manifest):
