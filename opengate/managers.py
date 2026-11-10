@@ -2979,7 +2979,10 @@ class Simulation(GateObject, Profilable):
         Returns:
             obj:SimulationOutput : The output of the simulation run.
         """
-        with self.profiler.measure("resolve_and_validate_config"):
+        if self.profiler.enabled:
+            with self.profiler.measure("resolve_and_validate_config"):
+                self.resolve_and_validate_config()
+        else:
             self.resolve_and_validate_config()
         se = SimulationEngine(self)
         try:
@@ -2987,14 +2990,19 @@ class Simulation(GateObject, Profilable):
             se.init_only = self.init_only
             output = se.run_engine()
         finally:
-            with self.profiler.measure("engine.close"):
+            if self.profiler.enabled:
+                with self.profiler.measure("engine.close"):
+                    se.close()
+            else:
                 se.close()
-        output.profiler_snapshot = self.profiler.to_dictionary(
-            require_complete=False
+        output.profiler_snapshot = (
+            self.profiler.to_dictionary(require_complete=False)
+            if self.profiler.enabled
+            else None
         )
         return output
 
-    @profile_method("run")
+    @profile_method("run", enabled_argument="profiling")
     def run(
         self,
         start_new_process=False,
@@ -3006,6 +3014,7 @@ class Simulation(GateObject, Profilable):
         cleanup_after_run=False,
         poll_interval=1.0,
         timeout=None,
+        profiling=None,
     ):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:

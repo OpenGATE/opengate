@@ -105,8 +105,8 @@ def _profiling_descriptor(enabled):
 
 
 def _campaign_profiling_enabled(manifest, requested=None):
-    if requested is True:
-        return True
+    if requested is not None:
+        return bool(requested)
     return bool(manifest.get("profiling", {}).get("enabled", False))
 
 
@@ -128,9 +128,9 @@ def _replace_json_file(path, data):
     os.replace(temporary_path, path)
 
 
-def _enable_campaign_profiling(campaign_dir, manifest_path, manifest):
-    """Persist profiling intent in the campaign and all child job metadata."""
-    descriptor = _profiling_descriptor(True)
+def _set_campaign_profiling(campaign_dir, manifest_path, manifest, enabled):
+    """Persist profiling intent in the campaign and every child job."""
+    descriptor = _profiling_descriptor(enabled)
     manifest["profiling"] = descriptor
     _replace_json_file(manifest_path, manifest)
     for job_item in manifest.get("jobs", []):
@@ -962,11 +962,21 @@ class JobsSplitManager(Profilable):
         if profiler is not None:
             self.attach_profiler(profiler)
         input_profiler = getattr(simulation, "profiler", None)
-        if profiling is True or (
+        profiling_enabled = (
             input_profiler is not None and input_profiler.enabled
-        ):
+            if profiling is None
+            else bool(profiling)
+        )
+        if profiling_enabled:
             self.profiler.enable()
-        if profiler is None and input_profiler is not None and input_profiler.enabled:
+        else:
+            self.profiler.disable()
+        if (
+            profiling_enabled
+            and profiler is None
+            and input_profiler is not None
+            and input_profiler.enabled
+        ):
             self.profiler.merge(
                 input_profiler.to_dictionary(require_complete=False),
                 prefix="input_simulation",
@@ -3091,15 +3101,21 @@ def jobs_run(
     worker count below the job count executes simulations in multiple waves;
     equal job and worker counts are normally preferable.
 
-    Profiling can be enabled while splitting or at this stage. Once enabled,
-    the campaign manifest carries the intent so local and scheduler-launched
-    child processes write independent attempt profiles.
+    Profiling can be enabled or disabled at this stage. The selected value is
+    persisted in the campaign manifest and every child job so local and
+    scheduler-launched processes follow the same profiling contract.
     """
     manifest_path, manifest = _load_jobs_manifest(split_path)
     campaign_dir = manifest_path.parent
+    campaign_profiling_enabled = _campaign_profiling_enabled(manifest)
+    if (
+        profiling is not None
+        and bool(profiling) != campaign_profiling_enabled
+    ):
+        _set_campaign_profiling(
+            campaign_dir, manifest_path, manifest, bool(profiling)
+        )
     profiling_enabled = _campaign_profiling_enabled(manifest, profiling)
-    if profiling_enabled and not _campaign_profiling_enabled(manifest):
-        _enable_campaign_profiling(campaign_dir, manifest_path, manifest)
 
     profiler = Profiler(
         name="jobs_run",
@@ -3154,7 +3170,10 @@ class SplitRunMergeController(Profilable):
         self.initialize_profiler(name="SplitRunMergeController")
         simulation_profiler = getattr(simulation, "profiler", None)
         if simulation_profiler is not None and simulation_profiler.enabled:
-            self.attach_profiler(simulation_profiler, scope="multijob")
+            # The controller may outlive Simulation.run() in asynchronous use.
+            # Keep its execution setting independent from the temporary setting
+            # applied to the simulation for that call.
+            self.profiler.enable()
         self.simulation = simulation
         self._campaign_dir = (
             None if campaign_dir is None else Path(campaign_dir).resolve()
@@ -3860,9 +3879,16 @@ class JobsMergeManager(Profilable):
     ):
         self.manifest_path, self.manifest = _load_jobs_manifest(split_path)
         self.campaign_dir = self.manifest_path.parent
-        if profiling is True and not _campaign_profiling_enabled(self.manifest):
-            _enable_campaign_profiling(
-                self.campaign_dir, self.manifest_path, self.manifest
+        campaign_profiling_enabled = _campaign_profiling_enabled(self.manifest)
+        if (
+            profiling is not None
+            and bool(profiling) != campaign_profiling_enabled
+        ):
+            _set_campaign_profiling(
+                self.campaign_dir,
+                self.manifest_path,
+                self.manifest,
+                bool(profiling),
             )
         self.initialize_profiler(name="JobsMergeManager")
         if profiler is not None:
@@ -3875,6 +3901,8 @@ class JobsMergeManager(Profilable):
             self.attach_profiler(target_simulation.profiler, scope="merge")
         if _campaign_profiling_enabled(self.manifest, profiling):
             self.profiler.enable()
+        else:
+            self.profiler.disable()
         self.output_dir_override = (
             None if output_dir_override is None else Path(output_dir_override).resolve()
         )
@@ -4556,6 +4584,7 @@ def jobs_merge(
     target_simulation=None,
     to_path=None,
     execute=True,
+    persist_profile=True,
     **options,
 ):
     """Merge a split campaign and return its :class:`JobsMergeManager`.
@@ -4576,7 +4605,7 @@ def jobs_merge(
     merge_manager.load_campaign_metadata()
     if execute:
         merge_manager.merge()
-    if merge_manager.profiler.enabled:
+    if merge_manager.profiler.enabled and persist_profile:
         profile_path = (
             merge_manager.campaign_dir
             / PROFILING_DIRNAME

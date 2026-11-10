@@ -4,7 +4,7 @@ import json
 import time
 
 import opengate as gate
-from opengate.profiling import Profiler
+from opengate.profiling import Profiler, profile_method
 from opengate.tests import utility
 
 
@@ -20,6 +20,28 @@ if __name__ == "__main__":
     is_ok = utility.print_test(
         len(profiler.to_dictionary()["records"]) == 0,
         "Disabled profiler records no timings",
+    )
+
+    class DisabledProbe:
+        def __init__(self):
+            self.profiler = Profiler()
+
+        @profile_method("execute")
+        def execute(self):
+            return "executed"
+
+    probe = DisabledProbe()
+
+    def fail_if_measured(*args, **kwargs):
+        raise AssertionError("Disabled decorated method entered profiler.measure()")
+
+    probe.profiler.measure = fail_if_measured
+    is_ok = (
+        utility.print_test(
+            probe.execute() == "executed",
+            "Disabled decorated methods bypass measurement machinery",
+        )
+        and is_ok
     )
 
     profiler.enable()

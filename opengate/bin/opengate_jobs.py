@@ -66,6 +66,14 @@ def json_option(f):
     )(f)
 
 
+def profiling_option(f):
+    return click.option(
+        "--profile/--no-profile",
+        default=None,
+        help="Enable or disable execution timing profiles for this campaign.",
+    )(f)
+
+
 def echo_json(data):
     click.echo(json.dumps(data, indent=2, sort_keys=True, default=str))
 
@@ -83,7 +91,7 @@ def is_split(campaign):
     return (Path(campaign) / JOBS_MANIFEST_FILENAME).exists()
 
 
-def do_split(campaign, jobs, policy, overwrite):
+def do_split(campaign, jobs, policy, overwrite, profiling=None):
     m = jobs_split(
         simulation_folder=Path(campaign),
         campaign_dir=Path(campaign),
@@ -91,6 +99,7 @@ def do_split(campaign, jobs, policy, overwrite):
         policy=policy,
         overwrite_existing_job_folders=overwrite,
         write_resolved_simulation=True,
+        profiling=profiling,
     )
     return m
 
@@ -119,6 +128,7 @@ def clean_campaign(campaign, remove_job_folders=True, remove_metadata_files=True
         remove_execution_status=remove_metadata_files,
         remove_manifest=remove_metadata_files,
         remove_resolved_simulation=remove_metadata_files,
+        remove_profiling=remove_metadata_files,
     )
 
 
@@ -130,10 +140,11 @@ def clean_campaign(campaign, remove_job_folders=True, remove_metadata_files=True
 @campaign_argument
 @click.option("-j", "--jobs", type=int, required=True, help="Number of jobs.")
 @split_options
+@profiling_option
 @json_option
-def split(campaign, jobs, policy, overwrite, as_json):
+def split(campaign, jobs, policy, overwrite, profiling, as_json):
     """Split the simulation of CAMPAIGN into job folders."""
-    m = do_split(campaign, jobs, policy, overwrite)
+    m = do_split(campaign, jobs, policy, overwrite, profiling=profiling)
     if as_json:
         echo_json(m.split_result)
     else:
@@ -283,6 +294,7 @@ def counts_str(status):
     "without news for a long time, are always run again).",
 )
 @split_options
+@profiling_option
 @json_option
 def run(
     campaign,
@@ -298,6 +310,7 @@ def run(
     rerun_running,
     policy,
     overwrite,
+    profiling,
     as_json,
 ):
     """Run the jobs of CAMPAIGN (split it first if needed, with -j).
@@ -329,7 +342,7 @@ def run(
             raise click.ClickException(
                 f"'{short(campaign)}' {what}: give the number of jobs with -j."
             )
-        do_split(campaign, jobs, policy, overwrite)
+        do_split(campaign, jobs, policy, overwrite, profiling=profiling)
         if not as_json:
             click.echo(f"Split into {jobs_str(jobs)} ({policy}) in {short(campaign)}")
     elif jobs is not None:
@@ -349,6 +362,7 @@ def run(
         number_of_workers=workers,
         force_rerun_completed=rerun_completed,
         allow_rerun_running=rerun_running,
+        profiling=profiling,
     )
 
     # cluster: submitted, nothing more to do here
@@ -407,6 +421,7 @@ def run(
             False,
             command="opengate_jobs merge",
             progress=not as_json,
+            profiling=profiling,
         )
         result["merge"] = merge_summary(m)
         if not as_json:
@@ -429,6 +444,7 @@ def do_merge(
     force,
     command=None,
     progress=True,
+    profiling=None,
     root_output_compression=None,
     root_chunk_size="64 MB",
     root_decompression_workers=1,
@@ -442,6 +458,7 @@ def do_merge(
             to_path=output,
             execute=False,
             progress=progress,
+            profiling=profiling,
             root_output_compression=root_output_compression,
             root_chunk_size=root_chunk_size,
             root_decompression_workers=root_decompression_workers,
@@ -517,6 +534,7 @@ def echo_merge(merge_manager):
     show_default=True,
     help="Number of worker threads used for ROOT basket decompression.",
 )
+@profiling_option
 @click.option("-v", "--verbose", is_flag=True, help="Print the full merge summary.")
 @json_option
 def merge(
@@ -527,6 +545,7 @@ def merge(
     root_output_compression,
     root_chunk_size,
     root_decompression_workers,
+    profiling,
     verbose,
     as_json,
 ):
@@ -548,6 +567,7 @@ def merge(
         output,
         force,
         progress=not as_json,
+        profiling=profiling,
         root_output_compression=root_output_compression,
         root_chunk_size=root_chunk_size,
         root_decompression_workers=root_decompression_workers,

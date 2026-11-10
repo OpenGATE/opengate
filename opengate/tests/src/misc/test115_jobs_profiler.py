@@ -34,8 +34,7 @@ if __name__ == "__main__":
     # A monolithic subprocess returns its process-local engine timings to the
     # profiler attached to the live parent simulation.
     monolithic_simulation = build_simulation(paths.output / "monolithic")
-    monolithic_simulation.profiler.enable()
-    monolithic_simulation.run(start_new_process=True)
+    monolithic_simulation.run(start_new_process=True, profiling=True)
     monolithic_paths = {
         record["path"]
         for record in monolithic_simulation.profiler.to_dictionary()["records"]
@@ -44,9 +43,15 @@ if __name__ == "__main__":
         "engine.transport" in monolithic_paths,
         "Monolithic subprocess transport timing is recovered by the parent",
     )
+    is_ok = (
+        utility.print_test(
+            monolithic_simulation.profiler.enabled is False,
+            "sim.run(profiling=True) does not persistently enable profiling",
+        )
+        and is_ok
+    )
 
     simulation = build_simulation(paths.output / "merged")
-    simulation.profiler.enable()
     controller = simulation.run(
         number_of_jobs=2,
         wait_for_result=True,
@@ -54,6 +59,7 @@ if __name__ == "__main__":
         campaign_dir=paths.output / "campaign",
         poll_interval=0.1,
         timeout=60,
+        profiling=True,
     )
 
     aggregate_path = (
@@ -67,6 +73,13 @@ if __name__ == "__main__":
         utility.print_test(
             aggregate_path.exists(),
             "Split-run-merge writes an aggregate campaign profile",
+        )
+        and is_ok
+    )
+    is_ok = (
+        utility.print_test(
+            simulation.profiler.enabled is False and controller.profiler.enabled,
+            "Multi-job profiling is execution-scoped while the controller retains campaign intent",
         )
         and is_ok
     )
@@ -88,6 +101,34 @@ if __name__ == "__main__":
         utility.print_test(
             any("merge_manager.execute_merge" in path for path in record_paths),
             "Aggregate profile contains merge execution timing",
+        )
+        and is_ok
+    )
+
+    # An explicit false override applies to the campaign and all materialized
+    # child jobs, including campaigns that were originally profiled.
+    gate.jobs_run(
+        controller.campaign_dir,
+        backend="local_sequential",
+        detach=False,
+        profiling=False,
+    )
+    with controller.manifest_path.open(encoding="utf-8") as stream:
+        disabled_manifest = json.load(stream)
+    profiling_disabled_everywhere = not disabled_manifest["profiling"]["enabled"]
+    for job in disabled_manifest["jobs"]:
+        metadata_path = (
+            controller.campaign_dir
+            / job["folder_name"]
+            / job["metadata_filename"]
+        )
+        with metadata_path.open(encoding="utf-8") as stream:
+            metadata = json.load(stream)
+        profiling_disabled_everywhere &= not metadata["profiling"]["enabled"]
+    is_ok = (
+        utility.print_test(
+            profiling_disabled_everywhere,
+            "Explicit profiling=False disables the campaign and all child jobs",
         )
         and is_ok
     )

@@ -11,6 +11,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import wraps
+from inspect import signature
 from pathlib import Path
 
 
@@ -26,16 +27,50 @@ def _join_path(prefix, name):
     return ".".join(part for part in parts if part)
 
 
-def profile_method(name=None):
+def profile_method(name=None, *, enabled_argument=None):
     """Measure an instance method through ``self.profiler`` when enabled."""
 
     def decorate(method):
         measurement_name = name or method.__name__
+        enabled_argument_position = None
+        if enabled_argument is not None:
+            parameter_names = tuple(signature(method).parameters)
+            try:
+                # Exclude ``self`` because it is not part of wrapper ``args``.
+                enabled_argument_position = parameter_names.index(enabled_argument) - 1
+            except ValueError as error:
+                raise ValueError(
+                    f"Unknown profiling control argument '{enabled_argument}' "
+                    f"for {method.__qualname__}()."
+                ) from error
 
         @wraps(method)
         def wrapped(self, *args, **kwargs):
-            with self.profiler.measure(measurement_name):
-                return method(self, *args, **kwargs)
+            requested_enabled = None
+            if enabled_argument is not None:
+                if enabled_argument in kwargs:
+                    requested_enabled = kwargs[enabled_argument]
+                elif enabled_argument_position < len(args):
+                    requested_enabled = args[enabled_argument_position]
+                if requested_enabled is not None and not isinstance(
+                    requested_enabled, bool
+                ):
+                    raise TypeError(
+                        f"{method.__qualname__}() expects {enabled_argument}= to "
+                        f"be True, False, or None; received {requested_enabled!r}."
+                    )
+
+            previous_enabled = self.profiler.enabled
+            if requested_enabled is not None:
+                self.profiler.enabled = requested_enabled
+            try:
+                if self.profiler.enabled is False:
+                    return method(self, *args, **kwargs)
+                with self.profiler.measure(measurement_name):
+                    return method(self, *args, **kwargs)
+            finally:
+                if requested_enabled is not None:
+                    self.profiler.enabled = previous_enabled
 
         return wrapped
 
@@ -112,6 +147,11 @@ class Profiler:
     def disable(self):
         self.enabled = False
         return self
+
+    @property
+    def has_data(self):
+        inventory = self._inventory
+        return bool(inventory.records or inventory.values or inventory.active)
 
     def scope(self, prefix):
         return Profiler(
@@ -301,7 +341,7 @@ class Profilable:
     def attach_profiler(self, profiler, *, scope=None):
         target = profiler.scope(scope) if scope else profiler
         current = getattr(self, "profiler", None)
-        if current is not None and current is not target:
+        if current is not None and current is not target and current.has_data:
             target.merge(current.to_dictionary(require_complete=False))
         self.profiler = target
         return self.profiler

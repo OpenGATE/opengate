@@ -1701,7 +1701,10 @@ class SimulationEngine(GateSingletonFatal, Profilable):
         #    self.simulation.reset_warnings()
 
         # initialization
-        with self.profiler.measure("initialize"):
+        if self.profiler.enabled:
+            with self.profiler.measure("initialize"):
+                self.initialize()
+        else:
             self.initialize()
 
         # things to do after init and before run
@@ -1729,10 +1732,17 @@ class SimulationEngine(GateSingletonFatal, Profilable):
             return output
 
         # go
-        with self.profiler.measure("transport"):
+        if self.profiler.enabled:
+            with self.profiler.measure("transport"):
+                self.start_and_stop()
+        else:
             self.start_and_stop()
 
-        with self.profiler.measure("finalize_outputs"):
+        if self.profiler.enabled:
+            finalize_token = self.profiler.start("finalize_outputs")
+        else:
+            finalize_token = None
+        try:
             # start visualisation if vrml or gdml
             self.visu_engine.start_visualisation()
             if self.user_hook_after_run:
@@ -1752,6 +1762,11 @@ class SimulationEngine(GateSingletonFatal, Profilable):
             # save the output and restore the sys.stdout
             output.log_output = self.simulation.log_output.getvalue()
             sys.stdout = original_stdout
+        except BaseException:
+            self.profiler.stop(finalize_token, outcome="failed")
+            raise
+        else:
+            self.profiler.stop(finalize_token)
 
         return output
 
