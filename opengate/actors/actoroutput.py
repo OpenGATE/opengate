@@ -1895,7 +1895,12 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
         super().clear_data(which="merged", item=item)
 
     def in_place_merge(
-        self, other_output, which_target, which_source, load_mode="live"
+        self,
+        other_output,
+        which_target,
+        which_source,
+        load_mode="live",
+        job_index=None,
     ):
         if type(self) is not type(other_output):
             raise GateMergeError(
@@ -1957,6 +1962,7 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                 source_item,
                 run_id_from=which_source,
                 run_id_to=which_target,
+                job_index=job_index,
             )
         finally:
             other_output.clear_data(which="merged", item=0)
@@ -1985,6 +1991,7 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                 which_target=target_scope,
                 which_source=source_scope,
                 load_mode=load_mode,
+                job_index=contribution.get("job_index"),
             )
 
     def write_data(self, which="all", item="all", **kwargs):

@@ -423,12 +423,29 @@ def run(
 # merge
 
 
-def do_merge(campaign, output, force, command=None, progress=True):
+def do_merge(
+    campaign,
+    output,
+    force,
+    command=None,
+    progress=True,
+    root_output_compression=None,
+    root_chunk_size="64 MB",
+    root_decompression_workers=1,
+):
     """Merge, refused if the output folder contains the merge of another
     campaign or other output files (unless force). progress: a bar while
     reading the jobs, then one line per actor output."""
     try:
-        m = jobs_merge(Path(campaign), to_path=output, execute=False, progress=progress)
+        m = jobs_merge(
+            Path(campaign),
+            to_path=output,
+            execute=False,
+            progress=progress,
+            root_output_compression=root_output_compression,
+            root_chunk_size=root_chunk_size,
+            root_decompression_workers=root_decompression_workers,
+        )
         reason = m.check_merged_output_dir()
         if reason is not None and not force:
             what = "--force" if command is None else f"'{command} --force'"
@@ -482,9 +499,37 @@ def echo_merge(merge_manager):
     help="Merge even if the output folder contains the merge of another "
     "campaign, or output files not from a merge of this campaign.",
 )
+@click.option(
+    "--root-output-compression",
+    default=None,
+    help="Override merged ROOT compression, for example 'lz4:1' or 'none'.",
+)
+@click.option(
+    "--root-chunk-size",
+    default="64 MB",
+    show_default=True,
+    help="Chunk size used while streaming ROOT data.",
+)
+@click.option(
+    "--root-decompression-workers",
+    type=click.IntRange(min=1),
+    default=1,
+    show_default=True,
+    help="Number of worker threads used for ROOT basket decompression.",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Print the full merge summary.")
 @json_option
-def merge(campaign, output, clean, force, verbose, as_json):
+def merge(
+    campaign,
+    output,
+    clean,
+    force,
+    root_output_compression,
+    root_chunk_size,
+    root_decompression_workers,
+    verbose,
+    as_json,
+):
     """Merge the output of the completed jobs of CAMPAIGN.
 
     The merged output goes to the output_dir of the simulation (or -o), with
@@ -498,7 +543,15 @@ def merge(campaign, output, clean, force, verbose, as_json):
             f"Not all jobs completed ({counts_str(status)}):\n"
             f"{failure_report(status)}"
         )
-    m = do_merge(campaign, output, force, progress=not as_json)
+    m = do_merge(
+        campaign,
+        output,
+        force,
+        progress=not as_json,
+        root_output_compression=root_output_compression,
+        root_chunk_size=root_chunk_size,
+        root_decompression_workers=root_decompression_workers,
+    )
     result = merge_summary(m)
     if clean:
         result["clean"] = clean_campaign(campaign)

@@ -33,6 +33,7 @@ import os
 import platform
 import tempfile
 from datetime import datetime
+import time
 from pathlib import Path
 from collections import OrderedDict
 from box import Box
@@ -1148,7 +1149,9 @@ class RootDataItem(DataItem):
             )
         return trees[0]
 
-    def register_merge_source(self, source_item, run_id_from, run_id_to):
+    def register_merge_source(
+        self, source_item, run_id_from, run_id_to, job_index=None
+    ):
         if not self.has_root_meta_data():
             self.set_root_meta_data(
                 {
@@ -1172,13 +1175,16 @@ class RootDataItem(DataItem):
                 merge_source.setdefault("run_id_map", {})[str(int(run_id_from))] = int(
                     run_id_to
                 )
+                if job_index is not None:
+                    merge_source["job_index"] = int(job_index)
                 return
-        merge_sources.append(
-            {
-                "root_output_path": root_output_path,
-                "run_id_map": {str(int(run_id_from)): int(run_id_to)},
-            }
-        )
+        merge_source = {
+            "root_output_path": root_output_path,
+            "run_id_map": {str(int(run_id_from)): int(run_id_to)},
+        }
+        if job_index is not None:
+            merge_source["job_index"] = int(job_index)
+        merge_sources.append(merge_source)
 
     def _read_filtered_branch_data(self, source_tree, branch_names, run_id_from):
         branch_data = {}
@@ -1394,7 +1400,13 @@ class RootDataItem(DataItem):
         if metadata_path is not None:
             self.save_root_metadata(metadata_path)
 
-    def _iter_merge_source_chunks(self, merge_source, step_size="64 MB", library="ak"):
+    def _iter_merge_source_chunks(
+        self,
+        merge_source,
+        step_size="64 MB",
+        library="ak",
+        decompression_executor=None,
+    ):
         import uproot
 
         tree_descriptor = self.get_single_tree_descriptor()
@@ -1406,6 +1418,7 @@ class RootDataItem(DataItem):
             expressions=branch_names,
             library=library,
             step_size=step_size,
+            decompression_executor=decompression_executor,
         ):
             yield OrderedDict(
                 (branch_name, chunk[branch_name]) for branch_name in branch_names
@@ -1482,26 +1495,204 @@ class RootDataItem(DataItem):
         return remapped_payload
 
     def stream_merge_to_writer(
-        self, writer, tree_name=None, step_size="64 MB", event_id_state=None
+        self,
+        writer,
+        tree_name=None,
+        step_size="64 MB",
+        event_id_state=None,
+        timing=None,
+        source_progress_callback=None,
+        decompression_executor=None,
+        chunk_progress_callback=None,
+        release_chunk_references=False,
     ):
         if not self.has_root_meta_data():
             fatal("Cannot stream-merge ROOT output because no ROOT metadata exists.")
+
+        # DIAGNOSTIC ONLY: chunk_progress_callback and
+        # release_chunk_references support the ROOT merge memory study and do
+        # not participate in normal merge behavior.
 
         tree_descriptor = self.get_single_tree_descriptor()
         tree_name = tree_name or tree_descriptor["tree_name"]
         if event_id_state is None:
             event_id_state = {"next_event_id": 0}
 
+        if (
+            timing is None
+            and source_progress_callback is None
+            and chunk_progress_callback is None
+            and release_chunk_references is False
+        ):
+            for merge_source in self.root_meta_data.get("merge_sources", []):
+                for chunk in self._iter_merge_source_chunks(
+                    merge_source,
+                    step_size=step_size,
+                    library="ak",
+                    decompression_executor=decompression_executor,
+                ):
+                    if len(next(iter(chunk.values()), [])) == 0:
+                        continue
+                    remapped_chunk = self._remap_chunk_identifiers(
+                        chunk, merge_source, event_id_state
+                    )
+                    writer.append_chunk(tree_name, remapped_chunk)
+            return
+
         for merge_source in self.root_meta_data.get("merge_sources", []):
-            for chunk in self._iter_merge_source_chunks(
-                merge_source, step_size=step_size, library="ak"
-            ):
-                if len(next(iter(chunk.values()), [])) == 0:
-                    continue
-                remapped_chunk = self._remap_chunk_identifiers(
-                    chunk, merge_source, event_id_state
+            if source_progress_callback is not None:
+                source_progress_callback("started", merge_source, source_entries=None)
+            source_entries = 0
+            chunk_index = 0
+            try:
+                chunks = iter(
+                    self._iter_merge_source_chunks(
+                        merge_source,
+                        step_size=step_size,
+                        library="ak",
+                        decompression_executor=decompression_executor,
+                    )
                 )
-                writer.append_chunk(tree_name, remapped_chunk)
+                while True:
+                    started_at = time.perf_counter() if timing is not None else None
+                    if chunk_progress_callback is not None:
+                        chunk_progress_callback(
+                            "started", "read", merge_source, chunk_index
+                        )
+                    try:
+                        chunk = next(chunks)
+                    except StopIteration:
+                        if chunk_progress_callback is not None:
+                            chunk_progress_callback(
+                                "completed",
+                                "read",
+                                merge_source,
+                                chunk_index,
+                                {"end_of_source": True},
+                            )
+                        break
+                    except BaseException:
+                        if chunk_progress_callback is not None:
+                            chunk_progress_callback(
+                                "failed", "read", merge_source, chunk_index
+                            )
+                        raise
+                    if timing is not None:
+                        timing["read_s"] += time.perf_counter() - started_at
+                    if len(next(iter(chunk.values()), [])) == 0:
+                        if chunk_progress_callback is not None:
+                            chunk_progress_callback(
+                                "completed",
+                                "read",
+                                merge_source,
+                                chunk_index,
+                                {"entries": 0, "payload_bytes": 0},
+                            )
+                        chunk_index += 1
+                        continue
+                    chunk_entries = len(next(iter(chunk.values())))
+                    chunk_payload_bytes = sum(
+                        int(getattr(values, "nbytes", 0))
+                        for values in chunk.values()
+                    )
+                    if chunk_progress_callback is not None:
+                        chunk_progress_callback(
+                            "completed",
+                            "read",
+                            merge_source,
+                            chunk_index,
+                            {
+                                "entries": chunk_entries,
+                                "payload_bytes": chunk_payload_bytes,
+                            },
+                        )
+                    source_entries += chunk_entries
+                    started_at = time.perf_counter() if timing is not None else None
+                    if chunk_progress_callback is not None:
+                        chunk_progress_callback(
+                            "started", "remap", merge_source, chunk_index
+                        )
+                    try:
+                        remapped_chunk = self._remap_chunk_identifiers(
+                            chunk, merge_source, event_id_state
+                        )
+                    except BaseException:
+                        if chunk_progress_callback is not None:
+                            chunk_progress_callback(
+                                "failed", "remap", merge_source, chunk_index
+                            )
+                        raise
+                    remapped_payload_bytes = sum(
+                        int(getattr(values, "nbytes", 0))
+                        for values in remapped_chunk.values()
+                    )
+                    if chunk_progress_callback is not None:
+                        chunk_progress_callback(
+                            "completed",
+                            "remap",
+                            merge_source,
+                            chunk_index,
+                            {"payload_bytes": remapped_payload_bytes},
+                        )
+                    if timing is not None:
+                        timing["remap_s"] += time.perf_counter() - started_at
+                    started_at = time.perf_counter() if timing is not None else None
+                    if chunk_progress_callback is not None:
+                        chunk_progress_callback(
+                            "started", "append", merge_source, chunk_index
+                        )
+                    try:
+                        writer.append_chunk(tree_name, remapped_chunk)
+                    except BaseException:
+                        if chunk_progress_callback is not None:
+                            chunk_progress_callback(
+                                "failed", "append", merge_source, chunk_index
+                            )
+                        raise
+                    if chunk_progress_callback is not None:
+                        target_path = Path(writer.output_path)
+                        chunk_progress_callback(
+                            "completed",
+                            "append",
+                            merge_source,
+                            chunk_index,
+                            {
+                                "target_bytes": (
+                                    target_path.stat().st_size
+                                    if target_path.exists()
+                                    else None
+                                )
+                            },
+                        )
+                    if timing is not None:
+                        timing["append_s"] += time.perf_counter() - started_at
+                        timing["chunks"] += 1
+                        timing["entries"] += chunk_entries
+                    if release_chunk_references:
+                        # DIAGNOSTIC ONLY: compare normal local-variable lifetime
+                        # with explicit release in the ROOT memory profiling study.
+                        if chunk_progress_callback is not None:
+                            chunk_progress_callback(
+                                "started", "release", merge_source, chunk_index
+                            )
+                        del remapped_chunk
+                        del chunk
+                        if chunk_progress_callback is not None:
+                            chunk_progress_callback(
+                                "completed", "release", merge_source, chunk_index
+                            )
+                    chunk_index += 1
+            except BaseException:
+                if source_progress_callback is not None:
+                    source_progress_callback(
+                        "failed", merge_source, source_entries=source_entries
+                    )
+                raise
+            else:
+                if source_progress_callback is not None:
+                    source_progress_callback(
+                        "completed", merge_source, source_entries=source_entries
+                    )
 
     def stream_write_merged_root(
         self,
@@ -1510,6 +1701,11 @@ class RootDataItem(DataItem):
         step_size="64 MB",
         writer=None,
         event_id_state=None,
+        timing=None,
+        source_progress_callback=None,
+        decompression_executor=None,
+        chunk_progress_callback=None,
+        release_chunk_references=False,
     ):
         if not self.has_root_meta_data():
             fatal(
@@ -1535,6 +1731,11 @@ class RootDataItem(DataItem):
                 tree_name=tree_descriptor["tree_name"],
                 step_size=step_size,
                 event_id_state=event_id_state,
+                timing=timing,
+                source_progress_callback=source_progress_callback,
+                decompression_executor=decompression_executor,
+                chunk_progress_callback=chunk_progress_callback,
+                release_chunk_references=release_chunk_references,
             )
         finally:
             if owns_writer:

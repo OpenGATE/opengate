@@ -1,8 +1,58 @@
+import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from pathlib import Path
 
 from .exception import GateMergeError
 from .profiling import Profilable, profile_method
-from .rootio import RootMergeFileWriter
+from .rootio import RootMergeFileWriter, normalize_root_output_compression
+
+
+def _diagnostic_process_memory_snapshot():
+    """Return native process-memory counters for the ROOT merge study.
+
+    DIAGNOSTIC ONLY: this deliberately imports the optional benchmark dependency
+    lazily and must not be used by normal merge execution.
+    """
+
+    try:
+        import psutil
+    except ImportError as error:
+        raise RuntimeError(
+            "Diagnostic ROOT chunk profiling requires psutil."
+        ) from error
+
+    process = psutil.Process()
+    snapshot = {"rss_bytes": process.memory_info().rss}
+    try:
+        snapshot["uss_bytes"] = process.memory_full_info().uss
+    except (AttributeError, psutil.Error, OSError):
+        snapshot["uss_bytes"] = None
+    return snapshot
+
+
+def _diagnostic_prefixed_process_memory_snapshot(prefix):
+    return {
+        f"{prefix}_{name}": value
+        for name, value in _diagnostic_process_memory_snapshot().items()
+    }
+
+
+def _output_contribution_metadata(
+    target_output, job_index, *, coordinator, phase, **metadata
+):
+    """Describe one actor-output contribution using a coordinator-neutral schema."""
+
+    return {
+        "actor_name": target_output.belongs_to_actor.name,
+        "output_name": target_output.name,
+        "output_type": type(target_output).__name__,
+        "job_index": job_index,
+        "coordinator": coordinator,
+        "phase": phase,
+        **metadata,
+    }
 
 
 def _progress_bar(coordinator, total, label):
@@ -135,14 +185,40 @@ class StandardMergeCoordinator(Profilable):
                 source_simulation = self._get_source_simulation(job_index)
                 source_actor = source_simulation.get_actor(actor_name)
                 source_output = source_actor.user_output[output_name]
+                source_paths = sorted(
+                    {
+                        contribution["output_path"]
+                        for contribution in contributions
+                        if contribution.get("output_path") is not None
+                    }
+                )
                 try:
-                    target_output.execute_merge(
-                        source_output,
-                        context=_CoordinatorOutputMergeContext(
-                            contributions,
-                            source_info=self._source_infos.get(job_index),
-                        ),
-                    )
+                    if self.profiler.enabled:
+                        with self.profiler.measure(
+                            "output_contribution",
+                            metadata=_output_contribution_metadata(
+                                target_output,
+                                job_index,
+                                coordinator="standard",
+                                phase="execute",
+                                source_paths=source_paths,
+                            ),
+                        ):
+                            target_output.execute_merge(
+                                source_output,
+                                context=_CoordinatorOutputMergeContext(
+                                    contributions,
+                                    source_info=self._source_infos.get(job_index),
+                                ),
+                            )
+                    else:
+                        target_output.execute_merge(
+                            source_output,
+                            context=_CoordinatorOutputMergeContext(
+                                contributions,
+                                source_info=self._source_infos.get(job_index),
+                            ),
+                        )
                 except Exception as error:
                     if isinstance(error, GateMergeError):
                         raise GateMergeError(
@@ -177,10 +253,36 @@ class StandardMergeCoordinator(Profilable):
 
 
 class RootMergeCoordinator(Profilable):
-    """Grouped ROOT merge executor for split-job merge finalization."""
+    """Grouped ROOT merge executor for split-job merge finalization.
 
-    def __init__(self):
+    ``chunk_size`` controls the amount streamed through memory at once.
+    ``decompression_workers`` enables Uproot's thread-based basket
+    decompression; writing and identifier remapping remain ordered.
+    """
+
+    def __init__(
+        self,
+        *,
+        compression="zlib",
+        chunk_size="64 MB",
+        decompression_workers=1,
+        diagnostic_chunk_profiling=False,
+        diagnostic_release_chunk_references=False,
+    ):
         self.initialize_profiler(name="RootMergeCoordinator")
+        self.compression = normalize_root_output_compression(compression)
+        self.chunk_size = chunk_size
+        self.decompression_workers = int(decompression_workers)
+        if self.decompression_workers < 1:
+            raise ValueError("decompression_workers must be at least one.")
+        # DIAGNOSTIC ONLY: these switches support the multi-job memory study and
+        # intentionally stay disabled in regular ROOT merge execution.
+        self.diagnostic_chunk_profiling = bool(diagnostic_chunk_profiling)
+        self.diagnostic_release_chunk_references = bool(
+            diagnostic_release_chunk_references
+        )
+        if self.diagnostic_release_chunk_references:
+            self.diagnostic_chunk_profiling = True
         self._root_output_groups = {}
         self._source_infos = {}
         self._source_simulations_by_job_index = {}
@@ -275,11 +377,33 @@ class RootMergeCoordinator(Profilable):
 
     @profile_method("finalize")
     def finalize_merge(self):
-        from .rootio import RootMergeFileWriter
+        timing = defaultdict(float) if self.profiler.enabled else None
+        executor_context = (
+            ThreadPoolExecutor(max_workers=self.decompression_workers)
+            if self.decompression_workers > 1
+            else nullcontext(None)
+        )
+        with executor_context as decompression_executor:
+            self._finalize_merge_outputs(decompression_executor, timing)
+        if timing is not None:
+            for name, value in timing.items():
+                self.profiler.set_value(f"streaming.{name}", value)
+            self.profiler.set_value("streaming.compression", self.compression)
+            self.profiler.set_value("streaming.chunk_size", self.chunk_size)
+            self.profiler.set_value(
+                "streaming.decompression_workers", self.decompression_workers
+            )
 
+    def _finalize_merge_outputs(self, decompression_executor, timing):
         for output_path, grouped_outputs in self._root_output_groups.items():
-            writer = RootMergeFileWriter(output_path)
+            writer = RootMergeFileWriter(
+                output_path,
+                compression=self.compression,
+            )
+            started_at = time.perf_counter() if timing is not None else None
             writer.open()
+            if timing is not None:
+                timing["open_s"] += time.perf_counter() - started_at
             try:
                 event_id_states_by_tree = {}
                 active_root_outputs = []
@@ -297,9 +421,14 @@ class RootMergeCoordinator(Profilable):
                     ):
                         continue
                     tree_descriptor = data_item.get_single_tree_descriptor()
+                    started_at = (
+                        time.perf_counter() if timing is not None else None
+                    )
                     writer.create_tree(
                         tree_descriptor["tree_name"], tree_descriptor["branches"]
                     )
+                    if timing is not None:
+                        timing["create_tree_s"] += time.perf_counter() - started_at
                     active_root_outputs.append(
                         (actor_output, data_item, tree_descriptor)
                     )
@@ -308,11 +437,146 @@ class RootMergeCoordinator(Profilable):
                     event_id_state = event_id_states_by_tree.setdefault(
                         tree_descriptor["tree_name"], {"next_event_id": 0}
                     )
+                    source_tokens = {}
+                    chunk_tokens = {}
+
+                    def record_source_progress(
+                        state, merge_source, source_entries=None
+                    ):
+                        if self.profiler.enabled is False:
+                            return
+                        source_path = Path(merge_source["root_output_path"])
+                        source_key = str(source_path.resolve())
+                        metadata = _output_contribution_metadata(
+                            actor_output,
+                            merge_source.get("job_index"),
+                            coordinator="root",
+                            phase="finalize",
+                            source_path=source_key,
+                            source_bytes=(
+                                source_path.stat().st_size
+                                if source_path.exists()
+                                else None
+                            ),
+                            target_path=str(output_path),
+                            tree_name=tree_descriptor["tree_name"],
+                        )
+                        if state == "started":
+                            if self.diagnostic_chunk_profiling:
+                                metadata.update(
+                                    _diagnostic_prefixed_process_memory_snapshot(
+                                        "start"
+                                    )
+                                )
+                            source_tokens[source_key] = self.profiler.start(
+                                "output_contribution", metadata=metadata
+                            )
+                            return
+                        token = source_tokens.pop(source_key, None)
+                        completion_metadata = {"source_entries": source_entries}
+                        if self.diagnostic_chunk_profiling:
+                            completion_metadata.update(
+                                _diagnostic_prefixed_process_memory_snapshot("end")
+                            )
+                        self.profiler.stop(
+                            token,
+                            outcome=("completed" if state == "completed" else "failed"),
+                            metadata=completion_metadata,
+                        )
+
+                    def record_chunk_progress(
+                        state,
+                        phase,
+                        merge_source,
+                        chunk_index,
+                        metadata=None,
+                    ):
+                        # DIAGNOSTIC ONLY: high-cardinality per-chunk records are
+                        # emitted solely for the ROOT memory profiling study.
+                        if (
+                            not self.diagnostic_chunk_profiling
+                            or not self.profiler.enabled
+                        ):
+                            return
+                        source_path = Path(merge_source["root_output_path"])
+                        token_key = (str(source_path.resolve()), chunk_index, phase)
+                        chunk_metadata = {
+                            "job_index": merge_source.get("job_index"),
+                            "chunk_index": chunk_index,
+                            "chunk_phase": phase,
+                            "source_path": str(source_path.resolve()),
+                            **(metadata or {}),
+                        }
+                        if state == "started":
+                            chunk_metadata.update(
+                                _diagnostic_prefixed_process_memory_snapshot(
+                                    "start"
+                                )
+                            )
+                            chunk_tokens[token_key] = self.profiler.start(
+                                f"diagnostic_chunk.{phase}",
+                                metadata=chunk_metadata,
+                            )
+                            return
+                        chunk_metadata.update(_diagnostic_process_memory_snapshot())
+                        token = chunk_tokens.pop(token_key, None)
+                        self.profiler.stop(
+                            token,
+                            outcome=("completed" if state == "completed" else "failed"),
+                            metadata=chunk_metadata,
+                        )
+
                     data_item.stream_write_merged_root(
                         output_path,
                         metadata_path=actor_output.get_metadata_path(),
                         writer=writer,
                         event_id_state=event_id_state,
+                        timing=timing,
+                        source_progress_callback=(
+                            record_source_progress if self.profiler.enabled else None
+                        ),
+                        step_size=self.chunk_size,
+                        decompression_executor=decompression_executor,
+                        chunk_progress_callback=(
+                            record_chunk_progress
+                            if self.diagnostic_chunk_profiling
+                            else None
+                        ),
+                        release_chunk_references=(
+                            self.diagnostic_release_chunk_references
+                        ),
                     )
             finally:
-                writer.close()
+                started_at = time.perf_counter() if timing is not None else None
+                diagnostic_close_token = None
+                if self.diagnostic_chunk_profiling and self.profiler.enabled:
+                    # DIAGNOSTIC ONLY: distinguish writer-owned live memory from
+                    # allocator pages retained after individual chunks.
+                    diagnostic_close_token = self.profiler.start(
+                        "diagnostic_writer.close",
+                        metadata=_diagnostic_prefixed_process_memory_snapshot("start"),
+                    )
+                try:
+                    writer.close()
+                except BaseException:
+                    if diagnostic_close_token is not None:
+                        self.profiler.stop(
+                            diagnostic_close_token,
+                            outcome="failed",
+                            metadata=_diagnostic_prefixed_process_memory_snapshot(
+                                "end"
+                            ),
+                        )
+                    raise
+                else:
+                    if diagnostic_close_token is not None:
+                        self.profiler.stop(
+                            diagnostic_close_token,
+                            metadata=_diagnostic_prefixed_process_memory_snapshot(
+                                "end"
+                            ),
+                        )
+                if timing is not None:
+                    timing["close_s"] += time.perf_counter() - started_at
+                    if output_path.exists():
+                        timing["output_bytes"] += output_path.stat().st_size

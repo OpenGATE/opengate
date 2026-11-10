@@ -55,6 +55,7 @@ from .serialization import (
     _rewrite_path_against_reference,
 )
 from .profiling import Profilable, profile_method
+from .rootio import normalize_root_output_compression
 from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.gansources import GANPairsSource, GANSource
@@ -1895,6 +1896,10 @@ def _setter_hook_output_dir(simulation, value):
     return Path(value)
 
 
+def _setter_hook_root_output_compression(simulation, value):
+    return normalize_root_output_compression(value)
+
+
 class Simulation(GateObject, Profilable):
     """
     Main class that store a simulation.
@@ -1931,6 +1936,7 @@ class Simulation(GateObject, Profilable):
     run_timing_intervals: List[List[float]]
     simulation_dir: Path
     output_dir: Path
+    root_output_compression: dict
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
     init_only: bool
@@ -2139,6 +2145,15 @@ class Simulation(GateObject, Profilable):
                 "If relative, it is resolved relative to the simulation's simulation_dir.",
                 "setter_hook": _setter_hook_output_dir,
                 "required_type": Path,
+            },
+        ),
+        "root_output_compression": (
+            {"algorithm": "zlib", "level": 1},
+            {
+                "doc": "Compression used when writing merged ROOT output. "
+                "Accepted algorithms are zlib, lz4, zstd, lzma, and none; "
+                "a level may be specified as 'algorithm:level'.",
+                "setter_hook": _setter_hook_root_output_compression,
             },
         ),
         "store_json_archive": (

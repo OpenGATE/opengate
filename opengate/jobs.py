@@ -3837,10 +3837,11 @@ def _check_merge_output_dir(output_dir):
 class JobsMergeManager(Profilable):
     """Campaign-level orchestrator for merging split simulation results.
 
-    Phase 1 supports sequential orchestration over leaf job folders only. The
-    manager rehydrates the persisted master simulation as the merge target and
-    uses per-job metadata to align each child-local run index with the original
-    run index of the master simulation.
+    The manager rehydrates the persisted master simulation as the merge target
+    and uses per-job metadata to align each child-local run index with the
+    original run index of the master simulation. ``root_output_compression``
+    overrides the persisted Simulation setting for this merge only, while
+    ``root_chunk_size`` and ``root_decompression_workers`` control execution.
     """
 
     def __init__(
@@ -3850,6 +3851,11 @@ class JobsMergeManager(Profilable):
         target_simulation=None,
         profiling=None,
         profiler=None,
+        root_output_compression=None,
+        root_chunk_size="64 MB",
+        root_decompression_workers=1,
+        root_diagnostic_chunk_profiling=False,
+        root_diagnostic_release_chunk_references=False,
         **options,
     ):
         self.manifest_path, self.manifest = _load_jobs_manifest(split_path)
@@ -3873,6 +3879,18 @@ class JobsMergeManager(Profilable):
             None if output_dir_override is None else Path(output_dir_override).resolve()
         )
         self.options = dict(options)
+        self.root_output_compression_override = root_output_compression
+        self.root_chunk_size = root_chunk_size
+        self.root_decompression_workers = int(root_decompression_workers)
+        if self.root_decompression_workers < 1:
+            raise ValueError("root_decompression_workers must be at least one.")
+        # DIAGNOSTIC ONLY: temporary controls for the ROOT merge memory study.
+        self.root_diagnostic_chunk_profiling = bool(
+            root_diagnostic_chunk_profiling
+        )
+        self.root_diagnostic_release_chunk_references = bool(
+            root_diagnostic_release_chunk_references
+        )
         self.master_simulation = target_simulation
         self._target_simulation_was_provided = target_simulation is not None
         self.leaf_sources = []
@@ -4125,7 +4143,20 @@ class JobsMergeManager(Profilable):
             self.master_simulation,
             source_simulation_loader=self.load_source_simulation,
         )
-        self.root_merge_coordinator = RootMergeCoordinator()
+        root_output_compression = (
+            self.master_simulation.root_output_compression
+            if self.root_output_compression_override is None
+            else self.root_output_compression_override
+        )
+        self.root_merge_coordinator = RootMergeCoordinator(
+            compression=root_output_compression,
+            chunk_size=self.root_chunk_size,
+            decompression_workers=self.root_decompression_workers,
+            diagnostic_chunk_profiling=self.root_diagnostic_chunk_profiling,
+            diagnostic_release_chunk_references=(
+                self.root_diagnostic_release_chunk_references
+            ),
+        )
         self.root_merge_coordinator.attach_profiler(
             self.profiler, scope="root_coordinator"
         )
@@ -4216,6 +4247,13 @@ class JobsMergeManager(Profilable):
             "merge_executed": self.merge_executed,
             "merge_finalized": self.merge_finalized,
             "merge_completed": self.merge_result is not None,
+            "root_output_compression": (
+                None
+                if self.root_merge_coordinator is None
+                else self.root_merge_coordinator.compression
+            ),
+            "root_chunk_size": self.root_chunk_size,
+            "root_decompression_workers": self.root_decompression_workers,
         }
 
     def format_merge_summary(self):
@@ -4245,6 +4283,16 @@ class JobsMergeManager(Profilable):
             lines.append(f"| planning duration: {self.planning_duration:.3f} s")
         if self.execution_duration is not None:
             lines.append(f"| execution duration: {self.execution_duration:.3f} s")
+        root_output_compression = (
+            self.master_simulation.root_output_compression
+            if self.root_output_compression_override is None
+            else self.root_output_compression_override
+        )
+        lines.append(f"| ROOT output compression: {root_output_compression}")
+        lines.append(f"| ROOT chunk size: {self.root_chunk_size}")
+        lines.append(
+            f"| ROOT decompression workers: {self.root_decompression_workers}"
+        )
         lines.append(f"| merge planned: {self.merge_planned}")
         lines.append(f"| merge executed: {self.merge_executed}")
         lines.append(f"| merge finalized: {self.merge_finalized}")
@@ -4361,6 +4409,9 @@ class JobsMergeManager(Profilable):
             "number_of_original_runs": len(
                 self.manifest.get("original_run_timing_intervals", [])
             ),
+            "root_output_compression": self.root_merge_coordinator.compression,
+            "root_chunk_size": self.root_chunk_size,
+            "root_decompression_workers": self.root_decompression_workers,
             "planning_duration": self.planning_duration,
             "execution_duration": self.execution_duration,
             "total_merge_duration": self.total_merge_duration,
@@ -4507,6 +4558,14 @@ def jobs_merge(
     execute=True,
     **options,
 ):
+    """Merge a split campaign and return its :class:`JobsMergeManager`.
+
+    ROOT-specific execution options are passed as
+    ``root_output_compression``, ``root_chunk_size``, and
+    ``root_decompression_workers``. Compression may be an algorithm name, an
+    ``"algorithm:level"`` string, or a serializable specification mapping.
+    """
+
     merge_manager = JobsMergeManager(
         from_path,
         output_dir_override=to_path,
