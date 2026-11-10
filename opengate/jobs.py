@@ -36,6 +36,7 @@ from .profiling import (
     Profilable,
     profile_method,
 )
+from .execution import ExecutionController, MonolithicRunController
 from .serialization import (
     dump_json,
     load_json,
@@ -2019,7 +2020,6 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             sim = create_sim_from_json(simulation_path)
             sim.simulation_dir = job_folder
             sim.output_dir = job_folder / "output"
-            sim.attach_profiler(profiler, scope="simulation")
             # Progress of the job, read by campaign status/progress reporting.
             sim.progress_hook = JobProgressWriter(
                 progress_path,
@@ -2032,8 +2032,14 @@ def _run_job_folder_in_process(job_folder, backend, start_new_process):
             if backend in LOCAL_JOBS_BACKENDS:
                 # Local jobs share the terminal; the controller owns the bar.
                 sim.progress_bar = False
+        controller = MonolithicRunController(
+            simulation=sim,
+            start_new_process=start_new_process,
+            profiling=None,
+            profiler=profiler,
+        )
         with profiler.measure("simulation_run"):
-            sim.run(start_new_process=start_new_process)
+            controller.execute()
         profiler.stop(execution_token)
         _write_profile_fragment(profiler, profile_path)
 
@@ -3149,7 +3155,7 @@ def jobs_run(
     return result
 
 
-class SplitRunMergeController(Profilable):
+class SplitRunMergeController(ExecutionController):
     """Local orchestration handle for split-run-merge workflows.
 
     The controller is an API-layer wrapper around the functional split/run/merge
@@ -3166,15 +3172,14 @@ class SplitRunMergeController(Profilable):
         backend=DEFAULT_LOCAL_JOBS_BACKEND,
         merge=True,
         cleanup=False,
+        profiling=False,
+        profiler=None,
     ):
-        self.initialize_profiler(name="SplitRunMergeController")
-        simulation_profiler = getattr(simulation, "profiler", None)
-        if simulation_profiler is not None and simulation_profiler.enabled:
-            # The controller may outlive Simulation.run() in asynchronous use.
-            # Keep its execution setting independent from the temporary setting
-            # applied to the simulation for that call.
-            self.profiler.enable()
-        self.simulation = simulation
+        super().__init__(
+            simulation,
+            profiling=profiling,
+            profiler=profiler,
+        )
         self._campaign_dir = (
             None if campaign_dir is None else Path(campaign_dir).resolve()
         )
@@ -3183,7 +3188,6 @@ class SplitRunMergeController(Profilable):
         self.merge_after_run = bool(merge)
         self.cleanup_after_run = bool(cleanup)
 
-        self._stage = "initialized"
         self._status = {
             "split_result": None,
             "run_result": None,
@@ -3196,14 +3200,6 @@ class SplitRunMergeController(Profilable):
         self.merge_manager = None
 
     @property
-    def stage(self):
-        return self._stage
-
-    @property
-    def status(self):
-        return self._status
-
-    @property
     def campaign_dir(self):
         return self._campaign_dir
 
@@ -3214,8 +3210,7 @@ class SplitRunMergeController(Profilable):
         return self._campaign_dir / JOBS_MANIFEST_FILENAME
 
     def _set_error(self, error):
-        self._status["error"] = f"{type(error).__name__}: {error}"
-        self._stage = "failed"
+        super()._set_error(error)
 
     def _derive_stage_from_status(self):
         if self._status.get("error") is not None:
@@ -3893,12 +3888,6 @@ class JobsMergeManager(Profilable):
         self.initialize_profiler(name="JobsMergeManager")
         if profiler is not None:
             self.attach_profiler(profiler)
-        elif (
-            target_simulation is not None
-            and getattr(target_simulation, "profiler", None) is not None
-            and target_simulation.profiler.enabled
-        ):
-            self.attach_profiler(target_simulation.profiler, scope="merge")
         if _campaign_profiling_enabled(self.manifest, profiling):
             self.profiler.enable()
         else:

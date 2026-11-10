@@ -31,22 +31,26 @@ if __name__ == "__main__":
     shutil.rmtree(paths.output, ignore_errors=True)
     paths.output.mkdir(parents=True)
 
-    # A monolithic subprocess returns its process-local engine timings to the
-    # profiler attached to the live parent simulation.
+    # A monolithic subprocess returns its process-local engine timings to its
+    # execution controller.
     monolithic_simulation = build_simulation(paths.output / "monolithic")
-    monolithic_simulation.run(start_new_process=True, profiling=True)
+    monolithic_controller = monolithic_simulation.run(
+        start_new_process=True, profiling=True
+    )
     monolithic_paths = {
         record["path"]
-        for record in monolithic_simulation.profiler.to_dictionary()["records"]
+        for record in monolithic_controller.profiler.to_dictionary()["records"]
     }
     is_ok = utility.print_test(
-        "engine.transport" in monolithic_paths,
+        "simulation.engine.transport" in monolithic_paths,
         "Monolithic subprocess transport timing is recovered by the parent",
     )
     is_ok = (
         utility.print_test(
-            monolithic_simulation.profiler.enabled is False,
-            "sim.run(profiling=True) does not persistently enable profiling",
+            isinstance(monolithic_controller, gate.MonolithicRunController)
+            and monolithic_controller.profiler.enabled
+            and not hasattr(monolithic_simulation, "profiler"),
+            "Monolithic profiling belongs to the returned execution controller",
         )
         and is_ok
     )
@@ -78,8 +82,8 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.print_test(
-            simulation.profiler.enabled is False and controller.profiler.enabled,
-            "Multi-job profiling is execution-scoped while the controller retains campaign intent",
+            not hasattr(simulation, "profiler") and controller.profiler.enabled,
+            "Multi-job profiling belongs to the returned execution controller",
         )
         and is_ok
     )

@@ -54,7 +54,6 @@ from .serialization import (
     _find_metaimage_payload_files,
     _rewrite_path_against_reference,
 )
-from .profiling import Profilable, profile_method
 from .rootio import normalize_root_output_compression
 from .sources.base import DebugSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
@@ -1900,7 +1899,7 @@ def _setter_hook_root_output_compression(simulation, value):
     return normalize_root_output_compression(value)
 
 
-class Simulation(GateObject, Profilable):
+class Simulation(GateObject):
     """
     Main class that store a simulation.
     It contains:
@@ -2252,8 +2251,6 @@ class Simulation(GateObject, Profilable):
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
         super().__init__(name=name, **kwargs)
-        self.initialize_profiler(name=name)
-
         # list to store warning messages issued somewhere in the simulation
         self._user_warnings = []
 
@@ -2277,10 +2274,6 @@ class Simulation(GateObject, Profilable):
 
     def __setstate__(self, state):
         super().__setstate__(state)
-        if not hasattr(self, "profiler"):
-            # Circular GateObject graphs may invoke this hook before user_info
-            # is fully restored, so do not access the generated name property.
-            self.initialize_profiler(name="Simulation")
         if hasattr(self, "auxiliary_attributes"):
             for auxiliary_attribute in self.auxiliary_attributes.values():
                 auxiliary_attribute.simulation = self
@@ -2971,7 +2964,7 @@ class Simulation(GateObject, Profilable):
         self.actor_manager.resolve_and_validate_config(context=context)
         self.filter_manager.resolve_and_validate_config(context=context)
 
-    def _run_simulation_engine(self, start_new_process):
+    def _run_simulation_engine(self, start_new_process, profiler):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
         Args:
             start_new_process (bool, optional): A flag passed to the engine
@@ -2979,30 +2972,29 @@ class Simulation(GateObject, Profilable):
         Returns:
             obj:SimulationOutput : The output of the simulation run.
         """
-        if self.profiler.enabled:
-            with self.profiler.measure("resolve_and_validate_config"):
+        if profiler.enabled:
+            with profiler.measure("resolve_and_validate_config"):
                 self.resolve_and_validate_config()
         else:
             self.resolve_and_validate_config()
-        se = SimulationEngine(self)
+        se = SimulationEngine(self, profiler=profiler)
         try:
             se.new_process = start_new_process
             se.init_only = self.init_only
             output = se.run_engine()
         finally:
-            if self.profiler.enabled:
-                with self.profiler.measure("engine.close"):
+            if profiler.enabled:
+                with profiler.measure("engine.close"):
                     se.close()
             else:
                 se.close()
         output.profiler_snapshot = (
-            self.profiler.to_dictionary(require_complete=False)
-            if self.profiler.enabled
+            profiler.to_dictionary(require_complete=False)
+            if profiler.enabled
             else None
         )
         return output
 
-    @profile_method("run", enabled_argument="profiling")
     def run(
         self,
         start_new_process=False,
@@ -3014,8 +3006,15 @@ class Simulation(GateObject, Profilable):
         cleanup_after_run=False,
         poll_interval=1.0,
         timeout=None,
-        profiling=None,
+        profiling=False,
     ):
+        """Execute the simulation and return its execution controller.
+
+        Ordinary executions return a :class:`MonolithicRunController`; managed
+        executions with more than one job return a
+        :class:`SplitRunMergeController`. Profiling is execution-scoped and its
+        results are available through the returned controller.
+        """
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
@@ -3064,6 +3063,7 @@ class Simulation(GateObject, Profilable):
                     backend="local_pool",
                     merge=merge_after_run,
                     cleanup=cleanup_after_run,
+                    profiling=profiling,
                 )
                 split_run_controller.execute(
                     number_of_jobs=number_of_jobs,
@@ -3072,6 +3072,24 @@ class Simulation(GateObject, Profilable):
                     timeout=timeout,
                 )
                 return split_run_controller
+
+        from .execution import MonolithicRunController
+
+        controller = MonolithicRunController(
+            simulation=self,
+            start_new_process=start_new_process,
+            profiling=profiling,
+        )
+        controller.execute()
+        return controller
+
+    def _execute_monolithic(self, start_new_process, profiler):
+        """Execute and recover one ordinary run under an external controller."""
+        if os.name == "nt" and self.multithreaded:
+            fatal(
+                "Error, the multi-thread option is not available for Windows now. "
+                "Run the simulation with one thread."
+            )
 
         if self._is_split_child_simulation_context() is False:
             self.warn_if_multithreaded_activity_sources_present()
@@ -3085,12 +3103,14 @@ class Simulation(GateObject, Profilable):
             """
 
             logger.info("Dispatching simulation to subprocess ...")
-            with self.profiler.measure("subprocess.dispatch_and_wait"):
-                output = dispatch_to_subprocess(self._run_simulation_engine, True)
+            with profiler.measure("subprocess.dispatch_and_wait"):
+                output = dispatch_to_subprocess(
+                    self._run_simulation_engine, True, profiler
+                )
             if output.profiler_snapshot is not None:
-                self.profiler.merge(output.profiler_snapshot)
+                profiler.merge(output.profiler_snapshot)
 
-            with self.profiler.measure("subprocess.recover_output"):
+            with profiler.measure("subprocess.recover_output"):
                 # Recover output from unpickled actors coming from the subprocess queue
                 for actor in self.actor_manager.actors.values():
                     actor.recover_user_output(output.get_actor(actor.name))
@@ -3112,7 +3132,7 @@ class Simulation(GateObject, Profilable):
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
-            output = self._run_simulation_engine(False)
+            output = self._run_simulation_engine(False, profiler)
 
         # replace warnings by the one of the subprocess
         self._user_warnings = output.warnings

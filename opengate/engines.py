@@ -1536,10 +1536,11 @@ class SimulationEngine(GateSingletonFatal, Profilable):
     Main class to execute a Simulation. Can only be created once per process because Geant4 dictates so.
     """
 
-    def __init__(self, simulation, new_process=False):
+    def __init__(self, simulation, new_process=False, profiler=None):
         self.simulation = simulation
         self.initialize_profiler(name="SimulationEngine")
-        self.attach_profiler(simulation.profiler, scope="engine")
+        if profiler is not None:
+            self.attach_profiler(profiler, scope="engine")
         self.verbose_getstate = simulation.verbose_getstate
         self.verbose_close = simulation.verbose_close
 

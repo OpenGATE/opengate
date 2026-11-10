@@ -100,13 +100,13 @@ if __name__ == "__main__":
     with profile_path.open(encoding="utf-8") as stream:
         json.load(stream)
 
-    # Simulation objects expose a disabled profiler without serializing it into
-    # their configuration dictionary.
+    # Profiling belongs to an execution controller, not the simulation
+    # configuration.
     simulation = gate.Simulation()
     is_ok = (
         utility.print_test(
-            simulation.profiler.enabled is False,
-            "Simulation profiler is disabled by default",
+            not hasattr(simulation, "profiler"),
+            "Simulation configuration does not own a profiler",
         )
         and is_ok
     )

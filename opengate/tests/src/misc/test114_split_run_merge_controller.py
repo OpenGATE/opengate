@@ -3,8 +3,8 @@
 
 This test focuses on API consistency rather than physics depth. It checks that:
 
-1. ``sim.run(number_of_jobs=1)`` stays on the normal simulation path and does
-   not return a split-run controller.
+1. ``sim.run(number_of_jobs=1)`` stays on the normal simulation path and
+   returns a ``MonolithicRunController`` rather than a split-run controller.
 2. ``sim.run(number_of_jobs>1, wait_for_result=False)`` returns a
    ``SplitRunMergeController`` after split and submission, and the caller can take
    over manually via ``wait()``, ``merge()``, and ``clean()``.
@@ -125,7 +125,8 @@ if __name__ == "__main__":
 
     # ------------------------------------------------------------------
     # 1) Degenerate managed case: number_of_jobs=1 should map to the normal
-    # subprocess path, not to SplitRunMergeController.
+    # subprocess path, represented by MonolithicRunController rather than
+    # SplitRunMergeController.
     # ------------------------------------------------------------------
     single_job_sim = build_simple_split_run_simulation(
         paths.output / "single_job_output",
@@ -148,8 +149,9 @@ if __name__ == "__main__":
 
     is_ok = (
         utility.print_test(
-            single_job_result is None,
-            "sim.run(number_of_jobs=1) stays on the normal run path and returns no controller",
+            isinstance(single_job_result, gate.MonolithicRunController)
+            and single_job_result.profiler.enabled is False,
+            "sim.run(number_of_jobs=1) stays on the normal run path and returns a monolithic controller",
         )
         and is_ok
     )
