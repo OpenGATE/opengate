@@ -3952,6 +3952,12 @@ class JobsMergeManager(Profilable):
             raise GateMergeError(
                 "Cannot validate a target simulation because no target simulation is set."
             )
+        # Compare resolved configurations. Resolution may add framework-owned
+        # helper actors, such as the DynamicGeometryActor required by dynamic
+        # volumes, which are already present in the resolved campaign master.
+        self.master_simulation.resolve_and_validate_config(
+            context="merge_preparation"
+        )
         reference_simulation = _load_master_simulation_from_manifest(
             self.manifest_path, self.manifest
         )
