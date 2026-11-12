@@ -104,6 +104,13 @@ Multithreading
 
 .. autoproperty:: opengate.Simulation.number_of_threads
 
+Multithreading is available on Linux, macOS and Windows. With several threads,
+each ROOT output (phase space, hits, digitizers, ...) is still written in a
+single file: Geant4 merges the data of all threads into the file created by
+the master thread. See `test144_root_output_several_files_mt
+<https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test144_root_output_several_files_mt.py>`_
+for an example with several ROOT files.
+
 .. warning::
 
    The speedup is not optimal in all situations. First, it takes time to start a new thread, so if the simulation is short, MT does not bring any speedup. Second, if the simulation contains several runs (e.g., for moving volumes), the master thread will wait for all threads to terminate the run before starting another one. This synchronization takes time and impacts the speedup.
