@@ -11,15 +11,18 @@ The example `test015_iec_phantom_voxelize_5` illustrates the different steps wit
 From volumes to voxels
 ----------------------
 
-To voxelize a specified volume, including all its sub-volumes, use the function call `voxelize_geometry`. This function requires as input a simulation object that contains the volumes to be voxelized. The second parameter, `extent`, defines the sub-portion of the scene to be voxelized. By default, it is set to `auto`, in which case GATE automatically determines the sub-portion to include all volumes within the simulation. Alternatively, `extent` can be specified as either a tuple of two 3-vectors indicating the diagonally opposite corners of a box-shaped sub-portion of the geometry to be extracted, or as a volume or list of volumes. In the latter scenario, the box is automatically adjusted to encompass the specified volume(s). The third parameter is `spacing`, which defines the resolution of the output image in millimeters. Additionally, an optional parameter `margin` can be set to add extra padding (in pixels) around the extracted box-shaped sub-portion specified by `extent`.
+To voxelize a specified volume, including all its sub-volumes, use the function call `voxelize_geometry`. This function requires as input a simulation object that contains the volumes to be voxelized. The second parameter, `extent`, defines the sub-portion of the scene to be voxelized. By default, it is set to `auto`, in which case GATE automatically determines the sub-portion to include all volumes within the simulation. Alternatively, `extent` can be specified as either a tuple of two 3-vectors (lists, tuples or numpy arrays) indicating the diagonally opposite corners of a box-shaped sub-portion of the geometry to be extracted, or as a volume or list of volumes. In the latter scenario, the box is automatically adjusted to encompass the specified volume(s). The third parameter is `spacing`, which defines the resolution of the output image in millimeters. Additionally, an optional parameter `margin` can be set to add extra padding (a number of voxels on each side) around the extracted box-shaped sub-portion specified by `extent`; the image stays centred on the extent.
 
 This algorithm creates an empty image corresponding to the defined `extent`, iterates over all the voxels within this image, and checks which volume is located at the center of each voxel within the simulation scene. For each distinct volume encountered, a label (an integer) is assigned to the voxel. The correspondence between each label and its associated volume along with its material is recorded.
 
 
 .. code:: python
 
-    # voxelize
-    volume_labels, image = voxelize_geometry(sim, extent=my_phantom, spacing=(3*mm, 3*mm, 3*mm, margin=1)
+    # voxelize a volume, with one voxel of margin on each side
+    volume_labels, image = voxelize_geometry(sim, extent=my_phantom, spacing=(3*mm, 3*mm, 3*mm), margin=1)
+
+    # or a box given by two opposite corners
+    volume_labels, image = voxelize_geometry(sim, extent=((-10*cm, -10*cm, -5*cm), (10*cm, 10*cm, 5*cm)), spacing=(3*mm, 3*mm, 3*mm))
 
     # write all output
     filenames = write_voxelized_geometry(sim, volume_labels, image, "voxelized_scene.mhd")
