@@ -169,7 +169,10 @@ def compute_voxelized_geometry(sim, extent, spacing, margin):
     ):
         image = create_image_with_volume_extent(extent, spacing, margin)
     elif isinstance(extent, __gate_list_objects__) and all(
-        [isinstance(e, __gate_list_objects__) and len(e) == 3 for e in extent]
+        [
+            isinstance(e, (*__gate_list_objects__, np.ndarray)) and len(e) == 3
+            for e in extent
+        ]
     ):
         image = create_image_with_extent(extent, spacing, margin)
     else:

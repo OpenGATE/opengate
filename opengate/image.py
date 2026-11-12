@@ -291,9 +291,12 @@ def align_image_with_physical_volume(
 
 
 def create_image_with_extent(extent, spacing=(1, 1, 1), margin=0):
+    # extent: two opposite corners (lists, tuples or arrays); margin in voxels
+    lower = np.asarray(extent[0], dtype=float)
+    upper = np.asarray(extent[1], dtype=float)
     # define the new size and spacing
     spacing = np.array(spacing).astype(float)
-    size = np.ceil((extent[1] - extent[0]) / spacing).astype(int) + 2 * margin
+    size = np.ceil((upper - lower) / spacing).astype(int) + 2 * margin
 
     # create image
     image = create_3d_image(size, spacing)
@@ -301,7 +304,7 @@ def create_image_with_extent(extent, spacing=(1, 1, 1), margin=0):
     # The origin is considered to be at the center of first pixel.
     # It is set such that the image is at the exact extent (bounding volume).
     # The volume contour thus goes through the center of the first pixel.
-    origin = extent[0] + spacing / 2.0 - margin
+    origin = lower + spacing / 2.0 - margin * spacing
     image.SetOrigin(origin)
     return image
 
