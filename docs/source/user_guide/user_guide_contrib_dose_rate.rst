@@ -41,8 +41,7 @@ CLI options
                                       score them with TLE (default: from JSON or
                                       on). Off: their energy is deposited along
                                       the electron tracks.
-      -t, --threads INTEGER           Number of threads (default: from JSON or 4,
-                                      1 on Windows).
+      -t, --threads INTEGER           Number of threads (default: from JSON or 4).
       -o, --output_folder PATH        Output folder. Default is auto-named based
                                       on mode (e.g. output_vrt, output_analog,
                                       output_e, output_gamma_tle).
@@ -87,7 +86,7 @@ Parameter descriptions:
   - Single-component modes: ``"e-"``, ``"gamma_tle"``, or ``"gamma"``.
 - **e_factor** (or ``e-factor``): In VRT mode, the reduction factor for electron histories (``activity_e = activity / e_factor``, default: 10.0).
 - **bremsstrahlung**: In ``e-`` and VRT modes, create the bremsstrahlung photons of the electrons and score them with TLE (default: ``true``). With ``false``, their energy is deposited along the electron tracks and never reaches other organs: the dose outside the source is then underestimated, especially for pure beta emitters such as Y-90.
-- **number_of_threads**: Number of worker threads (default: 4 on Linux/macOS, 1 on Windows).
+- **number_of_threads**: Number of worker threads (default: 4).
 - **visu**: Set to ``true`` to generate a VRML visualization for debugging (forces 1 thread).
 
 Radionuclide specification

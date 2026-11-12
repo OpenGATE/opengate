@@ -171,9 +171,6 @@ def get_available_tests(all_file_paths):
         ):
             reason_to_ignore = "Torch not avail"
             eval_this_file = False
-        if os.name == "nt" and "_mt" in filename:
-            eval_this_file = False
-            reason_to_ignore = "mt & nt"
 
         if eval_this_file:
             files_to_run.append(filename)
