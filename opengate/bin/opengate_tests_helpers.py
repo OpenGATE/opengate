@@ -230,7 +230,8 @@ def select_tests_by_explicit_paths(files_to_run, requested_tests, path_tests_src
     """
 
     path_tests_src = Path(path_tests_src).resolve()
-    available = set(files_to_run)
+    # compare with '/' separators (discover_all_tests() uses '\' on Windows)
+    available = {Path(f).as_posix(): f for f in files_to_run}
     selected = []
     missing = []
     outside = []
@@ -256,8 +257,8 @@ def select_tests_by_explicit_paths(files_to_run, requested_tests, path_tests_src
         if normalized not in available:
             missing.append(normalized)
             continue
-        if normalized not in selected:
-            selected.append(normalized)
+        if available[normalized] not in selected:
+            selected.append(available[normalized])
 
     if outside:
         fatal(
