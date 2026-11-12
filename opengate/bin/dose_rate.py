@@ -56,7 +56,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "-t",
     default=None,
     type=int,
-    help="Number of threads (default: from JSON or 4, 1 on Windows).",
+    help="Number of threads (default: from JSON or 4).",
 )
 @click.option(
     "--output_folder",
@@ -145,7 +145,7 @@ def go(
         param.activity_bq = 1e6
     param.activity_bq = int(float(param.activity_bq))
 
-    default_threads = 1 if sys.platform.startswith("win") else 4
+    default_threads = 4
     if threads is not None:
         param.number_of_threads = threads
     elif not hasattr(param, "number_of_threads") or param.number_of_threads is None:

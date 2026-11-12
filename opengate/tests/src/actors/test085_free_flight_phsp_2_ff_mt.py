@@ -3,7 +3,6 @@
 
 import os
 import subprocess
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -180,10 +179,6 @@ def run_test085_free_flight_phsp_3_scatter_mt():
 
 def run_test085_free_flight_phsp_4_analyze_mt():
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
-
-    # not on windows
-    if os.name == "nt":
-        sys.exit(0)
 
     # read root output
     ref_filename = paths.output / "phsp_sphere_ref.root"
