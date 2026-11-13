@@ -118,6 +118,8 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.13" ]]; then
   export CIBW_BUILD="cp313-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
   export CIBW_BUILD="cp314-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.15" ]]; then
+  export CIBW_BUILD="cp315-*"
 fi
 
 python -m cibuildwheel --output-dir dist
