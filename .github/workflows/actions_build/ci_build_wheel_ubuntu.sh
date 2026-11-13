@@ -4,7 +4,8 @@ set -e
 source $GITHUB_WORKSPACE/env_dump.txt
 
 pip install wget colored setuptools
-pip install cibuildwheel==3.4.0
+# cibuildwheel >= 4.2 builds CPython 3.15 (cp315) without the cpython-prerelease opt-in
+pip install cibuildwheel==4.3.5
 
 # Setup the environment for the build
 if [ ${MATRIX_OS} == "ubuntu-24.04-arm" ]; then

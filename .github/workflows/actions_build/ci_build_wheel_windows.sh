@@ -15,7 +15,8 @@ python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delvewheel
 
-pip install cibuildwheel==3.4.0
+# >= 4.2 builds CPython 3.15 (cp315) without the cpython-prerelease opt-in
+pip install cibuildwheel==4.3.5
 
 # For windows 2025, Need to add the certifi CA bundle to avoid SSL errors when downloading dependencies during the build. This is a workaround for cibuildwheel which does not handle this properly on Windows.
 python - << 'EOF'

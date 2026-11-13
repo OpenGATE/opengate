@@ -31,8 +31,8 @@ fi
 
 echo "QT_PLUGIN_DIR is $QT_PLUGIN_DIR"
 pip install wget colored setuptools
-# install cibuildwheel
-pip install cibuildwheel==3.4.0
+# install cibuildwheel (>= 4.2 builds CPython 3.15, i.e. cp315)
+pip install cibuildwheel==4.3.5
 
 # Geant4 and ITK are installed in $HOME/software/install, the only folder cached
 # by the build action (not the sources and build trees)
