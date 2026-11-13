@@ -37,9 +37,7 @@ runs:
   - name: Run tests
     shell: bash {0}
     run: |
-          if [[ ${{ matrix.python-version }} == "3.10" ]]; then
-            export PYTHONFOLDER="cp310-cp310"
-          elif [[ ${{ matrix.python-version }} == "3.11" ]]; then
+          if [[ ${{ matrix.python-version }} == "3.11" ]]; then
             export PYTHONFOLDER="cp311-cp311"
           elif [[ ${{ matrix.python-version }} == "3.12" ]]; then
             export PYTHONFOLDER="cp312-cp312"

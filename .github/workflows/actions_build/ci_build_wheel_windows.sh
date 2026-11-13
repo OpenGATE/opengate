@@ -92,9 +92,7 @@ $HOME/ccache_bin/ccache.exe --zero-stats
 export CMAKE_PREFIX_PATH=$G4_PREFIX:$ITK_PREFIX:${CMAKE_PREFIX_PATH}
 cp VERSION core/VERSION
 cd core
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-  export CIBW_BUILD="cp310-*"
-elif [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
+if [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
   export CIBW_BUILD="cp311-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-*"

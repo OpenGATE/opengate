@@ -16,9 +16,7 @@ else
   export CIBW_ARCHS="x86_64"
   export CIBW_MANYLINUX_X86_64_IMAGE=tbaudier/opengate_core:${GEANT4_VERSION}
 fi
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-  export CIBW_BUILD="cp310-*"
-elif [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
+if [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
   export CIBW_BUILD="cp311-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-*"

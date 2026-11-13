@@ -108,9 +108,7 @@ else
     export CIBW_ARCHS_MACOS="arm64"
     python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()" | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
 fi
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-  export CIBW_BUILD="cp310-*"
-elif [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
+if [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
   export CIBW_BUILD="cp311-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-*"
