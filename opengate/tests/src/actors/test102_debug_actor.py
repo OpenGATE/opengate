@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     # start simulation in another process
     sim.run(start_new_process=True)
-    sim.to_json_file(filename=archive_filename)
+    sim.to_json_file(directory=sim.output_dir, filename=archive_filename)
 
     # print results at the end
     print(stat)

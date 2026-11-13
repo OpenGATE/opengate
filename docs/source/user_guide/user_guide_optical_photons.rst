@@ -141,14 +141,14 @@ This process kills the particle. It requires the Material.xml properties filled 
 
     <material name="LSO">
         <propertiestable>
-            <propertyvector name="ABSLENGTH" unit="m" energyunit="eV">
-                <ve energy="1.84" value="50"/>
-                <ve energy="4.08" value="50"/>
+            <propertyvector name="ABSLENGTH" unit="cm" energyunit="eV">
+                <ve energy="1.84" value="30"/>
+                <ve energy="4.08" value="30"/>
             </propertyvector>
         </propertiestable>
     </material>
 
-In this example the absorption length of LSO (Lutetium Oxyorthosilicate) is set to a constant value of 50 m on the optical photon energy range of 1.84 eV to 4.08 eV.
+In this example the absorption length of LSO (Lutetium Oxyorthosilicate) is set to a constant value of 30 cm on the optical photon energy range of 1.84 eV to 4.08 eV. The value is taken from `Rothfuss et al. 2004 <https://doi.org/10.1109/TNS.2004.829753>`_.
 
 Mie Scattering
 --------------

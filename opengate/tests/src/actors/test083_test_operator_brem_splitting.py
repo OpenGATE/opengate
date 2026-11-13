@@ -38,7 +38,9 @@ def check_process_user_hook(simulation_engine):
 
 
 def validation_test(arr, nb_split, tol=0.04):
-    arr2 = arr[arr["ParticleName"] == "gamma"]
+    # only the split brems photons (weight 1/nb_split): a gamma from another
+    # process (e.g. fluorescence) is not split (weight 1)
+    arr2 = arr[(arr["ParticleName"] == "gamma") & (arr["Weight"] < 1)]
     EventID_arr = arr2["EventID"]
     Weights_arr = arr2["Weight"][EventID_arr == EventID_arr[0]]
     sum_Weights = np.round(np.sum(Weights_arr), 4)

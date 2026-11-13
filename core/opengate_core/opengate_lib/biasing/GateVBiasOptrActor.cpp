@@ -13,7 +13,6 @@ Copyright (C): OpenGATE Collaboration
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
 #include <functional> // Added for recursive lambda
-#include <vnl_matrix.h>
 
 GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
                                        py::dict &user_info, const bool MT_ready)

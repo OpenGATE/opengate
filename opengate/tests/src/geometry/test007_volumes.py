@@ -211,6 +211,9 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
+    # fixed seed (one thread): reproducible statistics, the test failed
+    # randomly (tracks +19.7 % on Windows, PR #1248)
+    sim.random_seed = 123456
     print(f"Volumes types: {sim.volume_manager.dump_volume_types()}")
 
     # main options
