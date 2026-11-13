@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("awkward", "pandas", "uproot")
 from collections import deque
 from dataclasses import dataclass
 from itertools import chain

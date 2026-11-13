@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("tables",)
 import tables
 from anytree import NodeMixin
 from pathlib import Path

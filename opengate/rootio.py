@@ -6,6 +6,8 @@ post-processing, whereas the classes and helpers here are part of GATE's
 internal actor-output persistence and merge machinery.
 """
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("awkward", "uproot")
 from pathlib import Path
 
 import awkward as ak
