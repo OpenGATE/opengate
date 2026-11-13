@@ -2,6 +2,8 @@
 ### For tubs1 set of cylinders each cylinder is assigned with an activity value
 ### The same procedure as in tubs1 with the activity can be followed to all phantom sets
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("scipy.spatial.transform",)
 import opengate as gate
 from scipy.spatial.transform import Rotation as R
 

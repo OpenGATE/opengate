@@ -31,8 +31,8 @@ fi
 
 echo "QT_PLUGIN_DIR is $QT_PLUGIN_DIR"
 pip install wget colored setuptools
-# install cibuildwheel
-pip install cibuildwheel==3.4.0
+# install cibuildwheel (>= 4.2 builds CPython 3.15, i.e. cp315)
+pip install cibuildwheel==4.3.5
 
 # Geant4 and ITK are installed in $HOME/software/install, the only folder cached
 # by the build action (not the sources and build trees)
@@ -108,9 +108,7 @@ else
     export CIBW_ARCHS_MACOS="arm64"
     python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()" | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
 fi
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-  export CIBW_BUILD="cp310-*"
-elif [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
+if [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
   export CIBW_BUILD="cp311-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-*"
@@ -118,6 +116,8 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.13" ]]; then
   export CIBW_BUILD="cp313-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
   export CIBW_BUILD="cp314-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.15" ]]; then
+  export CIBW_BUILD="cp315-*"
 fi
 
 python -m cibuildwheel --output-dir dist

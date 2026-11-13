@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("scipy",)
 import importlib
 import importlib.resources as resources
 import importlib.util
@@ -381,7 +383,8 @@ def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
     resource_package = __package__
-    with resources.open_text(f"{resource_package}.mac", filename) as f:
+    mac_folder = resources.files(f"{resource_package}.mac")
+    with mac_folder.joinpath(filename).open(encoding="utf-8") as f:
         c = f.read()
         commands = []
         for s in c.split("\n"):

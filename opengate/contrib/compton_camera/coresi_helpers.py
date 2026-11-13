@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("uproot",)
 import yaml
 import uproot
 from pathlib import Path

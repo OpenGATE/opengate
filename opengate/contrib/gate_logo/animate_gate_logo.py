@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = (
+    "itk",
+    "matplotlib.animation",
+    "matplotlib.pyplot",
+    "scipy.spatial.transform",
+    "scipy.stats",
+)
 from scipy.spatial.transform import Rotation
 import opengate as gate
 import itk

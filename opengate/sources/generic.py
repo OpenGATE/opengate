@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("scipy.spatial.transform",)
 import numpy as np
 import opengate_core as g4
 from box import Box

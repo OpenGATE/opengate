@@ -15,7 +15,8 @@ python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delvewheel
 
-pip install cibuildwheel==3.4.0
+# >= 4.2 builds CPython 3.15 (cp315) without the cpython-prerelease opt-in
+pip install cibuildwheel==4.3.5
 
 # For windows 2025, Need to add the certifi CA bundle to avoid SSL errors when downloading dependencies during the build. This is a workaround for cibuildwheel which does not handle this properly on Windows.
 python - << 'EOF'
@@ -91,9 +92,7 @@ $HOME/ccache_bin/ccache.exe --zero-stats
 export CMAKE_PREFIX_PATH=$G4_PREFIX:$ITK_PREFIX:${CMAKE_PREFIX_PATH}
 cp VERSION core/VERSION
 cd core
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-  export CIBW_BUILD="cp310-*"
-elif [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
+if [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
   export CIBW_BUILD="cp311-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-*"
@@ -101,6 +100,8 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.13" ]]; then
   export CIBW_BUILD="cp313-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
   export CIBW_BUILD="cp314-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.15" ]]; then
+  export CIBW_BUILD="cp315-*"
 fi
 echo ${MATRIX_OS}
 if [[ ${MATRIX_OS} == "windows-11-arm" ]]; then

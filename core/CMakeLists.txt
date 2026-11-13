@@ -17,6 +17,19 @@ set(CMAKE_CXX_STANDARD 17)
 # Enable Position Independent Code for all targets (-fPIC)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Compiler cache: a rebuild for another Python version (or after a small change)
+# then reuses most of the objects. The CI build scripts already export
+# CMAKE_CXX_COMPILER_LAUNCHER (ccache in the container / on the runner), so this
+# is only a fallback for local builds where ccache is installed.
+IF (NOT CMAKE_CXX_COMPILER_LAUNCHER)
+    find_program(CCACHE_PROGRAM ccache)
+    IF (CCACHE_PROGRAM)
+        message(STATUS "OPENGATE - compiling with ccache: ${CCACHE_PROGRAM}")
+        set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    ENDIF ()
+ENDIF ()
+
 # Need Geant4
 find_package(Geant4 REQUIRED OPTIONAL_COMPONENTS qt)
 include(${Geant4_USE_FILE})
