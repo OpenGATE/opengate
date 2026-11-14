@@ -799,8 +799,11 @@ class RepeatParametrisedVolume(VolumeBase):
         super().__init__(*args, **kwargs)
         if repeated_volume is not None:
             self.user_info["repeated_volume_name"] = repeated_volume.name
-            if repeated_volume.build_physical_volume is True:
-                repeated_volume.build_physical_volume = False
+        # The physical volume of the repeated volume is not built (the
+        # repetition replaces it), but only once this volume is part of the
+        # simulation: see resolve_references, called by the volume manager.
+        # (A repeater that is created but never added must not remove the
+        # repeated volume from the geometry, #857.)
         self.g4_repeat_parametrisation = None
 
     def close(self):
@@ -808,13 +811,12 @@ class RepeatParametrisedVolume(VolumeBase):
         super().close()
 
     def resolve_references(self):
-        if self.repeated_volume is not None:
-            return
-        if self.user_info["repeated_volume_name"] is None:
-            return
-        self.repeated_volume = self.volume_manager.volumes[
-            self.user_info["repeated_volume_name"]
-        ]
+        if self.repeated_volume is None:
+            name = self.user_info["repeated_volume_name"]
+            if name is None or name not in self.volume_manager.volumes:
+                # not known yet: resolved at the next volume tree update
+                return
+            self.repeated_volume = self.volume_manager.volumes[name]
         self.repeated_volume.build_physical_volume = False
 
     def release_g4_references(self):
