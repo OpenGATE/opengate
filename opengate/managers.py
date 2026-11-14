@@ -1757,6 +1757,10 @@ class VolumeManager(GateObject):
             self.update_volume_tree()
 
     def update_volume_tree(self):
+        # volumes that refer to other volumes (RepeatParametrisedVolume)
+        for v in self.volumes.values():
+            if hasattr(v, "resolve_references"):
+                v.resolve_references()
         for v in self.volumes.values():
             if (
                 v not in self.parallel_world_volumes.values()
