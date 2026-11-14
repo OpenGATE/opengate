@@ -11,6 +11,7 @@
 
 // Mutex that will be used by thread to write in the values to the image
 G4Mutex SetProdStopPixelMutex = G4MUTEX_INITIALIZER;
+G4Mutex SetProdStopNbEventMutex = G4MUTEX_INITIALIZER;
 
 GateProductionAndStoppingActor::GateProductionAndStoppingActor(
     py::dict &user_info)
@@ -46,12 +47,20 @@ void GateProductionAndStoppingActor::InitializeCpp() {
 }
 
 void GateProductionAndStoppingActor::BeginOfRunActionMasterThread(int run_id) {
+  // Reset the number of events (per run)
+  fNbOfEvent = 0;
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<ImageType>(cpp_value_image, fPhysicalVolumeName,
                                  fInitialTranslation);
   // compute volume of a dose voxel
   auto sp = cpp_value_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
+}
+
+void GateProductionAndStoppingActor::BeginOfEventAction(
+    const G4Event * /*event*/) {
+  G4AutoLock mutex(&SetProdStopNbEventMutex);
+  fNbOfEvent++;
 }
 
 void GateProductionAndStoppingActor::SteppingAction(G4Step *step) {

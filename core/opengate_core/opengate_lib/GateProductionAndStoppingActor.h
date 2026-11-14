@@ -32,6 +32,9 @@ public:
 
   void BeginOfRunActionMasterThread(int run_id) override;
 
+  // Called every time an Event starts (all threads): count the events
+  void BeginOfEventAction(const G4Event *event) override;
+
   // Called every time a Track ends
   void PostUserTrackingAction(const G4Track *track) override;
   void AddValueToImage(const G4Step *step);
@@ -54,6 +57,9 @@ public:
   std::string fMethod;
   bool fStopImageEnabled;
   bool fProductionImageEnabled;
+
+  // Number of events in the current run (all threads)
+  int fNbOfEvent = 0;
 
 private:
   double fVoxelVolume;
