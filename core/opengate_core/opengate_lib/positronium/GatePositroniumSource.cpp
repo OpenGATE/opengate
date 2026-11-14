@@ -1,0 +1,75 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#include "GatePositroniumSource.h"
+#include "GateHelpers.h"
+#include "GateHelpersDict.h"
+#include <G4UnitsTable.hh>
+
+#include "GatePositroniumDecayModel.h"
+#include "GatePositroniumDecayModelParams.h"
+
+GatePositroniumSource::GatePositroniumSource() : GateGenericSource() {}
+
+GatePositroniumSource::~GatePositroniumSource() = default;
+
+void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
+  GateGenericSource::InitializeUserInfo(user_info);
+
+  auto channel_from_fractions = py::dict(user_info["channels_from_fractions"]);
+
+  auto positronium_fractions =
+      DictGetVecDouble(channel_from_fractions, "fractions");
+  auto decay_kinds = DictGetVecStr(channel_from_fractions, "decay_kinds");
+  auto positronium_lifetimes =
+      DictGetVecDouble(user_info, "positronium_lifetimes");
+  auto prompt_photon_probabilities =
+      DictGetVecDouble(user_info, "prompt_photon_probabilities");
+  auto prompt_photon_energies =
+      DictGetVecDouble(user_info, "prompt_photon_energies");
+  auto mean_positron_range = DictGetVecDouble(user_info, "mean_positron_range");
+  auto electron_capture_probabilities =
+      DictGetVecDouble(user_info, "electron_capture_probabilities");
+
+  PositroniumDecayModelParams params;
+  params.fFractions = positronium_fractions;
+  params.fLifetimes = positronium_lifetimes;
+  params.fDecayKind = ParsePositroniumDecayKind(decay_kinds);
+  params.fPromptGammaProbabilities = prompt_photon_probabilities;
+  params.fPromptGammaEnergy = prompt_photon_energies;
+  params.fMeanPositronRange = mean_positron_range;
+  params.fElectronCaptureProbabilities = electron_capture_probabilities;
+
+  pModel = std::make_unique<GatePositroniumDecayModel>(params);
+}
+
+std::vector<PositroniumDecayKind>
+GatePositroniumSource::ParsePositroniumDecayKind(
+    const std::vector<std::string> &decayKindsStr) {
+  std::vector<PositroniumDecayKind> decayKinds;
+  for (auto const &decayKindStr : decayKindsStr) {
+    if (decayKindStr == "k2Gamma") {
+      decayKinds.push_back(PositroniumDecayKind::k2Gamma);
+    } else if (decayKindStr == "k3Gamma") {
+      decayKinds.push_back(PositroniumDecayKind::k3Gamma);
+    } else {
+      Fatal("GatePositroniumSource: invalid decay kind '" + decayKindStr + '"');
+    }
+  }
+  return decayKinds;
+}
+
+void GatePositroniumSource::GeneratePrimaries(G4Event *event,
+                                              double current_simulation_time) {
+  fSPS->SetParticleTime(current_simulation_time);
+  auto vertex = fSPS->GetPosDist()->VGenerateOne();
+  auto number_of_vertices =
+      pModel->GeneratePrimaryVertices(event, current_simulation_time, vertex);
+  fNumberOfGeneratedEvents++;
+  fTotalGeneratedEvents++;
+  fRunGeneratedEvents++;
+}
