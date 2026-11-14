@@ -72,6 +72,25 @@ If you want to enable radioactive decay regardless of the list, use:
 
 .. important:: This will **not** turn off radioactive decay if the physics list actually includes it. Think of the option as a light switch that turns on the light, but does not turn it off.
 
+**Very long half-lives.** Since Geant4 11.2, the radioactive decay of the ions
+whose lifetime is above a threshold (``thresholdForVeryLongDecayTime``) is
+ignored: these ions are considered stable. With the default threshold of the
+Geant4 version currently used by GATE (11.4), a Cs137 source (half-life 30 years)
+does not decay at all. To simulate such ions, increase the threshold, after the
+initialization:
+
+.. code-block:: python
+
+    sim.g4_commands_after_init.append(
+        "/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year"
+    )
+
+Be careful: this also enables the decay of the (almost) stable descendants of a
+decay chain (e.g. Bi209, half-life 1.9e19 years, in the Ac225 chain), which may add
+energy that is not expected in the time range of interest. See the
+`Geant4 documentation <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#note-on-the-time-threshold-for-radioactive-decay-of-ions>`_
+and ``test147``.
+
 
 
 Electromagnetic Parameters
