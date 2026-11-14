@@ -12,6 +12,7 @@ of generated events:
 - number_of_primaries.
 """
 
+import os
 import numpy as np
 import opengate as gate
 from opengate.tests import utility
@@ -96,7 +97,8 @@ if __name__ == "__main__":
     a[(t > 2.9) & (t < 3)] = 0
     analytic = np.sum((a[1:] + a[:-1]) / 2 * np.diff(t))
     is_ok = check("tac", tac, intervals, analytic) and is_ok
-    is_ok = check("tac_mt", tac, intervals, analytic, threads=2) and is_ok
+    if os.name != "nt":  # no multi-thread on Windows
+        is_ok = check("tac_mt", tac, intervals, analytic, threads=2) and is_ok
 
     # TAC with a spectrum: the activity is scaled by the sum of the weights
     # (total yield 0.4), like without TAC
