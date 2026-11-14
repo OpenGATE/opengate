@@ -106,7 +106,8 @@ void GateGenericSource::UpdateActivity(const double time) {
 }
 
 void GateGenericSource::UpdateActivityWithTAC(const double time) {
-  fActivity = GetTACActivity(time);
+  // the TAC is scaled like the activity (sum of the spectrum weights)
+  fActivity = GetTACActivity(time) * fActivityScale;
 }
 
 double GateGenericSource::GetTACActivity(const double time) const {
@@ -154,7 +155,7 @@ unsigned long GateGenericSource::GetExpectedNumberOfEvents(
       continue;
     n += (b - a) * (GetTACActivity(a) + GetTACActivity(b)) / 2.0;
   }
-  return (unsigned long)std::round(n);
+  return (unsigned long)std::round(n * fActivityScale);
 }
 
 double
@@ -558,6 +559,7 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     // Modify the activity according to the total sum of weights
     fActivity = fActivity * total;
     fInitialActivity = fActivity;
+    fActivityScale = total;
   }
 
   if (ene_type == "spectrum_discrete") { // TODO rename
@@ -590,6 +592,7 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     // normalize the weights
     fActivity *= weightsSum;
     fInitialActivity = fActivity;
+    fActivityScale = weightsSum;
 
     ene->SetEnergyDisType(ene_type);
     ene->SetEmin(energies.front());
@@ -648,6 +651,7 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     // normalize the weights
     fActivity *= weightsSum;
     fInitialActivity = fActivity;
+    fActivityScale = weightsSum;
 
     std::string interpolation_str;
     if (interpolation != "None" && interpolation != "none")

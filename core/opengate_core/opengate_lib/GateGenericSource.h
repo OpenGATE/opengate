@@ -78,6 +78,8 @@ protected:
   std::vector<double> fTAC_Activities;
   void UpdateActivityWithTAC(double time);
   double GetTACActivity(double time) const;
+  // activity scale = sum of the spectrum weights (yield), also for the TAC
+  double fActivityScale = 1.0;
 
   // generic ion is controlled separately
   // (maybe initialized once Run is started)

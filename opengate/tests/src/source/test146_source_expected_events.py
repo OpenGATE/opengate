@@ -7,7 +7,8 @@ It is compared to the analytical integral of the activity and to the number
 of generated events:
 - constant activity, source start_time/end_time inside the run;
 - decaying activity (half_life), source starting after the run start;
-- TAC (time activity curve), with a hole between two runs, mono and multi-thread;
+- TAC (time activity curve), with a hole between two runs, mono and multi-thread,
+  and with a spectrum (the activity is scaled by the total yield);
 - number_of_primaries.
 """
 
@@ -19,6 +20,7 @@ m = gate.g4_units.m
 sec = gate.g4_units.s
 Bq = gate.g4_units.Bq
 MeV = gate.g4_units.MeV
+keV = gate.g4_units.keV
 
 
 def run(name, set_source, intervals, threads=1):
@@ -95,6 +97,17 @@ if __name__ == "__main__":
     analytic = np.sum((a[1:] + a[:-1]) / 2 * np.diff(t))
     is_ok = check("tac", tac, intervals, analytic) and is_ok
     is_ok = check("tac_mt", tac, intervals, analytic, threads=2) and is_ok
+
+    # TAC with a spectrum: the activity is scaled by the sum of the weights
+    # (total yield 0.4), like without TAC
+    def tac_yield(s):
+        tac(s)
+        s.particle = "gamma"
+        s.energy.type = "spectrum_discrete"
+        s.energy.spectrum_energies = [100 * keV, 200 * keV]
+        s.energy.spectrum_weights = [0.3, 0.1]
+
+    is_ok = check("tac_yield", tac_yield, intervals, analytic * 0.4) and is_ok
 
     # number of primaries
     def primaries(s):
