@@ -37,7 +37,7 @@
 
 /* There will be one SourceManager per thread */
 
-bool GateSourceManager::fRunTerminationFlag = false;
+std::atomic<bool> GateSourceManager::fRunTerminationFlag{false};
 std::atomic<std::uint64_t> GateSourceManager::fGeneratedPrimariesThisRun{0};
 std::atomic<bool> GateSourceManager::fPrimaryLimitWarningIssued{false};
 std::uint64_t GateSourceManager::fMaxPrimariesPerRun = INT32_MAX;
@@ -63,7 +63,6 @@ GateSourceManager::GateSourceManager() {
   fExpectedNumberOfEvents = 0;
   fProgressBarStep = 1000;
   fCurrentEvent = 0;
-  fRunTerminationFlag = false;
 }
 
 GateSourceManager::~GateSourceManager() {
@@ -231,9 +230,7 @@ G4String GateSourceManager::GetActiveSourceName() {
 }
 
 void GateSourceManager::SetActiveSourcebyName(G4String sourceName) {
-  auto &l = fThreadLocalData.Get();
-  auto *source = FindSourceByName(sourceName);
-  l.fNextActiveSource = source;
+  SetActiveSource(FindSourceByName(sourceName));
 }
 
 void GateSourceManager::StartMasterThread() {
@@ -256,6 +253,7 @@ void GateSourceManager::StartMasterThread() {
   auto &l = fThreadLocalData.Get();
   l.fStartNewRun = true;
   for (size_t run_id = 0; run_id < fSimulationTimes.size(); run_id++) {
+    fRunTerminationFlag = false;
     ResetPrimaryCounterForRun();
     // Start Begin Of Run for MasterThread
     // (both for multi-thread and mono-thread app)
@@ -367,18 +365,16 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
   // init the next time as the end of the interval by default
   l.fNextSimulationTime = l.fCurrentTimeInterval.second;
-  // reset abort run flag to false
-  fRunTerminationFlag = false;
   // Prepare the run for all sources
   for (auto *source : fSources) {
     source->PrepareNextRun();
   }
   // Check next time
   PrepareNextSource();
+  l.fStartNewRun = false;
   if (l.fNextActiveSource == nullptr) {
     return;
   }
-  l.fStartNewRun = false;
   Log(LogLevel_RUN, fVerboseLevel, "Starting run {} ({})\n", run_id,
       G4Threading::IsMasterThread() == TRUE
           ? "master"
@@ -410,7 +406,21 @@ void GateSourceManager::PrepareNextSource() const {
 
 void GateSourceManager::CheckForNextRun() const {
   auto &l = fThreadLocalData.Get();
-  l.fStartNewRun = false;
+  if (l.fStartNewRun)
+    return; // completion has already been handled for this run
+  if (l.fDeferRunCompletion) {
+    for (const auto *source : fSources) {
+      if (!source->HasPendingEvents())
+        continue;
+      if (fRunTerminationFlag)
+        Fatal("Run stopped with pending replay events: history incomplete "
+              "(stop criterion or primary limit). No valid completed result "
+              "can be reported.");
+      if (l.fNextActiveSource == nullptr)
+        Fatal(
+            "Pending replay events have no selected source at run completion");
+    }
+  }
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
@@ -468,6 +478,8 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
   // update the current time
   l.fCurrentSimulationTime = l.fNextSimulationTime;
 
+  l.fGeneratingSource = nullptr;
+
   // Sometimes (rarely), there is no active source,
   // so we create a fake geantino particle
   // It may happen when the number of primaries is fixed
@@ -485,6 +497,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     if (TryReservePrimarySlot()) {
       // shoot particle
       const int first_vertex = event->GetNumberOfPrimaryVertex();
+      l.fGeneratingSource = l.fNextActiveSource;
       l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
       CheckPrimaryVerticesInsideWorld(event, first_vertex, l.fNextActiveSource);
       // log (after particle creation)
@@ -528,8 +541,9 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
   // prepare the next source
   PrepareNextSource();
 
-  // check if this is not the end of the run
-  CheckForNextRun();
+  // LV must publish replay work before deciding whether the run is finished.
+  if (!l.fDeferRunCompletion)
+    CheckForNextRun();
 
   // progress bar
   if (fProgressBarFlag) {

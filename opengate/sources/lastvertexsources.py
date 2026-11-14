@@ -25,16 +25,20 @@ class LastVertexSource(SourceBase):
     current Python/C++ architecture, but it is operationally driven by
     ``LastVertexInteractionSplittingActor`` rather than by the usual source
     sampling parameters alone.
+
+    ``total_replayed_events`` is gathered from the native sources after transport.
+    It counts replay primaries actually generated, excluding fallback geantinos,
+    and accumulates across runs independently of the replay queue cursor.
     """
 
     def __init__(self, *args, **kwargs):
         SourceBase.__init__(self, *args, **kwargs)
+        self.total_replayed_events = 0
 
     def create_g4_source(self):
         return g4.GateLastVertexSource()
 
     def resolve_and_validate_config(self, run_timing_intervals, context=None):
-        super().resolve_and_validate_config(run_timing_intervals, context=context)
         # LastVertexSource participates in the generic source resolution
         # cascade, so inherited base-source user_info such as
         # number_of_primaries/activity must stay internally consistent.
@@ -45,11 +49,19 @@ class LastVertexSource(SourceBase):
             len(run_timing_intervals), dtype=int
         )
         self.user_info.activity = 0
+        # Normalize actor-driven placeholders before the generic validation:
+        # the inherited scalar default otherwise fails for multi-run plans.
+        super().resolve_and_validate_config(run_timing_intervals, context=context)
 
     def initialize_g4_source(self, g4_source, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
         runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
         g4_source.InitializeUserInfo(runtime_user_info)
+
+    def gather_outputs(self, thread_sources):
+        self.total_replayed_events = sum(
+            source.GetTotalReplayedEvents() for source in thread_sources
+        )
 
 
 process_cls(LastVertexSource)

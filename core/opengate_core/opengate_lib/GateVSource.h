@@ -29,6 +29,9 @@ public:
   // (see, for example, GateGenericSource)
   virtual void CleanWorkerThread() {}
 
+  // Work published by an event that must finish before normal run completion.
+  virtual bool HasPendingEvents() const { return false; }
+
   // Called at initialisation to set the source properties from a single dict
   virtual void InitializeUserInfo(py::dict &user_info);
 
