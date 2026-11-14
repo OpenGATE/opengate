@@ -10,6 +10,8 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
 #include <G4RandomTools.hh>
+#include <algorithm>
+#include <cmath>
 
 GateVSource::GateVSource() {
   fName = "";
@@ -125,17 +127,20 @@ GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &time_intervals) {
 
 unsigned long
 GateVSource::GetExpectedNumberOfEvents(const TimeInterval &time_interval) {
-  long n = 0;
-  const auto t0 = time_interval.first / CLHEP::s;
-  const auto t1 = time_interval.second / CLHEP::s;
-  const auto a = fInitialActivity / CLHEP::Bq;
-  const auto l = fDecayConstant;
-  const auto duration = t1 - t0;
+  // Only the part of the interval during which the source is active
+  const auto t0 = std::max(time_interval.first, fStartTime);
+  const auto t1 = std::min(time_interval.second, fEndTime);
+  if (t1 <= t0)
+    return 0;
+  // Integral of the activity (Geant4 units: activity x time = number)
+  double n;
   if (fHalfLife <= 0)
-    n = (long)round((duration)*a);
+    n = fInitialActivity * (t1 - t0);
   else {
-    n = (long)round((fInitialActivity / l) * (exp(-l * time_interval.first) -
-                                              exp(-l * time_interval.second)));
+    // the decay starts at fStartTime, like in UpdateActivity
+    const auto l = fDecayConstant;
+    n = (fInitialActivity / l) *
+        (exp(-l * (t0 - fStartTime)) - exp(-l * (t1 - fStartTime)));
   }
-  return n;
+  return (unsigned long)std::round(n);
 }
