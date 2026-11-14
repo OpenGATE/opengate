@@ -517,14 +517,6 @@ class Region(GateObject):
         super().__init__(name=self.name, simulation=self.simulation)
         self.root_logical_volumes = {}
 
-    # this version will work when Volume inherits from GateObject
-    # def associate_volume(self, volume):
-    #     volume_name = volume.name
-    #     if volume_name not in self.root_logical_volumes.keys():
-    #         self.root_logical_volumes[volume_name] = volume
-    #     else:
-    #         fatal(f'This volume {volume_name} is already associated with this region.')
-
     def close(self):
         self.release_g4_references()
         self.physics_engine = None
@@ -572,6 +564,9 @@ class Region(GateObject):
 
         if volume_name in self.root_logical_volumes:
             fatal(f"This volume {volume_name} is already associated with this region.")
+        # Only the name is stored here: the volume may not exist yet (or the
+        # region may be deserialized before the volumes). The volume object is
+        # resolved later, in resolve_root_logical_volumes() (config phase).
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
 
