@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateKillAccordingParticleNameActor_h
-#define GateKillAccordingParticleNameActor_h
+#ifndef GateKillAccordingParticleNameLVActor_h
+#define GateKillAccordingParticleNameLVActor_h
 
 #include "GateVActor.h"
 #include <G4Cache.hh>
@@ -14,24 +14,27 @@
 
 namespace py = pybind11;
 
-class GateKillAccordingParticleNameActor : public GateVActor {
+class GateKillAccordingParticleNameLVActor : public GateVActor {
 
 public:
-  // Constructor
-  GateKillAccordingParticleNameActor(py::dict &user_info);
+  GateKillAccordingParticleNameLVActor(py::dict &user_info);
   struct threadLocalT {
     G4bool fIsAParticleToKill = false;
+    long fNbOfKilledParticles = 0;
   };
   G4Cache<threadLocalT> fThreadLocalData;
   std::vector<std::string> fParticlesNameToKill;
   std::vector<G4String> fListOfVolumeAncestor;
 
-  // Main function called every step in attached volume
+  void StartSimulationAction() override;
+  void EndOfSimulationWorkerAction(const G4Run *) override;
+
+  // Selection state is local to each worker; configuration is read-only.
   void PreUserTrackingAction(const G4Track *) override;
   void SteppingAction(G4Step *) override;
   void InitializeUserInfo(py::dict &user_info) override;
 
-  inline long GetNumberOfKilledParticles() { return fNbOfKilledParticles; }
+  long GetNumberOfKilledParticles() const { return fNbOfKilledParticles; }
 
 private:
   long fNbOfKilledParticles = 0;

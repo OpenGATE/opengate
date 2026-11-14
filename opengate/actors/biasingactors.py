@@ -499,11 +499,15 @@ class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.number_of_replayed_events = 0
+        self.number_of_actor_classified_replayed_events = 0
         self.number_of_events = 0
 
     def get_processed_output(self):
         d = {}
         d["replayed_particles"] = self.number_of_replayed_events
+        d["actor_classified_replay_events"] = (
+            self.number_of_actor_classified_replayed_events
+        )
         d["nb_events"] = self.number_of_events
         return d
 
@@ -579,7 +583,23 @@ class LastVertexInteractionSplittingActor(
             }
         )
 
+    def _get_replay_source(self):
+        from ..sources.lastvertexsources import LastVertexSource
+
+        sources = [
+            source
+            for source in self.simulation.source_manager.sources.values()
+            if isinstance(source, LastVertexSource)
+        ]
+        if len(sources) != 1:
+            fatal(
+                "LastVertexSplitting requires exactly one LastVertexSource; "
+                f"found {len(sources)}."
+            )
+        return sources[0]
+
     def initialize(self):
+        self._get_replay_source()
         ActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -597,10 +617,16 @@ class LastVertexInteractionSplittingActor(
 
     def EndSimulationAction(self):
         self.user_output.last_vertex_output.number_of_events = self.GetNumberOfEvents()
-        self.user_output.last_vertex_output.number_of_replayed_events = (
+        self.user_output.last_vertex_output.number_of_actor_classified_replayed_events = (
             self.GetNumberOfReplayedEvents()
         )
-        print("Number of replayed Events: ", self.GetNumberOfReplayedEvents())
+        # Source outputs are gathered before actor EndSimulationAction hooks.
+        source = self._get_replay_source()
+        self.user_output.last_vertex_output.number_of_replayed_events = (
+            source.total_replayed_events
+        )
+        print("Number of replayed Events: ", source.total_replayed_events)
+        print("Actor-classified replay Events: ", self.GetNumberOfReplayedEvents())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())
 
     def __str__(self):
@@ -622,11 +648,9 @@ class LastVertexInteractionSplittingActor(
         itk.imwrite(new_uncertainty_img, uncertainty_file)
 
     def CorrectDoseUncertainty(self):
-        # FIXME: This post-processing hook appears to be unused at the moment:
-        # no current execution path calls it. Even if revived later, the
-        # authority is awkward because a biasing actor rewrites outputs owned
-        # by dose actors. The uncertainty post-processing should probably live
-        # with the corresponding dose actor or actor output instead.
+        # Legacy explicit hook used by external VRT launchers. A biasing actor
+        # rewrites dose-actor outputs here; this post-processing should
+        # eventually be owned by the corresponding dose output instead.
         actors = self.simulation.actor_manager.actors
         for key in actors.keys():
             actor = actors[key]
@@ -637,7 +661,7 @@ class LastVertexInteractionSplittingActor(
                     actor.dose_uncertainty.active == True
                     and actor.dose_squared.active == True
                 ):
-                    uncertainty_file = actor.edep_uncertainty.get_output_path(
+                    uncertainty_file = actor.dose_uncertainty.get_output_path(
                         which="merged"
                     )
                     file = actor.dose.get_output_path(which="merged")

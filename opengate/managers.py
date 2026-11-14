@@ -128,10 +128,10 @@ from .actors.filters import FilterBase, filter_classes, get_filter_class
 from .actors.miscactors import (
     AttenuationImageActor,
     DepositedChargeActor,
-    KillAccordingParticleNameActor,
+    KillAccordingParticleNameLVActor,
     KillAccordingProcessesActor,
     KillActor,
-    KillNonInteractingParticleActor,
+    KillNonInteractingParticleForLVActor,
     SimulationStatisticsActor,
     DebugActor,
 )
@@ -186,8 +186,8 @@ actor_types = {
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
-    "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
-    "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
+    "KillNonInteractingParticleForLVActor": KillNonInteractingParticleForLVActor,
+    "KillAccordingParticleNameLVActor": KillAccordingParticleNameLVActor,
     "DepositedChargeActor": DepositedChargeActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "DynamicSourceActor": DynamicSourceActor,

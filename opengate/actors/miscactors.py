@@ -212,9 +212,13 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         return s
 
 
-class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleNameActor):
-    """Actor which kills a particle according the particle name provied by the user at the exit of the
-    actorified volume."""
+class KillAccordingParticleNameLVActor(
+    ActorBase, g4.GateKillAccordingParticleNameLVActor
+):
+    """LV actor killing selected particle names at an ancestor-volume exit.
+
+    Selection and counts are worker-local, with one final counter reduction.
+    """
 
     particles_name_to_kill: list
 
@@ -234,7 +238,7 @@ class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleName
         self.list_of_volume_name = []
 
     def __initcpp__(self):
-        g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)
+        g4.GateKillAccordingParticleNameLVActor.__init__(self, self.user_info)
         self.AddActions(
             {"PreUserTrackingAction", "SteppingAction", "EndSimulationAction"}
         )
@@ -281,7 +285,7 @@ class KillActor(ActorBase, g4.GateKillActor):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
-class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
+class ActorOutputKillNonInteractingParticleForLVActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -300,33 +304,36 @@ class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
         return s
 
 
-class KillNonInteractingParticleActor(
-    ActorBase, g4.GateKillNonInteractingParticleActor
+class KillNonInteractingParticleForLVActor(
+    ActorBase, g4.GateKillNonInteractingParticleForLVActor
 ):
     """
-    If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
-    without interaction, the particle is killed. Warning : this actor being based on energy measurement, Rayleigh photon
-    may not be killed.
+    LV contribution selector using the historical entrance/exit energy test.
+
+    Tracks born in the attached volume are not selected by the entry rule.
+    Equal entry/exit energy is tested exactly; Rayleigh is not distinguished
+    from transport without an energy change. Mutable state is worker-local;
+    killed counts are reduced once per worker at simulation completion.
     """
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         # FIXME: Should rely on user_output_config and not call _add_user_output manually
         self._add_user_output(
-            ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles"
+            ActorOutputKillNonInteractingParticleForLVActor,
+            "kill_non_interacting_particles",
         )
         self.__initcpp__()
         self.list_of_volume_name = []
-        self.number_of_killed_particles = 0
 
     def __initcpp__(self):
-        g4.GateKillNonInteractingParticleActor.__init__(self, self.user_info)
+        g4.GateKillNonInteractingParticleForLVActor.__init__(self, self.user_info)
         self.AddActions(
             {
                 "StartSimulationAction",
                 "PreUserTrackingAction",
                 "SteppingAction",
-                "EndOfSimulationAction",
+                "EndSimulationAction",
             }
         )
 
@@ -348,7 +355,7 @@ class KillNonInteractingParticleActor(
 
     def EndSimulationAction(self):
         self.user_output.kill_non_interacting_particles.number_of_killed_particles = (
-            self.number_of_killed_particles
+            self.GetNumberOfKilledParticles()
         )
 
     def __str__(self):
@@ -656,8 +663,8 @@ process_cls(ActorOutputDepositedChargeActor)
 process_cls(DepositedChargeActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
-process_cls(KillAccordingParticleNameActor)
-process_cls(ActorOutputKillNonInteractingParticleActor)
-process_cls(KillNonInteractingParticleActor)
+process_cls(KillAccordingParticleNameLVActor)
+process_cls(ActorOutputKillNonInteractingParticleForLVActor)
+process_cls(KillNonInteractingParticleForLVActor)
 process_cls(AttenuationImageActor)
 process_cls(DebugActor)
