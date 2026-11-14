@@ -403,6 +403,8 @@ To restrict the decay to the run_timing_intervals, you can set the parameter:
 
 .. autoproperty:: opengate.sources.generic.GenericSource.half_life
 
+.. _source-tac:
+
 Time Activity Curves (TAC)
 --------------------------
 
@@ -426,8 +428,13 @@ last one in the ``times`` vector, the activity is considered as zero.
 The number of elements in the ``times`` linspace (here 500) defined the
 accuracy of the TAC. See example ``test052``.
 
-.. autoproperty:: opengate.sources.generic.GenericSource.tac_times
-.. autoproperty:: opengate.sources.generic.GenericSource.tac_activities
+The TAC can be used by all the sources driven by an activity (e.g. the
+GenericSource, VoxelSource or PhaseSpaceSource). Like the ``activity``, the TAC
+is multiplied by the total yield of the energy spectrum (sum of the weights) when
+the spectrum weights are not normalized, e.g. for a radionuclide spectrum.
+
+.. autoproperty:: opengate.sources.base.SourceBase.tac_times
+.. autoproperty:: opengate.sources.base.SourceBase.tac_activities
 
 
 

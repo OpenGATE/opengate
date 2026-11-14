@@ -32,7 +32,13 @@ public:
   // Called at initialisation to set the source properties from a single dict
   virtual void InitializeUserInfo(py::dict &user_info);
 
+  // Activity at the given time: TAC if set, otherwise the initial activity
+  // with the decay (half_life), always multiplied by fActivityScale
   virtual void UpdateActivity(double time);
+
+  // Time Activity Curve (linear interpolation, zero outside the TAC)
+  void SetTAC(const std::vector<double> &times,
+              const std::vector<double> &activities);
 
   virtual double CalcNextTime(double current_simulation_time);
 
@@ -81,6 +87,16 @@ protected:
   double fInitialActivity;
   double fHalfLife;
   double fDecayConstant;
+
+  // Time Activity Curve
+  std::vector<double> fTAC_Times;
+  std::vector<double> fTAC_Activities;
+  double GetTACActivity(double time) const;
+
+  // Scale of the activity (and of the TAC), e.g. the total yield of an energy
+  // spectrum whose weights are normalized
+  double fActivityScale = 1.0;
+  void SetActivityScale(double scale);
 
   unsigned long fRunGeneratedEvents = 0;
   unsigned long fTotalGeneratedEvents = 0;

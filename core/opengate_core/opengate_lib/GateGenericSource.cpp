@@ -69,12 +69,6 @@ void GateGenericSource::SetProbabilityCDF(const std::vector<double> &cdf) {
   fProbabilityCDF = cdf;
 }
 
-void GateGenericSource::SetTAC(const std::vector<double> &times,
-                               const std::vector<double> &activities) {
-  fTAC_Times = times;
-  fTAC_Activities = activities;
-}
-
 void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
@@ -97,65 +91,6 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   // init number of events
   fDirectionRelativeToAttachedVolume =
       DictGetBool(user_info, "direction_relative_to_attached_volume");
-}
-
-void GateGenericSource::UpdateActivity(const double time) {
-  if (!fTAC_Times.empty())
-    return UpdateActivityWithTAC(time);
-  GateVSource::UpdateActivity(time);
-}
-
-void GateGenericSource::UpdateActivityWithTAC(const double time) {
-  // the TAC is scaled like the activity (sum of the spectrum weights)
-  fActivity = GetTACActivity(time) * fActivityScale;
-}
-
-double GateGenericSource::GetTACActivity(const double time) const {
-  // Below/above the TAC ?
-  if (time < fTAC_Times.front() || time > fTAC_Times.back())
-    return 0;
-
-  // Search for the time bin
-  const auto lower =
-      std::lower_bound(fTAC_Times.begin(), fTAC_Times.end(), time);
-  auto i = std::distance(fTAC_Times.begin(), lower);
-
-  // Exact match or first sample
-  if (i == 0)
-    return fTAC_Activities[0];
-
-  // Move to the lower bin edge for the interpolation
-  i -= 1;
-
-  // Last element ?
-  if (i >= fTAC_Times.size() - 1)
-    return fTAC_Activities.back();
-
-  // linear interpolation
-  const double bin_time = fTAC_Times[i + 1] - fTAC_Times[i];
-  const double w1 = (fTAC_Times[i + 1] - time) / bin_time;
-  const double w2 = (time - fTAC_Times[i]) / bin_time;
-  return fTAC_Activities[i] * w1 + fTAC_Activities[i + 1] * w2;
-}
-
-unsigned long GateGenericSource::GetExpectedNumberOfEvents(
-    const TimeInterval &time_interval) {
-  if (fTAC_Times.empty())
-    return GateVSource::GetExpectedNumberOfEvents(time_interval);
-  // Only the part of the interval during which the source is active
-  const auto t0 = std::max(time_interval.first, fStartTime);
-  const auto t1 = std::min(time_interval.second, fEndTime);
-  // Integral of the linearly interpolated TAC (trapezoids, exact) between
-  // t0 and t1. The activity is zero outside the TAC.
-  double n = 0;
-  for (size_t i = 0; i + 1 < fTAC_Times.size(); i++) {
-    const auto a = std::max(t0, fTAC_Times[i]);
-    const auto b = std::min(t1, fTAC_Times[i + 1]);
-    if (b <= a)
-      continue;
-    n += (b - a) * (GetTACActivity(a) + GetTACActivity(b)) / 2.0;
-  }
-  return (unsigned long)std::round(n * fActivityScale);
 }
 
 double
@@ -556,10 +491,8 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
       ene->UserEnergyHisto(x);
       total += w[i];
     }
-    // Modify the activity according to the total sum of weights
-    fActivity = fActivity * total;
-    fInitialActivity = fActivity;
-    fActivityScale = total;
+    // Modify the activity (and the TAC) according to the total sum of weights
+    SetActivityScale(total);
   }
 
   if (ene_type == "spectrum_discrete") { // TODO rename
@@ -588,11 +521,9 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
       weight /= weightsSum;
 
     // ! important !
-    // Modify the activity according to the total sum of weights because we
-    // normalize the weights
-    fActivity *= weightsSum;
-    fInitialActivity = fActivity;
-    fActivityScale = weightsSum;
+    // Modify the activity (and the TAC) according to the total sum of weights
+    // because we normalize the weights
+    SetActivityScale(weightsSum);
 
     ene->SetEnergyDisType(ene_type);
     ene->SetEmin(energies.front());
@@ -647,11 +578,9 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
       weight /= weightsSum;
 
     // ! important !
-    // Modify the activity according to the total sum of weights because we
-    // normalize the weights
-    fActivity *= weightsSum;
-    fInitialActivity = fActivity;
-    fActivityScale = weightsSum;
+    // Modify the activity (and the TAC) according to the total sum of weights
+    // because we normalize the weights
+    SetActivityScale(weightsSum);
 
     std::string interpolation_str;
     if (interpolation != "None" && interpolation != "none")

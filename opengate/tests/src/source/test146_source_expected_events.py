@@ -9,7 +9,9 @@ of generated events:
 - decaying activity (half_life), source starting after the run start;
 - TAC (time activity curve), with a hole between two runs, mono and multi-thread,
   and with a spectrum (the activity is scaled by the total yield);
-- number_of_primaries.
+- number_of_primaries;
+- TAC with a PhaseSpaceSource (the TAC is managed by all the sources);
+- TAC refused by the TreatmentPlanPBSource, ignored by the LastVertexSource.
 """
 
 import os
@@ -24,7 +26,7 @@ MeV = gate.g4_units.MeV
 keV = gate.g4_units.keV
 
 
-def run(name, set_source, intervals, threads=1):
+def run(name, set_source, intervals, threads=1, source_type="GenericSource"):
     sim = gate.Simulation()
     sim.output_dir = paths.output
     sim.verbose_level = gate.logger.NONE
@@ -34,10 +36,11 @@ def run(name, set_source, intervals, threads=1):
     sim.world.material = "G4_Galactic"
     sim.run_timing_intervals = intervals
 
-    source = sim.add_source("GenericSource", name)
-    source.particle = "geantino"
-    source.energy.mono = 1 * MeV
-    source.direction.type = "iso"
+    source = sim.add_source(source_type, name)
+    if source_type == "GenericSource":
+        source.particle = "geantino"
+        source.energy.mono = 1 * MeV
+        source.direction.type = "iso"
     set_source(source)
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -45,8 +48,9 @@ def run(name, set_source, intervals, threads=1):
     return sim.expected_number_of_events, stats.counts.events
 
 
-def check(name, set_source, intervals, analytic, threads=1):
-    expected, generated = run(name, set_source, intervals, threads)
+def check(name, set_source, intervals, analytic, threads=1, source_type=None):
+    source_type = "GenericSource" if source_type is None else source_type
+    expected, generated = run(name, set_source, intervals, threads, source_type)
     # rounding: one event per thread and per run
     b1 = abs(expected - analytic) <= threads * len(intervals)
     # generated: Poisson, 4 sigma (exact when the number of primaries is set)
@@ -116,5 +120,42 @@ if __name__ == "__main__":
         s.number_of_primaries = 1234
 
     is_ok = check("number_of_primaries", primaries, [[0, 1 * sec]], 1234) and is_ok
+
+    # TAC with a phase space source
+    def tac_phsp(s):
+        tac(s)
+        s.phsp_file = paths.output_ref.parent / "test019" / "test019_hits.root"
+        s.position_key = "PrePosition"
+        s.direction_key = "PreDirection"
+        s.weight_key = "Weight"
+        s.global_flag = True
+        s.particle = "gamma"
+
+    is_ok = (
+        check("tac_phsp", tac_phsp, intervals, analytic, source_type="PhaseSpaceSource")
+        and is_ok
+    )
+
+    # TAC refused by the TreatmentPlanPBSource (events driven by the plan)
+    print()
+    sim = gate.Simulation()
+    s = sim.add_source("TreatmentPlanPBSource", "tps")
+    tac(s)
+    try:
+        s.resolve_tac_activity()
+        b = False
+    except Exception:
+        b = True
+    utility.print_test(b, "TreatmentPlanPBSource: TAC refused")
+    is_ok = b and is_ok
+
+    # ... and ignored (with a warning) by the LastVertexSource
+    s = sim.add_source("LastVertexSource", "lv")
+    tac(s)
+    s.activity = 10 * Bq
+    s.resolve_and_validate_config([[0, 1 * sec]])
+    b = s.tac_times is None and s.activity == 0 and not s.can_predict_number_of_events()
+    utility.print_test(b, "LastVertexSource: TAC and activity ignored")
+    is_ok = b and is_ok
 
     utility.test_ok(is_ok)
