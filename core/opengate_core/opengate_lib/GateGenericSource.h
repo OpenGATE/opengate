@@ -77,6 +77,7 @@ protected:
   std::vector<double> fTAC_Times;
   std::vector<double> fTAC_Activities;
   void UpdateActivityWithTAC(double time);
+  double GetTACActivity(double time) const;
 
   // generic ion is controlled separately
   // (maybe initialized once Run is started)
@@ -132,6 +133,11 @@ protected:
   virtual void InitializeVisualization(py::dict user_info);
 
   void UpdateActivity(double time) override;
+
+  // with a TAC, integral of the TAC instead of the (decaying) activity
+  using GateVSource::GetExpectedNumberOfEvents;
+  unsigned long
+  GetExpectedNumberOfEvents(const TimeInterval &time_interval) override;
 
   void UpdateEffectiveEventTime(double current_simulation_time,
                                 unsigned long skipped_particle);

@@ -106,11 +106,13 @@ void GateGenericSource::UpdateActivity(const double time) {
 }
 
 void GateGenericSource::UpdateActivityWithTAC(const double time) {
+  fActivity = GetTACActivity(time);
+}
+
+double GateGenericSource::GetTACActivity(const double time) const {
   // Below/above the TAC ?
-  if (time < fTAC_Times.front() || time > fTAC_Times.back()) {
-    fActivity = 0;
-    return;
-  }
+  if (time < fTAC_Times.front() || time > fTAC_Times.back())
+    return 0;
 
   // Search for the time bin
   const auto lower =
@@ -118,25 +120,41 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
   auto i = std::distance(fTAC_Times.begin(), lower);
 
   // Exact match or first sample
-  if (i == 0) {
-    fActivity = fTAC_Activities[0];
-    return;
-  }
+  if (i == 0)
+    return fTAC_Activities[0];
 
   // Move to the lower bin edge for the interpolation
   i -= 1;
 
   // Last element ?
-  if (i >= fTAC_Times.size() - 1) {
-    fActivity = fTAC_Activities.back();
-    return;
-  }
+  if (i >= fTAC_Times.size() - 1)
+    return fTAC_Activities.back();
 
   // linear interpolation
   const double bin_time = fTAC_Times[i + 1] - fTAC_Times[i];
   const double w1 = (fTAC_Times[i + 1] - time) / bin_time;
   const double w2 = (time - fTAC_Times[i]) / bin_time;
-  fActivity = fTAC_Activities[i] * w1 + fTAC_Activities[i + 1] * w2;
+  return fTAC_Activities[i] * w1 + fTAC_Activities[i + 1] * w2;
+}
+
+unsigned long GateGenericSource::GetExpectedNumberOfEvents(
+    const TimeInterval &time_interval) {
+  if (fTAC_Times.empty())
+    return GateVSource::GetExpectedNumberOfEvents(time_interval);
+  // Only the part of the interval during which the source is active
+  const auto t0 = std::max(time_interval.first, fStartTime);
+  const auto t1 = std::min(time_interval.second, fEndTime);
+  // Integral of the linearly interpolated TAC (trapezoids, exact) between
+  // t0 and t1. The activity is zero outside the TAC.
+  double n = 0;
+  for (size_t i = 0; i + 1 < fTAC_Times.size(); i++) {
+    const auto a = std::max(t0, fTAC_Times[i]);
+    const auto b = std::min(t1, fTAC_Times[i + 1]);
+    if (b <= a)
+      continue;
+    n += (b - a) * (GetTACActivity(a) + GetTACActivity(b)) / 2.0;
+  }
+  return (unsigned long)std::round(n);
 }
 
 double
