@@ -772,8 +772,7 @@ def add_digitizer(
     sb.blur_attribute = "PostPosition"
     # intrinsic spatial resolution at 140 keV for 9.5 mm thick NaI
     sb.blur_fwhm = 3.6 * mm
-    sb.keep_in_solid_limits = True
-    sb.use_truncated_Gaussian = False
+    sb.edge_policy = "clamp"
 
     # energy windows
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")

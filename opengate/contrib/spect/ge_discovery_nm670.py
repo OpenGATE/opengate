@@ -656,8 +656,7 @@ def add_digitizer_tc99m_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sp_blur")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 7.6 * mm  # FAKE
-    sb.keep_in_solid_limits = True
-    sb.use_truncated_Gaussian = False
+    sb.edge_policy = "clamp"
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -707,8 +706,7 @@ def add_digitizer_tc99m_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sp_blur")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3 * mm  # FAKE
-    sb.keep_in_solid_limits = True
-    sb.use_truncated_Gaussian = False
+    sb.edge_policy = "clamp"
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -769,8 +767,7 @@ def add_digitizer_lu177_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb = digitizer.add_module("DigitizerSpatialBlurringActor")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 7.6 * mm  # FAKE
-    sb.keep_in_solid_limits = True
-    sb.use_truncated_Gaussian = False
+    sb.edge_policy = "clamp"
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -824,8 +821,7 @@ def add_digitizer_lu177_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb = digitizer.add_module("DigitizerSpatialBlurringActor")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3.9 * mm  # FAKE
-    sb.keep_in_solid_limits = True
-    sb.use_truncated_Gaussian = False
+    sb.edge_policy = "clamp"
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -1201,8 +1197,7 @@ def add_digitizer(
     sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sblur")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3 * mm  # FAKE !
-    sb.keep_in_solid_limits = True
-    sb.use_truncated_Gaussian = False
+    sb.edge_policy = "clamp"
 
     # default energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")

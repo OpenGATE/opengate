@@ -834,20 +834,33 @@ DigitizerSpatialBlurringActor
 Description
 ~~~~~~~~~~~
 
-   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This will push the hits back to the closest edge of the crystal. Alternatively the `use_truncated_Gaussian` option can be used with `keep_in_solid_limits` to recreate a more realistic scenario. This option changes the common Gaussian distribution to a new truncated Gaussian that preserves the standard deviation of the distribution within the crystal. This variation is paramount when using big crystals with spatial resolution, since it is the only way to preserve the original standard deviation of the reconstructed distribution. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+The :class:`~.opengate.actors.digitizers.DigitizerSpatialBlurringActor` blurs a position attribute (usually ``PostPosition``) with a Gaussian, independently along the three axes, to model the spatial resolution of the detector. The resolution is given as a standard deviation (``blur_sigma``) or a FWHM (``blur_fwhm``), one value or one per axis.
 
 .. code-block:: python
 
-   bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
-   bc.attached_to = hc.attached_to
-   bc.output_filename = hc.output_filename
+   bc = sim.add_actor("DigitizerSpatialBlurringActor", "Singles_blur")
+   bc.attached_to = crystal
    bc.input_digi_collection = sc.name
-   bc.keep_in_solid_limits = True
-   bc.use_truncated_Gaussian = True
    bc.blur_attribute = "PostPosition"
-   bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
+   bc.blur_fwhm = [5 * mm, 5 * mm, 5 * mm]
+   bc.edge_policy = "truncated"  # default
+   bc.output_filename = "singles.root"
 
+**Limits volume.** The blurring is done in the coordinate system of the *limits volume*, and its bounding box defines the limits used by ``edge_policy``. By default, it is the volume the actor is attached to: for a crystal block made of pixels, the limits are those of the block, so the blurred position can move from one pixel to another. Set ``limits_volume`` to a volume inside it (e.g. the pixel) to keep the blurred position in the volume where the digi is. When the volume is repeated (several heads, several blocks), the copy that contains the digi is used.
 
+**Edge policy.** Near the limits, part of the Gaussian falls outside the volume. The ``edge_policy`` option defines what happens:
+
+- ``"none"``: plain Gaussian, the blurred position may be outside the volume.
+- ``"clamp"``: the positions outside are moved onto the boundary. This creates a peak of events exactly on the edges.
+- ``"truncated"`` (default): truncated Gaussian. The Gaussian keeps the requested sigma, and the positions are drawn again until they are inside the limits. Near an edge, the blurred positions are therefore closer to the true position (the rms distance is *smaller* than sigma), and their mean is pushed inward. The model is: "same resolution everywhere, and no position outside the detector".
+- ``"truncated_std"``: truncated Gaussian whose width is increased near the edges, so that the rms distance between the blurred and the true positions stays equal to sigma (when this is possible: the positions cannot be further than the volume allows). The model is: "the position error is the nominal resolution everywhere"; it corresponds to a resolution that degrades near the edges.
+
+Far from the edges (more than ~2 sigma), all the policies give the same result. The figure shows the distribution of the blurred position, for a true position (orange) at 3, 1 and 0.3 sigma from an edge, with the rms distance to the true position. The choice matters little when sigma is small compared to the crystal (e.g. a SPECT camera: only a few mm at the border), but a lot for small pixels, where all the positions are close to an edge.
+
+.. image:: ../figures/spatial_blurring_edge_policies.png
+   :width: 700
+
+The former options ``keep_in_solid_limits`` and ``use_truncated_Gaussian`` are still accepted: ``keep_in_solid_limits=True`` (with ``use_truncated_Gaussian=False``) is ``"clamp"``, both ``False`` is ``"none"``, and ``use_truncated_Gaussian=True`` is ``"truncated_std"``. They cannot be used together with ``edge_policy``.
 
 Reference
 ~~~~~~~~~

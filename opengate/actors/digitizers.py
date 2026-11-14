@@ -823,6 +823,8 @@ class DigitizerSpatialBlurringActor(
     clear_every: int
     blur_attribute: str
     blur_sigma: float
+    edge_policy: str
+    limits_volume: str
     keep_in_solid_limits: bool
     use_truncated_Gaussian: bool
 
@@ -863,16 +865,46 @@ class DigitizerSpatialBlurringActor(
                 "doc": "std. dev. for the blurring.",
             },
         ),
-        "keep_in_solid_limits": (
-            True,
+        "edge_policy": (
+            None,
             {
-                "doc": "If the blurring move the position outside the solid limits, keep the point inside, on the boundary",
+                "doc": "What to do near the limits of the 'limits_volume' (its bounding box): "
+                "'none': plain Gaussian, the position may end up outside the volume; "
+                "'clamp': the positions outside are moved onto the boundary; "
+                "'truncated': truncated Gaussian (same sigma, the position is drawn again "
+                "inside the limits; near an edge, the blurred positions are closer to the "
+                "true one, by less than sigma on average); "
+                "'truncated_std': truncated Gaussian whose width is increased near the "
+                "edges so that the rms distance between the blurred and the true position "
+                "stays equal to sigma (when possible). "
+                "Default (None) is 'truncated', unless one of the former options "
+                "keep_in_solid_limits or use_truncated_Gaussian is set.",
+                "allowed_values": (None, "none", "clamp", "truncated", "truncated_std"),
+            },
+        ),
+        "limits_volume": (
+            None,
+            {
+                "doc": "Name of the volume that defines the coordinate system of the blurring "
+                "and the limits used by edge_policy. Default (None): the volume the actor "
+                "is attached to (e.g. the whole crystal block, even if it is made of "
+                "pixels). Can be a volume inside it (e.g. the crystal pixel) to keep the "
+                "blurred position in the volume where the digi is.",
+            },
+        ),
+        "keep_in_solid_limits": (
+            None,
+            {
+                "doc": "Former option, use edge_policy instead. "
+                "True (and use_truncated_Gaussian False) is edge_policy='clamp'; "
+                "False (and use_truncated_Gaussian False) is edge_policy='none'.",
             },
         ),
         "use_truncated_Gaussian": (
-            True,
+            None,
             {
-                "doc": "Apply a truncated Gaussian distribution to blur the position when close to the solid limits.",
+                "doc": "Former option, use edge_policy instead. "
+                "True is edge_policy='truncated_std' (the rms distance is kept equal to sigma).",
             },
         ),
     }
@@ -898,18 +930,62 @@ class DigitizerSpatialBlurringActor(
         self.blur_sigma = np.array(value) * fwhm_to_sigma
 
     def initialize_blurring_parameters(self):
+        if self.blur_sigma is None:
+            fatal(f"Error in the actor '{self.name}': use blur_sigma or blur_fwhm")
         if not hasattr(self.blur_sigma, "__len__"):
             self.blur_sigma = [self.blur_sigma] * 3
-        if self.blur_sigma is None:
-            fatal(f"Error, use blur_sigma or blur_fwhm")
+
+    def get_edge_policy(self):
+        """The edge policy, taking into account the two former options."""
+        keep = self.keep_in_solid_limits
+        trunc = self.use_truncated_Gaussian
+        if keep is None and trunc is None:
+            return "truncated" if self.edge_policy is None else self.edge_policy
+        if self.edge_policy is not None:
+            fatal(
+                f"Error in the actor '{self.name}': use edge_policy only, not with "
+                f"the former options keep_in_solid_limits or use_truncated_Gaussian."
+            )
+        # former behaviour: both options were True by default, and the truncated
+        # Gaussian was applied whatever keep_in_solid_limits
+        if trunc is None or trunc:
+            return "truncated_std"
+        if keep is None or keep:
+            return "clamp"
+        return "none"
+
+    def get_limits_volume(self):
+        """The name of the volume that defines the limits (default: attached_to)."""
+        v = self.limits_volume
+        if v is None:
+            v = self.attached_to
+            if not isinstance(v, str):
+                fatal(
+                    f"Error in the actor '{self.name}': it is attached to several "
+                    f"volumes ({v}), set limits_volume."
+                )
+        elif not isinstance(v, str):
+            v = v.name
+        if v not in self.simulation.volume_manager.volumes:
+            fatal(
+                f"Error in the actor '{self.name}': the limits_volume '{v}' is not "
+                f"a volume of the simulation."
+            )
+        return v
 
     def resolve_and_validate_config(self, context=None):
         super().resolve_and_validate_config(context=context)
         self.initialize_blurring_parameters()
+        self.get_edge_policy()
+        self.get_limits_volume()
 
     def initialize(self):
         DigitizerBase.initialize(self)
-        self.InitializeUserInfo(self.user_info)
+        # the C++ side receives the resolved values (the user values are kept)
+        user_info = self.user_info.copy()
+        user_info["edge_policy"] = self.get_edge_policy()
+        user_info["limits_volume"] = self.get_limits_volume()
+        self.InitializeUserInfo(user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
