@@ -40,6 +40,15 @@ def _translate_track_structure_em_physics_to_geant4(track_structure_em_physics):
         )
 
 
+# What Geant4 does with optical photons in a material without optical properties
+# (G4OpBoundaryProcess, status NoRINDEX)
+_optical_no_rindex_consequence = (
+    "Without refractive index (RINDEX), optical photons reaching this volume are "
+    "killed at its boundary (their energy is deposited locally), and no optical "
+    "photon can be produced in it."
+)
+
+
 class EngineBase:
     """
     Base class for all engines (SimulationEngine, VolumeEngine, etc.)
@@ -563,9 +572,10 @@ class PhysicsEngine(EngineBase):
                                         ]
                                     )
                                 else:
-                                    self.simulation_engine.warn_user(
+                                    self.simulation_engine.simulation.warn_user(
                                         f"Could not load the optical material properties for material {mat.GetName()} "
-                                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}"
+                                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}. "
+                                        f"{_optical_no_rindex_consequence}"
                                     )
                 material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
@@ -581,7 +591,8 @@ class PhysicsEngine(EngineBase):
                 else:
                     self.simulation_engine.simulation.warn_user(
                         f"Could not load the optical material properties for material {material_name} "
-                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}."
+                        f"found in volume {vol.name} from file {self.physics_manager.get_optical_properties_file()}. "
+                        f"{_optical_no_rindex_consequence}"
                     )
 
     @requires_fatal("physics_manager")
