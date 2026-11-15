@@ -125,6 +125,15 @@ def run_simulation(stopping_or_production: str, x_source=0.0):
     sim.run(start_new_process=True)
     # print(stats)
 
+    # the number of events is recorded in the output (#1214)
+    container = StoppingActor_depth.user_output.production_stopping
+    n = container.get_data_container("merged").get_data_item_object(0)
+    n = n.number_of_samples
+    b_n = n == stats.counts.events
+    utility.print_test(
+        b_n, f"Number of samples {n} vs number of events {stats.counts.events}"
+    )
+
     # ----------------------------------------------------------------------------------------------------------------
     x_source = (
         -1
@@ -168,6 +177,7 @@ def run_simulation(stopping_or_production: str, x_source=0.0):
         is_ok = True
     else:
         is_ok = False
+    is_ok = is_ok and b_n
 
     return is_ok
 
