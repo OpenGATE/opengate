@@ -927,6 +927,25 @@ The :class:`~.opengate.actors.digitizers.DigitizerProjectionActor` generates 2D 
    proj.origin_as_image_center = False  # Origin is not at image center
    proj.output_filename = 'projection.mhd'
 
+By default, the projection plane is the XY plane of the attached volume (the
+positions are projected along its Z axis, i.e. the thickness of the detector is
+expected along Z). For another plane, set ``detector_orientation_matrix``: it is the
+rotation of the projection image with respect to the attached volume. With a
+rotation R, the image axes are R·x and R·y, and the projection is along R·z. For
+example, for a detector whose thickness is along X:
+
+.. code-block:: python
+
+   from scipy.spatial.transform import Rotation
+
+   # image axes: -Z and Y of the volume, projection along X
+   proj.detector_orientation_matrix = Rotation.from_euler(
+       "y", 90, degrees=True
+   ).as_matrix()
+
+The written image does not store this rotation (its direction is the identity).
+See test148, and the SPECT models in ``opengate.contrib.spect`` for other examples.
+
 Refer to test028 for SPECT examples.
 
 Reference

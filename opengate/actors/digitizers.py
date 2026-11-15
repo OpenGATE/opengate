@@ -1229,7 +1229,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         ),
         "spacing": (
             [4 * g4_units.mm, 4 * g4_units.mm],
-            {"doc": "FIXME"},
+            {"doc": "spacing of the 2D projection (pixel size)"},
         ),
         "size": (
             [128, 128],
@@ -1244,13 +1244,21 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         "origin_as_image_center": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "If True, the origin of the output image is set such that "
+                "the center of the image is at (0,0). Otherwise, the origin is "
+                "the one of the image attached to the volume.",
             },
         ),
         "detector_orientation_matrix": (
             Rotation.from_euler("x", 0).as_matrix(),
             {
-                "doc": "FIXME",
+                "doc": "Rotation matrix (3x3) of the projection image with respect "
+                "to the volume it is attached to. By default (identity), the "
+                "projection plane is the XY plane of the volume, and the "
+                "positions are projected along its Z axis. With a rotation R, the "
+                "image axes are R.x and R.y, and the projection is along R.z, e.g. "
+                "Rotation.from_euler('y', 90, degrees=True).as_matrix() for a "
+                "detector whose thickness is along X (image axes: -Z and Y).",
             },
         ),
     }
