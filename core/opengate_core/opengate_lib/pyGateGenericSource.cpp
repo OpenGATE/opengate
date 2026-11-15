@@ -18,6 +18,5 @@ void init_GateGenericSource(py::module &m) {
       .def("SetEnergyCDF", &GateGenericSource::SetEnergyCDF)
       .def("SetProbabilityCDF", &GateGenericSource::SetProbabilityCDF)
       .def("GetTotalSkippedEvents", &GateGenericSource::GetTotalSkippedEvents)
-      .def("GetTotalZeroEvents", &GateGenericSource::GetTotalZeroEvents)
-      .def("SetTAC", &GateGenericSource::SetTAC);
+      .def("GetTotalZeroEvents", &GateGenericSource::GetTotalZeroEvents);
 }

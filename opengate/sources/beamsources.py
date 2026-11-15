@@ -123,6 +123,9 @@ class TreatmentPlanPBSource(SourceBase):
     Treatment Plan source Pencil Beam
     """
 
+    # the events are generated according to the plan, not to an activity
+    activity_driven = False
+
     user_info_defaults = {
         "sorted_spot_generation": (
             False,
@@ -269,8 +272,7 @@ class TreatmentPlanPBSource(SourceBase):
                 self.ion.E = words[3]
 
         self.initialize_start_end_time(run_timing_intervals)
-        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
-        g4_source.InitializeUserInfo(runtime_user_info)
+        self.initialize_g4_source_user_info(g4_source)
 
     def get_generated_primaries(self):
         if self.g4_thread_sources:

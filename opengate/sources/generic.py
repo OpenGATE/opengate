@@ -349,8 +349,6 @@ class GenericSource(SourceBase):
     weight: float
     weight_sigma: float
     user_particle_life_time: float
-    tac_times: list
-    tac_activities: list
     direction_relative_to_attached_volume: bool
     position: Box
     direction: Box
@@ -384,18 +382,6 @@ class GenericSource(SourceBase):
         "user_particle_life_time": (
             -1,
             {"doc": "FIXME "},
-        ),
-        "tac_times": (
-            None,
-            {
-                "doc": "TAC: Time Activity Curve, this set the vector for the times. Must be used with tac_activities."
-            },
-        ),
-        "tac_activities": (
-            None,
-            {
-                "doc": "TAC: Time Activity Curve, this set the vector for the activities. Must be used with tac_times."
-            },
         ),
         "direction_relative_to_attached_volume": (
             False,
@@ -451,7 +437,6 @@ class GenericSource(SourceBase):
         return g4.GateGenericSource()
 
     def resolve_and_validate_config(self, run_timing_intervals, context=None):
-        self.resolve_tac_activity()
         super().resolve_and_validate_config(run_timing_intervals, context=context)
 
         # Check the sub-parameters
@@ -499,10 +484,7 @@ class GenericSource(SourceBase):
                 g4_source.SetProbabilityCDF(cdf)
 
         self.initialize_start_end_time(run_timing_intervals)
-        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
-        self.update_tac_activity(g4_source, runtime_user_info)
-        g4_source.InitializeUserInfo(runtime_user_info)
-        # warning for non-used ?
+        self.initialize_g4_source_user_info(g4_source)
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method
@@ -525,28 +507,6 @@ class GenericSource(SourceBase):
             for g4_src in thread_sources
             if g4_src is not None
         )
-
-    def resolve_tac_activity(self):
-        if self.tac_times is None and self.tac_activities is None:
-            return
-        if len(self.tac_times) != len(self.tac_activities):
-            fatal(
-                f"option tac_activities must have the same size as tac_times in source '{self.name}'"
-            )
-        # it is important to set the starting time for this source as the tac
-        # may start later than the simulation timing
-        self.start_time = self.tac_times[0]
-        self.activity = self.tac_activities[0]
-
-    def update_tac_activity(self, g4_source, runtime_user_info=None):
-        if self.tac_times is None and self.tac_activities is None:
-            return
-        tac_activities = (
-            runtime_user_info["tac_activities"]
-            if runtime_user_info is not None
-            else self.tac_activities
-        )
-        g4_source.SetTAC(self.tac_times, tac_activities)
 
     def can_predict_number_of_events(self):
         aa = self.direction.angular_acceptance
