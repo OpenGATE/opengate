@@ -618,6 +618,8 @@ In this example, the actor is attached to (attached_to option) several volumes (
    am = gate_core.GateDigiAttributeManager.GetInstance()
    print(am.GetAvailableDigiAttributeNames())
 
+By default, a hit is created only for the steps with a non-zero energy deposit (``TotalEnergyDeposit > 0``); with ``hc.keep_zero_edep = True``, all the steps are recorded. Some hits have ``ProcessDefinedStep = Transportation``: the step was limited by a volume boundary (for example when an electron leaves the crystal, or goes from one pixel to the next one), and the energy deposit is the energy lost by the charged particle along this step (continuous ionisation). These are real energy deposits and they are kept. Some of them can be extremely small (e.g. 1e-20 keV, numerical residuals of very short steps at the boundary); they have no effect once the hits are summed into singles (DigitizerAdderActor). If needed, they can be removed during the analysis with a threshold on ``TotalEnergyDeposit`` (a cut on the process would also remove real deposits).
+
 .. warning:: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a “default” version corresponding to the legacy Gate (9.X).
 
 +------------------+-------------------+---------------------+
