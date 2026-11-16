@@ -1,5 +1,6 @@
 import copy
 import inspect
+import json
 import sys
 from typing import Optional
 from pathlib import Path
@@ -18,6 +19,7 @@ from ..exception import (
     warning,
 )
 from ..image import create_3d_image_of_histogram
+from ..npyio import is_numpy_path, numpy_tree_path
 from ..utility import ensure_filename_is_str, insert_suffix_before_extension
 from .dataitems import (
     QuotientItkImage,
@@ -1670,7 +1672,10 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                 "doc": "Filename for the data represented by this actor output. "
                 "Relative paths and filenames are taken "
                 "relative to the global simulation output folder "
-                "set via the Simulation.output_dir option. ",
+                "set via the Simulation.output_dir option. "
+                "A filename ending with .npy writes numpy files instead of ROOT, "
+                "one per digi collection: <name>.<collection>.npy, "
+                "e.g. hits.npy -> hits.Hits.npy. ",
             },
         ),
         "write_to_disk": (
@@ -1733,6 +1738,38 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
             f"{output_path.stem}-{self.belongs_to_actor.name}-metadata.json"
         )
         return output_path.with_name(metadata_filename)
+
+    def get_output_file_path(self, collection=None):
+        """Path of the file written to disk. For ROOT, the same as get_output_path().
+        For numpy, the file of one digi collection, e.g. hits.npy -> hits.Hits.npy.
+        The collection name is only needed when the actor writes several,
+        like the energy windows actor (one per channel).
+        """
+        path = self.get_output_path(which="merged")
+        if not is_numpy_path(path):
+            return path
+        if collection is None:
+            names = self._get_tree_names_from_metadata()
+            if names is None:
+                # nothing written yet: the collection is named after the actor
+                collection = self.belongs_to_actor.name
+            elif len(names) == 1:
+                collection = names[0]
+            else:
+                fatal(
+                    f"The actor '{self.belongs_to_actor.name}' writes one numpy file "
+                    f"per collection: {names}. Give the collection, "
+                    f"e.g. get_output_file_path('{names[0]}')."
+                )
+        return numpy_tree_path(path, collection)
+
+    def _get_tree_names_from_metadata(self):
+        metadata_path = self.get_metadata_path()
+        if metadata_path is None or not metadata_path.exists():
+            return None
+        with open(metadata_path) as f:
+            trees = json.load(f).get("trees") or []
+        return [t["tree_name"] for t in trees] or None
 
     def _get_requested_attribute_metadata(self):
         requested_attributes = None
@@ -1947,6 +1984,9 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
                         "root_output_path": str(
                             self.get_output_path(which="merged").resolve()
                         ),
+                        "file_format": source_item.root_meta_data.get(
+                            "file_format", "root"
+                        ),
                         "requested_attributes": requested_attributes,
                         "skipped_attributes": skipped_attributes,
                         "trees": source_item.root_meta_data["trees"],
@@ -2020,7 +2060,14 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
         )
         data_container = self.ensure_data_container("merged")
         data_item = data_container.get_data_item_object(0)
-        if not output_path.exists():
+        if is_numpy_path(output_path):
+            tree_names = self._get_runtime_tree_names() or []
+            file_exists = len(tree_names) > 0 and all(
+                numpy_tree_path(output_path, t).exists() for t in tree_names
+            )
+        else:
+            file_exists = output_path.exists()
+        if not file_exists:
             # Legitimate empty ROOT output currently leaves no ROOT file on
             # disk. Persist minimal metadata anyway so later rehydrated merge
             # logic can distinguish "empty contribution" from "broken child".

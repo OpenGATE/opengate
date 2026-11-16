@@ -158,6 +158,24 @@ You can also decide not to write data to disk, if you wish so. In the above exam
 
   phsp_actor1.write_to_disk = False
 
+Actors writing ROOT files, like the phase space actor and the digitizers, can write numpy files instead. Use a filename ending with ``.npy``:
+
+.. code-block:: python
+
+  phsp_actor1.output_filename = 'phsp1.npy'
+
+GATE then writes one numpy file per digi collection and adds the collection name to the filename, here ''phsp1.phsp_actor1.npy''. Each file holds a structured array with one row per entry, 3D vectors are split into three columns like in ROOT (e.g. ``Position_X``). Use ``get_output_file_path()`` to get the path of the file:
+
+.. code-block:: python
+
+  import numpy as np
+  phsp = np.load(phsp_actor1.get_output_file_path())
+  energies = phsp['KineticEnergy']
+
+An actor writing several collections, like the energy windows actor with one per channel, needs the collection name: ``ew_actor.get_output_file_path('peak140')``.
+
+Strings are stored with a fixed length of 64 characters, longer strings stop the simulation with an error. Numpy files are not compressed, so they are larger than ROOT files.
+
 
 Actors with multiple outputs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

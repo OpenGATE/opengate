@@ -44,6 +44,13 @@ from ..exception import (
     GateDeprecationError,
 )
 from ..serialization import dump_json
+from ..npyio import (
+    is_numpy_path,
+    numpy_tree_path,
+    inspect_numpy_trees,
+    iter_numpy_chunks,
+    create_merge_file_writer,
+)
 from ..utility import ensure_filename_is_str, calculate_variance
 from ..utility import g4_best_unit_tuple, g4_units
 from ..utility import insert_suffix_before_extension
@@ -935,6 +942,7 @@ class RootDataItem(DataItem):
                 "actor_type": actor_type,
                 "actor_output_name": actor_output_name,
                 "root_output_path": str(root_file_path),
+                "file_format": self._file_format(root_file_path),
                 "requested_attributes": requested_attributes,
                 "skipped_attributes": skipped_attributes,
                 "expected_on_disk": True,
@@ -970,6 +978,11 @@ class RootDataItem(DataItem):
 
     def has_root_meta_data(self):
         return self.root_meta_data is not None
+
+    @staticmethod
+    def _file_format(path):
+        # a .npy path holds one numpy file per tree, see npyio.py
+        return "npy" if is_numpy_path(path) else "root"
 
     def root_file_was_written(self):
         if not self.has_root_meta_data():
@@ -1058,6 +1071,7 @@ class RootDataItem(DataItem):
                 "actor_type": actor_type,
                 "actor_output_name": actor_output_name,
                 "root_output_path": str(root_file_path),
+                "file_format": self._file_format(root_file_path),
                 "requested_attributes": requested_attributes,
                 "skipped_attributes": skipped_attributes,
                 "expected_on_disk": True,
@@ -1098,9 +1112,12 @@ class RootDataItem(DataItem):
                 )
             if load_mode == "live":
                 tree_names = self._resolve_expected_tree_names_from_owner()
-                tree_descriptors = self.inspect_root_file(
-                    root_file_path, expected_tree_names=tree_names
-                )
+                if is_numpy_path(root_file_path):
+                    tree_descriptors = inspect_numpy_trees(root_file_path, tree_names)
+                else:
+                    tree_descriptors = self.inspect_root_file(
+                        root_file_path, expected_tree_names=tree_names
+                    )
                 if len(tree_descriptors) == 0:
                     fatal(
                         "Cannot load ROOT metadata fallback because none of the "
@@ -1111,6 +1128,7 @@ class RootDataItem(DataItem):
                     {
                         "metadata_version": self.metadata_version,
                         "root_output_path": str(root_file_path),
+                        "file_format": self._file_format(root_file_path),
                         "expected_on_disk": True,
                         "root_file_written": True,
                         "number_of_entries": None,
@@ -1126,6 +1144,9 @@ class RootDataItem(DataItem):
         else:
             self.root_meta_data["root_output_path"] = str(root_file_path)
 
+        # numpy files are read when needed, see _iter_merge_source_chunks
+        if is_numpy_path(root_file_path):
+            return
         self._root_file = uproot.open(root_file_path)
 
     def close_data(self):
@@ -1368,6 +1389,8 @@ class RootDataItem(DataItem):
             )
         if len(self.root_meta_data.get("merge_sources", [])) == 0:
             return
+        if is_numpy_path(path):
+            fatal("Merged numpy output is only written by the split-job merge.")
 
         output_path = Path(path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1401,6 +1424,9 @@ class RootDataItem(DataItem):
         branch_names = list(tree_descriptor["branches"].keys())
         root_output_path = merge_source["root_output_path"]
         tree_name = tree_descriptor["tree_name"]
+        if is_numpy_path(root_output_path):
+            yield from iter_numpy_chunks(numpy_tree_path(root_output_path, tree_name))
+            return
         for chunk in uproot.iterate(
             f"{root_output_path}:{tree_name}",
             expressions=branch_names,
@@ -1521,9 +1547,7 @@ class RootDataItem(DataItem):
         tree_descriptor = self.get_single_tree_descriptor()
 
         if owns_writer:
-            from ..rootio import RootMergeFileWriter
-
-            writer = RootMergeFileWriter(output_path)
+            writer = create_merge_file_writer(output_path)
             writer.open()
 
         try:

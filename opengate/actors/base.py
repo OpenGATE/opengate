@@ -850,6 +850,18 @@ class ActorBase(GateObject):
         if output_name not in self.user_output:
             fatal(f"No output named '{output_name}' found for actor {self.name}.")
 
+    def get_output_file_path(self, collection=None):
+        """Path of the ROOT or numpy file written by this actor.
+        Numpy output has one file per digi collection, e.g. hits.npy -> hits.Hits.npy.
+        Give the collection name if the actor writes several.
+        """
+        outputs = [o for o in self.user_output.values() if o.is_root_output()]
+        if len(outputs) == 0:
+            fatal(
+                f"The {self.type_name} actor '{self.name}' does not write a ROOT or numpy file."
+            )
+        return outputs[0].get_output_file_path(collection)
+
     def get_output_path_for_item(self, output_name, which, item):
         return self.user_output[output_name].get_output_path(which, item)
 
