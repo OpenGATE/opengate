@@ -47,6 +47,23 @@ public:
     EnergyWeightedCentroidPosition
   };
 
+  // How the value of an attribute is chosen among the hits of a single.
+  // Each policy selects ONE hit, whose value is copied to the single.
+  enum AttributePolicy {
+    AttributeMax,          // hit with the largest value
+    AttributeMin,          // hit with the smallest value
+    AttributeFirst,        // earliest hit (GlobalTime)
+    AttributeLast,         // latest hit (GlobalTime)
+    AttributeEnergyWinner, // hit with the largest deposited energy
+  };
+
+  struct AttributePolicyItem {
+    std::string fName;
+    AttributePolicy fPolicy;
+    GateVDigiAttribute *fInput{};
+    GateVDigiAttribute *fOutput{};
+  };
+
   // constructor
   explicit GateDigitizerAdderActor(py::dict &user_info);
 
@@ -90,6 +107,9 @@ protected:
   GateVDigiAttribute *fOutputGlobalTimeAttribute{};
   GateVDigiAttribute *fOutputTimeDifferenceAttribute{};
   GateVDigiAttribute *fOutputNumberOfHitsAttribute{};
+
+  // attributes with a user-defined policy (see attribute_policies)
+  std::vector<AttributePolicyItem> fAttributePolicies;
 
   void DigitInitialize(
       const std::vector<std::string> &attributes_not_in_filler) override;

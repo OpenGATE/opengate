@@ -38,6 +38,14 @@ public:
 
   void Update(size_t i, double edep, const G4ThreeVector &pos, double time);
 
+  // Attributes with a user-defined policy: for the k-th attribute, keep the
+  // index of the hit with the largest score (first one in case of equality).
+  std::vector<size_t> fAttributeIndex;
+  std::vector<double> fAttributeScore;
+  std::vector<bool> fAttributeIsSet;
+
+  void UpdateAttribute(size_t k, size_t i, double score);
+
   void Terminate();
 };
 

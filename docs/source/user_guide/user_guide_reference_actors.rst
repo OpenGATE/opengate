@@ -757,9 +757,21 @@ This actor groups the hits per different volumes according to the option `group_
   - The time (`GlobalTime`) is the time of the earliest hit.
 
 - **EnergyWinnerPosition**:
-  - The final energy (`TotalEnergyDeposit`) is the energy of the hit with the largest deposited energy.
+  - The final energy (`TotalEnergyDeposit`) is the sum of all deposited energy.
   - The position (`PostPosition`) is the position of the hit with the largest deposited energy.
   - The time (`GlobalTime`) is the time of the earliest hit.
+
+All the other attributes of the single are copied from one of its hits: the hit with the largest deposited energy for `EnergyWinnerPosition`, the last stored hit for `EnergyWeightedCentroidPosition`. The option `attribute_policies` selects another hit for some attributes:
+
+- `max`, `min`: the hit with the largest or smallest value of this attribute (numeric attributes only)
+- `first`, `last`: the earliest or latest hit (`GlobalTime`)
+- `energy_winner`: the hit with the largest deposited energy
+
+.. code-block:: python
+
+   # number of Compton in the phantom: value when the photon first reaches the crystal
+   # number of Compton in the head: largest value among the hits
+   sc.attribute_policies = {"n_compt_phantom": "first", "n_compt_head": "max"}
 
 .. code-block:: python
 
