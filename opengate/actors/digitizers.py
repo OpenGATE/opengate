@@ -1173,7 +1173,14 @@ class DigitizerHitsCollectionActor(
         "keep_zero_edep": (
             False,
             {
-                "doc": "FIXME",
+                "doc": "By default, only the steps with a non-zero energy deposit "
+                "create a hit. Set to True to keep all the steps (e.g. the photon "
+                "interactions without energy deposit, or the Transportation steps). "
+                "Note that some steps with ProcessDefinedStep = Transportation "
+                "(step limited by a volume boundary) have a non-zero energy "
+                "deposit: the energy lost by a charged particle along the step. "
+                "They are real deposits and are kept; some of them can be very "
+                "small (e.g. 1e-20 keV).",
             },
         ),
     }
