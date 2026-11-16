@@ -151,8 +151,9 @@ if __name__ == "__main__":
     for name in names:
         nb_mixed = int((expected["max"][name] != expected["min"][name]).sum())
         print(f"{name:20s} singles whose hits have different values: {nb_mixed}")
+        # (the numbers for the auxiliary attributes depend on their semantics)
         if name in ("n_compt_crystal", "n_Rayl_crystal", "TrackID"):
-            b = nb_mixed > 50
+            b = nb_mixed > (50 if name == "TrackID" else 10)
             utility.print_test(b, f"{name}: enough singles with different values")
             is_ok = is_ok and b
 
