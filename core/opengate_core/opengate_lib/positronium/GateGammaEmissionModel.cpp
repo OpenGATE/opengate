@@ -7,6 +7,7 @@
 
 #include "GateGammaEmissionModel.h"
 #include "G4LorentzVector.hh"
+#include "G4PhysicalConstants.hh"
 #include "Randomize.hh"
 #include <exception>
 // #include <GateMessageManager.hh>
@@ -107,7 +108,7 @@ GateGammaEmissionModel::GetPolarization(const G4ThreeVector &momentum) const {
   d0 = momentum.unit();
   a0 = GetPerpendicularVector(d0).unit();
   b0 = d0.cross(a0).unit();
-  G4double angle_radians = G4UniformRand() * M_PI;
+  G4double angle_radians = G4UniformRand() * CLHEP::pi;
   polarization = std::cos(angle_radians) * a0 + std::sin(angle_radians) * b0;
   polarization.unit();
   return polarization;
