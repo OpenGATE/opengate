@@ -87,11 +87,24 @@ hierarchy for the current track.
 The user must provide:
 
 - ``process_name``
-- ``volume_name``
+- ``volume_name``: one volume name, or a list of volume names
 
 Optional:
 
 - ``propagate_from_parent_track``
+
+A step is counted when the process that limited this step is ``process_name``
+and the step starts in the volume or in any of its daughters (for example the
+voxels of an image volume, or the collimator and the crystal of a detector
+head). Volumes are matched by name: the copies of a repeated volume are
+counted together, and volumes with different names need a list of names (or
+one attribute per volume).
+
+The value stored for a step includes this step. With
+``propagate_from_parent_track``, a secondary starts with the count of its
+parent including the step that created it: after a Compton interaction in a
+crystal, the recoil electron and all the following steps of the photon have
+the same value.
 
 This attribute is the auxiliary-attribute replacement for the old
 actor-based ``ProcessDefinedStepInVolumeAttributeLegacy`` helper.
