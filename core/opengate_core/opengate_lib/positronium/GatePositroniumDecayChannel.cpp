@@ -9,6 +9,7 @@
 #include "G4DecayProducts.hh"
 #include "G4DynamicParticle.hh"
 #include "G4LorentzVector.hh"
+#include "G4PhysicalConstants.hh"
 #include "GateHelpers.h"
 #include "Randomize.hh"
 
@@ -122,7 +123,7 @@ G4ThreeVector GatePositroniumDecayChannel::GetPolarization(
   auto d0 = momentum.unit();
   auto a0 = GetPerpendicularVector(d0).unit();
   auto b0 = d0.cross(a0).unit();
-  G4double angle_radians = G4UniformRand() * M_PI;
+  G4double angle_radians = G4UniformRand() * CLHEP::pi;
   auto polarization =
       std::cos(angle_radians) * a0 + std::sin(angle_radians) * b0;
   return polarization.unit();
