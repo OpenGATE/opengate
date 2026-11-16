@@ -100,6 +100,12 @@ head). Volumes are matched by name: the copies of a repeated volume are
 counted together, and volumes with different names need a list of names (or
 one attribute per volume).
 
+The volumes can belong to a parallel world. A step located in a parallel-world
+volume that has a material (layered mass geometry, for example a table
+overlapping a patient image) belongs to this volume only: it is not counted in
+the volumes of the mass world found at the same place, such as the image or
+the world.
+
 The value stored for a step includes this step. With
 ``propagate_from_parent_track``, a secondary starts with the count of its
 parent including the step that created it: after a Compton interaction in a

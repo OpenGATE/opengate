@@ -10,7 +10,9 @@
 #include "digitizer/GateDigiAttributeManager.h"
 #include <G4LogicalVolume.hh>
 #include <G4LogicalVolumeStore.hh>
+#include <G4Navigator.hh>
 #include <G4StepPoint.hh>
+#include <G4TransportationManager.hh>
 #include <G4VPhysicalVolume.hh>
 #include <G4VProcess.hh>
 
@@ -45,36 +47,87 @@ void GateProcessDefinedStepInVolumeAttribute::InitializeCpp() {
   manager->DefineDigiAttribute(fName, fDigiAttributeType, fill);
 }
 
+GateProcessDefinedStepInVolumeAttribute::threadLocalT::~threadLocalT() {
+  for (auto *navigator : fParallelWorldNavigators)
+    delete navigator;
+}
+
+void GateProcessDefinedStepInVolumeAttribute::InitializeThreadLocalData(
+    threadLocalT &l) const {
+  // Several logical volumes may share a name: keep them all.
+  for (const auto *lv : *G4LogicalVolumeStore::GetInstance()) {
+    for (const auto &name : fVolumeNames) {
+      if (lv->GetName() == name) {
+        l.fLogicalVolumes.push_back(lv);
+        break;
+      }
+    }
+  }
+  // Parallel worlds: all the worlds but the first one (mass world)
+  auto *tm = G4TransportationManager::GetTransportationManager();
+  auto world = tm->GetWorldsIterator();
+  for (size_t i = 1; i < tm->GetNoWorlds(); i++) {
+    auto *navigator = new G4Navigator();
+    navigator->SetWorldVolume(world[i]);
+    l.fParallelWorldNavigators.push_back(navigator);
+  }
+  l.fResolved = true;
+}
+
+bool GateProcessDefinedStepInVolumeAttribute::IsLogicalVolumeSelected(
+    const threadLocalT &l, const G4LogicalVolume *lv) const {
+  for (const auto *v : l.fLogicalVolumes) {
+    if (v == lv)
+      return true;
+  }
+  return false;
+}
+
 bool GateProcessDefinedStepInVolumeAttribute::IsStepInVolumes(
     const G4Step *step) const {
   auto &l = fThreadLocalData.Get();
-  if (!l.fResolved) {
-    // Several logical volumes may share a name: keep them all.
-    for (const auto *lv : *G4LogicalVolumeStore::GetInstance()) {
-      for (const auto &name : fVolumeNames) {
-        if (lv->GetName() == name) {
-          l.fLogicalVolumes.push_back(lv);
-          break;
-        }
+  if (!l.fResolved)
+    InitializeThreadLocalData(l);
+
+  // Parallel worlds. The middle of the step is inside the volumes the step
+  // is in, for all the worlds (a step never crosses a boundary).
+  // The step is in a volume if this volume is found anywhere in the touchable
+  // history: steps in the daughters are counted.
+  bool is_in_parallel_material = false;
+  if (!l.fParallelWorldNavigators.empty()) {
+    const auto point = 0.5 * (step->GetPreStepPoint()->GetPosition() +
+                              step->GetPostStepPoint()->GetPosition());
+    for (auto *navigator : l.fParallelWorldNavigators) {
+      const auto *pv =
+          navigator->LocateGlobalPointAndSetup(point, nullptr, false, true);
+      if (pv == nullptr)
+        continue;
+      const auto touchable = navigator->CreateTouchableHistoryHandle();
+      const auto history_depth = touchable->GetHistoryDepth();
+      for (int depth = 0; depth <= history_depth; depth++) {
+        const auto *physical_volume = touchable->GetVolume(depth);
+        if (physical_volume != nullptr &&
+            IsLogicalVolumeSelected(l, physical_volume->GetLogicalVolume()))
+          return true;
       }
+      // Layered mass geometry: this volume replaces the ones of the mass world
+      if (pv->GetLogicalVolume()->GetMaterial() != nullptr)
+        is_in_parallel_material = true;
     }
-    l.fResolved = true;
   }
+  if (is_in_parallel_material)
+    return false;
+
+  // Mass world
   const auto &touchable = step->GetPreStepPoint()->GetTouchableHandle();
   if (touchable->GetVolume() == nullptr)
     return false;
-  // The step is in a volume if this volume is found anywhere in the touchable
-  // history: steps in the daughters are counted.
   const auto history_depth = touchable->GetHistoryDepth();
   for (int depth = 0; depth <= history_depth; depth++) {
     const auto *physical_volume = touchable->GetVolume(depth);
-    if (physical_volume == nullptr)
-      continue;
-    const auto *lv = physical_volume->GetLogicalVolume();
-    for (const auto *v : l.fLogicalVolumes) {
-      if (v == lv)
-        return true;
-    }
+    if (physical_volume != nullptr &&
+        IsLogicalVolumeSelected(l, physical_volume->GetLogicalVolume()))
+      return true;
   }
   return false;
 }

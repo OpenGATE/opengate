@@ -12,6 +12,7 @@
 #include <vector>
 
 class G4LogicalVolume;
+class G4Navigator;
 
 /*
  * Count how often a given process defined a step of the current track while
@@ -24,6 +25,10 @@ class G4LogicalVolume;
  * - the value returned for a step always includes that step, whether the
  *   getter is called before (sensitive detector, i.e. actors and filters) or
  *   after (stepping action) the counter has been updated;
+ * - parallel worlds: a volume of a parallel world is found by locating the
+ *   step in this world. A step located in a parallel-world volume that has a
+ *   material (layered mass geometry) belongs to this volume and is not
+ *   counted in the volumes of the mass world found at the same place;
  * - with propagate_from_parent_track, a secondary starts with the count of
  *   its parent including the step that created it.
  */
@@ -55,7 +60,14 @@ protected:
   struct threadLocalT {
     bool fResolved{false};
     std::vector<const G4LogicalVolume *> fLogicalVolumes;
+    // One private navigator per parallel world (the navigators used for the
+    // tracking are never touched)
+    std::vector<G4Navigator *> fParallelWorldNavigators;
+    ~threadLocalT();
   };
+  void InitializeThreadLocalData(threadLocalT &l) const;
+  bool IsLogicalVolumeSelected(const threadLocalT &l,
+                               const G4LogicalVolume *lv) const;
   mutable G4Cache<threadLocalT> fThreadLocalData;
 };
 
