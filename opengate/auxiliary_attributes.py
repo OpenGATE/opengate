@@ -100,6 +100,10 @@ class ProcessDefinedStepInVolumeAttribute(
     Volumes are matched by name: all the copies of a repeated volume are
     counted together. Use a list of names to count several volumes with a
     single attribute.
+
+    Volumes of a parallel world can be used. A step located in a
+    parallel-world volume that has a material belongs to this volume only: it
+    is not counted in the volumes of the mass world found at the same place.
     """
 
     user_info_defaults = {
