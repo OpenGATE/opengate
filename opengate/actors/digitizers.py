@@ -4,7 +4,7 @@ from scipy.spatial.transform import Rotation
 import opengate_core as g4
 from ..base import process_cls
 from .base import ActorBase
-from ..exception import fatal
+from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 from ..utility import g4_units
 from ..image import (
@@ -1827,6 +1827,10 @@ class ProcessDefinedStepInVolumeAttributeLegacy:
     """
 
     def __init__(self, sim, process_name, volume_name):
+        warning(
+            "ProcessDefinedStepInVolumeAttributeLegacy has been replaced by the auxiliary "
+            "attribute ProcessDefinedStepInVolumeAttribute and will be deprecated soon."
+        )
         self.name = f"ProcessDefinedStep__{process_name}__{volume_name}"
         self.actor = sim.add_actor(
             "DigiAttributeProcessDefinedStepInVolumeActor", self.name
@@ -1897,6 +1901,10 @@ class LastProcessDefinedStepInVolumeAttributeLegacy:
     """
 
     def __init__(self, sim, volume_name):
+        warning(
+            "LastProcessDefinedStepInVolumeAttributeLegacy has been replaced by the auxiliary "
+            "attribute LastProcessDefinedStepInVolumeAttribute and will be deprecated soon."
+        )
         self.name = f"LastOccuringProcess__{volume_name}"
         self.actor = sim.add_actor(
             "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name
