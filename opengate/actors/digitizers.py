@@ -4,7 +4,7 @@ from scipy.spatial.transform import Rotation
 import opengate_core as g4
 from ..base import process_cls
 from .base import ActorBase
-from ..exception import fatal
+from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 from ..utility import g4_units
 from ..image import (
@@ -366,7 +366,19 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
                 "doc": "FIXME",
             },
         ),
+        "attribute_policies": (
+            {},
+            {
+                "doc": "Dictionary {attribute name: policy} to choose, for some attributes, "
+                "which hit gives its value to the single (the default is described above). "
+                "Policies: 'max' or 'min' (hit with the largest/smallest value, numeric attributes only), "
+                "'first' or 'last' (earliest/latest hit according to GlobalTime), "
+                "'energy_winner' (hit with the largest energy deposit). ",
+            },
+        ),
     }
+
+    attribute_policy_names = ("max", "min", "first", "last", "energy_winner")
 
     def __init__(self, *args, **kwargs):
         DigitizerBase.__init__(self, *args, **kwargs)
@@ -389,6 +401,17 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
             )
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
+        for att_name, att_policy in self.attribute_policies.items():
+            if att_policy not in self.attribute_policy_names:
+                fatal(
+                    f"Adder '{self.name}': unknown policy '{att_policy}' for the attribute "
+                    f"'{att_name}'. Available policies: {self.attribute_policy_names}"
+                )
+            if att_name in self.skip_attributes:
+                fatal(
+                    f"Adder '{self.name}': the attribute '{att_name}' has a policy "
+                    f"but is in skip_attributes."
+                )
 
     def initialize(self):
         DigitizerBase.initialize(self)
@@ -1827,6 +1850,10 @@ class ProcessDefinedStepInVolumeAttributeLegacy:
     """
 
     def __init__(self, sim, process_name, volume_name):
+        warning(
+            "ProcessDefinedStepInVolumeAttributeLegacy has been replaced by the auxiliary "
+            "attribute ProcessDefinedStepInVolumeAttribute and will be deprecated soon."
+        )
         self.name = f"ProcessDefinedStep__{process_name}__{volume_name}"
         self.actor = sim.add_actor(
             "DigiAttributeProcessDefinedStepInVolumeActor", self.name
@@ -1897,6 +1924,10 @@ class LastProcessDefinedStepInVolumeAttributeLegacy:
     """
 
     def __init__(self, sim, volume_name):
+        warning(
+            "LastProcessDefinedStepInVolumeAttributeLegacy has been replaced by the auxiliary "
+            "attribute LastProcessDefinedStepInVolumeAttribute and will be deprecated soon."
+        )
         self.name = f"LastOccuringProcess__{volume_name}"
         self.actor = sim.add_actor(
             "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name
