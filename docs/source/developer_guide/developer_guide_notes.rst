@@ -286,4 +286,4 @@ are the same.
 For this reason, ``ActorOutputRoot`` gives the ROOT file paths to the C++ side
 with ``/`` separators only (``Path.as_posix()``), which Windows accepts. Keep
 this rule for any new code that passes a ROOT file name to Geant4. The test
-``test144_root_output_several_files_mt`` checks it.
+``test151_root_output_several_files_mt`` checks it.
