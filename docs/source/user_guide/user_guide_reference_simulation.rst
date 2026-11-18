@@ -107,8 +107,8 @@ Multithreading
 Multithreading is available on Linux, macOS and Windows. With several threads,
 each ROOT output (phase space, hits, digitizers, ...) is still written in a
 single file: Geant4 merges the data of all threads into the file created by
-the master thread. See `test144_root_output_several_files_mt
-<https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test144_root_output_several_files_mt.py>`_
+the master thread. See `test151_root_output_several_files_mt
+<https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test151_root_output_several_files_mt.py>`_
 for an example with several ROOT files.
 
 .. warning::

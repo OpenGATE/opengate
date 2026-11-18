@@ -21,7 +21,7 @@ import numpy as np
 import uproot
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test144")
+    paths = utility.get_default_test_paths(__file__, output_folder="test151")
 
     # units
     m = gate.g4_units.m
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         phsp.attached_to = plane
         phsp.attributes = ["EventID", "KineticEnergy", "ThreadID"]
         phsp.steps_to_store = "entering"
-        phsp.output_filename = f"test144_phsp{i}.root"
+        phsp.output_filename = f"test151_phsp{i}.root"
         phsps.append(phsp)
 
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
