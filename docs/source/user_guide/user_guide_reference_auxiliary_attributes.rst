@@ -46,6 +46,9 @@ Description
 ~~~~~~~~~~~
 
 Counts how often the current track has undergone a configured Geant4 process.
+The process of a step is the process that limited this step (post-step
+point). The value read for a step includes this step, whether it is read by
+an actor, a filter or a digitizer.
 
 The user must provide:
 
@@ -142,6 +145,9 @@ Description
 
 Stores the last non-transportation process that defined a step in the
 configured volume hierarchy for the current track.
+The process of a step is the process that limited this step (post-step
+point). The value read for a step includes this step, whether it is read by
+an actor, a filter or a digitizer.
 
 The user must provide:
 
@@ -174,8 +180,9 @@ Description
 ~~~~~~~~~~~
 
 Stores the last interaction position seen on the current track inside the
-configured volume hierarchy. The stored position is taken from the pre-step
-point of a step whose defining process is not ``Transportation``. If no
+configured volume hierarchy: the post-step point of the last step whose
+defining process is not ``Transportation`` (the position of the interaction).
+The value read for a step includes this step. If no
 qualifying interaction has been seen yet, the attribute returns
 ``(NaN, NaN, NaN)``.
 

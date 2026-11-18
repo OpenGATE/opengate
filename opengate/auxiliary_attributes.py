@@ -50,7 +50,13 @@ class InteractionCounterAttribute(
     AuxiliaryAttributeBase, g4.GateInteractionCounterAttribute
 ):
     """
-    Count how often the current track has undergone a configured process.
+    Count how often the current track has undergone a configured process,
+    i.e. how many steps of the track were limited by this process.
+
+    The value read for a step includes this step (the process that limited
+    this step), whether it is read by an actor, a filter or a digitizer.
+    With ``propagate_from_parent_track``, a secondary starts with the count
+    of its parent, including the step that created it.
     """
 
     user_info_defaults = {
@@ -172,6 +178,9 @@ class LastProcessDefinedStepInVolumeAttribute(
     Store the last non-transportation process that defined a step in the
     configured volume for the current track. Optionally propagate the current
     process snapshot to secondaries created along the track.
+
+    The value read for a step includes this step (the process that limited
+    this step), whether it is read by an actor, a filter or a digitizer.
     """
 
     user_info_defaults = {
@@ -210,8 +219,9 @@ class LastInteractionPositionInVolumeAttribute(
 ):
     """
     Store the last interaction position seen on the current track inside the
-    configured volume hierarchy. The stored position is taken from the
-    pre-step point of the step whose defining process is not Transportation.
+    configured volume hierarchy: the post-step point of the last step whose
+    defining process is not Transportation (the position of the interaction).
+    The value read for a step includes this step.
     Optionally propagate the current position snapshot to secondaries created
     along the track. If no qualifying interaction has been seen yet, the
     attribute returns ``(NaN, NaN, NaN)``.
