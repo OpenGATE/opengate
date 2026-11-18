@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import sys
 import numpy as np
 import itk
 from box import Box
@@ -29,7 +28,7 @@ def write_water_phantom(folder, size=50, spacing=4.0, source_size=5):
 def run_simulation(bremsstrahlung, activity=2e5, threads=None):
     """Electron run (e- mode) of Y90, a pure beta emitter: all photons are bremsstrahlung."""
     if threads is None:
-        threads = 1 if sys.platform.startswith("win") else 4
+        threads = 4
     folder_name = "test035d_brems_" + ("on" if bremsstrahlung else "off")
     paths = utility.get_default_test_paths(__file__, "", output_folder=folder_name)
     dr_data = paths.data / "dose_rate_data"
