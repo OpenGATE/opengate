@@ -55,9 +55,16 @@ You can compare attributes (like Energy, Time, Position) using standard Python c
    f5 = F.ParticleName.contains("proton")
 
 The comparison follows the type of the attribute: ``F.TotalEnergyDeposit > 0``
-and ``F.TotalEnergyDeposit > 0.0`` are the same filter. Only double, integer
-and string attributes can be used; vector attributes (e.g. ``PostPosition``)
-cannot.
+and ``F.TotalEnergyDeposit > 0.0`` are the same filter. Double, integer and
+string attributes can be used. A 3-vector attribute (e.g. ``PostPosition``,
+``PrePosition``, ``PreDirection``) cannot be compared as a whole, but one of
+its components can, with the ``_X``, ``_Y`` or ``_Z`` suffix (the same names
+as the branches of the ROOT output):
+
+.. code-block:: python
+
+    f = F.PostPosition_X < 0 * mm
+    f = (F.PostPosition_X < 0 * mm) & (F.PreDirection_Z > 0.9)
 
 Logical Combination
 ~~~~~~~~~~~~~~~~~~~
@@ -85,7 +92,8 @@ You can filter on any attribute available in the ``GateDigiAttributeManager`` (C
 * ``ParticleName``, ``TrackCreatorProcess``, ``ProcessDefinedStep``, ``TrackVolumeName`` (string)
 * ``TrackID``, ``ParentID``, ``RunID``, ``EventID``, ``PDGCode`` (integer)
 
-Vector attributes, such as positions and directions, cannot be used in a filter.
+For vector attributes, such as positions and directions, use one component
+(``F.PostPosition_X``, ``F.PostPosition_Y``, ``F.PostPosition_Z``).
 
 Special Filters
 ---------------

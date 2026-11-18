@@ -25,4 +25,9 @@ void init_GateAttributeComparisonFilter(py::module &m) {
   make_attribute_filter_binding<double>(m, "GateAttributeFilterDouble");
   make_attribute_filter_binding<int>(m, "GateAttributeFilterInt");
   make_attribute_filter_binding<std::string>(m, "GateAttributeFilterString");
+  py::class_<GateAttributeFilterVectorComponent, GateVFilter>(
+      m, "GateAttributeFilterVectorComponent")
+      .def(py::init())
+      .def("InitializeUserInfo",
+           &GateAttributeFilterVectorComponent::InitializeUserInfo);
 }
