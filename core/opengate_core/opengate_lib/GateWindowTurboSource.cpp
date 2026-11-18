@@ -151,26 +151,17 @@ void GateWindowTurboSource::Visualize() const {
 
 unsigned long GateWindowTurboSource::GetExpectedNumberOfEvents(
     const TimeIntervals &time_intervals) {
-  // the goal is to calculate the weighted average of expected events of all
-  // time intervals that already have an act ratio
-  std::vector<unsigned long> expected_events;
-  unsigned long total_expected = 0;
+  // calculate if all time intervals have non-negative act ratios
   double total_expected_with_act_ratio = 0;
-  unsigned long total_expected_valid = 0;
   for (int i = 0; i < time_intervals.size(); i++) {
     G4double act_ratio = GetValueThisRun(fSharedCache->fActRatio, i);
+    if (act_ratio < 0)
+      return 0;
     unsigned long expected =
         GateVSource::GetExpectedNumberOfEvents(time_intervals[i]);
-    total_expected += expected;
-    if (act_ratio >= 0) {
-      total_expected_with_act_ratio += expected * act_ratio;
-      total_expected_valid += expected;
-    }
+    total_expected_with_act_ratio += expected * act_ratio;
   }
-  if (total_expected_valid == 0)
-    return 0;
-  return static_cast<unsigned long>(total_expected_with_act_ratio /
-                                    total_expected_valid * total_expected);
+  return static_cast<unsigned long>(total_expected_with_act_ratio);
 }
 
 void GateWindowTurboSource::InitializeDirection(py::dict puser_info) {

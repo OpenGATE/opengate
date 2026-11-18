@@ -7,6 +7,7 @@ from ..exception import fatal, warning
 import numpy as np
 from ..logger import logger
 import os
+import json
 
 
 def _wts_direction_parameters():
@@ -23,6 +24,7 @@ def _wts_direction_parameters():
             "act_ratio": [],
             "max_solid_angle": [],
             "skip_mode": False,
+            "init_result_json": "",
         }
     )
 
@@ -295,12 +297,45 @@ class WindowTurboSource(GenericSource):
 
         GenericSource.initialize_g4_source(self, g4_source, run_timing_intervals)
 
+    def resolve_and_validate_config(self, run_timing_intervals, context=None):
+        if os.path.exists(self.direction.init_result_json):
+            logger.debug(
+                f"Loading WTS initialization result from {self.direction.init_result_json}"
+            )
+            with open(self.direction.init_result_json, "r") as f:
+                init_result = json.load(f)
+                init_result_this_source = init_result.get(self.name, {})
+                self.direction.act_ratio = init_result_this_source.get(
+                    "act_ratio", self.direction.act_ratio
+                )
+                self.direction.max_solid_angle = init_result_this_source.get(
+                    "max_solid_angle", self.direction.max_solid_angle
+                )
+
+        return super().resolve_and_validate_config(run_timing_intervals, context)
+
+    def gather_outputs(self, thread_sources):
+        json_f = None
+        results = {}
+        if self.direction.init_result_json:
+            if os.path.exists(self.direction.init_result_json):
+                json_f = open(self.direction.init_result_json, "r")
+                results = json.load(json_f)
+                json_f.close()
+            result_this_source = {
+                "act_ratio": self.direction.act_ratio,
+                "max_solid_angle": self.direction.max_solid_angle,
+            }
+            results[self.name] = result_this_source
+            with open(self.direction.init_result_json, "w") as json_f:
+                json.dump(results, json_f, indent=4)
+
     def can_predict_number_of_events(self):
-        # only when at least one time interval has a non-negative act_ratio
+        # only when all time intervals have non-negative `act_ratio`s
         for ar in self.direction.act_ratio:
-            if ar >= 0:
-                return True
-        return False
+            if ar < 0:
+                return False
+        return True
 
     def _visualize_window(
         self, color, width: float = 2.0, timing_interval_index: int = 0

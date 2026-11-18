@@ -99,12 +99,16 @@ The additional parameters of ``WindowTurboSource`` are all located in ``source.d
      - Maximum solid angle of the window over the source position distribution. Usually left empty at its default value, so it is estimated automatically during initialization.
    * - ``skip_mode``
      - Advanced option, with a default value of ``False``. Its usage is not described in this document.
+   * - ``init_result_json``
+     - Path to the JSON file where the initialization results are stored and loaded.
 
 ``a1``, ``a2``, ``b1``, ``b2``, ``plane_distance``, and ``plane_phi`` jointly define the position and size of the window.
 ``a1`` and ``a2`` define the window extent within the reference plane in the direction perpendicular to the z axis;
 ``b1`` and ``b2`` define the window extent in the z direction.
 ``plane_distance`` defines the distance from the reference plane to the system center, and ``plane_phi`` defines the
-orientation of this plane around the z axis.
+orientation of this plane around the z axis. if ``init_result_json`` is provided, the initialization results will be stored
+and loaded from this file if possible. In this file, result are stored for each source, therefore it's recommanded to provide
+one single path for a simulation.
 
 .. image:: ../figures/window_turbo_source_definition.png
 
@@ -132,6 +136,8 @@ Initialization
 ``WindowTurboSource`` needs to estimate two quantities:
 
 * ``act_ratio``: on average, the fraction of ``GenericSource`` isotropic events that would pass through the window.
+Total event estimation before simulation and the progress bar initialization need ``act_ratio`` being set before
+the simulation.
 * ``max_solid_angle``: the maximum solid angle subtended by the window over the source position distribution.
 
 If the user does not provide these two parameters, the simulation estimates them automatically before the start of each
