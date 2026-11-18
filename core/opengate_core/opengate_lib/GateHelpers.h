@@ -89,4 +89,13 @@ void LogDebug(const S &format_str, Args &&...args) {
   fmt::print(fg(fmt::color::crimson), format_str, args...);
 }
 
+// Character of the progress bars (indicators). The Windows console does not
+// always use UTF-8 (e.g. code page 936): a multi-byte character is displayed
+// as several characters and breaks the bar (#957). ASCII on Windows.
+#ifdef _WIN32
+constexpr const char *GateProgressBarFill = "#";
+#else
+constexpr const char *GateProgressBarFill = "\u25A0";
+#endif
+
 #endif // GateHelpers_h
