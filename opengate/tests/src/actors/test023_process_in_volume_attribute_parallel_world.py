@@ -18,7 +18,6 @@ position of the interaction:
 - the interactions in the table are NOT counted in the water, nor in the world
 """
 
-import os
 import numpy as np
 import uproot
 
@@ -151,12 +150,11 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
     is_ok = check(steps_actor, names)
 
-    # one navigator per thread (no multithreading on Windows)
-    if os.name != "nt":
-        print()
-        print("Multithread")
-        sim, steps_actor, names = create_simulation(paths, number_of_threads=3)
-        sim.run(start_new_process=True)
-        is_ok = check(steps_actor, names) and is_ok
+    # one navigator per thread
+    print()
+    print("Multithread")
+    sim, steps_actor, names = create_simulation(paths, number_of_threads=3)
+    sim.run(start_new_process=True)
+    is_ok = check(steps_actor, names) and is_ok
 
     utility.test_ok(is_ok)

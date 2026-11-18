@@ -18,8 +18,6 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     n_threads = int(os.cpu_count() / 2)
-    if os.name == "nt":
-        n_threads = 1
     sim.number_of_threads = n_threads
     sim.visu = False
     sim.random_seed = 66666
