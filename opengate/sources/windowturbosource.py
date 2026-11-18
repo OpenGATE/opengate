@@ -296,7 +296,10 @@ class WindowTurboSource(GenericSource):
         GenericSource.initialize_g4_source(self, g4_source, run_timing_intervals)
 
     def can_predict_number_of_events(self):
-        # Actually, can, but initialization is needed. However act ratio is dependent on mother volume movement, therefore cannot be predicted before the simulation starts.
+        # only when at least one time interval has a non-negative act_ratio
+        for ar in self.direction.act_ratio:
+            if ar >= 0:
+                return True
         return False
 
     def _visualize_window(

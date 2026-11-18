@@ -45,6 +45,8 @@ public:
   void InitializeUserInfo(py::dict &user_info) override;
   virtual double CalcNextTime(double current_simulation_time) override;
   virtual void Visualize() const override;
+  virtual unsigned long
+  GetExpectedNumberOfEvents(const TimeIntervals &time_intervals) override;
 
 protected:
   virtual void CreateSPS() override;
