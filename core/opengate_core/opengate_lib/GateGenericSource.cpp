@@ -172,13 +172,7 @@ void GateGenericSource::GeneratePrimaries(
     fInitGenericIon = false; // only the first time
   }
 
-  // Confine cannot be initialized at initialization (because need all volumes
-  // to be created) It must be set here, the first time we get there
-  if (fInitConfine) {
-    auto *pos = fSPS->GetPosDist();
-    pos->ConfineSourceToVolume(fConfineVolume);
-    fInitConfine = false;
-  }
+  InitializeConfine();
 
   // sample the particle properties with SingleParticleSource
   // (the acceptance angle or forced direction is included)
@@ -662,7 +656,18 @@ void GateGenericSource::PosPointCloud::operator()(
   sceneHandler.EndPrimitives();
 }
 
-void GateGenericSource::Visualize() const {
+void GateGenericSource::InitializeConfine() {
+  // Confine cannot be initialized at initialization (because need all volumes
+  // to be created) It must be set the first time a position is sampled
+  // (event or visualization)
+  if (fInitConfine) {
+    auto *pos = fSPS->GetPosDist();
+    pos->ConfineSourceToVolume(fConfineVolume);
+    fInitConfine = false;
+  }
+}
+
+void GateGenericSource::Visualize() {
   if (fVisCount <= 0)
     return;
 
@@ -672,6 +677,9 @@ void GateGenericSource::Visualize() const {
   if (scene == nullptr)
     return;
 
+  // the confinement is set at the first event: it may not be set yet (no
+  // event generated)
+  InitializeConfine();
   auto *pos = fSPS->GetPosDist();
 
   auto *point_cloud = new PosPointCloud(fVisColour, fVisSize);

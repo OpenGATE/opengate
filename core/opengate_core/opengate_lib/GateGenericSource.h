@@ -47,7 +47,7 @@ public:
 
   unsigned long GetTotalSkippedEvents() const;
   unsigned long GetTotalZeroEvents() const;
-  virtual void Visualize() const override;
+  void Visualize() override;
 
 protected:
   //  We cannot use a std::unique_ptr
@@ -98,8 +98,9 @@ protected:
   unsigned long fTotalZeroEvents = 0;
 
   // if confine is used, must be defined after the initialization
-  // bool fInitConfine;
+  // (when all the volumes exist): see InitializeConfine
   std::string fConfineVolume;
+  void InitializeConfine();
 
   // for beta plus CDF
   std::vector<double> fEnergyCDF;
