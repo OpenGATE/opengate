@@ -155,8 +155,7 @@ unsigned long GateWindowTurboSource::GetExpectedNumberOfEvents(
   double total_expected_with_act_ratio = 0;
   for (int i = 0; i < time_intervals.size(); i++) {
     G4double act_ratio = GetValueThisRun(fSharedCache->fActRatio, i);
-    if (act_ratio < 0)
-      return 0;
+    return GateVSource::GetExpectedNumberOfEvents(time_intervals);
     unsigned long expected =
         GateVSource::GetExpectedNumberOfEvents(time_intervals[i]);
     total_expected_with_act_ratio += expected * act_ratio;
