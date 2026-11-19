@@ -76,20 +76,6 @@ void GateDigiAdderInVolume::Update(size_t i, double edep,
     fNumberOfHits++;
 }
 
-void GateDigiAdderInVolume::UpdateAttribute(const size_t k, const size_t i,
-                                            const double score) {
-  if (k >= fAttributeIndex.size()) {
-    fAttributeIndex.resize(k + 1, 0);
-    fAttributeScore.resize(k + 1, 0.0);
-    fAttributeIsSet.resize(k + 1, false);
-  }
-  if (!fAttributeIsSet[k] || score > fAttributeScore[k]) {
-    fAttributeIndex[k] = i;
-    fAttributeScore[k] = score;
-    fAttributeIsSet[k] = true;
-  }
-}
-
 void GateDigiAdderInVolume::Terminate() {
   if (fPolicy ==
       GateDigitizerAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {

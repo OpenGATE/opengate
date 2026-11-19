@@ -218,6 +218,34 @@ class Digitizer:
         return None
 
 
+attribute_policy_names = ("max", "min", "first", "last", "energy_winner")
+
+
+def check_attribute_policies(actor, computed_attributes=()):
+    """
+    Check the option attribute_policies of a digitizer that groups digi
+    (adder, readout, charge induction): known policies, no policy for the
+    attributes computed by the module or skipped. The types of the
+    attributes are checked on the C++ side (GateDigiAttributePolicies).
+    """
+    for att_name, att_policy in actor.attribute_policies.items():
+        if att_policy not in attribute_policy_names:
+            fatal(
+                f"Actor '{actor.name}': unknown policy '{att_policy}' for the attribute "
+                f"'{att_name}'. Available policies: {attribute_policy_names}"
+            )
+        if att_name in actor.skip_attributes:
+            fatal(
+                f"Actor '{actor.name}': the attribute '{att_name}' has a policy "
+                f"but is in skip_attributes."
+            )
+        if att_name in computed_attributes:
+            fatal(
+                f"Actor '{actor.name}': no attribute policy can be set for '{att_name}', "
+                f"this attribute is computed by the module."
+            )
+
+
 class DigitizerBase(ActorBase):
     _output_name_root = "root_output"
 
@@ -378,7 +406,7 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
         ),
     }
 
-    attribute_policy_names = ("max", "min", "first", "last", "energy_winner")
+    attribute_policy_names = attribute_policy_names
 
     def __init__(self, *args, **kwargs):
         DigitizerBase.__init__(self, *args, **kwargs)
@@ -401,17 +429,9 @@ class DigitizerAdderActor(DigitizerWithRootOutput, g4.GateDigitizerAdderActor):
             )
         if self.user_info.group_volume is not None:
             self.simulation.volume_manager.get_volume(self.user_info.group_volume)
-        for att_name, att_policy in self.attribute_policies.items():
-            if att_policy not in self.attribute_policy_names:
-                fatal(
-                    f"Adder '{self.name}': unknown policy '{att_policy}' for the attribute "
-                    f"'{att_name}'. Available policies: {self.attribute_policy_names}"
-                )
-            if att_name in self.skip_attributes:
-                fatal(
-                    f"Adder '{self.name}': the attribute '{att_name}' has a policy "
-                    f"but is in skip_attributes."
-                )
+        check_attribute_policies(
+            self, ("TotalEnergyDeposit", "PostPosition", "GlobalTime")
+        )
 
     def initialize(self):
         DigitizerBase.initialize(self)
@@ -1706,6 +1726,332 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         DigitizerBase.EndSimulationAction(self)
 
 
+class DigitizerChargeInductionActor(
+    DigitizerWithRootOutput, g4.GateDigitizerChargeInductionActor
+):
+    """
+    Charge induction and readout by pixel, for a semiconductor crystal with
+    a pixelated anode (e.g. CZT, CdTe).
+
+    Input: hits (TotalEnergyDeposit, PostPosition, PreStepUniqueVolumeID,
+    GlobalTime). Output: one digi per (event, crystal, pixel), whose energy
+    is the signal of the pixel and whose position is the centre of the
+    pixel (PostPosition, global; PostPositionLocal, local with z = 0), with
+    the pixel indices (PixelIndexX, PixelIndexY) and the earliest time of
+    the hits that contribute. The attributes with a policy
+    (attribute_policies) are taken from the hit chosen by the policy; the
+    other attributes are copied from the hit with the largest contribution
+    to the pixel. One event can give several digi (several pixels).
+
+    The crystal is the attached volume (a box). The pixel grid is in its
+    local XY plane: either given (pixel_size, number_of_pixels, centred on
+    the origin of the crystal: the crystal can be one monolithic box), or
+    read from a repeated pixel volume, daughter of the crystal
+    (pixel_volume): the pixel of a hit is then the copy of the pixel volume
+    it is in.
+
+    For each hit of energy E at depth z (distance to the cathode) and for
+    the pixel of the hit and its 8 neighbours (neighbours = 1):
+    signal[pixel] += E x eta(z, dx, dy), with (dx, dy) the position of the
+    hit relative to the centre of the pixel, and eta one of two tables
+    (eta_own for the pixel of the hit, eta_neighbour for the others),
+    computed from the weighting potential of a pad, the trapping of the
+    electrons and holes and the charge cloud (see opengate.actors.chargeinduction),
+    or given by the user. Then the gain and the threshold.
+
+    With neighbours = 0 and tables = "unit", the actor is a plain readout by
+    pixel (sum of the deposits per pixel).
+    """
+
+    user_info_defaults = {
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "Digi collection to be used as input (hits).",
+            },
+        ),
+        "pixel_size": (
+            [2.46 * g4_units.mm, 2.46 * g4_units.mm],
+            {
+                "doc": "Size of a pixel (pitch) along the local X and Y axes of the crystal. "
+                "Ignored if pixel_volume is set.",
+            },
+        ),
+        "number_of_pixels": (
+            [128, 16],
+            {
+                "doc": "Number of pixels along the local X and Y axes of the crystal. "
+                "The grid is centred on the origin of the crystal. Ignored if pixel_volume is set.",
+            },
+        ),
+        "pixel_volume": (
+            None,
+            {
+                "doc": "Name of a repeated pixel volume, daughter of the crystal "
+                "(RepeatParametrisedVolume, the volume it repeats, or a volume with several "
+                "translations). The pixel grid (pitch, number, centre) is read from the "
+                "positions of its copies, which must form a full regular grid in the XY plane "
+                "of the crystal; the pixel of a hit is the copy it is in.",
+            },
+        ),
+        "pad_size": (
+            None,
+            {
+                "doc": "Size of the anode pads along X and Y (None: the pitch, no gap). With "
+                "smaller pads, the weighting potential is computed for pads separated by gaps; "
+                "the electrons are still collected by the pad of the pixel they drift in.",
+            },
+        ),
+        "cathode_side": (
+            "+z",
+            {
+                "doc": "Side of the cathode in the local coordinate system of the crystal "
+                "('+z' or '-z'). The anode (pixels) is on the other side.",
+                "allowed_values": ("+z", "-z"),
+            },
+        ),
+        "neighbours": (
+            1,
+            {
+                "doc": "0: only the pixel of the hit gets a signal; 1: also the 8 pixels around (3 x 3).",
+                "allowed_values": (0, 1),
+            },
+        ),
+        "electron_mean_path": (
+            np.inf,
+            {
+                "doc": "Mean drift path of the electrons before trapping (inf: no trapping).",
+            },
+        ),
+        "hole_mean_path": (
+            0.0,
+            {
+                "doc": "Mean drift path of the holes before trapping (0: the holes do not move).",
+            },
+        ),
+        "charge_cloud_sigma": (
+            0.0,
+            {
+                "doc": "Sigma of the Gaussian charge cloud on the anode plane (0: no sharing by the cloud).",
+            },
+        ),
+        "tables": (
+            None,
+            {
+                "doc": "None: tables computed from the pixel size, the pad size, the thickness of "
+                "the crystal, electron_mean_path, hole_mean_path and charge_cloud_sigma. "
+                "'unit': eta_own = 1 and eta_neighbour = 0 (no induction). "
+                "Otherwise a dict or a .npz file with the keys z, x, y (regular axes) and "
+                "eta_own, eta_neighbour (shape (len(z), len(x), len(y))), and optionally "
+                "the separable cloud term: cloud_x, cloud_y, cloud_z with their regular axes "
+                "cloud_x_axis, cloud_y_axis, cloud_z_axis (see opengate.actors.chargeinduction).",
+            },
+        ),
+        "table_resolution": (
+            [512, 16, 121],
+            {
+                "doc": "Computation of the weighting potential: number of cells per period, "
+                "number of pixels per period, number of nodes along the depth.",
+            },
+        ),
+        "gain": (
+            1.0,
+            {
+                "doc": "Factor applied to the signal of each pixel.",
+            },
+        ),
+        "signal_threshold": (
+            1 * g4_units.keV,
+            {
+                "doc": "Signals (after the gain) below this value are dropped (negative ones always are).",
+            },
+        ),
+        "hit_position": (
+            "post",
+            {
+                "doc": "Position of a hit: 'post' (PostPosition) or 'middle' (middle of "
+                "PrePosition and PostPosition; PrePosition required in the hits).",
+                "allowed_values": ("post", "middle"),
+            },
+        ),
+        "attribute_policies": (
+            {},
+            {
+                "doc": "Dictionary {attribute name: policy} to choose, for some attributes, "
+                "which hit gives its value to the digi of a pixel. Same policies as "
+                "DigitizerAdderActor; 'energy_winner' is the hit with the largest "
+                "contribution to the signal of the pixel.",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "Attributes of the input not copied to the output.",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "Clear the output collection every this number of events (memory).",
+            },
+        ),
+    }
+
+    computed_attributes = (
+        "TotalEnergyDeposit",
+        "PostPosition",
+        "PostPositionLocal",
+        "GlobalTime",
+        "PixelIndexX",
+        "PixelIndexY",
+    )
+
+    def __init__(self, *args, **kwargs):
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self.induction_tables = None
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigitizerChargeInductionActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["induction_tables"] = None
+        return return_dict
+
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if isinstance(self.attached_to, (list, tuple)):
+            fatal(
+                f"The actor '{self.name}' must be attached to a single volume (the crystal)."
+            )
+        if len(self.pixel_size) != 2 or len(self.number_of_pixels) != 2:
+            fatal(
+                f"The actor '{self.name}': pixel_size and number_of_pixels must have two values."
+            )
+        if self.pad_size is not None and len(self.pad_size) != 2:
+            fatal(f"The actor '{self.name}': pad_size must have two values.")
+        if self.electron_mean_path <= 0:
+            fatal(f"The actor '{self.name}': electron_mean_path must be positive.")
+        if self.hole_mean_path < 0 or self.charge_cloud_sigma < 0:
+            fatal(
+                f"The actor '{self.name}': hole_mean_path and charge_cloud_sigma must be >= 0."
+            )
+        check_attribute_policies(self, self.computed_attributes)
+        if self.pixel_volume is not None:
+            self.get_pixel_volume()
+
+    def get_pixel_volume(self):
+        """The repeated pixel volume (the repeater if the user gave the repeated volume)."""
+        from ..geometry.volumes import RepeatParametrisedVolume
+
+        vm = self.simulation.volume_manager
+        name = self.pixel_volume
+        if not isinstance(name, str):
+            name = name.name
+        vol = vm.get_volume(name)
+        if not isinstance(vol, RepeatParametrisedVolume):
+            for v in vm.volumes.values():
+                if (
+                    isinstance(v, RepeatParametrisedVolume)
+                    and v.user_info["repeated_volume_name"] == name
+                ):
+                    vol = v
+                    break
+        mother = vol.mother if isinstance(vol.mother, str) else vol.mother.name
+        crystal = self.attached_to
+        if not isinstance(crystal, str):
+            crystal = crystal.name
+        if mother != crystal:
+            fatal(
+                f"The actor '{self.name}': the pixel volume '{vol.name}' must be a daughter of "
+                f"the crystal '{crystal}', while its mother is '{mother}'."
+            )
+        return vol
+
+    def pixel_grid(self):
+        """
+        Pixel size, number of pixels, centre of the grid (local XY of the
+        crystal) and, if a pixel volume is set, the indices of the pixel of
+        each copy number (else None).
+        """
+        from .chargeinduction import grid_from_positions, pixel_centres_of_volume
+
+        if self.pixel_volume is None:
+            return list(self.pixel_size), list(self.number_of_pixels), [0, 0], None
+        vol = self.get_pixel_volume()
+        size, number, center, ix, iy = grid_from_positions(pixel_centres_of_volume(vol))
+        return size, number, center, (ix, iy)
+
+    def crystal_thickness(self, size, number, center):
+        vol = self.simulation.volume_manager.get_volume(self.attached_to)
+        if vol.type_name not in ("Box", "BoxVolume"):
+            fatal(
+                f"The actor '{self.name}' must be attached to a Box volume (the crystal), "
+                f"while '{vol.name}' is a {vol.type_name}."
+            )
+        for i in (0, 1):
+            g = number[i] * size[i] / 2 + abs(center[i])
+            if g > vol.size[i] / 2 * (1 + 1e-9):
+                warning(
+                    f"The pixel grid of the actor '{self.name}' goes beyond the crystal "
+                    f"'{vol.name}' along axis {'XY'[i]}."
+                )
+        return vol.size[2]
+
+    def compute_induction_tables(self, pitch, thickness):
+        from .chargeinduction import induction_tables, unit_tables, read_tables
+
+        if self.tables is None:
+            n, n_period, n_z = self.table_resolution
+            return induction_tables(
+                pitch,
+                thickness,
+                electron_path=self.electron_mean_path,
+                hole_path=self.hole_mean_path,
+                cloud_sigma=self.charge_cloud_sigma,
+                n=n,
+                n_period=n_period,
+                n_z=n_z,
+                pad_size=self.pad_size,
+            )
+        if isinstance(self.tables, str) and self.tables == "unit":
+            return unit_tables(pitch, thickness)
+        return read_tables(self.tables)
+
+    def initialize(self):
+        DigitizerBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        from .chargeinduction import table_origin_and_spacing, cloud_tables
+
+        DigitizerBase.StartSimulationAction(self)
+        vol = self.simulation.volume_manager.get_volume(self.attached_to)
+        size, number, center, copies = self.pixel_grid()
+        thickness = self.crystal_thickness(size, number, center)
+        self.SetGrid(size, number, center)
+        if copies is not None:
+            self.SetPixelVolume(vol.volume_depth_in_tree + 1, copies[0], copies[1])
+        self.induction_tables = self.compute_induction_tables(size, thickness)
+        t = self.induction_tables
+        origin, spacing = table_origin_and_spacing(t)
+        self.SetTables(t["eta_own"], t["eta_neighbour"], origin, spacing)
+        c = cloud_tables(t)
+        if c is not None:
+            self.SetCloudTables(*c)
+        self.SetCrystalDepth(vol.volume_depth_in_tree)
+        self.SetCrystalThickness(thickness)
+        g4.GateDigitizerChargeInductionActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        # Keep this trampoline thin: do not put functional Python logic here.
+        g4.GateDigitizerChargeInductionActor.EndSimulationAction(self)
+        DigitizerBase.EndSimulationAction(self)
+
+
 class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
     """
     Similar to HitsCollectionActor : store a list of hits.
@@ -1958,6 +2304,7 @@ process_cls(DigitizerHitsCollectionActor)
 process_cls(DigitizerProjectionActor)
 process_cls(CoincidenceSorterActor)
 process_cls(DigitizerReadoutActor)
+process_cls(DigitizerChargeInductionActor)
 process_cls(PhaseSpaceActor)
 process_cls(DigiAttributeProcessDefinedStepInVolumeActor)
 process_cls(DigiAttributeLastProcessDefinedStepInVolumeActor)
