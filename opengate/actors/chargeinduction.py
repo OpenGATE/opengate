@@ -96,6 +96,8 @@ def depth_factor(z, phi, electron_path=np.inf, hole_path=0.0):
     on the pad, along one line of drift (phi: (z, ...)): the electrons go to
     the anode and the holes to the cathode, each with a mean path before
     trapping. electron_path infinite and hole_path 0: phi(anode) - phi(z).
+    np.einsum (no BLAS): single thread, on purpose. The computation is small
+    (~1 s) and a multithreaded BLAS only wastes CPU on a busy machine.
     """
     dphi = np.diff(phi, axis=0)
     zm = 0.5 * (z[1:] + z[:-1])
@@ -105,10 +107,10 @@ def depth_factor(z, phi, electron_path=np.inf, hole_path=0.0):
             e = np.exp(-(zm[i:] - zz) / electron_path)
         else:
             e = np.ones(len(zm) - i)
-        eta[i] = np.tensordot(e, dphi[i:], axes=(0, 0))
+        eta[i] = np.einsum("i,ijk->jk", e, dphi[i:])
         if hole_path > 0:
             h = np.exp(-(zz - zm[:i]) / hole_path)
-            eta[i] += np.tensordot(h, dphi[:i], axes=(0, 0))
+            eta[i] += np.einsum("i,ijk->jk", h, dphi[:i])
     return eta
 
 
