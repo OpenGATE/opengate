@@ -17,7 +17,6 @@
 #include <G4VisAttributes.hh>
 #include <G4VisManager.hh>
 #include <Randomize.hh>
-#include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
 
 void GateWindowTurboSource::SetSharedCache(
@@ -34,7 +33,6 @@ void GateWindowTurboSource::InitializeUserInfo(py::dict &user_info) {
   fWeight = -1;
   fWeightSigma = -1;
   fDirectionRelativeToAttachedVolume = false;
-  fUserInfo = user_info;
 }
 
 double GateWindowTurboSource::CalcNextTime(double current_simulation_time) {
@@ -72,16 +70,6 @@ void GateWindowTurboSource::InitializeSharedCache(py::dict &user_info) {
   }
 }
 
-void GateWindowTurboSource::WriteBackUserInfo() {
-  if (!fUserInfo)
-    return;
-  py::gil_scoped_acquire acquire; // write back needs to acquire gil
-  auto direction = py::dict(fUserInfo["direction"]);
-  direction["act_ratio"] = fSharedCache->fActRatio;
-  direction["max_solid_angle"] = fSharedCache->fMaxSolidAngle;
-  direction["init_duration"] = fSharedCache->fInitDuration;
-}
-
 void GateWindowTurboSource::PrepareSharedBeforeRun() {
   std::lock_guard<std::mutex> lock(fSharedCache->fMutex);
   fCurrentRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
@@ -107,7 +95,6 @@ void GateWindowTurboSource::PrepareSharedBeforeRun() {
   fSharedCache->fInitDuration.push_back(duration_sec);
   SetValueThisRun(fSharedCache->fActRatio, fCurrentActRatio);
   SetValueThisRun(fSharedCache->fMaxSolidAngle, max_solid_angle);
-  WriteBackUserInfo();
 }
 
 void GateWindowTurboSource::PrepareNextRun() {
@@ -155,7 +142,8 @@ unsigned long GateWindowTurboSource::GetExpectedNumberOfEvents(
   double total_expected_with_act_ratio = 0;
   for (int i = 0; i < time_intervals.size(); i++) {
     G4double act_ratio = GetValueThisRun(fSharedCache->fActRatio, i);
-    return GateVSource::GetExpectedNumberOfEvents(time_intervals);
+    if (act_ratio < 0)
+      return GateVSource::GetExpectedNumberOfEvents(time_intervals);
     unsigned long expected =
         GateVSource::GetExpectedNumberOfEvents(time_intervals[i]);
     total_expected_with_act_ratio += expected * act_ratio;

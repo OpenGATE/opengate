@@ -130,13 +130,19 @@ class WTSDirectionValidator(UserInfoValidatorBase):
                 )
             max_solid_angle = self.get_attr_interval(b, "max_solid_angle", int_idx)
             if (
-                max_solid_angle <= 0 or max_solid_angle > 2 * np.pi
-            ) and self.max_solid_angle_inited:
+                (max_solid_angle <= 0 or max_solid_angle > 2 * np.pi)
+                and self.max_solid_angle_inited
+                and max_solid_angle != -1
+            ):
                 fatal(
                     f"'max_solid_angle' must be in the range (0, 2*pi] for timing interval {int_idx} in '{self.context_name}'."
                 )
             act_ratio = self.get_attr_interval(b, "act_ratio", int_idx)
-            if (act_ratio < 0 or act_ratio > 1) and self.act_ratio_inited:
+            if (
+                (act_ratio < 0 or act_ratio > 1)
+                and self.act_ratio_inited
+                and act_ratio != -1
+            ):
                 fatal(
                     f"'act_ratio' must be in the range [0, 1] for timing interval {int_idx} in '{self.context_name}'."
                 )
@@ -315,6 +321,11 @@ class WindowTurboSource(GenericSource):
         return super().resolve_and_validate_config(run_timing_intervals, context)
 
     def gather_outputs(self, thread_sources):
+        # All runs and worker threads have finished; collect the shared results.
+        self.direction.act_ratio = self._g4_shared_cache.act_ratio
+        self.direction.max_solid_angle = self._g4_shared_cache.max_solid_angle
+        self.direction.init_duration = self._g4_shared_cache.init_duration
+
         json_f = None
         results = {}
         if self.direction.init_result_json:

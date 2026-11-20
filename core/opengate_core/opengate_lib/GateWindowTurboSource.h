@@ -92,8 +92,6 @@ private:
 
   void PrepareSharedBeforeRun();
   void InitializeSharedCache(py::dict &user_info);
-  void WriteBackUserInfo();
-  py::dict fUserInfo; // to write back act ratio and max solid angle
 
   std::shared_ptr<GateWindowTurboSharedCache> fSharedCache;
   bool fSkip; // true for act ratio, false for event skipping base on
