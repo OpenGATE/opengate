@@ -145,6 +145,29 @@ Both of the above commands are equivalent.
 
 .. important:: Geant4 only applies production cuts to electron, positrons, gammas, and protons. Use "all" instead of a specific particle to apply the cuts to all four particles.
 
+Repeated volumes
+~~~~~~~~~~~~~~~~
+
+Production cuts, step limits and the other per-volume physics settings (regions) cannot be set on a volume repeated with ``RepeatParametrisedVolume``, nor on the ``RepeatParametrisedVolume`` itself. Geant4 does not support a region that starts at a parameterised volume, so the simulation stops with a message if you try.
+
+Set them on the mother volume instead. A region applies to its volume and to all the volumes inside it (unless one of them starts its own region), so the cut then applies to all the repeated volumes:
+
+.. code-block:: python
+
+    detector = sim.add_volume("Box", "detector")
+    pixel = sim.add_volume("Box", "pixel")
+    pixel.mother = detector
+    param = RepeatParametrisedVolume(repeated_volume=pixel)
+    # ...
+    sim.volume_manager.add_volume(param)
+
+    # not possible: "pixel" is repeated
+    # sim.physics_manager.set_production_cut("pixel", "gamma", 0.01 * mm)
+    # the cut applies to all the pixels
+    sim.physics_manager.set_production_cut("detector", "gamma", 0.01 * mm)
+
+The cut then also applies to the material of the mother volume itself, and to its other daughters. Cuts are applied per material, so this usually only changes the speed of the simulation. To limit the cut to the repeated volumes, add an intermediate container volume inside the mother. Make it just large enough to hold the repeated volumes and give it the same material as the mother. Repeat the volume inside this container, and set the cut on the container.
+
 Have a look at section :ref:`production-cuts-details-label` in the detailed part of this user guide for more information.
 
 
