@@ -24,27 +24,23 @@ def add_test_digitizer(sim, crystal, filename="output.root"):
     # Singles
     # sc = sim.add_actor("DigitizerReadoutActor", f"singles")
     # sc.discretize_volume = crystal.name
-    sc = sim.add_actor("DigitizerAdderActor", f"singles")
+    sc = sim.add_actor("DigitizerAdderActor", f"singles_adder")
     sc.attached_to = hc.attached_to
     sc.authorize_repeated_volumes = True
     sc.input_digi_collection = hc.name
     sc.policy = "EnergyWeightedCentroidPosition"
     sc.group_volume = crystal.name
     sc.output_filename = hc.output_filename
+    sc.root_output.write_to_disk = False
 
-    # spatial blurring
-    mm = gate.g4_units.mm
-    bc = sim.add_actor("DigitizerSpatialBlurringActor", f"singles_blur")
-    bc.attached_to = hc.attached_to
-    bc.output_filename = hc.output_filename
-    bc.input_digi_collection = sc.name
-    bc.keep_in_solid_limits = True
-    bc.use_truncated_Gaussian = True
-    bc.blur_attribute = "PostPosition"
-    bc.authorize_repeated_volumes = True
-    bc.blur_fwhm = [5 * mm, 5 * mm, 5 * mm]
+    fc = sim.add_actor("DigitizerEfficiencyActor", "singles")
+    fc.attached_to = crystal.name
+    fc.authorize_repeated_volumes = True
+    fc.input_digi_collection = sc.name
+    fc.efficiency = 1.0
+    fc.output_filename = filename
 
-    return hc, bc
+    return hc, fc
 
 
 def test_add_physics_and_stats(sim, pet_name="pet"):
