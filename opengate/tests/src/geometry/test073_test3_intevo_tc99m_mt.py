@@ -18,6 +18,10 @@ if __name__ == "__main__":
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
     digit = intevo.add_digitizer(sim, crystal.name, "digit_tc99m")
+    # the reference was computed with the former edge policy of the digitizer
+    # (the default is now "truncated")
+    sb = digit.find_module_by_type("DigitizerSpatialBlurringActor")
+    sb.edge_policy = "clamp"
 
     # add a channel 'spectrum' (which is not by default because not compatible with ARF)
     keV = gate.g4_units.keV

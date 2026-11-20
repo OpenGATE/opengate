@@ -389,14 +389,23 @@ class AttributeComparisonFilter(FilterBase):
             # of the value: F.KineticEnergy > 0 compares a double attribute
             # with an int), so we use the type of the digi attribute if known
             att_type = get_digi_attribute_type(att)
+            if att_type == "3":
+                fatal(
+                    f"The attribute '{att}' is a 3-vector, it cannot be used "
+                    f"directly in a filter: use one component, e.g. {att}_X, "
+                    f"{att}_Y or {att}_Z."
+                )
             if att_type is not None and att_type not in _filter_class_by_type:
                 fatal(
                     f"The attribute '{att}' (type '{att_type}') cannot be used "
-                    f"in a filter: only double, int and string attributes are "
-                    f"supported (not vectors or unique volume IDs)."
+                    f"in a filter: only double, int and string attributes, or "
+                    f"one component of a 3-vector attribute (e.g. "
+                    f"PostPosition_X), are supported."
                 )
             if att_type is not None:
                 cls = _filter_class_by_type[att_type]
+            elif get_vector_attribute_component(att) is not None:
+                cls = AttributeFilterVectorComponent
             # unknown type (e.g. an auxiliary attribute): from the value
             elif isinstance(val, str):
                 cls = AttributeFilterString
@@ -425,6 +434,25 @@ def get_digi_attribute_type(attribute_name):
     if att is None:
         return None
     return att.GetDigiAttributeType()
+
+
+def get_vector_attribute_component(attribute_name):
+    """
+    For a name such as 'PostPosition_X', the 3-vector digi attribute and the
+    index of the component: ('PostPosition', 0). None if the name is not one
+    component of a 3-vector digi attribute.
+    """
+    if not isinstance(attribute_name, str) or len(attribute_name) < 3:
+        return None
+    base, sep, axis = attribute_name.rpartition("_")
+    if sep == "" or axis not in _vector_component_index:
+        return None
+    if get_digi_attribute_type(base) != "3":
+        return None
+    return base, _vector_component_index[axis]
+
+
+_vector_component_index = {"X": 0, "Y": 1, "Z": 2}
 
 
 class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDouble):
@@ -469,6 +497,46 @@ class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterStr
 
     def initialize(self):
         super().initialize()
+
+
+class AttributeFilterVectorComponent(
+    AttributeComparisonFilter, g4.GateAttributeFilterVectorComponent
+):
+    """
+    Compare one component of a 3-vector attribute with a value, e.g.
+    F.PostPosition_X < 0 * mm (also _Y and _Z, and other 3-vector attributes
+    such as PrePosition or PreDirection).
+    """
+
+    def __init__(self, *args, **kwargs):
+        val = kwargs.get("compare_value")
+        if isinstance(val, int) and not isinstance(val, bool):
+            kwargs["compare_value"] = float(val)
+        AttributeComparisonFilter.__init__(self, *args, **kwargs)
+
+    def __initcpp__(self):
+        g4.GateAttributeFilterVectorComponent.__init__(self)
+
+    def resolve_and_validate_config(self, context=None):
+        super().resolve_and_validate_config(context=context)
+        if get_vector_attribute_component(self.attribute) is None:
+            fatal(
+                f"Error in the filter '{self.name}': '{self.attribute}' is not "
+                f"one component of a 3-vector attribute (e.g. PostPosition_X)."
+            )
+        if self.compare_operation not in ("lt", "le", "gt", "ge", "eq", "ne"):
+            fatal(
+                f"Error in the filter '{self.name}': the operation "
+                f"'{self.compare_operation}' cannot be used with '{self.attribute}'."
+            )
+
+    def initialize(self):
+        # the C++ side receives the 3-vector attribute and the component index
+        base, component = get_vector_attribute_component(self.attribute)
+        user_info = self.user_info.copy()
+        user_info["vector_attribute"] = base
+        user_info["component"] = component
+        self.InitializeUserInfo(user_info)
 
 
 # filter class for each type of digi attribute
@@ -520,6 +588,7 @@ filter_classes = {
     "AttributeFilterDouble": AttributeFilterDouble,
     "AttributeFilterInt": AttributeFilterInt,
     "AttributeFilterString": AttributeFilterString,
+    "AttributeFilterVectorComponent": AttributeFilterVectorComponent,
     "BooleanFilter": BooleanFilter,
     "CopyNumberFilter": CopyNumberFilter,
 }
@@ -569,6 +638,7 @@ process_cls(AttributeComparisonFilter)
 process_cls(AttributeFilterDouble)
 process_cls(AttributeFilterInt)
 process_cls(AttributeFilterString)
+process_cls(AttributeFilterVectorComponent)
 
 # Added class processing: install OpenGATE's generated properties and
 # serialization hooks for CopyNumberFilter.user_info_defaults.

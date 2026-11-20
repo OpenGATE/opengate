@@ -58,6 +58,9 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
         eb.blur_reference_value = 80 * keV
         eb.blur_slope = -0.09 * 1 / MeV
         sb.blur_fwhm = 10 * mm
+        # the reference (GATE 9) keeps the blurred positions in the crystal by
+        # moving them onto its boundary
+        sb.edge_policy = "clamp"
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"

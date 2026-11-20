@@ -1197,7 +1197,7 @@ def add_digitizer(
     sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sblur")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3 * mm  # FAKE !
-    sb.edge_policy = "clamp"
+    sb.edge_policy = "truncated"
 
     # default energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
