@@ -618,6 +618,8 @@ In this example, the actor is attached to (attached_to option) several volumes (
    am = gate_core.GateDigiAttributeManager.GetInstance()
    print(am.GetAvailableDigiAttributeNames())
 
+By default, a hit is created only for the steps with a non-zero energy deposit (``TotalEnergyDeposit > 0``); with ``hc.keep_zero_edep = True``, all the steps are recorded. Some hits have ``ProcessDefinedStep = Transportation``: the step was limited by a volume boundary (for example when an electron leaves the crystal, or goes from one pixel to the next one), and the energy deposit is the energy lost by the charged particle along this step (continuous ionisation). These are real energy deposits and they are kept. Some of them can be extremely small (e.g. 1e-20 keV, numerical residuals of very short steps at the boundary); they have no effect once the hits are summed into singles (DigitizerAdderActor). If needed, they can be removed during the analysis with a threshold on ``TotalEnergyDeposit`` (a cut on the process would also remove real deposits).
+
 .. warning:: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a “default” version corresponding to the legacy Gate (9.X).
 
 +------------------+-------------------+---------------------+
@@ -755,9 +757,21 @@ This actor groups the hits per different volumes according to the option `group_
   - The time (`GlobalTime`) is the time of the earliest hit.
 
 - **EnergyWinnerPosition**:
-  - The final energy (`TotalEnergyDeposit`) is the energy of the hit with the largest deposited energy.
+  - The final energy (`TotalEnergyDeposit`) is the sum of all deposited energy.
   - The position (`PostPosition`) is the position of the hit with the largest deposited energy.
   - The time (`GlobalTime`) is the time of the earliest hit.
+
+All the other attributes of the single are copied from one of its hits: the hit with the largest deposited energy for `EnergyWinnerPosition`, the last stored hit for `EnergyWeightedCentroidPosition`. The option `attribute_policies` selects another hit for some attributes:
+
+- `max`, `min`: the hit with the largest or smallest value of this attribute (numeric attributes only)
+- `first`, `last`: the earliest or latest hit (`GlobalTime`)
+- `energy_winner`: the hit with the largest deposited energy
+
+.. code-block:: python
+
+   # number of Compton in the phantom: value when the photon first reaches the crystal
+   # number of Compton in the head: largest value among the hits
+   sc.attribute_policies = {"n_compt_phantom": "first", "n_compt_head": "max"}
 
 .. code-block:: python
 
@@ -799,6 +813,64 @@ Reference
 .. autoclass:: opengate.actors.digitizers.DigitizerReadoutActor
 
 
+DigitizerChargeInductionActor
+----------------------------
+
+Description
+~~~~~~~~~~~
+
+Charge induction and readout by pixel, for a semiconductor crystal with a pixelated anode (e.g. CZT, CdTe). The input is a hits collection; the output has one digi per (event, crystal, pixel). One event can therefore give several digi (several pixels above the threshold).
+
+The crystal is the volume the actor is attached to (a box). The pixel grid lies in its local XY plane. Two ways to define it:
+
+- monolithic crystal: :attr:`number_of_pixels` x :attr:`pixel_size`, centred on the origin of the crystal. The pixel of a hit is computed from its local position. The crystal can be a single box (faster, and production cuts can be set on it). This is the recommended model of a real CZT detector (one crystal, pixelated electrodes).
+- pixelated crystal: :attr:`pixel_volume` is a repeated volume, daughter of the crystal (a ``RepeatParametrisedVolume``, the volume it repeats, or a volume with several translations). The grid (pitch, number of pixels, centre) is read from the positions of the copies, which must form a full regular grid. The pixel of a hit is the copy number of the pixel volume it is in (exact, also for steps that end on the face between two pixels); hits that are not in a pixel volume are ignored.
+
+With the same parameters, both give the same results within the statistics (the extra volume boundaries only change the tracking slightly, see study 022j of the Veriton model).
+
+For each hit of energy :math:`E` at depth :math:`z` (distance to the cathode, see :attr:`cathode_side`), and for the pixel of the hit and, with ``neighbours = 1``, the 8 pixels around it:
+
+.. math::
+
+   S_{pixel} \mathrel{+}= E \, \eta(z, \Delta x, \Delta y)
+
+where :math:`(\Delta x, \Delta y)` is the position of the hit relative to the centre of the pixel and :math:`\eta` is one of two 3D tables, ``eta_own`` (the pixel of the hit) or ``eta_neighbour`` (the other pixels, can be negative), read with trilinear interpolation. Two tables are needed because the weighting potential jumps at the edge of a pad on the anode plane. The signal is then multiplied by :attr:`gain`; signals below :attr:`signal_threshold` (and negative signals) are dropped.
+
+The pads can be smaller than the pitch (:attr:`pad_size`, gaps between the pads): the weighting potential is computed for the smaller pads; the electrons are still collected by the pad of the pixel they drift in (the field steers them to the pad), so no charge is lost in the gaps.
+
+By default the tables are computed at the start of the simulation (about 1.5 s, cached and shared by actors with the same parameters) from the weighting potential of one pad (Shockley-Ramo), the mean drift paths of the electrons (:attr:`electron_mean_path`, infinite: no trapping) and of the holes (:attr:`hole_mean_path`, 0: the holes do not move), and the sigma of a Gaussian charge cloud (:attr:`charge_cloud_sigma`). The charge cloud term is separable and is given to the actor as three fine 1D tables (share of the cloud on the pad along x and y, share of the electrons that reach the anode along z): the actor adds ``(cloud_x(dx) cloud_y(dy) - own) cloud_z(z)`` to the interpolated value (``own``: 1 for the pixel of the hit, 0 for the neighbours), since the 3D grid cannot resolve the edge of the pad for a cloud of ~0.1 mm. With the default values, ``eta_own = 1 - phi`` and ``eta_neighbour = -phi`` (``phi``: weighting potential of the pixel at the hit position). See :mod:`opengate.actors.chargeinduction`. The tables can also be given by the user (:attr:`tables`: a dict or a ``.npz`` file with the keys ``z``, ``x``, ``y``, ``eta_own``, ``eta_neighbour``). With ``tables = "unit"`` and ``neighbours = 0``, the actor is a plain readout by pixel (sum of the deposits per pixel).
+
+Output attributes: ``TotalEnergyDeposit`` (the signal), ``PostPosition`` (centre of the pixel, global), ``PostPositionLocal`` (centre of the pixel, local, z = 0), ``PixelIndexX``, ``PixelIndexY``, ``GlobalTime`` (earliest time of the hits contributing to the pixel). The option :attr:`attribute_policies` works as for the :class:`~.opengate.actors.digitizers.DigitizerAdderActor` (``max``, ``min``, ``first``, ``last``, ``energy_winner``; here ``energy_winner`` is the hit with the largest contribution to the signal of the pixel). All other attributes are copied from the hit with the largest contribution to the pixel.
+
+.. code-block:: python
+
+   hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
+   hc.attached_to = crystal
+   hc.attributes = ["PostPosition", "TotalEnergyDeposit", "PreStepUniqueVolumeID",
+                    "GlobalTime", "EventID"]
+
+   pix = sim.add_actor("DigitizerChargeInductionActor", "Pixels")
+   pix.attached_to = crystal
+   pix.input_digi_collection = hc.name
+   pix.pixel_size = [2.46 * mm, 2.46 * mm]
+   pix.number_of_pixels = [128, 16]
+   pix.cathode_side = "+z"
+   pix.neighbours = 1
+   pix.electron_mean_path = 60 * mm
+   pix.hole_mean_path = 1.17 * mm
+   pix.charge_cloud_sigma = 0.116 * mm
+   pix.gain = 1.084
+   pix.signal_threshold = 1 * keV
+   # then DigitizerBlurringActor, DigitizerEnergyWindowsActor, DigitizerProjectionActor
+
+Examples are available in test 150.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerChargeInductionActor
+
+
 DigitizerBlurringActor
 ----------------------
 
@@ -834,20 +906,33 @@ DigitizerSpatialBlurringActor
 Description
 ~~~~~~~~~~~
 
-   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This will push the hits back to the closest edge of the crystal. Alternatively the `use_truncated_Gaussian` option can be used with `keep_in_solid_limits` to recreate a more realistic scenario. This option changes the common Gaussian distribution to a new truncated Gaussian that preserves the standard deviation of the distribution within the crystal. This variation is paramount when using big crystals with spatial resolution, since it is the only way to preserve the original standard deviation of the reconstructed distribution. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+The :class:`~.opengate.actors.digitizers.DigitizerSpatialBlurringActor` blurs a position attribute (usually ``PostPosition``) with a Gaussian, independently along the three axes, to model the spatial resolution of the detector. The resolution is given as a standard deviation (``blur_sigma``) or a FWHM (``blur_fwhm``), one value or one per axis.
 
 .. code-block:: python
 
-   bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
-   bc.attached_to = hc.attached_to
-   bc.output_filename = hc.output_filename
+   bc = sim.add_actor("DigitizerSpatialBlurringActor", "Singles_blur")
+   bc.attached_to = crystal
    bc.input_digi_collection = sc.name
-   bc.keep_in_solid_limits = True
-   bc.use_truncated_Gaussian = True
    bc.blur_attribute = "PostPosition"
-   bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
+   bc.blur_fwhm = [5 * mm, 5 * mm, 5 * mm]
+   bc.edge_policy = "truncated"  # default
+   bc.output_filename = "singles.root"
 
+**Limits volume.** The blurring is done in the coordinate system of the *limits volume*, and its bounding box defines the limits used by ``edge_policy``. By default, it is the volume the actor is attached to: for a crystal block made of pixels, the limits are those of the block, so the blurred position can move from one pixel to another. Set ``limits_volume`` to a volume inside it (e.g. the pixel) to keep the blurred position in the volume where the digi is. When the volume is repeated (several heads, several blocks), the copy that contains the digi is used.
 
+**Edge policy.** Near the limits, part of the Gaussian falls outside the volume. The ``edge_policy`` option defines what happens:
+
+- ``"none"``: plain Gaussian, the blurred position may be outside the volume.
+- ``"clamp"``: the positions outside are moved onto the boundary. This creates a peak of events exactly on the edges.
+- ``"truncated"`` (default): truncated Gaussian. The Gaussian keeps the requested sigma, and the positions are drawn again until they are inside the limits. Near an edge, the blurred positions are therefore closer to the true position (the rms distance is *smaller* than sigma), and their mean is pushed inward. The model is: "same resolution everywhere, and no position outside the detector".
+- ``"truncated_std"``: truncated Gaussian whose width is increased near the edges, so that the rms distance between the blurred and the true positions stays equal to sigma (when this is possible: the positions cannot be further than the volume allows). The model is: "the position error is the nominal resolution everywhere"; it corresponds to a resolution that degrades near the edges.
+
+Far from the edges (more than ~2 sigma), all the policies give the same result. The figure shows the distribution of the blurred position, for a true position (orange) at 3, 1 and 0.3 sigma from an edge, with the rms distance to the true position. The choice matters little when sigma is small compared to the crystal (e.g. a SPECT camera: only a few mm at the border), but a lot for small pixels, where all the positions are close to an edge.
+
+.. image:: ../figures/spatial_blurring_edge_policies.png
+   :width: 700
+
+The former options ``keep_in_solid_limits`` and ``use_truncated_Gaussian`` are still accepted: ``keep_in_solid_limits=True`` (with ``use_truncated_Gaussian=False``) is ``"clamp"``, both ``False`` is ``"none"``, and ``use_truncated_Gaussian=True`` is ``"truncated_std"``. They cannot be used together with ``edge_policy``.
 
 Reference
 ~~~~~~~~~
@@ -913,6 +998,25 @@ The :class:`~.opengate.actors.digitizers.DigitizerProjectionActor` generates 2D 
    proj.size = [128, 128]  # Image size in pixels (128x128)
    proj.origin_as_image_center = False  # Origin is not at image center
    proj.output_filename = 'projection.mhd'
+
+By default, the projection plane is the XY plane of the attached volume (the
+positions are projected along its Z axis, i.e. the thickness of the detector is
+expected along Z). For another plane, set ``detector_orientation_matrix``: it is the
+rotation of the projection image with respect to the attached volume. With a
+rotation R, the image axes are R·x and R·y, and the projection is along R·z. For
+example, for a detector whose thickness is along X:
+
+.. code-block:: python
+
+   from scipy.spatial.transform import Rotation
+
+   # image axes: -Z and Y of the volume, projection along X
+   proj.detector_orientation_matrix = Rotation.from_euler(
+       "y", 90, degrees=True
+   ).as_matrix()
+
+The written image does not store this rotation (its direction is the identity).
+See test148, and the SPECT models in ``opengate.contrib.spect`` for other examples.
 
 Refer to test028 for SPECT examples.
 

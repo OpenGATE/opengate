@@ -23,6 +23,13 @@ class SourceBase(DynamicGateObject):
     number_of_primaries: int
     activity: float
     half_life: float
+    tac_times: list
+    tac_activities: list
+
+    # True if the events are generated according to the activity (activity,
+    # half_life, tac_times/tac_activities). False for sources that generate
+    # their events otherwise (e.g. TreatmentPlanPBSource, LastVertexSource).
+    activity_driven = True
 
     user_info_defaults = {
         "attached_to": (
@@ -72,6 +79,19 @@ class SourceBase(DynamicGateObject):
             -1,
             {
                 "doc": "Half-life decay (-1 if no decay). Only when used with 'activity'",
+            },
+        ),
+        "tac_times": (
+            None,
+            {
+                "doc": "TAC: Time Activity Curve, this set the vector for the times. Must be used with tac_activities. "
+                "The activity is linearly interpolated between the times, and zero outside.",
+            },
+        ),
+        "tac_activities": (
+            None,
+            {
+                "doc": "TAC: Time Activity Curve, this set the vector for the activities. Must be used with tac_times.",
             },
         ),
     }
@@ -255,6 +275,7 @@ class SourceBase(DynamicGateObject):
         return True
 
     def resolve_and_validate_config(self, run_timing_intervals, context=None):
+        self.resolve_tac_activity()
         self.resolve_and_validate_timing(run_timing_intervals)
         if np.array([self.user_info.number_of_primaries]).shape == (1,):
             self.user_info.number_of_primaries = np.array(
@@ -291,6 +312,47 @@ class SourceBase(DynamicGateObject):
         if np.any(self.user_info.number_of_primaries > 0):
             self.user_info.activity = 0
 
+    def resolve_tac_activity(self):
+        if self.tac_times is None and self.tac_activities is None:
+            return
+        if not self.activity_driven:
+            fatal(
+                f"The source '{self.name}' ({type(self).__name__}) does not use "
+                f"the activity: tac_times/tac_activities cannot be used."
+            )
+        if self.tac_times is None or self.tac_activities is None:
+            fatal(
+                f"In source '{self.name}', tac_times and tac_activities must be "
+                f"used together."
+            )
+        if len(self.tac_times) != len(self.tac_activities):
+            fatal(
+                f"option tac_activities must have the same size as tac_times in source '{self.name}'"
+            )
+        # it is important to set the starting time for this source as the tac
+        # may start later than the simulation timing
+        self.start_time = self.tac_times[0]
+        self.activity = self.tac_activities[0]
+
+    def update_tac_activity(self, g4_source, runtime_user_info=None):
+        if self.tac_times is None and self.tac_activities is None:
+            return
+        tac_activities = (
+            runtime_user_info["tac_activities"]
+            if runtime_user_info is not None
+            else self.tac_activities
+        )
+        g4_source.SetTAC(self.tac_times, tac_activities)
+
+    def initialize_g4_source_user_info(self, g4_source):
+        """
+        Send the user info (scaled for the thread in MT) and the TAC to the
+        C++ source. Called by initialize_g4_source of each source.
+        """
+        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
+        self.update_tac_activity(g4_source, runtime_user_info)
+        g4_source.InitializeUserInfo(runtime_user_info)
+
 
 class DebugSource(SourceBase):
 
@@ -313,8 +375,7 @@ class DebugSource(SourceBase):
         pid = os.getpid()
         print(f"(python) DebugSource::initialize_g4_source pid={pid}")
         self.initialize_start_end_time(run_timing_intervals)
-        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
-        g4_source.InitializeUserInfo(runtime_user_info)
+        self.initialize_g4_source_user_info(g4_source)
 
     def initialize_start_end_time(self, run_timing_intervals):
         pid = os.getpid()

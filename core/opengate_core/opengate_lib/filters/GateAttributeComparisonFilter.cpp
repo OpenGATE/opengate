@@ -13,7 +13,6 @@
 // Explicitly instantiate the numeric types
 template class GateAttributeComparisonFilter<double>;
 template class GateAttributeComparisonFilter<int>;
-// template class GateAttributeComparisonFilter<G4ThreeVector>; NOT YET
 
 // Specialization for String ("contains" logic)
 template <>
@@ -82,3 +81,84 @@ bool GateAttributeComparisonFilter<std::string>::Evaluate(G4Step *step) const {
 
 // Forced instantiation for string
 template class GateAttributeComparisonFilter<std::string>;
+
+// --------------------------------------------------------------------
+// One component of a 3-vector attribute
+GateAttributeFilterVectorComponent::GateAttributeFilterVectorComponent()
+    : GateVFilter() {}
+
+void GateAttributeFilterVectorComponent::InitializeUserInfo(
+    py::dict &user_info) {
+  GateVFilter::InitializeUserInfo(user_info);
+  fAttributeName = DictGetStr(user_info, "vector_attribute");
+  fComponent = DictGetInt(user_info, "component");
+  fCompareValue = DictGetDouble(user_info, "compare_value");
+  fCompareOperation = DictGetStr(user_info, "compare_operation");
+  if (fComponent < 0 || fComponent > 2) {
+    std::ostringstream oss;
+    oss << "Error: the component of the attribute '" << fAttributeName
+        << "' must be 0, 1 or 2 (X, Y or Z), while it is " << fComponent;
+    Fatal(oss.str());
+  }
+
+  fAuxiliaryAttribute =
+      GateVAuxiliaryAttribute::GetAuxiliaryAttributeByName(fAttributeName);
+  if (fAuxiliaryAttribute != nullptr) {
+    if (fAuxiliaryAttribute->GetDigiAttributeType() != '3') {
+      std::ostringstream oss;
+      oss << "Error: Auxiliary attribute '" << fAttributeName
+          << "' is not a 3-vector, it cannot be used with _X, _Y or _Z.";
+      Fatal(oss.str());
+    }
+    return;
+  }
+
+  // We create a copy for thread safety during the simulation
+  auto *dgm = GateDigiAttributeManager::GetInstance();
+  auto *att = dgm->GetDigiAttribute(fAttributeName);
+  fAttribute = dynamic_cast<GateTDigiAttribute<G4ThreeVector> *>(
+      dgm->CopyDigiAttribute(att));
+  if (!fAttribute) {
+    std::ostringstream oss;
+    oss << "Error: Attribute '" << fAttributeName
+        << "' is not a 3-vector, it cannot be used with _X, _Y or _Z.";
+    Fatal(oss.str());
+  }
+  fAttribute->SetSingleValueMode(true);
+}
+
+bool GateAttributeFilterVectorComponent::Evaluate(G4Step *step) const {
+  G4ThreeVector v;
+  if (fAuxiliaryAttribute != nullptr) {
+    v = fAuxiliaryAttribute->Get3Value(step);
+  } else {
+    fAttribute->ProcessHits(step);
+    v = fAttribute->GetSingleValue();
+  }
+  const double value = v[fComponent];
+
+  if (fCompareOperation == "lt") {
+    return value < fCompareValue;
+  }
+  if (fCompareOperation == "le") {
+    return value <= fCompareValue;
+  }
+  if (fCompareOperation == "gt") {
+    return value > fCompareValue;
+  }
+  if (fCompareOperation == "ge") {
+    return value >= fCompareValue;
+  }
+  if (fCompareOperation == "eq") {
+    return value == fCompareValue;
+  }
+  if (fCompareOperation == "ne") {
+    return value != fCompareValue;
+  }
+
+  std::ostringstream oss;
+  oss << "Unknown compare_operation '" << fCompareOperation
+      << "' for attribute filter '" << fAttributeName << "'.";
+  Fatal(oss.str());
+  return false;
+}

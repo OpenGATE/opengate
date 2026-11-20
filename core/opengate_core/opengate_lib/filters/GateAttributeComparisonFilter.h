@@ -54,6 +54,27 @@ template <>
 bool GateAttributeComparisonFilter<std::string>::Evaluate(G4Step *step) const;
 // --------------------------------------------------------------------
 
+/*
+ * Comparison of one component (x, y or z) of a 3-vector attribute (e.g.
+ * PostPosition, PreDirection) with a double value. The component index is 0, 1
+ * or 2. Used in Python with F.PostPosition_X < 0 (same for _Y, _Z).
+ */
+class GateAttributeFilterVectorComponent : public GateVFilter {
+public:
+  GateAttributeFilterVectorComponent();
+
+  void InitializeUserInfo(py::dict &user_info) override;
+
+  bool Evaluate(G4Step *step) const override;
+
+  std::string fAttributeName;
+  int fComponent{0};
+  double fCompareValue{0};
+  std::string fCompareOperation;
+  GateTDigiAttribute<G4ThreeVector> *fAttribute{nullptr};
+  GateVAuxiliaryAttribute *fAuxiliaryAttribute{nullptr};
+};
+
 #include "GateAttributeComparisonFilter.txx"
 
 #endif // GateAttributeComparisonFilter_h

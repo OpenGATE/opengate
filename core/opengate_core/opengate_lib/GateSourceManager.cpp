@@ -305,8 +305,9 @@ void GateSourceManager::InitializeProgressBar() {
     return;
   auto &l = fThreadLocalData.Get();
   l.fProgressBar = std::make_unique<ProgressBar>(
-      option::BarWidth{50}, option::Start{""}, option::Fill{"■"},
-      option::Lead{"■"}, option::End{""}, option::ShowElapsedTime{true},
+      option::BarWidth{50}, option::Start{""},
+      option::Fill{GateProgressBarFill}, option::Lead{GateProgressBarFill},
+      option::End{""}, option::ShowElapsedTime{true},
       option::ShowRemainingTime{true},
       option::MaxProgress{fExpectedNumberOfEvents});
   // show_console_cursor(true);

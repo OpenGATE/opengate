@@ -38,6 +38,9 @@ public:
 
   void Update(size_t i, double edep, const G4ThreeVector &pos, double time);
 
+  // Attributes with a user-defined policy: index of the selected hit
+  GateDigiAttributePolicies::Tracker fAttributeTracker;
+
   void Terminate();
 };
 

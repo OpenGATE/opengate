@@ -109,6 +109,7 @@ from .actors.digitizers import (
     DigitizerPileupActor,
     DigitizerProjectionActor,
     DigitizerReadoutActor,
+    DigitizerChargeInductionActor,
     DigitizerSpatialBlurringActor,
     PhaseSpaceActor,
 )
@@ -201,6 +202,7 @@ actor_types = {
     "DigitizerBlurringActor": DigitizerBlurringActor,
     "DigitizerSpatialBlurringActor": DigitizerSpatialBlurringActor,
     "DigitizerReadoutActor": DigitizerReadoutActor,
+    "DigitizerChargeInductionActor": DigitizerChargeInductionActor,
     "DigitizerEfficiencyActor": DigitizerEfficiencyActor,
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
@@ -1757,6 +1759,10 @@ class VolumeManager(GateObject):
             self.update_volume_tree()
 
     def update_volume_tree(self):
+        # volumes that refer to other volumes (RepeatParametrisedVolume)
+        for v in self.volumes.values():
+            if hasattr(v, "resolve_references"):
+                v.resolve_references()
         for v in self.volumes.values():
             if (
                 v not in self.parallel_world_volumes.values()
@@ -2766,19 +2772,6 @@ class Simulation(GateObject):
         components. Some attributes are getter-only; others additionally use
         Geant4 hooks and optional per-track storage.
         """
-        if attribute_type in (
-            "ProcessDefinedStepInVolumeAttribute",
-            "LastProcessDefinedStepInVolumeAttribute",
-        ):
-            legacy_name = (
-                "ProcessDefinedStepInVolumeAttributeLegacy"
-                if attribute_type == "ProcessDefinedStepInVolumeAttribute"
-                else "LastProcessDefinedStepInVolumeAttributeLegacy"
-            )
-            warning(
-                f"{legacy_name} has been replaced by the auxiliary attribute "
-                f"{attribute_type} and will be deprecated soon."
-            )
         return self._activate_auxiliary_attribute(attribute_type, name)
 
     def _activate_auxiliary_attribute(self, attribute_type, name):

@@ -8,6 +8,7 @@
 #ifndef GateDigitizerAdderActor_h
 #define GateDigitizerAdderActor_h
 
+#include "GateDigiAttributePolicies.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>
 #include <cstdint> // Required for uint64_t
@@ -90,6 +91,9 @@ protected:
   GateVDigiAttribute *fOutputGlobalTimeAttribute{};
   GateVDigiAttribute *fOutputTimeDifferenceAttribute{};
   GateVDigiAttribute *fOutputNumberOfHitsAttribute{};
+
+  // attributes with a user-defined policy (see attribute_policies)
+  GateDigiAttributePolicies fAttributePolicies;
 
   void DigitInitialize(
       const std::vector<std::string> &attributes_not_in_filler) override;

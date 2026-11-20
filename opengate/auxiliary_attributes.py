@@ -50,7 +50,13 @@ class InteractionCounterAttribute(
     AuxiliaryAttributeBase, g4.GateInteractionCounterAttribute
 ):
     """
-    Count how often the current track has undergone a configured process.
+    Count how often the current track has undergone a configured process,
+    i.e. how many steps of the track were limited by this process.
+
+    The value read for a step includes this step (the process that limited
+    this step), whether it is read by an actor, a filter or a digitizer.
+    With ``propagate_from_parent_track``, a secondary starts with the count
+    of its parent, including the step that created it.
     """
 
     user_info_defaults = {
@@ -88,9 +94,22 @@ class ProcessDefinedStepInVolumeAttribute(
     AuxiliaryAttributeBase, g4.GateProcessDefinedStepInVolumeAttribute
 ):
     """
-    Count how often the configured process defined a step in the configured
-    volume for the current track. Optionally propagate the current count
-    snapshot to secondaries created along the track.
+    Count how often the configured process defined a step of the current track
+    in the configured volume(s), daughters included.
+
+    A step is counted when the process that limited this step is the
+    configured one and the step starts in one of the volumes. The value read
+    for a step includes this step, whether it is read by an actor, a filter or
+    a digitizer. With ``propagate_from_parent_track``, a secondary starts with
+    the count of its parent, including the step that created it.
+
+    Volumes are matched by name: all the copies of a repeated volume are
+    counted together. Use a list of names to count several volumes with a
+    single attribute.
+
+    Volumes of a parallel world can be used. A step located in a
+    parallel-world volume that has a material belongs to this volume only: it
+    is not counted in the volumes of the mass world found at the same place.
     """
 
     user_info_defaults = {
@@ -103,13 +122,15 @@ class ProcessDefinedStepInVolumeAttribute(
         "volume_name": (
             None,
             {
-                "doc": "Name of the volume in which the process count is evaluated.",
+                "doc": "Name of the volume in which the process count is evaluated "
+                "(steps in the daughters are counted), or list of such names.",
             },
         ),
         "propagate_from_parent_track": (
             False,
             {
-                "doc": "If true, secondaries inherit the current count snapshot from their parent at creation time.",
+                "doc": "If true, secondaries inherit the count of their parent, "
+                "including the step that created them.",
             },
         ),
     }
@@ -120,6 +141,20 @@ class ProcessDefinedStepInVolumeAttribute(
 
     def __initcpp__(self):
         g4.GateProcessDefinedStepInVolumeAttribute.__init__(self, self.user_info)
+
+    def check_volume_names(self):
+        names = self.volume_name
+        if isinstance(names, str):
+            names = [names]
+        if len(names) == 0:
+            fatal(f"Auxiliary attribute '{self.name}': volume_name is empty.")
+        known = self.simulation.volume_manager.volume_names
+        for name in names:
+            if name not in known:
+                fatal(
+                    f"Auxiliary attribute '{self.name}': unknown volume '{name}'. "
+                    f"Known volumes are: {known}"
+                )
 
     def initialize(self):
         if self.process_name is None:
@@ -132,6 +167,7 @@ class ProcessDefinedStepInVolumeAttribute(
                 f"Auxiliary attribute '{self.name}' requires a volume_name "
                 "before initialization."
             )
+        self.check_volume_names()
         AuxiliaryAttributeBase.initialize(self)
 
 
@@ -142,6 +178,9 @@ class LastProcessDefinedStepInVolumeAttribute(
     Store the last non-transportation process that defined a step in the
     configured volume for the current track. Optionally propagate the current
     process snapshot to secondaries created along the track.
+
+    The value read for a step includes this step (the process that limited
+    this step), whether it is read by an actor, a filter or a digitizer.
     """
 
     user_info_defaults = {
@@ -180,8 +219,9 @@ class LastInteractionPositionInVolumeAttribute(
 ):
     """
     Store the last interaction position seen on the current track inside the
-    configured volume hierarchy. The stored position is taken from the
-    pre-step point of the step whose defining process is not Transportation.
+    configured volume hierarchy: the post-step point of the last step whose
+    defining process is not Transportation (the position of the interaction).
+    The value read for a step includes this step.
     Optionally propagate the current position snapshot to secondaries created
     along the track. If no qualifying interaction has been seen yet, the
     attribute returns ``(NaN, NaN, NaN)``.

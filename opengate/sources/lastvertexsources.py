@@ -29,13 +29,44 @@ class LastVertexSource(SourceBase):
     sampling parameters alone.
     """
 
+    # the number of events is set by LastVertexInteractionSplittingActor, not
+    # by an activity
+    activity_driven = False
+
     def __init__(self, *args, **kwargs):
         SourceBase.__init__(self, *args, **kwargs)
+
+    def can_predict_number_of_events(self):
+        # the number of replayed events is only known during the simulation
+        return False
 
     def create_g4_source(self):
         return g4.GateLastVertexSource()
 
     def resolve_and_validate_config(self, run_timing_intervals, context=None):
+        # the activity, half_life and TAC are not used by this source
+        ignored = []
+        if self.user_info.activity > 0:
+            ignored.append("activity")
+        if self.user_info.half_life > 0:
+            ignored.append("half_life")
+        if (
+            self.user_info.tac_times is not None
+            or self.user_info.tac_activities is not None
+        ):
+            ignored.append("tac_times/tac_activities")
+        if ignored:
+            warning(
+                f"LastVertexSource '{self.name}': {', '.join(ignored)} ignored, the "
+                f"events are driven by LastVertexInteractionSplittingActor."
+            )
+            self.user_info.activity = 0
+            self.user_info.half_life = -1
+            self.user_info.tac_times = None
+            self.user_info.tac_activities = None
+            self.user_info.number_of_primaries = np.ones(
+                len(run_timing_intervals), dtype=int
+            )
         super().resolve_and_validate_config(run_timing_intervals, context=context)
         # LastVertexSource participates in the generic source resolution
         # cascade, so inherited base-source user_info such as
@@ -50,8 +81,7 @@ class LastVertexSource(SourceBase):
 
     def initialize_g4_source(self, g4_source, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
-        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
-        g4_source.InitializeUserInfo(runtime_user_info)
+        self.initialize_g4_source_user_info(g4_source)
 
 
 process_cls(LastVertexSource)

@@ -10,6 +10,7 @@
 #pragma warning(push)
 #pragma warning(disable : 4244 4267)
 #endif
+#include "GateHelpers.h"
 #include "indicators.hpp"
 #if defined(_MSC_VER)
 #pragma warning(pop)
@@ -42,8 +43,8 @@ void GateVolumeVoxelizer::Voxelize() {
   auto n = fImage->GetLargestPossibleRegion().GetNumberOfPixels() / interval;
   ProgressBar bar{option::BarWidth{50},
                   option::Start{""},
-                  option::Fill{"■"},
-                  option::Lead{"■"},
+                  option::Fill{GateProgressBarFill},
+                  option::Lead{GateProgressBarFill},
                   option::End{""},
                   option::ShowElapsedTime{true},
                   option::ShowRemainingTime{true},

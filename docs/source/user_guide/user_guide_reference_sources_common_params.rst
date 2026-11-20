@@ -50,6 +50,10 @@ Common parameters are:
 * | ``n``: the number (integer or a list) of particles to emit (the number of Geant4 Events).
 * | ``activity``: the number (real, in Bq) of particle to emit per second.
   | The number of Geant4 Events will depend on the simulation time.
+* | ``half_life``: decay of the activity, from the source ``start_time``.
+* | ``tac_times`` and ``tac_activities``: a Time Activity Curve, instead of ``activity``
+  | (see :ref:`source-tac`). Not available for the TreatmentPlanPBSource, and ignored
+  | (with a warning) by the LastVertexSource, whose events are not driven by an activity.
 
 
 If you want to start a multi-run simulation using the parameter n, you can provide a list of the number of particles to simulate for each run (see `test096 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source/test096_multi_run_simulation_using_n_generic_source.py>`_)

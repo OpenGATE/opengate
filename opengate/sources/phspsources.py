@@ -561,8 +561,7 @@ class PhaseSpaceSource(SourceBase):
 
         # Initialize base start/end times and check activity on the python side
         self.initialize_start_end_time(run_timing_intervals)
-        runtime_user_info = self.build_runtime_user_info_for_g4_source(g4_source)
-        g4_source.InitializeUserInfo(runtime_user_info)
+        self.initialize_g4_source_user_info(g4_source)
 
         # initialize the generator (read the phsp file)
         self.particle_generators[tid].initialize(self)

@@ -15,5 +15,11 @@ void init_GateDigitizerSpatialBlurringActor(py::module &m) {
              std::unique_ptr<GateDigitizerSpatialBlurringActor, py::nodelete>,
              GateVDigitizerWithOutputActor>(m,
                                             "GateDigitizerSpatialBlurringActor")
-      .def(py::init<py::dict &>());
+      .def(py::init<py::dict &>())
+      .def_static("ComputeTruncatedStd",
+                  &GateDigitizerSpatialBlurringActor::ComputeTruncatedStd)
+      .def_static("ComputeTruncatedRms",
+                  &GateDigitizerSpatialBlurringActor::ComputeTruncatedRms)
+      .def_static("ComputeParentSigmaForRms",
+                  &GateDigitizerSpatialBlurringActor::ComputeParentSigmaForRms);
 }

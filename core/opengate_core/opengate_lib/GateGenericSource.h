@@ -43,14 +43,11 @@ public:
 
   void SetProbabilityCDF(const std::vector<double> &cdf);
 
-  void SetTAC(const std::vector<double> &times,
-              const std::vector<double> &activities);
-
   void InitializeBackToBackMode(py::dict &user_info);
 
   unsigned long GetTotalSkippedEvents() const;
   unsigned long GetTotalZeroEvents() const;
-  virtual void Visualize() const override;
+  void Visualize() override;
 
 protected:
   //  We cannot use a std::unique_ptr
@@ -72,11 +69,6 @@ protected:
   G4Colour fVisColour;
   G4double fVisSize;
   G4int fVisCount = 0;
-
-  // Time Curve Activity
-  std::vector<double> fTAC_Times;
-  std::vector<double> fTAC_Activities;
-  void UpdateActivityWithTAC(double time);
 
   // generic ion is controlled separately
   // (maybe initialized once Run is started)
@@ -106,8 +98,9 @@ protected:
   unsigned long fTotalZeroEvents = 0;
 
   // if confine is used, must be defined after the initialization
-  // bool fInitConfine;
+  // (when all the volumes exist): see InitializeConfine
   std::string fConfineVolume;
+  void InitializeConfine();
 
   // for beta plus CDF
   std::vector<double> fEnergyCDF;
@@ -130,8 +123,6 @@ protected:
   virtual void InitializeEnergy(py::dict user_info);
 
   virtual void InitializeVisualization(py::dict user_info);
-
-  void UpdateActivity(double time) override;
 
   void UpdateEffectiveEventTime(double current_simulation_time,
                                 unsigned long skipped_particle);

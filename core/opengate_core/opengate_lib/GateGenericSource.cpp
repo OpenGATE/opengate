@@ -69,12 +69,6 @@ void GateGenericSource::SetProbabilityCDF(const std::vector<double> &cdf) {
   fProbabilityCDF = cdf;
 }
 
-void GateGenericSource::SetTAC(const std::vector<double> &times,
-                               const std::vector<double> &activities) {
-  fTAC_Times = times;
-  fTAC_Activities = activities;
-}
-
 void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
@@ -97,46 +91,6 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   // init number of events
   fDirectionRelativeToAttachedVolume =
       DictGetBool(user_info, "direction_relative_to_attached_volume");
-}
-
-void GateGenericSource::UpdateActivity(const double time) {
-  if (!fTAC_Times.empty())
-    return UpdateActivityWithTAC(time);
-  GateVSource::UpdateActivity(time);
-}
-
-void GateGenericSource::UpdateActivityWithTAC(const double time) {
-  // Below/above the TAC ?
-  if (time < fTAC_Times.front() || time > fTAC_Times.back()) {
-    fActivity = 0;
-    return;
-  }
-
-  // Search for the time bin
-  const auto lower =
-      std::lower_bound(fTAC_Times.begin(), fTAC_Times.end(), time);
-  auto i = std::distance(fTAC_Times.begin(), lower);
-
-  // Exact match or first sample
-  if (i == 0) {
-    fActivity = fTAC_Activities[0];
-    return;
-  }
-
-  // Move to the lower bin edge for the interpolation
-  i -= 1;
-
-  // Last element ?
-  if (i >= fTAC_Times.size() - 1) {
-    fActivity = fTAC_Activities.back();
-    return;
-  }
-
-  // linear interpolation
-  const double bin_time = fTAC_Times[i + 1] - fTAC_Times[i];
-  const double w1 = (fTAC_Times[i + 1] - time) / bin_time;
-  const double w2 = (time - fTAC_Times[i]) / bin_time;
-  fActivity = fTAC_Activities[i] * w1 + fTAC_Activities[i + 1] * w2;
 }
 
 double
@@ -218,13 +172,7 @@ void GateGenericSource::GeneratePrimaries(
     fInitGenericIon = false; // only the first time
   }
 
-  // Confine cannot be initialized at initialization (because need all volumes
-  // to be created) It must be set here, the first time we get there
-  if (fInitConfine) {
-    auto *pos = fSPS->GetPosDist();
-    pos->ConfineSourceToVolume(fConfineVolume);
-    fInitConfine = false;
-  }
+  InitializeConfine();
 
   // sample the particle properties with SingleParticleSource
   // (the acceptance angle or forced direction is included)
@@ -537,9 +485,8 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
       ene->UserEnergyHisto(x);
       total += w[i];
     }
-    // Modify the activity according to the total sum of weights
-    fActivity = fActivity * total;
-    fInitialActivity = fActivity;
+    // Modify the activity (and the TAC) according to the total sum of weights
+    SetActivityScale(total);
   }
 
   if (ene_type == "spectrum_discrete") { // TODO rename
@@ -568,10 +515,9 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
       weight /= weightsSum;
 
     // ! important !
-    // Modify the activity according to the total sum of weights because we
-    // normalize the weights
-    fActivity *= weightsSum;
-    fInitialActivity = fActivity;
+    // Modify the activity (and the TAC) according to the total sum of weights
+    // because we normalize the weights
+    SetActivityScale(weightsSum);
 
     ene->SetEnergyDisType(ene_type);
     ene->SetEmin(energies.front());
@@ -626,10 +572,9 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
       weight /= weightsSum;
 
     // ! important !
-    // Modify the activity according to the total sum of weights because we
-    // normalize the weights
-    fActivity *= weightsSum;
-    fInitialActivity = fActivity;
+    // Modify the activity (and the TAC) according to the total sum of weights
+    // because we normalize the weights
+    SetActivityScale(weightsSum);
 
     std::string interpolation_str;
     if (interpolation != "None" && interpolation != "none")
@@ -711,7 +656,18 @@ void GateGenericSource::PosPointCloud::operator()(
   sceneHandler.EndPrimitives();
 }
 
-void GateGenericSource::Visualize() const {
+void GateGenericSource::InitializeConfine() {
+  // Confine cannot be initialized at initialization (because need all volumes
+  // to be created) It must be set the first time a position is sampled
+  // (event or visualization)
+  if (fInitConfine) {
+    auto *pos = fSPS->GetPosDist();
+    pos->ConfineSourceToVolume(fConfineVolume);
+    fInitConfine = false;
+  }
+}
+
+void GateGenericSource::Visualize() {
   if (fVisCount <= 0)
     return;
 
@@ -721,6 +677,9 @@ void GateGenericSource::Visualize() const {
   if (scene == nullptr)
     return;
 
+  // the confinement is set at the first event: it may not be set yet (no
+  // event generated)
+  InitializeConfine();
   auto *pos = fSPS->GetPosDist();
 
   auto *point_cloud = new PosPointCloud(fVisColour, fVisSize);

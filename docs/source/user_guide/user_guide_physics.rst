@@ -72,6 +72,25 @@ If you want to enable radioactive decay regardless of the list, use:
 
 .. important:: This will **not** turn off radioactive decay if the physics list actually includes it. Think of the option as a light switch that turns on the light, but does not turn it off.
 
+**Very long half-lives.** Since Geant4 11.2, the radioactive decay of the ions
+whose lifetime is above a threshold (``thresholdForVeryLongDecayTime``) is
+ignored: these ions are considered stable. With the default threshold of the
+Geant4 version currently used by GATE (11.4), a Cs137 source (half-life 30 years)
+does not decay at all. To simulate such ions, increase the threshold, after the
+initialization:
+
+.. code-block:: python
+
+    sim.g4_commands_after_init.append(
+        "/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year"
+    )
+
+Be careful: this also enables the decay of the (almost) stable descendants of a
+decay chain (e.g. Bi209, half-life 1.9e19 years, in the Ac225 chain), which may add
+energy that is not expected in the time range of interest. See the
+`Geant4 documentation <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#note-on-the-time-threshold-for-radioactive-decay-of-ions>`_
+and ``test147``.
+
 
 
 Electromagnetic Parameters
@@ -125,6 +144,29 @@ or set the cut via the volume like this:
 Both of the above commands are equivalent.
 
 .. important:: Geant4 only applies production cuts to electron, positrons, gammas, and protons. Use "all" instead of a specific particle to apply the cuts to all four particles.
+
+Repeated volumes
+~~~~~~~~~~~~~~~~
+
+Production cuts, step limits and the other per-volume physics settings (regions) cannot be set on a volume repeated with ``RepeatParametrisedVolume``, nor on the ``RepeatParametrisedVolume`` itself. Geant4 does not support a region that starts at a parameterised volume, so the simulation stops with a message if you try.
+
+Set them on the mother volume instead. A region applies to its volume and to all the volumes inside it (unless one of them starts its own region), so the cut then applies to all the repeated volumes:
+
+.. code-block:: python
+
+    detector = sim.add_volume("Box", "detector")
+    pixel = sim.add_volume("Box", "pixel")
+    pixel.mother = detector
+    param = RepeatParametrisedVolume(repeated_volume=pixel)
+    # ...
+    sim.volume_manager.add_volume(param)
+
+    # not possible: "pixel" is repeated
+    # sim.physics_manager.set_production_cut("pixel", "gamma", 0.01 * mm)
+    # the cut applies to all the pixels
+    sim.physics_manager.set_production_cut("detector", "gamma", 0.01 * mm)
+
+The cut then also applies to the material of the mother volume itself, and to its other daughters. Cuts are applied per material, so this usually only changes the speed of the simulation. To limit the cut to the repeated volumes, add an intermediate container volume inside the mother. Make it just large enough to hold the repeated volumes and give it the same material as the mother. Repeat the volume inside this container, and set the cut on the container.
 
 Have a look at section :ref:`production-cuts-details-label` in the detailed part of this user guide for more information.
 

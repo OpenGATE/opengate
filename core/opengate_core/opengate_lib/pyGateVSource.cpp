@@ -18,5 +18,6 @@ void init_GateVSource(py::module &m) {
       .def("SetOrientationAccordingToAttachedVolume",
            &GateVSource::SetOrientationAccordingToAttachedVolume)
       .def("GetRunGeneratedEvents", &GateVSource::GetRunGeneratedEvents)
-      .def("GetTotalGeneratedEvents", &GateVSource::GetTotalGeneratedEvents);
+      .def("GetTotalGeneratedEvents", &GateVSource::GetTotalGeneratedEvents)
+      .def("SetTAC", &GateVSource::SetTAC);
 }

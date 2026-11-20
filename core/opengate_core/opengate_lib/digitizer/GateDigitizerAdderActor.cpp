@@ -48,6 +48,9 @@ void GateDigitizerAdderActor::InitializeUserInfo(py::dict &user_info) {
   fTimeDifferenceFlag = DictGetBool(user_info, "time_difference");
   fNumberOfHitsFlag = DictGetBool(user_info, "number_of_hits");
 
+  // optional policies for some attributes: {attribute name: policy}
+  fAttributePolicies.InitializeUserInfo(user_info, "GateDigitizerAdderActor");
+
   // init
   fGroupVolumeDepth = -1;
 }
@@ -79,6 +82,11 @@ void GateDigitizerAdderActor::StartSimulationAction() {
   CheckRequiredAttribute(fInputDigiCollection, "PostPosition");
   CheckRequiredAttribute(fInputDigiCollection, "PreStepUniqueVolumeID");
   CheckRequiredAttribute(fInputDigiCollection, "GlobalTime");
+
+  // attributes with a policy
+  fAttributePolicies.Check(
+      fInputDigiCollection,
+      {"TotalEnergyDeposit", "PostPosition", "GlobalTime"});
 }
 
 void GateDigitizerAdderActor::DigitInitialize(
@@ -92,6 +100,7 @@ void GateDigitizerAdderActor::DigitInitialize(
     att.emplace_back("TimeDifference");
   if (fNumberOfHitsFlag)
     att.emplace_back("NumberOfHits");
+  fAttributePolicies.AppendNames(att);
   GateVDigitizerWithOutputActor::DigitInitialize(att);
 
   // Get thread local variables
@@ -109,6 +118,9 @@ void GateDigitizerAdderActor::DigitInitialize(
   if (fNumberOfHitsFlag)
     fOutputNumberOfHitsAttribute =
         fOutputDigiCollection->GetDigiAttribute("NumberOfHits");
+
+  fAttributePolicies.SetCollections(fInputDigiCollection,
+                                    fOutputDigiCollection);
 
   // set input pointers to the attributes needed for computation
   auto &lr = fThreadLocalVDigitizerData.Get();
@@ -153,6 +165,7 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
         fOutputTimeDifferenceAttribute->FillDValue(hit->fDifferenceTime);
       if (fNumberOfHitsFlag)
         fOutputNumberOfHitsAttribute->FillDValue(hit->fNumberOfHits);
+      fAttributePolicies.Fill(hit->fAttributeTracker);
       lr.fDigiAttributeFiller->Fill(hit->fFinalIndex);
     }
   }
@@ -194,5 +207,9 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
   }
 
   // Update the adder (either newly created or pre-existing).
-  l.fMapOfDigiInVolume[key]->Update(i, *l.edep, *l.pos, *l.time);
+  auto &adder = l.fMapOfDigiInVolume[key];
+  adder->Update(i, *l.edep, *l.pos, *l.time);
+
+  // Attributes with a policy (energy winner: the deposited energy)
+  fAttributePolicies.Update(adder->fAttributeTracker, i, *l.time, *l.edep);
 }

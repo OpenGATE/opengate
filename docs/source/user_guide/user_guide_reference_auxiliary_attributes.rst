@@ -46,6 +46,9 @@ Description
 ~~~~~~~~~~~
 
 Counts how often the current track has undergone a configured Geant4 process.
+The process of a step is the process that limited this step (post-step
+point). The value read for a step includes this step, whether it is read by
+an actor, a filter or a digitizer.
 
 The user must provide:
 
@@ -87,11 +90,30 @@ hierarchy for the current track.
 The user must provide:
 
 - ``process_name``
-- ``volume_name``
+- ``volume_name``: one volume name, or a list of volume names
 
 Optional:
 
 - ``propagate_from_parent_track``
+
+A step is counted when the process that limited this step is ``process_name``
+and the step starts in the volume or in any of its daughters (for example the
+voxels of an image volume, or the collimator and the crystal of a detector
+head). Volumes are matched by name: the copies of a repeated volume are
+counted together, and volumes with different names need a list of names (or
+one attribute per volume).
+
+The volumes can belong to a parallel world. A step located in a parallel-world
+volume that has a material (layered mass geometry, for example a table
+overlapping a patient image) belongs to this volume only: it is not counted in
+the volumes of the mass world found at the same place, such as the image or
+the world.
+
+The value stored for a step includes this step. With
+``propagate_from_parent_track``, a secondary starts with the count of its
+parent including the step that created it: after a Compton interaction in a
+crystal, the recoil electron and all the following steps of the photon have
+the same value.
 
 This attribute is the auxiliary-attribute replacement for the old
 actor-based ``ProcessDefinedStepInVolumeAttributeLegacy`` helper.
@@ -123,6 +145,9 @@ Description
 
 Stores the last non-transportation process that defined a step in the
 configured volume hierarchy for the current track.
+The process of a step is the process that limited this step (post-step
+point). The value read for a step includes this step, whether it is read by
+an actor, a filter or a digitizer.
 
 The user must provide:
 
@@ -155,8 +180,9 @@ Description
 ~~~~~~~~~~~
 
 Stores the last interaction position seen on the current track inside the
-configured volume hierarchy. The stored position is taken from the pre-step
-point of a step whose defining process is not ``Transportation``. If no
+configured volume hierarchy: the post-step point of the last step whose
+defining process is not ``Transportation`` (the position of the interaction).
+The value read for a step includes this step. If no
 qualifying interaction has been seen yet, the attribute returns
 ``(NaN, NaN, NaN)``.
 

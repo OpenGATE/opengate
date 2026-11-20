@@ -37,21 +37,35 @@ void GateLastProcessDefinedStepInVolumeAttribute::InitializeCpp() {
   manager->DefineDigiAttribute(fName, fDigiAttributeType, fill);
 }
 
+const G4VProcess *
+GateLastProcessDefinedStepInVolumeAttribute::GetInteractionInCurrentStep(
+    const G4Step *step) const {
+  const auto *process = step->GetPostStepPoint()->GetProcessDefinedStep();
+  if (process == nullptr || process->GetProcessName() == "Transportation")
+    return nullptr;
+  if (!IsStepInVolume(step, fVolumeName))
+    return nullptr;
+  return process;
+}
+
 std::string GateLastProcessDefinedStepInVolumeAttribute::GetSValue(
     const G4Step *step) const {
+  if (step == nullptr)
+    return "Transportation";
+  // the current step first (actors read it before SteppingAction)
+  const auto *process = GetInteractionInCurrentStep(step);
+  if (process != nullptr)
+    return process->GetProcessName();
   return GetStoredTrackDataValue<GateStringTrackData, std::string>(
       step, "Transportation");
 }
 
 void GateLastProcessDefinedStepInVolumeAttribute::SteppingAction(
     const G4Step *step) {
-  const auto *pre_step_point = step->GetPreStepPoint();
-  if (IsStepInVolume(step, fVolumeName)) {
-    const auto *process = pre_step_point->GetProcessDefinedStep();
-    if (process != nullptr && process->GetProcessName() != "Transportation") {
-      SetStoredTrackDataValue<GateStringTrackData, std::string>(
-          step->GetTrack(), process->GetProcessName());
-    }
+  const auto *process = GetInteractionInCurrentStep(step);
+  if (process != nullptr) {
+    SetStoredTrackDataValue<GateStringTrackData, std::string>(
+        step->GetTrack(), process->GetProcessName());
   }
 
   if (fPropagateFromParentTrack) {

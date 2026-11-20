@@ -172,10 +172,10 @@ def update_sub_source_tac_activity(sub_source, g4_source, tac_times, tac_activit
         sub_source.start_time = sub_source.end_time + 1 * sec
     else:
         sub_source.start_time = tac_times[i]
-        # IMPORTANT : activities must be x by total here
-        # (not before, because it can be called several times in MT mode)
+        # the activities are multiplied by the total yield of the spectrum
+        # (sum of spectrum_weights) on the C++ side, like without TAC
         if g4_source is not None:
-            tac_values = np.array(tac_activities) * total
+            tac_values = np.array(tac_activities)
             if sub_source.simulation.multithreaded:
                 tac_values = tac_values / int(sub_source.simulation.number_of_threads)
             g4_source.SetTAC(tac_times, tac_values)
