@@ -94,6 +94,11 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
       fOutputEdepAttribute->FillDValue(digi->fFinalEdep);
       fOutputPosAttribute->Fill3Value(digi->fFinalPosition);
       fOutputGlobalTimeAttribute->FillDValue(digi->fFinalTime);
+      if (fTimeDifferenceFlag)
+        fOutputTimeDifferenceAttribute->FillDValue(digi->fDifferenceTime);
+      if (fNumberOfHitsFlag)
+        fOutputNumberOfHitsAttribute->FillDValue(digi->fNumberOfHits);
+      fAttributePolicies.Fill(digi->fAttributeTracker);
       lr.fDigiAttributeFiller->Fill(digi->fFinalIndex);
     }
   }

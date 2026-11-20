@@ -106,6 +106,17 @@ def create_simulation(paths):
     s.output_filename = "test086_attribute_policies_singles_default.root"
     singles["default"] = s
 
+    # the readout uses the same policies (and the number of hits)
+    s = sim.add_actor("DigitizerReadoutActor", "readout_max")
+    s.attached_to = crystal.name
+    s.input_digi_collection = hits.name
+    s.policy = "EnergyWeightedCentroidPosition"
+    s.discretize_volume = crystal.name
+    s.attribute_policies = {name: "max" for name in names}
+    s.number_of_hits = True
+    s.output_filename = "test086_attribute_policies_readout_max.root"
+    singles["readout_max"] = s
+
     return sim, hits, singles, names
 
 
@@ -175,5 +186,22 @@ if __name__ == "__main__":
         b = bool((singles[keys] == ref[keys].reindex(singles.index)).all().all())
         utility.print_test(b, f"Policy {policy:14s} same energy, position and time")
         is_ok = is_ok and b
+
+    # readout: same policies, number of hits
+    readout = read_tree(singles_actors["readout_max"]).set_index("EventID")
+    e = expected["max"].reindex(readout.index)
+    nb_diff = int((readout[names] != e).any(axis=1).sum())
+    nb_hits = g.size().reindex(readout.index)
+    b = (
+        nb_diff == 0
+        and len(readout) == g.ngroups
+        and (readout["NumberOfHits"] == nb_hits).all()
+    )
+    utility.print_test(
+        b,
+        f"Readout, policy max: {len(readout)} singles, {nb_diff} differ from the "
+        f"expected hit, number of hits ok: {(readout['NumberOfHits'] == nb_hits).all()}",
+    )
+    is_ok = is_ok and b
 
     utility.test_ok(is_ok)

@@ -109,6 +109,7 @@ from .actors.digitizers import (
     DigitizerPileupActor,
     DigitizerProjectionActor,
     DigitizerReadoutActor,
+    DigitizerChargeInductionActor,
     DigitizerSpatialBlurringActor,
     PhaseSpaceActor,
 )
@@ -201,6 +202,7 @@ actor_types = {
     "DigitizerBlurringActor": DigitizerBlurringActor,
     "DigitizerSpatialBlurringActor": DigitizerSpatialBlurringActor,
     "DigitizerReadoutActor": DigitizerReadoutActor,
+    "DigitizerChargeInductionActor": DigitizerChargeInductionActor,
     "DigitizerEfficiencyActor": DigitizerEfficiencyActor,
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,

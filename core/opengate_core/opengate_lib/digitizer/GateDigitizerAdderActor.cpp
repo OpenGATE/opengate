@@ -49,31 +49,7 @@ void GateDigitizerAdderActor::InitializeUserInfo(py::dict &user_info) {
   fNumberOfHitsFlag = DictGetBool(user_info, "number_of_hits");
 
   // optional policies for some attributes: {attribute name: policy}
-  fAttributePolicies.clear();
-  const auto policies = py::dict(user_info["attribute_policies"]);
-  for (const auto &item : policies) {
-    AttributePolicyItem a;
-    a.fName = std::string(py::str(item.first));
-    const auto p = std::string(py::str(item.second));
-    if (p == "max")
-      a.fPolicy = AttributeMax;
-    else if (p == "min")
-      a.fPolicy = AttributeMin;
-    else if (p == "first")
-      a.fPolicy = AttributeFirst;
-    else if (p == "last")
-      a.fPolicy = AttributeLast;
-    else if (p == "energy_winner")
-      a.fPolicy = AttributeEnergyWinner;
-    else {
-      std::ostringstream oss;
-      oss << "Error in GateDigitizerAdderActor: unknown attribute policy '" << p
-          << "' for the attribute '" << a.fName
-          << "'. Must be max, min, first, last or energy_winner.";
-      Fatal(oss.str());
-    }
-    fAttributePolicies.push_back(a);
-  }
+  fAttributePolicies.InitializeUserInfo(user_info, "GateDigitizerAdderActor");
 
   // init
   fGroupVolumeDepth = -1;
@@ -108,24 +84,9 @@ void GateDigitizerAdderActor::StartSimulationAction() {
   CheckRequiredAttribute(fInputDigiCollection, "GlobalTime");
 
   // attributes with a policy
-  for (auto &a : fAttributePolicies) {
-    if (a.fName == "TotalEnergyDeposit" || a.fName == "PostPosition" ||
-        a.fName == "GlobalTime") {
-      Fatal("Error in GateDigitizerAdderActor: no attribute policy can be set "
-            "for '" +
-            a.fName + "', this attribute is computed by the adder.");
-    }
-    CheckRequiredAttribute(fInputDigiCollection, a.fName);
-    const auto type =
-        fInputDigiCollection->GetDigiAttribute(a.fName)->GetDigiAttributeType();
-    if ((a.fPolicy == AttributeMax || a.fPolicy == AttributeMin) &&
-        type != 'D' && type != 'I' && type != 'L') {
-      Fatal("Error in GateDigitizerAdderActor: the policies max and min "
-            "require a numeric attribute (double, int, int64), which is not "
-            "the case of '" +
-            a.fName + "'.");
-    }
-  }
+  fAttributePolicies.Check(
+      fInputDigiCollection,
+      {"TotalEnergyDeposit", "PostPosition", "GlobalTime"});
 }
 
 void GateDigitizerAdderActor::DigitInitialize(
@@ -139,8 +100,7 @@ void GateDigitizerAdderActor::DigitInitialize(
     att.emplace_back("TimeDifference");
   if (fNumberOfHitsFlag)
     att.emplace_back("NumberOfHits");
-  for (const auto &a : fAttributePolicies)
-    att.emplace_back(a.fName);
+  fAttributePolicies.AppendNames(att);
   GateVDigitizerWithOutputActor::DigitInitialize(att);
 
   // Get thread local variables
@@ -159,10 +119,8 @@ void GateDigitizerAdderActor::DigitInitialize(
     fOutputNumberOfHitsAttribute =
         fOutputDigiCollection->GetDigiAttribute("NumberOfHits");
 
-  for (auto &a : fAttributePolicies) {
-    a.fInput = fInputDigiCollection->GetDigiAttribute(a.fName);
-    a.fOutput = fOutputDigiCollection->GetDigiAttribute(a.fName);
-  }
+  fAttributePolicies.SetCollections(fInputDigiCollection,
+                                    fOutputDigiCollection);
 
   // set input pointers to the attributes needed for computation
   auto &lr = fThreadLocalVDigitizerData.Get();
@@ -207,10 +165,7 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
         fOutputTimeDifferenceAttribute->FillDValue(hit->fDifferenceTime);
       if (fNumberOfHitsFlag)
         fOutputNumberOfHitsAttribute->FillDValue(hit->fNumberOfHits);
-      for (size_t k = 0; k < fAttributePolicies.size(); k++) {
-        const auto &a = fAttributePolicies[k];
-        a.fOutput->Fill(a.fInput, hit->fAttributeIndex[k]);
-      }
+      fAttributePolicies.Fill(hit->fAttributeTracker);
       lr.fDigiAttributeFiller->Fill(hit->fFinalIndex);
     }
   }
@@ -255,37 +210,6 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
   auto &adder = l.fMapOfDigiInVolume[key];
   adder->Update(i, *l.edep, *l.pos, *l.time);
 
-  // Attributes with a policy: every policy keeps the hit of largest score
-  for (size_t k = 0; k < fAttributePolicies.size(); k++) {
-    const auto &a = fAttributePolicies[k];
-    double score = 0;
-    switch (a.fPolicy) {
-    case AttributeMax:
-    case AttributeMin: {
-      double value = 0;
-      switch (a.fInput->GetDigiAttributeType()) {
-      case 'D':
-        value = a.fInput->GetDValues()[i];
-        break;
-      case 'I':
-        value = a.fInput->GetIValues()[i];
-        break;
-      default:
-        value = static_cast<double>(a.fInput->GetLValues()[i]);
-      }
-      score = a.fPolicy == AttributeMax ? value : -value;
-      break;
-    }
-    case AttributeFirst:
-      score = -*l.time;
-      break;
-    case AttributeLast:
-      score = *l.time;
-      break;
-    case AttributeEnergyWinner:
-      score = *l.edep;
-      break;
-    }
-    adder->UpdateAttribute(k, i, score);
-  }
+  // Attributes with a policy (energy winner: the deposited energy)
+  fAttributePolicies.Update(adder->fAttributeTracker, i, *l.time, *l.edep);
 }
