@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("matplotlib.cm", "matplotlib.patches", "matplotlib.pyplot")
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.patches as patches

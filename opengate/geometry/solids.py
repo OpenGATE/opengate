@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("meshio",)
 from box import Box
 from scipy.spatial.transform import Rotation
 import logging

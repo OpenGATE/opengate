@@ -6,6 +6,8 @@
 #   See LICENSE for further details
 # -----------------------------------------------------------------------------
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("scipy.spatial.transform",)
 import os
 import re
 import numpy as np

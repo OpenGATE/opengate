@@ -9,6 +9,8 @@ Adaptation of the Matlab PhotonAttenuation package written by Jarek Tuszynski.
 @author: vilches
 """
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("scipy.interpolate",)
 import numpy as np
 from scipy.interpolate import interp1d, pchip_interpolate
 import re

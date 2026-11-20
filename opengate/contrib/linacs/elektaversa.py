@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("itk", "scipy", "scipy.spatial.transform")
 from scipy.spatial.transform import Rotation
 from box import Box
 import opengate as gate

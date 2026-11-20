@@ -1,3 +1,5 @@
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("awkward", "matplotlib.pyplot", "scipy.stats", "uproot")
 import logging
 import os
 from pathlib import Path

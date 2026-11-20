@@ -4,7 +4,8 @@ set -e
 source $GITHUB_WORKSPACE/env_dump.txt
 
 pip install wget colored setuptools
-pip install cibuildwheel==3.4.0
+# cibuildwheel >= 4.2 builds CPython 3.15 (cp315) without the cpython-prerelease opt-in
+pip install cibuildwheel==4.3.5
 
 # Setup the environment for the build
 if [ ${MATRIX_OS} == "ubuntu-24.04-arm" ]; then
@@ -15,9 +16,7 @@ else
   export CIBW_ARCHS="x86_64"
   export CIBW_MANYLINUX_X86_64_IMAGE=tbaudier/opengate_core:${GEANT4_VERSION}
 fi
-if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
-  export CIBW_BUILD="cp310-*"
-elif [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
+if [[ ${MATRIX_PYTHON_VERSION} == "3.11" ]]; then
   export CIBW_BUILD="cp311-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.12" ]]; then
   export CIBW_BUILD="cp312-*"
@@ -25,6 +24,8 @@ elif [[ ${MATRIX_PYTHON_VERSION} == "3.13" ]]; then
   export CIBW_BUILD="cp313-*"
 elif [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
   export CIBW_BUILD="cp314-*"
+elif [[ ${MATRIX_PYTHON_VERSION} == "3.15" ]]; then
+  export CIBW_BUILD="cp315-*"
 fi
 export CIBW_PLATFORM="linux"
 if [ ${MATRIX_OS} == "ubuntu-24.04" ]; then

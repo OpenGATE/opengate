@@ -11,6 +11,8 @@ except ModuleNotFoundError:
     sys.modules[__name__] = None
     raise SystemExit
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("SimpleITK", "torch")
 import json
 import torch
 import warnings

@@ -36,8 +36,6 @@ except IOError:
     with open("../VERSION", "r") as fh:
         version = fh.read()[:-1]
 
-from distutils.version import LooseVersion
-
 from setuptools import Extension, find_packages
 from setuptools.command.build_ext import build_ext
 
@@ -59,10 +57,13 @@ class CMakeBuild(build_ext):
             )
 
         if platform.system() == "Windows":
-            cmake_version = LooseVersion(
-                re.search(r"version\s*([\d.]+)", out.decode()).group(1)
+            cmake_version = tuple(
+                int(part)
+                for part in re.search(r"version\s*([\d.]+)", out.decode())
+                .group(1)
+                .split(".")
             )
-            if cmake_version < "3.1.0":
+            if cmake_version < (3, 1, 0):
                 raise RuntimeError("CMake >= 3.1.0 is required on Windows")
 
         for ext in self.extensions:

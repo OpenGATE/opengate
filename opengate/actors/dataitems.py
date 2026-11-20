@@ -26,6 +26,8 @@ structured collections of such items, and actor outputs coordinate their use in
 the simulation workflow.
 """
 
+# PEP 810 (Python 3.15+): these imports are deferred until first use
+__lazy_modules__ = ("itk",)
 import itk
 import numpy as np
 import json
