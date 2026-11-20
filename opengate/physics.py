@@ -583,6 +583,48 @@ class Region(GateObject):
         # Python volume objects that will later receive their G4 logical volumes
         # during geometry construction.
         self.resolve_root_logical_volumes()
+        self.check_root_logical_volumes_not_parameterised()
+
+    def check_root_logical_volumes_not_parameterised(self):
+        """A region cannot start at a volume placed by a parameterisation
+        (RepeatParametrisedVolume), see #1275.
+
+        When Geant4 scans the regions, it goes down into a parameterised
+        daughter without checking whether its logical volume is the root of
+        another region: the region of the mother takes it over. The region is
+        then not part of the world, it gets no material-cuts couple, and the
+        first step in the volume crashes (segmentation fault). Setting the
+        region on the mother volume works.
+        """
+        # local import: avoid a circular import (geometry imports physics)
+        from .geometry.volumes import RepeatParametrisedVolume
+
+        for vol in self.simulation.volume_manager.volumes.values():
+            if not isinstance(vol, RepeatParametrisedVolume):
+                continue
+            repeated = vol.user_info["repeated_volume_name"]
+            if vol.name in self.root_logical_volumes:
+                fatal(
+                    f"Region '{self.name}' (production cuts, user limits or "
+                    f"EM switches) cannot be set on the volume '{vol.name}': "
+                    f"it is a RepeatParametrisedVolume and it has no logical "
+                    f"volume of its own. Set it on the mother volume "
+                    f"'{vol.mother}' instead: it then applies to all the "
+                    f"repeated volumes '{repeated}' (and to the other "
+                    f"daughters of '{vol.mother}')."
+                )
+            if repeated in self.root_logical_volumes:
+                fatal(
+                    f"Region '{self.name}' (production cuts, user limits or "
+                    f"EM switches) cannot be set on the volume '{repeated}': "
+                    f"this volume is repeated by the RepeatParametrisedVolume "
+                    f"'{vol.name}', and Geant4 does not support a region that "
+                    f"starts at a parameterised volume (the region is lost "
+                    f"and the simulation crashes). Set it on the mother volume "
+                    f"'{vol.mother}' instead: it then applies to all the "
+                    f"repeated volumes '{repeated}' (and to the other "
+                    f"daughters of '{vol.mother}')."
+                )
 
     def dump_production_cuts(self):
         s = ""

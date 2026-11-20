@@ -145,6 +145,8 @@ Both of the above commands are equivalent.
 
 .. important:: Geant4 only applies production cuts to electron, positrons, gammas, and protons. Use "all" instead of a specific particle to apply the cuts to all four particles.
 
+.. note:: Production cuts, step limits and the other per-volume physics settings (regions) cannot be set on a volume repeated with ``RepeatParametrisedVolume``, nor on the ``RepeatParametrisedVolume`` itself: Geant4 does not support a region that starts at a parameterised volume. Set them on the mother volume instead. They then apply to all the repeated volumes, and to the other daughters of the mother volume. The simulation stops with a message if you try.
+
 Have a look at section :ref:`production-cuts-details-label` in the detailed part of this user guide for more information.
 
 
