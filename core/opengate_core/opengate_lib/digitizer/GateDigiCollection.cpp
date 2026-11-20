@@ -9,8 +9,10 @@
 #include "../GateHelpers.h"
 #include "GateDigiAttributeManager.h"
 #include "GateDigiCollectionIterator.h"
+#include "GateDigiCollectionNumpyWriter.h"
 #include "GateDigiCollectionsRootManager.h"
 #include <G4Step.hh>
+#include <filesystem>
 
 GateDigiCollection::GateDigiCollection(const std::string &collName)
     : G4VHitsCollection("", collName), fDigiCollectionName(collName) {
@@ -56,6 +58,7 @@ void GateDigiCollection::SetWriteToRootFlag(const bool f) {
 
 void GateDigiCollection::SetFilenameAndInitRoot(const std::string &filename) {
   fFilename = filename;
+  fNumpyOutputFlag = std::filesystem::path(filename).extension() == ".npy";
   if (fFilename.empty())
     SetWriteToRootFlag(false);
   else
@@ -70,16 +73,27 @@ void GateDigiCollection::InitDigiAttributesFromNames(
 }
 
 void GateDigiCollection::RootStartInitialization() {
-  if (!fWriteToRootFlag)
+  if (!fWriteToRootFlag || fNumpyOutputFlag)
     return;
   auto *am = GateDigiCollectionsRootManager::GetInstance();
   const auto id = am->DeclareNewTuple(fDigiCollectionName);
   fTupleId = id;
 }
 
+std::string GateDigiCollection::GetNumpyFilename() const {
+  const std::filesystem::path p(fFilename);
+  const auto name = p.stem().string() + "." + fDigiCollectionName + ".npy";
+  return (p.parent_path() / name).string();
+}
+
 void GateDigiCollection::RootInitializeTupleForMaster() {
   if (!fWriteToRootFlag)
     return;
+  if (fNumpyOutputFlag) {
+    fNumpyWriter = std::make_shared<GateDigiCollectionNumpyWriter>(
+        GetNumpyFilename(), fDigiAttributes);
+    return;
+  }
   auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->CreateRootTuple(this);
 }
@@ -90,8 +104,11 @@ void GateDigiCollection::RootInitializeTupleForWorker() {
   // no need if not multi-thread
   if (!G4Threading::IsMultithreadedApplication())
     return;
-  auto *am = GateDigiCollectionsRootManager::GetInstance();
-  am->CreateRootTuple(this);
+  // the numpy file is shared by all threads, nothing to create here
+  if (!fNumpyOutputFlag) {
+    auto *am = GateDigiCollectionsRootManager::GetInstance();
+    am->CreateRootTuple(this);
+  }
   SetBeginOfEventIndex();
 }
 
@@ -113,6 +130,15 @@ void GateDigiCollection::FillToRootIfNeeded(bool clear) {
 }
 
 void GateDigiCollection::FillToRoot() {
+  if (fNumpyOutputFlag) {
+    if (fNumpyWriter == nullptr) {
+      Fatal("The numpy file of the digi collection '" + fDigiCollectionName +
+            "' is not open. RootInitializeTupleForMaster was not called.");
+    }
+    fNumpyWriter->AppendRows(GetSize());
+    Clear();
+    return;
+  }
   /*
    * maybe not very efficient to loop that way (row then column)
    * but I don't manage to do elsewhere
@@ -138,6 +164,11 @@ void GateDigiCollection::Clear() const {
 void GateDigiCollection::Write() const {
   if (!fWriteToRootFlag)
     return;
+  if (fNumpyOutputFlag) {
+    if (fNumpyWriter != nullptr)
+      fNumpyWriter->Flush();
+    return;
+  }
   const auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->Write(fTupleId);
 }
@@ -145,6 +176,11 @@ void GateDigiCollection::Write() const {
 void GateDigiCollection::Close() const {
   if (!fWriteToRootFlag)
     return;
+  if (fNumpyOutputFlag) {
+    if (fNumpyWriter != nullptr)
+      fNumpyWriter->Close();
+    return;
+  }
   auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->CloseFile(fTupleId);
 }

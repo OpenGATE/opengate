@@ -11,11 +11,14 @@
 #include "GateVDigiAttribute.h"
 #include <G4Cache.hh>
 #include <G4VHitsCollection.hh>
+#include <memory>
 #include <pybind11/stl.h>
 
 class GateDigiCollectionManager;
 
 class GateDigiCollectionIterator;
+
+class GateDigiCollectionNumpyWriter;
 
 /*
  * Management of a Digi Collection.
@@ -41,6 +44,8 @@ class GateDigiCollectionIterator;
  *       (EndSimulationAction) *
       6) Close may not be needed (unsure)
  *
+ *  A filename ending with .npy writes a numpy file instead, named
+ *  <stem>.<collection name>.npy, with the same calls.
  */
 
 class GateDigiCollection : public G4VHitsCollection {
@@ -82,6 +87,8 @@ public:
   void SetSharedStorage(bool b);
 
   std::string GetFilename() const { return fFilename; }
+
+  std::string GetNumpyFilename() const;
 
   std::string GetTitle() const { return fDigiCollectionTitle; }
 
@@ -133,6 +140,9 @@ protected:
   int fTupleId;
   int fCurrentDigiAttributeId;
   bool fWriteToRootFlag;
+  bool fNumpyOutputFlag = false;
+  // shared by all threads, created by the master
+  std::shared_ptr<GateDigiCollectionNumpyWriter> fNumpyWriter;
 
   // When fSharedStorageMode is true, fBeginOfEventIndex is stored in a plain
   // member rather than thread-local storage (all access serialised externally).
