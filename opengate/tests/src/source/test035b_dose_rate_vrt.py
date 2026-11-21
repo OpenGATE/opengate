@@ -3,7 +3,6 @@
 
 from pathlib import Path
 import json
-import sys
 import numpy as np
 import itk
 from box import Box
@@ -14,7 +13,7 @@ from opengate.tests import utility
 
 def run_simulation(vrt_mode="analog", activity=5e5, threads=None, skip=False):
     if threads is None:
-        threads = 1 if sys.platform.startswith("win") else 4
+        threads = 4
     folder_name = "test035b_" + vrt_mode
     paths = utility.get_default_test_paths(__file__, "", output_folder=folder_name)
     dr_data = paths.data / "dose_rate_data"

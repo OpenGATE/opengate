@@ -266,3 +266,24 @@ value of that type. Gate therefore keeps a dedicated per-run primary counter in
 than the allowed number of real primaries. The check must live in the runtime
 loop, because pre-computing the exact number of primaries is not reliable for
 all source types.
+
+ROOT output files in multithreaded mode on Windows
+--------------------------------------------------
+
+In MT mode, Gate asks Geant4 to merge the ntuples of all threads
+(``SetNtupleMerging``): the master thread creates the ROOT file and each worker
+thread looks for it, by its name, in the file list of the master. Every ROOT
+output after the first one gets its own file (``SetNtupleFileName``), and for
+those files Geant4 does not compose the name in the same way on the master and
+on the workers: the master rebuilds it as ``parent_path + "/" + stem`` (see
+``G4Analysis::GetBaseName``) while the workers use it as given. On Windows, a
+path with ``\`` separators is thus registered as ``C:\out/b.root`` by the
+master and looked up as ``C:\out\b.root`` by the workers. The file is not
+found ("Main ntuple file does not exist", then "ntuple id= 1 does not exist")
+and the simulation crashes (access violation). On Linux and macOS, both names
+are the same.
+
+For this reason, ``ActorOutputRoot`` gives the ROOT file paths to the C++ side
+with ``/`` separators only (``Path.as_posix()``), which Windows accepts. Keep
+this rule for any new code that passes a ROOT file name to Geant4. The test
+``test151_root_output_several_files_mt`` checks it.

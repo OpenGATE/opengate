@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
 import numpy as np
 import uproot
@@ -23,10 +22,6 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # this test need output/test072/output_singles.root
     if not os.path.exists(root_filename):
-        # ignore on windows
-        if os.name == "nt":
-            utility.test_ok(True)
-            sys.exit(0)
         subdir = os.path.dirname(__file__)
         cmd = "python " + str(paths.current / subdir / dependency)
         r = os.system(cmd)

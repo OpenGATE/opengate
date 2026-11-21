@@ -1,12 +1,10 @@
 import copy
 import inspect
-import sys
 from typing import Optional
 from pathlib import Path
 
 import itk
 import numpy as np
-import opengate_core as g4
 from box import Box
 
 from ..base import GateObject, process_cls
@@ -1784,13 +1782,6 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
 
     def resolve_and_validate_config(self, context=None):
         super().resolve_and_validate_config(context=context)
-        # Warning, for the moment, MT and root output does not work on windows machine
-        if sys.platform.startswith("nt"):
-            if g4.IsMultithreadedApplication():
-                fatal(
-                    f"Sorry Multithreading and Root output does not work (yet) on windows architecture."
-                    f"You can run the simulation in single-threaded mode of switch to linux/max."
-                )
 
         # For ROOT output, an empty or missing filename means "no ROOT file",
         # which keeps the legacy Gate 9 behavior. Use the explicit getter and
@@ -1811,8 +1802,12 @@ class ActorOutputRoot(ActorOutputUsingDataItemContainer):
             # this test avoid a warning in get_output_path when it is None
             self.belongs_to_actor.SetOutputPath(self.name, "None")
         else:
+            # Geant4 needs '/' separators for ROOT files: on Windows, in MT
+            # mode, a ROOT file with '\' is not found by the worker threads
+            # (Geant4 composes the file name differently on the master and on
+            # the workers, see Path.as_posix). No change on Linux and macOS.
             self.belongs_to_actor.SetOutputPath(
-                self.name, self.get_output_path_as_string()
+                self.name, Path(self.get_output_path_as_string()).as_posix()
             )
 
     def _get_runtime_tree_names(self):

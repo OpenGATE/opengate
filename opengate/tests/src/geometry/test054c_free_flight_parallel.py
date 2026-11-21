@@ -27,8 +27,6 @@ transparent (0 MeV). The total digitized energy deposition within the excluded
 volume MUST be strictly greater than 0 MeV.
 """
 
-import os
-
 import uproot
 import opengate as gate
 from opengate.tests import utility
@@ -39,10 +37,6 @@ if __name__ == "__main__":
 
     is_ok = True
     for nb_thread in range(1, 3):
-
-        # no MT on windows
-        if nb_thread > 1 and os.name == "nt":
-            continue
 
         # Create the simulation
         sim = gate.Simulation()

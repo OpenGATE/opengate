@@ -20,10 +20,6 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
     root_ref = paths.output / f"test053_{nuclide.nuclide}_5_ref.root"
     print(root_ref)
     if not os.path.exists(root_ref):
-        # ignore on windows
-        if os.name == "nt":
-            test_ok(True)
-            sys.exit(0)
         subdir = os.path.dirname(__file__)
         cmd = "python " + str(paths.current / subdir / dependency)
         print(cmd)
