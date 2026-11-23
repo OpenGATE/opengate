@@ -67,7 +67,7 @@ def run():
         sc = sim.add_actor("DigitizerAdderActor", f"singles_{name}")
         sc.attached_to = crystal
         sc.input_digi_collection = hc.name
-        sc.output_filename = "test151.root"
+        sc.output_filename = "test152.root"
         last[name] = sc.name
 
     px = sim.add_actor("DigitizerChargeInductionActor", "pixels_C")
@@ -76,7 +76,7 @@ def run():
     px.pixel_size = [pitch, pitch]
     px.number_of_pixels = [n_pixels, n_pixels]
     px.signal_threshold = 20 * keV
-    px.output_filename = "test151.root"
+    px.output_filename = "test152.root"
     last["C"] = px.name
 
     for name, (size, spacing) in {
@@ -89,7 +89,7 @@ def run():
         proj.input_digi_collections = [last[name]]
         proj.spacing = [spacing, spacing]
         proj.size = [size, size]
-        proj.output_filename = f"test151_projection_{name}.mhd"
+        proj.output_filename = f"test152_projection_{name}.mhd"
         proj.squared_counts.active = True
     sim.run()
     return sim
@@ -103,7 +103,7 @@ def images(sim, name):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "", output_folder="test151")
+    paths = utility.get_default_test_paths(__file__, "", output_folder="test152")
     sim = run()
     is_ok = True
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     is_ok = is_ok and b
 
     # C: one event can give several digi in one bin of 2 x 2 pixels
-    d = uproot.open(paths.output / "test151.root")["pixels_C"].arrays(library="np")
+    d = uproot.open(paths.output / "test152.root")["pixels_C"].arrays(library="np")
     key = d["EventID"] * 100 + (d["PixelIndexX"] // 2) * 10 + d["PixelIndexY"] // 2
     _, n = np.unique(key, return_counts=True)
     expected = (n**2).sum()
