@@ -48,7 +48,6 @@ void GateDigitizerProjectionActor::SetPhysicalVolumeName(
 
 void GateDigitizerProjectionActor::EnableSquaredImage(const bool b) {
   fSquaredImageIsEnabled = b;
-  // FIXME check if weight exists ?
 }
 
 // Called when the simulation starts
@@ -187,15 +186,13 @@ void GateDigitizerProjectionActor::ProcessSlice(const size_t slice,
       // force the slice according to the channel
       pindex[2] = slice;
 
-      // Take particle weight into account (if in the attribute list)
-      if (!weights.empty()) {
-        ImageAddValue<ImageType>(l.fLocalImage, pindex, weights[i]);
-        if (fSquaredImageIsEnabled) {
-          // like dose: square must be taken after each event, not each "hit"
-          ScoreSquaredValue(pindex, current_event_id, weights[i]);
-        }
-      } else {
-        ImageAddValue<ImageType>(l.fLocalImage, pindex, 1.0);
+      // Take particle weight into account (if in the attribute list,
+      // otherwise 1)
+      const double w = weights.empty() ? 1.0 : weights[i];
+      ImageAddValue<ImageType>(l.fLocalImage, pindex, w);
+      if (fSquaredImageIsEnabled) {
+        // like dose: square must be taken after each event, not each "hit"
+        ScoreSquaredValue(pindex, current_event_id, w);
       }
     } else {
       // Should never be here (?)
