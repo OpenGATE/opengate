@@ -767,6 +767,28 @@ class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
     """
 
 
+def repeat_lattice_translations(
+    linear_repeat, translation, start="auto", offset=(0, 0, 0), offset_nb=1
+):
+    """
+    Positions of the copies of a RepeatParametrisedVolume lattice (numpy array
+    N x 3), in the order of the copy numbers of GateRepeatParameterisation.
+    """
+    rep = np.array(linear_repeat, dtype=int)
+    t = np.array(translation, dtype=float).reshape(3)
+    if isinstance(start, str) and start == "auto":
+        start = -(rep - 1) * t / 2.0
+    else:
+        start = np.array(start, dtype=float)
+    offset = np.array(offset, dtype=float).reshape(3)
+    i, j, k = np.meshgrid(
+        np.arange(rep[0]), np.arange(rep[1]), np.arange(rep[2]), indexing="ij"
+    )
+    ijk = np.stack([i.ravel(), j.ravel(), k.ravel()], axis=1)
+    lattice = start + ijk * t
+    return np.concatenate([lattice + of * offset for of in range(offset_nb)])
+
+
 class RepeatParametrisedVolume(VolumeBase):
     """
     Volume created from another volume via translations.
@@ -787,6 +809,17 @@ class RepeatParametrisedVolume(VolumeBase):
         ),
         "offset_nb": (1, {"doc": "FIXME"}),
         "start": ("auto", {"doc": "FIXME"}),
+        "translations": (
+            None,
+            {
+                "doc": "Explicit positions of the copies (list of 3-vectors, in the frame "
+                "of the mother). If set, they replace the lattice: linear_repeat, start, "
+                "translation, offset and offset_nb are not used. The rotation is applied "
+                "to each copy around its own centre, the positions are not rotated "
+                "(as for the lattice, the rotation is the one of the frame given to "
+                "Geant4: the copy is turned by its inverse)."
+            },
+        ),
     }
 
     def __init__(self, repeated_volume=None, *args, **kwargs):
@@ -847,12 +880,7 @@ class RepeatParametrisedVolume(VolumeBase):
         self.create_repeat_parametrisation()
 
         # number of copies
-        n = (
-            self.linear_repeat[0]
-            * self.linear_repeat[1]
-            * self.linear_repeat[2]
-            * self.offset_nb
-        )
+        n = self.number_of_copies
 
         # (only daughter)
         # g4.EAxis.kUndefined => faster
@@ -866,6 +894,33 @@ class RepeatParametrisedVolume(VolumeBase):
                 self.g4_repeat_parametrisation,
                 False,  # very slow if True
             )
+        )
+
+    @property
+    def number_of_copies(self):
+        if self.translations is not None:
+            return len(self.translations)
+        return (
+            self.linear_repeat[0]
+            * self.linear_repeat[1]
+            * self.linear_repeat[2]
+            * self.offset_nb
+        )
+
+    def copy_translations(self):
+        """
+        Positions of all the copies in the frame of the mother, in the order
+        of the copy numbers (numpy array N x 3): the explicit translations if
+        set, else the lattice (same order as GateRepeatParameterisation).
+        """
+        if self.translations is not None:
+            return np.asarray(self.translations, dtype=float).reshape(-1, 3)
+        return repeat_lattice_translations(
+            self.linear_repeat,
+            self.translation,
+            self.start,
+            self.offset,
+            self.offset_nb,
         )
 
     def create_repeat_parametrisation(self):
@@ -882,6 +937,14 @@ class RepeatParametrisedVolume(VolumeBase):
             "offset",
             "offset_nb",
         ]
+        tr = None
+        if self.translations is not None:
+            tr = np.asarray(self.translations, dtype=float)
+            if tr.ndim != 2 or tr.shape[1] != 3 or len(tr) == 0:
+                fatal(
+                    f"The translations of the volume '{self.name}' must be a non-empty "
+                    f"list of 3-vectors, while its shape is {tr.shape}."
+                )
         if self.number_of_repetitions > 1:
             fatal(
                 f"The {type(self).name} volume named '{self.name}' has multiple translations/rotations, "
@@ -890,6 +953,8 @@ class RepeatParametrisedVolume(VolumeBase):
         p = {}
         for k in keys:
             p[k] = getattr(self, k)
+        if tr is not None:
+            p["translations"] = tr.tolist()
         self.g4_repeat_parametrisation = g4.GateRepeatParameterisation()
         self.g4_repeat_parametrisation.SetUserInfo(p)
 

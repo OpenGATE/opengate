@@ -307,6 +307,8 @@ def pixel_centres_of_volume(volume):
     mother (the crystal), in the order of the copy numbers. The volume is
     either a RepeatParametrisedVolume or a volume with several translations.
     """
+    if getattr(volume, "translations", None) is not None:
+        return volume.copy_translations()
     if hasattr(volume, "linear_repeat"):
         rep = np.array(volume.linear_repeat, dtype=int)
         t = np.array(volume.translation, dtype=float).reshape(3)

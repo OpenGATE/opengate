@@ -20,6 +20,12 @@ void GateRepeatParameterisation::SetUserInfo(py::dict &user_info) {
   fSx = int(repeat[0]);
   fSy = int(repeat[1]);
   fSz = int(repeat[2]);
+  // Explicit positions of the copies: the lattice parameters are not used
+  if (user_info.contains("translations") &&
+      !user_info["translations"].is_none()) {
+    fTranslations = DictGetVecG4ThreeVector(user_info, "translations");
+    return;
+  }
   auto m = fSx * fSy * fSz * fNbOffset;
   fTranslations.resize(m);
   int no = 0;
