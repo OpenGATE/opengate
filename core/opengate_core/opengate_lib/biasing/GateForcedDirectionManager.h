@@ -27,7 +27,9 @@ public:
   G4ThreeVector GenerateForcedDirection(const G4ThreeVector &position,
                                         bool &zero_energy_flag, double &weight);
 
-  G4ThreeVector SampleDirectionWithinCone(double &theta) const;
+  // sample a direction in the cone; weight: the weight of this direction
+  // (constant with the uniform sampling)
+  G4ThreeVector SampleDirectionWithinCone(double &theta, double &weight) const;
 
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
@@ -49,6 +51,14 @@ public:
   G4ThreeVector fU1;
   G4ThreeVector fU2;
   double fWeight;
+
+  // sampling of u = 1 - cos(theta) in the cone: "uniform" (pdf constant,
+  // weight constant) or "log" (pdf ~ 1 / (u + u0), u0 = 1 - cos(scale):
+  // more directions near the reference vector, weight (u + u0) L / 2)
+  bool fLogSamplingFlag;
+  double fU0;
+  double fUMin;
+  double fLogRange;
 };
 
 #endif // GateForcedDirectionManager_h

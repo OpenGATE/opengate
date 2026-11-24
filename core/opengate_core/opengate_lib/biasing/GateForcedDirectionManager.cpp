@@ -26,6 +26,10 @@ GateForcedDirectionManager::GateForcedDirectionManager() {
   fEnableIntersectionCheck = false;
   fSinThetaMin = 0;
   fCosThetaMin = 0;
+  fLogSamplingFlag = false;
+  fU0 = 0;
+  fUMin = 0;
+  fLogRange = 0;
 }
 
 GateForcedDirectionManager::~GateForcedDirectionManager() = default;
@@ -79,6 +83,28 @@ void GateForcedDirectionManager::Initialize(
   fCosThetaMin = std::cos(fAngleToleranceMin);
   fSinThetaMax = std::sin(fAngleToleranceMax);
   fCosThetaMax = std::cos(fAngleToleranceMax);
+
+  // Sampling of the direction in the cone
+  // (missing in the user info of older simulations: uniform)
+  std::string sampling = "uniform";
+  if (user_info.count("angle_sampling") > 0)
+    sampling = ParamAt(user_info, "angle_sampling");
+  if (sampling != "uniform" && sampling != "log") {
+    Fatal("angle_sampling must be 'uniform' or 'log', not '" + sampling + "'");
+  }
+  fLogSamplingFlag = sampling == "log";
+  if (fLogSamplingFlag) {
+    const double scale =
+        StrToDouble(ParamAt(user_info, "angle_sampling_scale"));
+    if (scale <= 0) {
+      Fatal("angle_sampling_scale must be positive with angle_sampling 'log'");
+    }
+    // u = 1 - cos(theta) in [fUMin, uMax], pdf q(u) = 1 / ((u + u0) L)
+    fU0 = 1.0 - std::cos(scale);
+    fUMin = 1.0 - fCosThetaMin;
+    const double uMax = 1.0 - fCosThetaMax;
+    fLogRange = std::log((uMax + fU0) / (fUMin + fU0));
+  }
 }
 
 void GateForcedDirectionManager::InitializeForcedDirection() {
@@ -125,15 +151,24 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
 }
 
 G4ThreeVector
-GateForcedDirectionManager::SampleDirectionWithinCone(double &theta) const {
+GateForcedDirectionManager::SampleDirectionWithinCone(double &theta,
+                                                      double &weight) const {
   // Uniformly sample phi between 0 and 2*pi
   const double phi = G4UniformRand() * 2 * CLHEP::pi;
 
-  // Uniformly sample cos(theta) between cos(0) and cos(theta_max)
-  // const double cosTheta = fCosThetaMax + G4UniformRand() * (1.0 -
-  // fCosThetaMax);
-  const double cosTheta =
-      fCosThetaMax + G4UniformRand() * (fCosThetaMin - fCosThetaMax);
+  double cosTheta;
+  if (fLogSamplingFlag) {
+    // u = 1 - cos(theta) with the pdf q(u) = 1 / ((u + u0) L) in the cone;
+    // the weight is the isotropic pdf over q: 1 / (2 q(u)) = (u + u0) L / 2
+    const double u =
+        (fUMin + fU0) * std::exp(G4UniformRand() * fLogRange) - fU0;
+    cosTheta = 1.0 - u;
+    weight = (u + fU0) * fLogRange / 2.0;
+  } else {
+    // Uniformly sample cos(theta) between cos(theta_min) and cos(theta_max)
+    cosTheta = fCosThetaMax + G4UniformRand() * (fCosThetaMin - fCosThetaMax);
+    weight = fWeight;
+  }
   theta = std::acos(cosTheta);
 
   // Calculate the direction vector
@@ -154,7 +189,8 @@ G4ThreeVector GateForcedDirectionManager::GenerateForcedDirection(
 
   // Sample direction within a cone
   double theta;
-  const auto direction = SampleDirectionWithinCone(theta);
+  double direction_weight;
+  const auto direction = SampleDirectionWithinCone(theta, direction_weight);
 
   // Check for intersection with the detector plane
   const auto localPosition = fFDTransformWorldToVolume.TransformPoint(position);
@@ -170,6 +206,6 @@ G4ThreeVector GateForcedDirectionManager::GenerateForcedDirection(
 
   // Transform the direction in the global coordinate system
   const auto globalDirection = fAARotationInverse * direction;
-  weight = fWeight;
+  weight = direction_weight;
   return globalDirection;
 }
