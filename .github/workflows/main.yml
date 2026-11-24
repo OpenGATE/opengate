@@ -58,14 +58,17 @@ jobs:
         path: dist/
 
   find_core_wheels_to_reuse:
-    # a pull request that does not change opengate_core reuses the wheels of
-    # a master run (see the script); the label "build-core" forces the build
+    # the matrix of the opengate_core wheels (OS x Python) of the build and
+    # test jobs, and whether these wheels are reused from a master run: a
+    # pull request or a push to master that does not change opengate_core
+    # reuses them (see the script); the label "build-core" forces the build
     runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
     outputs:
       reuse_run_id: ${{ steps.find.outputs.reuse_run_id }}
+      matrix: ${{ steps.find.outputs.matrix }}
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
@@ -76,6 +79,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         EVENT_NAME: ${{ github.event_name }}
+        REF: ${{ github.ref }}
         LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
       run: bash .github/workflows/find_core_wheels_to_reuse.sh
 
@@ -111,10 +115,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
-        # pull requests: the oldest and newest Python only (the label "full-matrix",
-        # set before the push, forces all of them); master, schedule, tags: all
-        python-version: ${{ fromJSON(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-matrix') && '["3.10", "3.14"]' || '["3.10", "3.11", "3.12", "3.13", "3.14"]') }}
+        # OS x Python, see find_core_wheels_to_reuse.sh: pull requests 3.10 and
+        # 3.14 only (the label "full-matrix", set before the push, forces all of
+        # them); push to master: all, but macOS 3.10 and 3.14 only; schedule,
+        # tags: all
+        include: ${{ fromJSON(needs.find_core_wheels_to_reuse.outputs.matrix) }}
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
@@ -344,15 +349,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     # a test job takes 15 to 40 min: a hang fails after 1.5 h (default: 6 h)
     timeout-minutes: 90
-    needs: [build_opengate_wheel, build_opengate_core_wheel_pr, reuse_opengate_core_wheels, prepare_test_data]
+    needs: [find_core_wheels_to_reuse, build_opengate_wheel, build_opengate_core_wheel_pr, reuse_opengate_core_wheels, prepare_test_data]
     # one of build_opengate_core_wheel_pr and reuse_opengate_core_wheels is skipped
     if: ${{ !cancelled() && !failure() }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
-        # same Python versions as build_opengate_core_wheel_pr
-        python-version: ${{ fromJSON(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-matrix') && '["3.10", "3.14"]' || '["3.10", "3.11", "3.12", "3.13", "3.14"]') }}
+        # same OS x Python as build_opengate_core_wheel_pr
+        include: ${{ fromJSON(needs.find_core_wheels_to_reuse.outputs.matrix) }}
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v6
