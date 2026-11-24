@@ -34,17 +34,12 @@ import uproot
 import opengate as gate
 from opengate.tests import utility
 import numpy as np
-import os
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, "test054d")
 
     is_ok = True
     for nb_thread in range(1, 3):
-
-        # no MT on windows
-        if nb_thread > 1 and os.name == "nt":
-            continue
 
         # Create the simulation
         sim = gate.Simulation()

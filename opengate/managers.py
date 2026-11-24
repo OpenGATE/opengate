@@ -2970,13 +2970,6 @@ class Simulation(GateObject):
         poll_interval=1.0,
         timeout=None,
     ):
-        # if windows and MT -> fail
-        if os.name == "nt" and self.multithreaded:
-            fatal(
-                "Error, the multi-thread option is not available for Windows now. "
-                "Run the simulation with one thread."
-            )
-
         if number_of_jobs is not None:
             try:
                 number_of_jobs = int(number_of_jobs)

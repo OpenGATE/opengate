@@ -3,7 +3,6 @@
 
 import os
 import subprocess
-import sys
 
 import SimpleITK as sitk
 
@@ -14,10 +13,6 @@ def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
     paths = utility.get_default_test_paths(
         __file__, None, output_folder="test085_spect"
     )
-
-    # not on windows
-    if os.name == "nt":
-        sys.exit(0)
 
     # The test needs the output of the other tests
     subdir = os.path.dirname(__file__)
