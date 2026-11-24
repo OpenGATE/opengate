@@ -394,6 +394,16 @@ The user guide on this will soon be updated and extended.
    param.offset_nb = 1
    param.offset = [0, 0, 0]
 
+Instead of the lattice, the positions of the copies can be given
+explicitly with ``translations`` (a list of 3-vectors, in the frame of the
+mother); ``linear_repeat``, ``start``, ``translation``, ``offset`` and
+``offset_nb`` are then not used. The ``rotation`` is applied to each copy
+around its own centre, the positions are not rotated. Note that this
+rotation is the one of the frame given to Geant4: the copy is turned by
+its inverse. To rotate a whole lattice, rotate the positions as well and
+give the inverse rotation, as done for the GE NM670 collimator
+(``rotate_collimator_holes`` in ``opengate.contrib.spect.ge_discovery_nm670``).
+
 When ``sim.check_volumes_overlap`` is True (the default), each copy of a
 parametrised volume is checked against its mother and against all the
 other copies, so the cost of the check grows with the square of the

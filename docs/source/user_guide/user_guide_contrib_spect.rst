@@ -22,7 +22,7 @@ The GE Discovery NM670 SPECT system can be simulated using the following command
     discovery.add_digitizer(sim, crystal.name, "digit_lu177")
 
 
-This configuration allows the simulation of two SPECT heads with different collimators (LEHR and MEGP) and digitizers optimized for Tc99m and Lu177, respectively. There are three collimator types: "lehr", "megp" and "hegp". There are two crystal size "3/8" and "5/8". Also the collimator can be rotated by few degrees, usually 15 deg like in reality.
+This configuration allows the simulation of two SPECT heads with different collimators (LEHR and MEGP) and digitizers optimized for Tc99m and Lu177, respectively. There are three collimator types: "lehr", "megp" and "hegp". There are two crystal size "3/8" and "5/8". Also the collimator holes can be rotated by few degrees around the collimator axis (``rotation_deg``), usually 15 deg like in reality. The hexagonal holes and their lattice are rotated together, so the septa keep their thickness and the septal penetration pattern turns with the collimator. The area with holes is the same as without rotation (the holes that would not be entirely inside it are removed). Up to version 10.1.2, only each hole was rotated around its own centre (in the opposite direction), not the lattice, so the septa were thinner and the septal penetration pattern did not follow the rotation (#791).
 
 Detail of the head description is `available here <https://github.com/OpenGATE/opengate/blob/master/opengate/contrib/spect/ge_discovery_nm670.py#L53>`__
 

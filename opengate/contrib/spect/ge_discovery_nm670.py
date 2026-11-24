@@ -1,9 +1,11 @@
 import pathlib
+import numpy as np
 from opengate.managers import Simulation
 from opengate.geometry.volumes import (
     RepeatParametrisedVolume,
     HexagonVolume,
     unite_volumes,
+    repeat_lattice_translations,
 )
 from opengate.geometry.utility import (
     get_transform_orbiting,
@@ -405,10 +407,68 @@ def add_collimator(sim, name, head, collimator_type, rotation_deg, debug):
             f'Use "megp" or "lehr" or "hegp" or "False"'
         )
 
-    # should we rotate the collimator holes ?
-    holep.rotation = Rotation.from_euler("Z", rotation_deg, degrees=True).as_matrix()
+    # rotation of the collimator holes: the hexagons and their lattice (#791)
+    if rotation_deg % 360 != 0:
+        rotate_collimator_holes(holep, rotation_deg, extend=not debug)
 
     return colli_trd
+
+
+def rotate_collimator_holes(holep, rotation_deg, extend=True):
+    """
+    Rotate the hexagonal holes of the collimator around Z (the collimator
+    axis): each hole and the lattice of the hole positions are rotated
+    together, so that the septa keep their thickness.
+
+    The area with holes is the one of the unrotated lattice (bounding box of
+    the holes): the lattice is extended so that, once rotated, it covers this
+    area, then only the holes entirely inside it are kept (the hexagon is
+    bounded by its circumscribed circle). With extend=False (debug), the
+    lattice is not extended.
+    """
+    rot = Rotation.from_euler("Z", rotation_deg, degrees=True)
+    hole = holep.repeated_volume
+    # circumradius of the hexagon (the radius of HexagonVolume is the apothem)
+    rc = hole.radius / np.cos(np.pi / 6)
+
+    # unrotated lattice and its area with holes (in the XY plane)
+    rep = np.array(holep.linear_repeat, dtype=int)
+    t = np.array(holep.translation, dtype=float)
+    if isinstance(holep.start, str) and holep.start == "auto":
+        start = -(rep - 1) * t / 2.0
+    else:
+        start = np.array(holep.start, dtype=float)
+    lattice = repeat_lattice_translations(rep, t, start, holep.offset, holep.offset_nb)
+    lo = lattice[:, :2].min(axis=0) - rc
+    hi = lattice[:, :2].max(axis=0) + rc
+
+    # extend the lattice by k steps on each side, so that it covers the area
+    # once rotated (same lattice points, same parity of the repeat numbers)
+    k = np.zeros(3, dtype=int)
+    if extend:
+        corners = np.array([[x, y, 0] for x in (lo[0], hi[0]) for y in (lo[1], hi[1])])
+        # corners of the area in the frame of the lattice (inverse rotation)
+        need = np.abs(rot.inv().apply(corners)).max(axis=0)
+        half = (rep - 1) * np.abs(t) / 2.0
+        for i in (0, 1):
+            if t[i] != 0:
+                k[i] = max(0, int(np.ceil((need[i] - half[i]) / abs(t[i]))) + 1)
+    lattice = repeat_lattice_translations(
+        rep + 2 * k, t, start - k * t, holep.offset, holep.offset_nb
+    )
+
+    # rotate, keep the holes inside the area
+    tr = rot.apply(lattice)
+    eps = 1e-9 * g4_units.mm
+    inside = np.all(tr[:, :2] - rc >= lo - eps, axis=1) & np.all(
+        tr[:, :2] + rc <= hi + eps, axis=1
+    )
+    holep.translations = tr[inside]
+    # the rotation of a RepeatParametrisedVolume is the rotation of the frame
+    # given to Geant4 (G4VPhysicalVolume::SetRotation): each hole is turned by
+    # its inverse, so the inverse is given to turn the holes like the lattice
+    holep.rotation = rot.inv().as_matrix()
+    return holep
 
 
 def hegp_collimator_repeater(sim, name, core, debug):
