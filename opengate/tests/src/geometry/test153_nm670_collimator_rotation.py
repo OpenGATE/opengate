@@ -84,9 +84,9 @@ def check_positions(colli_type):
     )
 
     d, a = neighbour_directions(tr)
-    # (lattice steps given with 5 decimals, MEGP offset 3.50704 instead of 3.50740: 1e-3 mm)
-    inner = np.all(np.abs(d - dist) < 1e-3 * mm, axis=1)
-    inner_ref = np.all(np.abs(d_ref - dist) < 1e-3 * mm, axis=1)
+    # (the lattice steps are given with 5 or 6 decimals: distances within 1e-4 mm)
+    inner = np.all(np.abs(d - dist) < 1e-4 * mm, axis=1)
+    inner_ref = np.all(np.abs(d_ref - dist) < 1e-4 * mm, axis=1)
     dir_ref = np.unique(np.round(a_ref[inner_ref], 1) % 60)
     dir_rot = np.unique(np.round(a[inner], 1) % 60)
     expected = np.unique(np.round((dir_ref + 15) % 60, 1) % 60)

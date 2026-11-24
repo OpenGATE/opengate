@@ -515,7 +515,7 @@ def megp_collimator_repeater(sim, name, core, debug):
     holep.translation = [7.01481 * mm, 4.05 * mm, 0]
     # do it twice, with the following offset
     holep.offset_nb = 2
-    holep.offset = [3.50704 * mm, 2.025 * mm, 0]
+    holep.offset = [3.507405 * mm, 2.025 * mm, 0]
 
     sim.volume_manager.add_volume(holep)
     return holep
