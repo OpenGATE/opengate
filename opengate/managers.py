@@ -2089,8 +2089,8 @@ class Simulation(GateObject):
             1,
             {
                 "doc": "Number of threads on which the simulation will run. "
-                "Geant4's run manager will run in MT mode if more than 1 thread is requested."
-                "Requires Geant4 do be compiled with Multithread flag TRUE."
+                "Geant4's run manager will run in MT mode if more than 1 thread is requested. "
+                "Requires Geant4 to be compiled with Multithread flag TRUE."
             },
         ),
         "force_multithread_mode": (
