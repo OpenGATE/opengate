@@ -347,6 +347,38 @@ Example combining intersection and angle checks:
     source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
     source.direction.angular_acceptance.angle_tolerance_max = 20 * sim.unit.deg
 
+With the ``"ForceDirection"`` policy, the direction is sampled in the cone
+between ``angle_tolerance_min`` and ``angle_tolerance_max`` around
+``angle_check_reference_vector``, and the weight of the particle is the
+probability of an isotropic direction to fall in it. Two samplings are
+available with ``angle_sampling``:
+
+- ``"uniform"`` (default): uniform in the solid angle of the cone; all
+  particles get the same weight, (cos θmin − cos θmax) / 2.
+- ``"log"``: more directions near the reference vector. With u = 1 − cos θ,
+  u is sampled with a probability density proportional to 1 / (u + u0), with
+  u0 = 1 − cos(``angle_sampling_scale``) (default 5 deg). The weight of each
+  particle is corrected, (u + u0) L / 2 with L = ln((umax + u0) / (umin + u0)),
+  so the result is unbiased. It is the largest at ``angle_tolerance_max``.
+
+The ``"log"`` sampling is useful when the cone must be wide (e.g. septal
+penetration in SPECT free flight) but most of the detected particles are near
+the reference vector (along the collimator holes): there, it improves the
+efficiency for the same weighted result.
+
+.. code-block:: python
+
+    aa = source.direction.angular_acceptance
+    aa.policy = "ForceDirection"
+    aa.target_volumes = ["spect_detector"]
+    aa.enable_angle_check = True
+    aa.angle_check_reference_vector = [0, 0, -1]
+    aa.angle_tolerance_max = 30 * sim.unit.deg
+    aa.angle_sampling = "log"
+    aa.angle_sampling_scale = 3 * sim.unit.deg
+
+See ``test085_free_flight_fd_angle_sampling.py``.
+
 See for example ``test028`` test files for more details (in particular ``test028_ge_nm670_spect_4_acc_angle_helpers.py``).
 
 For details on how Geant4 defines particle directions using 𝜃 and 𝜙 angles, see the `Particle initial direction`_ section.

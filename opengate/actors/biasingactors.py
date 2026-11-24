@@ -99,7 +99,12 @@ class AngularAcceptanceValidator(UserInfoValidatorBase):
             fatal(
                 f"In {context_name}: '{b.skip_policy}' is not a valid policy. Must be one of {valid_skip_policies}."
             )
-        # check the sampling of the direction
+        # check the sampling of the direction (absent from the configurations
+        # saved before this option, e.g. SPECT config json: the defaults)
+        default_aa = generic_source_default_aa()
+        for k in ("angle_sampling", "angle_sampling_scale"):
+            if k not in b:
+                b[k] = default_aa[k]
         valid_samplings = ["uniform", "log"]
         if b.angle_sampling not in valid_samplings:
             fatal(
