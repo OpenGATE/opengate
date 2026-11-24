@@ -129,6 +129,7 @@ In standard analog simulations (``mode = "analog"``), radionuclide decay simulat
 To significantly accelerate dose rate computations for beta/gamma emitters, an automated VRT pipeline is available:
 
 1. **Emission Decoupling**:
+
    - **Electron simulation** (``mode = "e-"``): Simulates electrons sampled from the radionuclide beta spectrum. A 1 m production cut for electrons in the CT volume deposits their energy along their track, without secondary electrons. Because electron dose is deposited locally with high efficiency, far fewer histories are needed (:math:`A_e = A / \text{e\_factor}`, default reduction factor 10).
      The bremsstrahlung photons of the electrons are created (2 mm production cut for photons) and scored with a :class:`~.opengate.actors.doseactors.TLEDoseActor`: the electrons are scored as with the ``DoseActor``, the photons with the track-length estimator. They carry the dose outside the source for pure beta emitters such as Y-90, whose emission spectrum has no gamma line. Use ``bremsstrahlung = false`` to deposit their energy along the electron tracks instead (former behaviour).
    - **Photon simulation** (``mode = "gamma_tle"``): Simulates photons sampled from the gamma spectrum using a :class:`~.opengate.actors.doseactors.TLEDoseActor` (Track Length Estimator). TLE analytically scores dose along photon paths in every voxel traversed, achieving smooth dose distributions with low uncertainty without tracking rare secondary electrons.
