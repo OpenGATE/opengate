@@ -62,6 +62,17 @@ def generic_source_default_aa():
             # The strict tolerance to use *outside* the proximity_distance.
             "angle_tolerance_min": 0 * g4_units.deg,
             "angle_tolerance_max": 6 * g4_units.deg,
+            # -----------------------------------------------------------------
+            # --- Sampling of the direction (policy "ForceDirection" only) ---
+            # u = 1 - cos(theta), theta: the angle to the reference vector,
+            # between angle_tolerance_min and angle_tolerance_max.
+            # - "uniform": u uniform (isotropic in the cone), constant weight
+            # - "log": pdf of u ~ 1 / (u + u0), u0 = 1 - cos(angle_sampling_scale):
+            #   more directions near the reference vector; the weight of each
+            #   particle is corrected, (u + u0) L / 2, bounded (max at
+            #   angle_tolerance_max)
+            "angle_sampling": "uniform",
+            "angle_sampling_scale": 5 * g4_units.deg,
         }
     )
 
@@ -88,6 +99,19 @@ class AngularAcceptanceValidator(UserInfoValidatorBase):
             fatal(
                 f"In {context_name}: '{b.skip_policy}' is not a valid policy. Must be one of {valid_skip_policies}."
             )
+        # check the sampling of the direction (absent from the configurations
+        # saved before this option, e.g. SPECT config json: the defaults)
+        default_aa = generic_source_default_aa()
+        for k in ("angle_sampling", "angle_sampling_scale"):
+            if k not in b:
+                b[k] = default_aa[k]
+        valid_samplings = ["uniform", "log"]
+        if b.angle_sampling not in valid_samplings:
+            fatal(
+                f"In {context_name}: '{b.angle_sampling}' is not a valid angle_sampling. Must be one of {valid_samplings}."
+            )
+        if b.angle_sampling == "log" and b.angle_sampling_scale <= 0:
+            fatal(f"In {context_name}: 'angle_sampling_scale' must be positive.")
         # check normal vector
         if b.enable_angle_check:
             if len(b.angle_check_reference_vector) != 3:

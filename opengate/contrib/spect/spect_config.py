@@ -856,7 +856,7 @@ class FreeFlightConfig(ConfigBase):
             s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
             s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
         for key, value in self.angular_acceptance.items():
-            if "angle_tolerance" in key:
+            if "angle_tolerance" in key or key == "angle_sampling_scale":
                 s += f"FreeFlight angular_acceptance: {key} = {value/g4_units.deg:.2f} deg\n"
             else:
                 if key != "target_volumes":
