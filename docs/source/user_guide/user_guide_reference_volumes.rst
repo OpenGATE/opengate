@@ -96,6 +96,41 @@ above, voxels with label 3 correspond to “G4_ADIPOSE_TISSUE_ICRP”,
 voxels with label 4 correspond to “G4_TISSUE_SOFT_ICRP”, and so forth.
 See test `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry>`_ as an example simulation using an Image volume.
 
+.. _image-volume-voxel-navigation:
+
+Voxel navigation
+~~~~~~~~~~~~~~~~
+
+By default (``voxel_navigation = "nested"``), the voxels are a nested
+parameterisation: a particle makes one step per voxel boundary. With
+
+.. code:: python
+
+   patient.voxel_navigation = "regular"
+
+the voxels are a ``G4PhantomParameterisation`` with the regular navigation of
+Geant4: the consecutive voxels of the same material are crossed in one step,
+the steps stop only where the material changes. It is faster when the
+particles cross many voxels without interaction, for example the free-flight
+photons (``GammaFreeFlightActor``): the attenuation is the same, with several
+times fewer steps. Limits: a step may cross several voxels, so the actors that
+need one step per voxel (energy deposited along the steps of charged
+particles) are less precise; it cannot be used with a dynamic image, nor with
+several placements of the image volume. The Geant4 process that splits the
+energy of a step among the voxels it crosses (``G4ScoreSplittingProcess``) is
+switched off: the opengate actors find the voxel themselves. See test154.
+
+A close but different method is the region-oriented representation of
+[Sarrut2008]_ (the "regionalized" image volume of Gate 6 and later): the voxels
+are grouped into regions of the same material and a distance map gives the
+distance to the next region boundary in one look-up. The regular navigation
+reaches the same steps (one per material change) by walking the voxels
+inside the Geant4 navigator, with no pre-computation.
+
+.. [Sarrut2008] D. Sarrut and L. Guigues, "Region-oriented CT image
+   representation for reducing computing time of Monte Carlo simulations",
+   Medical Physics 35(4), 1452-1463, 2008.
+
 .. _image-volume-visualisation:
 
 Visualisation

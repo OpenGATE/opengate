@@ -1012,6 +1012,19 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                 "the image intensities.",
             },
         ),
+        "voxel_navigation": (
+            "nested",
+            {
+                "doc": "How Geant4 navigates in the voxels. 'nested' (default): "
+                "nested parameterisation, one step per voxel boundary. 'regular': "
+                "G4PhantomParameterisation with the regular navigation, the "
+                "consecutive voxels of the same material are crossed in one step "
+                "(faster, e.g. for free-flight photons). With 'regular', the steps "
+                "may cross several voxels: not for the actors that need one step "
+                "per voxel. Not with a dynamic image.",
+                "allowed_values": ("nested", "regular"),
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -1216,6 +1229,17 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     def construct_physical_volume(self):
         super().construct_physical_volume()
 
+        if self.voxel_navigation == "regular":
+            if len(self.g4_physical_volumes) != 1:
+                fatal(
+                    f"Image volume '{self.name}': voxel_navigation 'regular' "
+                    f"needs a single placement of the image volume"
+                )
+            self.g4_voxel_param.Construct(
+                self.name, self.g4_logical_volume, self.g4_physical_volumes[0], True
+            )
+            return
+
         self.g4_physical_y = g4.G4PVReplica(
             self.name + "_Y",
             self.g4_logical_y,
@@ -1249,20 +1273,23 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def construct_logical_volume(self):
         super().construct_logical_volume()
-        self.g4_logical_x = g4.G4LogicalVolume(
-            self.g4_solid_x, self.g4_material, self.name + "_log_X"
-        )
-        self.g4_logical_y = g4.G4LogicalVolume(
-            self.g4_solid_y, self.g4_material, self.name + "_log_Y"
-        )
-        self.g4_logical_z = g4.G4LogicalVolume(
-            self.g4_solid_z, self.g4_material, self.name + "_log_Z"
-        )
-        self.g4_vis_attributes_logical_slices = g4.G4VisAttributes()
-        self.g4_vis_attributes_logical_slices.SetVisibility(bool(False))
-        self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
-        self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
-        self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        # the replicas of the nested parameterisation (not used by the
+        # regular navigation, see GateImageRegularParameterisation)
+        if self.voxel_navigation == "nested":
+            self.g4_logical_x = g4.G4LogicalVolume(
+                self.g4_solid_x, self.g4_material, self.name + "_log_X"
+            )
+            self.g4_logical_y = g4.G4LogicalVolume(
+                self.g4_solid_y, self.g4_material, self.name + "_log_Y"
+            )
+            self.g4_logical_z = g4.G4LogicalVolume(
+                self.g4_solid_z, self.g4_material, self.name + "_log_Z"
+            )
+            self.g4_vis_attributes_logical_slices = g4.G4VisAttributes()
+            self.g4_vis_attributes_logical_slices.SetVisibility(bool(False))
+            self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+            self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+            self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
         # the visualisation draws the image box and its slices (GateImageBox),
         # never the voxels: do not let Geant4 visit the (millions of) voxels
         # each time the scene is drawn, it makes the Qt viewer very slow
@@ -1383,7 +1410,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                 self.label_image = self.create_label_image()
             label_image = self.label_image
         # initialize parametrisation
-        g4_voxel_param = g4.GateImageNestedParameterisation()
+        if self.voxel_navigation == "regular":
+            g4_voxel_param = g4.GateImageRegularParameterisation()
+        else:
+            g4_voxel_param = g4.GateImageNestedParameterisation()
 
         # send image to cpp size
         update_image_py_to_cpp(label_image, g4_voxel_param.cpp_edep_image, True)
@@ -1394,6 +1424,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def update_label_image(self, label_image):
         """Needed for dynamic image parametrisation."""
+        if self.voxel_navigation == "regular":
+            fatal(
+                f"Image volume '{self.name}': voxel_navigation 'regular' cannot be "
+                f"used with a dynamic image"
+            )
         # send image to cpp size
         update_image_py_to_cpp(label_image, self.g4_voxel_param.cpp_edep_image, True)
         self.g4_voxel_param.initialize_image()

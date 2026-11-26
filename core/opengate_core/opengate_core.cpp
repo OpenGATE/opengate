@@ -454,6 +454,8 @@ void init_itk_image(py::module &);
 
 void init_GateImageNestedParameterisation(py::module &);
 
+void init_GateImageRegularParameterisation(py::module &);
+
 void init_GateRepeatParameterisation(py::module &);
 
 void init_GateRunAction(py::module &);
@@ -815,6 +817,7 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_itk_image(m);
   init_GateImageNestedParameterisation(m);
+  init_GateImageRegularParameterisation(m);
   init_GateRepeatParameterisation(m);
   init_GateVSource(m);
   init_GateLastVertexSource(m);
