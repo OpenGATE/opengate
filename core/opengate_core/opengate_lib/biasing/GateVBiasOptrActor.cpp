@@ -10,6 +10,7 @@ Copyright (C): OpenGATE Collaboration
 #include "../GateHelpersDict.h"
 #include <G4LogicalVolumeStore.hh>
 #include <G4Navigator.hh>
+#include <G4PathFinder.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
 #include <functional> // Added for recursive lambda
@@ -143,18 +144,36 @@ void GateVBiasOptrActor::BuildLVCache(
   }
 }
 
-const G4LogicalVolume *
-GateVBiasOptrActor::GetVolumeFromParallelNavigator(const G4ThreeVector &pos,
-                                                   const G4ThreeVector &dir,
-                                                   G4Navigator *realNav) const {
+const G4LogicalVolume *GateVBiasOptrActor::GetVolumeFromParallelNavigator(
+    const G4ThreeVector &pos, const G4ThreeVector &dir, G4Navigator *realNav,
+    const int navIndex) const {
 
   if (!realNav)
     return nullptr;
 
+  // Fast path: during tracking, G4PathFinder has already located the
+  // current point in every active navigator (start of the step, or end of
+  // the step in SteppingAction). Use its located volume when the navigator
+  // is at this point (its last located point), instead of a new location.
+  const auto *pathFinder = G4PathFinder::GetInstanceIfExist();
+  if (pathFinder != nullptr) {
+    const G4VPhysicalVolume *located = pathFinder->GetLocatedVolume(navIndex);
+    if (located != nullptr) {
+      const G4ThreeVector last =
+          realNav->GetLocalToGlobalTransform().TransformPoint(
+              realNav->GetCurrentLocalCoordinate());
+      if ((last - pos).mag2() < 1e-12) { // (1e-6 mm)^2
+        const G4LogicalVolume *fast = located == realNav->GetWorldVolume()
+                                          ? nullptr
+                                          : located->GetLogicalVolume();
+        return fast;
+      }
+    }
+  }
+
+  // Otherwise, locate the point with a temporary navigator
   G4Navigator &tmpNav = fThreadLocalCache.Get().fTmpNav;
   tmpNav.SetWorldVolume(realNav->GetWorldVolume());
-
-  // Locate the point purely mathematically
   const G4VPhysicalVolume *pv =
       tmpNav.LocateGlobalPointAndSetup(pos, &dir, false, false);
 
@@ -195,7 +214,7 @@ bool GateVBiasOptrActor::IsPointInVolumeListAcrossAllWorlds(
   const auto navIt = transport->GetActiveNavigatorsIterator();
   for (int i = 1; i < numNav; ++i) {
     const G4LogicalVolume *lv =
-        GetVolumeFromParallelNavigator(pos, dir, *(navIt + i));
+        GetVolumeFromParallelNavigator(pos, dir, *(navIt + i), i);
     if (lv && cache.count(lv) > 0)
       return true;
   }
@@ -264,10 +283,10 @@ bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds(
   for (int i = 1; i < numNav; ++i) {
     G4Navigator *realNav = *(navIt + i);
     const G4LogicalVolume *postLV = GetVolumeFromParallelNavigator(
-        post->GetPosition(), post->GetMomentumDirection(), realNav);
+        post->GetPosition(), post->GetMomentumDirection(), realNav, i);
     if (postLV && volumes.count(postLV) > 0) {
       const G4LogicalVolume *preLV = GetVolumeFromParallelNavigator(
-          pre->GetPosition(), pre->GetMomentumDirection(), realNav);
+          pre->GetPosition(), pre->GetMomentumDirection(), realNav, i);
       if (preLV == nullptr || volumes.count(preLV) == 0)
         return true;
     }

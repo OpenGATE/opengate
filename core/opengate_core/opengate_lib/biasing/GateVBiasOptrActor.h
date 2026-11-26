@@ -82,10 +82,12 @@ public:
   GetExcludedVolumePointers() const;
 
   // Helper to abstract the Geant4 parallel navigator math
+  // navIndex: index of the navigator in the active navigators of the
+  // transportation manager (same order as in G4PathFinder)
   const G4LogicalVolume *
   GetVolumeFromParallelNavigator(const G4ThreeVector &pos,
-                                 const G4ThreeVector &dir,
-                                 G4Navigator *realNav) const;
+                                 const G4ThreeVector &dir, G4Navigator *realNav,
+                                 int navIndex) const;
 
   // True when the step goes from outside the set of volumes into it (a step
   // between two volumes of the set is not "entering")
