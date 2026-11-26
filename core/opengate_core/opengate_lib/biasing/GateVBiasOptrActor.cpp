@@ -167,13 +167,21 @@ GateVBiasOptrActor::GetVolumeFromParallelNavigator(const G4ThreeVector &pos,
 bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
     const G4Track *track,
     const std::unordered_set<const G4LogicalVolume *> &cache) const {
+  const auto *massVol =
+      track->GetVolume() ? track->GetVolume()->GetLogicalVolume() : nullptr;
+  return IsPointInVolumeListAcrossAllWorlds(
+      massVol, track->GetPosition(), track->GetMomentumDirection(), cache);
+}
+
+bool GateVBiasOptrActor::IsPointInVolumeListAcrossAllWorlds(
+    const G4LogicalVolume *massVol, const G4ThreeVector &pos,
+    const G4ThreeVector &dir,
+    const std::unordered_set<const G4LogicalVolume *> &cache) const {
 
   if (cache.empty())
     return false;
 
   // 1. Mass Navigator Fast Path
-  const auto *massVol =
-      track->GetVolume() ? track->GetVolume()->GetLogicalVolume() : nullptr;
   if (massVol && cache.count(massVol) > 0)
     return true;
 
@@ -185,11 +193,7 @@ bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
     return false;
 
   const auto navIt = transport->GetActiveNavigatorsIterator();
-  const G4ThreeVector &pos = track->GetPosition();
-  const G4ThreeVector dir = track->GetMomentumDirection();
-
   for (int i = 1; i < numNav; ++i) {
-    // REUSE HELPER
     const G4LogicalVolume *lv =
         GetVolumeFromParallelNavigator(pos, dir, *(navIt + i));
     if (lv && cache.count(lv) > 0)
@@ -198,19 +202,33 @@ bool GateVBiasOptrActor::IsInVolumeListAcrossAllWorlds(
   return false;
 }
 
-bool GateVBiasOptrActor::IsInExcludedVolumeAcrossAllWorlds(
-    const G4Track *track) const {
-
-  if (fExcludeVolumes.empty())
-    return false;
-
+const std::unordered_set<const G4LogicalVolume *> &
+GateVBiasOptrActor::GetExcludedVolumePointers() const {
   threadLocalCache_t &l = fThreadLocalCache.Get();
   if (!l.fIsVolumePointersCached) {
     BuildLVCache(fExcludeVolumes, l.fExcludedVolumePointers, "exclude_volumes");
     l.fIsVolumePointersCached = true;
   }
+  return l.fExcludedVolumePointers;
+}
 
-  return IsInVolumeListAcrossAllWorlds(track, l.fExcludedVolumePointers);
+bool GateVBiasOptrActor::IsInExcludedVolumeAcrossAllWorlds(
+    const G4Track *track) const {
+  if (fExcludeVolumes.empty())
+    return false;
+  return IsInVolumeListAcrossAllWorlds(track, GetExcludedVolumePointers());
+}
+
+bool GateVBiasOptrActor::IsPreStepInExcludedVolumeAcrossAllWorlds(
+    const G4Step *step) const {
+  if (fExcludeVolumes.empty())
+    return false;
+  const auto *pre = step->GetPreStepPoint();
+  const auto *pv = pre->GetPhysicalVolume();
+  const auto *massVol = pv ? pv->GetLogicalVolume() : nullptr;
+  return IsPointInVolumeListAcrossAllWorlds(massVol, pre->GetPosition(),
+                                            pre->GetMomentumDirection(),
+                                            GetExcludedVolumePointers());
 }
 
 bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds(
@@ -220,13 +238,18 @@ bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds(
   if (!step || volumes.empty())
     return false;
 
-  // 1. Mass Navigator Fast Path (Boundary Trigger)
-  if (step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary) {
-    const auto *massVol = step->GetPostStepPoint()
-                              ->GetTouchable()
-                              ->GetVolume()
-                              ->GetLogicalVolume();
-    if (volumes.count(massVol) > 0)
+  const auto *pre = step->GetPreStepPoint();
+  const auto *post = step->GetPostStepPoint();
+
+  // 1. Mass Navigator Fast Path (Boundary Trigger): the post-step volume is
+  // in the set, the pre-step volume is not
+  if (post->GetStepStatus() == fGeomBoundary) {
+    const auto *postPV = post->GetPhysicalVolume();
+    const auto *prePV = pre->GetPhysicalVolume();
+    const auto *postLV = postPV ? postPV->GetLogicalVolume() : nullptr;
+    const auto *preLV = prePV ? prePV->GetLogicalVolume() : nullptr;
+    if (postLV && volumes.count(postLV) > 0 &&
+        (preLV == nullptr || volumes.count(preLV) == 0))
       return true;
   }
 
@@ -237,24 +260,15 @@ bool GateVBiasOptrActor::IsStepEnteringVolumeAcrossAllWorlds(
   if (numNav <= 1)
     return false;
 
-  const G4ThreeVector &prePos = step->GetPreStepPoint()->GetPosition();
-  const G4ThreeVector &postPos = step->GetPostStepPoint()->GetPosition();
-  const G4ThreeVector &dir = step->GetTrack()->GetMomentumDirection();
   const auto navIt = transport->GetActiveNavigatorsIterator();
-
   for (int i = 1; i < numNav; ++i) {
     G4Navigator *realNav = *(navIt + i);
-
-    // REUSE HELPER FOR END OF STEP
-    const G4LogicalVolume *postLV =
-        GetVolumeFromParallelNavigator(postPos, dir, realNav);
-
+    const G4LogicalVolume *postLV = GetVolumeFromParallelNavigator(
+        post->GetPosition(), post->GetMomentumDirection(), realNav);
     if (postLV && volumes.count(postLV) > 0) {
-      // REUSE HELPER FOR START OF STEP
-      const G4LogicalVolume *preLV =
-          GetVolumeFromParallelNavigator(prePos, dir, realNav);
-
-      if (preLV != postLV)
+      const G4LogicalVolume *preLV = GetVolumeFromParallelNavigator(
+          pre->GetPosition(), pre->GetMomentumDirection(), realNav);
+      if (preLV == nullptr || volumes.count(preLV) == 0)
         return true;
     }
   }

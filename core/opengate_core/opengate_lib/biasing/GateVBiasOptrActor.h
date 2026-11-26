@@ -66,7 +66,20 @@ public:
       const G4Track *track,
       const std::unordered_set<const G4LogicalVolume *> &cache) const;
 
+  // Same test at a given point: massVolume is the volume of the point in
+  // the mass world, the parallel worlds are located from pos and dir
+  bool IsPointInVolumeListAcrossAllWorlds(
+      const G4LogicalVolume *massVolume, const G4ThreeVector &pos,
+      const G4ThreeVector &dir,
+      const std::unordered_set<const G4LogicalVolume *> &cache) const;
+
   bool IsInExcludedVolumeAcrossAllWorlds(const G4Track *track) const;
+
+  // Is the pre-step point of the step in an excluded volume ?
+  bool IsPreStepInExcludedVolumeAcrossAllWorlds(const G4Step *step) const;
+
+  const std::unordered_set<const G4LogicalVolume *> &
+  GetExcludedVolumePointers() const;
 
   // Helper to abstract the Geant4 parallel navigator math
   const G4LogicalVolume *
@@ -74,6 +87,8 @@ public:
                                  const G4ThreeVector &dir,
                                  G4Navigator *realNav) const;
 
+  // True when the step goes from outside the set of volumes into it (a step
+  // between two volumes of the set is not "entering")
   bool IsStepEnteringVolumeAcrossAllWorlds(
       const G4Step *step,
       const std::unordered_set<const G4LogicalVolume *> &volumes) const;
