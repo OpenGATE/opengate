@@ -33,6 +33,44 @@ constant does not change the total emitted activity; it leaves the same
 normalized spatial distribution. The total source strength is controlled
 separately by ``activity``, ``half_life``, or ``n``.
 
+How the voxel is sampled
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The voxel of each particle is drawn with an alias table (Walker's method,
+built with Vose's algorithm). The table is built once, at initialisation,
+from the normalized image, and contains only the voxels with a non-zero
+value. Each entry is a voxel, a probability q and a second voxel (its
+"alias"). To sample, one random number selects an entry uniformly; its
+fractional part is compared to q to keep the voxel of the entry or take its
+alias. The cost per particle is one random number and one memory access,
+whatever the size of the image.
+
+It gives exactly the same distribution as sampling the voxels one after the
+other along z, y and x, which needs three binary searches in large
+cumulative tables. The difference is only in speed, about 0.06 µs per
+particle instead of 0.4 to 0.9 µs for a CT-sized image. It matters when the
+transport of a particle is cheap compared to its emission, or when the
+images are large, for example:
+
+- large activity images (fine voxels, whole body), or many voxel sources in
+  the same simulation (one per organ, per region or per time point), that
+  do not fit in the processor caches;
+- particles that are tracked for only a few steps: low-energy electrons or
+  beta particles that deposit their energy close to the emission point,
+  simulations without a phantom, or a coarse geometry;
+- variance reduction that makes the transport faster, such as the free
+  flight of photons (``GammaFreeFlightActor``) or a faster navigation in
+  the image volumes (see :doc:`user_guide_reference_volumes`).
+
+When most of the time is spent tracking particles in a detailed geometry,
+the gain is only a few percent.
+
+The table needs 12 bytes per non-zero voxel. It is small for a sparse image
+(a few spheres, lesions or organs); when all the voxels are non-zero it is
+three times the size of the image in floats. An image
+with 2^32 voxels or more is refused. A dynamic image rebuilds the table at
+each change.
+
 The activity image can also be made dynamic from one run to the next with
 ``source.add_dynamic_parametrisation(image=[...])``. See
 :doc:`user_guide_dynamic_parametrisations`.

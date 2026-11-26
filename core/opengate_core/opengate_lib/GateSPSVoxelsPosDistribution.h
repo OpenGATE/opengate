@@ -12,6 +12,7 @@
 #include <itkImage.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 class GateSPSVoxelsPosDistribution : public GateSPSPosDistribution {
@@ -41,12 +42,16 @@ public:
   G4RotationMatrix fGlobalRotation;
 
 protected:
-  // fCDFX[(z * ny + y) * nx + x]
-  // fCDFY[z * ny + y]
-  // fCDFZ[z]
-  std::vector<double> fCDFX;
-  std::vector<double> fCDFY;
-  std::vector<double> fCDFZ;
+  // The voxel is sampled with an alias table (Walker / Vose) built from the
+  // CDFs: one random number and one table entry per sample, instead of three
+  // binary searches in the CDFs (slow for large images: cache misses).
+  // Only the voxels with a non-zero probability are in the table.
+  struct AliasEntry {
+    float q;             // probability to keep the voxel of this entry
+    std::uint32_t self;  // linear index (z * ny + y) * nx + x of the voxel
+    std::uint32_t alias; // linear index of the alias voxel
+  };
+  std::vector<AliasEntry> fAlias;
   std::size_t fNx = 0;
   std::size_t fNy = 0;
   std::size_t fNz = 0;
