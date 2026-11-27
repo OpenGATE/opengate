@@ -150,22 +150,27 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
-  const auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
+  // most events have no digi: the run is only read when needed
+  int run = -1;
   for (size_t channel = 0; channel < fInputDigiCollections.size(); channel++) {
+    const auto *hc = fInputDigiCollections[channel];
+    const auto begin = hc->GetBeginOfEventIndex();
+    const auto end = hc->GetSize();
+    // If no new hits, do nothing
+    if (end <= begin)
+      continue;
+    if (run < 0)
+      run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
     const auto slice = channel + run * fInputDigiCollections.size();
-    ProcessSlice(slice, channel);
+    ProcessSlice(slice, channel, begin, end);
   }
 }
 
 void GateDigitizerProjectionActor::ProcessSlice(const size_t slice,
-                                                const size_t channel) const {
+                                                const size_t channel,
+                                                const size_t begin,
+                                                const size_t end) const {
   const auto &l = fThreadLocalData.Get();
-  const auto *hc = fInputDigiCollections[channel];
-  const auto index = hc->GetBeginOfEventIndex();
-  const auto n = hc->GetSize() - index;
-  // If no new hits, do nothing
-  if (n <= 0)
-    return;
 
   // FIXME store other attributes somewhere ?
   const auto &pos = *l.fInputPos[channel];
@@ -176,7 +181,7 @@ void GateDigitizerProjectionActor::ProcessSlice(const size_t slice,
       G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
 
   // loop on channels
-  for (size_t i = index; i < hc->GetSize(); i++) {
+  for (size_t i = begin; i < end; i++) {
     // get position from the input collection
     for (auto j = 0; j < 3; j++)
       point[j] = pos[i][j];

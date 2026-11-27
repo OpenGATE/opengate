@@ -30,10 +30,11 @@ void GateDigitizerEfficiencyActor::DigitInitialize(
 void GateDigitizerEfficiencyActor::EndOfEventAction(
     const G4Event * /*unused*/) {
   // loop on all digi of this events
-  auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
-  iter.GoToBegin();
+  // no digi in this event: nothing to do
+  if (!iter.GoToBegin())
+    return;
   while (!iter.IsAtEnd()) {
     if (G4UniformRand() < fEfficiency) {
       auto &i = lr.fInputIter.fIndex;

@@ -142,7 +142,9 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
   // loop on all hits to group per volume ID
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
-  iter.GoToBegin();
+  // no digi in this event: nothing to do
+  if (!iter.GoToBegin())
+    return;
 
   while (!iter.IsAtEnd()) {
     AddDigiPerVolume();

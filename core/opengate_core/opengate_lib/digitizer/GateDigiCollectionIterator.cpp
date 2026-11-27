@@ -67,25 +67,27 @@ void GateDigiCollectionIterator::operator++(int) {
 
 void GateDigiCollectionIterator::GoTo(const size_t index) const {
   // (note: I tried to inline the function, it does not really change the speed)
+  // data() + index, not &v[index]: index may be equal to the size (end of the
+  // loop), where operator[] is out of range.
   for (size_t i = 0; i < fDAttributes.size(); i++) {
     auto &v = *fDAttributesVector[i];
-    *fDAttributes[i] = &v[index];
+    *fDAttributes[i] = v.data() + index;
   }
   for (size_t i = 0; i < fIAttributes.size(); i++) {
     auto &v = *fIAttributesVector[i];
-    *fIAttributes[i] = &v[index];
+    *fIAttributes[i] = v.data() + index;
   }
   for (size_t i = 0; i < fLAttributes.size(); i++) {
     auto &v = *fLAttributesVector[i];
-    *fLAttributes[i] = &v[index];
+    *fLAttributes[i] = v.data() + index;
   }
   for (size_t i = 0; i < f3Attributes.size(); i++) {
     auto &v = *f3AttributesVector[i];
-    *f3Attributes[i] = &v[index];
+    *f3Attributes[i] = v.data() + index;
   }
   for (size_t i = 0; i < fUAttributes.size(); i++) {
     auto &v = *fUAttributesVector[i];
-    *fUAttributes[i] = &v[index];
+    *fUAttributes[i] = v.data() + index;
   }
 }
 
@@ -93,9 +95,13 @@ bool GateDigiCollectionIterator::IsAtEnd() const {
   return (fIndex >= fDigiCollection->GetSize());
 }
 
-void GateDigiCollectionIterator::GoToBegin() {
+bool GateDigiCollectionIterator::GoToBegin() {
   fIndex = fDigiCollection->GetBeginOfEventIndex();
+  // most events have no digi: skip the pointer updates
+  if (fIndex >= fDigiCollection->GetSize())
+    return false;
   GoTo(fIndex);
+  return true;
 }
 
 void GateDigiCollectionIterator::Reset() {

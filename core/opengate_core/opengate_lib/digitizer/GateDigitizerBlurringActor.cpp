@@ -57,10 +57,12 @@ void GateDigitizerBlurringActor::DigitInitialize(
 
 void GateDigitizerBlurringActor::EndOfEventAction(const G4Event * /*unused*/) {
   // loop on all digi of this event
-  auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
-  iter.GoToBegin();
+  // no digi in this event: nothing to do
+  if (!iter.GoToBegin())
+    return;
+  auto &l = fThreadLocalData.Get();
   while (!iter.IsAtEnd()) {
     // blur the current value
     const auto v = fBlurValue(*l.fAttDValue);

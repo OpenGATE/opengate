@@ -52,13 +52,14 @@ void GateDigitizerReadoutActor::BeginOfRunAction(const G4Run *run) {
 }
 
 void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
-  // get thread local data
-  auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
-  auto &lro = fThreadLocalReadoutData.Get();
   // loop on all digi to group per volume ID
   auto &iter = lr.fInputIter;
-  iter.GoToBegin();
+  // no digi in this event: nothing to do
+  if (!iter.GoToBegin())
+    return;
+  auto &l = fThreadLocalData.Get();
+  auto &lro = fThreadLocalReadoutData.Get();
   while (!iter.IsAtEnd()) {
     AddDigiPerVolume();
     iter++;
