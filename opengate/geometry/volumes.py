@@ -1052,6 +1052,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # ITK images
         self._itk_image = None  # the input
         self.label_image = None  # image storing material labels
+        # the outside voxels (numpy bool, z y x), with outside_threshold
+        self.outside_mask = None
         # G4 references (additionally to those in base class)
         self.g4_physical_x = None
         self.g4_physical_y = None
@@ -1072,6 +1074,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         return_dict["g4_logical_z"] = None
         return_dict["g4_voxel_param"] = None
         return_dict["g4_vis_attributes_logical_slices"] = None
+        return_dict["outside_mask"] = None
         return_dict["slice_xy"] = None
         return_dict["slice_xz"] = None
         return_dict["slice_yz"] = None
