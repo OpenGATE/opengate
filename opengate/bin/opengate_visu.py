@@ -10,14 +10,65 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--input", "-i", default="", help="Input visualization file")
-@click.option("--vrml", "-v", is_flag=True, help="VRML file")
-@click.option("--gdml", "-g", is_flag=True, help="GDML file")
+@click.option("--vrml", "-v", is_flag=True, help="VRML file (pyvista viewer)")
+@click.option("--gdml", "-g", is_flag=True, help="GDML file (pyg4ometry viewer)")
+@click.option(
+    "--vtk",
+    "use_vtk",
+    is_flag=True,
+    help="VRML file, rendered with VTK (optional: needs 'pip install vtk')",
+)
 @click.option("--qt", "-q", is_flag=True, help="Test Qt window")
-def go(input, vrml, gdml, qt):
+@click.option(
+    "--slices",
+    "-s",
+    default="",
+    help="With --vtk: .npz image slices saved by the simulation",
+)
+@click.option(
+    "--backend",
+    "-b",
+    default="auto",
+    help="With --vtk: auto (default), cuda, vulkan, gpu or cpu",
+)
+@click.option(
+    "--screenshot",
+    "-o",
+    default="",
+    help="With --vtk: save the scene to this image instead of opening a window",
+)
+@click.option(
+    "--probe",
+    is_flag=True,
+    help="With --vtk: report the graphics backend ladder and exit",
+)
+def go(input, vrml, gdml, use_vtk, qt, slices, backend, screenshot, probe):
 
     if qt:
         g4.createTestQtWindow()
         return ()
+
+    if probe:
+        from opengate.visualization import main as vtk_main
+
+        return vtk_main(["--probe"])
+
+    if use_vtk:
+        from opengate.visualization import main as vtk_main
+
+        return vtk_main(
+            [
+                option
+                for option in (
+                    input,
+                    "--backend",
+                    backend,
+                    *(["--slices", slices] if slices else []),
+                    *(["--screenshot", screenshot] if screenshot else []),
+                )
+                if option
+            ]
+        )
 
     if not os.path.isfile(input):
         print("The file " + input + " does not exist")

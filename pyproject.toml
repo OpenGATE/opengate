@@ -41,11 +41,13 @@ requires-python = ">=3.9"
 
 [project.optional-dependencies]
 novis = ["opengate-core-novis"]
+vtk = ["vtk>=9.3"]
 
 [project.scripts]
 opengate_tests = "opengate.bin.opengate_tests:go"
 opengate_info = "opengate.bin.opengate_info:go"
 opengate_visu = "opengate.bin.opengate_visu:go"
+opengate_visu_benchmark = "opengate.bin.opengate_visu_benchmark:go"
 opengate_check_visu = "opengate.bin.opengate_check_visu:go"
 opengate_download_data = "opengate.bin.opengate_download_data:go"
 opengate_plot_volume_info = "opengate.bin.opengate_plot_volume_info:go"
