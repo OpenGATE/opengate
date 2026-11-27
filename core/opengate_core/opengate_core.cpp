@@ -585,6 +585,8 @@ void init_GateVolumeVoxelizer(py::module &);
 
 void init_GateImageBox(py::module &m);
 
+void init_GateImageMaskSolid(py::module &m);
+
 PYBIND11_MODULE(opengate_core, m) {
 
   init_G4ThreeVector(m);
@@ -902,4 +904,5 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateUniqueVolumeID(m);
   init_GateGeometryUtils(m);
   init_GateImageBox(m);
+  init_GateImageMaskSolid(m);
 }
