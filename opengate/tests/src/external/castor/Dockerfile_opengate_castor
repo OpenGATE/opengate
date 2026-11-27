@@ -1,0 +1,44 @@
+#Docker for opengate_core
+#systemctl start docker
+#login: docker login
+#build: docker build -t tbaudier/opengate_castor_ci -f Dockerfile_opengate_castor.
+#push: docker push tbaudier/opengate_castor_ci
+#run: docker run --rm -v $(Pipeline.Workspace):/home tbaudier/opengate_castor_ci /home/.github/workflows/run_test_opengate_castor.sh
+#interactive: docker run -ti --rm -v $PWD:/home quay.io/pypa/manylinux_2_34_x86_64 /bin/bash
+
+FROM quay.io/pypa/manylinux_2_34_x86_64
+MAINTAINER Thomas Baudier <thomas.baudier@creatis.insa-lyon.fr>
+#Install packages
+RUN     yum install -y gcc wget git expat-devel fftw-devel qt6-qtbase-devel freeglut-devel libXmu-devel xerces-c-devel libXpm-devel libXft-devel xrootd-devel openssl-devel libuuid-devel \
+
+#Create folder
+    &&  mkdir -p /software/cmake /software/root/src /software/root/bin /software/castor/src /software/castor/bin /software/wheelhouse \
+
+#Install cmake
+    &&  cd /software/cmake \
+    &&  wget https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-x86_64.tar.gz \
+    &&  tar xzvf cmake-3.31.8-linux-x86_64.tar.gz \
+    &&  rm -rf cmake-3.31.8-linux-x86_64.tar.gz \
+    &&  mv cmake-3.31.8-linux-x86_64 cmake \
+    &&  export PATH=/software/cmake/cmake/bin/:${PATH} \
+
+#Compile root
+    &&  cd /software/root \
+    &&  git clone --branch v6-36-06 https://github.com/root-project/root.git --depth 1 src \
+    &&  cd bin \
+    &&  . /opt/rh/gcc-toolset-14/enable \
+    &&  cmake -Dxrootd=OFF ../src \
+    &&  make -j10 \
+    &&  source /software/root/bin/bin/thisroot.sh \
+
+#Compile castor
+    &&  cd /software/castor \
+    &&  git clone -b feature/gatev10_converter https://gitlab.com/castor-collaboration/castor.git --depth 1 src \
+    &&  cd bin \
+    &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DCASToR_BUILD_GATE_UTILITIES=ON ../src \
+    &&  make -j10 \
+    &&  export PATH=/software/castor/bin/:$PATH
+
+# docker commit <container_name>
+# docker tag <image_id> tbaudier/opengate_castor_ci:1.0.0
+
