@@ -143,7 +143,10 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
     kBq = 1e3 * Bq
     sec = gate.g4_units.s
-    run_timing_intervals = [(0, 1.5 * sec), (3.0 * sec, 5.5 * sec)]
+    # run 1 starts when the fast component is negligible (2^-16 of its start)
+    # and lasts 2.5 half-lives of the slow one, so that its fitted half-life is
+    # the slow one within a few percent, whatever the random seed
+    run_timing_intervals = [(0, 1.5 * sec), (5.0 * sec, 15.0 * sec)]
     run_0_start_sec = run_timing_intervals[0][0] / sec
     run_0_end_sec = run_timing_intervals[0][1] / sec
     run_1_start_sec = run_timing_intervals[1][0] / sec
