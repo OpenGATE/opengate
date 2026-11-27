@@ -156,7 +156,10 @@ def main():
         src.particle = "e-"
         src.energy.mono = 1 * MeV
         src.direction.type = "iso"
-        src.number_of_primaries = 200
+        src.number_of_primaries = 100
+        # a copy of the source (same image): it shares the table too
+        src2 = sim.source_manager.add_source_copy("vox", "vox_copy")
+        src2.number_of_primaries = 100
 
         # The trigger from the issue: a region user limit. Its physics
         # constructor is C++ now, so running it on worker threads does not
@@ -175,16 +178,17 @@ def main():
             f"Simulation generated {stats.counts.events} events (expected 200)",
         )
 
-        # 1 master source + one source per worker thread: the table is built
-        # once, and shared by the others
-        b = calls["count"] == 1 and calls["share"] == number_of_threads
+        # 2 sources x (1 master source + one source per worker thread): the
+        # table is built once, and shared by all the others
+        expected_share = 2 * (1 + number_of_threads) - 1
+        b = calls["count"] == 1 and calls["share"] == expected_share
         is_ok = b and is_ok
         utility.print_test(
             b,
             f"CDF setter called {calls['count']} time(s) (expected 1: once per "
             f"image), table shared {calls['share']} times (expected "
-            f"{number_of_threads}: the other thread-local sources). A larger "
-            f"count means worker threads re-apply the table.",
+            f"{expected_share}: the other thread-local sources of the two "
+            f"sources). A larger count means worker threads re-apply the table.",
         )
 
         utility.test_ok(is_ok and cdf_ok)
