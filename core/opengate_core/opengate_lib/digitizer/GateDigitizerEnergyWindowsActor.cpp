@@ -108,27 +108,27 @@ void GateDigitizerEnergyWindowsActor::BeginOfEventAction(const G4Event *event) {
 
 void GateDigitizerEnergyWindowsActor::EndOfEventAction(
     const G4Event * /*event*/) {
-  const auto index = fInputDigiCollection->GetBeginOfEventIndex();
-  auto n = fInputDigiCollection->GetSize() - index;
+  const auto begin = fInputDigiCollection->GetBeginOfEventIndex();
+  const auto end = fInputDigiCollection->GetSize();
   // If no new hits, do nothing
-  if (n <= 0)
+  if (end <= begin)
     return;
   // init last energy windows to 'outside' (-1)
   for (size_t i = 0; i < fChannelDigiCollections.size(); i++) {
-    ApplyThreshold(i, fChannelMin[i], fChannelMax[i]);
+    ApplyThreshold(i, fChannelMin[i], fChannelMax[i], begin, end);
   }
 }
 
 void GateDigitizerEnergyWindowsActor::ApplyThreshold(const size_t i,
                                                      const double min,
-                                                     const double max) const {
+                                                     const double max,
+                                                     const size_t begin,
+                                                     const size_t end) const {
   auto &l = fThreadLocalData.Get();
   // get the vector of values
   const auto &edep = *l.fInputEdep;
-  // get the index of the first hit for this event
-  const auto index = fInputDigiCollection->GetBeginOfEventIndex();
-  // fill all the hits
-  for (size_t n = index; n < fInputDigiCollection->GetSize(); n++) {
+  // fill all the hits of this event: indices [begin, end)
+  for (size_t n = begin; n < end; n++) {
     auto e = edep[n];
     if (e >= min && e < max) { // FIXME put in doc. strictly or not ?
       l.fFillers[i]->Fill(n);

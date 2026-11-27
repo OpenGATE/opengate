@@ -117,8 +117,14 @@ void GateDigiCollection::FillToRoot() {
    * maybe not very efficient to loop that way (row then column)
    * but I don't manage to do elsewhere
    */
+  const auto n = GetSize();
+  // most events have no digi: the attributes are already empty
+  if (n == 0) {
+    SetBeginOfEventIndex(0);
+    return;
+  }
   auto *am = GateDigiCollectionsRootManager::GetInstance();
-  for (size_t i = 0; i < GetSize(); i++) {
+  for (size_t i = 0; i < n; i++) {
     for (auto *att : fDigiAttributes) {
       att->FillToRoot(i);
     }

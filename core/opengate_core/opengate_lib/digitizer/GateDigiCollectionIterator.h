@@ -34,7 +34,9 @@ public:
 
   bool IsAtEnd() const;
 
-  void GoToBegin();
+  // Go to the first digi of the current event. Return false if the event has
+  // no digi (the tracked pointers are then not updated).
+  bool GoToBegin();
 
   void GoTo(size_t index) const;
 

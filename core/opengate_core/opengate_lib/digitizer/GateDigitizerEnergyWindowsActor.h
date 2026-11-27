@@ -64,7 +64,8 @@ protected:
   std::vector<double> fChannelMax;
   int fClearEveryNEvents;
 
-  void ApplyThreshold(size_t i, double min, double max) const;
+  void ApplyThreshold(size_t i, double min, double max, size_t begin,
+                      size_t end) const;
 
   // During computation
   struct threadLocalT {

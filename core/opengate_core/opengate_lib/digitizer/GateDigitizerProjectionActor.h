@@ -64,7 +64,9 @@ protected:
   std::vector<GateDigiCollection *> fInputDigiCollections;
   G4RotationMatrix fDetectorOrientationMatrix;
 
-  void ProcessSlice(size_t slice, size_t channel) const;
+  // digi of the current event: indices [begin, end) of the input collection
+  void ProcessSlice(size_t slice, size_t channel, size_t begin,
+                    size_t end) const;
   void ScoreSquaredValue(const ImageType::IndexType &index,
                          int current_event_id, double value) const;
   ImageType::RegionType GetRunRegion(int run_id) const;

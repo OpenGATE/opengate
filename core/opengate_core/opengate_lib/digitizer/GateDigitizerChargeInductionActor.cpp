@@ -408,10 +408,12 @@ void GateDigitizerChargeInductionActor::ProcessHit() {
 
 void GateDigitizerChargeInductionActor::EndOfEventAction(
     const G4Event * /*event*/) {
-  auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
-  iter.GoToBegin();
+  // no digi in this event: nothing to do
+  if (!iter.GoToBegin())
+    return;
+  auto &l = fThreadLocalData.Get();
   while (!iter.IsAtEnd()) {
     ProcessHit();
     iter++;
