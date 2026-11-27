@@ -37,7 +37,8 @@ public:
 
   void initialize_material(std::vector<std::string> materials);
 
-  // Place the voxels in the container (the image volume, a box)
+  // Place the voxels in the container (the image volume: a box, or a
+  // GateImageMaskSolid)
   void Construct(const std::string &name, G4LogicalVolume *containerLV,
                  G4VPhysicalVolume *containerPV, bool skipEqualMaterials);
 
