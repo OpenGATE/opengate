@@ -158,6 +158,17 @@ the bowel) stays inside. Any other mask (e.g. lungs connected to the
 outside by the airways): edit the image before (set the voxels to remove
 below the threshold, or those to keep above it).
 
+Choose the threshold below the values of all the low density materials
+that touch the border of the image: they would become outside, i.e. the
+material of the mother. For example the foam core of an imaging table
+(about -980 to -850 HU in a CT) is connected to the border: with a
+threshold of -700 it becomes air, and the attenuation under the table is
+too low (a few % more counts in the heads that look through the table, in
+a SPECT simulation). With a threshold close to the air (e.g. -980), set
+the voxels that the other volumes cross to -1000 in the image (they must
+be outside), and the small islands of noisy air to -1000 too (they would
+add surfaces for nothing).
+
 It needs ``voxel_navigation = "regular"`` (the steps in the voxels stop at
 the surface of the solid), and the image cannot be dynamic. The actors
 attached to the image volume score nothing in the outside voxels. The
