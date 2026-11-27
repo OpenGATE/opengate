@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateRunAction.h"
+#include "GateImageRegularParameterisation.h"
 #include "GateUniqueVolumeIDManager.h"
 #include <G4MoleculeCounterManager.hh>
 
@@ -31,6 +32,10 @@ void GateRunAction::BeginOfRunAction(const G4Run *run) {
   // The map should be reset each run because of the motion can change the
   // touchable properties
   GateUniqueVolumeIDManager::Clear();
+  // see GateImageRegularParameterisation
+  if (GateImageRegularParameterisation::fRegularNavigationIsUsed) {
+    GateImageRegularParameterisation::DeactivateScoreSplitting();
+  }
   if (fChemistryIsActive) {
     // Chemistry scoring may instantiate the counter manager lazily. Once
     // chemistry is known to be active for the simulation, ensure the run
