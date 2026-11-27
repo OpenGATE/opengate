@@ -9,6 +9,7 @@
 #include "GateHelpers.h"
 #include <Randomize.hh>
 #include <limits>
+#include <memory>
 
 GateSPSVoxelsPosDistribution::GateSPSVoxelsPosDistribution() {
   // Create the image pointer
@@ -23,9 +24,6 @@ GateSPSVoxelsPosDistribution::GateSPSVoxelsPosDistribution() {
 void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(
     const double *cdfZ, const double *cdfY, const double *cdfX, std::size_t nx,
     std::size_t ny, std::size_t nz) {
-  fNx = nx;
-  fNy = ny;
-  fNz = nz;
   if (nx * ny * nz >= std::numeric_limits<std::uint32_t>::max()) {
     Fatal("GateSPSVoxelsPosDistribution: too many voxels in the image");
   }
@@ -65,19 +63,24 @@ void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(
     total += p;
   std::vector<double> scaled(n);
   std::vector<std::size_t> small, large;
-  fAlias.assign(n, AliasEntry{1.0f, 0, 0});
+  auto table = std::make_shared<GateVoxelAliasTable>();
+  table->nx = nx;
+  table->ny = ny;
+  table->nz = nz;
+  auto &alias = table->entries;
+  alias.assign(n, GateVoxelAliasTable::Entry{1.0f, 0, 0});
   for (std::size_t m = 0; m < n; m++) {
     scaled[m] = proba[m] * static_cast<double>(n) / total;
     (scaled[m] < 1.0 ? small : large).push_back(m);
-    fAlias[m].self = index[m];
-    fAlias[m].alias = index[m];
+    alias[m].self = index[m];
+    alias[m].alias = index[m];
   }
   while (!small.empty() && !large.empty()) {
     const auto s = small.back();
     small.pop_back();
     const auto l = large.back();
-    fAlias[s].q = static_cast<float>(scaled[s]);
-    fAlias[s].alias = index[l];
+    alias[s].q = static_cast<float>(scaled[s]);
+    alias[s].alias = index[l];
     scaled[l] = (scaled[l] + scaled[s]) - 1.0;
     if (scaled[l] < 1.0) {
       large.pop_back();
@@ -86,23 +89,33 @@ void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(
   }
   // the remaining entries (rounding): keep their own voxel
   for (const auto m : small)
-    fAlias[m].q = 1.0f;
+    alias[m].q = 1.0f;
   for (const auto m : large)
-    fAlias[m].q = 1.0f;
+    alias[m].q = 1.0f;
+  fTable = table;
+}
+
+void GateSPSVoxelsPosDistribution::SetAliasTable(
+    std::shared_ptr<GateVoxelAliasTable> table) {
+  if (table == nullptr || table->entries.empty()) {
+    Fatal("GateSPSVoxelsPosDistribution: empty alias table");
+  }
+  fTable = table;
 }
 
 G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
   // alias sampling: an entry m uniformly, then its voxel with the
   // probability q, otherwise its alias voxel
-  const double u = G4UniformRand() * static_cast<double>(fAlias.size());
+  const auto &t = *fTable;
+  const double u = G4UniformRand() * static_cast<double>(t.entries.size());
   auto m = static_cast<std::size_t>(u);
-  if (m >= fAlias.size())
-    m = fAlias.size() - 1;
-  const auto &e = fAlias[m];
+  if (m >= t.entries.size())
+    m = t.entries.size() - 1;
+  const auto &e = t.entries[m];
   const std::uint32_t v = (u - static_cast<double>(m)) < e.q ? e.self : e.alias;
-  const auto k = static_cast<itk::IndexValueType>(v % fNx);
-  const auto j = static_cast<itk::IndexValueType>((v / fNx) % fNy);
-  const auto i = static_cast<itk::IndexValueType>(v / (fNx * fNy));
+  const auto k = static_cast<itk::IndexValueType>(v % t.nx);
+  const auto j = static_cast<itk::IndexValueType>((v / t.nx) % t.ny);
+  const auto i = static_cast<itk::IndexValueType>(v / (t.nx * t.ny));
 
   const itk::Index<3> index = {k, j, i};
   itk::Point<double> point;
