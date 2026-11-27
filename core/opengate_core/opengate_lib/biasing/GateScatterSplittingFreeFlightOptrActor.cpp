@@ -96,6 +96,7 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfEventAction(
   threadLocal_t &l = threadLocalData.Get();
   l.fComptonInteractionCount = 0;
   l.fCurrentTrackIsFreeFlight = false;
+  l.fCurrentTrackID = -1;
 }
 
 bool GateScatterSplittingFreeFlightOptrActor::IsFreeFlight(
@@ -146,6 +147,13 @@ void GateScatterSplittingFreeFlightOptrActor::ConfigureForWorker() {
 void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
   threadLocal_t &l = threadLocalData.Get();
+
+  // StartTracking may be called twice for the same track (by the biasing
+  // interface and by PreUserTrackingAction in MT), and never for the
+  // particles that are not biased (electrons): see SteppingAction.
+  if (track->GetTrackID() == l.fCurrentTrackID)
+    return;
+  l.fCurrentTrackID = track->GetTrackID();
 
   // A new track is being tracked
   l.fTrackMustBeKilled = false;
@@ -211,22 +219,11 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
         " energy=", track->GetKineticEnergy(), " process=", procName);
   }
 
-  // ==== CHECK 1 : energy, weight threshold ====
-  // Is it a valid particle? (energy or weight cutoff).
-  // If not, will be killed in SteppingAction
-  if (!IsTrackValid(track)) {
-    l.fTrackMustBeKilled = true;
-    if (fDebug) {
-      DDD("\t fIsTrackValidForStep = false, returning nullptr "
-          "(fTrackMustBeKilled=true)");
-    }
-    return nullptr;
-  }
-  l.fTrackMustBeKilled = false;
-
-  // ==== CHECK 2 : excluded volumes for parallel world ====
-  // Evaluate if the track is within an excluded volume (for parallel world)
-  // Note: when there is not parallel world, thit is not useful
+  // ==== CHECK 1 : excluded volumes ====
+  // Evaluate if the track is within an excluded volume (also in the
+  // parallel worlds). Excluded volumes are fully analog: no FF, no
+  // splitting, and no kill by the energy or weight cutoff (e.g. the X-rays
+  // of fluorescence in a detector must be tracked).
   // Note: fLastStepNumber is used to avoid the check for all processes
   const int currentStep = track->GetCurrentStepNumber();
   if (l.fLastStepNumber != currentStep) {
@@ -239,14 +236,34 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
           " laststep=", l.fLastStepNumber);
     }
   }
+  if (l.fIsStepInExcludedVolume) {
+    l.fTrackMustBeKilled = false;
+    if (fDebug) {
+      DDD("\t excluded volume, analog, returning nullptr");
+    }
+    return nullptr;
+  }
+
+  // ==== CHECK 2 : energy, weight threshold ====
+  // Is it a valid particle? (energy or weight cutoff).
+  // If not, will be killed in SteppingAction
+  if (!IsTrackValid(track)) {
+    l.fTrackMustBeKilled = true;
+    if (fDebug) {
+      DDD("\t fIsTrackValidForStep = false, returning nullptr "
+          "(fTrackMustBeKilled=true)");
+    }
+    return nullptr;
+  }
+  l.fTrackMustBeKilled = false;
 
   // ===========================================================================
   // Cases matrix:
-  // - FF + in excluded volume          => analog tracking, NO splitting
+  // - in excluded volume (FF or not)   => analog tracking, NO splitting, no
+  //                                       cutoff (returned above)
   // - FF + not in excluded volume      => FF tracking
   // - FF + kill volume                 => FF tracking
-  // - not FF + in excluded volume      => analog but NO splitting
-  // - not FF §+ kill volume            => kill particle
+  // - not FF + entering a kill volume  => killed (SteppingAction)
   // - not FF + not in excluded volume  => analog, splitting if Compt or Rayl
   // ===========================================================================
 
@@ -258,15 +275,6 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
   // ===========================================================================
   // FF tracking
   if (isFF) {
-    if (l.fIsStepInExcludedVolume) {
-      // Track is in an unbiased volume (parallel world)
-      // Returning nullptr disables FF occurrence, and the cached
-      // flag will disable splitting in ProposeFinalState.
-      if (fDebug) {
-        DDD("\t isFF but excluded, returning nullptr");
-      }
-      return nullptr;
-    }
     if (fDebug) {
       DDD("\t isFF and not excluded, returning FF operation");
     }
@@ -274,16 +282,10 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
   }
 
   // ===========================================================================
-  // Analog tracking (with possible splitting except if we are in kill volumes)
-  if (IsInVolumeListAcrossAllWorlds(track, GetKillVolumePointers())) {
-    l.fTrackMustBeKilled = true;
-    if (fDebug) {
-      DDD("\t no FF and  = false, returning nullptr");
-    }
-    return nullptr;
-  }
-
-  // Conventional, analog tracking
+  // Conventional, analog tracking (splitting in ProposeFinalState). A non-FF
+  // track is killed when it enters a kill volume (SteppingAction), not when
+  // it is in it: the secondaries of the FF tracks born in a kill volume
+  // (fluorescence) must be tracked.
   return nullptr;
 }
 
@@ -369,6 +371,14 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   // (Go in this function every step, even Transportation)
   threadLocal_t &l = threadLocalData.Get();
 
+  // The particles that are not biased (electrons) do not go through
+  // StartTracking (in sequential mode): set their state here, otherwise
+  // they keep the one of the previous track.
+  auto *track = step->GetTrack();
+  if (track->GetTrackID() != l.fCurrentTrackID) {
+    StartTracking(track);
+  }
+
   if (fDebug) {
     DDD("GateScatterSplittingFreeFlightOptrActor::SteppingAction for track ",
         step->GetTrack()->GetTrackID(), " to_kill=", l.fTrackMustBeKilled,
@@ -408,6 +418,18 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
       DDD("\t Track entering parallel/mass kill volume, killing track and "
           "returning");
     }
+    return;
+  }
+
+  // In an excluded volume, the non-FF tracks are analog: no kill (e.g. the
+  // fluorescence and the electrons of the FF photons in a detector). The
+  // flag computed in ProposeOccurence is for this step (pre-step point),
+  // otherwise (not biased particles) it is computed here.
+  bool inExcluded = l.fIsStepInExcludedVolume;
+  if (l.fLastStepNumber != track->GetCurrentStepNumber()) {
+    inExcluded = IsPreStepInExcludedVolumeAcrossAllWorlds(step);
+  }
+  if (inExcluded) {
     return;
   }
 

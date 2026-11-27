@@ -73,13 +73,6 @@ GateGammaFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     l.fIsFirstTime = false;
   }
 
-  // Kill tracks below cutoffs
-  if (!IsTrackValid(track)) {
-    l.fIsTrackValidForStep = false;
-    l.fIsExcludedForStep = false;
-    return nullptr;
-  }
-
   // ----------------------------------------------------------------
   // Make the FF-vs-excluded decision HERE, ONCE, at the start of the step.
   // Store it in fIsExcludedForStep so ProposeFinalState uses the SAME answer.
@@ -93,9 +86,16 @@ GateGammaFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     l.fIsExcludedForStep = IsInExcludedVolumeAcrossAllWorlds(track);
     l.fLastStepNumber = currentStep;
   }
-  l.fIsTrackValidForStep = true;
 
+  // Excluded volumes are fully analog: no FF and no kill by the cutoffs
+  l.fIsTrackValidForStep = true;
   if (l.fIsExcludedForStep) {
+    return nullptr;
+  }
+
+  // Kill tracks below cutoffs
+  if (!IsTrackValid(track)) {
+    l.fIsTrackValidForStep = false;
     return nullptr;
   }
 

@@ -65,6 +65,9 @@ protected:
     std::map<std::string, double> fBiasInformationPerThread;
     bool fCurrentTrackIsFreeFlight;
     bool fTrackMustBeKilled;
+    // ID of the track whose state is set (StartTracking); reset at each
+    // event (the track IDs are unique within an event only)
+    int fCurrentTrackID = -1;
     int fLastStepNumber = -1;
     bool fIsStepInExcludedVolume = false;
     bool fIsKillVolumesCached = false;
