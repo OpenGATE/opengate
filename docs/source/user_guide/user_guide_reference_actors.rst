@@ -515,6 +515,28 @@ Here is a classical way to use the TLEDoseActor:
 Refer to the ``test081_tle_*`` tests in ``opengate/tests/src/actors`` for
 more details.
 
+The TLE deposit of a photon step is split among all the dose voxels crossed by
+the step, in proportion to the length of the step in each voxel
+(``split_step_in_voxels = True``, the default). It is exact for a photon step
+(the energy, the attenuation coefficient and the density are the same along
+the step) and the total deposited energy does not change; ``hit_type`` is not
+used for these steps. The steps can be longer than the dose voxels when the
+dose grid is finer than the image voxels, or not aligned with them, and with
+the regular navigation of the image volumes (see
+:ref:`image-volume-voxel-navigation`), where one step crosses all the
+consecutive voxels of the same material. With
+
+.. code:: python
+
+   tle_dose_actor.split_step_in_voxels = False
+
+the whole deposit of a step goes to one voxel, chosen with ``hit_type``
+(``"random"``: a random point of the step). It is unbiased but adds variance
+when the steps are long, and ``"middle"``, ``"pre"`` or ``"post"`` are then
+biased. With the split, the dose with the regular navigation is the same as
+with the nested navigation, with fewer steps
+(test157). Only the TLE photon steps are split, not the other particles.
+
 .. seealso::
 
    For an application combining ``TLEDoseActor`` with particle splitting for fast internal dosimetry and dose rate calculation, see :ref:`dose_rate_vrt_label`.

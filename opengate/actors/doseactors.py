@@ -752,6 +752,18 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
                 "allowed_values": ("EPDL", "NIST"),  # "simulated" does not work
             },
         ),
+        "split_step_in_voxels": (
+            True,
+            {
+                "doc": "If True (default), the TLE deposit of a photon step is split "
+                "among the dose voxels crossed by the step, in proportion to the "
+                "length in each voxel (exact, hit_type is not used for these steps). "
+                "If False, the whole deposit goes to one voxel, chosen with "
+                "hit_type: more variance when the steps are longer than the dose "
+                "voxels (dose grid finer than or not aligned with the image "
+                "voxels, voxel_navigation='regular').",
+            },
+        ),
     }
 
     def __initcpp__(self):

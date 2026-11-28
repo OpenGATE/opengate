@@ -77,8 +77,8 @@ if __name__ == "__main__":
     dose_actor.dose.active = True
     dose_actor.size = [200, 200, 200]
     dose_actor.database = "NIST"
-    tle_dose_actor.tle_threshold_type = "energy"
-    tle_dose_actor.tle_threshold = 1 * MeV
+    dose_actor.tle_threshold_type = "energy"
+    dose_actor.tle_threshold = 1 * MeV
     dose_actor.spacing = [x / y for x, y in zip(waterbox_size, dose_actor.size)]
     print(f"Dose actor pixels : {dose_actor.size}")
     print(f"Dose actor spacing : {dose_actor.spacing} mm")

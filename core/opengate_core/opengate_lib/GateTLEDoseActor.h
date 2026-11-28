@@ -45,6 +45,17 @@ public:
   void SteppingAction(G4Step *) override;
   void ScoreTLEDepositStep(G4Step *step);
 
+  // Deposit edep along the step segment: each dose voxel crossed by the
+  // segment gets edep x (length in the voxel / step length). Exact for a
+  // gamma step: energy, mu_en/rho and density are constant along the step.
+  void ScoreTLEDepositSplit(G4Step *step, double edep, double density,
+                            int event_id);
+
+  // If true, the TLE deposit of a step is split among the dose voxels it
+  // crosses (see ScoreTLEDepositSplit); otherwise it goes to one voxel,
+  // chosen with hit_type.
+  bool fSplitStepInVoxels = false;
+
   // Kill the gamma if below this energy
   double fEnergyMin;
   double fEnergyMax;
