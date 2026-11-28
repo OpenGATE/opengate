@@ -33,7 +33,10 @@ Common parameters are:
    respect to the mother volume. We advocate the use of
    ``scipy.spatial.transform.Rotation`` to manage the rotation matrix.
 -  ``color``: a list of 4 values (Red, Green, Blue, Opacity) between 0
-   and 1, e.g. ``[1, 0, 0, 0.5]``. Only used when visualization is on.
+   and 1, e.g. ``[1, 0, 0, 0.5]`` or a string representing a Geant4 color name,
+   including  ``"white"``, ``"grey"``, ``"gray"``,
+   ``"black"``, ``"brown"``, ``"red"``, ``"green"``, ``"blue"``, ``"cyan"``,
+   ``"magenta"``, or ``"yellow"``. Only used when visualization is on.
 - ``style``: forced visualization style for this volume. Can be ``'solid'``,
    or ``'wireframe'``. Otherwise or not set, the volume will be displayed
    according to global visualization style. Only available with qt.
