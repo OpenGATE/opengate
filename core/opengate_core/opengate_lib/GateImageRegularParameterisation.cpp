@@ -81,14 +81,16 @@ void GateImageRegularParameterisation::Construct(
                           GetVoxelHalfZ());
   fVoxelLV =
       new G4LogicalVolume(voxel, fImageMaterials[0], name + "_log_voxel");
-  // the container (the image volume) must be a box filled by the voxels
-  const auto *box = dynamic_cast<const G4Box *>(containerLV->GetSolid());
-  if (box == nullptr)
-    Fatal("GateImageRegularParameterisation: the container of " + name +
-          " is not a box");
+  // the container (the image volume): a box filled by the voxels, or a
+  // GateImageMaskSolid (the inside voxels): its bounding box
+  // is the image box. G4RegularNavigation stops the steps where the
+  // container solid is no longer kInside.
+  G4ThreeVector bmin, bmax;
+  containerLV->GetSolid()->BoundingLimits(bmin, bmax);
   BuildContainerSolid(containerPV);
-  CheckVoxelsFillContainer(box->GetXHalfLength(), box->GetYHalfLength(),
-                           box->GetZHalfLength());
+  CheckVoxelsFillContainer(0.5 * (bmax.x() - bmin.x()),
+                           0.5 * (bmax.y() - bmin.y()),
+                           0.5 * (bmax.z() - bmin.z()));
   fVoxelPV =
       new G4PVParameterised(name + "_voxels", fVoxelLV, containerLV, kUndefined,
                             (G4int)GetNoVoxels(), this, false);

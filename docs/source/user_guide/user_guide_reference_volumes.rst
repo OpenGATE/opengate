@@ -131,6 +131,53 @@ inside the Geant4 navigator, with no pre-computation.
    representation for reducing computing time of Monte Carlo simulations",
    Medical Physics 35(4), 1452-1463, 2008.
 
+.. _image-volume-outside:
+
+Image volume with an outside
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The solid of an image volume is the box of the image: no other volume can
+be placed in it, even where the image is only air. When volumes must come
+close to the patient (e.g. the heads of a SPECT), they are often put in a
+parallel world, which makes every step more expensive. With
+
+.. code:: python
+
+   patient.voxel_navigation = "regular"
+   patient.outside_threshold = -900
+
+the voxels strictly below the threshold (the raw values of the image, HU
+for a CT) **and** connected to the border of the image (through such
+voxels, by their faces) are "outside": the solid of the image volume is the
+union of the other voxels (``GateImageMaskSolid``), a staircase that follows
+the patient and the table. The outside voxels belong to the mother volume
+(they get its material, logged with the number of outside voxels), and
+other volumes can be placed there, in the same world, without overlap and
+without a parallel world. A closed pocket below the threshold (e.g. gas in
+the bowel) stays inside. Any other mask (e.g. lungs connected to the
+outside by the airways): edit the image before (set the voxels to remove
+below the threshold, or those to keep above it).
+
+Choose the threshold below the values of all the low density materials
+that touch the border of the image: they would become outside, i.e. the
+material of the mother. For example the foam core of an imaging table
+(about -980 to -850 HU in a CT) is connected to the border: with a
+threshold of -700 it becomes air, and the attenuation under the table is
+too low (a few % more counts in the heads that look through the table, in
+a SPECT simulation). With a threshold close to the air (e.g. -980), set
+the voxels that the other volumes cross to -1000 in the image (they must
+be outside), and the small islands of noisy air to -1000 too (they would
+add surfaces for nothing).
+
+It needs ``voxel_navigation = "regular"`` (the steps in the voxels stop at
+the surface of the solid), and the image cannot be dynamic. The actors
+attached to the image volume score nothing in the outside voxels. The
+Geant4 overlap check (``sim.check_volumes_overlap``) uses the real shape:
+it reports a volume that contains an inside voxel. With moving volumes it
+only sees the first position: check the others. See test155 (the solid)
+and test156 (the same energy in volumes next to the image as with a
+parallel world, in less time).
+
 .. _image-volume-visualisation:
 
 Visualisation

@@ -14,6 +14,7 @@ from ..base import DynamicGateObject, process_cls
 from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
+from ..logger import logger
 from ..image import write_itk_image
 from ..image import update_image_py_to_cpp, check_image_direction_is_identity
 from .utility import (
@@ -1025,6 +1026,21 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                 "allowed_values": ("nested", "regular"),
             },
         ),
+        "outside_threshold": (
+            None,
+            {
+                "doc": "If set, the image volume has an 'outside': the voxels with a "
+                "value (raw image value, e.g. HU for a CT) strictly below this "
+                "threshold and connected to the border of the image (through "
+                "voxels below the threshold, by their faces). The solid of the "
+                "volume is then the union of the other voxels (GateImageMaskSolid), "
+                "not the box of the image: the outside voxels belong to the mother "
+                "volume (they get its material), and other volumes can be placed "
+                "there, in the same world, without overlap. Any other mask (e.g. "
+                "lungs connected to the outside by the airways): edit the image. "
+                "Needs voxel_navigation 'regular'. None (default): the box.",
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -1036,6 +1052,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # ITK images
         self._itk_image = None  # the input
         self.label_image = None  # image storing material labels
+        # the outside voxels (numpy bool, z y x), with outside_threshold
+        self.outside_mask = None
         # G4 references (additionally to those in base class)
         self.g4_physical_x = None
         self.g4_physical_y = None
@@ -1056,6 +1074,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         return_dict["g4_logical_z"] = None
         return_dict["g4_voxel_param"] = None
         return_dict["g4_vis_attributes_logical_slices"] = None
+        return_dict["outside_mask"] = None
         return_dict["slice_xy"] = None
         return_dict["slice_xz"] = None
         return_dict["slice_yz"] = None
@@ -1168,19 +1187,108 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             self.volume_manager.find_or_build_material(m)
         self.itk_image = self.load_input_image()
         self.label_image = self.create_label_image()
+        self.outside_mask = None
+        if self.outside_threshold is not None:
+            self.apply_outside_mask()
         if self.dump_label_image:
             self.save_label_image()
         # set attributes of the solid
         self.half_size_mm = 0.5 * self.size_pix * self.spacing
         self.half_spacing = 0.5 * self.spacing
         self.construct_material()
-        self.construct_solid()
-        # the slices are only displayed by the visualisation
-        if self.simulation is not None and self.simulation.visu:
+        if self.outside_mask is None:
+            self.construct_solid()
+        else:
+            self.construct_mask_solid()
+        # the slices are only displayed by the visualisation (not with an
+        # outside: the mask solid is drawn as its box)
+        if (
+            self.simulation is not None
+            and self.simulation.visu
+            and self.outside_mask is None
+        ):
             self.construct_slices()
         self.construct_logical_volume()
         self.g4_voxel_param = self.create_image_parametrisation()
         self.construct_physical_volume()
+
+    def compute_outside_mask(self, itk_image=None):
+        """The outside voxels (numpy bool array, z y x): the voxels strictly
+        below outside_threshold and connected (by the faces) to the border
+        of the image."""
+        from scipy.ndimage import label
+
+        if itk_image is None:
+            itk_image = self.itk_image
+        below = itk.array_view_from_image(itk_image) < self.outside_threshold
+        components, _ = label(below)  # 6-connectivity
+        border = np.concatenate(
+            [
+                components[[0, -1], :, :].ravel(),
+                components[:, [0, -1], :].ravel(),
+                components[:, :, [0, -1]].ravel(),
+            ]
+        )
+        border = np.unique(border[border > 0])
+        return np.isin(components, border)
+
+    def apply_outside_mask(self):
+        """Compute the outside voxels, give them the material of the mother
+        volume in the label image (they are never entered by the
+        navigation, it is a safety), log what they were."""
+        if self.voxel_navigation != "regular":
+            fatal(
+                f"Image volume '{self.name}': outside_threshold needs "
+                f"voxel_navigation = 'regular' (it is '{self.voxel_navigation}')"
+            )
+        if any("image" in dp for dp in (self.dynamic_params or {}).values()):
+            fatal(
+                f"Image volume '{self.name}': outside_threshold cannot be used "
+                f"with a dynamic image"
+            )
+        self.outside_mask = self.compute_outside_mask()
+        mother = self.volume_manager.get_volume(self.mother)
+        mother_material = getattr(mother, "material", None)
+        if mother_material is None:
+            fatal(
+                f"Image volume '{self.name}': outside_threshold, cannot find the "
+                f"material of the mother volume '{self.mother}'"
+            )
+        if mother_material not in self.material_to_label_lut:
+            self.material_to_label_lut[mother_material] = len(
+                self.material_to_label_lut
+            )
+            self.volume_manager.find_or_build_material(mother_material)
+        labels = itk.array_view_from_image(self.label_image)
+        label_to_material = {v: k for k, v in self.material_to_label_lut.items()}
+        values, counts = np.unique(labels[self.outside_mask], return_counts=True)
+        before = ", ".join(
+            f"{label_to_material[v]} {c}" for v, c in zip(values, counts)
+        )
+        labels[self.outside_mask] = self.material_to_label_lut[mother_material]
+        n = int(self.outside_mask.sum())
+        logger.info(
+            f"Image volume '{self.name}': {n} outside voxels "
+            f"({100.0 * n / self.outside_mask.size:.1f} %), threshold "
+            f"{self.outside_threshold}; their materials were: {before}; "
+            f"now {mother_material} (the mother volume '{self.mother}')"
+        )
+        if n == self.outside_mask.size:
+            fatal(f"Image volume '{self.name}': all the voxels are outside")
+
+    def construct_mask_solid(self):
+        from ..image import compute_outside_distance_map
+
+        inside = ~self.outside_mask
+        spacing = [float(s) for s in self.spacing]
+        size = [int(s) for s in self.size_pix]
+        self.g4_solid = g4.GateImageMaskSolid(self.name)
+        self.g4_solid.SetMask(
+            size,
+            spacing,
+            inside.astype(np.uint8),
+            compute_outside_distance_map(inside, spacing),
+        )
 
     def get_visu_window(self, image_array):
         if self.visu_window is not None:

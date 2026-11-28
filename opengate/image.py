@@ -609,3 +609,30 @@ def resample_itk_image(
         image, like, default_pixel_value=default_pixel_value, linear=linear
     )
     return image
+
+
+def compute_outside_distance_map(inside, spacing):
+    """
+    The distance map of the outside voxels of a mask, for GateImageMaskSolid
+    (an image volume with an outside).
+
+    inside: numpy array (z, y, x), True (non zero) for the inside voxels.
+    spacing: (x, y, z) in mm.
+    Returns a float32 array (z, y, x): for each outside voxel, a lower bound
+    of the distance from any point of the voxel to the inside region; 0 for
+    the inside voxels. It is the Euclidean distance between the voxel
+    centres (exact, scipy) minus one voxel diagonal: the point is within half
+    a diagonal of the centre of its voxel, and the nearest inside voxel
+    extends half a diagonal around its centre.
+    """
+    from scipy.ndimage import distance_transform_edt
+
+    inside = np.asarray(inside) != 0
+    if not inside.any():
+        # no inside voxel: any large value (the ray march jumps to the end)
+        return np.full(inside.shape, 1e30, dtype=np.float32)
+    sampling = np.asarray(spacing, dtype=float)[::-1]  # (z, y, x)
+    d = distance_transform_edt(~inside, sampling=sampling)
+    d -= np.sqrt(np.sum(sampling**2))
+    d[d < 0] = 0
+    return d.astype(np.float32)
