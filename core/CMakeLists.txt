@@ -94,6 +94,7 @@ file(GLOB all_SRCS CONFIGURE_DEPENDS
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/digitizer/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/biasing/*.cpp"
         "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/filters/*.cpp"
+        "${PROJECT_SOURCE_DIR}/opengate_core/opengate_lib/positronium/*.cpp"
         )
 pybind11_add_module(opengate_core
         #NO_EXTRAS
