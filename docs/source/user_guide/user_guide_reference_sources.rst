@@ -16,4 +16,4 @@ Details: Sources
    user_guide_reference_sources_gan_source.rst
    user_guide_reference_sources_phid_source.rst
    user_guide_reference_sources_phase_space_source.rst
-
+   user_guide_reference_sources_positronium_source.rst

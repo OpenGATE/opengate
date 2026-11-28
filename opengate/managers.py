@@ -62,6 +62,7 @@ from .sources.lastvertexsources import LastVertexSource
 from .sources.phidsources import PhotonFromIonDecaySource
 from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelizedPromptGammaTLESource, VoxelSource
+from .sources.positroniumsources import PositroniumSource
 from .utility import (
     ensure_directory_exists,
     g4_units,
@@ -72,6 +73,7 @@ from .utility import (
 from .voxelize import voxelize_geometry
 
 source_types = {
+    "PositroniumSource": PositroniumSource,
     "GenericSource": GenericSource,
     "DebugSource": DebugSource,
     "LastVertexSource": LastVertexSource,
@@ -703,7 +705,6 @@ DEFAULT_OPTICAL_PROPERTIES_FILE = (
 DEFAULT_SURFACE_PROPERTIES_FILE = (
     Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml"
 )
-
 
 # Physics lists that need an optional Geant4 dataset, not downloaded with the
 # other Geant4 data (opengate_download_data -o): (part of the physics list
