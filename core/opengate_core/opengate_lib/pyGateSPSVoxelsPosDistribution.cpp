@@ -44,11 +44,22 @@ void SetCumulativeDistributionFunction(GateSPSVoxelsPosDistribution &source,
 
 void init_GateSPSVoxelsPosDistribution(py::module &m) {
 
+  // the alias table: only a handle on the Python side (to share it)
+  py::class_<GateVoxelAliasTable, std::shared_ptr<GateVoxelAliasTable>>(
+      m, "GateVoxelAliasTable")
+      .def("size",
+           [](const GateVoxelAliasTable &t) { return t.entries.size(); })
+      .def_readonly("nx", &GateVoxelAliasTable::nx)
+      .def_readonly("ny", &GateVoxelAliasTable::ny)
+      .def_readonly("nz", &GateVoxelAliasTable::nz);
+
   py::class_<GateSPSVoxelsPosDistribution, GateSPSPosDistribution>(
       m, "GateSPSVoxelsPosDistribution")
       .def(py::init())
       .def("SetCumulativeDistributionFunction",
            &SetCumulativeDistributionFunction)
+      .def("GetAliasTable", &GateSPSVoxelsPosDistribution::GetAliasTable)
+      .def("SetAliasTable", &GateSPSVoxelsPosDistribution::SetAliasTable)
       .def("VGenerateOne", &GateSPSVoxelsPosDistribution::VGenerateOne)
       .def_readwrite("cpp_edep_image",
                      &GateSPSVoxelsPosDistribution::cpp_image);

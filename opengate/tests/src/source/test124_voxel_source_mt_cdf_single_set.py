@@ -102,16 +102,23 @@ def main():
     number_of_threads = 4
 
     # Count the calls to the C++ CDF setter. It is the expensive operation
-    # (it copies all three CDFs) and the one that must run only on the main
-    # thread, once per thread-local source.
+    # (it reads the three CDFs and builds the alias table): once per image,
+    # on the main thread. The other thread-local sources share the table
+    # (SetAliasTable), once each.
     real_setter = g4.GateSPSVoxelsPosDistribution.SetCumulativeDistributionFunction
-    calls = {"count": 0}
+    real_share = g4.GateSPSVoxelsPosDistribution.SetAliasTable
+    calls = {"count": 0, "share": 0}
 
     def counting_setter(self, vz, vy, vx):
         calls["count"] += 1
         return real_setter(self, vz, vy, vx)
 
+    def counting_share(self, table):
+        calls["share"] += 1
+        return real_share(self, table)
+
     g4.GateSPSVoxelsPosDistribution.SetCumulativeDistributionFunction = counting_setter
+    g4.GateSPSVoxelsPosDistribution.SetAliasTable = counting_share
 
     try:
         sim = gate.Simulation()
@@ -149,7 +156,10 @@ def main():
         src.particle = "e-"
         src.energy.mono = 1 * MeV
         src.direction.type = "iso"
-        src.number_of_primaries = 200
+        src.number_of_primaries = 100
+        # a copy of the source (same image): it shares the table too
+        src2 = sim.source_manager.add_source_copy("vox", "vox_copy")
+        src2.number_of_primaries = 100
 
         # The trigger from the issue: a region user limit. Its physics
         # constructor is C++ now, so running it on worker threads does not
@@ -168,19 +178,23 @@ def main():
             f"Simulation generated {stats.counts.events} events (expected 200)",
         )
 
-        # 1 master source + one source per worker thread
-        expected_calls = 1 + number_of_threads
-        is_ok = calls["count"] == expected_calls and is_ok
+        # 2 sources x (1 master source + one source per worker thread): the
+        # table is built once, and shared by all the others
+        expected_share = 2 * (1 + number_of_threads) - 1
+        b = calls["count"] == 1 and calls["share"] == expected_share
+        is_ok = b and is_ok
         utility.print_test(
-            is_ok,
-            f"CDF setter called {calls['count']} times "
-            f"(expected {expected_calls}: once per thread-local source). "
-            f"A larger count means worker threads re-apply the CDF.",
+            b,
+            f"CDF setter called {calls['count']} time(s) (expected 1: once per "
+            f"image), table shared {calls['share']} times (expected "
+            f"{expected_share}: the other thread-local sources of the two "
+            f"sources). A larger count means worker threads re-apply the table.",
         )
 
         utility.test_ok(is_ok and cdf_ok)
     finally:
         g4.GateSPSVoxelsPosDistribution.SetCumulativeDistributionFunction = real_setter
+        g4.GateSPSVoxelsPosDistribution.SetAliasTable = real_share
 
 
 if __name__ == "__main__":

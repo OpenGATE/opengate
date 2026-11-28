@@ -13,7 +13,26 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <vector>
+
+// The alias table (Walker / Vose) of the voxels of an activity image: one
+// random number and one table entry per sample, instead of three binary
+// searches in the CDFs (slow for large images: cache misses). Only the
+// voxels with a non-zero probability are in the table. Read only once
+// built: shared by the thread-local sources and by the sources with the
+// same image (see VoxelSource on the Python side), to save memory.
+struct GateVoxelAliasTable {
+  struct Entry {
+    float q;             // probability to keep the voxel of this entry
+    std::uint32_t self;  // linear index (z * ny + y) * nx + x of the voxel
+    std::uint32_t alias; // linear index of the alias voxel
+  };
+  std::vector<Entry> entries;
+  std::size_t nx = 0;
+  std::size_t ny = 0;
+  std::size_t nz = 0;
+};
 
 class GateSPSVoxelsPosDistribution : public GateSPSPosDistribution {
 
@@ -25,9 +44,14 @@ public:
   // Cannot inherit from GenerateOne
   G4ThreeVector VGenerateOne() override;
 
+  // build a new alias table from the CDFs (the CDFs are not kept)
   void SetCumulativeDistributionFunction(const double *cdfZ, const double *cdfY,
                                          const double *cdfX, std::size_t nx,
                                          std::size_t ny, std::size_t nz);
+
+  // the alias table, to share it with another source (same image)
+  std::shared_ptr<GateVoxelAliasTable> GetAliasTable() const { return fTable; }
+  void SetAliasTable(std::shared_ptr<GateVoxelAliasTable> table);
 
   // Image type is 3D float by default (the pixel data are not used
   // nor even allocated. Only useful to convert pixel coordinates
@@ -42,19 +66,7 @@ public:
   G4RotationMatrix fGlobalRotation;
 
 protected:
-  // The voxel is sampled with an alias table (Walker / Vose) built from the
-  // CDFs: one random number and one table entry per sample, instead of three
-  // binary searches in the CDFs (slow for large images: cache misses).
-  // Only the voxels with a non-zero probability are in the table.
-  struct AliasEntry {
-    float q;             // probability to keep the voxel of this entry
-    std::uint32_t self;  // linear index (z * ny + y) * nx + x of the voxel
-    std::uint32_t alias; // linear index of the alias voxel
-  };
-  std::vector<AliasEntry> fAlias;
-  std::size_t fNx = 0;
-  std::size_t fNy = 0;
-  std::size_t fNz = 0;
+  std::shared_ptr<GateVoxelAliasTable> fTable;
 };
 
 #endif // GateSPSVoxelsPosDistribution_h

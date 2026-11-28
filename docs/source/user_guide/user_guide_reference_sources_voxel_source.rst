@@ -71,6 +71,12 @@ three times the size of the image in floats. An image
 with 2^32 voxels or more is refused. A dynamic image rebuilds the table at
 each change.
 
+The image and its table are in memory only once: they are shared by the
+threads, and by all the voxel sources that read the same image file (for
+example the copies of a source made with ``sim.source_manager.add_source_copy``,
+one per detector head or per energy line). The cumulative tables used to
+build the alias table are not kept.
+
 The activity image can also be made dynamic from one run to the next with
 ``source.add_dynamic_parametrisation(image=[...])``. See
 :doc:`user_guide_dynamic_parametrisations`.
