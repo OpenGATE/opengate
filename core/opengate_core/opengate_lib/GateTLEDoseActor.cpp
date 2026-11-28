@@ -16,8 +16,11 @@
 #include <G4ParticleDefinition.hh>
 #include <G4RunManager.hh>
 #include <G4Threading.hh>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <itkAddImageFilter.h>
+#include <limits>
 #include <vector>
 
 // The edep/dose images are also written by GateDoseActor::SteppingAction
@@ -38,6 +41,7 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
   fTLEThreshold = py::cast<double>(user_info["tle_threshold"]);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
   fDatabase = py::cast<std::string>(user_info["database"]);
+  fSplitStepInVoxels = py::cast<bool>(user_info["split_step_in_voxels"]);
   if (fStrTLEThresholdType == "max range") {
     fTLEThresholdType = 0;
   } else if (fStrTLEThresholdType == "average range") {
@@ -281,14 +285,19 @@ void GateTLEDoseActor::ScoreTLEDepositStep(G4Step *step) {
     edep = weight * energy;
     step->GetTrack()->SetTrackStatus(fStopAndKill);
   }
+  const auto event_id =
+      G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+  if (fSplitStepInVoxels && energy > fEnergyMin) {
+    ScoreTLEDepositSplit(step, edep, density, event_id);
+    return;
+  }
+
   const double dose = edep / density;
 
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
-  const auto event_id =
-      G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   if (isInside) {
     // all ImageAddValue calls in a mutex-scope
     {
@@ -308,6 +317,131 @@ void GateTLEDoseActor::ScoreTLEDepositStep(G4Step *step) {
       if (fDoseSquaredFlag) {
         ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
                           dose, event_id, index);
+      }
+    }
+  }
+}
+
+void GateTLEDoseActor::ScoreTLEDepositSplit(G4Step *step, const double edep,
+                                            const double density,
+                                            const int event_id) {
+  // the pre and post points in the frame of the dose image (as in
+  // GateDoseActor::GetVoxelPosition)
+  const auto *touchable = step->GetPreStepPoint()->GetTouchable();
+  const auto &transform = touchable->GetHistory()->GetTransform(0);
+  const auto pre =
+      transform.TransformPoint(step->GetPreStepPoint()->GetPosition());
+  const auto post =
+      transform.TransformPoint(step->GetPostStepPoint()->GetPosition());
+
+  // continuous index, shifted so that voxel i spans [i, i+1) on each axis
+  Image3DType::PointType p0, p1;
+  for (int k = 0; k < 3; k++) {
+    p0[k] = pre[k];
+    p1[k] = post[k];
+  }
+  const auto c0 =
+      cpp_edep_image->TransformPhysicalPointToContinuousIndex<double, double>(
+          p0);
+  const auto c1 =
+      cpp_edep_image->TransformPhysicalPointToContinuousIndex<double, double>(
+          p1);
+  const auto size = cpp_edep_image->GetLargestPossibleRegion().GetSize();
+  double a[3], d[3];
+  for (int k = 0; k < 3; k++) {
+    a[k] = c0[k] + 0.5;
+    d[k] = c1[k] + 0.5 - a[k];
+  }
+
+  // clip the segment a + t d, t in [0, 1], to the image box [0, size]
+  double t0 = 0, t1 = 1;
+  for (int k = 0; k < 3; k++) {
+    const double n = static_cast<double>(size[k]);
+    if (d[k] == 0) {
+      if (a[k] < 0 || a[k] >= n)
+        return;
+      continue;
+    }
+    double ta = (0 - a[k]) / d[k];
+    double tb = (n - a[k]) / d[k];
+    if (ta > tb)
+      std::swap(ta, tb);
+    t0 = std::max(t0, ta);
+    t1 = std::min(t1, tb);
+  }
+  if (t0 >= t1)
+    return;
+
+  // voxel walk (Amanatides and Woo 1987); the weight of a voxel is the
+  // fraction of the step length (in t) inside it
+  Image3DType::IndexType index;
+  int step_dir[3];
+  double t_max[3], t_delta[3];
+  // the entry voxel: the one of a point just after the entry, so that a
+  // step starting exactly on a face gets the voxel it goes into
+  const double t_in = t0 + std::min(1e-9, 0.5 * (t1 - t0));
+  for (int k = 0; k < 3; k++) {
+    long i = static_cast<long>(std::floor(a[k] + t_in * d[k]));
+    i = std::min(std::max(i, 0L), static_cast<long>(size[k]) - 1);
+    index[k] = i;
+    if (d[k] > 0) {
+      step_dir[k] = 1;
+      t_max[k] = (static_cast<double>(i + 1) - a[k]) / d[k];
+      t_delta[k] = 1.0 / d[k];
+    } else if (d[k] < 0) {
+      step_dir[k] = -1;
+      t_max[k] = (static_cast<double>(i) - a[k]) / d[k];
+      t_delta[k] = -1.0 / d[k];
+    } else {
+      step_dir[k] = 0;
+      t_max[k] = std::numeric_limits<double>::infinity();
+      t_delta[k] = std::numeric_limits<double>::infinity();
+    }
+  }
+
+  // collect the (voxel, weight) pairs, then add them under one lock
+  thread_local std::vector<std::pair<Image3DType::IndexType, double>> hits;
+  hits.clear();
+  double t = t0;
+  const std::size_t max_iter = size[0] + size[1] + size[2] + 3;
+  for (std::size_t it = 0; it < max_iter && t < t1; it++) {
+    int k = 0;
+    if (t_max[1] < t_max[k])
+      k = 1;
+    if (t_max[2] < t_max[k])
+      k = 2;
+    const double t_next = std::min(t_max[k], t1);
+    if (t_next > t)
+      hits.emplace_back(index, t_next - t);
+    t = t_next;
+    if (t >= t1)
+      break;
+    index[k] += step_dir[k];
+    if (index[k] < 0 || index[k] >= static_cast<long>(size[k]))
+      break;
+    t_max[k] += t_delta[k];
+  }
+  if (hits.empty())
+    return;
+
+  {
+    G4AutoLock mutex(&SetPixelMutex);
+    for (const auto &[idx, w] : hits) {
+      if (fDoseFlag) {
+        ImageAddValue<Image3DType>(cpp_dose_image, idx, w * edep / density);
+      }
+      ImageAddValue<Image3DType>(cpp_edep_image, idx, w * edep);
+    }
+  }
+  if (fEdepSquaredFlag || fDoseSquaredFlag) {
+    for (const auto &[idx, w] : hits) {
+      if (fEdepSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
+                          w * edep, event_id, idx);
+      }
+      if (fDoseSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
+                          w * edep / density, event_id, idx);
       }
     }
   }
